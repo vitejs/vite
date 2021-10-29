@@ -367,11 +367,11 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### server.host
 
-- **Type:** `string`
+- **Type:** `string | boolean`
 - **Default:** `'127.0.0.1'`
 
   Specify which IP addresses the server should listen on.
-  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
+  Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
 
   This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
@@ -542,18 +542,16 @@ createServer()
 
 ### server.fs.strict
 
-- **Experimental**
 - **Type:** `boolean`
-- **Default:** `false` (will change to `true` in future versions)
+- **Default:** `true` (enabled by default since Vite 2.7)
 
   Restrict serving files outside of workspace root.
 
 ### server.fs.allow
 
-- **Experimental**
 - **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -592,6 +590,15 @@ createServer()
     }
   })
   ```
+
+### server.fs.deny
+
+- **Experimental**
+- **Type:** `string[]`
+
+  Blocklist for sensitive files being restricted to be served by Vite dev server.
+
+  Default to `['.env', '.env.*', '*.{pem,crt}']`.
 
 ### server.origin
 

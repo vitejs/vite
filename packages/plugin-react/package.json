@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-react",
-  "version": "1.0.6",
+  "version": "1.1.0-beta.0",
   "license": "MIT",
   "author": "Evan You",
   "contributors": [
@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react#readme",
   "dependencies": {
-    "@babel/core": "^7.15.5",
+    "@babel/core": "^7.15.8",
     "@babel/plugin-transform-react-jsx": "^7.14.9",
     "@babel/plugin-transform-react-jsx-development": "^7.14.5",
     "@babel/plugin-transform-react-jsx-self": "^7.14.9",

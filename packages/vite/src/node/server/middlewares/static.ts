@@ -14,6 +14,7 @@ import {
   slash,
   isFileReadable
 } from '../../utils'
+import match from 'minimatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -115,7 +116,14 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fs.allow`
-      if (!ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server, res, next)) {
+      if (
+        !ensureServingAccess(
+          slash(path.resolve(fsPathFromId(url))),
+          server,
+          res,
+          next
+        )
+      ) {
         return
       }
 
@@ -130,32 +138,24 @@ export function serveRawFsMiddleware(
   }
 }
 
+const _matchOptions = { matchBase: true }
+
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
 ): boolean {
-  // explicitly disabled
-  if (server.config.server.fs.strict === false) return true
+  if (!server.config.server.fs.strict) return true
 
   const cleanedUrl = cleanUrl(url)
   const file = ensureLeadingSlash(normalizePath(cleanedUrl))
+
+  if (server.config.server.fs.deny.some((i) => match(file, i, _matchOptions)))
+    return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
   if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
     return true
-
-  if (!server.config.server.fs.strict) {
-    if (isFileReadable(cleanedUrl)) {
-      server.config.logger.warnOnce(`Unrestricted file system access to "${url}"`)
-      server.config.logger.warnOnce(
-        `For security concerns, accessing files outside of serving allow list will ` +
-        `be restricted by default in the future version of Vite. ` +
-        `Refer to https://vitejs.dev/config/#server-fs-allow for more details.`
-      )
-    }
-    return true
-  }
 
   return false
 }
@@ -164,7 +164,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction,
+  next: Connect.NextFunction
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true
@@ -181,8 +181,7 @@ Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and 
     res.statusCode = 403
     res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
     res.end()
-  }
-  else {
+  } else {
     // if the file doesn't exist, we shouldn't restrict this path as it can
     // be an API call. Middlewares would issue a 404 if the file isn't handled
     next()

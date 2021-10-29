@@ -18,6 +18,7 @@ interface ImportMeta {
     accept(dep: string, cb: (mod: any) => void): void
     accept(deps: string[], cb: (mods: any[]) => void): void
 
+    prune(cb: () => void): void
     dispose(cb: (data: any) => void): void
     decline(): void
     invalidate(): void
