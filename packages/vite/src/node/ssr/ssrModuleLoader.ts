@@ -116,6 +116,7 @@ async function instantiateModule(
       } else {
         pendingDeps.splice(pendingDeps.indexOf(dep), 1)
       }
+      // return local module to avoid race condition #5470
       return mod
     }
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
