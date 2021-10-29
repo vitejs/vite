@@ -367,11 +367,11 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### server.host
 
-- **Type:** `string`
+- **Type:** `string | boolean`
 - **Default:** `'127.0.0.1'`
 
   Specify which IP addresses the server should listen on.
-  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
+  Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
 
   This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
