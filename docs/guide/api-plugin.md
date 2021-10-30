@@ -218,7 +218,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       // use stored config in other hooks
       transform(code, id) {
         if (config.command === 'serve') {
-          // serve: plugin invoked by dev server
+          // dev: plugin invoked by dev server
         } else {
           // build: plugin invoked by Rollup
         }
@@ -226,6 +226,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     }
   }
   ```
+
+  Note that the `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
 
 ### `configureServer`
 
