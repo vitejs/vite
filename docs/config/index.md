@@ -69,7 +69,7 @@ export default defineConfig(({ command, mode }) => {
 })
 ```
 
-It is important to note that in Vite's API the `command` value is `serve` during de (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
+It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
 
 ### Async Config
 
