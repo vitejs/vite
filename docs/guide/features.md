@@ -296,12 +296,12 @@ Note that:
 - The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root).
 - The glob matching is done via `fast-glob` - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
 
-You should also be aware that glob imports can not accept variables, You must hard code the imports. The most elegent solution to this is a switch statement, like so:
+You should also be aware that glob imports do not accept variables, You must hard code the imports. One possible solution is as so:
 
 ```js
-switch (url) {
-  case "posts":  location = Object.entries(import.meta.globEager("/posts/**/*.md"));
-  case "assets": location = import.meta.globEager("assets/**/*.{png,jpg}");
+const location = {
+  posts: Object.entries(import.meta.globEager("/posts/**/*.md")),
+  assets: import.meta.globEager("assets/**/*.{png,jpg}")
 }
 ```
 
