@@ -295,15 +295,7 @@ Note that:
 - This is a Vite-only feature and is not a web or ES standard.
 - The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root).
 - The glob matching is done via `fast-glob` - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
-
-You should also be aware that glob imports do not accept variables, You must hard code the imports. One possible solution is as so:
-
-```js
-const location = {
-  posts: Object.entries(import.meta.globEager("/posts/**/*.md")),
-  assets: import.meta.globEager("assets/**/*.{png,jpg}")
-}
-```
+  - You should also be aware that glob imports do not accept variables, you need to directly pass the string pattern.
 
 ## WebAssembly
 
