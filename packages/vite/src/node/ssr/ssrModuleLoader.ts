@@ -122,8 +122,10 @@ async function instantiateModule(
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
   const ssrRequire = (dep: string) => {
-    const { resolve, dirname } = path
-    return require(resolve(dirname(mod.file!), dep))
+    const { dirname } = path
+    return require(require.resolve(dep, {
+      paths: [dirname(mod.file!)]
+    }))
   }
 
   const ssrDynamicImport = (dep: string) => {
