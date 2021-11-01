@@ -122,9 +122,8 @@ async function instantiateModule(
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
   const ssrRequire = (dep: string) => {
-    const { dirname } = path
     return require(require.resolve(dep, {
-      paths: [dirname(mod.file!)]
+      paths: [path.dirname(mod.file!)]
     }))
   }
 

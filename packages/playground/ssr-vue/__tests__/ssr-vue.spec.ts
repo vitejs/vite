@@ -4,6 +4,15 @@ import fetch from 'node-fetch'
 
 const url = `http://localhost:${port}`
 
+test('/require', async () => {
+  await page.goto(url + '/require')
+  expect(await page.textContent('h1')).toMatch('foo')
+
+  // raw http request
+  const envHtml = await (await fetch(url + '/require')).text()
+  expect(envHtml).toMatch('foo')
+})
+
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')
