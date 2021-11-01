@@ -391,7 +391,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (opts.format === 'es' || opts.format === 'cjs' || opts.format === 'system') {
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: false,
             minify: true
