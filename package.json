@@ -31,7 +31,7 @@
     "@microsoft/api-extractor": "^7.18.11",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.0.2",
-    "@types/node": "^15.12.2",
+    "@types/node": "^16.11.6",
     "@types/semver": "^7.3.8",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
     "@typescript-eslint/parser": "^5.2.0",
