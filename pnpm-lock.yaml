@@ -227,12 +227,14 @@ importers:
       test-package-c: link:./test-package-c
       test-package-d: link:./test-package-d
       test-package-e: link:./test-package-e
+      test-package-f: link:./test-package-f
     dependencies:
       test-package-a: link:test-package-a
       test-package-b: link:test-package-b
       test-package-c: link:test-package-c
       test-package-d: link:test-package-d
       test-package-e: link:test-package-e
+      test-package-f: link:test-package-f
 
   packages/playground/nested-deps/test-package-a:
     specifiers: {}
@@ -268,6 +270,9 @@ importers:
       test-package-e-excluded: link:../test-package-e-excluded
     dependencies:
       test-package-e-excluded: link:../test-package-e-excluded
+
+  packages/playground/nested-deps/test-package-f:
+    specifiers: {}
 
   packages/playground/optimize-deps:
     specifiers:
@@ -2186,7 +2191,6 @@ packages:
 
   /@types/yauzl/2.9.2:
     resolution: {integrity: sha512-8uALY5LTvSuHgloDVUvWP3pIauILm+8/0pDMokuDYIoNsOkSwd5AiHBTSEJjKTDcZr5z8UpgOWZkxBF4iJftoA==}
-    requiresBuild: true
     dependencies:
       '@types/node': 15.14.9
     dev: true
@@ -3757,7 +3761,7 @@ packages:
     dev: true
 
   /end-of-stream/1.4.4:
-    resolution: {integrity: sha512-+uw1inIHVPQoaVuHzRyXd21icM+cnt4CzD5rW+NC1wjOUSTOs+Te7FOv7AhN7vS9x/oIyhLP5PR1H+phQAHu5Q==}
+    resolution: {integrity: sha1-WuZKX0UFe682JuwU2gyl5LJDHrA=}
     dependencies:
       once: 1.4.0
     dev: true
@@ -6836,7 +6840,7 @@ packages:
     dev: true
 
   /pngjs/5.0.0:
-    resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
+    resolution: {integrity: sha1-553SshV2f9nARWHAEjbflgvOf7s=}
     engines: {node: '>=10.13.0'}
     dev: true
 
@@ -7031,7 +7035,7 @@ packages:
     dev: false
 
   /proper-lockfile/4.1.2:
-    resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
+    resolution: {integrity: sha1-yLneKvay8WAQZ/mOAaxmuqIjFB8=}
     dependencies:
       graceful-fs: 4.2.8
       retry: 0.12.0
@@ -7047,7 +7051,7 @@ packages:
     dev: true
 
   /proxy-from-env/1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+    resolution: {integrity: sha1-4QLxbKNVQkhldV0sno6k8k1Yw+I=}
     dev: true
 
   /prr/1.0.1:
@@ -7183,7 +7187,7 @@ packages:
     dev: true
 
   /pvutils/1.0.17:
-    resolution: {integrity: sha512-wLHYUQxWaXVQvKnwIDWFVKDJku9XDCvyhhxoq8dc5MFdIlRenyPI9eSfEtcvgHgD7FlvCyGAlWgOzRnZD99GZQ==}
+    resolution: {integrity: sha1-rePHTf5xeJRP5EgGYmvS4knZlr8=}
     engines: {node: '>=6.0.0'}
     dev: true
 
@@ -8844,7 +8848,7 @@ packages:
     dev: true
 
   /yazl/2.5.1:
-    resolution: {integrity: sha512-phENi2PLiHnHb6QBVot+dJnaAZ0xosj7p3fWl+znIjBDlnMI2PsZCJZ306BPTFOaHf5qdDEI8x5qFrSOBN5vrw==}
+    resolution: {integrity: sha1-o9ZdPdZZpbCTeFDoYJ8i//orXDU=}
     dependencies:
       buffer-crc32: 0.2.13
     dev: true

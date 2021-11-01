@@ -1,6 +1,6 @@
 import { ViteDevServer } from '..'
 import { Plugin } from '../plugin'
-import { bareImportRE } from '../utils'
+import { bareImportRE, normalizePath } from '../utils'
 import { tryOptimizedResolve } from './resolve'
 
 /**
@@ -14,8 +14,11 @@ export function preAliasPlugin(): Plugin {
       server = _server
     },
     resolveId(id, importer, options) {
-      const hasPreBundled = server._optimizeDepsMetadata?.optimized[id]
-      if (!options?.ssr && (bareImportRE.test(id) || hasPreBundled)) {
+      // When using absolute path to import dep instead of bare import, the dep properly has pre-bundled. #5494
+      if (
+        !options?.ssr &&
+        (bareImportRE.test(id) || server._optimizeDepsMetadata?.optimized[normalizePath(id)])
+      ) {
         return tryOptimizedResolve(id, server, importer)
       }
     }

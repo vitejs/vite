@@ -13,6 +13,7 @@
     "test-package-b": "link:./test-package-b",
     "test-package-c": "link:./test-package-c",
     "test-package-d": "link:./test-package-d",
-    "test-package-e": "link:./test-package-e"
+    "test-package-e": "link:./test-package-e",
+    "test-package-f": "link:./test-package-f"
   }
 }
