@@ -194,10 +194,27 @@ async function nodeImport(
   importer: string | null,
   config: ViteDevServer['config']
 ) {
-  const mod = require(resolve(id, importer, root, preserveSymlinks))
+  let url: string
+  // `resolve` doesn't handle `node:` builtins, so handle them directly
+  if (id.startsWith('node:') || isBuiltin(id)) {
+    url = id
+  } else {
+    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
+    if (usingDynamicImport) {
+      url = pathToFileURL(url).toString()
+    }
+  }
+  const mod = await dynamicImport(url)
+  return proxyESM(id, mod)
+}
 
-  const defaultExport = mod.__esModule ? mod.default : mod
-  // rollup-style default import interop for cjs
+// rollup-style default import interop for cjs
+function proxyESM(id: string, mod: any) {
+  const defaultExport = mod.__esModule
+    ? mod.default
+    : mod.default
+    ? mod.default
+    : mod
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
