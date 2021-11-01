@@ -1,3 +1,13 @@
+# [2.7.0-beta.1](https://github.com/vitejs/vite/compare/v2.7.0-beta.0...v2.7.0-beta.1) (2021-11-01)
+
+
+### Bug Fixes
+
+* **ssr:** dont transform process.env. in ssr ([#5404](https://github.com/vitejs/vite/issues/5404)) ([1140981](https://github.com/vitejs/vite/commit/11409818d934f2b13ba7d5972647d31273fd3293))
+* Vite module graph race condition ([#5470](https://github.com/vitejs/vite/issues/5470)) ([70fd32c](https://github.com/vitejs/vite/commit/70fd32c1569c3d93a231577b573dbd2b34da4de2))
+
+
+
 # [2.7.0-beta.0](https://github.com/vitejs/vite/compare/v2.6.13...v2.7.0-beta.0) (2021-10-28)
 
 
