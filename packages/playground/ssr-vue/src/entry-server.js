@@ -1,6 +1,15 @@
 import { createApp } from './main'
 import { renderToString } from 'vue/server-renderer'
 import path from 'path'
+import assert from 'assert'
+
+// test require relative path
+const { foo } = require('../config')
+assert.strictEqual(foo, 'foo')
+// test require bare module
+const serverRenderer = require('vue/server-renderer')
+// test require and import result point at the same object
+assert.strictEqual(serverRenderer.renderToString, renderToString)
 
 export async function render(url, manifest, rootDir) {
   const { app, router } = createApp()
