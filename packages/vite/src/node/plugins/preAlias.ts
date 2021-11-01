@@ -14,7 +14,8 @@ export function preAliasPlugin(): Plugin {
       server = _server
     },
     resolveId(id, importer, options) {
-      if (!options?.ssr && bareImportRE.test(id)) {
+      const hasPreBundled = server._optimizeDepsMetadata?.optimized[id]
+      if (!options?.ssr && (bareImportRE.test(id) || hasPreBundled)) {
         return tryOptimizedResolve(id, server, importer)
       }
     }
