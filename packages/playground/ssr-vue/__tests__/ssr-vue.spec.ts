@@ -9,8 +9,8 @@ test('/require', async () => {
   expect(await page.textContent('h1')).toMatch('foo')
 
   // raw http request
-  const envHtml = await (await fetch(url + '/require')).text()
-  expect(envHtml).toMatch('foo')
+  const requireHtml = await (await fetch(url + '/require')).text()
+  expect(requireHtml).toMatch('foo')
 })
 
 test('/about', async () => {
