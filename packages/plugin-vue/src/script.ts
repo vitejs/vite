@@ -22,6 +22,17 @@ export function setResolvedScript(
   ;(ssr ? ssrCache : clientCache).set(descriptor, script)
 }
 
+// Check if we can use compile template as inlined render function
+// inside <script setup>. This can only be done for build because
+// inlined template cannot be individually hot updated.
+export function isUseInlineTemplate(descriptor: SFCDescriptor, isProd: boolean): boolean {
+  return (
+    isProd &&
+    !!descriptor.scriptSetup &&
+    !descriptor.template?.src
+  )
+}
+
 export function resolveScript(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -43,7 +54,7 @@ export function resolveScript(
     ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
-    inlineTemplate: !options.devServer,
+    inlineTemplate: isUseInlineTemplate(descriptor, !options.devServer),
     refTransform: options.refTransform !== false,
     templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr),
     // @ts-ignore TODO remove ignore when we support this in @vue/compiler-sfc

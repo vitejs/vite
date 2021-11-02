@@ -219,3 +219,11 @@ describe('custom element', () => {
     expect(await getColor('.custom-element')).toBe('green')
   })
 })
+
+describe('setup import template', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.setup-import-template')).toMatch('0')
+    await page.click('.setup-import-template')
+    expect(await page.textContent('.setup-import-template')).toMatch('1')
+  })
+})
