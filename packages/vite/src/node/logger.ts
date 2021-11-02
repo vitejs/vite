@@ -6,6 +6,7 @@ import os from 'os'
 import readline from 'readline'
 import { RollupError } from 'rollup'
 import { ResolvedConfig } from '.'
+import { CommonServerOptions } from './http'
 import { Hostname, resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -139,15 +140,26 @@ export function createLogger(
   return logger
 }
 
+/**
+ * @deprecated Use `server.printUrls()` instead
+ */
 export function printHttpServerUrls(
   server: Server,
   config: ResolvedConfig
 ): void {
+  printCommonServerUrls(server, config.server, config)
+}
+
+export function printCommonServerUrls(
+  server: Server,
+  options: CommonServerOptions,
+  config: ResolvedConfig,
+): void {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(config.server.host)
-    const protocol = config.server.https ? 'https' : 'http'
+    const hostname = resolveHostname(options.host)
+    const protocol = options.https ? 'https' : 'http'
     printServerUrls(
       hostname,
       protocol,
