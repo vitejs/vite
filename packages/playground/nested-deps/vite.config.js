@@ -1,6 +1,8 @@
-// extract the package absolute path
-const { normalizePath } = require('vite');
-const packageFPath = normalizePath(require.resolve('test-package-f')).replace(/(\\|\/)index.js/, '')
+const path = require('path')
+const os = require('os')
+const isWindows = os.platform() === 'win32'
+const packageFPath = path.resolve(__dirname, 'test-package-f')
+const ensureSlash = (p) => (p.startsWith('/') ? p : `/${p}`)
 
 /**
  * @type {import('vite').UserConfig}
@@ -8,7 +10,9 @@ const packageFPath = normalizePath(require.resolve('test-package-f')).replace(/(
 module.exports = {
   resolve: {
     alias: {
-      __F_ABSOLUTE_PACKAGE_PATH__: packageFPath
+      __F_ABSOLUTE_PACKAGE_PATH__: isWindows
+        ? ensureSlash(packageFPath)
+        : packageFPath
     }
   },
   optimizeDeps: {
