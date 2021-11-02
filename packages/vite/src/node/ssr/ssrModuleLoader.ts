@@ -212,7 +212,7 @@ function proxyESM(id: string, mod: any) {
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
-      return mod[prop]
+      return mod[prop] ?? defaultExport[prop]
     }
   })
 }
