@@ -71,7 +71,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
-  // should also try import from `.ts/tsx/mts/cts` source file as fallback,
+  // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
 }
 
