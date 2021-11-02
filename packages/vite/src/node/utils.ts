@@ -164,6 +164,14 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
+const knownTsRE = /\.(ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isPossibleTsOutput = (url: string) =>
+  knownTsOutputRE.test(cleanUrl(url))
+export const getTsSrcPath = (filename: string) =>
+  filename.replace(/\.([cm])?(js)(x?)$/, '.$1ts$3')
+
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,

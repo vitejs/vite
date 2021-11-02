@@ -33,6 +33,11 @@
 <h2>Don't add extensions to directory names</h2>
 <p class="dir-with-ext">fail</p>
 
+<h2>
+  A ts module can import another ts module using its corresponding js file name
+</h2>
+<p class="ts-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -118,6 +123,9 @@
   // don't add extensions to dir name (./dir-with-ext.js/index.js)
   import { file as dirWithExtMsg } from './dir-with-ext'
   text('.dir-with-ext', dirWithExtMsg)
+
+  import { msg as tsExtensionMsg } from './ts-extension'
+  text('.ts-extension', tsExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
