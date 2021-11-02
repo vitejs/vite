@@ -13,6 +13,7 @@ export { normalizePath } from './utils'
 export type {
   CorsOptions,  
   CorsOrigin,
+  CommonServerOptions
 } from './http'
 export type {
   ViteDevServer,
