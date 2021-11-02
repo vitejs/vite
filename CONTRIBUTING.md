@@ -10,10 +10,24 @@ To development and test the core `vite` package:
 
 1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
-2. Run `pnpm link` in `packages/vite`. This links `vite` globally so that you can:
+2. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
 
    - Run `pnpm link vite` in another Vite project to use the locally built Vite;
    - Use the `vite` binary anywhere.
+
+   If your project has `vite` as a nested dependency, you can customize the dependency resolution instead depending on the package manager used. For pnpm, add this in your project's root `package.json`:
+
+   ```json
+   {
+     "pnpm": {
+       "overrides": {
+         "vite": "link:../path/to/vite/packages/vite"
+       }
+     }
+   }
+   ```
+
+   And re-run `pnpm install` to link the package.
 
 ## Running Tests
 

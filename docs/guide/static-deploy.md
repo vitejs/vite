@@ -10,7 +10,7 @@ The following guides are based on some shared assumptions:
 {
   "scripts": {
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   }
 }
 ```

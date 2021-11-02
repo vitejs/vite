@@ -23,7 +23,9 @@ const Foo = defineAsyncComponent(() =>
 function load(file) {
   return defineAsyncComponent(() => import(`../components/${file}.vue`))
 }
-const url = import.meta.env.SSR ? import.meta.url : document.querySelector('.import-meta-url').textContent
+const url = import.meta.env.SSR
+  ? import.meta.url
+  : document.querySelector('.import-meta-url').textContent
 const protocol = new URL(url).protocol
 const state = reactive({
   count: 0,

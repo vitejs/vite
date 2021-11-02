@@ -98,7 +98,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       )
     },
-    async transform(code, id, ssr) {
+    async transform(code, id, options) {
+      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
       // File extension could be mocked/overriden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =
@@ -199,6 +200,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
+          sourceFileName: id,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',
