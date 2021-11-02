@@ -3,7 +3,7 @@ export const EXPORT_HELPER_ID = 'plugin-vue:export-helper'
 export const helperCode = `
 export default (sfc, props) => {
 
-  if (typeof sfc === 'function' ) {
+  if (!sfc || typeof sfc !== 'object') {
     sfc = {};
   }
 
