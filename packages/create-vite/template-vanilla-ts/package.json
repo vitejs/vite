@@ -4,10 +4,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^4.3.2",
-    "vite": "^2.6.4"
+    "typescript": "^4.4.4",
+    "vite": "^2.6.13"
   }
 }

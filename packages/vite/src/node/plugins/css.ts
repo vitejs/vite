@@ -206,7 +206,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules
+          const isSelfAccepting = !modules && !inlineRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
@@ -271,7 +271,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
     },
 
-    async transform(css, id, ssr) {
+    async transform(css, id, options) {
       if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
@@ -286,7 +286,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
-          if (ssr) {
+          if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
@@ -318,8 +318,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           modulesCode ||
           (usedRE.test(id)
             ? `export default ${JSON.stringify(
-              inlined ? await minifyCSS(css, config) : css
-            )}`
+                inlined ? await minifyCSS(css, config) : css
+              )}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve

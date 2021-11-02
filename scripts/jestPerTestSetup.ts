@@ -65,7 +65,7 @@ beforeAll(async () => {
       tempDir = resolve(__dirname, '../packages/temp/', testName)
 
       // when `root` dir is present, use it as vite's root
-      let testCustomRoot = resolve(tempDir, 'root')
+      const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
       const testCustomServe = resolve(dirname(testPath), 'serve.js')

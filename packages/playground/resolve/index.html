@@ -60,6 +60,9 @@
 <h2>resolve.conditions</h2>
 <p class="custom-condition"></p>
 
+<h2>resolve package that contains # in path</h2>
+<p class="path-contains-sharp-symbol"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -171,6 +174,9 @@
 
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)
+
+  import es5Ext from 'es5-ext'
+  text('.path-contains-sharp-symbol', '[success]')
 </script>
 
 <style>

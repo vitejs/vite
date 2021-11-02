@@ -63,6 +63,10 @@ export interface ServerOptions {
   host?: string | boolean
   port?: number
   /**
+   * If enabled, vite will exit if specified port is already in use
+   */
+  strictPort?: boolean
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
@@ -71,19 +75,6 @@ export interface ServerOptions {
    * Open browser window on startup
    */
   open?: boolean | string
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
-  /**
-   * Configure HMR-specific options (port, host, path & protocol)
-   */
-  hmr?: HmrOptions | boolean
-  /**
-   * chokidar watch options
-   * https://github.com/paulmillr/chokidar#api
-   */
-  watch?: WatchOptions
   /**
    * Configure custom proxy rules for the dev server. Expects an object
    * of `{ key: options }` pairs.
@@ -114,10 +105,20 @@ export interface ServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+
   /**
-   * If enabled, vite will exit if specified port is already in use
+   * Force dep pre-optimization regardless of whether deps have changed.
    */
-  strictPort?: boolean
+  force?: boolean
+  /**
+   * Configure HMR-specific options (port, host, path & protocol)
+   */
+  hmr?: HmrOptions | boolean
+  /**
+   * chokidar watch options
+   * https://github.com/paulmillr/chokidar#api
+   */
+  watch?: WatchOptions
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    */
@@ -148,20 +149,29 @@ export interface FileSystemServeOptions {
    * Set to `false` to disable the warning
    * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @experimental
-   * @default undefined
+   * @default true
    */
-  strict?: boolean | undefined
+  strict?: boolean
 
   /**
    * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
+   */
+  allow?: string[]
+
+  /**
+   * Restrict accessing files that matches the patterns.
+   *
+   * This will have higher priority than `allow`.
+   * Glob patterns are supported.
+   *
+   * @default ['.env', '.env.*', '*.crt', '*.pem']
    *
    * @experimental
    */
-  allow?: string[]
+  deny?: string[]
 }
 
 /**
@@ -314,7 +324,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
+  _pendingRequests: Map<string, Promise<TransformResult | null>>
 }
 
 export async function createServer(
@@ -422,7 +432,7 @@ export async function createServer(
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
-    _pendingRequests: Object.create(null)
+    _pendingRequests: new Map()
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -690,6 +700,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server = raw || {}
   let allowDirs = server.fs?.allow
+  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
@@ -704,9 +715,9 @@ export function resolveServerOptions(
   }
 
   server.fs = {
-    // TODO: make strict by default
-    strict: server.fs?.strict,
-    allow: allowDirs
+    strict: server.fs?.strict ?? true,
+    allow: allowDirs,
+    deny
   }
   return server as ResolvedServerOptions
 }
