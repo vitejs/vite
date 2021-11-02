@@ -108,12 +108,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
-      const isRequire = !!(
-        resolveOpts &&
-        resolveOpts.custom &&
-        resolveOpts.custom['node-resolve'] &&
-        resolveOpts.custom['node-resolve'].isRequire
-      )
+      const isRequire: boolean =
+        resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
       const options: InternalResolveOptions = {
         ...baseOptions,
