@@ -4,7 +4,7 @@ import fetch from 'node-fetch'
 
 const url = `http://localhost:${port}`
 
-test('/require', async () => {
+test('require syntax can be used natural in server side', async () => {
   await page.goto(url + '/require')
   expect(await page.textContent('h1')).toMatch('foo')
 
