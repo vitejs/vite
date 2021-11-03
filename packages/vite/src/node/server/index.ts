@@ -719,5 +719,9 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
-  return server as ResolvedServerOptions
+
+  return {
+    ...server,
+    port: server.port || 3000
+  } as ResolvedServerOptions
 }
