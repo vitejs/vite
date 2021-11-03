@@ -57,6 +57,19 @@ export interface Options {
   refTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
+   * In non-production environments, plugin-vue injects a __file property to components
+   * for better debugging experience. If the name property is missing in a component,
+   * Vue will infer it from the __file field to display in console warnings.
+   * This property is stripped in production builds by default.
+   * But you may want to retain it if you are developing a component library
+   * and don't want to bother specifying name in each component.
+   * Then you can turn this option on.
+   *
+   * @default false
+   */
+  exposeFilename?: boolean,
+
+  /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
   ssr?: boolean
@@ -73,7 +86,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     include = /\.vue$/,
     exclude,
     customElement = /\.ce\.vue$/,
-    refTransform = false
+    refTransform = false,
+    exposeFilename = false
   } = rawOptions
 
   const filter = createFilter(include, exclude)
@@ -100,6 +114,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     exclude,
     customElement,
     refTransform,
+    exposeFilename,
     root: process.cwd(),
     sourceMap: true
   }

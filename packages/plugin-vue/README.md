@@ -46,6 +46,19 @@ export interface Options {
    */
   refTransform?: boolean | string | RegExp | (string | RegExp)[]
 
+  /**
+   * In non-production environments, plugin-vue injects a __file property to components
+   * for better debugging experience. If the name property is missing in a component,
+   * Vue will infer it from the __file field to display in console warnings.
+   * This property is stripped in production builds by default.
+   * But you may want to retain it if you are developing a component library
+   * and don't want to bother specifying name in each component.
+   * Then you can turn this option on.
+   *
+   * @default false
+   */
+  exposeFilename?: boolean,
+
   // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
