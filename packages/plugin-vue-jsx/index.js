@@ -97,7 +97,10 @@ function vueJsxPlugin(options = {}) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore
-            { isTSX: true, allowExtensions: true }
+            {
+              isTSX: true,
+              allowExtensions: true
+            }
           ])
         }
 
@@ -109,6 +112,9 @@ function vueJsxPlugin(options = {}) {
           sourceFileName: id,
           configFile: false
         })
+
+        // support multi class in jsx #5525
+        result.code = result.code.replace(/(?<=:\s*(["'][^"']*)?)\s*\n/g, ' ')
 
         if (!ssr && !needHmr) {
           return {
