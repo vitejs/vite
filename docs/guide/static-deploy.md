@@ -187,7 +187,13 @@ You can also run the above script in your CI setup to enable automatic deploymen
    {
      "hosting": {
        "public": "dist",
-       "ignore": []
+       "ignore": [],
+       "rewrites": [
+         {
+           "source": "**",
+           "destination": "/index.html"
+         }
+       ]
      }
    }
    ```
