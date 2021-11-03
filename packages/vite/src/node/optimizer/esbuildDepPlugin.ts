@@ -157,7 +157,10 @@ export function esbuildDepPlugin(
         if (
           !relativePath.startsWith('./') &&
           !relativePath.startsWith('../') &&
-          relativePath !== '.'
+          relativePath !== '.' &&
+          // Windows: when root and entryFile are on different drives, then
+          // getting relative path is not possible.
+          !path.isAbsolute(relativePath)
         ) {
           relativePath = `./${relativePath}`
         }
