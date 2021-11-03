@@ -667,7 +667,6 @@ importers:
       '@rollup/pluginutils': ^4.1.1
       '@types/convert-source-map': ^1.5.2
       '@types/debug': ^4.1.7
-      '@types/es-module-lexer': ^0.4.1
       '@types/estree': ^0.0.50
       '@types/etag': ^1.8.1
       '@types/less': ^3.0.3
@@ -746,7 +745,6 @@ importers:
       '@rollup/pluginutils': 4.1.1
       '@types/convert-source-map': 1.5.2
       '@types/debug': 4.1.7
-      '@types/es-module-lexer': 0.4.1
       '@types/estree': 0.0.50
       '@types/etag': 1.8.1
       '@types/less': 3.0.3
@@ -2033,13 +2031,6 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
-    dev: true
-
-  /@types/es-module-lexer/0.4.1:
-    resolution: {integrity: sha512-PDKZezERXh0axp2G+rGqqwaz6eU9U9OnasbO6BjINSC4BjbeTnrBxrLS2KGqOHMVTB5z73BUuvMjY6FNyF8zDw==}
-    deprecated: This is a stub types definition. es-module-lexer provides its own type definitions, so you do not need this installed.
-    dependencies:
-      es-module-lexer: 0.9.3
     dev: true
 
   /@types/estree/0.0.39:
