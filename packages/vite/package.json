@@ -65,7 +65,6 @@
     "@rollup/pluginutils": "^4.1.1",
     "@types/convert-source-map": "^1.5.2",
     "@types/debug": "^4.1.7",
-    "@types/es-module-lexer": "^0.4.1",
     "@types/estree": "^0.0.50",
     "@types/etag": "^1.8.1",
     "@types/less": "^3.0.3",
