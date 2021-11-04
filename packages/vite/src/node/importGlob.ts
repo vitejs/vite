@@ -1,4 +1,5 @@
 import path from 'path'
+import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
 import {
   isModernFlag,
@@ -7,6 +8,8 @@ import {
 } from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
 import { RollupError } from 'rollup'
+
+const rawRE = /(\?|&)raw(?:&|$)/
 
 export async function transformImportGlob(
   source: string,
@@ -41,6 +44,10 @@ export async function transformImportGlob(
   let [pattern, endIndex] = lexGlobPattern(source, pos)
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
     throw err(`pattern must start with "." or "/" (relative to project root)`)
+  }
+  const isRaw = rawRE.test(pattern)
+  if (isRaw) {
+    pattern = cleanUrl(pattern)
   }
   let base: string
   let parentDepth = 0
@@ -79,8 +86,12 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    const identifier = `__glob_${importIndex}_${i}`
-    if (isEager) {
+    if (isRaw) {
+      entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
+        await fsp.readFile(path.join(base, file), 'utf-8')
+      )},`
+    } else if (isEager) {
+      const identifier = `__glob_${importIndex}_${i}`
       importsString += `import ${
         isEagerDefault ? `` : `* as `
       }${identifier} from ${JSON.stringify(importee)};`
