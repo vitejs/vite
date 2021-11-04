@@ -118,7 +118,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         s.overwrite(
           node.loc.start.offset,
           node.loc.end.offset,
-          `<script type="module" src="${filePath}?html-proxy&index=${scriptModuleIndex}.js"></script>`
+          `<script type="module" src="${
+            config.base + url.slice(1)
+          }?html-proxy&index=${scriptModuleIndex}.js"></script>`
         )
       }
     }
