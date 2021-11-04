@@ -462,6 +462,16 @@ importers:
       cross-env: 7.0.3
       express: 4.17.1
 
+  packages/playground/ssr-pug:
+    specifiers:
+      cross-env: ^7.0.3
+      express: ^4.17.1
+      pug: ^3.0.0
+    devDependencies:
+      cross-env: 7.0.3
+      express: 4.17.1
+      pug: 3.0.2
+
   packages/playground/ssr-react:
     specifiers:
       '@vitejs/plugin-react': workspace:*
