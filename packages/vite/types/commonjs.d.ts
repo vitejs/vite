@@ -72,6 +72,26 @@ export interface RollupCommonJSOptions {
    */
   ignore?: ReadonlyArray<string> | ((id: string) => boolean)
   /**
+   * In most cases, where `require` calls are inside a `try-catch` clause,
+   * they should be left unconverted as it requires an optional dependency
+   * that may or may not be installed beside the rolled up package.
+   * Due to the conversion of `require` to a static `import` - the call is hoisted
+   * to the top of the file, outside of the `try-catch` clause.
+   *
+   * - `true`: All `require` calls inside a `try` will be left unconverted.
+   * - `false`: All `require` calls inside a `try` will be converted as if the `try-catch` clause is not there.
+   * - `remove`: Remove all `require` calls from inside any `try` block.
+   * - `string[]`: Pass an array containing the IDs to left unconverted.
+   * - `((id: string) => boolean|'remove')`: Pass a function that control individual IDs.
+   *
+   * @default false
+   */
+  ignoreTryCatch?:
+    | boolean
+    | 'remove'
+    | ReadonlyArray<string>
+    | ((id: string) => boolean | 'remove');
+  /**
    * Controls how to render imports from external dependencies. By default,
    * this plugin assumes that all external dependencies are CommonJS. This
    * means they are rendered as default imports to be compatible with e.g.
