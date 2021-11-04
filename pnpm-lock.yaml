@@ -104,12 +104,17 @@ importers:
 
   packages/playground/alias:
     specifiers:
+      aliased-module: file:./dir/module
       resolve-linked: workspace:*
       vue: ^3.2.16
     dependencies:
+      aliased-module: link:dir/module
       vue: 3.2.20
     devDependencies:
       resolve-linked: link:../resolve-linked
+
+  packages/playground/alias/dir/module:
+    specifiers: {}
 
   packages/playground/assets:
     specifiers: {}
