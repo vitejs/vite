@@ -1,5 +1,5 @@
 import _debug from 'debug'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCBlock, SFCDescriptor, resolveTemplateUsageCheckString } from '@vue/compiler-sfc'
 import {
   createDescriptor,
   getDescriptor,
@@ -40,7 +40,8 @@ export async function handleHotUpdate(
 
   if (
     !isEqualBlock(descriptor.script, prevDescriptor.script) ||
-    !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
+    !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup) ||
+    needGlobHMR(descriptor, prevDescriptor)
   ) {
     let scriptModule: ModuleNode | undefined
     if (descriptor.script?.lang && !descriptor.script.src) {
@@ -169,6 +170,23 @@ export function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null): boolean {
   return keysA.every((key) => a.attrs[key] === b.attrs[key])
 }
 
+// fix vue issue #3176
+function needGlobHMR(
+  prev: SFCDescriptor | null,
+  next: SFCDescriptor | null
+): boolean {
+  const isDynamicUpdate = resolveTemplateUsageCheckString(prev!) !== resolveTemplateUsageCheckString(next!)
+  const prevSetup = prev!.scriptSetup
+  const nextSetup = next!.scriptSetup
+  const isSetupWithTS = !!(
+    prevSetup?.setup &&
+    nextSetup?.setup &&
+    (prevSetup.lang === 'ts' || prevSetup.lang === 'tsx')
+    && (nextSetup.lang === 'ts' || nextSetup.lang === 'tsx')
+  )
+  return isDynamicUpdate && isSetupWithTS
+}
+
 export function isOnlyTemplateChanged(
   prev: SFCDescriptor,
   next: SFCDescriptor
@@ -176,6 +194,7 @@ export function isOnlyTemplateChanged(
   return (
     isEqualBlock(prev.script, next.script) &&
     isEqualBlock(prev.scriptSetup, next.scriptSetup) &&
+    !needGlobHMR(prev, next) &&
     prev.styles.length === next.styles.length &&
     prev.styles.every((s, i) => isEqualBlock(s, next.styles[i])) &&
     prev.customBlocks.length === next.customBlocks.length &&
