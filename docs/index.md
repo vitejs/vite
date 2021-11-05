@@ -25,7 +25,11 @@ footer: MIT Licensed | Copyright © 2019-present Evan You & Vite Contributors
 
 <div class="frontpage sponsors">
   <h2>Sponsors</h2>
-  <a v-for="{ href, src, name, id } of sponsors" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
+  <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier === 'platinum')" class="platinum" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
+    <img :src="src" :alt="name" :id="`sponsor-${id}`">
+  </a>
+  <br>
+  <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier !== 'platinum')" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
     <img :src="src" :alt="name" :id="`sponsor-${id}`">
   </a>
   <br>

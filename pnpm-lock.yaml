@@ -40,7 +40,7 @@ importers:
       ts-node: ^10.1.0
       typescript: ~4.4.3
       vite: workspace:*
-      vitepress: ^0.19.2
+      vitepress: ^0.20.0
       yorkie: ^2.0.0
     devDependencies:
       '@microsoft/api-extractor': 7.18.17
@@ -75,7 +75,7 @@ importers:
       ts-node: 10.4.0_d3e11751f498564481cc5d710b5b838a
       typescript: 4.4.4
       vite: link:packages/vite
-      vitepress: 0.19.2
+      vitepress: 0.20.0
       yorkie: 2.0.0
 
   packages/create-app:
@@ -8576,8 +8576,8 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vitepress/0.19.2:
-    resolution: {integrity: sha512-F8KY5gTfIa9B61by6rlGQE2K/fw2FIflld6UuB3SHTp0E5cblYGUkGfVwMiai+ets2ztDqWIiJJqpDBm/Cam1Q==}
+  /vitepress/0.20.0:
+    resolution: {integrity: sha512-+PZy1BAWha46hcaWqhB1Vet+2dwhebTnk900ZzrAgLiw4Dx0dQpnMRnDlrp5HR8fgmLNB1Ij9PJO4gh4tvb6gQ==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
