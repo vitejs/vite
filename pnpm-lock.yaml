@@ -7183,7 +7183,7 @@ packages:
     dev: true
 
   /pvutils/1.0.17:
-    resolution: {integrity: sha512-wLHYUQxWaXVQvKnwIDWFVKDJku9XDCvyhhxoq8dc5MFdIlRenyPI9eSfEtcvgHgD7FlvCyGAlWgOzRnZD99GZQ==}
+    resolution: {integrity: sha1-rePHTf5xeJRP5EgGYmvS4knZlr8=}
     engines: {node: '>=6.0.0'}
     dev: true
 

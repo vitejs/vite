@@ -52,6 +52,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
 
+  // The dir where pre-bundled deps is stored
+  let cacheDir: string
+
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
   const userPlugins = opts.babel?.plugins || []
@@ -78,6 +81,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       })
       isProduction = config.isProduction
       skipFastRefresh ||= isProduction || config.command === 'build'
+      cacheDir = config.cacheDir as string
 
       const jsxInject = config.esbuild && config.esbuild.jsxInject
       if (jsxInject && importReactRE.test(jsxInject)) {
@@ -106,6 +110,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         querystring.match(fileExtensionRE) ||
         filepath.match(fileExtensionRE) ||
         []
+
+      // Pre-bundle deps should not be transformed there. #5438
+      if (id.startsWith(cacheDir)) {
+        return
+      }
 
       if (/\.(mjs|[tj]sx?)$/.test(extension)) {
         const plugins = [...userPlugins]
