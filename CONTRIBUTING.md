@@ -6,7 +6,7 @@ Hi! We are really excited that you are interested in contributing to Vite. Befor
 
 The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
 
-To development and test the core `vite` package:
+To develop and test the core `vite` package:
 
 1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
