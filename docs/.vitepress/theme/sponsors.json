@@ -1,5 +1,12 @@
 [
   {
+    "id": "stackblitz",
+    "name": "StackBlitz",
+    "href": "https://stackblitz.com/",
+    "src": "/stackblitz.svg",
+    "tier": "platinum"
+  },
+  {
     "id": "tailwind",
     "name": "Tailwind Labs",
     "href": "https://tailwindcss.com",
