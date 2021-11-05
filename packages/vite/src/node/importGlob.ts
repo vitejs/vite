@@ -9,7 +9,7 @@ import {
 import { cleanUrl } from './utils'
 import { RollupError } from 'rollup'
 
-const rawRE = /(\?|&)raw(?:&|$)/
+const rawRE = /\?raw$/
 
 export async function transformImportGlob(
   source: string,
@@ -47,7 +47,7 @@ export async function transformImportGlob(
   }
   const isRaw = rawRE.test(pattern)
   if (isRaw) {
-    pattern = cleanUrl(pattern)
+    pattern = pattern.replace(rawRE, '')
   }
   let base: string
   let parentDepth = 0
