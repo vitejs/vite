@@ -25,6 +25,8 @@ const { createServer } = require('vite')
     }
   })
   await server.listen()
+
+  server.printUrls()
 })()
 ```
 
@@ -135,6 +137,34 @@ const { build } = require('vite')
       }
     }
   })
+})()
+```
+
+## `preview`
+
+**Experimental**
+
+**Type Signature:**
+
+```ts
+async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
+```
+
+**Example Usage:**
+
+```js
+const { preview } = require('vite')
+
+;(async () => {
+  const previewServer = await preview({
+    // any valid user config options, plus `mode` and `configFile`
+    preview: {
+      port: 8080,
+      open: true
+    }
+  })
+
+  previewServer.printUrls()
 })()
 ```
 

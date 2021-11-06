@@ -164,3 +164,63 @@ describe('resolveEnvPrefix', () => {
     expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
 })
+
+describe('preview config', () => {
+
+  const serverConfig = () => ({
+    port: 3003,
+    strictPort: true,
+    host: true,
+    open: true,
+    https: true,
+    proxy: { '/foo': 'http://localhost:4567' },
+    cors: false
+  })
+
+  test('preview inherits server config with default port', async () => {
+    const config: InlineConfig = {
+      server: serverConfig(),
+    }
+    expect(await resolveConfig(config, 'serve')).toMatchObject({
+      preview: {
+        ...serverConfig(),
+        port: undefined
+      }
+    })
+  })
+
+  test('preview inherits server config with port override', async () => {
+    const config: InlineConfig = {
+      server: serverConfig(),
+      preview: {
+        port: 3006
+      }
+    }
+    expect(await resolveConfig(config, 'serve')).toMatchObject({
+      preview: {
+        ...serverConfig(),
+        port: 3006
+      }
+    })
+  })
+
+  const previewConfig = () => ({
+    port: 3006,
+    strictPort: false,
+    open: false,
+    host: false,
+    https: false,
+    proxy: { '/bar': 'http://localhost:3010' },
+    cors: true
+  })
+
+  test('preview overrides server config', async () => {
+    const config: InlineConfig = {
+      server: serverConfig(),
+      preview: previewConfig()
+    }
+    expect(await resolveConfig(config, 'serve')).toMatchObject({
+      preview: previewConfig()
+    })
+  })
+})

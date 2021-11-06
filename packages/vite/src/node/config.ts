@@ -7,6 +7,11 @@ import {
   resolveServerOptions,
   ServerOptions
 } from './server'
+import {
+  ResolvedPreviewOptions,
+  resolvePreviewOptions,
+  PreviewOptions
+} from './preview'
 import { CSSOptions } from './plugins/css'
 import {
   arraify,
@@ -141,6 +146,10 @@ export interface UserConfig {
    */
   build?: BuildOptions
   /**
+   * Preview specific options, e.g. host, port, https...
+   */
+  preview?: PreviewOptions
+   /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -225,6 +234,7 @@ export type ResolvedConfig = Readonly<
     plugins: readonly Plugin[]
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
+    preview: ResolvedPreviewOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -418,6 +428,8 @@ export async function resolveConfig(
         )
       : ''
 
+  const server = resolveServerOptions(resolvedRoot, config.server)
+    
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -432,8 +444,9 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: resolveServerOptions(resolvedRoot, config.server),
+    server,
     build: resolvedBuildOptions,
+    preview: resolvePreviewOptions(config.preview, server),
     env: {
       ...userEnv,
       BASE_URL,

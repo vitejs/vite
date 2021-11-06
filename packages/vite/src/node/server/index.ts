@@ -2,19 +2,23 @@ import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
 import * as http from 'http'
-import * as https from 'https'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
+import { 
+  resolveHttpsConfig, 
+  resolveHttpServer, 
+  httpServerStart, 
+  CommonServerOptions 
+} from '../http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import { createPluginContainer, PluginContainer } from './pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
-import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
+import { proxyMiddleware } from './middlewares/proxy'
 import { spaFallbackMiddleware } from './middlewares/spaFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
@@ -55,57 +59,11 @@ import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
-import { printHttpServerUrls } from '../logger'
+import { printCommonServerUrls } from '../logger'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
-export interface ServerOptions {
-  host?: string | boolean
-  port?: number
-  /**
-   * If enabled, vite will exit if specified port is already in use
-   */
-  strictPort?: boolean
-  /**
-   * Enable TLS + HTTP/2.
-   * Note: this downgrades to TLS only when the proxy option is also used.
-   */
-  https?: boolean | https.ServerOptions
-  /**
-   * Open browser window on startup
-   */
-  open?: boolean | string
-  /**
-   * Configure custom proxy rules for the dev server. Expects an object
-   * of `{ key: options }` pairs.
-   * Uses [`http-proxy`](https://github.com/http-party/node-http-proxy).
-   * Full options [here](https://github.com/http-party/node-http-proxy#options).
-   *
-   * Example `vite.config.js`:
-   * ``` js
-   * module.exports = {
-   *   proxy: {
-   *     // string shorthand
-   *     '/foo': 'http://localhost:4567/foo',
-   *     // with options
-   *     '/api': {
-   *       target: 'http://jsonplaceholder.typicode.com',
-   *       changeOrigin: true,
-   *       rewrite: path => path.replace(/^\/api/, '')
-   *     }
-   *   }
-   * }
-   * ```
-   */
-  proxy?: Record<string, string | ProxyOptions>
-  /**
-   * Configure CORS for the dev server.
-   * Uses https://github.com/expressjs/cors.
-   * Set to `true` to allow all methods from any origin, or configure separately
-   * using an object.
-   */
-  cors?: CorsOptions | boolean
-
+export interface ServerOptions extends CommonServerOptions {
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -173,24 +131,6 @@ export interface FileSystemServeOptions {
    */
   deny?: string[]
 }
-
-/**
- * https://github.com/expressjs/cors#configuration-options
- */
-export interface CorsOptions {
-  origin?:
-    | CorsOrigin
-    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
-  methods?: string | string[]
-  allowedHeaders?: string | string[]
-  exposedHeaders?: string | string[]
-  credentials?: boolean
-  maxAge?: number
-  preflightContinue?: boolean
-  optionsSuccessStatus?: number
-}
-
-export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export type ServerHook = (
   server: ViteDevServer
@@ -333,7 +273,7 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const httpsOptions = await resolveHttpsConfig(config)
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
@@ -421,7 +361,7 @@ export async function createServer(
     },
     printUrls() {
       if (httpServer) {
-        printHttpServerUrls(httpServer, config)
+        printCommonServerUrls(httpServer, config.server, config)
       } else {
         throw new Error('cannot print server URLs in middleware mode.')
       }
