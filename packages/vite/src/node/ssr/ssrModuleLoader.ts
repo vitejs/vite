@@ -21,7 +21,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 
 interface SSRContext {
-  global: typeof globalThis
+  global: NodeJS.Global
 }
 
 type SSRModule = Record<string, any>
