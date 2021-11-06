@@ -1,0 +1,16 @@
+{
+  "name": "vite-solid-starter",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "solid-js": "^1.2.2"
+  },
+  "devDependencies": {
+    "vite-plugin-solid": "^2.1.1",
+    "vite": "^2.6.13"
+  }
+}
