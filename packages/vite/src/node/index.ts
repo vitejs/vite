@@ -10,12 +10,11 @@ export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 export { normalizePath } from './utils'
 
 // additional types
+export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
   ViteDevServer,
   ServerOptions,
-  CorsOptions,
   FileSystemServeOptions,
-  CorsOrigin,
   ServerHook,
   ResolvedServerOptions
 } from './server'
@@ -25,7 +24,11 @@ export type {
   LibraryFormats,
   ResolvedBuildOptions
 } from './build'
-export type { PreviewServer } from './preview'
+export type {
+  PreviewOptions,
+  PreviewServer,
+  ResolvedPreviewOptions
+} from './preview'
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions
