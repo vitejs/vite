@@ -33,6 +33,14 @@ declare global {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/prefer-namespace-keyword
+declare module globalThis {
+  let page: Page | undefined
+  let viteTestUrl: string | undefined
+  let watcher: RollupWatcher | undefined
+  let beforeAllError: any
+}
+
 let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
