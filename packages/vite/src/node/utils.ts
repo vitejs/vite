@@ -520,7 +520,8 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, true)
+    // We cann't exclude sourcesContent there. #5438
+    map = remapping(sourcemapList, () => null, false)
   } else {
     map = remapping(
       sourcemapList[0],
@@ -531,7 +532,7 @@ export function combineSourcemaps(
           return { ...nullSourceMap }
         }
       },
-      true
+      false
     )
   }
   if (!map.file) {
