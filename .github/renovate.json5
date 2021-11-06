@@ -25,13 +25,9 @@
 
     // breaking changes
     "cac", // `cac:v6.7.10+` has breaking changes
-    "source-map",
-    "react-refresh",
+    "source-map", // `source-map:v0.7.0+` needs more investigation
 
-    // breaks since "3.0.1", needs further investigate
-    "postcss-load-config",
-
-    // ESM Only
+    // ESM Only => https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
     "strip-ansi",
     "periscopic"
   ]

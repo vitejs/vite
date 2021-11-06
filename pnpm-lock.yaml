@@ -668,12 +668,6 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.0
       hash-sum: 2.0.0
 
-  packages/temp:
-    specifiers:
-      css-color-names: ^1.0.1
-    devDependencies:
-      css-color-names: 1.0.1
-
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.1
@@ -740,7 +734,7 @@ importers:
       sirv: ^1.0.18
       source-map: ^0.6.1
       source-map-support: ^0.5.20
-      strip-ansi: ^7.0.1
+      strip-ansi: ^6.0.1
       terser: ^5.9.0
       tsconfck: 1.1.1
       tslib: ^2.3.1
@@ -813,7 +807,7 @@ importers:
       sirv: 1.0.18
       source-map: 0.6.1
       source-map-support: 0.5.20
-      strip-ansi: 7.0.1
+      strip-ansi: 6.0.1
       terser: 5.9.0
       tsconfck: 1.1.1_typescript@4.4.4
       tslib: 2.3.1
@@ -2573,11 +2567,6 @@ packages:
   /ansi-regex/5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
-    dev: true
-
-  /ansi-regex/6.0.1:
-    resolution: {integrity: sha512-n5M855fKb2SsfMIiFFoVrABHJC8QtHwVx+mHWP3QcEqBHYienj5dHSgjbxtC0WEZXYt4wcD6zrQElDPhFuZgfA==}
-    engines: {node: '>=12'}
     dev: true
 
   /ansi-styles/3.2.1:
@@ -7936,13 +7925,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       ansi-regex: 5.0.1
-    dev: true
-
-  /strip-ansi/7.0.1:
-    resolution: {integrity: sha512-cXNxvT8dFNRVfhVME3JAe98mkXDYN2O1l7jmcwMnOslDeESg1rF/OZMtK0nRAhiari1unG5cD4jG3rapUAkLbw==}
-    engines: {node: '>=12'}
-    dependencies:
-      ansi-regex: 6.0.1
     dev: true
 
   /strip-bom/3.0.0:
