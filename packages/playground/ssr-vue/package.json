@@ -15,15 +15,15 @@
   },
   "dependencies": {
     "example-external-component": "file:example-external-component",
-    "vue": "^3.2.16",
+    "vue": "^3.2.21",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
     "@vitejs/plugin-vue-jsx": "workspace:*",
-    "dep-import-type": "link:./dep-import-type",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
+    "dep-import-type": "link:./dep-import-type",
     "express": "^4.17.1",
     "serve-static": "^1.14.1"
   }

@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@emotion/react": "^11.4.0",
-    "react": "^17.0.1",
+    "react": "^17.0.2",
     "react-dom": "^17.0.1",
     "react-switch": "^6.0.0"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-pipeline-operator": "^7.14.5",
+    "@babel/plugin-proposal-pipeline-operator": "^7.16.0",
     "@emotion/babel-plugin": "^11.3.0",
     "@vitejs/plugin-react": "workspace:*"
   },

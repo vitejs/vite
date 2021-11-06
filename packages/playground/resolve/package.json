@@ -9,14 +9,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "resolve-exports-path": "link:./exports-path",
-    "resolve-exports-env": "link:./exports-env",
-    "resolve-browser-field": "link:./browser-field",
-    "resolve-custom-main-field": "link:./custom-main-field",
-    "resolve-custom-condition": "link:./custom-condition",
-    "@babel/runtime": "^7.12.5",
-    "normalize.css": "^8.0.1",
+    "@babel/runtime": "^7.16.0",
     "es5-ext": "0.10.53",
+    "normalize.css": "^8.0.1",
+    "resolve-browser-field": "link:./browser-field",
+    "resolve-custom-condition": "link:./custom-condition",
+    "resolve-custom-main-field": "link:./custom-main-field",
+    "resolve-exports-env": "link:./exports-env",
+    "resolve-exports-path": "link:./exports-path",
     "resolve-linked": "workspace:*"
   }
 }

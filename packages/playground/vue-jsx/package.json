@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.16"
+    "vue": "^3.2.21"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue-jsx": "workspace:*",
-    "@vitejs/plugin-vue": "workspace:*"
+    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue-jsx": "workspace:*"
   }
 }

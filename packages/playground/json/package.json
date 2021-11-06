@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vue": "^3.2.16"
+    "vue": "^3.2.21"
   }
 }

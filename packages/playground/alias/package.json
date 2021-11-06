@@ -10,8 +10,8 @@
     "postinstall": "node ../../../scripts/patchFileDeps"
   },
   "dependencies": {
-    "vue": "^3.2.16",
-    "aliased-module": "file:./dir/module"
+    "aliased-module": "file:./dir/module",
+    "vue": "^3.2.21"
   },
   "devDependencies": {
     "resolve-linked": "workspace:*"
