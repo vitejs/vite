@@ -56,6 +56,7 @@ export function resolveSSRExternal(
   return externals
 }
 
+// do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
   ssrExternals: Set<string>,
@@ -127,7 +128,9 @@ function collectExternals(
     else if (esmEntry !== requireEntry) {
       ssrExternals.add(id)
     }
-    // externalize js entries with commonjs
+    // if we're externalizing ESM and CJS should basically just always do it?
+    // or are there others like SystemJS / AMD that we'd need to handle?
+    // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
       if (pkg.type === "module" || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
