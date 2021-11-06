@@ -561,7 +561,7 @@ importers:
   packages/playground/vue:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
-      js-yaml: ^3.14.1
+      js-yaml: ^4.1.0
       less: ^4.1.2
       lodash-es: ^4.17.21
       pug: ^3.0.2
@@ -573,7 +573,7 @@ importers:
       vue: 3.2.21
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      js-yaml: 3.14.1
+      js-yaml: 4.1.0
       less: 4.1.2
       pug: 3.0.2
       sass: 1.43.4
