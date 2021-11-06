@@ -5,16 +5,42 @@ import compression from 'compression'
 import { Server } from 'http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '.'
 import { Connect } from 'types/connect'
+import { ResolvedServerOptions } from './server'
 import {
   resolveHttpsConfig,
   resolveHttpServer,
-  httpServerStart
-} from './server/http'
+  httpServerStart,
+  CommonServerOptions
+} from './http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
-import { printHttpServerUrls } from './logger'
+import { printCommonServerUrls } from './logger'
+
+export interface PreviewOptions extends CommonServerOptions {
+}
+
+export interface ResolvedPreviewOptions extends PreviewOptions {
+}
+
+export function resolvePreviewOptions(
+  preview: PreviewOptions | undefined,
+  server: ResolvedServerOptions
+): ResolvedPreviewOptions {
+  // The preview server inherits every CommonServerOption from the `server` config
+  // except for the port to enable having both the dev and preview servers running
+  // at the same time without extra configuration
+  return {
+    port: preview?.port,
+    strictPort: preview?.strictPort ?? server.strictPort,
+    host: preview?.host ?? server.host,
+    https: preview?.https ?? server.https,
+    open: preview?.open ?? server.open,
+    proxy: preview?.proxy ?? server.proxy,
+    cors: preview?.cors ?? server.cors
+  }
+}
 
 export interface PreviewServer {
   /**
@@ -44,19 +70,19 @@ export async function preview(
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
-    config.server,
+    config.preview,
     app,
-    await resolveHttpsConfig(config)
+    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
 
   // cors
-  const { cors } = config.server
+  const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  if (config.server.proxy) {
+  if (config.preview.proxy) {
     app.use(proxyMiddleware(httpServer, config))
   }
 
@@ -72,7 +98,7 @@ export async function preview(
     })
   )
 
-  const options = config.server
+  const options = config.preview
   const hostname = resolveHostname(options.host)
   const port = options.port ?? 5000
   const protocol = options.https ? 'https' : 'http'
@@ -101,7 +127,7 @@ export async function preview(
     config,
     httpServer,
     printUrls() {
-      printHttpServerUrls(httpServer, config)
+      printCommonServerUrls(httpServer, config.preview, config)
     }
   }
 }
