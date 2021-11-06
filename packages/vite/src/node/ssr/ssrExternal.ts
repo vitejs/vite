@@ -35,7 +35,10 @@ export function resolveSSRExternal(
   collectExternals(config.root, ssrExternals, seen)
 
   for (const dep of knownImports) {
-    // assume external if not yet seen
+    // Assume external if not yet seen
+    // At this point, the project root and any linked packages have had their dependencies checked,
+    // so we can safely mark any knownImports not yet seen as external. They are guaranteed to be
+    // dependencies of packages in node_modules.
     if (!seen.has(dep)) {
       ssrExternals.add(dep)
     }
@@ -80,14 +83,14 @@ function collectExternals(
     if (seen.has(id)) continue
     seen.add(id)
 
-    let entry: string | undefined
+    let esmEntry: string | undefined
     let requireEntry: string
     try {
-      entry = tryNodeResolve(
+      esmEntry = tryNodeResolve(
         id,
         undefined,
         resolveOptions,
-        true,
+        true, // we set `targetWeb` to `true` to get the ESM entry
         undefined,
         true
       )?.id
@@ -111,26 +114,26 @@ function collectExternals(
       continue
     }
     // no esm entry but has require entry
-    if (!entry) {
+    if (!esmEntry) {
       ssrExternals.add(id)
     }
     // trace the dependencies of linked packages
-    else if (!entry.includes('node_modules')) {
+    else if (!esmEntry.includes('node_modules')) {
       const pkgPath = resolveFrom(`${id}/package.json`, root)
       depsToTrace.add(path.dirname(pkgPath))
     }
     // has separate esm/require entry, assume require entry is cjs
-    else if (entry !== requireEntry) {
+    else if (esmEntry !== requireEntry) {
       ssrExternals.add(id)
     }
     // externalize js entries with commonjs
-    else if (/\.m?js$/.test(entry)) {
-      if (pkg.type === "module" || entry.endsWith('.mjs')) {
+    else if (/\.m?js$/.test(esmEntry)) {
+      if (pkg.type === "module" || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
         continue
       }
       // check if the entry is cjs
-      const content = fs.readFileSync(entry, 'utf-8')
+      const content = fs.readFileSync(esmEntry, 'utf-8')
       if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
         ssrExternals.add(id)
       }
