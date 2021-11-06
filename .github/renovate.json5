@@ -24,10 +24,11 @@
     "typescript",
 
     // breaking changes
+    "cac", // `cac:v6.7.10+` has breaking changes
     "source-map",
     "react-refresh",
 
-    // breaks since "3.0.1", needs futher investigate
+    // breaks since "3.0.1", needs further investigate
     "postcss-load-config",
 
     // ESM Only
