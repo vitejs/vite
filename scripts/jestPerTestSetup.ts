@@ -22,6 +22,11 @@ export function slash(p: string): string {
 
 // injected by the test env
 declare global {
+  let page: Page | undefined
+  let viteTestUrl: string | undefined
+  let watcher: RollupWatcher | undefined
+  let beforeAllError: any
+
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Global {
@@ -33,12 +38,11 @@ declare global {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/prefer-namespace-keyword
-declare module globalThis {
-  let page: Page | undefined
-  let viteTestUrl: string | undefined
-  let watcher: RollupWatcher | undefined
-  let beforeAllError: any
+declare const global: {
+  page: Page
+  viteTestUrl: string
+  watcher: RollupWatcher
+  beforeAllError: any
 }
 
 let server: ViteDevServer | http.Server
