@@ -10,7 +10,7 @@
     "postinstall": "node ../../../scripts/patchFileDeps"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.24.0",
     "clipboard": "^2.0.6",
     "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
     "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
@@ -20,10 +20,10 @@
     "lodash-es": "^4.17.20",
     "nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.5.7",
-    "react": "^17.0.1",
+    "react": "^17.0.2",
     "react-dom": "^17.0.1",
     "resolve-linked": "0.0.0",
-    "vue": "^3.2.16",
+    "vue": "^3.2.21",
     "vuex": "^4.0.0"
   },
   "devDependencies": {
