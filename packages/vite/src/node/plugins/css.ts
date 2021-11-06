@@ -1019,7 +1019,7 @@ const scss: SassStylePreprocessor = async (
           .then(done)
           .catch(done)
       } else {
-        done(null)
+        done?.(null)
       }
     })
   }

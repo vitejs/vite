@@ -10,6 +10,6 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "express": "^4.17.1",
-    "pug": "^3.0.0"
+    "pug": "^3.0.2"
   }
 }
