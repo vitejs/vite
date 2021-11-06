@@ -668,6 +668,12 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.0
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.1
@@ -721,7 +727,7 @@ importers:
       minimatch: ^3.0.4
       okie: ^1.0.1
       open: ^8.4.0
-      periscopic: ^3.0.4
+      periscopic: ^2.0.3
       postcss: ^8.3.11
       postcss-import: ^14.0.2
       postcss-load-config: ^3.1.0
@@ -797,7 +803,7 @@ importers:
       minimatch: 3.0.4
       okie: 1.0.1
       open: 8.4.0
-      periscopic: 3.0.4
+      periscopic: 2.0.3
       postcss-import: 14.0.2_postcss@8.3.11
       postcss-load-config: 3.1.0_ts-node@10.4.0
       postcss-modules: 4.2.2_postcss@8.3.11
@@ -4207,10 +4213,6 @@ packages:
   /estree-walker/2.0.2:
     resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
 
-  /estree-walker/3.0.0:
-    resolution: {integrity: sha512-s6ceX0NFiU/vKPiKvFdR83U1Zffu7upwZsGwpoqfg5rbbq1l50WQ5hCeIvM6E6oD4shUHCYMsiFPns4Jk0YfMQ==}
-    dev: true
-
   /esutils/2.0.3:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
@@ -5106,12 +5108,6 @@ packages:
 
   /is-reference/1.2.1:
     resolution: {integrity: sha512-U82MsXXiFIrjCK4otLT+o2NA2Cd2g5MLoOVXUZjIOhLurrRxpEXzI8O0KZHr3IjLvlAH1kTPYSuqer5T9ZVBKQ==}
-    dependencies:
-      '@types/estree': 0.0.50
-    dev: true
-
-  /is-reference/3.0.0:
-    resolution: {integrity: sha512-Eo1W3wUoHWoCoVM4GVl/a+K0IgiqE5aIo4kJABFyMum1ZORlPkC+UC357sSQUL5w5QCE5kCC9upl75b7+7CY/Q==}
     dependencies:
       '@types/estree': 0.0.50
     dev: true
@@ -6711,11 +6707,11 @@ packages:
     resolution: {integrity: sha1-elfrVQpng/kRUzH89GY9XI4AelA=}
     dev: true
 
-  /periscopic/3.0.4:
-    resolution: {integrity: sha512-SFx68DxCv0Iyo6APZuw/AKewkkThGwssmU0QWtTlvov3VAtPX+QJ4CadwSaz8nrT5jPIuxdvJWB4PnD2KNDxQg==}
+  /periscopic/2.0.3:
+    resolution: {integrity: sha512-FuCZe61mWxQOJAQFEfmt9FjzebRlcpFz8sFPbyaCKtdusPkMEbA9ey0eARnRav5zAhmXznhaQkKGFAPn7X9NUw==}
     dependencies:
-      estree-walker: 3.0.0
-      is-reference: 3.0.0
+      estree-walker: 2.0.2
+      is-reference: 1.2.1
     dev: true
 
   /phoenix/1.6.2:
