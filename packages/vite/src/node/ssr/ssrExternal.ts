@@ -18,14 +18,15 @@ const debug = createDebugger('vite:ssr-external')
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
-  knownImports: string[],
-  ssrExternals: Set<string> = new Set(),
-  seen: Set<string> = new Set()
+  knownImports: string[]
 ): string[] {
   const ssrConfig = config.ssr
   if (ssrConfig?.noExternal === true) {
     return []
   }
+
+  const ssrExternals: Set<string> = new Set()
+  const seen: Set<string> = new Set()
   ssrConfig?.external?.forEach((id) => {
     ssrExternals.add(id)
     seen.add(id)
