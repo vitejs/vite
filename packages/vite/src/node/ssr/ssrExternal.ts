@@ -44,6 +44,7 @@ export function resolveSSRExternal(
     }
   }
 
+  // ensure `vite/dynamic-import-polyfill` is bundled (issue #1865)
   ssrExternals.delete('vite')
 
   let externals = [...ssrExternals]
