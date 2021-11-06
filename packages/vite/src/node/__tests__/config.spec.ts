@@ -165,7 +165,6 @@ describe('resolveEnvPrefix', () => {
   })
 })
 
-
 describe('preview config', () => {
 
   const serverConfig = () => ({
