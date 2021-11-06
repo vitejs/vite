@@ -23,6 +23,7 @@ export function slash(p: string): string {
 // injected by the test env
 declare global {
   let page: Page | undefined
+  let browserLogs: string[]
   let viteTestUrl: string | undefined
   let watcher: RollupWatcher | undefined
   let beforeAllError: any
@@ -31,6 +32,7 @@ declare global {
   namespace NodeJS {
     interface Global {
       page?: Page
+      browserLogs: string[]
       viteTestUrl?: string
       watcher?: RollupWatcher
       beforeAllError: any
