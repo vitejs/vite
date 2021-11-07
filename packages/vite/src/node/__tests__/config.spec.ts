@@ -166,7 +166,6 @@ describe('resolveEnvPrefix', () => {
 })
 
 describe('preview config', () => {
-
   const serverConfig = () => ({
     port: 3003,
     strictPort: true,
@@ -179,7 +178,7 @@ describe('preview config', () => {
 
   test('preview inherits server config with default port', async () => {
     const config: InlineConfig = {
-      server: serverConfig(),
+      server: serverConfig()
     }
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {

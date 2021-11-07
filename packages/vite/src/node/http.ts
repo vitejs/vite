@@ -9,8 +9,8 @@ import { Logger } from './logger'
 
 export interface CommonServerOptions {
   /**
-   * Specify server port. Note if the port is already being used, Vite will 
-   * automatically try the next available port so this may not be the actual 
+   * Specify server port. Note if the port is already being used, Vite will
+   * automatically try the next available port so this may not be the actual
    * port the server ends up listening on.
    */
   port?: number
@@ -19,7 +19,7 @@ export interface CommonServerOptions {
    */
   strictPort?: boolean
   /**
-   * Specify which IP addresses the server should listen on. 
+   * Specify which IP addresses the server should listen on.
    * Set to 0.0.0.0 to listen on all addresses, including LAN and public addresses.
    */
   host?: string | boolean
@@ -67,7 +67,7 @@ export interface CommonServerOptions {
 /**
  * https://github.com/expressjs/cors#configuration-options
  */
- export interface CorsOptions {
+export interface CorsOptions {
   origin?:
     | CorsOrigin
     | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)

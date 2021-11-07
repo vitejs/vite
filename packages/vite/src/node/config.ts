@@ -149,7 +149,7 @@ export interface UserConfig {
    * Preview specific options, e.g. host, port, https...
    */
   preview?: PreviewOptions
-   /**
+  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -429,7 +429,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server)
-    
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,

@@ -18,11 +18,9 @@ import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
 import { printCommonServerUrls } from './logger'
 
-export interface PreviewOptions extends CommonServerOptions {
-}
+export interface PreviewOptions extends CommonServerOptions {}
 
-export interface ResolvedPreviewOptions extends PreviewOptions {
-}
+export interface ResolvedPreviewOptions extends PreviewOptions {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
