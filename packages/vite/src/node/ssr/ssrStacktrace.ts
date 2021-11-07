@@ -31,6 +31,8 @@ export function ssrRewriteStacktrace(
             return input
           }
 
+          // In `source-map:v0.7.0+` this constructor returns a Promise...
+          // How can we make this block async?
           const consumer = new SourceMapConsumer(
             rawSourceMap as unknown as RawSourceMap
           )

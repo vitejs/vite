@@ -238,10 +238,10 @@ cli
           base: options.base,
           configFile: options.config,
           logLevel: options.logLevel,
-          server: {
-            host: options.host,
-            port: options.port ?? 5000,
+          preview: {
+            port: options.port,
             strictPort: options.strictPort,
+            host: options.host,
             https: options.https,
             open: options.open
           }
