@@ -690,7 +690,7 @@ importers:
       '@types/resolve': ^1.20.1
       '@types/sass': ~1.43.0
       '@types/stylus': ^0.48.36
-      '@types/ws': ^7.4.7
+      '@types/ws': ^8.2.0
       '@vue/compiler-dom': ^3.2.21
       acorn: ^8.5.0
       acorn-class-fields: ^1.0.0
@@ -739,7 +739,7 @@ importers:
       tsconfck: 1.1.1
       tslib: ^2.3.1
       types: link:./types
-      ws: ^7.5.5
+      ws: ^8.2.3
     dependencies:
       esbuild: 0.13.12
       postcss: 8.3.11
@@ -768,7 +768,7 @@ importers:
       '@types/resolve': 1.20.1
       '@types/sass': 1.43.0
       '@types/stylus': 0.48.36
-      '@types/ws': 7.4.7
+      '@types/ws': 8.2.0
       '@vue/compiler-dom': 3.2.21
       acorn: 8.5.0
       acorn-class-fields: 1.0.0_acorn@8.5.0
@@ -812,7 +812,7 @@ importers:
       tsconfck: 1.1.1_typescript@4.4.4
       tslib: 2.3.1
       types: link:types
-      ws: 7.5.5
+      ws: 8.2.3
 
 packages:
 
@@ -2178,8 +2178,8 @@ packages:
       '@types/node': 16.11.6
     dev: true
 
-  /@types/ws/7.4.7:
-    resolution: {integrity: sha512-JQbbmxZTZehdc2iszGKs5oC3NFnjeay7mtAWrdt7qNtAVK0g19muApzAy4bm9byz79xa2ZnO/BOBC2R8RC5Lww==}
+  /@types/ws/8.2.0:
+    resolution: {integrity: sha512-cyeefcUCgJlEk+hk2h3N+MqKKsPViQgF5boi9TTHSK+PoR9KWBb/C5ccPcDyAqgsbAYHTwulch725DV84+pSpg==}
     dependencies:
       '@types/node': 16.11.6
     dev: true
@@ -8755,6 +8755,19 @@ packages:
   /ws/7.5.5:
     resolution: {integrity: sha512-BAkMFcAzl8as1G/hArkxOxq3G7pjUqQ3gzYbLL0/5zNkph70e+lCoxBGnm6AW1+/aiNeV4fnKqZ8m4GZewmH2w==}
     engines: {node: '>=8.3.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: true
+
+  /ws/8.2.3:
+    resolution: {integrity: sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==}
+    engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
       utf-8-validate: ^5.0.2
