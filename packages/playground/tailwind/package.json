@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "autoprefixer": "^10.3.0",
-    "tailwindcss": "^2.2.4",
+    "autoprefixer": "^10.4.0",
+    "tailwindcss": "^2.2.19",
     "vue": "^3.2.21",
     "vue-router": "^4.0.0"
   },

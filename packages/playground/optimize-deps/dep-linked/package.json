@@ -3,6 +3,6 @@
   "version": "0.0.0",
   "main": "index.js",
   "dependencies": {
-    "lodash-es": "^4.17.20"
+    "lodash-es": "^4.17.21"
   }
 }

@@ -90,7 +90,7 @@ export interface RollupCommonJSOptions {
     | boolean
     | 'remove'
     | ReadonlyArray<string>
-    | ((id: string) => boolean | 'remove');
+    | ((id: string) => boolean | 'remove')
   /**
    * Controls how to render imports from external dependencies. By default,
    * this plugin assumes that all external dependencies are CommonJS. This

@@ -7,11 +7,11 @@ import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { 
-  resolveHttpsConfig, 
-  resolveHttpServer, 
-  httpServerStart, 
-  CommonServerOptions 
+import {
+  resolveHttpsConfig,
+  resolveHttpServer,
+  httpServerStart,
+  CommonServerOptions
 } from '../http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import { createPluginContainer, PluginContainer } from './pluginContainer'

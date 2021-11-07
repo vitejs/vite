@@ -153,7 +153,7 @@ export function printHttpServerUrls(
 export function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
-  config: ResolvedConfig,
+  config: ResolvedConfig
 ): void {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address

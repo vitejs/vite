@@ -24,14 +24,14 @@
     "typescript",
 
     // breaking changes
-    "source-map",
-    "react-refresh",
+    "cac", // `cac:v6.7.10+` has breaking changes
+    "react-router", // `react-router:v6.0.0+` has breaking changes
+    "react-router-dom", // `react-router-dom:v6.0.0+` has breaking changes
+    "source-map", // `source-map:v0.7.0+` needs more investigation
 
-    // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config",
-
-    // ESM Only
-    "strip-ansi",
-    "periscopic"
+    // ESM Only => https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
+    "node-fetch",
+    "periscopic",
+    "strip-ansi"
   ]
 }

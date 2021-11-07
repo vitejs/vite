@@ -9,6 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "tailwindcss": "^2.2.4"
+    "tailwindcss": "^2.2.19"
   }
 }

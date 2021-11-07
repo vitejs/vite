@@ -22,15 +22,21 @@ export function slash(p: string): string {
 
 // injected by the test env
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace NodeJS {
-    interface Global {
-      page?: Page
-      viteTestUrl?: string
-      watcher?: RollupWatcher
-      beforeAllError: any
-    }
-  }
+  const page: Page | undefined
+
+  const browserLogs: string[]
+  const viteTestUrl: string | undefined
+  const watcher: RollupWatcher | undefined
+  let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
+}
+
+declare const global: {
+  page?: Page
+
+  browserLogs: string[]
+  viteTestUrl?: string
+  watcher?: RollupWatcher
+  beforeAllError: Error | null
 }
 
 let server: ViteDevServer | http.Server

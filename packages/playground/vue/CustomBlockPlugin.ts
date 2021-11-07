@@ -7,7 +7,7 @@ export const vueI18nPlugin: Plugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+      code = JSON.stringify(require('js-yaml').load(code.trim()))
     }
     return {
       code: `export default Comp => {
