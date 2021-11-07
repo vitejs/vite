@@ -62,7 +62,7 @@ To achieve, you can create an `env.d.ts` in `src` directory, then augment `Impor
 ```typescript
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv extends Readonly<Record<string, string>> {
+interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
   // more env variables...
 }
