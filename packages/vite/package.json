@@ -73,7 +73,7 @@
     "@types/resolve": "^1.20.1",
     "@types/sass": "~1.43.0",
     "@types/stylus": "^0.48.36",
-    "@types/ws": "^7.4.7",
+    "@types/ws": "^8.2.0",
     "@vue/compiler-dom": "^3.2.21",
     "acorn": "^8.5.0",
     "acorn-class-fields": "^1.0.0",
@@ -117,7 +117,7 @@
     "tsconfck": "1.1.1",
     "tslib": "^2.3.1",
     "types": "link:./types",
-    "ws": "^7.5.5"
+    "ws": "^8.2.3"
   },
   "peerDependencies": {
     "less": "*",
