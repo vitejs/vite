@@ -7,6 +7,7 @@ import {
   generateCodeFrame,
   isDataUrl,
   isExternalUrl,
+  normalizePath,
   processSrcSet,
   slash
 } from '../utils'
@@ -55,7 +56,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
       if (proxyMatch) {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
-        const url = file.replace(config.root, '')
+        const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
         if (result) {
           return result
@@ -230,7 +231,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   .map((child: any) => child.content || '')
                   .join('')
                 // <script type="module">...</script>
-                const filePath = id.replace(config.root, '')
+                const filePath = id.replace(normalizePath(config.root), '')
                 addToHTMLProxyCache(
                   config,
                   filePath,

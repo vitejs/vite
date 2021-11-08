@@ -92,7 +92,6 @@ export async function handleHMRUpdate(
       const filteredModules = await plugin.handleHotUpdate(hmrContext)
       if (filteredModules) {
         hmrContext.modules = filteredModules
-        break
       }
     }
   }

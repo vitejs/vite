@@ -8,10 +8,15 @@
 }
 
 .sponsors img {
-  max-width: 200px;
+  max-width: 180px;
   height: 40px;
   display: block;
-  margin: 1.25rem 0;
+  margin-top: 1em;
+}
+
+.sponsors a.platinum img {
+  max-width: 240px;
+  height: 60px;
 }
 
 .sponsors.frontpage {

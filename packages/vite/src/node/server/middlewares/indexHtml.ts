@@ -15,7 +15,7 @@ import {
 import { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId } from '../../utils'
+import { cleanUrl, fsPathFromId, normalizePath } from '../../utils'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
@@ -105,7 +105,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       if (src) {
         processNodeUrl(src, s, config, htmlPath, originalUrl)
       } else if (isModule) {
-        const url = filePath.replace(config.root, '')
+        const url = filePath.replace(normalizePath(config.root), '')
 
         const contents = node.children
           .map((child: any) => child.content || '')
