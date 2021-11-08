@@ -512,7 +512,7 @@ importers:
       example-external-component: link:example-external-component
       vue: 3.2.21
       vue-router: 4.0.12_vue@3.2.21
-      vuex: 4.0.2_vue@3.2.20
+      vuex: 4.0.2_vue@3.2.21
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
