@@ -108,6 +108,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         []
 
       if (/\.(mjs|[tj]sx?)$/.test(extension)) {
+        const isJSX = extension.endsWith('x')
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
@@ -117,8 +118,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
-          const isReactModule =
-            extension.endsWith('x') || code.includes('react')
+          const isReactModule = isJSX || code.includes('react')
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
@@ -129,7 +129,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
-        if (!isProjectFile || extension.endsWith('x')) {
+        if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
