@@ -35,6 +35,8 @@ const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro)$/
 
+const setupRE = /<script\s+setup/
+
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
 // seemingly unused imports are dropped by esbuild when transpiling TS which
@@ -266,21 +268,23 @@ function esbuildScanPlugin(
               const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
               js += `import ${JSON.stringify(src)}\n`
             } else if (content.trim()) {
-              if (path.endsWith('.svelte')) {
-                const contextMatch = openTag.match(contextRE)
-                const context =
-                  contextMatch &&
-                  (contextMatch[1] || contextMatch[2] || contextMatch[3])
-                if (context === 'module') {
-                  const id = `virtual-module:${path}`
-                  moduleScripts[id] = {
-                    loader,
-                    contents: content
-                  }
-                  js += `import '${id}';\n`
-                } else {
-                  js += content + '\n'
+              // There can be module scripts (`<script context="module">` in Svelte and `<script>` in Vue)
+              // or local scripts (`<script>` in Svelte and `<script setup>` in Vue)
+              // We need to handle these separately in case variable names are reused between them
+              const contextMatch = openTag.match(contextRE)
+              const context =
+                contextMatch &&
+                (contextMatch[1] || contextMatch[2] || contextMatch[3])
+              if (
+                (path.endsWith('.vue') && setupRE.test(raw)) ||
+                (path.endsWith('.svelte') && context !== 'module')
+              ) {
+                const id = `virtual-module:${path}`
+                moduleScripts[id] = {
+                  loader,
+                  contents: content
                 }
+                js += `import '${id}';\n`
               } else {
                 js += content + '\n'
               }
@@ -294,7 +298,7 @@ function esbuildScanPlugin(
           if (
             loader.startsWith('ts') &&
             (path.endsWith('.svelte') ||
-              (path.endsWith('.vue') && /<script\s+setup/.test(raw)))
+              (path.endsWith('.vue') && setupRE.test(raw)))
           ) {
             // when using TS + (Vue + <script setup>) or Svelte, imports may seem
             // unused to esbuild and dropped in the build output, which prevents
