@@ -180,6 +180,8 @@ async function resolveConfig(
 ): Promise<ResolvedConfig>
 ```
 
+The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
+
 ## `transformWithEsbuild`
 
 **Type Signature:**
