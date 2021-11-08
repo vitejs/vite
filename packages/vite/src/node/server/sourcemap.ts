@@ -9,9 +9,8 @@ const debug = createDebugger('vite:sourcemap', {
 })
 
 // Virtual modules should be prefixed with a null byte to avoid a
-// false positive "missing source" warning. We also check for colons,
-// because the optimizer emits sourcemaps with sources like "dep:react"
-// due to namespacing for special handling in esbuildDepPlugin.
+// false positive "missing source" warning. We also check for certain
+// prefixes used for special handling in esbuildDepPlugin.
 const virtualSourceRE = /^(\0|dep:|browser-external:)/
 
 interface SourceMapLike {
