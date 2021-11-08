@@ -1,5 +1,6 @@
 import debug from 'debug'
 import chalk from 'chalk'
+import enhancedResolve from 'enhanced-resolve'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -11,7 +12,6 @@ import {
   CLIENT_PUBLIC_PATH,
   ENV_PUBLIC_PATH
 } from './constants'
-import resolve from 'resolve'
 import builtins from 'builtin-modules'
 import { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -66,12 +66,16 @@ export function resolveFrom(
   preserveSymlinks = false,
   ssr = false
 ): string {
-  return resolve.sync(id, {
-    basedir,
+  preserveSymlinks = preserveSymlinks || isRunningWithYarnPnp || false
+  const resolve = enhancedResolve.create.sync({
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
-    preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
+    symlinks: !preserveSymlinks,
+    conditionNames: ['node', 'require'],
+    // allow package.json resolution even if not exported
+    exportsFields: id.endsWith('/package.json') ? [] : ['exports']
   })
+  return resolve(basedir, id) as string
 }
 
 /**

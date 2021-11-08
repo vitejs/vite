@@ -693,7 +693,6 @@ importers:
       '@types/less': ^3.0.3
       '@types/mime': ^2.0.3
       '@types/node': ^16.11.7
-      '@types/resolve': ^1.20.1
       '@types/sass': ~1.43.0
       '@types/stylus': ^0.48.36
       '@types/ws': ^8.2.0
@@ -713,6 +712,7 @@ importers:
       debug: ^4.3.2
       dotenv: ^10.0.0
       dotenv-expand: ^5.1.0
+      enhanced-resolve: ^5.8.2
       es-module-lexer: ^0.9.3
       esbuild: ^0.13.12
       estree-walker: ^2.0.2
@@ -732,7 +732,6 @@ importers:
       postcss-import: ^14.0.2
       postcss-load-config: ^3.1.0
       postcss-modules: ^4.2.2
-      resolve: ^1.20.0
       resolve.exports: ^1.1.0
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.0
@@ -747,9 +746,9 @@ importers:
       types: link:./types
       ws: ^8.2.3
     dependencies:
+      enhanced-resolve: 5.8.3
       esbuild: 0.13.12
       postcss: 8.3.11
-      resolve: 1.20.0
       rollup: 2.59.0
     optionalDependencies:
       fsevents: 2.3.2
@@ -771,7 +770,6 @@ importers:
       '@types/less': 3.0.3
       '@types/mime': 2.0.3
       '@types/node': 16.11.7
-      '@types/resolve': 1.20.1
       '@types/sass': 1.43.0
       '@types/stylus': 0.48.36
       '@types/ws': 8.2.0
@@ -2154,10 +2152,6 @@ packages:
     resolution: {integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==}
     dependencies:
       '@types/node': 16.11.7
-    dev: true
-
-  /@types/resolve/1.20.1:
-    resolution: {integrity: sha512-Ku5+GPFa12S3W26Uwtw+xyrtIpaZsGYHH6zxNbZlstmlvMYSZRzOwzwsXbxlVUbHyUucctSyuFtu6bNxwYomIw==}
     dev: true
 
   /@types/sass/1.43.0:
@@ -3775,6 +3769,14 @@ packages:
     dependencies:
       once: 1.4.0
     dev: true
+
+  /enhanced-resolve/5.8.3:
+    resolution: {integrity: sha512-EGAbGvH7j7Xt2nc0E7D99La1OiEs8LnyimkRgwExpUMScN6O+3x9tIWs7PLQZVNx4YD+00skHXPXi1yQHpAmZA==}
+    engines: {node: '>=10.13.0'}
+    dependencies:
+      graceful-fs: 4.2.8
+      tapable: 2.2.1
+    dev: false
 
   /enquirer/2.3.6:
     resolution: {integrity: sha512-yjNnPr315/FjS4zIsUxYguYUPP2e1NK4d7E7ZOLiyYCcbFBiTMyID+2wvm2w6+pZ/odMA7cRkjhsPbltwBOrLg==}
@@ -8133,6 +8135,11 @@ packages:
       tmp: 0.2.1
     transitivePeerDependencies:
       - ts-node
+    dev: false
+
+  /tapable/2.2.1:
+    resolution: {integrity: sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ==}
+    engines: {node: '>=6'}
     dev: false
 
   /temp-dir/2.0.0:
