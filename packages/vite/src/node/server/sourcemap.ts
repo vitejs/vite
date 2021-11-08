@@ -8,6 +8,8 @@ const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true
 })
 
+const virtualSourceRE = /:|\0/
+
 interface SourceMapLike {
   sources: string[]
   sourcesContent?: (string | null)[]
@@ -30,7 +32,7 @@ export async function injectSourcesContent(
   const missingSources: string[] = []
   map.sourcesContent = await Promise.all(
     map.sources.map((sourcePath) => {
-      if (sourcePath) {
+      if (sourcePath && !virtualSourceRE.test(sourcePath)) {
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)
