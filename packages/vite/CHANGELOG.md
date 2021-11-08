@@ -1,3 +1,23 @@
+# [2.7.0-beta.2](https://github.com/vitejs/vite/compare/v2.7.0-beta.1...v2.7.0-beta.2) (2021-11-08)
+
+
+### Bug Fixes
+
+* **commonjs:** expose ignoreTryCatch config option ([#5555](https://github.com/vitejs/vite/issues/5555)) ([d383c2a](https://github.com/vitejs/vite/commit/d383c2a04159a2e5d2f2618ac4e590bdb3172f77))
+* **esbuild:** respect esbuild config on build ([#5538](https://github.com/vitejs/vite/issues/5538)) ([ff05fe9](https://github.com/vitejs/vite/commit/ff05fe99ad1f2fe7524eadd455a4a0b831cd75f2))
+* **hmr:** revert early break from handleHotUpdate loop ([#5536](https://github.com/vitejs/vite/issues/5536)) ([4abade6](https://github.com/vitejs/vite/commit/4abade62f101049b941fa8f6b98187c5587e238f))
+* replace server.origin in css plugin (fix [#5408](https://github.com/vitejs/vite/issues/5408)) ([#5571](https://github.com/vitejs/vite/issues/5571)) ([bd8b66d](https://github.com/vitejs/vite/commit/bd8b66d8ef4ceb81168a3a7deeff7d9040d778f2))
+* **server:** use `options` argument in caching of `transformRequest` calls ([#5391](https://github.com/vitejs/vite/issues/5391)) ([27b7f90](https://github.com/vitejs/vite/commit/27b7f90ce2aa9de4290a8422b899d2d718a8c7d7))
+* Windows path error on script proxying ([#5556](https://github.com/vitejs/vite/issues/5556)) ([f8dc1ee](https://github.com/vitejs/vite/commit/f8dc1eee23ec26333af78dd592c35c0306c880a8))
+
+
+### Features
+
+* importing ts files using their corresponding js extesions ([#5510](https://github.com/vitejs/vite/issues/5510)) ([7977e92](https://github.com/vitejs/vite/commit/7977e92e0610cfcb814b45af8432bab1054863d2))
+* preview config ([#5514](https://github.com/vitejs/vite/issues/5514)) ([ff755eb](https://github.com/vitejs/vite/commit/ff755eb7ec2346d2d6c2b74850f0c95063d51a6a))
+
+
+
 # [2.7.0-beta.1](https://github.com/vitejs/vite/compare/v2.7.0-beta.0...v2.7.0-beta.1) (2021-11-01)
 
 
