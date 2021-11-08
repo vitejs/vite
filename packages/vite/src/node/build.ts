@@ -477,7 +477,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? createMoveToVendorChunkFn(config)
+            ? createMoveToVendorChunkFn()
             : undefined,
         ...output
       }
@@ -605,7 +605,7 @@ function getPkgName(root: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
-function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
+export function createMoveToVendorChunkFn(): GetManualChunk {
   const cache = new Map<string, boolean>()
   return (id, { getModuleInfo }) => {
     if (
