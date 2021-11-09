@@ -1,3 +1,12 @@
+## [1.0.8](https://github.com/vitejs/vite/compare/plugin-react@1.0.7...plugin-react@1.0.8) (2021-11-09)
+
+
+### Bug Fixes
+
+* **plugin-react:** apply `babel.plugins` to project files only ([#5255](https://github.com/vitejs/vite/issues/5255)) ([93c0016](https://github.com/vitejs/vite/commit/93c0016c89cadfebeae8f113087b70b2a18a7d23))
+
+
+
 ## [1.0.7](https://github.com/vitejs/vite/compare/plugin-react@1.0.6...plugin-react@1.0.7) (2021-10-28)
 
 
