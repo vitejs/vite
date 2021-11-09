@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -51,6 +51,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
+  let logger: undefined | ResolvedConfig['logger']
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
@@ -73,6 +74,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     configResolved(config) {
       base = config.base
       projectRoot = config.root
+      logger = config.logger
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
@@ -154,7 +156,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // React elements provided by dependencies will also use the
             // automatic runtime!
             const [restoredAst, isCommonJS] = isNodeModules
-              ? await restoreJSX(babel, code, id)
+              ? await restoreJSX(babel, code, id).catch((err: Error) => {
+                  logger?.warn(
+                    `[@vitejs/plugin-react] Got ${err.name} while calling restoreJSX(...)` +
+                      ', please open an issue for describing.'
+                  )
+                  return [null, false] as const
+                })
               : [null, false]
 
             if (!isNodeModules || (ast = restoredAst)) {
