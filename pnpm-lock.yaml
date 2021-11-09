@@ -668,6 +668,12 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.0
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.1
