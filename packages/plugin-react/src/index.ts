@@ -108,36 +108,17 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         []
 
       if (/\.(mjs|[tj]sx?)$/.test(extension)) {
-        const plugins = [...userPlugins]
+        const isJSX = extension.endsWith('x')
+        const isNodeModules = id.includes('/node_modules/')
+        const isProjectFile =
+          !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        const parserPlugins: typeof userParserPlugins = [
-          ...userParserPlugins,
-          'importMeta',
-          // This plugin is applied before esbuild transforms the code,
-          // so we need to enable some stage 3 syntax that is supported in
-          // TypeScript and some environments already.
-          'topLevelAwait',
-          'classProperties',
-          'classPrivateProperties',
-          'classPrivateMethods'
-        ]
-
-        if (!extension.endsWith('.ts')) {
-          parserPlugins.push('jsx')
-        }
-
-        const isTypeScript = /\.tsx?$/.test(extension)
-        if (isTypeScript) {
-          parserPlugins.push('typescript')
-        }
-
-        const isNodeModules = id.includes('node_modules')
+        let plugins = isProjectFile ? [...userPlugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
-          const isReactModule =
-            extension.endsWith('x') || code.includes('react')
+          const isReactModule = isJSX || code.includes('react')
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
@@ -148,16 +129,16 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
-        if (isNodeModules || extension.endsWith('x')) {
+        if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
-            const [restoredAst, isCommonJS] = isNodeModules
+            const [restoredAst, isCommonJS] = !isProjectFile
               ? await restoreJSX(babel, code, id)
               : [null, false]
 
-            if (!isNodeModules || (ast = restoredAst)) {
+            if (isProjectFile || (ast = restoredAst)) {
               plugins.push([
                 await loadPlugin(
                   '@babel/plugin-transform-react-jsx' +
@@ -174,7 +155,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 plugins.push(babelImportToRequire)
               }
             }
-          } else if (!isNodeModules) {
+          } else if (isProjectFile) {
             // These plugins are only needed for the classic runtime.
             if (!isProduction) {
               plugins.push(
@@ -191,7 +172,40 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           }
         }
 
-        const isReasonReact = extension.endsWith('.bs.js')
+        // Plugins defined through this Vite plugin are only applied
+        // to modules within the project root, but "babel.config.js"
+        // files can define plugins that need to be applied to every
+        // module, including node_modules and linked packages.
+        const shouldSkip =
+          !plugins.length &&
+          !opts.babel?.configFile &&
+          !(isProjectFile && opts.babel?.babelrc)
+
+        if (shouldSkip) {
+          return // Avoid parsing if no plugins exist.
+        }
+
+        const parserPlugins: typeof userParserPlugins = [
+          ...userParserPlugins,
+          'importMeta',
+          // This plugin is applied before esbuild transforms the code,
+          // so we need to enable some stage 3 syntax that is supported in
+          // TypeScript and some environments already.
+          'topLevelAwait',
+          'classProperties',
+          'classPrivateProperties',
+          'classPrivateMethods'
+        ]
+
+        if (!id.endsWith('.ts')) {
+          parserPlugins.push('jsx')
+        }
+
+        if (/\.tsx?$/.test(id)) {
+          parserPlugins.push('typescript')
+        }
+
+        const isReasonReact = id.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
