@@ -155,11 +155,6 @@ async function doTransform(
   const mod = await moduleGraph.ensureEntryFromUrl(url)
   ensureWatchedFile(watcher, mod.file, root)
 
-  // add meta.filename if loaded from disk
-  if (loadResult == null) {
-    mod.meta = { ...mod.meta, filename: mod.file }
-  }
-
   // transform
   const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
