@@ -813,6 +813,13 @@ export async function loadConfigFromFile(
         isTS = true
       }
     }
+
+    if (!resolvedPath) {
+      const cjsconfigFile = path.resolve(configRoot, 'vite.config.cjs')
+      if (fs.existsSync(cjsconfigFile)) {
+        resolvedPath = cjsconfigFile
+      }
+    }
   }
 
   if (!resolvedPath) {
