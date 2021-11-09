@@ -50,7 +50,7 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === path.resolve(name)
   )
-  const isEnv = config.inlineConfig.envFile !== false && file.endsWith('.env')
+  const isEnv = config.inlineConfig.envFile !== false && (file === '.env' || file.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
