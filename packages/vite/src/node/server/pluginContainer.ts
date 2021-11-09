@@ -571,9 +571,11 @@ export async function createPluginContainer(
             prettifyUrl(id, root)
           )
         if (isObject(result)) {
-          code = result.code || ''
-          if (result.map) {
-            ctx.sourcemapChain.push(result.map)
+          if (result.code !== undefined) {
+            code = result.code
+            if (result.map) {
+              ctx.sourcemapChain.push(result.map)
+            }
           }
           updateModuleInfo(id, result)
         } else {
