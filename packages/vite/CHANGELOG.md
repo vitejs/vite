@@ -1,3 +1,13 @@
+## [2.6.14](https://github.com/vitejs/vite/compare/v2.6.13...v2.6.14) (2021-11-09)
+
+
+### Bug Fixes
+
+* **hmr:** revert early break from handleHotUpdate loop ([#5536](https://github.com/vitejs/vite/issues/5536)) ([1684946](https://github.com/vitejs/vite/commit/168494629637c86e62fb6e12652e191082fbb54f))
+* **sourcemap:** tolerate virtual modules in `sources` array ([#5587](https://github.com/vitejs/vite/issues/5587)) ([feaf355](https://github.com/vitejs/vite/commit/feaf355faabf0d6a8180f8e73fcf32d0e3bd7e98))
+
+
+
 ## [2.6.13](https://github.com/vitejs/vite/compare/v2.6.12...v2.6.13) (2021-10-27)
 
 
