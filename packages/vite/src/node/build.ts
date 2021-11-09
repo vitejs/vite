@@ -329,6 +329,42 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   }
 }
 
+export function resolvePaths(config: ResolvedConfig, options: ResolvedConfig["build"]) {
+  const rollupOptions = options.rollupOptions
+  const libOptions = options.lib
+  const ssr = !!options.ssr
+
+  const resolve = (p: string) => path.resolve(config.root, p)
+
+  rollupOptions.input = Array.isArray(rollupOptions?.input)
+    ? rollupOptions.input.map(input => resolve(input))
+    : typeof rollupOptions?.input === 'string'
+    ? resolve(rollupOptions.input)
+    : undefined
+
+  const input = resolve(
+    libOptions
+      ? libOptions.entry
+      : typeof options.ssr === 'string'
+      ? options.ssr
+      : typeof rollupOptions?.input === 'string'
+      ? rollupOptions.input
+      : 'index.html'
+  )
+
+  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
+  return {
+    input: resolve(input),
+    outDir: resolve(options.outDir)
+  }
+}
+
 /**
  * Track parallel build calls and only stop the esbuild service when all
  * builds are done. (#1098)
@@ -373,29 +409,7 @@ async function doBuild(
     )
   )
 
-  const resolve = (p: string) => path.resolve(config.root, p)
-
-  if (Array.isArray(options.rollupOptions?.input)) {
-    options.rollupOptions.input = options.rollupOptions.input.map(input => resolve(input))
-  }
-  else if (typeof options.rollupOptions?.input === 'string') {
-    options.rollupOptions.input = resolve(options.rollupOptions.input)
-  }
-
-  const input = libOptions
-    ? resolve(libOptions.entry)
-    : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
-
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
-    throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
-    )
-  }
-
-  const outDir = resolve(options.outDir)
+  const { input, outDir } = resolvePaths(config, options)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (

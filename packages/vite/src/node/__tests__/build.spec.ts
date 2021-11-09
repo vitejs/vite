@@ -1,5 +1,6 @@
-import { resolveLibFilename } from '../build'
+import { resolveLibFilename, resolvePaths } from '../build'
 import { resolve } from 'path'
+import { resolveConfig } from '..'
 
 describe('resolveLibFilename', () => {
   test('custom filename function', () => {
@@ -63,5 +64,67 @@ describe('resolveLibFilename', () => {
         resolve(__dirname, 'packages/noname')
       )
     }).toThrow()
+  })
+})
+
+describe('resolvePaths', () => {
+  test('resolve build.rollupOptions.input', async () => {
+    const config = await resolveConfig({
+      build: {
+        rollupOptions: {
+          input: 'packages/noname/index.html'
+        }
+      }
+    }, 'build', 'production')
+    const { input } = resolvePaths(config, config.build)
+
+    expect(input).toBe(resolve('packages/noname/index.html'))
+  })
+
+  test('resolve build.rollupOptions.input[]', async () => {
+    const config = await resolveConfig({
+      root: 'packages/noname',
+      build: {
+        rollupOptions: {
+          input: ['index.html']
+        }
+      }
+    }, 'build', 'production')
+    const { input } = resolvePaths(config, config.build)
+
+    const resolved = resolve('packages/noname/index.html')
+
+    expect(input).toBe(resolved)
+    expect(config.build.rollupOptions.input[0]).toBe(resolved)
+  })
+
+  test('resolve index.html', async () => {
+    const config = await resolveConfig({
+      root: 'packages/noname',
+    }, 'build', 'production')
+    const { input } = resolvePaths(config, config.build)
+
+    expect(input).toBe(resolve('packages/noname/index.html'))
+  })
+
+  test('resolve build.outdir', async () => {
+    const config = await resolveConfig({ build: { outDir: 'packages/noname' } }, 'build', 'production')
+    const { outDir } = resolvePaths(config, config.build)
+
+    expect(outDir).toBe(resolve('packages/noname'))
+  })
+
+  test('resolve build.lib.entry', async () => {
+    const config = await resolveConfig({ build: { lib: { entry: 'packages/noname/index.html' } } }, 'build', 'production')
+    const { input } = resolvePaths(config, config.build)
+
+    expect(input).toBe(resolve('packages/noname/index.html'))
+  })
+
+  test('resolve build.ssr', async () => {
+    const config = await resolveConfig({ build: { ssr: 'packages/noname/ssr.ts' } }, 'build', 'production')
+    const { input } = resolvePaths(config, config.build)
+
+    expect(input).toBe(resolve('packages/noname/ssr.ts'))
   })
 })
