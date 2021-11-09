@@ -374,6 +374,14 @@ async function doBuild(
   )
 
   const resolve = (p: string) => path.resolve(config.root, p)
+
+  if (Array.isArray(options.rollupOptions?.input)) {
+    options.rollupOptions.input = options.rollupOptions.input.map(input => resolve(input))
+  }
+  else if (typeof options.rollupOptions?.input === 'string') {
+    options.rollupOptions.input = resolve(options.rollupOptions.input)
+  }
+
   const input = libOptions
     ? resolve(libOptions.entry)
     : typeof options.ssr === 'string'
