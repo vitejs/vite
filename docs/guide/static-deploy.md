@@ -84,7 +84,7 @@ Now the `preview` method will launch the server at http://localhost:8080.
    git commit -m 'deploy'
 
    # if you are deploying to https://<USERNAME>.github.io
-   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git master
+   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
 
    # if you are deploying to https://<USERNAME>.github.io/<REPO>
    # git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
