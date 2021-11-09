@@ -495,9 +495,6 @@ export async function createPluginContainer(
           id = result
         } else {
           id = result.id
-          if ('meta' in result) {
-            result.meta = { ...partial.meta, ...result.meta }
-          }
           Object.assign(partial, result)
         }
 
