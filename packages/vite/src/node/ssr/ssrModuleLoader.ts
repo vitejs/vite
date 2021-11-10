@@ -1,12 +1,9 @@
 import path from 'path'
-import { Module } from 'module'
 import { pathToFileURL } from 'url'
 import { ViteDevServer } from '../server'
 import {
   dynamicImport,
-  cleanUrl,
   isBuiltin,
-  resolveFrom,
   unwrapId,
   usingDynamicImport
 } from '../utils'
