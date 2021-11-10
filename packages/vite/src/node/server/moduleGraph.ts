@@ -1,4 +1,6 @@
 import { extname } from 'path'
+import { ModuleInfo, PartialResolvedId } from 'rollup'
+import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
@@ -8,8 +10,6 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { TransformResult } from './transformRequest'
-import { PluginContainer } from './pluginContainer'
-import { parse as parseUrl } from 'url'
 
 export class ModuleNode {
   /**
@@ -22,6 +22,8 @@ export class ModuleNode {
   id: string | null = null
   file: string | null = null
   type: 'js' | 'css'
+  info?: ModuleInfo
+  meta?: Record<string, any>
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
@@ -45,17 +47,23 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   mod.ssrModule = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
+
+export type ResolvedUrl = [
+  url: string,
+  resolvedId: string,
+  meta: object | null | undefined
+]
+
 export class ModuleGraph {
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
-  container: PluginContainer
 
-  constructor(container: PluginContainer) {
-    this.container = container
-  }
+  constructor(
+    private resolveId: (url: string) => Promise<PartialResolvedId | null>
+  ) {}
 
   async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
     const [url] = await this.resolveUrl(rawUrl)
@@ -81,6 +89,7 @@ export class ModuleGraph {
   }
 
   invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
+    mod.info = undefined
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
@@ -140,10 +149,11 @@ export class ModuleGraph {
   }
 
   async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
-    const [url, resolvedId] = await this.resolveUrl(rawUrl)
+    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
+      if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
@@ -187,14 +197,15 @@ export class ModuleGraph {
   // 1. remove the HMR timestamp query (?t=xxxx)
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
-  async resolveUrl(url: string): Promise<[string, string]> {
+  async resolveUrl(url: string): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolvedId = (await this.container.resolveId(url))?.id || url
+    const resolved = await this.resolveId(url)
+    const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
     if (ext && !pathname!.endsWith(ext)) {
       url = pathname + ext + (search || '') + (hash || '')
     }
-    return [url, resolvedId]
+    return [url, resolvedId, resolved?.meta]
   }
 }
