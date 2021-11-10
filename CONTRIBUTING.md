@@ -10,9 +10,9 @@ To develop and test the core `vite` package:
 
 1. Run `pnpm i` in Vite's root folder
 
-1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
-1. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
+3. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
 
    - Run `pnpm link vite` in another Vite project to use the locally built Vite;
    - Use the `vite` binary anywhere.
