@@ -746,7 +746,7 @@ export default defineConfig({
 
 ### build.ssr
 
-- **Type:** `string`
+- **Type:** `boolean | string`
 - **Default:** `undefined`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
