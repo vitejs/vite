@@ -2,8 +2,7 @@ import path from 'path'
 import { defineConfig } from 'vite'
 import vuePlugin from '@vitejs/plugin-vue'
 import { vueI18nPlugin } from './CustomBlockPlugin'
-import { createMoveToVendorChunkFn } from 'vite'
-const viteChunks = createMoveToVendorChunkFn()
+import { moveToVendorChunkFn } from 'vite'
 
 export default defineConfig({
   resolve: {
@@ -22,12 +21,12 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       output: {
-        // partial override of vite's manualChunks
         manualChunks: (id, api) => {
           if (id.includes('node_modules') && id.includes('vue')) {
             return 'vue-chunk'
           }
-          return viteChunks(id, api)
+          // call vite's default manualChunks
+          return moveToVendorChunkFn(id, api)
         }
       }
     }

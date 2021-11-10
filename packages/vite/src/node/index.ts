@@ -1,7 +1,7 @@
 export * from './config'
 export { createServer, searchForWorkspaceRoot } from './server'
 export { preview } from './preview'
-export { build, createMoveToVendorChunkFn } from './build'
+export { build, moveToVendorChunkFn } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger, printHttpServerUrls } from './logger'

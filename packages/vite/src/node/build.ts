@@ -338,6 +338,9 @@ let parallelCallCounts = 0
 // bundle is even pushed.
 const parallelBuilds: RollupBuild[] = []
 
+// cache indicating whether processed chunks are imported by entry
+const cacheVendorChunks = new Map<string, boolean>()
+
 /**
  * Bundles the app for production.
  * Returns a Promise containing the build result.
@@ -477,7 +480,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? createMoveToVendorChunkFn()
+            ? moveToVendorChunkFn
             : undefined,
         ...output
       }
@@ -525,6 +528,8 @@ async function doBuild(
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
           config.logger.info(chalk.cyanBright(`\nbuild started...`))
+          // clear cache for build watch
+          cacheVendorChunks.clear()
           if (options.write) {
             prepareOutDir(outDir, options.emptyOutDir, config)
           }
@@ -556,6 +561,8 @@ async function doBuild(
       prepareOutDir(outDir, options.emptyOutDir, config)
     }
 
+    // clear cache for parallel builds
+    cacheVendorChunks.clear()
     if (Array.isArray(outputs)) {
       const res = []
       for (const output of outputs) {
@@ -605,52 +612,47 @@ function getPkgName(root: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
-export function createMoveToVendorChunkFn(): GetManualChunk {
-  const cache = new Map<string, boolean>()
-  return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
-    }
+export const moveToVendorChunkFn: GetManualChunk = (id, { getModuleInfo }) => {
+  if (
+    id.includes('node_modules') &&
+    !isCSSRequest(id) &&
+    staticImportedByEntry(id, getModuleInfo)
+  ) {
+    return 'vendor'
   }
 }
 
 function staticImportedByEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
   importStack: string[] = []
 ): boolean {
-  if (cache.has(id)) {
-    return cache.get(id) as boolean
+  if (cacheVendorChunks.has(id)) {
+    return cacheVendorChunks.get(id) as boolean
   }
   if (importStack.includes(id)) {
     // circular deps!
-    cache.set(id, false)
+    cacheVendorChunks.set(id, false)
     return false
   }
   const mod = getModuleInfo(id)
   if (!mod) {
-    cache.set(id, false)
+    cacheVendorChunks.set(id, false)
     return false
   }
 
   if (mod.isEntry) {
-    cache.set(id, true)
+    cacheVendorChunks.set(id, true)
     return true
   }
   const someImporterIs = mod.importers.some((importer) =>
     staticImportedByEntry(
       importer,
       getModuleInfo,
-      cache,
       importStack.concat(id)
     )
   )
-  cache.set(id, someImporterIs)
+  cacheVendorChunks.set(id, someImporterIs)
   return someImporterIs
 }
 
