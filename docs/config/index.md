@@ -744,6 +744,14 @@ export default defineConfig({
 
   When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
 
+### build.ssr
+
+- **Type:** `boolean | string`
+- **Default:** `undefined`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
