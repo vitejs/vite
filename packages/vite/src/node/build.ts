@@ -269,7 +269,7 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     }
   }
 
-  const resolve = (p: string) => path.resolve(root, p)
+  const resolve = (p: string) => p.startsWith('\0') ? p : path.resolve(root, p)
 
   resolved.outDir = resolve(resolved.outDir)
 
