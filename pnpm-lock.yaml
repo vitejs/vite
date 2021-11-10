@@ -691,6 +691,7 @@ importers:
       '@types/estree': ^0.0.50
       '@types/etag': ^1.8.1
       '@types/less': ^3.0.3
+      '@types/micromatch': ^4.0.0
       '@types/mime': ^2.0.3
       '@types/node': ^16.11.7
       '@types/resolve': ^1.20.1
@@ -723,8 +724,8 @@ importers:
       http-proxy: ^1.18.1
       launch-editor-middleware: ^2.2.1
       magic-string: ^0.25.7
+      micromatch: ^4.0.4
       mime: ^3.0.0
-      minimatch: ^3.0.4
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -769,6 +770,7 @@ importers:
       '@types/estree': 0.0.50
       '@types/etag': 1.8.1
       '@types/less': 3.0.3
+      '@types/micromatch': 4.0.2
       '@types/mime': 2.0.3
       '@types/node': 16.11.7
       '@types/resolve': 1.20.1
@@ -799,8 +801,8 @@ importers:
       http-proxy: 1.18.1_debug@4.3.2
       launch-editor-middleware: 2.2.1
       magic-string: 0.25.7
+      micromatch: 4.0.4
       mime: 3.0.0
-      minimatch: 3.0.4
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
@@ -2044,6 +2046,10 @@ packages:
       '@babel/types': 7.16.0
     dev: true
 
+  /@types/braces/3.0.1:
+    resolution: {integrity: sha512-+euflG6ygo4bn0JHtn4pYqcXwRtLvElQ7/nnjDu7iYG56H0+OhCd7d6Ug0IE3WcFpZozBKW2+80FUbv5QGk5AQ==}
+    dev: true
+
   /@types/convert-source-map/1.5.2:
     resolution: {integrity: sha512-tHs++ZeXer40kCF2JpE51Hg7t4HPa18B1b1Dzy96S0eCw8QKECNMYMfwa1edK/x8yCN0r4e6ewvLcc5CsVGkdg==}
     dev: true
@@ -2113,6 +2119,12 @@ packages:
 
   /@types/less/3.0.3:
     resolution: {integrity: sha512-1YXyYH83h6We1djyoUEqTlVyQtCfJAFXELSKW2ZRtjHD4hQ82CC4lvrv5D0l0FLcKBaiPbXyi3MpMsI9ZRgKsw==}
+    dev: true
+
+  /@types/micromatch/4.0.2:
+    resolution: {integrity: sha512-oqXqVb0ci19GtH0vOA/U2TmHTcRY9kuZl4mqUxe0QmJAlIW13kzhuK5pi1i9+ngav8FjpSb9FVS/GE00GLX1VA==}
+    dependencies:
+      '@types/braces': 3.0.1
     dev: true
 
   /@types/mime/2.0.3:

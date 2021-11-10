@@ -7,7 +7,7 @@ import { ModuleNode } from './moduleGraph'
 import { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import { RollupError } from 'rollup'
-import match from 'minimatch'
+import { isMatch } from 'micromatch'
 import { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
 import { performance } from 'perf_hooks'
@@ -50,7 +50,9 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === path.resolve(name)
   )
-  const isEnv = config.inlineConfig.envFile !== false && (file === '.env' || file.startsWith('.env.'))
+  const isEnv =
+    config.inlineConfig.envFile !== false &&
+    (file === '.env' || file.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
@@ -189,7 +191,10 @@ export async function handleFileAddUnlink(
     for (const i in server._globImporters) {
       const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
-        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
+        if (
+          isMatch(file, pattern) ||
+          isMatch(path.relative(base, file), pattern)
+        ) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.
