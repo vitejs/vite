@@ -233,7 +233,7 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -267,6 +267,29 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     }
+  }
+
+  const resolve = (p: string) => path.resolve(root, p)
+
+  resolved.outDir = resolve(resolved.outDir)
+
+  if (raw?.rollupOptions?.input) {
+    resolved.rollupOptions.input = Array.isArray(raw.rollupOptions.input)
+      ? raw.rollupOptions.input.map(input => resolve(input))
+      : typeof raw.rollupOptions.input === 'object'
+      ? Object.keys(raw.rollupOptions.input).map(key => {
+          // @ts-ignore
+          raw.rollupOptions.input[key] = resolve(raw.rollupOptions.input[key])
+        }) && raw.rollupOptions.input
+      : resolve(raw.rollupOptions.input)
+  } else {
+    resolved.rollupOptions.input = resolve(
+      raw?.lib
+        ? raw.lib.entry
+        : typeof raw?.ssr === 'string'
+        ? raw.ssr
+        : 'index.html'
+    )
   }
 
   // handle special build targets
@@ -329,35 +352,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   }
 }
 
-export function resolvePaths(config: ResolvedConfig, options: ResolvedConfig["build"]) {
-  const rollupOptions = options.rollupOptions
-  const libOptions = options.lib
-  const ssr = !!options.ssr
-
-  const resolve = (p: string) => path.resolve(config.root, p)
-
-  if (Array.isArray(rollupOptions?.input))
-    rollupOptions.input = rollupOptions.input.map(input => resolve(input))
-
-  const input = libOptions
-    ? libOptions.entry
-    : typeof options.ssr === 'string'
-    ? options.ssr
-    : rollupOptions?.input || 'index.html'
-
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
-    throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
-    )
-  }
-
-  return {
-    input: typeof input === 'string' ? resolve(input) : input,
-    outDir: resolve(options.outDir)
-  }
-}
-
 /**
  * Track parallel build calls and only stop the esbuild service when all
  * builds are done. (#1098)
@@ -391,6 +385,8 @@ async function doBuild(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
+  const input = options.rollupOptions.input
+  const outDir = options.outDir
   const ssr = !!options.ssr
   const libOptions = options.lib
 
@@ -401,8 +397,6 @@ async function doBuild(
       )}`
     )
   )
-
-  const { input, outDir } = resolvePaths(config, options)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
@@ -436,7 +430,6 @@ async function doBuild(
 
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
-    input,
     context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'

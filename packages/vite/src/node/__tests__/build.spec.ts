@@ -1,4 +1,4 @@
-import { resolveLibFilename, resolvePaths } from '../build'
+import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
 import { resolveConfig } from '..'
 
@@ -76,9 +76,21 @@ describe('resolvePaths', () => {
         }
       }
     }, 'build', 'production')
-    const { input } = resolvePaths(config, config.build)
 
-    expect(input).toBe(resolve('index.html'))
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
+  })
+  test('resolve build.rollupOptions.input{}', async () => {
+    const config = await resolveConfig({
+      build: {
+        rollupOptions: {
+          input: {
+            index: 'index.html'
+          }
+        }
+      }
+    }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input['index']).toBe(resolve('index.html'))
   })
 
   test('resolve build.rollupOptions.input[]', async () => {
@@ -89,46 +101,37 @@ describe('resolvePaths', () => {
         }
       }
     }, 'build', 'production')
-    const { input } = resolvePaths(config, config.build)
 
-    const resolved = resolve('index.html')
-
-    expect(input).toStrictEqual([resolved])
-    expect(config.build.rollupOptions.input).toStrictEqual([resolved])
+    expect(config.build.rollupOptions.input).toStrictEqual([resolve('index.html')])
   })
 
   test('resolve index.html', async () => {
     const config = await resolveConfig({}, 'build', 'production')
-    const { input } = resolvePaths(config, config.build)
 
-    expect(input).toBe(resolve('index.html'))
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
   })
 
   test('resolve build.outdir', async () => {
     const config = await resolveConfig({ build: { outDir: 'outDir' } }, 'build', 'production')
-    const { outDir } = resolvePaths(config, config.build)
 
-    expect(outDir).toBe(resolve('outDir'))
+    expect(config.build.outDir).toBe(resolve('outDir'))
   })
 
   test('resolve default build.outdir', async () => {
     const config = await resolveConfig({}, 'build', 'production')
-    const { outDir } = resolvePaths(config, config.build)
 
-    expect(outDir).toBe(resolve('dist'))
+    expect(config.build.outDir).toBe(resolve('dist'))
   })
 
   test('resolve build.lib.entry', async () => {
     const config = await resolveConfig({ build: { lib: { entry: 'index.html' } } }, 'build', 'production')
-    const { input } = resolvePaths(config, config.build)
 
-    expect(input).toBe(resolve('index.html'))
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
   })
 
   test('resolve build.ssr', async () => {
     const config = await resolveConfig({ build: { ssr: 'ssr.ts' } }, 'build', 'production')
-    const { input } = resolvePaths(config, config.build)
 
-    expect(input).toBe(resolve('ssr.ts'))
+    expect(config.build.rollupOptions.input).toBe(resolve('ssr.ts'))
   })
 })
