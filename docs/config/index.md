@@ -750,7 +750,7 @@ export default defineConfig({
 - **Default:** `undefined`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-  Assign SSR server entry file path be similar to `vite build --ssr src/entry-server --outDir dist/server`
+  Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
 
 ### build.minify
 
