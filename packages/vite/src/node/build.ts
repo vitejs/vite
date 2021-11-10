@@ -273,8 +273,10 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
 
   resolved.outDir = resolve(resolved.outDir)
 
+  let input
+
   if (raw?.rollupOptions?.input) {
-    resolved.rollupOptions.input = Array.isArray(raw.rollupOptions.input)
+    input = Array.isArray(raw.rollupOptions.input)
       ? raw.rollupOptions.input.map(input => resolve(input))
       : typeof raw.rollupOptions.input === 'object'
       ? Object.assign(
@@ -283,7 +285,7 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
         )
       : resolve(raw.rollupOptions.input)
   } else {
-    resolved.rollupOptions.input = resolve(
+    input = resolve(
       raw?.lib
         ? raw.lib.entry
         : typeof raw?.ssr === 'string'
@@ -292,12 +294,15 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     )
   }
 
-  if (!!raw?.ssr && typeof resolved.rollupOptions.input === 'string' && resolved.rollupOptions.input.endsWith('.html')) {
+  if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`
     )
   }
+
+  if (input)
+    resolved.rollupOptions.input = input
 
   // handle special build targets
   if (resolved.target === 'modules') {
