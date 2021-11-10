@@ -292,6 +292,13 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     )
   }
 
+  if (!!raw?.ssr && typeof resolved.rollupOptions.input === 'string' && resolved.rollupOptions.input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
   // handle special build targets
   if (resolved.target === 'modules') {
     // Support browserslist
