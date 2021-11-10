@@ -298,9 +298,11 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const plugins = config.plugins
-  const container = await createPluginContainer(config, watcher)
-  const moduleGraph = new ModuleGraph(container)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
+    container.resolveId(url)
+  )
+
+  const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   // eslint-disable-next-line prefer-const
@@ -422,7 +424,7 @@ export async function createServer(
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of plugins) {
+  for (const plugin of config.plugins) {
     if (plugin.configureServer) {
       postHooks.push(await plugin.configureServer(server))
     }
