@@ -301,8 +301,7 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     )
   }
 
-  if (input)
-    resolved.rollupOptions.input = input
+  resolved.rollupOptions.input = input
 
   // handle special build targets
   if (resolved.target === 'modules') {
