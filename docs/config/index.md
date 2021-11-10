@@ -744,6 +744,14 @@ export default defineConfig({
 
   When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
 
+### build.ssr
+
+- **Type:** `string`
+- **Default:** `undefined`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  Assign SSR server entry file path be similar to `vite build --ssr src/entry-server --outDir dist/server`
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
