@@ -94,8 +94,8 @@ describe('resolvePaths', () => {
 
     const resolved = resolve('packages/noname/index.html')
 
-    expect(input).toBe(resolved)
-    expect(config.build.rollupOptions.input[0]).toBe(resolved)
+    expect(input).toStrictEqual([resolved])
+    expect(config.build.rollupOptions.input).toStrictEqual([resolved])
   })
 
   test('resolve index.html', async () => {

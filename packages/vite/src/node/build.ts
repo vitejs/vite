@@ -336,21 +336,14 @@ export function resolvePaths(config: ResolvedConfig, options: ResolvedConfig["bu
 
   const resolve = (p: string) => path.resolve(config.root, p)
 
-  rollupOptions.input = Array.isArray(rollupOptions?.input)
-    ? rollupOptions.input.map(input => resolve(input))
-    : typeof rollupOptions?.input === 'string'
-    ? resolve(rollupOptions.input)
-    : undefined
+  if (Array.isArray(rollupOptions?.input))
+    rollupOptions.input = rollupOptions.input.map(input => resolve(input))
 
-  const input = resolve(
-    libOptions
-      ? libOptions.entry
-      : typeof options.ssr === 'string'
-      ? options.ssr
-      : typeof rollupOptions?.input === 'string'
-      ? rollupOptions.input
-      : 'index.html'
-  )
+  const input = libOptions
+    ? libOptions.entry
+    : typeof options.ssr === 'string'
+    ? options.ssr
+    : rollupOptions?.input || 'index.html'
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -360,7 +353,7 @@ export function resolvePaths(config: ResolvedConfig, options: ResolvedConfig["bu
   }
 
   return {
-    input: resolve(input),
+    input: typeof input === 'string' ? resolve(input) : input,
     outDir: resolve(options.outDir)
   }
 }
