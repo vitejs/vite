@@ -279,7 +279,7 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
       : typeof raw.rollupOptions.input === 'object'
       ? Object.assign(
           // @ts-ignore
-          ...Object.keys(raw.rollupOptions.input).map(key => ({[key]: resolve(raw.rollupOptions.input[key]) }))
+          ...Object.keys(raw.rollupOptions.input).map(key => ({ [key]: resolve(raw.rollupOptions.input[key]) }))
         )
       : resolve(raw.rollupOptions.input)
   } else {
