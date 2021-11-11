@@ -8,9 +8,11 @@ The Vite repo is a monorepo using pnpm workspaces. The package manager used to i
 
 To develop and test the core `vite` package:
 
-1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+1. Run `pnpm i` in Vite's root folder
 
-2. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
+2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+
+3. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
 
    - Run `pnpm link vite` in another Vite project to use the locally built Vite;
    - Use the `vite` binary anywhere.
