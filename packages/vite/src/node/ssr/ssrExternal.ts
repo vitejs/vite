@@ -3,6 +3,7 @@ import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
   createDebugger,
+  isDefined,
   lookupFile,
   normalizePath,
   resolveFrom
@@ -39,7 +40,8 @@ export function resolveSSRExternal(
     seen
   )
 
-  for (const dep of knownImports) {
+  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
+  for (const dep of importedDeps) {
     // Assume external if not yet seen
     // At this point, the project root and any linked packages have had their dependencies checked,
     // so we can safely mark any knownImports not yet seen as external. They are guaranteed to be
@@ -171,4 +173,14 @@ export function shouldExternalizeForSSR(
     }
   })
   return should
+}
+
+function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0].startsWith('@')) {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
 }
