@@ -152,6 +152,8 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
+export const virtualModuleRE = /virtual-module:.*/
+
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
@@ -163,6 +165,14 @@ export const isJSRequest = (url: string): boolean => {
   }
   return false
 }
+
+const knownTsRE = /\.(ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isPossibleTsOutput = (url: string) =>
+  knownTsOutputRE.test(cleanUrl(url))
+export const getTsSrcPath = (filename: string) =>
+  filename.replace(/\.([cm])?(js)(x?)$/, '.$1ts$3')
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [

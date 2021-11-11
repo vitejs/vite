@@ -13,6 +13,15 @@ test('require syntax can be used natural in server side', async () => {
   expect(requireHtml).toMatch('foo')
 })
 
+test('vuex can be import succeed by named import', async () => {
+  await page.goto(url + '/store')
+  expect(await page.textContent('h1')).toMatch('bar')
+
+  // raw http request
+  const storeHtml = await (await fetch(url + '/store')).text()
+  expect(storeHtml).toMatch('bar')
+})
+
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')

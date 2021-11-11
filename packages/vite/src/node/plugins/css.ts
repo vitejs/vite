@@ -218,7 +218,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                   : await moduleGraph.ensureEntryFromUrl(
                       (
                         await fileToUrl(file, config, this)
-                      ).replace(config.base, '/')
+                      ).replace((config.server?.origin ?? '') + config.base, '/')
                     )
               )
             }
@@ -1016,10 +1016,10 @@ const scss: SassStylePreprocessor = async (
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
         rebaseUrls(resolved, options.filename, options.alias)
-          .then(done)
-          .catch(done)
+          .then((data) => done?.(data))
+          .catch((data) => done?.(data))
       } else {
-        done(null)
+        done?.(null)
       }
     })
   }

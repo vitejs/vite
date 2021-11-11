@@ -25,7 +25,10 @@ import {
   cleanUrl,
   slash,
   nestedResolveFrom,
-  isFileReadable
+  isFileReadable,
+  isTsRequest,
+  isPossibleTsOutput,
+  getTsSrcPath
 } from '../utils'
 import { ViteDevServer, SSROptions } from '..'
 import { createFilter } from '@rollup/pluginutils'
@@ -64,7 +67,13 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryPrefix?: string
   skipPackageJson?: boolean
   preferRelative?: boolean
+  preserveSymlinks?: boolean
   isRequire?: boolean
+  // #3040
+  // when the importer is a ts module,
+  // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
+  // should also try import from `.ts/tsx/mts/cts` source file as fallback.
+  isFromTsImporter?: boolean
 }
 
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
@@ -75,10 +84,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     ssrConfig,
     preferRelative = false
   } = baseOptions
-  const requireOptions: InternalResolveOptions = {
-    ...baseOptions,
-    isRequire: true
-  }
   let server: ViteDevServer | undefined
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
@@ -104,13 +109,15 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
-      const isRequire =
-        resolveOpts &&
-        resolveOpts.custom &&
-        resolveOpts.custom['node-resolve'] &&
-        resolveOpts.custom['node-resolve'].isRequire
+      const isRequire: boolean =
+        resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const options = isRequire ? requireOptions : baseOptions
+      const options: InternalResolveOptions = {
+        ...baseOptions,
+
+        isRequire,
+        isFromTsImporter: isTsRequest(importer ?? '')
+      }
 
       const preserveSymlinks = !!server?.config.resolve.preserveSymlinks
 
@@ -299,7 +306,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
-  preserveSymlinks: boolean,
+  preserveSymlinks?: boolean,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
@@ -420,7 +427,7 @@ function tryResolveFile(
   options: InternalResolveOptions,
   tryIndex: boolean,
   targetWeb: boolean,
-  preserveSymlinks: boolean,
+  preserveSymlinks?: boolean,
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
@@ -450,6 +457,22 @@ function tryResolveFile(
       if (index) return index + postfix
     }
   }
+
+  const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
+  if (tryTsExtension) {
+    const tsSrcPath = getTsSrcPath(file)
+    return tryResolveFile(
+      tsSrcPath,
+      postfix,
+      options,
+      tryIndex,
+      targetWeb,
+      preserveSymlinks,
+      tryPrefix,
+      skipPackageJson
+    )
+  }
+
   if (tryPrefix) {
     const prefixed = `${path.dirname(file)}/${tryPrefix}${path.basename(file)}`
     return tryResolveFile(
@@ -467,7 +490,7 @@ export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
-  importer: string | undefined,
+  importer: string | null | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
   server?: ViteDevServer,
@@ -500,14 +523,12 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const preserveSymlinks = !!server?.config.resolve.preserveSymlinks
-
   // nested node module, step-by-step resolve to the basedir of the nestedPath
   if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
+    basedir = nestedResolveFrom(nestedRoot, basedir, options.preserveSymlinks)
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks)
+  const pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
 
   if (!pkg) {
     return
@@ -519,9 +540,9 @@ export function tryNodeResolve(
         pkg,
         options,
         targetWeb,
-        preserveSymlinks
+        options.preserveSymlinks
       )
-    : resolvePackageEntry(id, pkg, options, targetWeb, preserveSymlinks)
+    : resolvePackageEntry(id, pkg, options, targetWeb, options.preserveSymlinks)
   if (!resolved) {
     return
   }
@@ -854,7 +875,7 @@ function resolveDeepImport(
   }: PackageData,
   options: InternalResolveOptions,
   targetWeb: boolean,
-  preserveSymlinks: boolean
+  preserveSymlinks?: boolean
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
