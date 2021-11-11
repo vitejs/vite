@@ -596,7 +596,7 @@ async function buildPolyfillChunk(
   bundle[polyfillChunk.name] = polyfillChunk
 }
 
-const polyfillId = 'vite/legacy-polyfills'
+const polyfillId = '\0vite/legacy-polyfills'
 
 /**
  * @param {Set<string>} imports
