@@ -67,6 +67,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryPrefix?: string
   skipPackageJson?: boolean
   preferRelative?: boolean
+  preserveSymlinks?: boolean
   isRequire?: boolean
   // #3040
   // when the importer is a ts module,
@@ -305,7 +306,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
-  preserveSymlinks: boolean,
+  preserveSymlinks?: boolean,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
@@ -426,7 +427,7 @@ function tryResolveFile(
   options: InternalResolveOptions,
   tryIndex: boolean,
   targetWeb: boolean,
-  preserveSymlinks: boolean,
+  preserveSymlinks?: boolean,
   tryPrefix?: string,
   skipPackageJson?: boolean
 ): string | undefined {
@@ -489,7 +490,7 @@ export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
   id: string,
-  importer: string | undefined,
+  importer: string | null | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
   server?: ViteDevServer,
@@ -522,14 +523,12 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const preserveSymlinks = !!server?.config.resolve.preserveSymlinks
-
   // nested node module, step-by-step resolve to the basedir of the nestedPath
   if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
+    basedir = nestedResolveFrom(nestedRoot, basedir, options.preserveSymlinks)
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks)
+  const pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
 
   if (!pkg) {
     return
@@ -541,9 +540,9 @@ export function tryNodeResolve(
         pkg,
         options,
         targetWeb,
-        preserveSymlinks
+        options.preserveSymlinks
       )
-    : resolvePackageEntry(id, pkg, options, targetWeb, preserveSymlinks)
+    : resolvePackageEntry(id, pkg, options, targetWeb, options.preserveSymlinks)
   if (!resolved) {
     return
   }
@@ -876,7 +875,7 @@ function resolveDeepImport(
   }: PackageData,
   options: InternalResolveOptions,
   targetWeb: boolean,
-  preserveSymlinks: boolean
+  preserveSymlinks?: boolean
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {

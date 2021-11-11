@@ -32,7 +32,12 @@ export function resolveSSRExternal(
     seen.add(id)
   })
 
-  collectExternals(config.root, ssrExternals, seen)
+  collectExternals(
+    config.root,
+    config.resolve.preserveSymlinks,
+    ssrExternals,
+    seen
+  )
 
   for (const dep of knownImports) {
     // Assume external if not yet seen
@@ -59,6 +64,7 @@ export function resolveSSRExternal(
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
+  preserveSymlinks: boolean | undefined,
   ssrExternals: Set<string>,
   seen: Set<string>
 ) {
@@ -75,6 +81,7 @@ function collectExternals(
 
   const resolveOptions: InternalResolveOptions = {
     root,
+    preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
@@ -132,7 +139,7 @@ function collectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
-      if (pkg.type === "module" || esmEntry.endsWith('.mjs')) {
+      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
         continue
       }
@@ -145,7 +152,7 @@ function collectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    collectExternals(depRoot, ssrExternals, seen)
+    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen)
   }
 }
 

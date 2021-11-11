@@ -14,6 +14,7 @@ import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
+import { ssrRequireHookPlugin } from './ssrRequireHook'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -42,6 +43,7 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
+    config.build.ssr ? ssrRequireHookPlugin(config) : null,
     htmlInlineScriptProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
