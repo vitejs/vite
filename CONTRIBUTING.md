@@ -139,11 +139,13 @@ You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DE
 
 ### Issue Triaging Workflow
 
-![issue-workflow](./.github/issue-workflow.png)
+<!-- Run `node scripts/generateFlowCharts` to update this flow chart -->
+![issue-workflow](./.github/issue-workflow.jpg)
 
 ### Pull Request Review Workflow
 
-![issue-workflow](./.github/pr-workflow.png)
+<!-- Run `node scripts/generateFlowCharts` to update this flow chart -->
+![pr-workflow](./.github/pr-workflow.jpg)
 
 ## Notes on Dependencies
 
