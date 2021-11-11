@@ -364,7 +364,7 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const resolvedBuildOptions = resolveBuildOptions(resolvedRoot, config.build)
 
   // resolve cache directory
   const pkgPath = lookupFile(

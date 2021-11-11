@@ -1,5 +1,6 @@
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
+import { resolveConfig } from '..'
 
 describe('resolveLibFilename', () => {
   test('custom filename function', () => {
@@ -63,5 +64,74 @@ describe('resolveLibFilename', () => {
         resolve(__dirname, 'packages/noname')
       )
     }).toThrow()
+  })
+})
+
+describe('resolvePaths', () => {
+  test('resolve build.rollupOptions.input', async () => {
+    const config = await resolveConfig({
+      build: {
+        rollupOptions: {
+          input: 'index.html'
+        }
+      }
+    }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
+  })
+  test('resolve build.rollupOptions.input{}', async () => {
+    const config = await resolveConfig({
+      build: {
+        rollupOptions: {
+          input: {
+            index: 'index.html'
+          }
+        }
+      }
+    }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input['index']).toBe(resolve('index.html'))
+  })
+
+  test('resolve build.rollupOptions.input[]', async () => {
+    const config = await resolveConfig({
+      build: {
+        rollupOptions: {
+          input: ['index.html']
+        }
+      }
+    }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input).toStrictEqual([resolve('index.html')])
+  })
+
+  test('resolve index.html', async () => {
+    const config = await resolveConfig({}, 'build', 'production')
+
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
+  })
+
+  test('resolve build.outdir', async () => {
+    const config = await resolveConfig({ build: { outDir: 'outDir' } }, 'build', 'production')
+
+    expect(config.build.outDir).toBe(resolve('outDir'))
+  })
+
+  test('resolve default build.outdir', async () => {
+    const config = await resolveConfig({}, 'build', 'production')
+
+    expect(config.build.outDir).toBe(resolve('dist'))
+  })
+
+  test('resolve build.lib.entry', async () => {
+    const config = await resolveConfig({ build: { lib: { entry: 'index.html' } } }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
+  })
+
+  test('resolve build.ssr', async () => {
+    const config = await resolveConfig({ build: { ssr: 'ssr.ts' } }, 'build', 'production')
+
+    expect(config.build.rollupOptions.input).toBe(resolve('ssr.ts'))
   })
 })
