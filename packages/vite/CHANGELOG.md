@@ -1,3 +1,25 @@
+# [2.7.0-beta.4](https://github.com/vitejs/vite/compare/v2.7.0-beta.3...v2.7.0-beta.4) (2021-11-12)
+
+
+### Bug Fixes
+
+* **build:** resolve `rollupOptions.input` paths ([#5601](https://github.com/vitejs/vite/issues/5601)) ([5b6b016](https://github.com/vitejs/vite/commit/5b6b01693720290e8998b2613f0dcb2d699ee84f))
+* check exactly in proxyESM ([#5512](https://github.com/vitejs/vite/issues/5512)) ([a17da55](https://github.com/vitejs/vite/commit/a17da55c5dd7ec6206fea8a255f9383b75384351))
+* handle local and module scripts separately ([#5464](https://github.com/vitejs/vite/issues/5464)) ([0713446](https://github.com/vitejs/vite/commit/0713446fa4df678422c84bd141b189a930c100e7))
+* **logger:** no sameCount if clearScreen is false ([#5648](https://github.com/vitejs/vite/issues/5648)) ([afd6b6d](https://github.com/vitejs/vite/commit/afd6b6d5408745b6f376318a15762ca6f34e8c68))
+* **server:** watch correct env files ([#5520](https://github.com/vitejs/vite/issues/5520)) ([03b77bd](https://github.com/vitejs/vite/commit/03b77bd01677cfa2ac76d1a8438af0ce1c7c5678))
+* **sourcemap:** tolerate virtual modules in `sources` array ([#5587](https://github.com/vitejs/vite/issues/5587)) ([cfd2c5e](https://github.com/vitejs/vite/commit/cfd2c5e8deb9fe1e80ec611deff7834a89dcdecc))
+* **ssr:** use `tryNodeResolve` instead of `resolveFrom` ([#3951](https://github.com/vitejs/vite/issues/3951)) ([87c0050](https://github.com/vitejs/vite/commit/87c0050dea008120aad79cf23acca7dfd41cd72e))
+* use micromatch for consistent glob matching ([#5610](https://github.com/vitejs/vite/issues/5610)) ([9d50df8](https://github.com/vitejs/vite/commit/9d50df8198d7cf339e95095580775a5bf8e93948))
+* vitepress/theme in ssrExternals ([#5651](https://github.com/vitejs/vite/issues/5651)) ([1f91cdb](https://github.com/vitejs/vite/commit/1f91cdb6c5c573fd9efd147e38cabc0e5f22028f))
+
+
+### Features
+
+* support `moduleInfo.meta` in dev server ([#5465](https://github.com/vitejs/vite/issues/5465)) ([f6d08c7](https://github.com/vitejs/vite/commit/f6d08c7430906d6262ee1df729d2ea193a80fa6c))
+
+
+
 # [2.7.0-beta.3](https://github.com/vitejs/vite/compare/v2.7.0-beta.2...v2.7.0-beta.3) (2021-11-08)
 
 
