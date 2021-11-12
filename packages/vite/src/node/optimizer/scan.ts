@@ -207,7 +207,10 @@ function esbuildScanPlugin(
         { filter: virtualModuleRE },
         async ({ path, importer }) => {
           return {
-            path,
+            path: await resolve(
+              path.substring('virtual-module:'.length),
+              importer
+            ),
             namespace: 'html'
           }
         }
