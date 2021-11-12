@@ -103,15 +103,13 @@ async function instantiateModule(
   } = server.config
 
   const extensions = ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json']
-  if (typeof jest !== 'undefined') {
+  if (typeof jest !== 'undefined')
     for (const ext of DEFAULT_EXTENSIONS) {
-      if (!extensions.includes(ext)) {
+      if (!extensions.includes(ext))
         throw new Error(
           `The module extensions used in SSR should include all DEFAULT_EXTENSIONS`
         )
-      }
     }
-  }
 
   // The `extensions` and `mainFields` options are used to ensure that
   // CommonJS modules are preferred. We want to avoid ESM->ESM imports
