@@ -222,10 +222,15 @@ async function nodeImport(
 
   // When an ESM module imports an ESM dependency, this hook is *not* used.
   const unhookNodeResolve = hookNodeResolve(
-    (nodeResolve) => (id, parent, isMain, options) =>
-      id[0] === '.' || isBuiltin(id)
-        ? nodeResolve(id, parent, isMain, options)
-        : viteResolve(id, parent.id)
+    (nodeResolve) => (id, parent, isMain, options) => {
+      if (id[0] === '.' || isBuiltin(id)) {
+        return nodeResolve(id, parent, isMain, options)
+      }
+      if (!parent) {
+        return id
+      }
+      return viteResolve(id, parent.id)
+    }
   )
 
   let url: string
