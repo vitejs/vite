@@ -45,6 +45,11 @@ export function baseMiddleware({
           `did you mean to visit <a href="${redirectPath}">${redirectPath}</a> instead?`
       )
       return
+    } else {
+      // not found for resources
+      res.writeHead(404);
+      res.end()
+      return
     }
 
     next()
