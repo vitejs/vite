@@ -8,6 +8,7 @@ import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
 import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
+import svgToTinyDataUri from 'mini-svg-data-uri'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
 
@@ -156,7 +157,8 @@ export function fileToUrl(
   config: ResolvedConfig,
   ctx: PluginContext
 ): string | Promise<string> {
-  if (config.command === 'serve') {
+  const file = cleanUrl(id)
+  if (config.command === 'serve' && !file.endsWith('.svg')) {
     return fileToDevUrl(id, config)
   } else {
     return fileToBuiltUrl(id, config, ctx)
@@ -283,17 +285,25 @@ async function fileToBuiltUrl(
     return cached
   }
 
+  const { search, hash } = parseUrl(id)
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
 
   let url: string
   if (
-    config.build.lib ||
-    (!file.endsWith('.svg') &&
-      content.length < Number(config.build.assetsInlineLimit))
+    file.endsWith('.svg') ||
+    ((config.build.lib ||
+      Buffer.byteLength(content) < config.build.assetsInlineLimit) &&
+      hash == null)
   ) {
-    // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    // svgs can be inlined without base64
+    url = file.endsWith('.svg')
+      ? // The only difference between the default method and `toSrcset` is that
+        // the latter encodes spaces as `%20`, so it's safer to always use it
+        // to support `srcset` use-case even when svg is imported into JavaScript
+        svgToTinyDataUri.toSrcset(content.toString())
+      : // base64 inlined as a string
+        `data:${mime.getType(file)};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
@@ -304,7 +314,6 @@ async function fileToBuiltUrl(
     // https://github.com/rollup/rollup/issues/3415
     const map = assetHashToFilenameMap.get(config)!
     const contentHash = getAssetHash(content)
-    const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
     const output = config.build?.rollupOptions?.output
     const assetFileNames =

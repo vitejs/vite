@@ -722,6 +722,7 @@ importers:
       magic-string: ^0.25.7
       micromatch: ^4.0.4
       mime: ^3.0.0
+      mini-svg-data-uri: ^1.3.3
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -799,6 +800,7 @@ importers:
       magic-string: 0.25.7
       micromatch: 4.0.4
       mime: 3.0.0
+      mini-svg-data-uri: 1.4.3
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
@@ -6253,6 +6255,11 @@ packages:
       react: 17.0.2
       tiny-warning: 1.0.3
     dev: false
+
+  /mini-svg-data-uri/1.4.3:
+    resolution: {integrity: sha512-gSfqpMRC8IxghvMcxzzmMnWpXAChSA+vy4cia33RgerMS8Fex95akUyQZPbxJJmeBGiGmK7n/1OpUX8ksRjIdA==}
+    hasBin: true
+    dev: true
 
   /miniflare/1.4.1:
     resolution: {integrity: sha512-hJkMbTEM+sSiAo2yuPOucrdFYINLU7vvl9uVkRzAQ/h0CjmkYOCoyBn4jYzWtDZeQ0XrkyS6PGUCO277B5TsXA==}
