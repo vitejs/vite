@@ -103,6 +103,10 @@ async function instantiateModule(
   } = server.config
 
   const extensions = ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json']
+
+  // If an extension is added/removed from DEFAULT_EXTENSIONS, so too
+  // should it be added/removed from our extensions array. To be sure,
+  // we verify this when running tests.
   if (typeof jest !== 'undefined')
     for (const ext of DEFAULT_EXTENSIONS) {
       if (!extensions.includes(ext))
