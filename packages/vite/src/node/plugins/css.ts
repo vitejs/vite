@@ -218,10 +218,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                   : await moduleGraph.ensureEntryFromUrl(
                       (
                         await fileToUrl(file, config, this)
-                      ).replace(
-                        (config.server?.origin ?? '') + config.base,
-                        '/'
-                      )
+                      ).replace((config.server?.origin ?? '') + config.base, '/')
                     )
               )
             }

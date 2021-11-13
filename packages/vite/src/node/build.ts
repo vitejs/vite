@@ -233,10 +233,7 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(
-  root: string,
-  raw?: BuildOptions
-): ResolvedBuildOptions {
+export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -272,8 +269,7 @@ export function resolveBuildOptions(
     }
   }
 
-  const resolve = (p: string) =>
-    p.startsWith('\0') ? p : path.resolve(root, p)
+  const resolve = (p: string) => p.startsWith('\0') ? p : path.resolve(root, p)
 
   resolved.outDir = resolve(resolved.outDir)
 
@@ -281,13 +277,11 @@ export function resolveBuildOptions(
 
   if (raw?.rollupOptions?.input) {
     input = Array.isArray(raw.rollupOptions.input)
-      ? raw.rollupOptions.input.map((input) => resolve(input))
+      ? raw.rollupOptions.input.map(input => resolve(input))
       : typeof raw.rollupOptions.input === 'object'
       ? Object.assign(
           // @ts-ignore
-          ...Object.keys(raw.rollupOptions.input).map((key) => ({
-            [key]: resolve(raw.rollupOptions.input[key])
-          }))
+          ...Object.keys(raw.rollupOptions.input).map(key => ({ [key]: resolve(raw.rollupOptions.input[key]) }))
         )
       : resolve(raw.rollupOptions.input)
   } else {
