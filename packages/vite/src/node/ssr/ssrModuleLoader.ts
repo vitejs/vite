@@ -131,6 +131,13 @@ async function instantiateModule(
     root
   }
 
+  // Prevent ESM modules from being resolved during test runs, since Jest
+  // cannot `require` them. Note: This prevents testing of ESM-only packages.
+  if (typeof jest !== 'undefined') {
+    resolveOptions.isRequire = true
+    resolveOptions.mainFields = ['main']
+  }
+
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
