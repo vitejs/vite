@@ -18,7 +18,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
-import { DEFAULT_EXTENSIONS, DEFAULT_MAIN_FIELDS } from '../constants'
+import { DEFAULT_MAIN_FIELDS } from '../constants'
 
 interface SSRContext {
   global: typeof globalThis
@@ -102,19 +102,6 @@ async function instantiateModule(
     root
   } = server.config
 
-  const extensions = ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json']
-
-  // If an extension is added/removed from DEFAULT_EXTENSIONS, so too
-  // should it be added/removed from our extensions array. To be sure,
-  // we verify this when running tests.
-  if (typeof jest !== 'undefined')
-    for (const ext of DEFAULT_EXTENSIONS) {
-      if (!extensions.includes(ext))
-        throw new Error(
-          `The module extensions used in SSR should include all DEFAULT_EXTENSIONS`
-        )
-    }
-
   // The `extensions` and `mainFields` options are used to ensure that
   // CommonJS modules are preferred. We want to avoid ESM->ESM imports
   // whenever possible, because `hookNodeResolve` can't intercept them.
@@ -124,7 +111,7 @@ async function instantiateModule(
     // before "import" condition.
     conditions: ['node', 'require'],
     dedupe,
-    extensions,
+    extensions: ['.js', '.cjs', '.mjs', '.jsx', '.json'],
     isBuild: true,
     isProduction,
     mainFields: ['main', ...DEFAULT_MAIN_FIELDS],
