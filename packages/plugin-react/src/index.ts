@@ -134,11 +134,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
-            const [restoredAst, isCommonJS] = !isProjectFile
-              ? await restoreJSX(babel, code, id)
-              : [null, false]
+            const [restoredAst, isCommonJS] =
+              !isProjectFile && !isJSX
+                ? await restoreJSX(babel, code, id)
+                : [null, false]
 
-            if (isProjectFile || (ast = restoredAst)) {
+            if (isJSX || (ast = restoredAst)) {
               plugins.push([
                 await loadPlugin(
                   '@babel/plugin-transform-react-jsx' +
