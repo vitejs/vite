@@ -1,3 +1,15 @@
+# [2.7.0-beta.5](https://github.com/vitejs/vite/compare/v2.7.0-beta.4...v2.7.0-beta.5) (2021-11-13)
+
+
+### Bug Fixes
+
+* correctly resolve virtual modules during import scan ([#5659](https://github.com/vitejs/vite/issues/5659)) ([40d503c](https://github.com/vitejs/vite/commit/40d503cce08324b6bd6341b45ad8a73876f6f4a0))
+* **resolve:** check nested directories for package.json ([#5665](https://github.com/vitejs/vite/issues/5665)) ([022db52](https://github.com/vitejs/vite/commit/022db52f6de19e98e6412e7c11bf719b1fd8960c))
+* **ssr:** prefer CJS but still allow ESM entries ([#5662](https://github.com/vitejs/vite/issues/5662)) ([72d8925](https://github.com/vitejs/vite/commit/72d8925f79a8983ae131df06a627ee020aab71f8))
+* tolerate undefined parent in `hookNodeResolve` callback ([#5664](https://github.com/vitejs/vite/issues/5664)) ([d788682](https://github.com/vitejs/vite/commit/d788682492465a9365b262dcd93a618e4415637c))
+
+
+
 # [2.7.0-beta.4](https://github.com/vitejs/vite/compare/v2.7.0-beta.3...v2.7.0-beta.4) (2021-11-12)
 
 
