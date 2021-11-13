@@ -1,3 +1,12 @@
+## [1.0.9](https://github.com/vitejs/vite/compare/plugin-react@1.0.8...plugin-react@1.0.9) (2021-11-13)
+
+
+### Bug Fixes
+
+* **plugin-react:** uncompiled JSX in linked pkgs ([#5669](https://github.com/vitejs/vite/issues/5669)) ([83ffcd9](https://github.com/vitejs/vite/commit/83ffcd9e1cb60ea8a04d679bd0ddffc3c687a323))
+
+
+
 ## [1.0.8](https://github.com/vitejs/vite/compare/plugin-react@1.0.7...plugin-react@1.0.8) (2021-11-09)
 
 
