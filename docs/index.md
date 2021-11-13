@@ -25,14 +25,16 @@ footer: MIT Licensed | Copyright © 2019-present Evan You & Vite Contributors
 
 <div class="frontpage sponsors">
   <h2>Sponsors</h2>
-  <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier === 'platinum')" class="platinum" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
-    <img :src="src" :alt="name" :id="`sponsor-${id}`">
-  </a>
-  <br>
-  <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier !== 'platinum')" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
-    <img :src="src" :alt="name" :id="`sponsor-${id}`">
-  </a>
-  <br>
+  <div class="platinum-sponsors">
+    <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier === 'platinum')" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
+      <img :src="src" :alt="name" :id="`sponsor-${id}`">
+    </a>
+  </div>
+  <div class="gold-sponsors">
+    <a v-for="{ href, src, name, id } of sponsors.filter(s => s.tier !== 'platinum')" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
+      <img :src="src" :alt="name" :id="`sponsor-${id}`">
+    </a>
+  </div>
   <a href="https://github.com/sponsors/yyx990803" target="_blank" rel="noopener">Become a sponsor on GitHub</a>
 </div>
 
