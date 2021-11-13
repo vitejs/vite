@@ -701,6 +701,7 @@ importers:
       fast-glob: ^3.2.7
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
+      json5: ^2.2.0
       launch-editor-middleware: ^2.2.1
       magic-string: ^0.25.7
       mime: ^2.5.2
@@ -728,6 +729,7 @@ importers:
       ws: ^7.5.5
     dependencies:
       esbuild: 0.13.10
+      json5: 2.2.0
       postcss: 8.3.11
       resolve: 1.20.0
       rollup: 2.58.3

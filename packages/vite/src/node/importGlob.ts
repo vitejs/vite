@@ -1,6 +1,7 @@
 import path from 'path'
 import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
+import * as JSON5 from 'json5'
 import {
   isModernFlag,
   preloadMethod,
@@ -9,7 +10,11 @@ import {
 import { cleanUrl } from './utils'
 import { RollupError } from 'rollup'
 
-const rawRE = /\?raw$/
+export interface AssertOptions {
+  assert?: {
+    type: string
+  }
+}
 
 export async function transformImportGlob(
   source: string,
@@ -41,13 +46,9 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, endIndex] = lexGlobPattern(source, pos)
+  let [pattern, assertion, endIndex] = lexGlobPattern(source, pos)
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
     throw err(`pattern must start with "." or "/" (relative to project root)`)
-  }
-  const isRaw = rawRE.test(pattern)
-  if (isRaw) {
-    pattern = pattern.replace(rawRE, '')
   }
   let base: string
   let parentDepth = 0
@@ -86,7 +87,7 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    if (isRaw) {
+    if (assertion?.assert?.type === 'raw') {
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
@@ -126,7 +127,10 @@ const enum LexerState {
   inTemplateString
 }
 
-function lexGlobPattern(code: string, pos: number): [string, number] {
+function lexGlobPattern(
+  code: string,
+  pos: number
+): [string, AssertOptions, number] {
   let state = LexerState.inCall
   let pattern = ''
 
@@ -172,7 +176,14 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  return [pattern, code.indexOf(`)`, i) + 1]
+  const endIndex = code.indexOf(`)`, i)
+  const options = code.substring(i + 1, endIndex)
+  const commaIndex = options.indexOf(`,`)
+  let assert = {}
+  if (commaIndex > -1) {
+    assert = JSON5.parse(options.substr(commaIndex + 1))
+  }
+  return [pattern, assert, endIndex + 1]
 }
 
 function error(pos: number) {

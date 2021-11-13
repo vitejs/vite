@@ -22,7 +22,9 @@
 </script>
 
 <script type="module">
-  const rawModules = import.meta.globEager('/dir/ba?.json?raw')
+  const rawModules = import.meta.globEager('/dir/*.json', {
+    assert: { type: 'raw' }
+  })
   const globraw = {}
   Object.keys(rawModules).forEach((key) => {
     globraw[key] = JSON.parse(rawModules[key])
