@@ -18,6 +18,7 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
+import { DEFAULT_MAIN_FIELDS } from '../constants'
 
 interface SSRContext {
   global: typeof globalThis
@@ -101,17 +102,27 @@ async function instantiateModule(
     root
   } = server.config
 
+  // The `extensions` and `mainFields` options are used to ensure that
+  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
+  // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
-    conditions: ['node'],
+    // By adding "require" to the `conditions` array, resolution of the
+    // pkg.exports field will use "require" condition whenever it comes
+    // before "import" condition.
+    conditions: ['node', 'require'],
     dedupe,
-    // Prefer CommonJS modules.
-    extensions: ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: ['.js', '.cjs', '.mjs', '.jsx', '.json'],
     isBuild: true,
     isProduction,
-    // Disable "module" condition.
-    isRequire: true,
-    mainFields: ['main'],
+    mainFields: ['main', ...DEFAULT_MAIN_FIELDS],
     root
+  }
+
+  // Prevent ESM modules from being resolved during test runs, since Jest
+  // cannot `require` them. Note: This prevents testing of ESM-only packages.
+  if (typeof jest !== 'undefined') {
+    resolveOptions.isRequire = true
+    resolveOptions.mainFields = ['main']
   }
 
   // Since dynamic imports can happen in parallel, we need to
