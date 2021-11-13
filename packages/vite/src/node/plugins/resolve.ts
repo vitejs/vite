@@ -13,7 +13,6 @@ import {
   isBuiltin,
   bareImportRE,
   createDebugger,
-  deepImportRE,
   injectQuery,
   isExternalUrl,
   isObject,
@@ -505,13 +504,35 @@ export function tryNodeResolve(
   const nestedRoot = id.substring(0, lastArrowIndex).trim()
   const nestedPath = id.substring(lastArrowIndex + 1).trim()
 
-  // check for deep import, e.g. "my-lib/foo"
-  const deepMatch = nestedPath.match(deepImportRE)
+  const possiblePkgIds: string[] = []
+  for (let prevSlashIndex = -1; ; ) {
+    let slashIndex = nestedPath.indexOf('/', prevSlashIndex + 1)
+    if (slashIndex < 0) {
+      slashIndex = nestedPath.length
+    }
 
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : nestedPath
+    const part = nestedPath.slice(
+      prevSlashIndex + 1,
+      (prevSlashIndex = slashIndex)
+    )
+    if (!part) {
+      break
+    }
+
+    // Assume path parts with an extension are not package roots, except for the
+    // first path part (since periods are sadly allowed in package names).
+    // At the same time, skip the first path part if it begins with "@"
+    // (since "@foo/bar" should be treated as the top-level path).
+    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
+      continue
+    }
+
+    const possiblePkgId = nestedPath.slice(0, slashIndex)
+    possiblePkgIds.push(possiblePkgId)
+  }
 
   let basedir: string
-  if (dedupe && dedupe.includes(pkgId)) {
+  if (dedupe?.some((id) => possiblePkgIds.includes(id))) {
     basedir = root
   } else if (
     importer &&
@@ -528,21 +549,33 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, options.preserveSymlinks)
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
+  let pkg: PackageData | undefined
+  const pkgId = possiblePkgIds.reverse().find((pkgId) => {
+    pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
+    return pkg
+  })!
 
   if (!pkg) {
     return
   }
 
-  let resolved = deepMatch
-    ? resolveDeepImport(
-        '.' + id.slice(pkgId.length),
-        pkg,
-        options,
-        targetWeb,
-        options.preserveSymlinks
-      )
-    : resolvePackageEntry(id, pkg, options, targetWeb, options.preserveSymlinks)
+  let resolved =
+    nestedPath !== pkgId
+      ? resolveDeepImport(
+          '.' + nestedPath.slice(pkgId.length),
+          pkg,
+          options,
+          targetWeb,
+          options.preserveSymlinks
+        )
+      : resolvePackageEntry(
+          nestedPath,
+          pkg,
+          options,
+          targetWeb,
+          options.preserveSymlinks
+        )
+
   if (!resolved) {
     return
   }
@@ -572,7 +605,7 @@ export function tryNodeResolve(
       !isJsType ||
       importer?.includes('node_modules') ||
       exclude?.includes(pkgId) ||
-      exclude?.includes(id) ||
+      exclude?.includes(nestedPath) ||
       SPECIAL_QUERY_RE.test(resolved) ||
       ssr
     ) {
