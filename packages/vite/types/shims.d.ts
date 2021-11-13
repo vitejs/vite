@@ -95,13 +95,12 @@ declare module 'rollup-plugin-web-worker-loader' {
   export default p
 }
 
-declare module 'minimatch' {
-  function match(
+declare module 'micromatch' {
+  export function isMatch(
     path: string,
     pattern: string,
     options?: { matchBase?: boolean }
   ): boolean
-  export default match
 }
 
 declare module 'compression' {

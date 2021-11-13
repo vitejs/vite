@@ -6,6 +6,7 @@ import os from 'os'
 import readline from 'readline'
 import { RollupError } from 'rollup'
 import { ResolvedConfig } from '.'
+import { CommonServerOptions } from './http'
 import { Hostname, resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -65,10 +66,9 @@ export function createLogger(
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
-  const clear =
+  const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
-      ? clearScreen
-      : () => {}
+  const clear = canClearScreen ? clearScreen : () => {}
 
   function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
@@ -89,17 +89,21 @@ export function createLogger(
       if (options.error) {
         loggedErrors.add(options.error)
       }
-      if (type === lastType && msg === lastMsg) {
-        sameCount++
-        clear()
-        console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
-      } else {
-        sameCount = 0
-        lastMsg = msg
-        lastType = type
-        if (options.clear) {
+      if (canClearScreen) {
+        if (type === lastType && msg === lastMsg) {
+          sameCount++
           clear()
+          console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
+        } else {
+          sameCount = 0
+          lastMsg = msg
+          lastType = type
+          if (options.clear) {
+            clear()
+          }
+          console[method](format())
         }
+      } else {
         console[method](format())
       }
     }
@@ -139,15 +143,26 @@ export function createLogger(
   return logger
 }
 
+/**
+ * @deprecated Use `server.printUrls()` instead
+ */
 export function printHttpServerUrls(
   server: Server,
+  config: ResolvedConfig
+): void {
+  printCommonServerUrls(server, config.server, config)
+}
+
+export function printCommonServerUrls(
+  server: Server,
+  options: CommonServerOptions,
   config: ResolvedConfig
 ): void {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(config.server.host)
-    const protocol = config.server.https ? 'https' : 'http'
+    const hostname = resolveHostname(options.host)
+    const protocol = options.https ? 'https' : 'http'
     printServerUrls(
       hostname,
       protocol,

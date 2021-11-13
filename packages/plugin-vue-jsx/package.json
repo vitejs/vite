@@ -26,9 +26,9 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx#readme",
   "dependencies": {
-    "@babel/core": "^7.15.8",
+    "@babel/core": "^7.16.0",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
-    "@babel/plugin-transform-typescript": "^7.15.8",
+    "@babel/plugin-transform-typescript": "^7.16.1",
     "@rollup/pluginutils": "^4.1.1",
     "@vue/babel-plugin-jsx": "^1.1.1",
     "hash-sum": "^2.0.0"

@@ -1,3 +1,49 @@
+# [2.7.0-beta.4](https://github.com/vitejs/vite/compare/v2.7.0-beta.3...v2.7.0-beta.4) (2021-11-12)
+
+
+### Bug Fixes
+
+* **build:** resolve `rollupOptions.input` paths ([#5601](https://github.com/vitejs/vite/issues/5601)) ([5b6b016](https://github.com/vitejs/vite/commit/5b6b01693720290e8998b2613f0dcb2d699ee84f))
+* check exactly in proxyESM ([#5512](https://github.com/vitejs/vite/issues/5512)) ([a17da55](https://github.com/vitejs/vite/commit/a17da55c5dd7ec6206fea8a255f9383b75384351))
+* handle local and module scripts separately ([#5464](https://github.com/vitejs/vite/issues/5464)) ([0713446](https://github.com/vitejs/vite/commit/0713446fa4df678422c84bd141b189a930c100e7))
+* **logger:** no sameCount if clearScreen is false ([#5648](https://github.com/vitejs/vite/issues/5648)) ([afd6b6d](https://github.com/vitejs/vite/commit/afd6b6d5408745b6f376318a15762ca6f34e8c68))
+* **server:** watch correct env files ([#5520](https://github.com/vitejs/vite/issues/5520)) ([03b77bd](https://github.com/vitejs/vite/commit/03b77bd01677cfa2ac76d1a8438af0ce1c7c5678))
+* **sourcemap:** tolerate virtual modules in `sources` array ([#5587](https://github.com/vitejs/vite/issues/5587)) ([cfd2c5e](https://github.com/vitejs/vite/commit/cfd2c5e8deb9fe1e80ec611deff7834a89dcdecc))
+* **ssr:** use `tryNodeResolve` instead of `resolveFrom` ([#3951](https://github.com/vitejs/vite/issues/3951)) ([87c0050](https://github.com/vitejs/vite/commit/87c0050dea008120aad79cf23acca7dfd41cd72e))
+* use micromatch for consistent glob matching ([#5610](https://github.com/vitejs/vite/issues/5610)) ([9d50df8](https://github.com/vitejs/vite/commit/9d50df8198d7cf339e95095580775a5bf8e93948))
+* vitepress/theme in ssrExternals ([#5651](https://github.com/vitejs/vite/issues/5651)) ([1f91cdb](https://github.com/vitejs/vite/commit/1f91cdb6c5c573fd9efd147e38cabc0e5f22028f))
+
+
+### Features
+
+* support `moduleInfo.meta` in dev server ([#5465](https://github.com/vitejs/vite/issues/5465)) ([f6d08c7](https://github.com/vitejs/vite/commit/f6d08c7430906d6262ee1df729d2ea193a80fa6c))
+
+
+
+# [2.7.0-beta.3](https://github.com/vitejs/vite/compare/v2.7.0-beta.2...v2.7.0-beta.3) (2021-11-08)
+
+
+
+# [2.7.0-beta.2](https://github.com/vitejs/vite/compare/v2.7.0-beta.1...v2.7.0-beta.2) (2021-11-08)
+
+
+### Bug Fixes
+
+* **commonjs:** expose ignoreTryCatch config option ([#5555](https://github.com/vitejs/vite/issues/5555)) ([d383c2a](https://github.com/vitejs/vite/commit/d383c2a04159a2e5d2f2618ac4e590bdb3172f77))
+* **esbuild:** respect esbuild config on build ([#5538](https://github.com/vitejs/vite/issues/5538)) ([ff05fe9](https://github.com/vitejs/vite/commit/ff05fe99ad1f2fe7524eadd455a4a0b831cd75f2))
+* **hmr:** revert early break from handleHotUpdate loop ([#5536](https://github.com/vitejs/vite/issues/5536)) ([4abade6](https://github.com/vitejs/vite/commit/4abade62f101049b941fa8f6b98187c5587e238f))
+* replace server.origin in css plugin (fix [#5408](https://github.com/vitejs/vite/issues/5408)) ([#5571](https://github.com/vitejs/vite/issues/5571)) ([bd8b66d](https://github.com/vitejs/vite/commit/bd8b66d8ef4ceb81168a3a7deeff7d9040d778f2))
+* **server:** use `options` argument in caching of `transformRequest` calls ([#5391](https://github.com/vitejs/vite/issues/5391)) ([27b7f90](https://github.com/vitejs/vite/commit/27b7f90ce2aa9de4290a8422b899d2d718a8c7d7))
+* Windows path error on script proxying ([#5556](https://github.com/vitejs/vite/issues/5556)) ([f8dc1ee](https://github.com/vitejs/vite/commit/f8dc1eee23ec26333af78dd592c35c0306c880a8))
+
+
+### Features
+
+* importing ts files using their corresponding js extesions ([#5510](https://github.com/vitejs/vite/issues/5510)) ([7977e92](https://github.com/vitejs/vite/commit/7977e92e0610cfcb814b45af8432bab1054863d2))
+* preview config ([#5514](https://github.com/vitejs/vite/issues/5514)) ([ff755eb](https://github.com/vitejs/vite/commit/ff755eb7ec2346d2d6c2b74850f0c95063d51a6a))
+
+
+
 # [2.7.0-beta.1](https://github.com/vitejs/vite/compare/v2.7.0-beta.0...v2.7.0-beta.1) (2021-11-01)
 
 
