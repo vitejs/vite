@@ -553,7 +553,7 @@ export function tryNodeResolve(
   const pkgId = possiblePkgIds.reverse().find((pkgId) => {
     pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
     return pkg
-  })
+  })!
 
   if (!pkg) {
     return
