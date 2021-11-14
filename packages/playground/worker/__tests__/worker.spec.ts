@@ -12,6 +12,11 @@ test('normal', async () => {
   )
 })
 
+test('TS output', async () => {
+  await page.click('.ping-ts-output')
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
+})
+
 test('inlined', async () => {
   await page.click('.ping-inline')
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
