@@ -67,7 +67,7 @@ describe('resolveLibFilename', () => {
   })
 })
 
-describe('resolvePaths', () => {
+describe('resolveBuildOptions', () => {
   test('resolve build.rollupOptions.input', async () => {
     const config = await resolveConfig({
       build: {
