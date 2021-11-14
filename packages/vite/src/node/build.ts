@@ -279,9 +279,8 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     input = Array.isArray(raw.rollupOptions.input)
       ? raw.rollupOptions.input.map(input => resolve(input))
       : typeof raw.rollupOptions.input === 'object'
-      ? Object.assign(
-          // @ts-ignore
-          ...Object.keys(raw.rollupOptions.input).map(key => ({ [key]: resolve(raw.rollupOptions.input[key]) }))
+      ? Object.fromEntries(
+          Object.entries(raw.rollupOptions.input).map(([key, value]) => [key, resolve(value)])
         )
       : resolve(raw.rollupOptions.input)
   } else {
