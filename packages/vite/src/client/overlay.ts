@@ -123,6 +123,35 @@ export class ErrorOverlay extends HTMLElement {
     this.root = this.attachShadow({ mode: 'open' })
     this.root.innerHTML = template
 
+    if (!err) {
+      err = {
+        id: this.getAttribute('id') || undefined,
+        message: this.getAttribute('message') || '',
+        stack: this.getAttribute('stack') || '',
+        plugin: this.getAttribute('plugin') || undefined,
+        pluginCode: this.getAttribute('plugin-code') || undefined,
+        frame: this.getAttribute('frame') || undefined,
+        loc: this.hasAttribute('loc-line')
+          ? {
+              file: this.getAttribute('loc-file') || undefined,
+              line: Number(this.getAttribute('loc-line')),
+              column: Number(this.getAttribute('loc-column'))
+            }
+          : undefined
+      }
+    }
+
+    this.showError(err)
+
+    this.root.querySelector('.window')!.addEventListener('click', (e) => {
+      e.stopPropagation()
+    })
+    this.addEventListener('click', () => {
+      this.close()
+    })
+  }
+
+  showError(err: ErrorPayload['err']) {
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
     const message = hasFrame
@@ -144,13 +173,6 @@ export class ErrorOverlay extends HTMLElement {
       this.text('.frame', err.frame!.trim())
     }
     this.text('.stack', err.stack, true)
-
-    this.root.querySelector('.window')!.addEventListener('click', (e) => {
-      e.stopPropagation()
-    })
-    this.addEventListener('click', () => {
-      this.close()
-    })
   }
 
   text(selector: string, text: string, linkFiles = false): void {
