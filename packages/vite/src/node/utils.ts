@@ -172,7 +172,7 @@ export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)$/, '.$1ts$3')
+  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
