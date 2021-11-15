@@ -46,6 +46,9 @@ export async function resolvePlugins(
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
     htmlInlineScriptProxyPlugin(config),
     cssPlugin(config),
+    // Replace constants before running esbuild transform so that dynamic
+    // imports in dead branches won't need to be resolved (#5676).
+    definePlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
     jsonPlugin(
       {
@@ -58,7 +61,6 @@ export async function resolvePlugins(
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
-    definePlugin(config),
     cssPostPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
