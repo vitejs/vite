@@ -73,6 +73,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
+  tryEsmOnly?: boolean
 }
 
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
@@ -559,23 +560,29 @@ export function tryNodeResolve(
     return
   }
 
-  let resolved =
-    nestedPath !== pkgId
-      ? resolveDeepImport(
-          '.' + nestedPath.slice(pkgId.length),
-          pkg,
-          options,
-          targetWeb,
-          options.preserveSymlinks
-        )
-      : resolvePackageEntry(
-          nestedPath,
-          pkg,
-          options,
-          targetWeb,
-          options.preserveSymlinks
-        )
+  let resolveId = resolvePackageEntry
+  let unresolvedId = pkgId
+  if (unresolvedId !== nestedPath) {
+    resolveId = resolveDeepImport
+    unresolvedId = '.' + nestedPath.slice(pkgId.length)
+  }
 
+  let resolved: string | undefined
+  try {
+    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+  } catch (err) {
+    if (!options.tryEsmOnly) {
+      throw err
+    }
+  }
+  if (!resolved && options.tryEsmOnly) {
+    resolved = resolveId(unresolvedId, pkg, targetWeb, {
+      ...options,
+      isRequire: false,
+      mainFields: DEFAULT_MAIN_FIELDS,
+      extensions: DEFAULT_EXTENSIONS
+    })
+  }
   if (!resolved) {
     return
   }
@@ -760,9 +767,8 @@ function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
 export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
-  options: InternalResolveOptions,
   targetWeb: boolean,
-  preserveSymlinks = false
+  options: InternalResolveOptions
 ): string | undefined {
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
@@ -800,7 +806,7 @@ export function resolvePackageEntry(
           const resolvedBrowserEntry = tryFsResolve(
             path.join(dir, browserEntry),
             options,
-            preserveSymlinks
+            options.preserveSymlinks
           )
           if (resolvedBrowserEntry) {
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
@@ -849,7 +855,7 @@ export function resolvePackageEntry(
     const resolvedEntryPoint = tryFsResolve(
       entryPoint,
       options,
-      preserveSymlinks
+      options.preserveSymlinks
     )
 
     if (resolvedEntryPoint) {
@@ -906,9 +912,8 @@ function resolveDeepImport(
     dir,
     data
   }: PackageData,
-  options: InternalResolveOptions,
   targetWeb: boolean,
-  preserveSymlinks?: boolean
+  options: InternalResolveOptions
 ): string | undefined {
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
@@ -945,7 +950,7 @@ function resolveDeepImport(
     const resolved = tryFsResolve(
       path.join(dir, relativeId),
       options,
-      preserveSymlinks,
+      options.preserveSymlinks,
       !exportsField, // try index only if no exports field
       targetWeb
     )
