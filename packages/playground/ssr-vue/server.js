@@ -52,10 +52,11 @@ async function createServer(
   }
 
   app.use('*', async (req, res) => {
+    let template, render
+
     try {
       const url = req.originalUrl
 
-      let template, render
       if (!isProd) {
         // always read fresh template in dev
         template = fs.readFileSync(resolve('index.html'), 'utf-8')
@@ -76,7 +77,20 @@ async function createServer(
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      res.status(500).end(e.stack)
+
+      if (template && !isProd) {
+        res
+          .status(500)
+          .set({ 'Content-Type': 'text/html' })
+          .end(
+            template.replace(
+              `</body>`,
+              `<vite-error-overlay message="${e.message}" stack="${e.stack}"></vite-error-overlay>\n</body>`
+            )
+          )
+      } else {
+        res.status(500).end(e.stack)
+      }
     }
   })
 

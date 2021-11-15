@@ -152,3 +152,12 @@ test('deep import built-in module', async () => {
   await page.goto(url)
   expect(await page.textContent('.file-message')).toMatch('fs/promises')
 })
+
+if (!isBuild) {
+  test('error overlay', async () => {
+    await page.goto(url + '/error')
+    expect(await page.textContent('vite-error-overlay .message-body')).toMatch(
+      'This should render vite-error-overlay'
+    )
+  })
+}
