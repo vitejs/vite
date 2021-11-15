@@ -97,7 +97,7 @@ async function instantiateModule(
 
   const {
     isProduction,
-    resolve: { dedupe },
+    resolve: { dedupe, preserveSymlinks },
     root
   } = server.config
 
@@ -111,6 +111,7 @@ async function instantiateModule(
     isProduction,
     isRequire: true,
     mainFields: ['main'],
+    preserveSymlinks,
     root
   }
 
