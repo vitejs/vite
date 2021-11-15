@@ -151,6 +151,8 @@ test('client navigation', async () => {
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
+  await page.click('a[href="/"]')
+  await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
 })
 
 test('import.meta.url', async () => {
