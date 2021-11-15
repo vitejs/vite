@@ -36,12 +36,12 @@
   "devDependencies": {
     "@rollup/pluginutils": "^4.1.1",
     "@types/hash-sum": "^1.0.0",
-    "@vue/compiler-sfc": "^3.2.21",
+    "@vue/compiler-sfc": "^3.2.22",
     "debug": "^4.3.2",
     "hash-sum": "^2.0.0",
     "rollup": "^2.59.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.21"
+    "vue": "^3.2.22"
   }
 }
