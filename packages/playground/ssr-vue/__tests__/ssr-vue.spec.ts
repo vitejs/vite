@@ -164,3 +164,20 @@ test('deep import built-in module', async () => {
   await page.goto(url)
   expect(await page.textContent('.file-message')).toMatch('fs/promises')
 })
+
+test('dynamic css file should be loaded advanced', async () => {
+  if (isBuild) {
+    await page.goto(url)
+    const homeHtml = await (await fetch(url)).text()
+    const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
+    const filename = re.exec(homeHtml)[1]
+    const manifest = require('/home/runner/work/vite/vite/packages/temp/ssr-vue/dist/client/ssr-manifest.json')
+
+    const depFile = manifest[filename]
+    for (const file of depFile) {
+      expect(homeHtml).toMatch(
+        file
+      )
+    }
+  }
+})

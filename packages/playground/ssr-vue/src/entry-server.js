@@ -1,6 +1,6 @@
 import { createApp } from './main'
 import { renderToString } from 'vue/server-renderer'
-import path from 'path'
+import path, { basename } from 'path'
 
 export async function render(url, manifest, rootDir) {
   const { app, router } = createApp()
@@ -40,6 +40,13 @@ function renderPreloadLinks(modules, manifest) {
       files.forEach((file) => {
         if (!seen.has(file)) {
           seen.add(file)
+          const filename = basename(file)
+          if (manifest[filename]) {
+            for (const depFile of manifest[filename]) {
+              links += renderPreloadLink(depFile)
+              seen.add(depFile)
+            }
+          }
           links += renderPreloadLink(file)
         }
       })

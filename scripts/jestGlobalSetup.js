@@ -3,6 +3,7 @@ const os = require('os')
 const fs = require('fs-extra')
 const path = require('path')
 const { chromium } = require('playwright-chromium')
+const {execSync} = require('child_process')
 
 const DIR = path.join(os.tmpdir(), 'jest_playwright_global_setup')
 

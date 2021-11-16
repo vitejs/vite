@@ -9,13 +9,15 @@
   <p class="inter">this will be styled with a font-face</p>
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
-
+  <Button>DynamicButton</Button>
   <ImportType />
 </template>
 
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
+import Button from 'vant/lib/button'
+import 'vant/lib/index.css'
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)

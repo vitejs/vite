@@ -104,7 +104,8 @@ beforeAll(async () => {
         },
         build: {
           // skip transpilation during tests to make it faster
-          target: 'esnext'
+          target: 'esnext',
+          ssrManifest: true
         }
       }
 
