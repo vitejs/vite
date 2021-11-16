@@ -210,8 +210,8 @@ describe('importAsString', () => {
     await page.waitForLoadState()
     page.off('console', addConsoleMessage)
 
-    const finalMessage = messages[messages.length - 1]?.toString()
-    expect(finalMessage).toMatch('Some imported HTML')
-    expect(finalMessage).not.toMatch('This is injected')
+    const result = messages.map((m) => m.toString()).join('\n')
+    expect(result).toMatch('Some imported HTML')
+    expect(result).not.toMatch('This is injected')
   })
 })
