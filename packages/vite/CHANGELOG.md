@@ -1,3 +1,13 @@
+# [2.7.0-beta.6](https://github.com/vitejs/vite/compare/v2.7.0-beta.5...v2.7.0-beta.6) (2021-11-16)
+
+
+### Bug Fixes
+
+* **dev:** Fix infinite recursion on query imports ([#5671](https://github.com/vitejs/vite/issues/5671)) ([#5674](https://github.com/vitejs/vite/issues/5674)) ([bce4e56](https://github.com/vitejs/vite/commit/bce4e56cb12b3c76f48bf2ddc37423025e79a0d2))
+* **ssr:** avoid resolving ESM for CJS dependencies ([#5693](https://github.com/vitejs/vite/issues/5693)) ([b937ea4](https://github.com/vitejs/vite/commit/b937ea4cb1642a76d7a650802c0db2fede338474))
+
+
+
 # [2.7.0-beta.5](https://github.com/vitejs/vite/compare/v2.7.0-beta.4...v2.7.0-beta.5) (2021-11-13)
 
 
