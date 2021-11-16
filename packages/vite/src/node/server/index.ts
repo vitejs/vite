@@ -105,7 +105,6 @@ export interface FileSystemServeOptions {
    * Strictly restrict file accessing outside of allowing paths.
    *
    * Set to `false` to disable the warning
-   * Default to false at this moment, will enabled by default in the future versions.
    *
    * @default true
    */
