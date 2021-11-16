@@ -1,6 +1,7 @@
 import MagicString from 'magic-string'
 import { ResolvedConfig } from '..'
 import { Plugin } from '../plugin'
+import { arraify } from '../utils'
 
 /**
  * This plugin hooks into Node's module resolution algorithm at runtime,
@@ -8,7 +9,13 @@ import { Plugin } from '../plugin'
  * in development.
  */
 export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
-  if (config.command !== 'build' || !config.resolve.dedupe?.length) {
+  if (
+    config.command !== 'build' ||
+    !config.resolve.dedupe?.length ||
+    arraify(config.build.rollupOptions?.output).find(
+      (output) => output?.format === 'es' || output?.format === 'esm'
+    )
+  ) {
     return null
   }
   return {
