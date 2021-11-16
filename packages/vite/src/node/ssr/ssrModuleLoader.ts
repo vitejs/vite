@@ -18,7 +18,6 @@ import {
 import { transformRequest } from '../server/transformRequest'
 import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
-import { DEFAULT_MAIN_FIELDS } from '../constants'
 
 interface SSRContext {
   global: typeof globalThis
@@ -98,7 +97,7 @@ async function instantiateModule(
 
   const {
     isProduction,
-    resolve: { dedupe },
+    resolve: { dedupe, preserveSymlinks },
     root
   } = server.config
 
@@ -106,23 +105,14 @@ async function instantiateModule(
   // CommonJS modules are preferred. We want to avoid ESM->ESM imports
   // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
-    // By adding "require" to the `conditions` array, resolution of the
-    // pkg.exports field will use "require" condition whenever it comes
-    // before "import" condition.
-    conditions: ['node', 'require'],
     dedupe,
-    extensions: ['.js', '.cjs', '.mjs', '.jsx', '.json'],
+    extensions: ['.js', '.cjs', '.json'],
     isBuild: true,
     isProduction,
-    mainFields: ['main', ...DEFAULT_MAIN_FIELDS],
+    isRequire: true,
+    mainFields: ['main'],
+    preserveSymlinks,
     root
-  }
-
-  // Prevent ESM modules from being resolved during test runs, since Jest
-  // cannot `require` them. Note: This prevents testing of ESM-only packages.
-  if (typeof jest !== 'undefined') {
-    resolveOptions.isRequire = true
-    resolveOptions.mainFields = ['main']
   }
 
   // Since dynamic imports can happen in parallel, we need to
@@ -219,8 +209,12 @@ async function nodeImport(
 ) {
   // Node's module resolution is hi-jacked so Vite can ensure the
   // configured `resolve.dedupe` and `mode` options are respected.
-  const viteResolve = (id: string, importer: string) => {
-    const resolved = tryNodeResolve(id, importer, resolveOptions, false)
+  const viteResolve = (
+    id: string,
+    importer: string,
+    options = resolveOptions
+  ) => {
+    const resolved = tryNodeResolve(id, importer, options, false)
     if (!resolved) {
       const err: any = new Error(
         `Cannot find module '${id}' imported from '${importer}'`
@@ -237,19 +231,29 @@ async function nodeImport(
       if (id[0] === '.' || isBuiltin(id)) {
         return nodeResolve(id, parent, isMain, options)
       }
-      if (!parent) {
-        return id
+      if (parent) {
+        return viteResolve(id, parent.id)
       }
-      return viteResolve(id, parent.id)
+      // Importing a CJS module from an ESM module. In this case, the import
+      // specifier is already an absolute path, so this is a no-op.
+      // Options like `resolve.dedupe` and `mode` are not respected.
+      return id
     }
   )
 
   let url: string
-  // `resolve` doesn't handle `node:` builtins, so handle them directly
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(id, importer)
+    url = viteResolve(
+      id,
+      importer,
+      // Non-external modules can import ESM-only modules, but only outside
+      // of test runs, because we use Node `require` in Jest to avoid segfault.
+      typeof jest === 'undefined'
+        ? { ...resolveOptions, tryEsmOnly: true }
+        : resolveOptions
+    )
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
