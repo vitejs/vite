@@ -203,18 +203,12 @@ function esbuildScanPlugin(
         external: true
       }))
 
-      build.onResolve(
-        { filter: virtualModuleRE },
-        async ({ path, importer }) => {
-          return {
-            path: await resolve(
-              path.substring('virtual-module:'.length),
-              importer
-            ),
-            namespace: 'html'
-          }
+      build.onResolve({ filter: virtualModuleRE }, ({ path }) => {
+        return {
+          path,
+          namespace: 'html'
         }
-      )
+      })
 
       // html types: extract script contents -----------------------------------
       build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
@@ -226,7 +220,7 @@ function esbuildScanPlugin(
 
       build.onLoad(
         { filter: virtualModuleRE, namespace: 'html' },
-        async ({ path }) => {
+        ({ path }) => {
           return moduleScripts[path]
         }
       )
