@@ -60,6 +60,7 @@ import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
+import { performance } from 'perf_hooks'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -225,6 +226,11 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * restart the dev server
+   * @param forceOptimize - force the optimizer to ignore the cache and re-bundle
+   */
+  restart(forceOptimize?: boolean): Promise<void>
+  /**
    * @internal
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
@@ -246,6 +252,10 @@ export interface ViteDevServer {
       }[]
     }
   >
+  /**
+   * @internal
+   */
+  _isRestarting: boolean
   /**
    * @internal
    */
@@ -365,9 +375,25 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
+    async restart(forceOptimize: boolean) {
+      if (server._isRestarting) {
+        return // no multi-restarts
+      }
+      server._isRestarting = true
+      try {
+        if (forceOptimize) {
+          await runOptimize(forceOptimize)
+        }
+        await restartServer(server)
+      } finally {
+        server._isRestarting = false
+      }
+    },
+
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
+    _isRestarting: false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
@@ -500,11 +526,11 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const runOptimize = async () => {
+  const runOptimize = async (forceOptimize?: boolean) => {
     if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
-        server._optimizeDepsMetadata = await optimizeDeps(config)
+        server._optimizeDepsMetadata = await optimizeDeps(config, forceOptimize)
       } finally {
         server._isRunningOptimizer = false
       }
@@ -659,4 +685,34 @@ export function resolveServerOptions(
     deny
   }
   return server as ResolvedServerOptions
+}
+
+async function restartServer(server: ViteDevServer) {
+  // @ts-ignore
+  global.__vite_start_time = performance.now()
+  const { port } = server.config.server
+
+  await server.close()
+
+  let newServer = null
+  try {
+    newServer = await createServer(server.config.inlineConfig)
+  } catch (err: any) {
+    server.config.logger.error(err.message, {
+      timestamp: true
+    })
+    return
+  }
+
+  for (const key in newServer) {
+    if (key !== 'app') {
+      // @ts-ignore
+      server[key] = newServer[key]
+    }
+  }
+  if (!server.config.server.middlewareMode) {
+    await server.listen(port, true)
+  } else {
+    server.config.logger.info('server restarted.', { timestamp: true })
+  }
 }
