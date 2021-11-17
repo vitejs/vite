@@ -12,9 +12,7 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
     !config.resolve.dedupe?.length ||
-    arraify(config.build.rollupOptions?.output).find(
-      (output) => output?.format === 'es' || output?.format === 'esm'
-    )
+    isBuildOutputEsm(config)
   ) {
     return null
   }
@@ -73,4 +71,11 @@ export function hookNodeResolve(
   return () => {
     Module._resolveFilename = prevResolver
   }
+}
+
+function isBuildOutputEsm(config: ResolvedConfig) {
+  const outputs = arraify(config.build.rollupOptions?.output)
+  return outputs.some(
+    (output) => output?.format === 'es' || output?.format === 'esm'
+  )
 }
