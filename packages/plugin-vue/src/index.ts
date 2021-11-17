@@ -90,7 +90,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       ? createFilter(/\.(j|t)sx?$/, /node_modules/)
       : createFilter(refTransform)
 
-  // compat for older verisons
+  // compat for older versions
   const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
 
   let options: ResolvedOptions = {

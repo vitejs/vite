@@ -13,7 +13,6 @@ test('vuex can be import succeed by named import', async () => {
   expect(storeHtml).toMatch('bar')
 })
 
-
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')

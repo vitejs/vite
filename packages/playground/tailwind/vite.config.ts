@@ -15,6 +15,6 @@ export default defineConfig({
   server: {
     // This option caused issues with HMR,
     // although it should not affect the build
-    origin: "http://localhost:8080/",
+    origin: 'http://localhost:8080/'
   }
 })
