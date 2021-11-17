@@ -31,7 +31,8 @@ import {
   assetUrlRE,
   registerAssetToChunk,
   fileToUrl,
-  checkPublicFile
+  checkPublicFile,
+  assetUrlQuotedRE
 } from './asset'
 import MagicString from 'magic-string'
 import * as Postcss from 'postcss'
@@ -242,8 +243,16 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      // replace asset references before returning the CSS to JS
+      const finalCss = css.replace(
+        assetUrlQuotedRE,
+        (_, fileHash, postfix = '') => {
+          return config.base + getAssetFilename(fileHash, config) + postfix
+        }
+      )
+
       return {
-        code: css,
+        code: finalCss,
         // TODO CSS source map
         map: { mappings: '' }
       }
