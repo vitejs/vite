@@ -32,9 +32,15 @@ export const FS_PREFIX = `/@fs/`
 export const VALID_ID_PREFIX = `/@id/`
 
 /**
- * Some Rollup plugins use ids that starts with the null byte \0 to avoid
- * collisions, but it is not permitted in import URLs so we have to replace
- * them.
+ * Plugins that use 'virtual modules' (e.g. for helper functions), prefix the
+ * module ID with `\0`, a convention from the rollup ecosystem.
+ * This prevents other plugins from trying to process the id (like node resolution),
+ * and core features like sourcemaps can use this info to differentiate between
+ * virtual modules and regular files.
+ * `\0` is not a permitted char in import URLs so we have to replace them during
+ * import analysis. The id will be decoded back before entering the plugins pipeline.
+ * These encoded virtual ids are also prefixed by the VALID_ID_PREFIX, so virtual
+ * modules in the browser end up encoded as `/@id/__x00__{id}`
  */
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
