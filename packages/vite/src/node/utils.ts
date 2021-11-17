@@ -617,52 +617,6 @@ export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : require
 
-/**
- * Indicates whether the value is surrounded by quotes.
- *
- * ---
- *
- * Example with double quotes:
- * ```
- * a(href="#")
- * ```
- *
- * In this case `val` is `"#"`.
- *
- * ---
- *
- * Example with single quotes:
- * ```
- * a(href='#')
- * ```
- *
- * In this case `val` is `'#'`.
- *
- * ---
- *
- * Example with no quotes:
- * ```
- * - const route = '#';
- * a(href=route)
- * ```
- *
- * In this case `val` is `route`.
- *
- * ---
- *
- * Special cases:
- * ```
- * a(href='/' + '#')
- * a(href="/" + "#")
- * ```
- *
- * These cases should not be treated as quoted.
- *
- * ---
- *
- * @param val Value of tag attribute.
- * @returns Whether the value is quoted or not.
- */
 export function isQuoted(val: string): boolean {
   if (/^(["'`])(.*)\1$/.test(val)) {
     // Regex for checking if there are any unescaped quotations.
