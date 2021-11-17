@@ -608,7 +608,7 @@ type ImportNameSpecifier = { importedName: string; localName: string }
  *
  * Credits \@csr632 via #837
  */
-function transformCjsImport(
+export function transformCjsImport(
   importExp: string,
   url: string,
   rawUrl: string,
@@ -621,12 +621,16 @@ function transformCjsImport(
     }) as any
   ).body[0] as Node
 
-  if (node.type === 'ImportDeclaration') {
+  if (
+    node.type === 'ImportDeclaration' ||
+    node.type === 'ExportNamedDeclaration'
+  ) {
     if (!node.specifiers.length) {
       return `import "${url}"`
     }
 
     const importNames: ImportNameSpecifier[] = []
+    const exportNames: string[] = []
     for (const spec of node.specifiers) {
       if (
         spec.type === 'ImportSpecifier' &&
@@ -642,6 +646,14 @@ function transformCjsImport(
         })
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
+      } else if (
+        spec.type === 'ExportSpecifier' &&
+        spec.exported.type === 'Identifier'
+      ) {
+        const importedName = spec.exported.name
+        const localName = spec.local.name
+        importNames.push({ importedName, localName })
+        exportNames.push(importedName)
       }
     }
 
@@ -662,6 +674,10 @@ function transformCjsImport(
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
+    if (exportNames.length) {
+      lines.push(`export { ${exportNames.join(', ')} }`)
+    }
+
     return lines.join('; ')
   }
 }
