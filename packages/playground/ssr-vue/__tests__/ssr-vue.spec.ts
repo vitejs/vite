@@ -14,7 +14,6 @@ test('vuex can be import succeed by named import', async () => {
   expect(storeHtml).toMatch('bar')
 })
 
-
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')
@@ -172,13 +171,14 @@ test('dynamic css file should be loaded advanced', async () => {
     const homeHtml = await (await fetch(url)).text()
     const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
     const filename = re.exec(homeHtml)[1]
-    const manifest = require(resolve(process.cwd(), './packages/temp/ssr-vue/dist/client/ssr-manifest.json'))
+    const manifest = require(resolve(
+      process.cwd(),
+      './packages/temp/ssr-vue/dist/client/ssr-manifest.json'
+    ))
 
     const depFile = manifest[filename]
     for (const file of depFile) {
-      expect(homeHtml).toMatch(
-        file
-      )
+      expect(homeHtml).toMatch(file)
     }
   }
 })

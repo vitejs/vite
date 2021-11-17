@@ -8,7 +8,6 @@ import { chunkToEmittedCssFileMap } from '../plugins/css'
 import { chunkToEmittedAssetsMap } from '../plugins/asset'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 
-
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
@@ -60,7 +59,10 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                 const url = code.slice(start, end)
                 const deps: string[] = []
                 // compatible target = esnext
-                if ((url[0] === `"` || url[0] === `'`) && (url[url.length - 1] === `"` || url[url.length - 1] === `'`)) {
+                if (
+                  (url[0] === `"` || url[0] === `'`) &&
+                  (url[url.length - 1] === `"` || url[url.length - 1] === `'`)
+                ) {
                   const ownerFilename = chunk.fileName
                   // literal import - trace direct imports and add to deps
                   const analyzed: Set<string> = new Set<string>()
