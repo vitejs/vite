@@ -53,6 +53,9 @@
 <h2>Plugin resolved virtual file</h2>
 <p class="virtual"></p>
 
+<h2>Plugin resolved custom virtual file</h2>
+<p class="custom-virtual"></p>
+
 <h2>Inline package</h2>
 <p class="inline-pkg"></p>
 
@@ -179,6 +182,9 @@
 
   import { msg as virtualMsg } from '@virtual-file'
   text('.virtual', virtualMsg)
+
+  import { msg as customVirtualMsg } from '@custom-virtual-file'
+  text('.custom-virtual', customVirtualMsg)
 
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)

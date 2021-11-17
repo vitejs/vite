@@ -78,6 +78,10 @@ test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
+test('plugin resolved custom virtual file', async () => {
+  expect(await page.textContent('.custom-virtual')).toMatch('[success]')
+})
+
 test('resolve inline package', async () => {
   expect(await page.textContent('.inline-pkg')).toMatch('[success]')
 })

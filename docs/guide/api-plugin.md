@@ -17,7 +17,7 @@ When learning, debugging, or authoring plugins we suggest including [vite-plugin
 
 ## Conventions
 
-If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions) (except for virtual modules naming, see note below).
+If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions).
 
 - Rollup Plugins should have a clear name with `rollup-plugin-` prefix.
 - Include `rollup-plugin` and `vite-plugin` keywords in package.json.
@@ -36,9 +36,10 @@ If your plugin is only going to work for a particular framework, its name should
 - `vite-plugin-react-` prefix for React Plugins
 - `vite-plugin-svelte-` prefix for Svelte Plugins
 
-Rollup recommends prefixing the module ID for 'virtual modules' (e.g. for helper functions) with `\0`. This prevents other plugins from trying to process it. But this convention for paths isn't browser-friendly.
+Vite convention for virtual modules is to prefix the user-facing path with `virtual:`. If possible the plugin name should be used as a namespace to avoid collisions with other plugins in the ecosystem. For example, a `vite-plugin-posts` could ask users to import a `virtual:posts` or `virtual:posts/helpers` virtual modules to get build time information. Internally, plugins that use virtual modules should prefix the module ID with `\0` while resolving the id, a convention from the rollup ecosystem. This prevents other plugins from trying to process the id (like node resolution), and core features like sourcemaps can use this info to differentiate between virtual modules and regular files. `\0` is not a permitted char in import URLs so we have to replace them during import analysis. A `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id will be decoded back before entering the plugins pipeline, so this is not seen by plugins hooks code.
 
-Vite convention for virtual modules is to prefix the path with `virtual:`. If possible the plugin name should be used as a namespace to avoid collisions with other plugins in the ecosystem. For example, a `vite-plugin-posts` could ask users to import a `virtual:posts` or `virtual:posts/helpers` virtual modules to get build time information.
+Note that modules directly derived from a real file, as in the case of a script module in a Single File Component (like a .vue or .svelte SFC) don't need to follow this convention. SFCs generally generate a set of submodules when processed but the code in these can be mapped back to the filesystem. Using `\0` for these submodules would prevent sourcemaps from working correctly.
+
 
 ## Plugins config
 
@@ -88,28 +89,29 @@ It is common convention to author a Vite/Rollup plugin as a factory function tha
 
 ```js
 export default function myPlugin() {
-  const virtualFileId = '@my-virtual-file'
+  const virtualModuleId = '@my-virtual-module'
+  const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
     name: 'my-plugin', // required, will show up in warnings and errors
     resolveId(id) {
-      if (id === virtualFileId) {
-        return virtualFileId
+      if (id === virtualModuleId) {
+        return resolvedVirtualModuleId
       }
     },
     load(id) {
-      if (id === virtualFileId) {
-        return `export const msg = "from virtual file"`
+      if (id === resolvedVirtualModuleId) {
+        return `export const msg = "from virtual module"`
       }
     }
   }
 }
 ```
 
-Which allows importing the file in JavaScript:
+Which allows importing the module in JavaScript:
 
 ```js
-import { msg } from '@my-virtual-file'
+import { msg } from '@my-virtual-module'
 
 console.log(msg)
 ```
