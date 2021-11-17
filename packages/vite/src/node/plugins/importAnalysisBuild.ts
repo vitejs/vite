@@ -10,7 +10,7 @@ import {
   removedPureCssFilesCache
 } from './css'
 import { transformImportGlob } from '../importGlob'
-import { bareImportRE } from '../utils'
+import { bareImportRE, isQuoted } from '../utils'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -258,7 +258,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const deps: Set<string> = new Set()
               let hasRemovedPureCssChunk = false
 
-              if (url[0] === `"` && url[url.length - 1] === `"`) {
+              if (isQuoted(url)) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
