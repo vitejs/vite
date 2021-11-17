@@ -188,6 +188,48 @@ test('do not rewrite when variable is in scope', async () => {
   expect(result.deps).toEqual(['vue'])
 })
 
+// #5472
+test('do not rewrite when variable is in scope with object destructuring', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
+// #5472
+test('do not rewrite when variable is in scope with array destructuring', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
+// #5727
+test('rewrite variable in string interpolation in function nested arguments', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A({foo = \`test\${fn}\`} = {}){ return {}; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A({foo = \`test\${__vite_ssr_import_0__.fn}\`} = {}){ return {}; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransform(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,

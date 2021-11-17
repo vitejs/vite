@@ -321,10 +321,12 @@ function walk(
                 !isStaticPropertyKey(child, parent) &&
                 // do not record if this is a default value
                 // assignment of a destructuring variable
-                !(
-                  parent &&
-                  parent.type === 'AssignmentPattern' &&
-                  parent.right === child
+                (
+                  !parent || 
+                  (
+                    !(parent.type === 'AssignmentPattern' && parent.right === child) &&
+                    !(parent.type === 'TemplateLiteral' && parent.expressions.includes(child))
+                  )
                 )
               ) {
                 setScope(node, child.name)
@@ -346,7 +348,12 @@ function walk(
                 setScope(parentFunction, (property.value as Identifier).name)
               }
             })
-          } else {
+          } else if (node.id.type === 'ArrayPattern') {
+            node.id.elements.forEach((element) => {
+              setScope(parentFunction, (element as Identifier).name)
+            })
+          }
+          else {
             setScope(parentFunction, (node.id as Identifier).name)
           }
         }
