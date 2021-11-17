@@ -1,6 +1,7 @@
 <!-- the production demo page, copied into dist/ -->
 <div class="es"></div>
 <div class="umd"></div>
+<div class="iife"></div>
 <div class="dynamic-import-message"></div>
 
 <script type="module">
@@ -18,4 +19,10 @@
 <script src="./my-lib-custom-filename.umd.js"></script>
 <script>
   MyLib('.umd')
+  delete window.MyLib // so that it won't affect iife
+</script>
+
+<script src="./my-lib-custom-filename.iife.js"></script>
+<script>
+  MyLib('.iife')
 </script>

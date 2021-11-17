@@ -202,7 +202,16 @@ const rollupToEsbuildFormatMap: Record<
 > = {
   es: 'esm',
   cjs: 'cjs',
-  iife: 'iife'
+
+  // passing `var Lib = (() => {})()` to esbuild with format = "iife"
+  // will turn it to `(() => { var Lib = (() => {})() })()`,
+  // so we remove the format config to tell esbuild not doing this
+  //
+  // although esbuild doesn't change format, there is still possibility
+  // that `{ treeShaking: true }` removes a top-level no-side-effect variable
+  // like: `var Lib = 1`, which becomes `` after esbuild transforming,
+  // but thankfully rollup does not do this optimization now
+  iife: undefined
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {

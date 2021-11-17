@@ -11,6 +11,10 @@ if (isBuild) {
     expect(await page.textContent('.umd')).toBe('It works')
   })
 
+  test('iife', async () => {
+    expect(await page.textContent('.iife')).toBe('It works')
+  })
+
   test('Library mode does not include `preload`', async () => {
     expect(await page.textContent('.dynamic-import-message')).toBe('hello vite')
     const code = fs.readFileSync(
