@@ -1,3 +1,14 @@
+# [2.7.0-beta.7](https://github.com/vitejs/vite/compare/v2.7.0-beta.6...v2.7.0-beta.7) (2021-11-17)
+
+
+### Bug Fixes
+
+* **build:** keep IIFE name after minifying (fix [#5490](https://github.com/vitejs/vite/issues/5490)) ([#5715](https://github.com/vitejs/vite/issues/5715)) ([1544211](https://github.com/vitejs/vite/commit/1544211767695982597c18d028a2edf15372931f))
+* **scan:** correctly resolve virtual modules ([#5711](https://github.com/vitejs/vite/issues/5711)) ([01f9b16](https://github.com/vitejs/vite/commit/01f9b16a8bdfa182890924ac00207fe54496b99f))
+* **ssr:** skip dedupe require in esm ([#5714](https://github.com/vitejs/vite/issues/5714)) ([9666446](https://github.com/vitejs/vite/commit/96664469e49d44f8c628bf0310bdd03d1c4556de))
+
+
+
 # [2.7.0-beta.6](https://github.com/vitejs/vite/compare/v2.7.0-beta.5...v2.7.0-beta.6) (2021-11-16)
 
 
