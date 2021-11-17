@@ -521,9 +521,9 @@ export function tryNodeResolve(
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
-  let pkg: PackageData | null = null
+  let pkg: PackageData | undefined
   const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
     return pkg
   })!
 
