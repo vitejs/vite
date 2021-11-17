@@ -19,7 +19,8 @@ import {
   dataUrlRE,
   multilineCommentsRE,
   singlelineCommentsRE,
-  virtualModuleRE
+  virtualModuleRE,
+  virtualModulePrefix
 } from '../utils'
 import {
   createPluginContainer,
@@ -189,7 +190,7 @@ function esbuildScanPlugin(
   return {
     name: 'vite:dep-scan',
     setup(build) {
-      const moduleScripts: Record<string, OnLoadResult> = {}
+      const localScripts: Record<string, OnLoadResult> = {}
 
       // external urls
       build.onResolve({ filter: externalRE }, ({ path }) => ({
@@ -203,11 +204,17 @@ function esbuildScanPlugin(
         external: true
       }))
 
+      // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
       build.onResolve({ filter: virtualModuleRE }, ({ path }) => {
         return {
-          path,
-          namespace: 'html'
+          // strip prefix to get valid filesystem path so esbuild can resolve imports in the file
+          path: path.replace(virtualModulePrefix, ''),
+          namespace: 'local-script'
         }
+      })
+
+      build.onLoad({ filter: /.*/, namespace: 'local-script' }, ({ path }) => {
+        return localScripts[path]
       })
 
       // html types: extract script contents -----------------------------------
@@ -217,13 +224,6 @@ function esbuildScanPlugin(
           namespace: 'html'
         }
       })
-
-      build.onLoad(
-        { filter: virtualModuleRE, namespace: 'html' },
-        ({ path }) => {
-          return moduleScripts[path]
-        }
-      )
 
       // extract scripts inside HTML-like files and treat it as a js module
       build.onLoad(
@@ -276,12 +276,11 @@ function esbuildScanPlugin(
                 (path.endsWith('.vue') && setupRE.test(raw)) ||
                 (path.endsWith('.svelte') && context !== 'module')
               ) {
-                const id = `virtual-module:${path}`
-                moduleScripts[id] = {
+                localScripts[path] = {
                   loader,
                   contents: content
                 }
-                js += `import '${id}';\n`
+                js += `import '${virtualModulePrefix}${path}';\n`
               } else {
                 js += content + '\n'
               }
