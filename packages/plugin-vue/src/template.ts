@@ -134,11 +134,7 @@ export function resolveTemplateCompilerOptions(
 
   if (transformAssetUrls && typeof transformAssetUrls === 'object') {
     // presence of array fields means this is raw tags config
-    if (
-      Object.keys(transformAssetUrls).some((key) =>
-        Array.isArray((transformAssetUrls as any)[key])
-      )
-    ) {
+    if (Object.values(transformAssetUrls).some((val) => Array.isArray(val))) {
       transformAssetUrls = {
         ...assetUrlOptions,
         tags: transformAssetUrls as any
