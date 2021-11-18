@@ -873,8 +873,7 @@ export async function loadConfigFromFile(
     if (!userConfig) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using rollup.
-      // lazy require rollup (it's actually in dependencies)
+      // transpile es import syntax to require syntax using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
