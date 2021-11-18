@@ -226,8 +226,9 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
-   * restart the dev server
-   * @param forceOptimize - force the optimizer to ignore the cache and re-bundle
+   * Restart the server.
+   *
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
   /**
@@ -255,7 +256,11 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _isRestarting: boolean
+  _restartPromise: Promise<void> | null
+  /**
+   * @internal
+   */
+  _forceOptimizeOnRestart: boolean
   /**
    * @internal
    */
@@ -376,24 +381,21 @@ export async function createServer(
       }
     },
     async restart(forceOptimize: boolean) {
-      if (server._isRestarting) {
-        return // no multi-restarts
+      if (!server._restartPromise) {
+        server._forceOptimizeOnRestart = !!forceOptimize
+        server._restartPromise = restartServer(server).finally(() => {
+          server._restartPromise = null
+          server._forceOptimizeOnRestart = false
+        })
       }
-      server._isRestarting = true
-      try {
-        if (forceOptimize) {
-          await runOptimize(forceOptimize)
-        }
-        await restartServer(server)
-      } finally {
-        server._isRestarting = false
-      }
+      return server._restartPromise
     },
 
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
-    _isRestarting: false,
+    _restartPromise: null,
+    _forceOptimizeOnRestart: false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
@@ -526,11 +528,14 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const runOptimize = async (forceOptimize?: boolean) => {
+  const runOptimize = async () => {
     if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
-        server._optimizeDepsMetadata = await optimizeDeps(config, forceOptimize)
+        server._optimizeDepsMetadata = await optimizeDeps(
+          config,
+          config.server.force || server._forceOptimizeOnRestart
+        )
       } finally {
         server._isRunningOptimizer = false
       }
