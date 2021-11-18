@@ -689,7 +689,7 @@ export default defineConfig({
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
   ::: tip Note
-  If you specify `build.lib`, `build.cssCodeSplit` will be  ` false `  as default .
+  If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
   :::
 
 ### build.cssTarget
