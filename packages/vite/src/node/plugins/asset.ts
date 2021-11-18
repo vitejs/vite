@@ -13,10 +13,6 @@ import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
-// urls in JS must be quoted as strings, so when replacing them we need
-// a different regex
-export const assetUrlQuotedRE = /["']?__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?["']?/g
-
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
@@ -85,18 +81,19 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code, chunk) {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
-      while ((match = assetUrlQuotedRE.exec(code))) {
+      while ((match = assetUrlRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
+
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         registerAssetToChunk(chunk, file)
         const outputFilepath = config.base + file + postfix
         s.overwrite(
           match.index,
           match.index + full.length,
-          JSON.stringify(outputFilepath)
+          `'${outputFilepath}'`
         )
       }
       if (s) {
