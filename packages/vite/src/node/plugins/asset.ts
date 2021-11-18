@@ -15,7 +15,7 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
 // urls in JS must be quoted as strings, so when replacing them we need
 // a different regex
-export const assetUrlQuotedRE = /["']__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?["']/g
+export const assetUrlQuotedRE = /["']?__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?["']?/g
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
