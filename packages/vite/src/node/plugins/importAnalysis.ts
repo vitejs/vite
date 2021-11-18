@@ -631,6 +631,7 @@ export function transformCjsImport(
 
     const importNames: ImportNameSpecifier[] = []
     const exportNames: string[] = []
+    let defaultExports
     for (const spec of node.specifiers) {
       if (
         spec.type === 'ImportSpecifier' &&
@@ -650,10 +651,24 @@ export function transformCjsImport(
         spec.type === 'ExportSpecifier' &&
         spec.exported.type === 'Identifier'
       ) {
-        const importedName = spec.exported.name
         const localName = spec.local.name
-        importNames.push({ importedName, localName })
-        exportNames.push(importedName)
+        const exportedName = spec.exported.name
+        if (localName === 'default' && exportedName === 'default') {
+          defaultExports = `__vite__cjsExportDefault_${importIndex}`
+          importNames.push({
+            importedName: 'default',
+            localName: defaultExports
+          })
+        } else if (localName === 'default' && exportedName !== 'default') {
+          importNames.push({ importedName: 'default', localName: exportedName })
+          exportNames.push(exportedName)
+        } else if (localName !== 'default' && exportedName === 'default') {
+          importNames.push({ importedName: localName, localName })
+          defaultExports = localName
+        } else {
+          importNames.push({ importedName: exportedName, localName })
+          exportNames.push(localName)
+        }
       }
     }
 
@@ -674,6 +689,9 @@ export function transformCjsImport(
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
+    if (defaultExports) {
+      lines.push(`export default ${defaultExports}`)
+    }
     if (exportNames.length) {
       lines.push(`export { ${exportNames.join(', ')} }`)
     }

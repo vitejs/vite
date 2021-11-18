@@ -26,9 +26,21 @@ describe('transformCjsImport', () => {
       'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react'
     )
+
+    expect(
+      transformCjsImport(
+        'import { default as React } from "react"',
+        url,
+        rawUrl,
+        0
+      )
+    ).toBe(
+      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+        'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react'
+    )
   })
 
-  test('import name specifier', () => {
+  test('import all specifier', () => {
     expect(
       transformCjsImport('import * as react from "react"', url, rawUrl, 0)
     ).toBe(
@@ -37,7 +49,7 @@ describe('transformCjsImport', () => {
     )
   })
 
-  test('export all declaration', () => {
+  test('export all specifier', () => {
     expect(transformCjsImport('export * from "react"', url, rawUrl, 0)).toBe(
       undefined
     )
@@ -47,7 +59,7 @@ describe('transformCjsImport', () => {
     ).toBe(undefined)
   })
 
-  test('export name declaration', () => {
+  test('export name specifier', () => {
     expect(
       transformCjsImport(
         'export { useState, Component } from "react"',
@@ -63,9 +75,39 @@ describe('transformCjsImport', () => {
     )
   })
 
-  // expect(
-  //   transformCjsImport('export { default } from "react"', url, rawUrl, 0)
-  // ).toBe('import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
-  //   'const default = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
-  //   'export { default }')
+  test('export default specifier', () => {
+    expect(
+      transformCjsImport('export { default } from "react"', url, rawUrl, 0)
+    ).toBe(
+      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+        'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'export default __vite__cjsExportDefault_0'
+    )
+
+    expect(
+      transformCjsImport(
+        'export { default as React} from "react"',
+        url,
+        rawUrl,
+        0
+      )
+    ).toBe(
+      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+        'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'export { React }'
+    )
+
+    expect(
+      transformCjsImport(
+        'export { Component as default } from "react"',
+        url,
+        rawUrl,
+        0
+      )
+    ).toBe(
+      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+        'const Component = __vite__cjsImport0_react["Component"]; ' +
+        'export default Component'
+    )
+  })
 })
