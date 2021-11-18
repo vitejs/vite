@@ -34,7 +34,7 @@ export interface PackageData {
 export function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string
-) {
+): void {
   packageCache.delete(pkgPath)
   const pkgDir = path.dirname(pkgPath)
   packageCache.forEach((pkg, cacheKey) => {
