@@ -1,3 +1,14 @@
+# [1.10.0-beta.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.0...plugin-vue@1.10.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* plugin-vue dev scripts error in ssr-vue ([#5607](https://github.com/vitejs/vite/issues/5607)) ([502b8f2](https://github.com/vitejs/vite/commit/502b8f2b31f06d4e524d36b5566197db76f6ccda))
+* **plugin-vue:** template src isn't working when script setup ([#5418](https://github.com/vitejs/vite/issues/5418)) ([518da44](https://github.com/vitejs/vite/commit/518da447e573b6f6ec5e2b1ca837332e0e230c14))
+* **plugin-vue:** use __vccOpts for vue-class-component ([#5374](https://github.com/vitejs/vite/issues/5374)) ([c4f9db2](https://github.com/vitejs/vite/commit/c4f9db2cb375729b06f438298560045d4c488c14))
+
+
+
 # [1.10.0-beta.0](https://github.com/vitejs/vite/compare/plugin-vue@1.9.4...plugin-vue@1.10.0-beta.0) (2021-10-28)
 
 
