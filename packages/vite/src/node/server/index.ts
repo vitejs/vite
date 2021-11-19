@@ -60,6 +60,8 @@ import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
+import { performance } from 'perf_hooks'
+import { invalidatePackageData } from '../packages'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -225,6 +227,12 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * Restart the server.
+   *
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   */
+  restart(forceOptimize?: boolean): Promise<void>
+  /**
    * @internal
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
@@ -246,6 +254,14 @@ export interface ViteDevServer {
       }[]
     }
   >
+  /**
+   * @internal
+   */
+  _restartPromise: Promise<void> | null
+  /**
+   * @internal
+   */
+  _forceOptimizeOnRestart: boolean
   /**
    * @internal
    */
@@ -365,9 +381,22 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
+    async restart(forceOptimize: boolean) {
+      if (!server._restartPromise) {
+        server._forceOptimizeOnRestart = !!forceOptimize
+        server._restartPromise = restartServer(server).finally(() => {
+          server._restartPromise = null
+          server._forceOptimizeOnRestart = false
+        })
+      }
+      return server._restartPromise
+    },
+
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
+    _restartPromise: null,
+    _forceOptimizeOnRestart: false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
@@ -390,8 +419,20 @@ export async function createServer(
     process.stdin.on('end', exitProcess)
   }
 
+  const { packageCache } = config
+  const setPackageData = packageCache.set.bind(packageCache)
+  packageCache.set = (id, pkg) => {
+    if (id.endsWith('.json')) {
+      watcher.add(id)
+    }
+    return setPackageData(id, pkg)
+  }
+
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    if (file.endsWith('/package.json')) {
+      return invalidatePackageData(packageCache, file)
+    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
     if (serverConfig.hmr !== false) {
@@ -504,7 +545,10 @@ export async function createServer(
     if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
-        server._optimizeDepsMetadata = await optimizeDeps(config)
+        server._optimizeDepsMetadata = await optimizeDeps(
+          config,
+          config.server.force || server._forceOptimizeOnRestart
+        )
       } finally {
         server._isRunningOptimizer = false
       }
@@ -659,4 +703,34 @@ export function resolveServerOptions(
     deny
   }
   return server as ResolvedServerOptions
+}
+
+async function restartServer(server: ViteDevServer) {
+  // @ts-ignore
+  global.__vite_start_time = performance.now()
+  const { port } = server.config.server
+
+  await server.close()
+
+  let newServer = null
+  try {
+    newServer = await createServer(server.config.inlineConfig)
+  } catch (err: any) {
+    server.config.logger.error(err.message, {
+      timestamp: true
+    })
+    return
+  }
+
+  for (const key in newServer) {
+    if (key !== 'app') {
+      // @ts-ignore
+      server[key] = newServer[key]
+    }
+  }
+  if (!server.config.server.middlewareMode) {
+    await server.listen(port, true)
+  } else {
+    server.config.logger.info('server restarted.', { timestamp: true })
+  }
 }
