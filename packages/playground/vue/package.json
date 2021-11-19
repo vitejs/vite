@@ -6,16 +6,18 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "lodash-es": "^4.17.20"
+    "lodash-es": "^4.17.21",
+    "vue": "^3.2.21"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0",
-    "js-yaml": "^3.14.1",
-    "less": "^3.13.0",
-    "pug": "^3.0.0",
-    "sass": "^1.30.0"
+    "@vitejs/plugin-vue": "workspace:*",
+    "js-yaml": "^4.1.0",
+    "less": "^4.1.2",
+    "pug": "^3.0.2",
+    "sass": "^1.43.4",
+    "stylus": "^0.55.0"
   }
 }

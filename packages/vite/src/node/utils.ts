@@ -38,7 +38,16 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
+  const deepMatch = id.match(deepImportRE)
+  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
   return builtins.includes(id)
+}
+
+export function moduleListContains(
+  moduleList: string[] | undefined,
+  id: string
+): boolean | undefined {
+  return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
@@ -143,6 +152,9 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
+export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModulePrefix = 'virtual-module:'
+
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
@@ -154,6 +166,14 @@ export const isJSRequest = (url: string): boolean => {
   }
   return false
 }
+
+const knownTsRE = /\.(ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isPossibleTsOutput = (url: string) =>
+  knownTsOutputRE.test(cleanUrl(url))
+export const getTsSrcPath = (filename: string) =>
+  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
@@ -376,6 +396,21 @@ export function writeFile(
 }
 
 /**
+ * Use instead of fs.existsSync(filename)
+ * #2051 if we don't have read permission on a directory, existsSync() still
+ * works and will result in massively slow subsequent checks (which are
+ * unnecessary in the first place)
+ */
+export function isFileReadable(filename: string): boolean {
+  try {
+    fs.accessSync(filename, fs.constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Delete every file and subdirectory. **The given directory must exist.**
  * Pass an optional `skip` array to preserve files in the root directory.
  */
@@ -568,3 +603,17 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+
+export const usingDynamicImport = typeof jest === 'undefined'
+/**
+ * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
+ *
+ * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
+ * if we're in a Jest environment.
+ * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
+ *
+ * @param file File path to import.
+ */
+export const dynamicImport = usingDynamicImport
+  ? new Function('file', 'return import(file)')
+  : require

@@ -4,7 +4,7 @@ import {
   createServer as createHttpsServer,
   ServerOptions as HttpsServerOptions
 } from 'https'
-import WebSocket from 'ws'
+import { WebSocketServer as WebSocket, ServerOptions } from 'ws'
 import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import { ResolvedConfig } from '..'
 import { isObject } from '../utils'
@@ -12,6 +12,8 @@ import { Socket } from 'net'
 export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
+  on: WebSocket['on']
+  off: WebSocket['off']
   send(payload: HMRPayload): void
   close(): Promise<void>
 }
@@ -21,14 +23,14 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions
 ): WebSocketServer {
-  let wss: WebSocket.Server
+  let wss: WebSocket
   let httpsServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const wsServer = (hmr && hmr.server) || server
 
   if (wsServer) {
-    wss = new WebSocket.Server({ noServer: true })
+    wss = new WebSocket({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
       if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
@@ -37,7 +39,7 @@ export function createWebSocketServer(
       }
     })
   } else {
-    const websocketServerOptions: WebSocket.ServerOptions = {}
+    const websocketServerOptions: ServerOptions = {}
     const port = (hmr && hmr.port) || 24678
     if (httpsOptions) {
       // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
@@ -65,7 +67,7 @@ export function createWebSocketServer(
     }
 
     // vite dev server in middleware mode
-    wss = new WebSocket.Server(websocketServerOptions)
+    wss = new WebSocket(websocketServerOptions)
   }
 
   wss.on('connection', (socket) => {
@@ -92,6 +94,8 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    on: wss.on.bind(wss),
+    off: wss.off.bind(wss),
     send(payload: HMRPayload) {
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
@@ -100,7 +104,8 @@ export function createWebSocketServer(
 
       const stringified = JSON.stringify(payload)
       wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        // readyState 1 means the connection is open
+        if (client.readyState === 1) {
           client.send(stringified)
         }
       })

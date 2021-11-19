@@ -1,3 +1,65 @@
+# [1.1.0-beta.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.0...plugin-react@1.1.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* **plugin-react:** apply `babel.plugins` to project files only ([#5255](https://github.com/vitejs/vite/issues/5255)) ([377d0be](https://github.com/vitejs/vite/commit/377d0be5cf85a50240e160beaaafda77b7199452))
+* **plugin-react:** remove querystring from sourcemap filename ([#5760](https://github.com/vitejs/vite/issues/5760)) ([d93a9fa](https://github.com/vitejs/vite/commit/d93a9fab8986f3659e79d7b0b065e99ef625a5dd))
+* **plugin-react:** restore usage of extension instead of id ([#5761](https://github.com/vitejs/vite/issues/5761)) ([59471b1](https://github.com/vitejs/vite/commit/59471b186612d3da0083543e23d660747d3287f3))
+* **plugin-react:** uncompiled JSX in linked pkgs ([#5669](https://github.com/vitejs/vite/issues/5669)) ([41a7c9c](https://github.com/vitejs/vite/commit/41a7c9ccfbc1a7bc60aec672056eac3966ddd036))
+
+
+
+# [1.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.6...plugin-react@1.1.0-beta.0) (2021-10-28)
+
+
+### Bug Fixes
+
+* **plugin-react:** avoid mangling the sourcemaps of virtual modules ([#5421](https://github.com/vitejs/vite/issues/5421)) ([8556ffe](https://github.com/vitejs/vite/commit/8556ffe3c59952d7e64565422bf433699e97756e))
+
+
+
+## [1.0.6](https://github.com/vitejs/vite/compare/plugin-react@1.0.5...plugin-react@1.0.6) (2021-10-25)
+
+
+### Bug Fixes
+
+* **plugin-react:** account for querystring in transform hook ([#5333](https://github.com/vitejs/vite/issues/5333)) ([13c3813](https://github.com/vitejs/vite/commit/13c381368caf8302a0c5b7cec07dfc0eb344bede))
+
+
+
+## [1.0.5](https://github.com/vitejs/vite/compare/plugin-react@1.0.4...plugin-react@1.0.5) (2021-10-18)
+
+
+### Bug Fixes
+
+* **plugin-react:** fix regex for react imports ([#5274](https://github.com/vitejs/vite/issues/5274)) ([00b3e4f](https://github.com/vitejs/vite/commit/00b3e4fe102652b2d92e76a05e8c7a5b766b1d03))
+* **plugin-react:** transform .mjs files ([#5314](https://github.com/vitejs/vite/issues/5314)) ([8ce2ea1](https://github.com/vitejs/vite/commit/8ce2ea17d51b80c660f2cdca7844d4fc6991baed))
+
+
+
+## [1.0.4](https://github.com/vitejs/vite/compare/plugin-react@1.0.3...plugin-react@1.0.4) (2021-10-11)
+
+
+
+## [1.0.3](https://github.com/vitejs/vite/compare/plugin-react@1.0.2...plugin-react@1.0.3) (2021-10-11)
+
+
+### Bug Fixes
+
+* **plugin-react:** turn off jsx for .ts ([#5198](https://github.com/vitejs/vite/issues/5198)) ([916f9d3](https://github.com/vitejs/vite/commit/916f9d3984d5e83f7cb869b3606a1f043a814b97)), closes [#5102](https://github.com/vitejs/vite/issues/5102)
+
+
+
+## [1.0.2](https://github.com/vitejs/vite/compare/plugin-react@1.0.1...plugin-react@1.0.2) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-react:** respect `opts.fastRefresh` in viteBabel ([#5139](https://github.com/vitejs/vite/issues/5139)) ([5cf4e69](https://github.com/vitejs/vite/commit/5cf4e69cd3afc7f960e02072171c7c441747e8f0))
+
+
+
 ## [1.0.1](https://github.com/vitejs/vite/compare/plugin-react@1.0.0...plugin-react@1.0.1) (2021-09-22)
 
 

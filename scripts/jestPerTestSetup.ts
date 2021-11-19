@@ -22,15 +22,21 @@ export function slash(p: string): string {
 
 // injected by the test env
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace NodeJS {
-    interface Global {
-      page?: Page
-      viteTestUrl?: string
-      watcher?: RollupWatcher
-      beforeAllError: any
-    }
-  }
+  const page: Page | undefined
+
+  const browserLogs: string[]
+  const viteTestUrl: string | undefined
+  const watcher: RollupWatcher | undefined
+  let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
+}
+
+declare const global: {
+  page?: Page
+
+  browserLogs: string[]
+  viteTestUrl?: string
+  watcher?: RollupWatcher
+  beforeAllError: Error | null
 }
 
 let server: ViteDevServer | http.Server
@@ -62,30 +68,23 @@ beforeAll(async () => {
     // start a vite server in that directory.
     if (testName) {
       const playgroundRoot = resolve(__dirname, '../packages/playground')
-      const srcDir = resolve(playgroundRoot, testName)
-      tempDir = resolve(__dirname, '../temp', testName)
-      await fs.copy(srcDir, tempDir, {
-        dereference: true,
-        filter(file) {
-          file = slash(file)
-          return (
-            !file.includes('__tests__') &&
-            !file.includes('node_modules') &&
-            !file.match(/dist(\/|$)/)
-          )
-        }
-      })
+      tempDir = resolve(__dirname, '../packages/temp/', testName)
 
       // when `root` dir is present, use it as vite's root
-      let testCustomRoot = resolve(tempDir, 'root')
+      const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
       const testCustomServe = resolve(dirname(testPath), 'serve.js')
       if (fs.existsSync(testCustomServe)) {
         // test has custom server configuration.
-        const { serve } = require(testCustomServe)
-        server = await serve(rootDir, isBuildTest)
-        return
+        const { serve, preServe } = require(testCustomServe)
+        if (preServe) {
+          await preServe(rootDir, isBuildTest)
+        }
+        if (serve) {
+          server = await serve(rootDir, isBuildTest)
+          return
+        }
       }
 
       const options: UserConfig = {

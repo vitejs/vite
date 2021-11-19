@@ -54,6 +54,10 @@ test('dont add extension to directory name (./dir-with-ext.js/index.js)', async 
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
+test('a ts module can import another ts module using its corresponding js file name', async () => {
+  expect(await page.textContent('.ts-extension')).toMatch('[success]')
+})
+
 test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
@@ -74,6 +78,10 @@ test('plugin resolved virtual file', async () => {
   expect(await page.textContent('.virtual')).toMatch('[success]')
 })
 
+test('plugin resolved custom virtual file', async () => {
+  expect(await page.textContent('.custom-virtual')).toMatch('[success]')
+})
+
 test('resolve inline package', async () => {
   expect(await page.textContent('.inline-pkg')).toMatch('[success]')
 })
@@ -88,4 +96,10 @@ test('resolve.mainFields', async () => {
 
 test('resolve.conditions', async () => {
   expect(await page.textContent('.custom-condition')).toMatch('[success]')
+})
+
+test('resolve package that contains # in path', async () => {
+  expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
+    '[success]'
+  )
 })

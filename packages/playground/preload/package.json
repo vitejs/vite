@@ -6,13 +6,13 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.13",
+    "vue": "^3.2.21",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }

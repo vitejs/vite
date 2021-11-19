@@ -43,20 +43,15 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
-  const pending = server._pendingRequests[url]
-  if (pending) {
-    debugTransform(
-      `[reuse pending] for ${prettifyUrl(url, server.config.root)}`
-    )
-    return pending
+  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
+  let request = server._pendingRequests.get(cacheKey)
+  if (!request) {
+    request = doTransform(url, server, options)
+    server._pendingRequests.set(cacheKey, request)
+    const done = () => server._pendingRequests.delete(cacheKey)
+    request.then(done, done)
   }
-  const result = doTransform(url, server, options)
-  server._pendingRequests[url] = result
-  const onDone = () => {
-    server._pendingRequests[url] = null
-  }
-  result.then(onDone, onDone)
-  return result
+  return request
 }
 
 async function doTransform(
@@ -95,7 +90,7 @@ async function doTransform(
 
   // load
   const loadStart = isDebug ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, ssr)
+  const loadResult = await pluginContainer.load(id, { ssr })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -157,7 +152,10 @@ async function doTransform(
 
   // transform
   const transformStart = isDebug ? performance.now() : 0
-  const transformResult = await pluginContainer.transform(code, id, map, ssr)
+  const transformResult = await pluginContainer.transform(code, id, {
+    inMap: map,
+    ssr
+  })
   if (
     transformResult == null ||
     (isObject(transformResult) && transformResult.code == null)

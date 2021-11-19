@@ -1,3 +1,50 @@
+# [1.10.0-beta.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.0...plugin-vue@1.10.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* plugin-vue dev scripts error in ssr-vue ([#5607](https://github.com/vitejs/vite/issues/5607)) ([502b8f2](https://github.com/vitejs/vite/commit/502b8f2b31f06d4e524d36b5566197db76f6ccda))
+* **plugin-vue:** template src isn't working when script setup ([#5418](https://github.com/vitejs/vite/issues/5418)) ([518da44](https://github.com/vitejs/vite/commit/518da447e573b6f6ec5e2b1ca837332e0e230c14))
+* **plugin-vue:** use __vccOpts for vue-class-component ([#5374](https://github.com/vitejs/vite/issues/5374)) ([c4f9db2](https://github.com/vitejs/vite/commit/c4f9db2cb375729b06f438298560045d4c488c14))
+
+
+
+# [1.10.0-beta.0](https://github.com/vitejs/vite/compare/plugin-vue@1.9.4...plugin-vue@1.10.0-beta.0) (2021-10-28)
+
+
+
+## [1.9.4](https://github.com/vitejs/vite/compare/plugin-vue@1.9.3...plugin-vue@1.9.4) (2021-10-27)
+
+
+### Bug Fixes
+
+* **plugin-vue:** exclude direct css request from hmr target ([#5422](https://github.com/vitejs/vite/issues/5422)) ([4331c26](https://github.com/vitejs/vite/commit/4331c26a5e5d7a9efc08a8b7bf7056785a1bcd94))
+
+
+
+## [1.9.3](https://github.com/vitejs/vite/compare/plugin-vue@1.9.2...plugin-vue@1.9.3) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-vue:** don't use object spread in the config hook ([#5155](https://github.com/vitejs/vite/issues/5155)) ([c1ce471](https://github.com/vitejs/vite/commit/c1ce471c07264db034f42573662971f0dc531df7))
+
+
+
+## [1.9.2](https://github.com/vitejs/vite/compare/plugin-vue@1.9.1...plugin-vue@1.9.2) (2021-09-24)
+
+
+### Bug Fixes
+
+* **plugin-vue:** handle rewrite default edge case with TS ([609a342](https://github.com/vitejs/vite/commit/609a342986b2d3b05ef59dc23523239938264008))
+
+
+### Reverts
+
+* Revert "feat(plugin-vue): define __VUE_SSR__ flag" ([3e2c1bf](https://github.com/vitejs/vite/commit/3e2c1bf74bb8ef583d66c67c715fdeae8d8fe432))
+
+
+
 ## [1.9.1](https://github.com/vitejs/vite/compare/plugin-vue@1.9.0...plugin-vue@1.9.1) (2021-09-23)
 
 

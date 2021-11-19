@@ -14,14 +14,14 @@ import {
   normalizeId
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
-import { ImportSpecifier, init, parse } from 'es-module-lexer'
+import { init, parse } from 'es-module-lexer'
 import { scanImports } from './scan'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:deps')
 
-export type ExportsData = [ImportSpecifier[], string[]] & {
+export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
@@ -294,6 +294,7 @@ export async function optimizeDeps(
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     format: 'esm',
+    target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
@@ -378,7 +379,7 @@ function needsInterop(
   return false
 }
 
-function isSingleDefaultExport(exports: string[]) {
+function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 

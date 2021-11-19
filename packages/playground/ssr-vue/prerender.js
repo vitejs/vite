@@ -1,5 +1,5 @@
 // Pre-render the app into static HTML.
-// run `yarn generate` and then `dist/static` can be served as a static site.
+// run `npm run generate` and then `dist/static` can be served as a static site.
 
 const fs = require('fs')
 const path = require('path')
@@ -21,7 +21,7 @@ const routesToPrerender = fs
 ;(async () => {
   // pre-render each route...
   for (const url of routesToPrerender) {
-    const [appHtml, preloadLinks] = await render(url, manifest)
+    const [appHtml, preloadLinks] = await render(url, manifest, __dirname)
 
     const html = template
       .replace(`<!--preload-links-->`, preloadLinks)

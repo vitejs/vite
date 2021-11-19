@@ -338,3 +338,14 @@ test('inlined', async () => {
   // should not insert css
   expect(await getColor('.inlined')).toBe('black')
 })
+
+test('minify css', async () => {
+  if (!isBuild) {
+    return
+  }
+
+  // should keep the rgba() syntax
+  const cssFile = findAssetFile(/index\.\w+\.css$/)
+  expect(cssFile).toMatch('rgba(')
+  expect(cssFile).not.toMatch('#ffff00b3')
+})

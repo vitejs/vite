@@ -58,7 +58,14 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
-  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React\s+/
+  // Support pattens like:
+  // - import * as React from 'react';
+  // - import React from 'react';
+  // - import React, {useEffect} from 'react';
+  const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/
+
+  // Any extension, including compound ones like '.bs.js'
+  const fileExtensionRE = /\.[^\/\s\?]+$/
 
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
@@ -70,7 +77,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         resolve: projectRoot
       })
       isProduction = config.isProduction
-      skipFastRefresh = isProduction || config.command === 'build'
+      skipFastRefresh ||= isProduction || config.command === 'build'
 
       const jsxInject = config.esbuild && config.esbuild.jsxInject
       if (jsxInject && importReactRE.test(jsxInject)) {
@@ -91,34 +98,27 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       )
     },
-    async transform(code, id, ssr) {
-      if (/\.[tj]sx?$/.test(id)) {
-        const plugins = [...userPlugins]
+    async transform(code, id, options) {
+      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
+      // File extension could be mocked/overriden in querystring.
+      const [filepath, querystring = ''] = id.split('?')
+      const [extension = ''] =
+        querystring.match(fileExtensionRE) ||
+        filepath.match(fileExtensionRE) ||
+        []
 
-        const parserPlugins: typeof userParserPlugins = [
-          ...userParserPlugins,
-          'jsx',
-          'importMeta',
-          // This plugin is applied before esbuild transforms the code,
-          // so we need to enable some stage 3 syntax that is supported in
-          // TypeScript and some environments already.
-          'topLevelAwait',
-          'classProperties',
-          'classPrivateProperties',
-          'classPrivateMethods'
-        ]
+      if (/\.(mjs|[tj]sx?)$/.test(extension)) {
+        const isJSX = extension.endsWith('x')
+        const isNodeModules = id.includes('/node_modules/')
+        const isProjectFile =
+          !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        const isTypeScript = /\.tsx?$/.test(id)
-        if (isTypeScript) {
-          parserPlugins.push('typescript')
-        }
-
-        const isNodeModules = id.includes('node_modules')
+        const plugins = isProjectFile ? [...userPlugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
-          const isReactModule = id.endsWith('x') || code.includes('react')
+          const isReactModule = isJSX || code.includes('react')
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
@@ -129,16 +129,17 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
-        if (isNodeModules || id.endsWith('x')) {
+        if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
-            const [restoredAst, isCommonJS] = isNodeModules
-              ? await restoreJSX(babel, code, id)
-              : [null, false]
+            const [restoredAst, isCommonJS] =
+              !isProjectFile && !isJSX
+                ? await restoreJSX(babel, code, id)
+                : [null, false]
 
-            if (!isNodeModules || (ast = restoredAst)) {
+            if (isJSX || (ast = restoredAst)) {
               plugins.push([
                 await loadPlugin(
                   '@babel/plugin-transform-react-jsx' +
@@ -155,7 +156,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 plugins.push(babelImportToRequire)
               }
             }
-          } else if (!isNodeModules) {
+          } else if (isProjectFile) {
             // These plugins are only needed for the classic runtime.
             if (!isProduction) {
               plugins.push(
@@ -172,7 +173,40 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           }
         }
 
-        const isReasonReact = id.endsWith('.bs.js')
+        // Plugins defined through this Vite plugin are only applied
+        // to modules within the project root, but "babel.config.js"
+        // files can define plugins that need to be applied to every
+        // module, including node_modules and linked packages.
+        const shouldSkip =
+          !plugins.length &&
+          !opts.babel?.configFile &&
+          !(isProjectFile && opts.babel?.babelrc)
+
+        if (shouldSkip) {
+          return // Avoid parsing if no plugins exist.
+        }
+
+        const parserPlugins: typeof userParserPlugins = [
+          ...userParserPlugins,
+          'importMeta',
+          // This plugin is applied before esbuild transforms the code,
+          // so we need to enable some stage 3 syntax that is supported in
+          // TypeScript and some environments already.
+          'topLevelAwait',
+          'classProperties',
+          'classPrivateProperties',
+          'classPrivateMethods'
+        ]
+
+        if (!extension.endsWith('.ts')) {
+          parserPlugins.push('jsx')
+        }
+
+        if (/\.tsx?$/.test(extension)) {
+          parserPlugins.push('typescript')
+        }
+
+        const isReasonReact = extension.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
@@ -181,6 +215,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
+          sourceFileName: filepath,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',
