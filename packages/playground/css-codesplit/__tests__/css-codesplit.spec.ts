@@ -3,6 +3,7 @@ import { findAssetFile, getColor, isBuild, readManifest } from '../../testUtils'
 test('should load both stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
+  expect(await getColor('h3')).toBe('yellow')
 })
 
 if (isBuild) {
