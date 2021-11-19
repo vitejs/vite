@@ -271,8 +271,6 @@ async function genScriptCode(
         '_sfc_main',
         script.lang === 'ts'
           ? ['typescript']
-          : script.lang === 'tsx'
-          ? ['typescript', 'jsx']
           : undefined
       )
       map = script.map
