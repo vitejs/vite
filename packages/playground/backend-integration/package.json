@@ -6,9 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "tailwindcss": "^2.2.4"
+    "tailwindcss": "^2.2.19"
   }
 }

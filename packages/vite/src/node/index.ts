@@ -10,12 +10,11 @@ export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
 export { normalizePath } from './utils'
 
 // additional types
+export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
   ViteDevServer,
   ServerOptions,
-  CorsOptions,
   FileSystemServeOptions,
-  CorsOrigin,
   ServerHook,
   ResolvedServerOptions
 } from './server'
@@ -25,6 +24,11 @@ export type {
   LibraryFormats,
   ResolvedBuildOptions
 } from './build'
+export type {
+  PreviewOptions,
+  PreviewServer,
+  ResolvedPreviewOptions
+} from './preview'
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions
@@ -63,7 +67,7 @@ export type {
 } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
-export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
+export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
@@ -81,6 +85,7 @@ export type {
   ErrorPayload
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'
+export type { WebSocket } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'

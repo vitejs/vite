@@ -233,7 +233,10 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  root: string,
+  raw?: BuildOptions
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -268,6 +271,43 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       ...raw?.dynamicImportVarsOptions
     }
   }
+
+  const resolve = (p: string) =>
+    p.startsWith('\0') ? p : path.resolve(root, p)
+
+  resolved.outDir = resolve(resolved.outDir)
+
+  let input
+
+  if (raw?.rollupOptions?.input) {
+    input = Array.isArray(raw.rollupOptions.input)
+      ? raw.rollupOptions.input.map((input) => resolve(input))
+      : typeof raw.rollupOptions.input === 'object'
+      ? Object.fromEntries(
+          Object.entries(raw.rollupOptions.input).map(([key, value]) => [
+            key,
+            resolve(value)
+          ])
+        )
+      : resolve(raw.rollupOptions.input)
+  } else {
+    input = resolve(
+      raw?.lib
+        ? raw.lib.entry
+        : typeof raw?.ssr === 'string'
+        ? raw.ssr
+        : 'index.html'
+    )
+  }
+
+  if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
+  resolved.rollupOptions.input = input
 
   // handle special build targets
   if (resolved.target === 'modules') {
@@ -362,6 +402,8 @@ async function doBuild(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
+  const input = options.rollupOptions.input
+  const outDir = options.outDir
   const ssr = !!options.ssr
   const libOptions = options.lib
 
@@ -372,22 +414,6 @@ async function doBuild(
       )}`
     )
   )
-
-  const resolve = (p: string) => path.resolve(config.root, p)
-  const input = libOptions
-    ? resolve(libOptions.entry)
-    : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
-
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
-    throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
-    )
-  }
-
-  const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
@@ -421,7 +447,7 @@ async function doBuild(
 
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
-    input,
+    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
@@ -785,15 +811,35 @@ function injectSsrFlagToHooks(p: Plugin): Plugin {
   const { resolveId, load, transform } = p
   return {
     ...p,
-    resolveId: wrapSsrHook(resolveId),
-    load: wrapSsrHook(load),
-    transform: wrapSsrHook(transform)
+    resolveId: wrapSsrResolveId(resolveId),
+    load: wrapSsrLoad(load),
+    transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrHook(fn: Function | undefined) {
+function wrapSsrResolveId(fn: Function | undefined) {
   if (!fn) return
-  return function (this: any, ...args: any[]) {
-    return fn.call(this, ...args, true)
+  return function (this: any, id: any, importer: any, options: any) {
+    return fn.call(this, id, importer, injectSsrFlag(options))
   }
+}
+
+function wrapSsrLoad(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, id: any, ...args: any[]) {
+    return fn.call(this, id, injectSsrFlag(args[0]))
+  }
+}
+
+function wrapSsrTransform(fn: Function | undefined) {
+  if (!fn) return
+  // Receiving options param to be future-proof if Rollup adds it
+  return function (this: any, code: any, importer: any, ...args: any[]) {
+    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+}
+
+function injectSsrFlag(options: any = {}) {
+  return { ...options, ssr: true }
 }

@@ -12,6 +12,8 @@ module.exports = {
         scriptAsync: resolve(__dirname, 'scriptAsync.html'),
         scriptMixed: resolve(__dirname, 'scriptMixed.html'),
         zeroJS: resolve(__dirname, 'zeroJS.html'),
+        noHead: resolve(__dirname, 'noHead.html'),
+        noBody: resolve(__dirname, 'noBody.html'),
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html')
@@ -24,21 +26,25 @@ module.exports = {
       name: 'pre-transform',
       transformIndexHtml: {
         enforce: 'pre',
-        transform(html) {
+        transform(html, { filename }) {
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
-          return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
-</head>
-<body>
+          const head = `
+  <head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+  </head>`
+          return `<!DOCTYPE html>
+<html lang="en">${filename.includes('noHead') ? '' : head}
+${
+  filename.includes('noBody')
+    ? html
+    : `<body>
   ${html}
-</body>
+</body>`
+}
 </html>
   `
         }

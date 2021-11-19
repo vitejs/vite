@@ -25,6 +25,8 @@ const { createServer } = require('vite')
     }
   })
   await server.listen()
+
+  server.printUrls()
 })()
 ```
 
@@ -128,13 +130,41 @@ const { build } = require('vite')
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
+    base: '/foo/',
     build: {
-      base: '/foo/',
       rollupOptions: {
         // ...
       }
     }
   })
+})()
+```
+
+## `preview`
+
+**Experimental**
+
+**Type Signature:**
+
+```ts
+async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
+```
+
+**Example Usage:**
+
+```js
+const { preview } = require('vite')
+
+;(async () => {
+  const previewServer = await preview({
+    // any valid user config options, plus `mode` and `configFile`
+    preview: {
+      port: 8080,
+      open: true
+    }
+  })
+
+  previewServer.printUrls()
 })()
 ```
 
@@ -149,6 +179,8 @@ async function resolveConfig(
   defaultMode?: string
 ): Promise<ResolvedConfig>
 ```
+
+The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
 
 ## `transformWithEsbuild`
 

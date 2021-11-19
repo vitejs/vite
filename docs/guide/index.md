@@ -26,14 +26,14 @@ You can try Vite online on [StackBlitz](https://vite.new/). It runs the Vite-bas
 
 The supported template presets are:
 
-| JavaScript | TypeScript |
-| :---: | :---: |
+|             JavaScript              |                TypeScript                 |
+| :---------------------------------: | :---------------------------------------: |
 | [vanilla](https://vite.new/vanilla) | [vanilla-ts](https://vite.new/vanilla-ts) |
-| [vue](https://vite.new/vue) | [vue-ts](https://vite.new/vue-ts) |
-| [react](https://vite.new/react) | [react-ts](https://vite.new/react-ts) |
-| [preact](https://vite.new/preact) | [preact-ts](https://vite.new/preact-ts) |
-| [lit](https://vite.new/lit) | [lit-ts](https://vite.new/lit-ts) |
-| [svelte](https://vite.new/svelte) | [svelte-ts](https://vite.new/svelte-ts) |
+|     [vue](https://vite.new/vue)     |     [vue-ts](https://vite.new/vue-ts)     |
+|   [react](https://vite.new/react)   |   [react-ts](https://vite.new/react-ts)   |
+|  [preact](https://vite.new/preact)  |  [preact-ts](https://vite.new/preact-ts)  |
+|     [lit](https://vite.new/lit)     |     [lit-ts](https://vite.new/lit-ts)     |
+|  [svelte](https://vite.new/svelte)  |  [svelte-ts](https://vite.new/svelte-ts)  |
 
 ## Scaffolding Your First Vite Project
 
@@ -56,7 +56,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpm dlx create-vite
+$ pnpm create vite
 ```
 
 Then follow the prompts!
@@ -72,6 +72,9 @@ npm init vite@latest my-vue-app -- --template vue
 
 # yarn
 yarn create vite my-vue-app --template vue
+
+# pnpm
+pnpm create vite my-vue-app -- --template vue
 ```
 
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`.
@@ -112,12 +115,12 @@ Running `vite` starts the dev server using the current working directory as root
 
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here is the default npm scripts in a scaffolded Vite project:
 
-```json
+```jsonc
 {
   "scripts": {
-    "dev": "vite", // start dev server
+    "dev": "vite", // start dev server, aliases: `vite dev`, `vite serve`
     "build": "vite build", // build for production
-    "serve": "vite preview" // locally preview production build
+    "preview": "vite preview" // locally preview production build
   }
 }
 ```
