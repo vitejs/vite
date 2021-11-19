@@ -614,7 +614,7 @@ type ImportNameSpecifier = { importedName: string; localName: string }
  *
  * Credits \@csr632 via #837
  */
-function transformCjsImport(
+export function transformCjsImport(
   importExp: string,
   url: string,
   rawUrl: string,
@@ -627,12 +627,17 @@ function transformCjsImport(
     }) as any
   ).body[0] as Node
 
-  if (node.type === 'ImportDeclaration') {
+  if (
+    node.type === 'ImportDeclaration' ||
+    node.type === 'ExportNamedDeclaration'
+  ) {
     if (!node.specifiers.length) {
       return `import "${url}"`
     }
 
     const importNames: ImportNameSpecifier[] = []
+    const exportNames: string[] = []
+    let defaultExports: string = ''
     for (const spec of node.specifiers) {
       if (
         spec.type === 'ImportSpecifier' &&
@@ -648,6 +653,23 @@ function transformCjsImport(
         })
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
+      } else if (
+        spec.type === 'ExportSpecifier' &&
+        spec.exported.type === 'Identifier'
+      ) {
+        // for ExportSpecifier, local name is same as imported name
+        const importedName = spec.local.name
+        // we want to specify exported name as variable and re-export it
+        const exportedName = spec.exported.name
+        if (exportedName === 'default') {
+          defaultExports = makeLegalIdentifier(
+            `__vite__cjsExportDefault_${importIndex}`
+          )
+          importNames.push({ importedName, localName: defaultExports })
+        } else {
+          importNames.push({ importedName, localName: exportedName })
+          exportNames.push(exportedName)
+        }
       }
     }
 
@@ -668,6 +690,13 @@ function transformCjsImport(
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
+    if (defaultExports) {
+      lines.push(`export default ${defaultExports}`)
+    }
+    if (exportNames.length) {
+      lines.push(`export { ${exportNames.join(', ')} }`)
+    }
+
     return lines.join('; ')
   }
 }
