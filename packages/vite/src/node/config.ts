@@ -47,6 +47,7 @@ import {
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
+import { PackageCache } from './packages'
 
 const debug = createDebugger('vite:config')
 
@@ -239,6 +240,8 @@ export type ResolvedConfig = Readonly<
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
+    /** @internal */
+    packageCache: PackageCache
   }
 >
 
@@ -458,6 +461,7 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
+    packageCache: new Map(),
     createResolver,
     optimizeDeps: {
       ...config.optimizeDeps,

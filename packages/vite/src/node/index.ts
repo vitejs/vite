@@ -6,7 +6,8 @@ export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger, printHttpServerUrls } from './logger'
 export { transformWithEsbuild } from './plugins/esbuild'
-export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
+export { resolvePackageEntry } from './plugins/resolve'
+export { resolvePackageData } from './packages'
 export { normalizePath } from './utils'
 
 // additional types
@@ -34,6 +35,7 @@ export type {
   DepOptimizationOptions
 } from './optimizer'
 export type { Plugin } from './plugin'
+export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
   LogOptions,
@@ -60,11 +62,7 @@ export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
-export type {
-  PackageData,
-  ResolveOptions,
-  InternalResolveOptions
-} from './plugins/resolve'
+export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
