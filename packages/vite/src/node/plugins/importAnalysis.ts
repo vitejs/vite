@@ -652,8 +652,8 @@ export function transformCjsImport(
         spec.exported.type === 'Identifier'
       ) {
         // for ExportSpecifier, local name is same as imported name
-        // we want to specify exported name as variable and re-export it
         const importedName = spec.local.name
+        // we want to specify exported name as variable and re-export it
         const exportedName = spec.exported.name
         if (exportedName === 'default') {
           defaultExports = makeLegalIdentifier(
