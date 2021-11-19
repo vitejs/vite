@@ -631,7 +631,7 @@ export function transformCjsImport(
 
     const importNames: ImportNameSpecifier[] = []
     const exportNames: string[] = []
-    let defaultExports
+    let defaultExports: string = ''
     for (const spec of node.specifiers) {
       if (
         spec.type === 'ImportSpecifier' &&
