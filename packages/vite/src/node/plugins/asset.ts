@@ -103,11 +103,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const codeWithQuotedUrlsReplaced = s ? s.toString() : code;
+      s = undefined;
+
       // Urls added in CSS that is imported in JS end up like
       // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
       // and need to be wrapped with single quotes
-      while ((match = assetUrlRE.exec(code))) {
-        s = s || (s = new MagicString(code))
+      while ((match = assetUrlRE.exec(codeWithQuotedUrlsReplaced))) {
+        s = s || (s = new MagicString(codeWithQuotedUrlsReplaced))
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
