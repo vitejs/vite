@@ -274,8 +274,6 @@ export function removeStyle(id: string): void {
   if (style) {
     if (style instanceof CSSStyleSheet) {
       // @ts-ignore
-      const index = document.adoptedStyleSheets.indexOf(style)
-      // @ts-ignore
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
       )
