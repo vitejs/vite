@@ -1,3 +1,15 @@
+# [1.1.0-beta.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.0...plugin-react@1.1.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* **plugin-react:** apply `babel.plugins` to project files only ([#5255](https://github.com/vitejs/vite/issues/5255)) ([377d0be](https://github.com/vitejs/vite/commit/377d0be5cf85a50240e160beaaafda77b7199452))
+* **plugin-react:** remove querystring from sourcemap filename ([#5760](https://github.com/vitejs/vite/issues/5760)) ([d93a9fa](https://github.com/vitejs/vite/commit/d93a9fab8986f3659e79d7b0b065e99ef625a5dd))
+* **plugin-react:** restore usage of extension instead of id ([#5761](https://github.com/vitejs/vite/issues/5761)) ([59471b1](https://github.com/vitejs/vite/commit/59471b186612d3da0083543e23d660747d3287f3))
+* **plugin-react:** uncompiled JSX in linked pkgs ([#5669](https://github.com/vitejs/vite/issues/5669)) ([41a7c9c](https://github.com/vitejs/vite/commit/41a7c9ccfbc1a7bc60aec672056eac3966ddd036))
+
+
+
 # [1.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.6...plugin-react@1.1.0-beta.0) (2021-10-28)
 
 
