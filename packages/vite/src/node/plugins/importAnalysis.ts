@@ -651,23 +651,18 @@ export function transformCjsImport(
         spec.type === 'ExportSpecifier' &&
         spec.exported.type === 'Identifier'
       ) {
-        const localName = spec.local.name
+        // for ExportSpecifier, local name is same as imported name
+        // we want to specify exported name as variable and re-export it
+        const importedName = spec.local.name
         const exportedName = spec.exported.name
-        if (localName === 'default' && exportedName === 'default') {
-          defaultExports = `__vite__cjsExportDefault_${importIndex}`
-          importNames.push({
-            importedName: 'default',
-            localName: defaultExports
-          })
-        } else if (localName === 'default' && exportedName !== 'default') {
-          importNames.push({ importedName: 'default', localName: exportedName })
-          exportNames.push(exportedName)
-        } else if (localName !== 'default' && exportedName === 'default') {
-          importNames.push({ importedName: localName, localName })
-          defaultExports = localName
+        if (exportedName === 'default') {
+          defaultExports = makeLegalIdentifier(
+            `__vite__cjsExportDefault_${importIndex}`
+          )
+          importNames.push({ importedName, localName: defaultExports })
         } else {
-          importNames.push({ importedName: exportedName, localName })
-          exportNames.push(localName)
+          importNames.push({ importedName, localName: exportedName })
+          exportNames.push(exportedName)
         }
       }
     }
