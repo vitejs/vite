@@ -40,6 +40,7 @@ export async function resolvePlugins(
       root: config.root,
       isProduction: config.isProduction,
       isBuild,
+      packageCache: config.packageCache,
       ssrConfig: config.ssr,
       asSrc: true
     }),

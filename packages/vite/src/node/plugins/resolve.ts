@@ -30,9 +30,14 @@ import {
   getTsSrcPath
 } from '../utils'
 import { ViteDevServer, SSROptions } from '..'
-import { createFilter } from '@rollup/pluginutils'
 import { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import {
+  loadPackageData,
+  PackageCache,
+  PackageData,
+  resolvePackageData
+} from '../packages'
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
@@ -56,6 +61,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   isBuild: boolean
   isProduction: boolean
   ssrConfig?: SSROptions
+  packageCache?: PackageCache
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -415,11 +421,15 @@ function tryResolveFile(
     } else if (tryIndex) {
       if (!skipPackageJson) {
         const pkgPath = file + '/package.json'
-        if (fs.existsSync(pkgPath)) {
+        try {
           // path points to a node package
-          const pkg = loadPackageData(pkgPath)
+          const pkg = loadPackageData(pkgPath, options.preserveSymlinks)
           const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
           return resolved
+        } catch (e) {
+          if (e.code !== 'ENOENT') {
+            throw e
+          }
         }
       }
       const index = tryFsResolve(file + '/index', options)
@@ -457,7 +467,7 @@ export function tryNodeResolve(
   server?: ViteDevServer,
   ssr?: boolean
 ): PartialResolvedId | undefined {
-  const { root, dedupe, isBuild } = options
+  const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   // split id by last '>' for nested selected packages, for example:
   // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -508,12 +518,12 @@ export function tryNodeResolve(
 
   // nested node module, step-by-step resolve to the basedir of the nestedPath
   if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, options.preserveSymlinks)
+    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
   let pkg: PackageData | undefined
   const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, options.preserveSymlinks)
+    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
     return pkg
   })!
 
@@ -648,81 +658,6 @@ export function tryOptimizedResolve(
       return getOptimizedUrl(optimizedData)
     }
   }
-}
-
-export interface PackageData {
-  dir: string
-  hasSideEffects: (id: string) => boolean
-  webResolvedImports: Record<string, string | undefined>
-  nodeResolvedImports: Record<string, string | undefined>
-  setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
-  getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
-  data: {
-    [field: string]: any
-    version: string
-    main: string
-    module: string
-    browser: string | Record<string, string | false>
-    exports: string | Record<string, any> | string[]
-    dependencies: Record<string, string>
-  }
-}
-
-const packageCache = new Map<string, PackageData>()
-
-export function resolvePackageData(
-  id: string,
-  basedir: string,
-  preserveSymlinks = false
-): PackageData | undefined {
-  const cacheKey = id + basedir
-  if (packageCache.has(cacheKey)) {
-    return packageCache.get(cacheKey)
-  }
-  try {
-    const pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
-    return loadPackageData(pkgPath, cacheKey)
-  } catch (e) {
-    isDebug && debug(`${chalk.red(`[failed loading package.json]`)} ${id}`)
-  }
-}
-
-function loadPackageData(pkgPath: string, cacheKey = pkgPath) {
-  const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const pkgDir = path.dirname(pkgPath)
-  const { sideEffects } = data
-  let hasSideEffects: (id: string) => boolean
-  if (typeof sideEffects === 'boolean') {
-    hasSideEffects = () => sideEffects
-  } else if (Array.isArray(sideEffects)) {
-    hasSideEffects = createFilter(sideEffects, null, { resolve: pkgDir })
-  } else {
-    hasSideEffects = () => true
-  }
-
-  const pkg: PackageData = {
-    dir: pkgDir,
-    data,
-    hasSideEffects,
-    webResolvedImports: {},
-    nodeResolvedImports: {},
-    setResolvedCache(key: string, entry: string, targetWeb: boolean) {
-      if (targetWeb) {
-        pkg.webResolvedImports[key] = entry
-      } else {
-        pkg.nodeResolvedImports[key] = entry
-      }
-    },
-    getResolvedCache(key: string, targetWeb: boolean) {
-      if (targetWeb) {
-        return pkg.webResolvedImports[key]
-      } else {
-        return pkg.nodeResolvedImports[key]
-      }
-    }
-  }
-  packageCache.set(cacheKey, pkg)
-  return pkg
 }
 
 export function resolvePackageEntry(
