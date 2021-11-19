@@ -198,15 +198,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classPrivateMethods'
         ]
 
-        if (!id.endsWith('.ts')) {
+        if (!extension.endsWith('.ts')) {
           parserPlugins.push('jsx')
         }
 
-        if (/\.tsx?$/.test(id)) {
+        if (/\.tsx?$/.test(extension)) {
           parserPlugins.push('typescript')
         }
 
-        const isReasonReact = id.endsWith('.bs.js')
+        const isReasonReact = extension.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
