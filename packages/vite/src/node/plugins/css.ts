@@ -319,7 +319,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       return {
         code:
           modulesCode ||
-          (usedRE.test(id)
+          (usedRE.test(id) || inlined
             ? `export default ${JSON.stringify(
                 inlined ? await minifyCSS(css, config) : css
               )}`
