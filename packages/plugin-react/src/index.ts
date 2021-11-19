@@ -113,7 +113,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        let plugins = isProjectFile ? [...userPlugins] : []
+        const plugins = isProjectFile ? [...userPlugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {

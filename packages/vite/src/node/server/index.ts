@@ -61,6 +61,7 @@ import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
+import { invalidatePackageData } from '../packages'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -418,8 +419,20 @@ export async function createServer(
     process.stdin.on('end', exitProcess)
   }
 
+  const { packageCache } = config
+  const setPackageData = packageCache.set.bind(packageCache)
+  packageCache.set = (id, pkg) => {
+    if (id.endsWith('.json')) {
+      watcher.add(id)
+    }
+    return setPackageData(id, pkg)
+  }
+
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    if (file.endsWith('/package.json')) {
+      return invalidatePackageData(packageCache, file)
+    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
     if (serverConfig.hmr !== false) {
