@@ -175,7 +175,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // Differentiate CSS imports that use the default export from those that
         // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble treeshaking
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
         // them)
         if (
           specifier &&
