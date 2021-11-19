@@ -1,3 +1,20 @@
+# [2.7.0-beta.8](https://github.com/vitejs/vite/compare/v2.7.0-beta.7...v2.7.0-beta.8) (2021-11-19)
+
+
+### Bug Fixes
+
+* **hmr:** prevent SSR from setting `isSelfAccepting` to false ([#5377](https://github.com/vitejs/vite/issues/5377)) ([37e5617](https://github.com/vitejs/vite/commit/37e561755030e87383897af3ea28b9a08e8c2773))
+* move package.json cache into ResolvedConfig ([#5388](https://github.com/vitejs/vite/issues/5388)) ([650b56e](https://github.com/vitejs/vite/commit/650b56e0414d772294817bc2dc399e70563ed699))
+* scoped variable with array destructuring & nested arguments ([#5730](https://github.com/vitejs/vite/issues/5730)) ([b86a2f3](https://github.com/vitejs/vite/commit/b86a2f35ee538d531db3ee0e2094e671b4e0c405))
+* **transformCjsImport:** make dev and build get the same result ([#5745](https://github.com/vitejs/vite/issues/5745)) ([9d3e4e6](https://github.com/vitejs/vite/commit/9d3e4e6ca53ba0e9e5c6efbdd84cd347123f93ed))
+
+
+### Features
+
+* **dev:** expose restart function on ViteDevServer ([#5723](https://github.com/vitejs/vite/issues/5723)) ([1425a16](https://github.com/vitejs/vite/commit/1425a162e768f569e5d9a3929e31ed5f421a5ca2))
+
+
+
 # [2.7.0-beta.7](https://github.com/vitejs/vite/compare/v2.7.0-beta.6...v2.7.0-beta.7) (2021-11-17)
 
 
