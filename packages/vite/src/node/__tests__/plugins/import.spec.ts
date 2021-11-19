@@ -73,6 +73,20 @@ describe('transformCjsImport', () => {
         'const Component = __vite__cjsImport0_react["Component"]; ' +
         'export { useState, Component }'
     )
+
+    expect(
+      transformCjsImport(
+        'export { useState as useStateAlias, Component as ComponentAlias } from "react"',
+        url,
+        rawUrl,
+        0
+      )
+    ).toBe(
+      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+        'const useStateAlias = __vite__cjsImport0_react["useState"]; ' +
+        'const ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
+        'export { useStateAlias, ComponentAlias }'
+    )
   })
 
   test('export default specifier', () => {
@@ -106,8 +120,8 @@ describe('transformCjsImport', () => {
       )
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
-        'const Component = __vite__cjsImport0_react["Component"]; ' +
-        'export default Component'
+        'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react["Component"]; ' +
+        'export default __vite__cjsExportDefault_0'
     )
   })
 })
