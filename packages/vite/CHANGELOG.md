@@ -1564,7 +1564,7 @@ css files.
 * css [@import](https://github.com/import) alias for windows ([71fcfdf](https://github.com/vitejs/vite/commit/71fcfdf219c0dd2aab6612e6b5ba89af1f63cd85))
 * don't override resolver options ([#1740](https://github.com/vitejs/vite/issues/1740)) ([73196e5](https://github.com/vitejs/vite/commit/73196e517643af88a790ab5222d3e6b68dbbf987))
 * resolve css [@import](https://github.com/import) relative imports without leading dot ([78eb32c](https://github.com/vitejs/vite/commit/78eb32c17998a96aff0f787cf4629b2683c6cd09)), closes [#1737](https://github.com/vitejs/vite/issues/1737)
-* **optimizer:** do not perform treeshaking for pre-bundling ([6b619c4](https://github.com/vitejs/vite/commit/6b619c4be210dbab0164f42ee4b358c3ac34a896))
+* **optimizer:** do not perform tree-shaking for pre-bundling ([6b619c4](https://github.com/vitejs/vite/commit/6b619c4be210dbab0164f42ee4b358c3ac34a896))
 
 
 ### Code Refactoring
