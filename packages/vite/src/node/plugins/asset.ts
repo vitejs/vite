@@ -119,7 +119,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           match.index,
           match.index + full.length,
-          `'${outputFilepath}'`
+          outputFilepath
         )
       }
       if (s) {
