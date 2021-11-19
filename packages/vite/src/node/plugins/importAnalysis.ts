@@ -538,6 +538,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           ).forEach(([url]) => importedUrls.add(url))
         }
+        // HMR transforms are no-ops in SSR, so an `accept` call will
+        // never be injected. Avoid updating the `isSelfAccepting`
+        // property for our module node in that case.
+        if (ssr && importerModule.isSelfAccepting) {
+          isSelfAccepting = true
+        }
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
