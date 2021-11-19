@@ -52,21 +52,24 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 
 ### Conditional Config
 
-If the config needs to conditional determine options based on the command (`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
+If the config needs to conditional determine options based on the command (`dev`/`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
 
 ```js
 export default defineConfig(({ command, mode }) => {
   if (command === 'serve') {
     return {
-      // serve specific config
+      // dev specific config
     }
   } else {
+    // command === 'build'
     return {
       // build specific config
     }
   }
 })
 ```
+
+It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
 
 ### Async Config
 
@@ -168,6 +171,10 @@ export default defineConfig(async ({ command, mode }) => {
 - **Type:** `string[]`
 
   If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
+
+  :::warning SSR + ESM
+  For SSR builds, deduplication does not work for ESM build outputs configured from `build.rollupOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
+  :::
 
 ### resolve.conditions
 
@@ -358,20 +365,19 @@ export default defineConfig(async ({ command, mode }) => {
 
   Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
 
-:::warning SECURITY NOTES
-
-- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::warning SECURITY NOTES
+  `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
   :::
 
 ## Server Options
 
 ### server.host
 
-- **Type:** `string`
+- **Type:** `string | boolean`
 - **Default:** `'127.0.0.1'`
 
   Specify which IP addresses the server should listen on.
-  Set this to `0.0.0.0` to listen on all addresses, including LAN and public addresses.
+  Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
 
   This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
@@ -542,18 +548,16 @@ createServer()
 
 ### server.fs.strict
 
-- **Experimental**
 - **Type:** `boolean`
-- **Default:** `false` (will change to `true` in future versions)
+- **Default:** `true` (enabled by default since Vite 2.7)
 
   Restrict serving files outside of workspace root.
 
 ### server.fs.allow
 
-- **Experimental**
 - **Type:** `string[]`
 
-  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list will result in a 403.
+  Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
   Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
 
@@ -592,6 +596,15 @@ createServer()
     }
   })
   ```
+
+### server.fs.deny
+
+- **Experimental**
+- **Type:** `string[]`
+
+  Blocklist for sensitive files being restricted to be served by Vite dev server.
+
+  Default to `['.env', '.env.*', '*.{pem,crt}']`.
 
 ### server.origin
 
@@ -675,6 +688,10 @@ export default defineConfig({
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
+  ::: tip Note
+  If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
+  :::
+
 ### build.cssTarget
 
 - **Type:** `string | string[]`
@@ -734,6 +751,14 @@ export default defineConfig({
 
   When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
 
+### build.ssr
+
+- **Type:** `boolean | string`
+- **Default:** `undefined`
+- **Related:** [Server-Side Rendering](/guide/ssr)
+
+  Produce SSR-oriented build. The value can be a string to directly specify the SSR entry, or `true`, which requires specifying the SSR entry via `rollupOptions.input`.
+
 ### build.minify
 
 - **Type:** `boolean | 'terser' | 'esbuild'`
@@ -781,6 +806,77 @@ export default defineConfig({
 - **Default:** `null`
 
   Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
+
+## Preview Options
+
+### preview.host
+
+- **Type:** `string | boolean`
+- **Default:** [`server.host`](#server_host)
+
+  Specify which IP addresses the server should listen on.
+  Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
+
+  This can be set via the CLI using `--host 0.0.0.0` or `--host`.
+
+### preview.port
+
+- **Type:** `number`
+- **Default:** `5000`
+
+  Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
+
+**Example:**
+
+```js
+export default defineConfig({
+  server: {
+    port: 3030
+  },
+  preview: {
+    port: 8080
+  }
+})
+```
+
+### preview.strictPort
+
+- **Type:** `boolean`
+- **Default:** [`server.strictPort`](#server_strictport)
+
+  Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+
+### preview.https
+
+- **Type:** `boolean | https.ServerOptions`
+- **Default:** [`server.https`](#server_https)
+
+  Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](#server-proxy) is also used.
+
+  The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
+
+### preview.open
+
+- **Type:** `boolean | string`
+- **Default:** [`server.open`](#server_open)
+
+  Automatically open the app in the browser on server start. When the value is a string, it will be used as the URL's pathname. If you want to open the server in a specific browser you like, you can set the env `process.env.BROWSER` (e.g. `firefox`). See [the `open` package](https://github.com/sindresorhus/open#app) for more details.
+
+### preview.proxy
+
+- **Type:** `Record<string, string | ProxyOptions>`
+- **Default:** [`server.proxy`](#server_proxy)
+
+  Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+
+  Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+
+### preview.cors
+
+- **Type:** `boolean | CorsOptions`
+- **Default:** [`server.cors`](#server_proxy)
+
+  Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
 
 ## Dep Optimization Options
 

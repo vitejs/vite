@@ -19,6 +19,7 @@
     <AsyncComponent />
   </Suspense>
   <RefTransform />
+  <SetupImportTemplate />
 </template>
 
 <script setup lang="ts">
@@ -33,6 +34,7 @@ import Slotted from './Slotted.vue'
 import ScanDep from './ScanDep.vue'
 import AsyncComponent from './AsyncComponent.vue'
 import RefTransform from './RefTransform.vue'
+import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 
 import { ref } from 'vue'
 

@@ -5,6 +5,6 @@ test('should have no 404s', () => {
 })
 
 test('not contain `.mjs`', async () => {
-  let appHtml = await page.content()
+  const appHtml = await page.content()
   expect(appHtml).toMatch('Hello Vite!')
 })

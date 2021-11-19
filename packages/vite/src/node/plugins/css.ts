@@ -206,7 +206,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules
+          const isSelfAccepting = !modules && !inlineRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
@@ -218,7 +218,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                   : await moduleGraph.ensureEntryFromUrl(
                       (
                         await fileToUrl(file, config, this)
-                      ).replace(config.base, '/')
+                      ).replace(
+                        (config.server?.origin ?? '') + config.base,
+                        '/'
+                      )
                     )
               )
             }
@@ -271,7 +274,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
     },
 
-    async transform(css, id, ssr) {
+    async transform(css, id, options) {
       if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
         return
       }
@@ -286,7 +289,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return css
         } else {
           // server only
-          if (ssr) {
+          if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
@@ -318,8 +321,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           modulesCode ||
           (usedRE.test(id)
             ? `export default ${JSON.stringify(
-              inlined ? await minifyCSS(css, config) : css
-            )}`
+                inlined ? await minifyCSS(css, config) : css
+              )}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
@@ -1016,10 +1019,10 @@ const scss: SassStylePreprocessor = async (
     resolvers.sass(url, importer).then((resolved) => {
       if (resolved) {
         rebaseUrls(resolved, options.filename, options.alias)
-          .then(done)
-          .catch(done)
+          .then((data) => done?.(data))
+          .catch((data) => done?.(data))
       } else {
-        done(null)
+        done?.(null)
       }
     })
   }

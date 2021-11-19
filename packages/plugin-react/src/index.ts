@@ -98,7 +98,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       )
     },
-    async transform(code, id, ssr) {
+    async transform(code, id, options) {
+      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
       // File extension could be mocked/overriden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =
@@ -107,7 +108,83 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         []
 
       if (/\.(mjs|[tj]sx?)$/.test(extension)) {
-        const plugins = [...userPlugins]
+        const isJSX = extension.endsWith('x')
+        const isNodeModules = id.includes('/node_modules/')
+        const isProjectFile =
+          !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
+
+        const plugins = isProjectFile ? [...userPlugins] : []
+
+        let useFastRefresh = false
+        if (!skipFastRefresh && !ssr && !isNodeModules) {
+          // Modules with .js or .ts extension must import React.
+          const isReactModule = isJSX || code.includes('react')
+          if (isReactModule && filter(id)) {
+            useFastRefresh = true
+            plugins.push([
+              await loadPlugin('react-refresh/babel.js'),
+              { skipEnvCheck: true }
+            ])
+          }
+        }
+
+        let ast: t.File | null | undefined
+        if (!isProjectFile || isJSX) {
+          if (useAutomaticRuntime) {
+            // By reverse-compiling "React.createElement" calls into JSX,
+            // React elements provided by dependencies will also use the
+            // automatic runtime!
+            const [restoredAst, isCommonJS] =
+              !isProjectFile && !isJSX
+                ? await restoreJSX(babel, code, id)
+                : [null, false]
+
+            if (isJSX || (ast = restoredAst)) {
+              plugins.push([
+                await loadPlugin(
+                  '@babel/plugin-transform-react-jsx' +
+                    (isProduction ? '' : '-development')
+                ),
+                {
+                  runtime: 'automatic',
+                  importSource: opts.jsxImportSource
+                }
+              ])
+
+              // Avoid inserting `import` statements into CJS modules.
+              if (isCommonJS) {
+                plugins.push(babelImportToRequire)
+              }
+            }
+          } else if (isProjectFile) {
+            // These plugins are only needed for the classic runtime.
+            if (!isProduction) {
+              plugins.push(
+                await loadPlugin('@babel/plugin-transform-react-jsx-self'),
+                await loadPlugin('@babel/plugin-transform-react-jsx-source')
+              )
+            }
+
+            // Even if the automatic JSX runtime is not used, we can still
+            // inject the React import for .jsx and .tsx modules.
+            if (!skipReactImport && !importReactRE.test(code)) {
+              code = `import React from 'react'; ` + code
+            }
+          }
+        }
+
+        // Plugins defined through this Vite plugin are only applied
+        // to modules within the project root, but "babel.config.js"
+        // files can define plugins that need to be applied to every
+        // module, including node_modules and linked packages.
+        const shouldSkip =
+          !plugins.length &&
+          !opts.babel?.configFile &&
+          !(isProjectFile && opts.babel?.babelrc)
+
+        if (shouldSkip) {
+          return // Avoid parsing if no plugins exist.
+        }
 
         const parserPlugins: typeof userParserPlugins = [
           ...userParserPlugins,
@@ -125,69 +202,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           parserPlugins.push('jsx')
         }
 
-        const isTypeScript = /\.tsx?$/.test(extension)
-        if (isTypeScript) {
+        if (/\.tsx?$/.test(extension)) {
           parserPlugins.push('typescript')
-        }
-
-        const isNodeModules = id.includes('node_modules')
-
-        let useFastRefresh = false
-        if (!skipFastRefresh && !ssr && !isNodeModules) {
-          // Modules with .js or .ts extension must import React.
-          const isReactModule =
-            extension.endsWith('x') || code.includes('react')
-          if (isReactModule && filter(id)) {
-            useFastRefresh = true
-            plugins.push([
-              await loadPlugin('react-refresh/babel.js'),
-              { skipEnvCheck: true }
-            ])
-          }
-        }
-
-        let ast: t.File | null | undefined
-        if (isNodeModules || extension.endsWith('x')) {
-          if (useAutomaticRuntime) {
-            // By reverse-compiling "React.createElement" calls into JSX,
-            // React elements provided by dependencies will also use the
-            // automatic runtime!
-            const [restoredAst, isCommonJS] = isNodeModules
-              ? await restoreJSX(babel, code, id)
-              : [null, false]
-
-            if (!isNodeModules || (ast = restoredAst)) {
-              plugins.push([
-                await loadPlugin(
-                  '@babel/plugin-transform-react-jsx' +
-                    (isProduction ? '' : '-development')
-                ),
-                {
-                  runtime: 'automatic',
-                  importSource: opts.jsxImportSource
-                }
-              ])
-
-              // Avoid inserting `import` statements into CJS modules.
-              if (isCommonJS) {
-                plugins.push(babelImportToRequire)
-              }
-            }
-          } else if (!isNodeModules) {
-            // These plugins are only needed for the classic runtime.
-            if (!isProduction) {
-              plugins.push(
-                await loadPlugin('@babel/plugin-transform-react-jsx-self'),
-                await loadPlugin('@babel/plugin-transform-react-jsx-source')
-              )
-            }
-
-            // Even if the automatic JSX runtime is not used, we can still
-            // inject the React import for .jsx and .tsx modules.
-            if (!skipReactImport && !importReactRE.test(code)) {
-              code = `import React from 'react'; ` + code
-            }
-          }
         }
 
         const isReasonReact = extension.endsWith('.bs.js')
@@ -199,6 +215,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
+          sourceFileName: filepath,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',

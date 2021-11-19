@@ -9,7 +9,7 @@ export default {
   Layout() {
     return h(Theme.Layout, null, {
       'sidebar-bottom': () =>
-        h('div', { class: 'sponsors' }, [
+        h('div', { class: 'sponsors sidebar' }, [
           h(
             'a',
             {

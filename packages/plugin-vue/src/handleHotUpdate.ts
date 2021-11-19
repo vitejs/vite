@@ -11,6 +11,8 @@ import { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
 
+const directRequestRE = /(\?|&)direct\b/
+
 /**
  * Vite-specific HMR handling
  */
@@ -92,7 +94,8 @@ export async function handleHotUpdate(
       const mod = modules.find(
         (m) =>
           m.url.includes(`type=style&index=${i}`) &&
-          m.url.endsWith(`.${next.lang || 'css'}`)
+          m.url.endsWith(`.${next.lang || 'css'}`) &&
+          !directRequestRE.test(m.url)
       )
       if (mod) {
         affectedModules.add(mod)

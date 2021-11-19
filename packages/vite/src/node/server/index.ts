@@ -2,19 +2,23 @@ import fs from 'fs'
 import path from 'path'
 import * as net from 'net'
 import * as http from 'http'
-import * as https from 'https'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import chalk from 'chalk'
 import { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
+import {
+  resolveHttpsConfig,
+  resolveHttpServer,
+  httpServerStart,
+  CommonServerOptions
+} from '../http'
 import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
 import { createPluginContainer, PluginContainer } from './pluginContainer'
 import { FSWatcher, WatchOptions } from 'types/chokidar'
 import { createWebSocketServer, WebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
-import { proxyMiddleware, ProxyOptions } from './middlewares/proxy'
+import { proxyMiddleware } from './middlewares/proxy'
 import { spaFallbackMiddleware } from './middlewares/spaFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
@@ -55,22 +59,13 @@ import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
-import { printHttpServerUrls } from '../logger'
+import { printCommonServerUrls } from '../logger'
+import { performance } from 'perf_hooks'
+import { invalidatePackageData } from '../packages'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
-export interface ServerOptions {
-  host?: string | boolean
-  port?: number
-  /**
-   * Enable TLS + HTTP/2.
-   * Note: this downgrades to TLS only when the proxy option is also used.
-   */
-  https?: boolean | https.ServerOptions
-  /**
-   * Open browser window on startup
-   */
-  open?: boolean | string
+export interface ServerOptions extends CommonServerOptions {
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    */
@@ -84,40 +79,6 @@ export interface ServerOptions {
    * https://github.com/paulmillr/chokidar#api
    */
   watch?: WatchOptions
-  /**
-   * Configure custom proxy rules for the dev server. Expects an object
-   * of `{ key: options }` pairs.
-   * Uses [`http-proxy`](https://github.com/http-party/node-http-proxy).
-   * Full options [here](https://github.com/http-party/node-http-proxy#options).
-   *
-   * Example `vite.config.js`:
-   * ``` js
-   * module.exports = {
-   *   proxy: {
-   *     // string shorthand
-   *     '/foo': 'http://localhost:4567/foo',
-   *     // with options
-   *     '/api': {
-   *       target: 'http://jsonplaceholder.typicode.com',
-   *       changeOrigin: true,
-   *       rewrite: path => path.replace(/^\/api/, '')
-   *     }
-   *   }
-   * }
-   * ```
-   */
-  proxy?: Record<string, string | ProxyOptions>
-  /**
-   * Configure CORS for the dev server.
-   * Uses https://github.com/expressjs/cors.
-   * Set to `true` to allow all methods from any origin, or configure separately
-   * using an object.
-   */
-  cors?: CorsOptions | boolean
-  /**
-   * If enabled, vite will exit if specified port is already in use
-   */
-  strictPort?: boolean
   /**
    * Create Vite dev server to be used as a middleware in an existing server
    */
@@ -146,41 +107,31 @@ export interface FileSystemServeOptions {
    * Strictly restrict file accessing outside of allowing paths.
    *
    * Set to `false` to disable the warning
-   * Default to false at this moment, will enabled by default in the future versions.
    *
-   * @experimental
-   * @default undefined
+   * @default true
    */
-  strict?: boolean | undefined
+  strict?: boolean
 
   /**
    * Restrict accessing files outside the allowed directories.
    *
    * Accepts absolute path or a path relative to project root.
    * Will try to search up for workspace root by default.
+   */
+  allow?: string[]
+
+  /**
+   * Restrict accessing files that matches the patterns.
+   *
+   * This will have higher priority than `allow`.
+   * Glob patterns are supported.
+   *
+   * @default ['.env', '.env.*', '*.crt', '*.pem']
    *
    * @experimental
    */
-  allow?: string[]
+  deny?: string[]
 }
-
-/**
- * https://github.com/expressjs/cors#configuration-options
- */
-export interface CorsOptions {
-  origin?:
-    | CorsOrigin
-    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
-  methods?: string | string[]
-  allowedHeaders?: string | string[]
-  exposedHeaders?: string | string[]
-  credentials?: boolean
-  maxAge?: number
-  preflightContinue?: boolean
-  optionsSuccessStatus?: number
-}
-
-export type CorsOrigin = boolean | string | RegExp | (string | RegExp)[]
 
 export type ServerHook = (
   server: ViteDevServer
@@ -276,6 +227,12 @@ export interface ViteDevServer {
    */
   printUrls(): void
   /**
+   * Restart the server.
+   *
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   */
+  restart(forceOptimize?: boolean): Promise<void>
+  /**
    * @internal
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
@@ -300,6 +257,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _restartPromise: Promise<void> | null
+  /**
+   * @internal
+   */
+  _forceOptimizeOnRestart: boolean
+  /**
+   * @internal
+   */
   _isRunningOptimizer: boolean
   /**
    * @internal
@@ -314,7 +279,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Record<string, Promise<TransformResult | null> | null>
+  _pendingRequests: Map<string, Promise<TransformResult | null>>
 }
 
 export async function createServer(
@@ -323,7 +288,7 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const httpsOptions = await resolveHttpsConfig(config)
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
@@ -348,9 +313,11 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const plugins = config.plugins
-  const container = await createPluginContainer(config, watcher)
-  const moduleGraph = new ModuleGraph(container)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
+    container.resolveId(url)
+  )
+
+  const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   // eslint-disable-next-line prefer-const
@@ -376,14 +343,12 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     ssrLoadModule(url) {
-      if (!server._ssrExternals) {
-        server._ssrExternals = resolveSSRExternal(
-          config,
-          server._optimizeDepsMetadata
-            ? Object.keys(server._optimizeDepsMetadata.optimized)
-            : []
-        )
-      }
+      server._ssrExternals ||= resolveSSRExternal(
+        config,
+        server._optimizeDepsMetadata
+          ? Object.keys(server._optimizeDepsMetadata.optimized)
+          : []
+      )
       return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
@@ -411,18 +376,31 @@ export async function createServer(
     },
     printUrls() {
       if (httpServer) {
-        printHttpServerUrls(httpServer, config)
+        printCommonServerUrls(httpServer, config.server, config)
       } else {
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
+    async restart(forceOptimize: boolean) {
+      if (!server._restartPromise) {
+        server._forceOptimizeOnRestart = !!forceOptimize
+        server._restartPromise = restartServer(server).finally(() => {
+          server._restartPromise = null
+          server._forceOptimizeOnRestart = false
+        })
+      }
+      return server._restartPromise
+    },
+
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
+    _restartPromise: null,
+    _forceOptimizeOnRestart: false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
-    _pendingRequests: Object.create(null)
+    _pendingRequests: new Map()
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
@@ -441,8 +419,20 @@ export async function createServer(
     process.stdin.on('end', exitProcess)
   }
 
+  const { packageCache } = config
+  const setPackageData = packageCache.set.bind(packageCache)
+  packageCache.set = (id, pkg) => {
+    if (id.endsWith('.json')) {
+      watcher.add(id)
+    }
+    return setPackageData(id, pkg)
+  }
+
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    if (file.endsWith('/package.json')) {
+      return invalidatePackageData(packageCache, file)
+    }
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
     if (serverConfig.hmr !== false) {
@@ -474,7 +464,7 @@ export async function createServer(
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of plugins) {
+  for (const plugin of config.plugins) {
     if (plugin.configureServer) {
       postHooks.push(await plugin.configureServer(server))
     }
@@ -555,7 +545,10 @@ export async function createServer(
     if (config.cacheDir) {
       server._isRunningOptimizer = true
       try {
-        server._optimizeDepsMetadata = await optimizeDeps(config)
+        server._optimizeDepsMetadata = await optimizeDeps(
+          config,
+          config.server.force || server._forceOptimizeOnRestart
+        )
       } finally {
         server._isRunningOptimizer = false
       }
@@ -690,6 +683,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server = raw || {}
   let allowDirs = server.fs?.allow
+  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
@@ -704,9 +698,39 @@ export function resolveServerOptions(
   }
 
   server.fs = {
-    // TODO: make strict by default
-    strict: server.fs?.strict,
-    allow: allowDirs
+    strict: server.fs?.strict ?? true,
+    allow: allowDirs,
+    deny
   }
   return server as ResolvedServerOptions
+}
+
+async function restartServer(server: ViteDevServer) {
+  // @ts-ignore
+  global.__vite_start_time = performance.now()
+  const { port } = server.config.server
+
+  await server.close()
+
+  let newServer = null
+  try {
+    newServer = await createServer(server.config.inlineConfig)
+  } catch (err: any) {
+    server.config.logger.error(err.message, {
+      timestamp: true
+    })
+    return
+  }
+
+  for (const key in newServer) {
+    if (key !== 'app') {
+      // @ts-ignore
+      server[key] = newServer[key]
+    }
+  }
+  if (!server.config.server.middlewareMode) {
+    await server.listen(port, true)
+  } else {
+    server.config.logger.info('server restarted.', { timestamp: true })
+  }
 }

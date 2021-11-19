@@ -7,6 +7,7 @@ import {
   generateCodeFrame,
   isDataUrl,
   isExternalUrl,
+  normalizePath,
   processSrcSet,
   slash
 } from '../utils'
@@ -55,7 +56,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
       if (proxyMatch) {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
-        const url = file.replace(config.root, '')
+        const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
         if (result) {
           return result
@@ -230,7 +231,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   .map((child: any) => child.content || '')
                   .join('')
                 // <script type="module">...</script>
-                const filePath = id.replace(config.root, '')
+                const filePath = id.replace(normalizePath(config.root), '')
                 addToHTMLProxyCache(
                   config,
                   filePath,
@@ -621,26 +622,28 @@ function toPublicPath(filename: string, config: ResolvedConfig) {
   return isExternalUrl(filename) ? filename : config.base + filename
 }
 
-const headInjectRE = /([ \t]*)<\/head>/
-const headPrependInjectRE = /([ \t]*)<head[^>]*>/
+const headInjectRE = /([ \t]*)<\/head>/i
+const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
+
+const htmlInjectRE = /<\/html>/i
+const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
+
+const bodyInjectRE = /([ \t]*)<\/body>/i
+const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/i
+
 const doctypePrependInjectRE = /<!doctype html>/i
+
 function injectToHead(
   html: string,
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
   if (prepend) {
-    // inject after head or doctype
+    // inject as the first element of head
     if (headPrependInjectRE.test(html)) {
       return html.replace(
         headPrependInjectRE,
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
-      )
-    }
-    else if(doctypePrependInjectRE.test(html)) {
-      return html.replace(
-        doctypePrependInjectRE,
-        `$&\n${serializeTags(tags)}`
       )
     }
   } else {
@@ -652,13 +655,18 @@ function injectToHead(
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
       )
     }
+    // try to inject before the body tag
+    if (bodyPrependInjectRE.test(html)) {
+      return html.replace(
+        bodyPrependInjectRE,
+        (match, p1) => `${serializeTags(tags, p1)}\n${match}`
+      )
+    }
   }
-  // if no <head> tag is present, just prepend
-  return serializeTags(tags) + html
+  // if no head tag is present, we prepend the tag for both prepend and append
+  return prependInjectFallback(html, tags)
 }
 
-const bodyInjectRE = /([ \t]*)<\/body>/
-const bodyPrependInjectRE = /([ \t]*)<body[^>]*>/
 function injectToBody(
   html: string,
   tags: HtmlTagDescriptor[],
@@ -672,8 +680,14 @@ function injectToBody(
         (match, p1) => `${match}\n${serializeTags(tags, incrementIndent(p1))}`
       )
     }
-    // if no body, prepend
-    return serializeTags(tags) + html
+    // if no there is no body tag, inject after head or fallback to prepend in html
+    if (headInjectRE.test(html)) {
+      return html.replace(
+        headInjectRE,
+        (match, p1) => `${match}\n${serializeTags(tags, p1)}`
+      )
+    }
+    return prependInjectFallback(html, tags)
   } else {
     // inject before body close
     if (bodyInjectRE.test(html)) {
@@ -682,9 +696,23 @@ function injectToBody(
         (match, p1) => `${serializeTags(tags, incrementIndent(p1))}${match}`
       )
     }
-    // if no body, append
+    // if no body tag is present, append to the html tag, or at the end of the file
+    if (htmlInjectRE.test(html)) {
+      return html.replace(htmlInjectRE, `${serializeTags(tags)}\n$&`)
+    }
     return html + `\n` + serializeTags(tags)
   }
+}
+
+function prependInjectFallback(html: string, tags: HtmlTagDescriptor[]) {
+  // prepend to the html tag, append after doctype, or the document start
+  if (htmlPrependInjectRE.test(html)) {
+    return html.replace(htmlPrependInjectRE, `$&\n${serializeTags(tags)}`)
+  }
+  if (doctypePrependInjectRE.test(html)) {
+    return html.replace(doctypePrependInjectRE, `$&\n${serializeTags(tags)}`)
+  }
+  return serializeTags(tags) + html
 }
 
 const unaryTags = new Set(['link', 'meta', 'base'])

@@ -1,5 +1,12 @@
 [
   {
+    "id": "stackblitz",
+    "name": "StackBlitz",
+    "href": "https://stackblitz.com/",
+    "src": "/stackblitz.svg",
+    "tier": "platinum"
+  },
+  {
     "id": "tailwind",
     "name": "Tailwind Labs",
     "href": "https://tailwindcss.com",
@@ -22,5 +29,11 @@
     "name": "Plaid Inc.",
     "href": "https://plaid.co.jp/",
     "src": "/plaid.svg"
+  },
+  {
+    "id": "divriots",
+    "name": "divriots",
+    "href": "https://divriots.com/",
+    "src": "/divriots.png"
   }
 ]

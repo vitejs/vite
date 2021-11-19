@@ -7,6 +7,12 @@
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
 
+<button class="ping-ts-output">Ping Possible Compiled TS Worker</button>
+<div>
+  Response from worker imported from code that might be compiled TS:
+  <span class="pong-ts-output"></span>
+</div>
+
 <button class="tick-shared">Tick Shared Worker</button>
 <div>
   Tick from shared worker, it syncs between pages:
@@ -17,6 +23,7 @@
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
   import SharedWorker from './my-shared-worker?sharedworker&name=shared'
+  import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
 
   document.querySelector('.mode-true').textContent = mode
@@ -50,6 +57,15 @@
   })
 
   sharedWorker.port.start()
+
+  const tsOutputWorker = new TSOutputWorker()
+  worker.addEventListener('message', (e) => {
+    text('.pong-ts-output', e.data.msg)
+  })
+
+  document.querySelector('.ping-ts-output').addEventListener('click', () => {
+    inlineWorker.postMessage('ping')
+  })
 
   function text(el, text) {
     document.querySelector(el).textContent = text

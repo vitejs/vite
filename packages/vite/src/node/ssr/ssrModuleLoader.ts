@@ -1,8 +1,12 @@
-import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '..'
-import { cleanUrl, resolveFrom, unwrapId } from '../utils'
+import { ViteDevServer } from '../server'
+import {
+  dynamicImport,
+  isBuiltin,
+  unwrapId,
+  usingDynamicImport
+} from '../utils'
 import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 import {
   ssrExportAllKey,
@@ -12,9 +16,11 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
+import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {
-  global: NodeJS.Global
+  global: typeof globalThis
 }
 
 type SSRModule = Record<string, any>
@@ -83,11 +89,31 @@ async function instantiateModule(
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
-    url: pathToFileURL(mod.file!).toString(),
+    url: pathToFileURL(mod.file!).toString()
   }
 
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
+
+  const {
+    isProduction,
+    resolve: { dedupe, preserveSymlinks },
+    root
+  } = server.config
+
+  // The `extensions` and `mainFields` options are used to ensure that
+  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
+  // whenever possible, because `hookNodeResolve` can't intercept them.
+  const resolveOptions: InternalResolveOptions = {
+    dedupe,
+    extensions: ['.js', '.cjs', '.json'],
+    isBuild: true,
+    isProduction,
+    isRequire: true,
+    mainFields: ['main'],
+    preserveSymlinks,
+    root
+  }
 
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
@@ -95,12 +121,7 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeRequire(
-        dep,
-        mod.file,
-        server.config.root,
-        !!server.config.resolve.preserveSymlinks
-      )
+      return nodeImport(dep, mod.file!, resolveOptions)
     }
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
@@ -108,12 +129,14 @@ async function instantiateModule(
       if (pendingDeps.length === 1) {
         pendingImports.set(url, pendingDeps)
       }
-      await ssrLoadModule(dep, server, context, urlStack)
+      const mod = await ssrLoadModule(dep, server, context, urlStack)
       if (pendingDeps.length === 1) {
         pendingImports.delete(url)
       } else {
         pendingDeps.splice(pendingDeps.indexOf(dep), 1)
       }
+      // return local module to avoid race condition #5470
+      return mod
     }
     return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
   }
@@ -178,41 +201,83 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
-function nodeRequire(
+// In node@12+ we can use dynamic import to load CJS and ESM
+async function nodeImport(
   id: string,
-  importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
+  importer: string,
+  resolveOptions: InternalResolveOptions
 ) {
-  const mod = require(resolve(id, importer, root, preserveSymlinks))
-  const defaultExport = mod.__esModule ? mod.default : mod
-  // rollup-style default import interop for cjs
+  // Node's module resolution is hi-jacked so Vite can ensure the
+  // configured `resolve.dedupe` and `mode` options are respected.
+  const viteResolve = (
+    id: string,
+    importer: string,
+    options = resolveOptions
+  ) => {
+    const resolved = tryNodeResolve(id, importer, options, false)
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    return resolved.id
+  }
+
+  // When an ESM module imports an ESM dependency, this hook is *not* used.
+  const unhookNodeResolve = hookNodeResolve(
+    (nodeResolve) => (id, parent, isMain, options) => {
+      if (id[0] === '.' || isBuiltin(id)) {
+        return nodeResolve(id, parent, isMain, options)
+      }
+      if (parent) {
+        return viteResolve(id, parent.id)
+      }
+      // Importing a CJS module from an ESM module. In this case, the import
+      // specifier is already an absolute path, so this is a no-op.
+      // Options like `resolve.dedupe` and `mode` are not respected.
+      return id
+    }
+  )
+
+  let url: string
+  if (id.startsWith('node:') || isBuiltin(id)) {
+    url = id
+  } else {
+    url = viteResolve(
+      id,
+      importer,
+      // Non-external modules can import ESM-only modules, but only outside
+      // of test runs, because we use Node `require` in Jest to avoid segfault.
+      typeof jest === 'undefined'
+        ? { ...resolveOptions, tryEsmOnly: true }
+        : resolveOptions
+    )
+    if (usingDynamicImport) {
+      url = pathToFileURL(url).toString()
+    }
+  }
+
+  try {
+    const mod = await dynamicImport(url)
+    return proxyESM(id, mod)
+  } finally {
+    unhookNodeResolve()
+  }
+}
+
+// rollup-style default import interop for cjs
+function proxyESM(id: string, mod: any) {
+  const defaultExport = mod.__esModule
+    ? mod.default
+    : mod.default
+    ? mod.default
+    : mod
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
-      return mod[prop]
+      return mod[prop] ?? defaultExport?.[prop]
     }
   })
-}
-
-const resolveCache = new Map<string, string>()
-
-function resolve(
-  id: string,
-  importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
-) {
-  const key = id + importer + root
-  const cached = resolveCache.get(key)
-  if (cached) {
-    return cached
-  }
-  const resolveDir =
-    importer && fs.existsSync(cleanUrl(importer))
-      ? path.dirname(importer)
-      : root
-  const resolved = resolveFrom(id, resolveDir, preserveSymlinks, true)
-  resolveCache.set(key, resolved)
-  return resolved
 }

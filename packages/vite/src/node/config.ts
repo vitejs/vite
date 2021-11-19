@@ -7,6 +7,11 @@ import {
   resolveServerOptions,
   ServerOptions
 } from './server'
+import {
+  ResolvedPreviewOptions,
+  resolvePreviewOptions,
+  PreviewOptions
+} from './preview'
 import { CSSOptions } from './plugins/css'
 import {
   arraify,
@@ -42,6 +47,7 @@ import {
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
+import { PackageCache } from './packages'
 
 const debug = createDebugger('vite:config')
 
@@ -141,6 +147,10 @@ export interface UserConfig {
    */
   build?: BuildOptions
   /**
+   * Preview specific options, e.g. host, port, https...
+   */
+  preview?: PreviewOptions
+  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -225,10 +235,13 @@ export type ResolvedConfig = Readonly<
     plugins: readonly Plugin[]
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
+    preview: ResolvedPreviewOptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
+    /** @internal */
+    packageCache: PackageCache
   }
 >
 
@@ -354,7 +367,7 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const resolvedBuildOptions = resolveBuildOptions(resolvedRoot, config.build)
 
   // resolve cache directory
   const pkgPath = lookupFile(
@@ -405,7 +418,7 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, undefined, ssr))?.id
+      return (await container.resolveId(id, importer, { ssr }))?.id
     }
   }
 
@@ -417,6 +430,8 @@ export async function resolveConfig(
           typeof publicDir === 'string' ? publicDir : 'public'
         )
       : ''
+
+  const server = resolveServerOptions(resolvedRoot, config.server)
 
   const resolved: ResolvedConfig = {
     ...config,
@@ -432,8 +447,9 @@ export async function resolveConfig(
     mode,
     isProduction,
     plugins: userPlugins,
-    server: resolveServerOptions(resolvedRoot, config.server),
+    server,
     build: resolvedBuildOptions,
+    preview: resolvePreviewOptions(config.preview, server),
     env: {
       ...userEnv,
       BASE_URL,
@@ -445,6 +461,7 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
+    packageCache: new Map(),
     createResolver,
     optimizeDeps: {
       ...config.optimizeDeps,
@@ -860,8 +877,7 @@ export async function loadConfigFromFile(
     if (!userConfig) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using rollup.
-      // lazy require rollup (it's actually in dependencies)
+      // transpile es import syntax to require syntax using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
