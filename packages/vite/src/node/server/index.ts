@@ -94,6 +94,10 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Do not serve index.html for all URLs which are not resources
+   */
+  noSpa?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -477,7 +481,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (!config.server.noSpa && (!middlewareMode || middlewareMode === 'html')) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
