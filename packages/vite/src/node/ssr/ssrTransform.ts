@@ -315,22 +315,20 @@ function walk(
         node.params.forEach((p) =>
           (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              if (child.type !== 'Identifier') return
+              // do not record as scope variable if is a destructuring keyword
+              if (isStaticPropertyKey(child, parent)) return
+              // do not record if this is a default value
+              // assignment of a destructuring variable
               if (
-                child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructuring key
-                !isStaticPropertyKey(child, parent) &&
-                // do not record if this is a default value
-                // assignment of a destructuring variable
-                (
-                  !parent || 
-                  (
-                    !(parent.type === 'AssignmentPattern' && parent.right === child) &&
-                    !(parent.type === 'TemplateLiteral' && parent.expressions.includes(child))
-                  )
-                )
+                (parent?.type === 'AssignmentPattern' &&
+                  parent?.right === child) ||
+                (parent?.type === 'TemplateLiteral' &&
+                  parent?.expressions.includes(child))
               ) {
-                setScope(node, child.name)
+                return
               }
+              setScope(node, child.name)
             }
           })
         )
@@ -352,8 +350,7 @@ function walk(
             node.id.elements.forEach((element) => {
               setScope(parentFunction, (element as Identifier).name)
             })
-          }
-          else {
+          } else {
             setScope(parentFunction, (node.id as Identifier).name)
           }
         }
