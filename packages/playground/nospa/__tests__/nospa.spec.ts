@@ -8,17 +8,21 @@ const assertNotIndexHtml = async (path: string) => {
     `This file should only ever be served as /index.html`
   )
 }
+
 test('/index.html is served', async () => {
   await page.goto(viteTestUrl + '/index.html')
   const html = await page.innerHTML('body')
   expect(html).toContain(`This file should only ever be served as /index.html`)
 })
-test('/ is not served', async () => {
-  await assertNotIndexHtml('/')
-})
-test('/foo/ is not served', async () => {
-  await assertNotIndexHtml('/foo/')
-})
-test('/foo/index.html is not served', async () => {
-  await assertNotIndexHtml('/foo/index.html')
-})
+
+if (!process.env.VITE_TEST_BUILD) {
+  test('/ is not served', async () => {
+    await assertNotIndexHtml('/')
+  })
+  test('/foo/ is not served', async () => {
+    await assertNotIndexHtml('/foo/')
+  })
+  test('/foo/index.html is not served', async () => {
+    await assertNotIndexHtml('/foo/index.html')
+  })
+}
