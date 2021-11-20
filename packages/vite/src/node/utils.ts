@@ -498,13 +498,11 @@ export async function processSrcSet(
     })
   )
 
-  const url = ret.reduce((prev, { url, descriptor }, index) => {
+  return ret.reduce((prev, { url, descriptor }, index) => {
     descriptor = descriptor || ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
-
-  return url
 }
 
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
