@@ -833,7 +833,7 @@ export async function loadConfigFromFile(
       }
     }
 
-    if (!userConfig && !isTS && !isMjs) {
+    if (!isTS && !isMjs) {
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
