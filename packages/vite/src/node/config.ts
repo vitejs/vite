@@ -294,7 +294,7 @@ export async function resolveConfig(
     customLogger: config.customLogger
   })
 
-  // user config may provide an alternative mode. But --mode has a higher prority
+  // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
