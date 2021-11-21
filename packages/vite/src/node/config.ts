@@ -829,13 +829,13 @@ export async function loadConfigFromFile(
 
     if (isESM) {
       const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const bundled = await bundleConfigFile(resolvedPath, true)
+      dependencies = bundled.dependencies
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const bundled = await bundleConfigFile(resolvedPath, true)
-        dependencies = bundled.dependencies
         fs.writeFileSync(resolvedPath + '.js', bundled.code)
         userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
@@ -853,6 +853,8 @@ export async function loadConfigFromFile(
     if (!isTS && !isESM) {
       // 1. try to directly require the module (assuming commonjs)
       try {
+        const bundled = await bundleConfigFile(resolvedPath)
+        dependencies = bundled.dependencies
         // clear cache in case of server restart
         delete require.cache[require.resolve(resolvedPath)]
         userConfig = require(resolvedPath)
