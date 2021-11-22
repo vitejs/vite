@@ -1,3 +1,7 @@
+# [1.10.0](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.1...plugin-vue@1.10.0) (2021-11-22)
+
+
+
 # [1.10.0-beta.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.0...plugin-vue@1.10.0-beta.1) (2021-11-19)
 
 
