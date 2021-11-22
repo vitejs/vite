@@ -78,7 +78,7 @@
       "eslint --ext .ts"
     ]
   },
-  "packageManager": "pnpm",
+  "packageManager": "pnpm@6.23.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
