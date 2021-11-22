@@ -339,6 +339,13 @@ test('inlined', async () => {
   expect(await getColor('.inlined')).toBe('black')
 })
 
+test('inlined-code', async () => {
+  const code = await page.textContent('.inlined-code')
+  // should resolve assets
+  expect(code).toContain('background:')
+  expect(code).not.toContain('__VITE_ASSET__')
+})
+
 test('minify css', async () => {
   if (!isBuild) {
     return
