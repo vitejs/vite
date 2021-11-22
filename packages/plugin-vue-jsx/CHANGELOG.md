@@ -1,3 +1,7 @@
+# [1.3.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.0-beta.0...plugin-vue-jsx@1.3.0) (2021-11-22)
+
+
+
 # [1.3.0-beta.0](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.2.0...plugin-vue-jsx@1.3.0-beta.0) (2021-10-28)
 
 
