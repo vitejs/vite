@@ -6,7 +6,7 @@ const routes = [
   {
     path: '/about',
     name: 'About',
-    component: () => import('./src/components/About.vue')
+    component: () => import(/*breaks*/ './src/components/About.vue')
   } // Lazy load route component
 ]
 
