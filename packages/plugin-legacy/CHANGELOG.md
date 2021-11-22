@@ -1,3 +1,12 @@
+## [1.6.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.2...plugin-legacy@1.6.3) (2021-11-22)
+
+
+### Bug Fixes
+
+* **build:** resolve `rollupOptions.input` paths ([#5601](https://github.com/vitejs/vite/issues/5601)) ([5b6b016](https://github.com/vitejs/vite/commit/5b6b01693720290e8998b2613f0dcb2d699ee84f))
+
+
+
 ## [1.6.2](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.1...plugin-legacy@1.6.2) (2021-10-11)
 
 
