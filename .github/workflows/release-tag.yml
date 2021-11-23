@@ -7,6 +7,8 @@ on:
       - 'plugin-*' # Push events to matching plugin-*, i.e. plugin-(vue|vue-jsx|react|legacy)@1.0.0
       - 'create-vite*' # # Push events to matching create-vite*, i.e. create-vite@1.0.0
 
+# $GITHUB_REF_NAME - https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+
 jobs:
   release:
     runs-on: ubuntu-latest
