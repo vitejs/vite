@@ -13,10 +13,6 @@ import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
-// urls in JS must be quoted as strings, so when replacing them we need
-// a different regex
-const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?"/g
-
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
@@ -85,7 +81,16 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code, chunk) {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
-      while ((match = assetUrlQuotedRE.exec(code))) {
+
+      // Urls added with JS using e.g.
+      // imgElement.src = "my/file.png" are using quotes
+
+      // Urls added in CSS that is imported in JS end up like
+      // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
+
+      // In both cases, the wrapping should already be fine
+
+      while ((match = assetUrlRE.exec(code))) {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
@@ -96,9 +101,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           match.index,
           match.index + full.length,
-          JSON.stringify(outputFilepath)
+          outputFilepath
         )
       }
+
       if (s) {
         return {
           code: s.toString(),

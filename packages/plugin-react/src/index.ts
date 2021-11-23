@@ -113,7 +113,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        let plugins = isProjectFile ? [...userPlugins] : []
+        const plugins = isProjectFile ? [...userPlugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -198,15 +198,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classPrivateMethods'
         ]
 
-        if (!id.endsWith('.ts')) {
+        if (!extension.endsWith('.ts')) {
           parserPlugins.push('jsx')
         }
 
-        if (/\.tsx?$/.test(id)) {
+        if (/\.tsx?$/.test(extension)) {
           parserPlugins.push('typescript')
         }
 
-        const isReasonReact = id.endsWith('.bs.js')
+        const isReasonReact = extension.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
@@ -215,7 +215,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
-          sourceFileName: id,
+          sourceFileName: filepath,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',

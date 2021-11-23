@@ -172,6 +172,10 @@ export default defineConfig(async ({ command, mode }) => {
 
   If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
 
+  :::warning SSR + ESM
+  For SSR builds, deduplication does not work for ESM build outputs configured from `build.rollupOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
+  :::
+
 ### resolve.conditions
 
 - **Type:** `string[]`
@@ -361,9 +365,8 @@ export default defineConfig(async ({ command, mode }) => {
 
   Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
 
-:::warning SECURITY NOTES
-
-- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::warning SECURITY NOTES
+  `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
   :::
 
 ## Server Options
@@ -684,6 +687,10 @@ export default defineConfig({
   Enable/disable CSS code splitting. When enabled, CSS imported in async chunks will be inlined into the async chunk itself and inserted when the chunk is loaded.
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
+
+  ::: tip Note
+  If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
+  :::
 
 ### build.cssTarget
 

@@ -175,7 +175,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         // Differentiate CSS imports that use the default export from those that
         // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble treeshaking
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
         // them)
         if (
           specifier &&
@@ -252,13 +252,24 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (imports.length) {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
-              const { s: start, e: end, d: dynamicIndex } = imports[index]
+              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+              const {
+                n: name,
+                s: start,
+                e: end,
+                d: dynamicIndex
+              } = imports[index]
               // check the chunk being imported
-              const url = code.slice(start, end)
+              let url = name
+              if (!url) {
+                const rawUrl = code.slice(start, end)
+                if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                  url = rawUrl.slice(1, -1)
+              }
               const deps: Set<string> = new Set()
               let hasRemovedPureCssChunk = false
 
-              if (isQuoted(url)) {
+              if (url) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
@@ -295,7 +306,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
                 const normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url.slice(1, -1)
+                  url
                 )
                 addDeps(normalizedFile)
               }

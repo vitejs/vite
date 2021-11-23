@@ -47,6 +47,7 @@ import {
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
+import { PackageCache } from './packages'
 
 const debug = createDebugger('vite:config')
 
@@ -239,6 +240,8 @@ export type ResolvedConfig = Readonly<
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
+    /** @internal */
+    packageCache: PackageCache
   }
 >
 
@@ -291,7 +294,7 @@ export async function resolveConfig(
     customLogger: config.customLogger
   })
 
-  // user config may provide an alternative mode. But --mode has a higher prority
+  // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
@@ -458,6 +461,7 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
+    packageCache: new Map(),
     createResolver,
     optimizeDeps: {
       ...config.optimizeDeps,
@@ -771,14 +775,14 @@ export async function loadConfigFromFile(
 
   let resolvedPath: string | undefined
   let isTS = false
-  let isMjs = false
+  let isESM = false
   let dependencies: string[] = []
 
   // check package.json for type: "module" and set `isMjs` to true
   try {
     const pkg = lookupFile(configRoot, ['package.json'])
     if (pkg && JSON.parse(pkg).type === 'module') {
-      isMjs = true
+      isESM = true
     }
   } catch (e) {}
 
@@ -788,7 +792,7 @@ export async function loadConfigFromFile(
     isTS = configFile.endsWith('.ts')
 
     if (configFile.endsWith('.mjs')) {
-      isMjs = true
+      isESM = true
     }
   } else {
     // implicit config file loaded from inline root (if present)
@@ -802,7 +806,7 @@ export async function loadConfigFromFile(
       const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
       if (fs.existsSync(mjsconfigFile)) {
         resolvedPath = mjsconfigFile
-        isMjs = true
+        isESM = true
       }
     }
 
@@ -823,7 +827,7 @@ export async function loadConfigFromFile(
   try {
     let userConfig: UserConfigExport | undefined
 
-    if (isMjs) {
+    if (isESM) {
       const fileUrl = require('url').pathToFileURL(resolvedPath)
       if (isTS) {
         // before we can register loaders without requiring users to run node
@@ -846,7 +850,7 @@ export async function loadConfigFromFile(
       }
     }
 
-    if (!userConfig && !isTS && !isMjs) {
+    if (!isTS && !isESM) {
       // 1. try to directly require the module (assuming commonjs)
       try {
         // clear cache in case of server restart
@@ -873,8 +877,7 @@ export async function loadConfigFromFile(
     if (!userConfig) {
       // 2. if we reach here, the file is ts or using es import syntax, or
       // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using rollup.
-      // lazy require rollup (it's actually in dependencies)
+      // transpile es import syntax to require syntax using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
@@ -903,7 +906,7 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  mjs = false
+  isESM = false
 ): Promise<{ code: string; dependencies: string[] }> {
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -912,7 +915,7 @@ async function bundleConfigFile(
     write: false,
     platform: 'node',
     bundle: true,
-    format: mjs ? 'esm' : 'cjs',
+    format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
     plugins: [
