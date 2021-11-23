@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
 import {
-  // createDebugger,
+  createDebugger,
   isExternalUrl,
   asyncReplace,
   cleanUrl,
@@ -44,7 +44,8 @@ import { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 
-// const debug = createDebugger('vite:css')
+const debug = createDebugger('vite:css')
+const isDebug = !!process.env.DEBUG
 
 export interface CSSOptions {
   /**
@@ -1001,9 +1002,14 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
-    throw new Error(
-      `Preprocessor dependency "${lang}" not found. Did you install it?`
-    )
+    if (isDebug) {
+      debug(`[load] Preprocessor dependency "${lang}" not found. Did you install it?`);
+      throw new Error(e.stack);
+    } else { 
+      throw new Error(
+        `Preprocessor dependency "${lang}" not found. Did you install it?`
+      )
+    }
   }
 }
 
