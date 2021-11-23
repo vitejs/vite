@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Get branch and pkgName for tag
+      - name: Get pkgName for tag
         id: tag
         run: |
           # matching v2.0.0 / v2.0.0-beta.8 etc
