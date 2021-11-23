@@ -10,7 +10,7 @@ import {
   removedPureCssFilesCache
 } from './css'
 import { transformImportGlob } from '../importGlob'
-import { bareImportRE, isQuoted } from '../utils'
+import { bareImportRE } from '../utils'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
