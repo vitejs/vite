@@ -850,36 +850,8 @@ export async function loadConfigFromFile(
       }
     }
 
-    if (!isTS && !isESM) {
-      // 1. try to directly require the module (assuming commonjs)
-      try {
-        const bundled = await bundleConfigFile(resolvedPath)
-        dependencies = bundled.dependencies
-        // clear cache in case of server restart
-        delete require.cache[require.resolve(resolvedPath)]
-        userConfig = require(resolvedPath)
-        debug(`cjs config loaded in ${getTime()}`)
-      } catch (e) {
-        const ignored = new RegExp(
-          [
-            `Cannot use import statement`,
-            `Must use import to load ES Module`,
-            // #1635, #2050 some Node 12.x versions don't have esm detection
-            // so it throws normal syntax errors when encountering esm syntax
-            `Unexpected token`,
-            `Unexpected identifier`
-          ].join('|')
-        )
-        if (!ignored.test(e.message)) {
-          throw e
-        }
-      }
-    }
-
     if (!userConfig) {
-      // 2. if we reach here, the file is ts or using es import syntax, or
-      // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using esbuild.
+      // Bundle config file and transpile it to cjs using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
