@@ -163,3 +163,9 @@ test('deep import built-in module', async () => {
   await page.goto(url)
   expect(await page.textContent('.file-message')).toMatch('fs/promises')
 })
+
+test('msg should encrypted', async () => {
+  // raw http request
+  const homeHtml = await (await fetch(url + '/')).text()
+  expect(homeHtml).not.toMatch('Secret Message!')
+})
