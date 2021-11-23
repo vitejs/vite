@@ -5,6 +5,9 @@ const vueJsx = require('@vitejs/plugin-vue-jsx')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  optimizeDeps: {
+    exclude: ['bcrypt']
+  },
   plugins: [
     vuePlugin(),
     vueJsx(),
