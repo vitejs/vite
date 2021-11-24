@@ -10,7 +10,10 @@
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
   <Button>DynamicButton</Button>
-  <div>encrypted message: <p class="encrypted-msg">{{ encryptedMsg }}</p></div>
+  <div>
+    encrypted message:
+    <p class="encrypted-msg">{{ encryptedMsg }}</p>
+  </div>
   <ImportType />
 </template>
 
