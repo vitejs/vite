@@ -180,5 +180,10 @@ test('dynamic css file should be loaded advanced', async () => {
     for (const file of depFile) {
       expect(homeHtml).toMatch(file)
     }
-  }
+})
+  
+test('msg should encrypted', async () => {
+  // raw http request
+  const homeHtml = await (await fetch(url + '/')).text()
+  expect(homeHtml).not.toMatch('Secret Message!')
 })
