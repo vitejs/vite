@@ -12,7 +12,7 @@ import {
   ENV_PUBLIC_PATH
 } from './constants'
 import resolve from 'resolve'
-import builtins from 'builtin-modules'
+import { builtinModules } from 'module'
 import { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import {
@@ -38,8 +38,9 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
 export function isBuiltin(id: string): boolean {
-  const deepMatch = id.match(deepImportRE)
-  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
+  const builtins = [...builtinModules]
+  if (!builtins.includes('fs/promises')) builtins.push('fs/promises')
+  builtins.forEach(builtin => { builtins.push(`node:${builtin}`) })
   return builtins.includes(id)
 }
 
