@@ -22,7 +22,7 @@ You can learn more about the rationale behind the project in the [Why Vite](./wh
 
 ## Trying Vite Online
 
-You can try Vite online on [StackBlitz](https://vite.new/). It runs the Vite-based build setup directly in the browser, so it is almost identical to the local setup but doesn't require installing anything on your machine. You can navigate to `vite.new/{template}` to select which framework to use.
+You can try Vite online on [StackBlitz](https://stackblitz.com/). It runs the Vite-based build setup directly in the browser, so it is almost identical to the local setup but doesn't require installing anything on your machine. You can navigate to `vite.new/{template}` to select which framework to use.
 
 The supported template presets are:
 
