@@ -245,7 +245,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               everyScriptIsAsync &&= isAsync
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
-            } else if (url && url && !url.endsWith('.js')) {
+            } else if (url && !url.endsWith('.js')) {
               config.logger.warn(`<script src="${url}"> in "${id}" can't be transformed without type="module" attribute`)
             }
           }
