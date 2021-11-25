@@ -40,6 +40,7 @@ export const normalizeId = (id: string): string =>
 export function isBuiltin(id: string): boolean {
   const builtins = [...builtinModules]
   if (!builtins.includes('fs/promises')) builtins.push('fs/promises')
+  if (!builtins.includes('diagnostics_channel')) builtins.push('diagnostics_channel') 
   builtins.forEach(builtin => { builtins.push(`node:${builtin}`) })
   return builtins.includes(id)
 }
