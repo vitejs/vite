@@ -1,5 +1,6 @@
 // @ts-nocheck
-import type { NestedTypeOnlyClass } from './not-used-type'
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { NestedTypeOnlyClass } from './not-used-type'
 
 class NestedBase {
   set data(value: string) {
