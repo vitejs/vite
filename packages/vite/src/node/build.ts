@@ -235,7 +235,11 @@ export type ResolvedBuildOptions = Required<
   Omit<
     BuildOptions,
     // make deprecated options optional
-    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize' | 'manualChunks'
+    | 'base'
+    | 'cleanCssOptions'
+    | 'polyfillDynamicImport'
+    | 'brotliSize'
+    | 'manualChunks'
   >
 >
 
@@ -509,7 +513,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? (createMoveToVendorChunkFn(config) && config.build.manualChunks?.(config))
+            ? createManualChunksFn(config)
             : undefined,
         ...output
       }
@@ -637,9 +641,9 @@ function getPkgName(root: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
-function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
+function createManualChunksFn(config: ResolvedConfig): GetManualChunk {
   const cache = new Map<string, boolean>()
-  return (id, { getModuleInfo }) => {
+  return (id, { getModuleInfo, getModuleIds }) => {
     if (
       id.includes('node_modules') &&
       !isCSSRequest(id) &&
@@ -647,6 +651,10 @@ function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
     ) {
       return 'vendor'
     }
+    return config.build.manualChunks?.(config)(id, {
+      getModuleInfo,
+      getModuleIds
+    })
   }
 }
 

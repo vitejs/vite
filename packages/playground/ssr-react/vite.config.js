@@ -6,6 +6,13 @@ const react = require('@vitejs/plugin-react')
 module.exports = {
   plugins: [react()],
   build: {
-    minify: false
+    minify: false,
+    manualChunks: (config) => {
+      return (id) => {
+        if (id.includes('Home.jsx')) {
+          return 'Home.chunk'
+        }
+      }
+    }
   }
 }
