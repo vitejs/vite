@@ -246,7 +246,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
             } else if (url && url && !url.endsWith('.js')) {
-              config.logger.warn(`found Typescript on script tag without type module: ${url}`)
+              config.logger.warn(`<script src="${url}"> in "${id}" can't be transformed without type="module" attribute`)
             }
           }
 
