@@ -245,7 +245,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               everyScriptIsAsync &&= isAsync
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
-            } else if (url && path.extname(url).match(/\.([mc])?ts/) != null) {
+            } else if (url && url && !url.endsWith('.js')) {
               config.logger.warn(`found Typescript on script tag without type module: ${url}`)
             }
           }
