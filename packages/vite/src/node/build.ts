@@ -215,6 +215,11 @@ export interface BuildOptions {
    * https://rollupjs.org/guide/en/#watchoptions
    */
   watch?: WatcherOptions | null
+  /**
+   * Rollup ManualChunksOption options
+   * https://rollupjs.org/guide/en/#outputmanualchunks
+   */
+  manualChunks?: (config: ResolvedConfig) => GetManualChunk
 }
 
 export interface LibraryOptions {
@@ -504,7 +509,7 @@ async function doBuild(
           !libOptions &&
           output?.format !== 'umd' &&
           output?.format !== 'iife'
-            ? createMoveToVendorChunkFn(config)
+            ? (createMoveToVendorChunkFn(config) && config.build.manualChunks?.(config))
             : undefined,
         ...output
       }
