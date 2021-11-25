@@ -1,8 +1,8 @@
-import { editFile, untilUpdated } from '../../testUtils'
+import { editFile, untilUpdated, isBuild } from '../../testUtils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 import { resolve } from 'path'
-import promises from 'fs/promises'
+import { promises } from 'fs'
 
 const url = `http://localhost:${port}`
 
@@ -66,10 +66,13 @@ test(`circular dependecies modules doesn't throw`, async () => {
 })
 
 test('Home chunk file should be split succeed', async () => {
-  const assetsArr = await promises.readdir(
-    resolve(process.cwd(), './packages/temp/ssr-react/dist/client/assets')
-  )
-  const re = /Home\.chunk/
-  const res = assetsArr.some((asset) => re.test(asset))
-  expect(res).toBe(true)
+  if (isBuild) {
+    const assetsArr = await promises.readdir(
+      resolve(process.cwd(), './packages/temp/ssr-react/dist/client/assets')
+    )
+    const chunkRe = /Home\.chunk/
+    const vendorRe = /vendor/
+    expect(assetsArr.some((asset) => chunkRe.test(asset))).toBe(true)
+    expect(assetsArr.some((asset) => vendorRe.test(asset))).toBe(true)
+  }
 })
