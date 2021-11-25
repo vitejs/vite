@@ -6,15 +6,15 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "autoprefixer": "^10.3.0",
-    "tailwindcss": "^2.2.4",
-    "vue": "^3.2.13"
+    "autoprefixer": "^10.4.0",
+    "tailwindcss": "^2.2.19",
+    "vue": "^3.2.21",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^1.0.0",
-    "vue-router": "^4.0.0"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }

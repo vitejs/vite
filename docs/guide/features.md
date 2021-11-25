@@ -22,7 +22,7 @@ Vite caches dependency requests via HTTP headers, so if you wish to locally edit
 
 ## Hot Module Replacement
 
-Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capabilities can leverage the API to provide instant, precise updates without reloading the page or blowing away application state. Vite provides first-party HMR integrations for [Vue Single File Components](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) and [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh). There are also official integrations for Preact via [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
+Vite provides an [HMR API](./api-hmr) over native ESM. Frameworks with HMR capabilities can leverage the API to provide instant, precise updates without reloading the page or blowing away application state. Vite provides first-party HMR integrations for [Vue Single File Components](https://github.com/vitejs/vite/tree/main/packages/plugin-vue) and [React Fast Refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react). There are also official integrations for Preact via [@prefresh/vite](https://github.com/JoviDeCroock/prefresh/tree/main/packages/vite).
 
 Note you don't need to manually set these up - when you [create an app via `create-vite`](./), the selected templates would have these pre-configured for you already.
 
@@ -66,6 +66,8 @@ But a few libraries haven't transitioned to this new default yet, including [`li
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 
+If migrating your codebase to `"isolatedModules": true` is an unsurmountable effort, you may be able to get around it with a third-party plugin such as [rollup-plugin-friendly-type-imports](https://www.npmjs.com/package/rollup-plugin-friendly-type-imports). However, this approach is not officially supported by Vite.
+
 ### Client Types
 
 Vite's default types are for its Node.js API. To shim the environment of client side code in a Vite application, add a `d.ts` declaration file:
@@ -108,6 +110,8 @@ If not using JSX with React or Vue, custom `jsxFactory` and `jsxFragment` can be
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
@@ -122,6 +126,8 @@ You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) t
 
 ```js
 // vite.config.js
+import { defineConfig } from 'vite'
+
 export default defineConfig({
   esbuild: {
     jsxInject: `import React from 'react'`
@@ -234,7 +240,7 @@ JSON files can be directly imported - named imports are also supported:
 ```js
 // import the entire object
 import json from './example.json'
-// import a root field as named exports - helps with treeshaking!
+// import a root field as named exports - helps with tree-shaking!
 import { field } from './example.json'
 ```
 
@@ -289,6 +295,7 @@ Note that:
 - This is a Vite-only feature and is not a web or ES standard.
 - The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root).
 - The glob matching is done via `fast-glob` - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
+- You should also be aware that glob imports do not accept variables, you need to directly pass the string pattern.
 
 ## WebAssembly
 

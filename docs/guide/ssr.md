@@ -227,7 +227,7 @@ If you have configured aliases that redirects one package to another, you may wa
 
 ## SSR-specific Plugin Logic
 
-Some frameworks such as Vue or Svelte compiles components into different formats based on client vs. SSR. To support conditional transforms, Vite passes an additional `ssr` argument to the following plugin hooks:
+Some frameworks such as Vue or Svelte compiles components into different formats based on client vs. SSR. To support conditional transforms, Vite passes an additional `ssr` property in the `options` object of the following plugin hooks:
 
 - `resolveId`
 - `load`
@@ -239,14 +239,20 @@ Some frameworks such as Vue or Svelte compiles components into different formats
 export function mySSRPlugin() {
   return {
     name: 'my-ssr',
-    transform(code, id, ssr) {
-      if (ssr) {
+    transform(code, id, options) {
+      if (options?.ssr) {
         // perform ssr-specific transform...
       }
     }
   }
 }
 ```
+
+The options object in `load` and `transform` is optional, rollup is not currently using this object but may extend these hooks with additional metadata in the future.
+
+::: note
+Before Vite 2.7, this was informed to plugin hooks with a positional `ssr` param instead of using the `options` object. All major frameworks and plugins are updated but you may find outdated posts using the previous API.
+:::
 
 ## SSR Target
 

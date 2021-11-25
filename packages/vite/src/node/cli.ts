@@ -1,5 +1,6 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
+import { performance } from 'perf_hooks'
 import { BuildOptions } from './build'
 import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
@@ -13,8 +14,6 @@ interface GlobalCLIOptions {
   '--'?: string[]
   c?: boolean | string
   config?: string
-  r?: string
-  root?: string
   base?: string
   l?: LogLevel
   logLevel?: LogLevel
@@ -37,8 +36,6 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret['--']
   delete ret.c
   delete ret.config
-  delete ret.r
-  delete ret.root
   delete ret.base
   delete ret.l
   delete ret.logLevel
@@ -54,7 +51,6 @@ function cleanOptions<Options extends GlobalCLIOptions>(
 
 cli
   .option('-c, --config <file>', `[string] use specified config file`)
-  .option('-r, --root <path>', `[string] use specified root directory`)
   .option('--base <path>', `[string] public base path (default: /)`)
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
@@ -65,7 +61,8 @@ cli
 // dev
 cli
   .command('[root]') // default command
-  .alias('serve')
+  .alias('serve') // the command is called 'serve' in Vite's API
+  .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
@@ -90,7 +87,31 @@ cli
         clearScreen: options.clearScreen,
         server: cleanOptions(options)
       })
+
+      if (!server.httpServer) {
+        throw new Error('HTTP server not available')
+      }
+
       await server.listen()
+
+      const info = server.config.logger.info
+
+      info(
+        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          chalk.green(` dev server running at:\n`),
+        {
+          clear: !server.config.logger.hasWarned
+        }
+      )
+
+      server.printUrls()
+
+      // @ts-ignore
+      if (global.__vite_start_time) {
+        // @ts-ignore
+        const startupDuration = performance.now() - global.__vite_start_time
+        info(`\n  ${chalk.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`)
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         chalk.red(`error when starting dev server:\n${e.stack}`),
@@ -124,7 +145,7 @@ cli
   .option(
     '--minify [minifier]',
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
-      `or specify minifier to use (default: terser)`
+      `or specify minifier to use (default: esbuild)`
   )
   .option('--manifest', `[boolean] emit build manifest json`)
   .option('--ssrManifest', `[boolean] emit ssr manifest json`)
@@ -192,9 +213,9 @@ cli
   .command('preview [root]')
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
+  .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
-  .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .action(
     async (
       root: string,
@@ -207,22 +228,20 @@ cli
       } & GlobalCLIOptions
     ) => {
       try {
-        const config = await resolveConfig(
-          {
-            root,
-            base: options.base,
-            configFile: options.config,
-            logLevel: options.logLevel,
-            server: {
-              open: options.open,
-              strictPort: options.strictPort,
-              https: options.https
-            }
-          },
-          'serve',
-          'production'
-        )
-        await preview(config, cleanOptions(options))
+        const server = await preview({
+          root,
+          base: options.base,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          preview: {
+            port: options.port,
+            strictPort: options.strictPort,
+            host: options.host,
+            https: options.https,
+            open: options.open
+          }
+        })
+        server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
           chalk.red(`error when starting preview server:\n${e.stack}`),

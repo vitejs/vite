@@ -202,7 +202,16 @@ const rollupToEsbuildFormatMap: Record<
 > = {
   es: 'esm',
   cjs: 'cjs',
-  iife: 'iife'
+
+  // passing `var Lib = (() => {})()` to esbuild with format = "iife"
+  // will turn it to `(() => { var Lib = (() => {})() })()`,
+  // so we remove the format config to tell esbuild not doing this
+  //
+  // although esbuild doesn't change format, there is still possibility
+  // that `{ treeShaking: true }` removes a top-level no-side-effect variable
+  // like: `var Lib = 1`, which becomes `` after esbuild transforming,
+  // but thankfully rollup does not do this optimization now
+  iife: undefined
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
@@ -215,12 +224,19 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const target = config.build.target
-      const minify = config.build.minify === 'esbuild'
+      const minify =
+        config.build.minify === 'esbuild' &&
+        // Do not minify ES lib output since that would remove pure annotations
+        // and break tree-shaking
+        // https://github.com/vuejs/vue-next/issues/2860#issuecomment-926882793
+        !(config.build.lib && opts.format === 'es')
+
       if ((!target || target === 'esnext') && !minify) {
         return null
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, {
+        ...config.esbuild,
         target: target || undefined,
         ...(minify
           ? {

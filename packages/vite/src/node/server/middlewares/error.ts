@@ -39,7 +39,7 @@ function cleanStack(stack: string) {
     .join('\n')
 }
 
-export function logError(server: ViteDevServer, err: RollupError) {
+export function logError(server: ViteDevServer, err: RollupError): void {
   const msg = buildErrorMessage(err, [
     chalk.red(`Internal server error: ${err.message}`)
   ])
@@ -68,35 +68,8 @@ export function errorMiddleware(
     if (allowNext) {
       next()
     } else {
-      if (err instanceof AccessRestrictedError) {
-        res.statusCode = 403
-        res.write(renderErrorHTML(err.message))
-        res.end()
-      }
       res.statusCode = 500
       res.end()
     }
   }
-}
-
-export class AccessRestrictedError extends Error {
-  constructor(msg: string) {
-    super(msg)
-  }
-}
-
-export function renderErrorHTML(msg: string): string {
-  // to have syntax highlighting and autocompletion in IDE
-  const html = String.raw
-  return html`
-    <body>
-      <h1>403 Restricted</h1>
-      <p>${msg.replace(/\n/g, '<br/>')}</p>
-      <style>
-        body {
-          padding: 1em 2em;
-        }
-      </style>
-    </body>
-  `
 }

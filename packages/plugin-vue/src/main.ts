@@ -10,7 +10,7 @@ import {
 } from './utils/descriptorCache'
 import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
-import { resolveScript } from './script'
+import { resolveScript, isUseInlineTemplate } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
 import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
@@ -53,14 +53,8 @@ export async function transformMain(
   )
 
   // template
-  // Check if we can use compile template as inlined render function
-  // inside <script setup>. This can only be done for build because
-  // inlined template cannot be individually hot updated.
-  const useInlineTemplate =
-    !devServer &&
-    descriptor.scriptSetup &&
-    !(descriptor.template && descriptor.template.src)
-  const hasTemplateImport = descriptor.template && !useInlineTemplate
+  const hasTemplateImport =
+    descriptor.template && !isUseInlineTemplate(descriptor, !devServer)
 
   let templateCode = ''
   let templateMap: RawSourceMap | undefined
@@ -272,7 +266,13 @@ async function genScriptCode(
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
     if ((!script.lang || script.lang === 'ts') && !script.src) {
-      scriptCode = compiler.rewriteDefault(script.content, '_sfc_main')
+      scriptCode = compiler.rewriteDefault(
+        script.content,
+        '_sfc_main',
+        script.lang === 'ts'
+          ? ['typescript']
+          : undefined
+      )
       map = script.map
     } else {
       if (script.src) {

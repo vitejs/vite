@@ -338,3 +338,21 @@ test('inlined', async () => {
   // should not insert css
   expect(await getColor('.inlined')).toBe('black')
 })
+
+test('inlined-code', async () => {
+  const code = await page.textContent('.inlined-code')
+  // should resolve assets
+  expect(code).toContain('background:')
+  expect(code).not.toContain('__VITE_ASSET__')
+})
+
+test('minify css', async () => {
+  if (!isBuild) {
+    return
+  }
+
+  // should keep the rgba() syntax
+  const cssFile = findAssetFile(/index\.\w+\.css$/)
+  expect(cssFile).toMatch('rgba(')
+  expect(cssFile).not.toMatch('#ffff00b3')
+})

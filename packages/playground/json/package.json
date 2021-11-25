@@ -6,6 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vue": "^3.2.21"
   }
 }

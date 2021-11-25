@@ -53,14 +53,16 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
   :::
 
-### IntelliSense
+### IntelliSense for TypeScript
 
-By default, Vite provides type definition for `import.meta.env`. While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
+By default, Vite provides type definition for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
 
 To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
-interface ImportMetaEnv extends Readonly<Record<string, string>> {
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
   // more env variables...
 }
@@ -72,7 +74,7 @@ interface ImportMeta {
 
 ## Modes
 
-By default, the dev server (`serve` command) runs in `development` mode, and the `build` command runs in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` and `serve` commands run in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 

@@ -4,6 +4,15 @@ import fetch from 'node-fetch'
 
 const url = `http://localhost:${port}`
 
+test('vuex can be import succeed by named import', async () => {
+  await page.goto(url + '/store')
+  expect(await page.textContent('h1')).toMatch('bar')
+
+  // raw http request
+  const storeHtml = await (await fetch(url + '/store')).text()
+  expect(storeHtml).toMatch('bar')
+})
+
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')
@@ -34,7 +43,9 @@ test('/about', async () => {
 
 test('/external', async () => {
   await page.goto(url + '/external')
-  expect(await page.textContent('div')).toMatch('Example external component content')
+  expect(await page.textContent('div')).toMatch(
+    'Example external component content'
+  )
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('mismatch')
@@ -139,4 +150,22 @@ test('client navigation', async () => {
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
+  await page.click('a[href="/"]')
+  await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
+})
+
+test('import.meta.url', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.protocol')).toEqual('file:')
+})
+
+test('deep import built-in module', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.file-message')).toMatch('fs/promises')
+})
+
+test('msg should encrypted', async () => {
+  // raw http request
+  const homeHtml = await (await fetch(url + '/')).text()
+  expect(homeHtml).not.toMatch('Secret Message!')
 })
