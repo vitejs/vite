@@ -38,6 +38,7 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
   
 const builtins = [...builtinModules]
+if (!builtins.includes('fs/promises')) builtins.push('fs/promises')
 builtins.forEach(builtin => { builtins.push(`node:${builtin}`) })
 
 export function isBuiltin(id: string): boolean {
