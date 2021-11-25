@@ -14,7 +14,9 @@ export function spaFallbackMiddleware(
       {
         from: /\/$/,
         to({ parsedUrl }: any) {
-          const rewritten = parsedUrl.pathname + 'index.html'
+          const rewritten =
+            decodeURIComponent(parsedUrl.pathname) + 'index.html'
+
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
           } else {

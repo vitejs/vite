@@ -196,3 +196,17 @@ describe('noBody', () => {
     expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
   })
 })
+
+describe('unicode path', () => {
+  test('direct access', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+    )
+    expect(await page.textContent('h1')).toBe('unicode-path')
+  })
+
+  test('spa fallback', async () => {
+    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
+    expect(await page.textContent('h1')).toBe('unicode-path')
+  })
+})

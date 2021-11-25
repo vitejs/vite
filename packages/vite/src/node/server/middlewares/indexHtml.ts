@@ -34,9 +34,9 @@ export function createDevHtmlTransformFn(
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
-    return fsPathFromId(url)
+    return decodeURIComponent(fsPathFromId(url))
   } else {
-    return path.join(server.config.root, url.slice(1))
+    return decodeURIComponent(path.join(server.config.root, url.slice(1)))
   }
 }
 
