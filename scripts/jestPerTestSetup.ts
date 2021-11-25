@@ -22,20 +22,31 @@ export function slash(p: string): string {
 
 // injected by the test env
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace NodeJS {
-    interface Global {
-      page?: Page
-      viteTestUrl?: string
-      watcher?: RollupWatcher
-    }
-  }
+  const page: Page | undefined
+
+  const browserLogs: string[]
+  const viteTestUrl: string | undefined
+  const watcher: RollupWatcher | undefined
+  let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
+}
+
+declare const global: {
+  page?: Page
+
+  browserLogs: string[]
+  viteTestUrl?: string
+  watcher?: RollupWatcher
+  beforeAllError: Error | null
 }
 
 let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
-let err: Error
+
+const setBeforeAllError = (err) => ((global as any).beforeAllError = err)
+const getBeforeAllError = () => (global as any).beforeAllError
+//init with null so old errors don't carry over
+setBeforeAllError(null)
 
 const logs = ((global as any).browserLogs = [])
 const onConsole = (msg) => {
@@ -57,30 +68,23 @@ beforeAll(async () => {
     // start a vite server in that directory.
     if (testName) {
       const playgroundRoot = resolve(__dirname, '../packages/playground')
-      const srcDir = resolve(playgroundRoot, testName)
-      tempDir = resolve(__dirname, '../temp', testName)
-      await fs.copy(srcDir, tempDir, {
-        dereference: true,
-        filter(file) {
-          file = slash(file)
-          return (
-            !file.includes('__tests__') &&
-            !file.includes('node_modules') &&
-            !file.match(/dist(\/|$)/)
-          )
-        }
-      })
+      tempDir = resolve(__dirname, '../packages/temp/', testName)
 
       // when `root` dir is present, use it as vite's root
-      let testCustomRoot = resolve(tempDir, 'root')
+      const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
       const testCustomServe = resolve(dirname(testPath), 'serve.js')
       if (fs.existsSync(testCustomServe)) {
         // test has custom server configuration.
-        const { serve } = require(testCustomServe)
-        server = await serve(rootDir, isBuildTest)
-        return
+        const { serve, preServe } = require(testCustomServe)
+        if (preServe) {
+          await preServe(rootDir, isBuildTest)
+        }
+        if (serve) {
+          server = await serve(rootDir, isBuildTest)
+          return
+        }
       }
 
       const options: UserConfig = {
@@ -137,7 +141,7 @@ beforeAll(async () => {
   } catch (e) {
     // jest doesn't exit if our setup has error here
     // https://github.com/facebook/jest/issues/2713
-    err = e
+    setBeforeAllError(e)
 
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
@@ -151,8 +155,9 @@ afterAll(async () => {
   global.page?.off('console', onConsole)
   await global.page?.close()
   await server?.close()
-  if (err) {
-    throw err
+  const beforeAllErr = getBeforeAllError()
+  if (beforeAllErr) {
+    throw beforeAllErr
   }
 })
 

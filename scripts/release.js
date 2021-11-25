@@ -141,19 +141,20 @@ async function main() {
 
   step('\nBuilding package...')
   if (!skipBuild && !isDryRun) {
-    await run('yarn', ['build'])
+    await run('pnpm', ['run', 'build'])
   } else {
     console.log(`(skipped)`)
   }
 
   step('\nGenerating changelog...')
-  await run('yarn', ['changelog'])
+  await run('pnpm', ['run', 'changelog'])
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
     step('\nCommitting changes...')
     await runIfNotDry('git', ['add', '-A'])
     await runIfNotDry('git', ['commit', '-m', `release: ${tag}`])
+    await runIfNotDry('git', ['tag', tag])
   } else {
     console.log('No changes to commit.')
   }
@@ -162,7 +163,6 @@ async function main() {
   await publishPackage(targetVersion, runIfNotDry)
 
   step('\nPushing to GitHub...')
-  await runIfNotDry('git', ['tag', tag])
   await runIfNotDry('git', ['push', 'origin', `refs/tags/${tag}`])
   await runIfNotDry('git', ['push'])
 
@@ -199,6 +199,8 @@ async function publishPackage(version, runIfNotDry) {
     publicArgs.push(`--tag`, args.tag)
   }
   try {
+    // important: we still use Yarn 1 to publish since we rely on its specific
+    // behavior
     await runIfNotDry('yarn', publicArgs, {
       stdio: 'pipe'
     })

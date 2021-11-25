@@ -1,6 +1,6 @@
 # @vitejs/plugin-vue [![npm](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg)](https://npmjs.com/package/@vitejs/plugin-vue)
 
-Note: requires `@vue/compiler-sfc` as peer dependency. This is largely a port of `rollup-plugin-vue` with some vite-specific tweaks.
+> Note: as of `vue` 3.2.13+ and `@vitejs/plugin-vue` 1.9.0+, `@vue/compiler-sfc` is no longer required as a peer dependency.
 
 ```js
 // vite.config.js
@@ -30,7 +30,23 @@ export interface Options {
    */
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
-  // options to pass on to @vue/compiler-sfc
+  /**
+   * Enable Vue ref transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
+   *
+   * **requires Vue \>= 3.2.5**
+   *
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories in necessary)
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
@@ -67,7 +83,7 @@ const vueI18nPlugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+      code = JSON.stringify(require('js-yaml').load(code.trim()))
     }
     return `export default Comp => {
       Comp.i18n = ${code}

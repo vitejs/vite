@@ -4,9 +4,20 @@ Vite plugins extends Rollup's well-designed plugin interface with a few extra Vi
 
 **It is recommended to go through [Rollup's plugin documentation](https://rollupjs.org/guide/en/#plugin-development) first before reading the sections below.**
 
+## Authoring a Plugin
+
+Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](https://vitejs.dev/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins)
+
+When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vitejs.dev).
+
+::: tip
+When learning, debugging, or authoring plugins we suggest including [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) in your project. It allows you to inspect the intermediate state of Vite plugins. After installing, you can visit `localhost:3000/__inspect/` to inspect the modules and transformation stack of your project. Check out install instructions in the [vite-plugin-inspect docs](https://github.com/antfu/vite-plugin-inspect).
+![vite-plugin-inspect](/images/vite-plugin-inspect.png)
+:::
+
 ## Conventions
 
-If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions)
+If the plugin doesn't use Vite specific hooks and can be implemented as a [Compatible Rollup Plugin](#rollup-plugin-compatibility), then it is recommended to use the [Rollup Plugin naming conventions](https://rollupjs.org/guide/en/#conventions).
 
 - Rollup Plugins should have a clear name with `rollup-plugin-` prefix.
 - Include `rollup-plugin` and `vite-plugin` keywords in package.json.
@@ -24,6 +35,11 @@ If your plugin is only going to work for a particular framework, its name should
 - `vite-plugin-vue-` prefix for Vue Plugins
 - `vite-plugin-react-` prefix for React Plugins
 - `vite-plugin-svelte-` prefix for Svelte Plugins
+
+Vite convention for virtual modules is to prefix the user-facing path with `virtual:`. If possible the plugin name should be used as a namespace to avoid collisions with other plugins in the ecosystem. For example, a `vite-plugin-posts` could ask users to import a `virtual:posts` or `virtual:posts/helpers` virtual modules to get build time information. Internally, plugins that use virtual modules should prefix the module ID with `\0` while resolving the id, a convention from the rollup ecosystem. This prevents other plugins from trying to process the id (like node resolution), and core features like sourcemaps can use this info to differentiate between virtual modules and regular files. `\0` is not a permitted char in import URLs so we have to replace them during import analysis. A `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id will be decoded back before entering the plugins pipeline, so this is not seen by plugins hooks code.
+
+Note that modules directly derived from a real file, as in the case of a script module in a Single File Component (like a .vue or .svelte SFC) don't need to follow this convention. SFCs generally generate a set of submodules when processed but the code in these can be mapped back to the filesystem. Using `\0` for these submodules would prevent sourcemaps from working correctly.
+
 
 ## Plugins config
 
@@ -73,28 +89,29 @@ It is common convention to author a Vite/Rollup plugin as a factory function tha
 
 ```js
 export default function myPlugin() {
-  const virtualFileId = '@my-virtual-file'
+  const virtualModuleId = '@my-virtual-module'
+  const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
     name: 'my-plugin', // required, will show up in warnings and errors
     resolveId(id) {
-      if (id === virtualFileId) {
-        return virtualFileId
+      if (id === virtualModuleId) {
+        return resolvedVirtualModuleId
       }
     },
     load(id) {
-      if (id === virtualFileId) {
-        return `export const msg = "from virtual file"`
+      if (id === resolvedVirtualModuleId) {
+        return `export const msg = "from virtual module"`
       }
     }
   }
 }
 ```
 
-Which allows importing the file in JavaScript:
+Which allows importing the module in JavaScript:
 
 ```js
-import { msg } from '@my-virtual-file'
+import { msg } from '@my-virtual-module'
 
 console.log(msg)
 ```
@@ -207,7 +224,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
       // use stored config in other hooks
       transform(code, id) {
         if (config.command === 'serve') {
-          // serve: plugin invoked by dev server
+          // dev: plugin invoked by dev server
         } else {
           // build: plugin invoked by Rollup
         }
@@ -215,6 +232,8 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     }
   }
   ```
+
+  Note that the `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
 
 ### `configureServer`
 
@@ -279,7 +298,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ### `transformIndexHtml`
 
-- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post' transform: IndexHtmlTransformHook }`
+- **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post', transform: IndexHtmlTransformHook }`
 - **Kind:** `async`, `sequential`
 
   Dedicated hook for transforming `index.html`. The hook receives the current HTML string and a transform context. The context exposes the [`ViteDevServer`](./api-javascript#vitedevserver) instance during dev, and exposes the Rollup output bundle during build.
@@ -411,6 +430,15 @@ function myPlugin() {
     name: 'build-only',
     apply: 'build' // or 'serve'
   }
+}
+```
+
+A function can also be used for more precise control:
+
+```js
+apply(config, { command }) {
+  // apply only on build but not for SSR
+  return command === 'build' && !config.build.ssr
 }
 ```
 

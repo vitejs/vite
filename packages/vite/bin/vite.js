@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { performance } = require('perf_hooks')
 
 if (!__dirname.includes('node_modules')) {
   try {
@@ -7,7 +8,7 @@ if (!__dirname.includes('node_modules')) {
   } catch (e) {}
 }
 
-global.__vite_start_time = Date.now()
+global.__vite_start_time = performance.now()
 
 // check debug mode first before requiring the CLI.
 const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))

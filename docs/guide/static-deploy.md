@@ -40,7 +40,7 @@ $ npm run build
 $ npm run preview
 ```
 
-The `preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
 
 You may configure the port of the server py passing `--port` flag as an argument.
 
@@ -84,7 +84,7 @@ Now the `preview` method will launch the server at http://localhost:8080.
    git commit -m 'deploy'
 
    # if you are deploying to https://<USERNAME>.github.io
-   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git master
+   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
 
    # if you are deploying to https://<USERNAME>.github.io/<REPO>
    # git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
@@ -183,7 +183,13 @@ You can also run the above script in your CI setup to enable automatic deploymen
    {
      "hosting": {
        "public": "dist",
-       "ignore": []
+       "ignore": [],
+       "rewrites": [
+         {
+           "source": "**",
+           "destination": "/index.html"
+         }
+       ]
      }
    }
    ```

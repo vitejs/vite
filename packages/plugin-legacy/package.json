@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "1.5.1",
+  "version": "1.6.3",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -26,11 +26,11 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "dependencies": {
-    "@babel/standalone": "^7.14.9",
-    "core-js": "^3.16.0",
+    "@babel/standalone": "^7.16.4",
+    "core-js": "^3.19.1",
     "magic-string": "^0.25.7",
     "regenerator-runtime": "^0.13.9",
-    "systemjs": "^6.10.2"
+    "systemjs": "^6.11.0"
   },
   "peerDependencies": {
     "vite": "^2.0.0"

@@ -1,3 +1,151 @@
+# [1.10.0](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.1...plugin-vue@1.10.0) (2021-11-22)
+
+
+
+# [1.10.0-beta.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.0...plugin-vue@1.10.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* plugin-vue dev scripts error in ssr-vue ([#5607](https://github.com/vitejs/vite/issues/5607)) ([502b8f2](https://github.com/vitejs/vite/commit/502b8f2b31f06d4e524d36b5566197db76f6ccda))
+* **plugin-vue:** template src isn't working when script setup ([#5418](https://github.com/vitejs/vite/issues/5418)) ([518da44](https://github.com/vitejs/vite/commit/518da447e573b6f6ec5e2b1ca837332e0e230c14))
+* **plugin-vue:** use __vccOpts for vue-class-component ([#5374](https://github.com/vitejs/vite/issues/5374)) ([c4f9db2](https://github.com/vitejs/vite/commit/c4f9db2cb375729b06f438298560045d4c488c14))
+
+
+
+# [1.10.0-beta.0](https://github.com/vitejs/vite/compare/plugin-vue@1.9.4...plugin-vue@1.10.0-beta.0) (2021-10-28)
+
+
+
+## [1.9.4](https://github.com/vitejs/vite/compare/plugin-vue@1.9.3...plugin-vue@1.9.4) (2021-10-27)
+
+
+### Bug Fixes
+
+* **plugin-vue:** exclude direct css request from hmr target ([#5422](https://github.com/vitejs/vite/issues/5422)) ([4331c26](https://github.com/vitejs/vite/commit/4331c26a5e5d7a9efc08a8b7bf7056785a1bcd94))
+
+
+
+## [1.9.3](https://github.com/vitejs/vite/compare/plugin-vue@1.9.2...plugin-vue@1.9.3) (2021-10-05)
+
+
+### Bug Fixes
+
+* **plugin-vue:** don't use object spread in the config hook ([#5155](https://github.com/vitejs/vite/issues/5155)) ([c1ce471](https://github.com/vitejs/vite/commit/c1ce471c07264db034f42573662971f0dc531df7))
+
+
+
+## [1.9.2](https://github.com/vitejs/vite/compare/plugin-vue@1.9.1...plugin-vue@1.9.2) (2021-09-24)
+
+
+### Bug Fixes
+
+* **plugin-vue:** handle rewrite default edge case with TS ([609a342](https://github.com/vitejs/vite/commit/609a342986b2d3b05ef59dc23523239938264008))
+
+
+### Reverts
+
+* Revert "feat(plugin-vue): define __VUE_SSR__ flag" ([3e2c1bf](https://github.com/vitejs/vite/commit/3e2c1bf74bb8ef583d66c67c715fdeae8d8fe432))
+
+
+
+## [1.9.1](https://github.com/vitejs/vite/compare/plugin-vue@1.9.0...plugin-vue@1.9.1) (2021-09-23)
+
+
+### Features
+
+* ~~**plugin-vue:** define __VUE_SSR__ flag ([49618c1](https://github.com/vitejs/vite/commit/49618c17f38ee54ea17b4b04d58eb5fbf3e532fe))~~ (Reverted)
+
+
+
+# [1.9.0](https://github.com/vitejs/vite/compare/plugin-vue@1.8.1...plugin-vue@1.9.0) (2021-09-21)
+
+
+### Bug Fixes
+
+* **plugin-vue:** enable ts in template also for lang=tsx ([ed88df3](https://github.com/vitejs/vite/commit/ed88df30a93d759e5c4ac0f079b9f604fad2ce40))
+
+
+### Features
+
+* **plugin-vue:** support optional @vue/compiler-sfc peer dep ([b17b5ae](https://github.com/vitejs/vite/commit/b17b5ae68de50413a95fb992ceda92ec0fceaa86))
+
+
+
+## [1.8.1](https://github.com/vitejs/vite/compare/plugin-vue@1.8.0...plugin-vue@1.8.1) (2021-09-19)
+
+
+### Bug Fixes
+
+* **plugin-vue:** generate tree-shakable code ([316d7af](https://github.com/vitejs/vite/commit/316d7afc0c84e51359938a12ebe1b09ca34ea8bd))
+
+
+
+# [1.8.0](https://github.com/vitejs/vite/compare/plugin-vue@1.7.1...plugin-vue@1.8.0) (2021-09-18)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#4545](https://github.com/vitejs/vite/issues/4545)) ([a44fd5d](https://github.com/vitejs/vite/commit/a44fd5d38679da0be2536103e83af730cda73a95))
+
+
+### Performance Improvements
+
+* **plugin-vue:** inline main script for build + avoid sourcemap generation when possible ([93d9a2d](https://github.com/vitejs/vite/commit/93d9a2d175b1a1e3fe54197856a86887b1dadb74))
+
+
+
+## [1.7.1](https://github.com/vitejs/vite/compare/plugin-vue@1.7.0...plugin-vue@1.7.1) (2021-09-18)
+
+
+### Bug Fixes
+
+* **plugin-vue:** properly handle in-template TS syntax + tests ([0a2a5e1](https://github.com/vitejs/vite/commit/0a2a5e1c8b9d2765faecfb5e4641b1c5a94575e1))
+
+
+
+# [1.7.0](https://github.com/vitejs/vite/compare/plugin-vue@1.6.2...plugin-vue@1.7.0) (2021-09-18)
+
+
+### Features
+
+* **plugin-vue:** support TS in template expressions ([01fa2ab](https://github.com/vitejs/vite/commit/01fa2abe901834c1c3168c343120429700e82983))
+
+
+
+## [1.6.2](https://github.com/vitejs/vite/compare/plugin-vue@1.6.1...plugin-vue@1.6.2) (2021-09-08)
+
+
+### Bug Fixes
+
+* **plugin-vue:** ensure descriptor in case main request is cached ([85612fe](https://github.com/vitejs/vite/commit/85612fe69da98759dbf3b5352cf47a74f20374ff))
+
+
+
+## [1.6.1](https://github.com/vitejs/vite/compare/plugin-vue@1.6.0...plugin-vue@1.6.1) (2021-09-06)
+
+
+### Bug Fixes
+
+* hmr doesn't work when modifying the code of jsx in sfc ([#4563](https://github.com/vitejs/vite/issues/4563)) ([1012367](https://github.com/vitejs/vite/commit/101236794c5d6d28591302d5552cb1c0ab8f4115))
+* **plugin-vue:** avoid applying ref transform to dependencies by default ([cd4f341](https://github.com/vitejs/vite/commit/cd4f341201d5598c3ec9cc594949e7d5304ac7ec))
+
+
+
+# [1.6.0](https://github.com/vitejs/vite/compare/plugin-vue@1.5.0...plugin-vue@1.6.0) (2021-08-24)
+
+
+### Features
+
+* **plugin-vue:** latest ref transform support ([533b002](https://github.com/vitejs/vite/commit/533b0029adc912257251b5021879ab1d676a16ab))
+* **plugin-vue:** warn compiler-sfc version mismatch ([e7263b9](https://github.com/vitejs/vite/commit/e7263b98f2e174198b322d26c6a7207d706a6639))
+
+
+
+# [1.5.0](https://github.com/vitejs/vite/compare/plugin-vue@1.4.0...plugin-vue@1.5.0) (2021-08-24)
+
+
+
 # [1.4.0](https://github.com/vitejs/vite/compare/plugin-vue@1.3.0...plugin-vue@1.4.0) (2021-08-07)
 
 ### Features

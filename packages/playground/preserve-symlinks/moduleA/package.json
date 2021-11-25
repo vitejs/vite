@@ -1,0 +1,5 @@
+{
+  "name": "@symlinks/moduleA",
+  "version": "0.0.0",
+  "main": "linked.js"
+}

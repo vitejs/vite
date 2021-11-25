@@ -22,6 +22,10 @@ test('custom', async () => {
   expect(await page.textContent('.custom')).toBe('1')
 })
 
+test('custom-prefix', async () => {
+  expect(await page.textContent('.custom-prefix')).toBe('1')
+})
+
 test('mode file override', async () => {
   expect(await page.textContent('.mode-file')).toBe(`.env.${mode}`)
 })
@@ -40,6 +44,7 @@ test('env object', async () => {
   const envText = await page.textContent('.env-object')
   expect(JSON.parse(envText)).toMatchObject({
     VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+    CUSTOM_PREFIX_ENV_VARIABLE: '1',
     VITE_CUSTOM_ENV_VARIABLE: '1',
     BASE_URL: '/',
     MODE: mode,

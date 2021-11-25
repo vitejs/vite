@@ -31,14 +31,26 @@ export async function ssrTransform(
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    ecmaVersion: 2021,
-    locations: true
-  }) as any
+  let ast: any
+  try {
+    ast = parser.parse(code, {
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      locations: true
+    })
+  } catch (err) {
+    if (!err.loc || !err.loc.line) throw err
+    const line = err.loc.line
+    throw new Error(
+      `Parse failure: ${err.message}\nContents of line ${line}: ${
+        code.split('\n')[line - 1]
+      }`
+    )
+  }
 
   let uid = 0
   const deps = new Set<string>()
+  const dynamicDeps = new Set<string>()
   const idToImportMap = new Map<string, string>()
   const declaredConst = new Set<string>()
 
@@ -200,6 +212,9 @@ export async function ssrTransform(
     },
     onDynamicImport(node) {
       s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
+        dynamicDeps.add(node.source.value as string)
+      }
     }
   })
 
@@ -221,7 +236,8 @@ export async function ssrTransform(
   return {
     code: s.toString(),
     map,
-    deps: [...deps]
+    deps: [...deps],
+    dynamicDeps: [...dynamicDeps]
   }
 }
 
@@ -286,25 +302,33 @@ function walk(
           onIdentifier(node, parent!, parentStack)
         }
       } else if (isFunction(node)) {
+        // If it is a function declaration, it could be shadowing an import
+        // Add its name to the scope so it won't get replaced
+        if (node.type === 'FunctionDeclaration') {
+          const parentFunction = findParentFunction(parentStack)
+          if (parentFunction) {
+            setScope(parentFunction, node.id!.name)
+          }
+        }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
         node.params.forEach((p) =>
-          (eswalk as any)(p, {
+          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              if (child.type !== 'Identifier') return
+              // do not record as scope variable if is a destructuring keyword
+              if (isStaticPropertyKey(child, parent)) return
+              // do not record if this is a default value
+              // assignment of a destructuring variable
               if (
-                child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructuring key
-                !isStaticPropertyKey(child, parent) &&
-                // do not record if this is a default value
-                // assignment of a destructuring variable
-                !(
-                  parent &&
-                  parent.type === 'AssignmentPattern' &&
-                  parent.right === child
-                )
+                (parent?.type === 'AssignmentPattern' &&
+                  parent?.right === child) ||
+                (parent?.type === 'TemplateLiteral' &&
+                  parent?.expressions.includes(child))
               ) {
-                setScope(node, child.name)
+                return
               }
+              setScope(node, child.name)
             }
           })
         )
@@ -321,6 +345,10 @@ function walk(
               } else {
                 setScope(parentFunction, (property.value as Identifier).name)
               }
+            })
+          } else if (node.id.type === 'ArrayPattern') {
+            node.id.elements.forEach((element) => {
+              setScope(parentFunction, (element as Identifier).name)
             })
           } else {
             setScope(parentFunction, (node.id as Identifier).name)

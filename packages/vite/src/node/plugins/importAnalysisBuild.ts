@@ -4,8 +4,13 @@ import { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
 import { OutputChunk } from 'rollup'
-import { chunkToEmittedCssFileMap } from './css'
+import {
+  chunkToEmittedCssFileMap,
+  isCSSRequest,
+  removedPureCssFilesCache
+} from './css'
 import { transformImportGlob } from '../importGlob'
+import { bareImportRE } from '../utils'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -89,7 +94,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
 
   return {
-    name: 'vite:import-analysis',
+    name: 'vite:build-import-analysis',
 
     resolveId(id) {
       if (id === preloadHelperId) {
@@ -116,7 +121,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e) {
+      } catch (e: any) {
         this.error(e, e.idx)
       }
 
@@ -133,15 +138,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
+          n: specifier,
           d: dynamicIndex
         } = imports[index]
 
-        const isGlob =
+        // import.meta.glob
+        if (
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
-
-        // import.meta.glob
-        if (isGlob) {
+        ) {
           const { importsString, exp, endIndex, isEager } =
             await transformImportGlob(
               source,
@@ -166,6 +171,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const original = source.slice(dynamicIndex, dynamicEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(dynamicIndex, dynamicEnd, replacement)
+        }
+
+        // Differentiate CSS imports that use the default export from those that
+        // do not by injecting a ?used query - this allows us to avoid including
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
+        // them)
+        if (
+          specifier &&
+          isCSSRequest(specifier) &&
+          source.slice(expStart, start).includes('from') &&
+          // edge case for package names ending with .css (e.g normalize.css)
+          !(bareImportRE.test(specifier) && !specifier.includes('/'))
+        ) {
+          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
+          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url)
         }
       }
 
@@ -225,19 +245,31 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           let imports: ImportSpecifier[]
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
-          } catch (e) {
+          } catch (e: any) {
             this.error(e, e.idx)
           }
 
           if (imports.length) {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
-              const { s: start, e: end } = imports[index]
+              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+              const {
+                n: name,
+                s: start,
+                e: end,
+                d: dynamicIndex
+              } = imports[index]
               // check the chunk being imported
-              const url = code.slice(start, end)
+              let url = name
+              if (!url) {
+                const rawUrl = code.slice(start, end)
+                if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                  url = rawUrl.slice(1, -1)
+              }
               const deps: Set<string> = new Set()
+              let hasRemovedPureCssChunk = false
 
-              if (url[0] === `"` && url[url.length - 1] === `"`) {
+              if (url) {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
@@ -255,11 +287,26 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       })
                     }
                     chunk.imports.forEach(addDeps)
+                  } else {
+                    const removedPureCssFiles =
+                      removedPureCssFilesCache.get(config)!
+                    const chunk = removedPureCssFiles.get(filename)
+                    if (chunk) {
+                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
+                      if (cssFiles && cssFiles.size > 0) {
+                        cssFiles.forEach((file) => {
+                          deps.add(file)
+                        })
+                        hasRemovedPureCssChunk = true
+                      }
+
+                      s.overwrite(dynamicIndex, end + 1, 'Promise.resolve({})')
+                    }
                   }
                 }
                 const normalizedFile = path.posix.join(
                   path.posix.dirname(chunk.fileName),
-                  url.slice(1, -1)
+                  url
                 )
                 addDeps(normalizedFile)
               }
@@ -276,7 +323,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   markPos + preloadMarker.length + 1,
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
-                  deps.size > 1
+                  deps.size > 1 ||
+                    // main chunk is removed
+                    (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
                     : `[]`
                 )

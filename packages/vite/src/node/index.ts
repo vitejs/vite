@@ -1,19 +1,21 @@
 export * from './config'
-export { createServer } from './server'
+export { createServer, searchForWorkspaceRoot } from './server'
+export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
-export { createLogger } from './logger'
-export { resolvePackageData, resolvePackageEntry } from './plugins/resolve'
+export { createLogger, printHttpServerUrls } from './logger'
+export { transformWithEsbuild } from './plugins/esbuild'
+export { resolvePackageEntry } from './plugins/resolve'
+export { resolvePackageData } from './packages'
 export { normalizePath } from './utils'
 
 // additional types
+export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
   ViteDevServer,
   ServerOptions,
-  CorsOptions,
   FileSystemServeOptions,
-  CorsOrigin,
   ServerHook,
   ResolvedServerOptions
 } from './server'
@@ -24,10 +26,16 @@ export type {
   ResolvedBuildOptions
 } from './build'
 export type {
+  PreviewOptions,
+  PreviewServer,
+  ResolvedPreviewOptions
+} from './preview'
+export type {
   DepOptimizationMetadata,
   DepOptimizationOptions
 } from './optimizer'
 export type { Plugin } from './plugin'
+export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
   LogOptions,
@@ -51,16 +59,13 @@ export type {
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
+export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
-export type {
-  PackageData,
-  ResolveOptions,
-  InternalResolveOptions
-} from './plugins/resolve'
+export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
-export type { ModuleGraph, ModuleNode } from './server/moduleGraph'
+export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
@@ -78,8 +83,10 @@ export type {
   ErrorPayload
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'
+export type { WebSocket } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'

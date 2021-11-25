@@ -11,7 +11,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   const base = config.base
 
   return {
-    name: 'vite:manifest',
+    name: 'vite:ssr-manifest',
     generateBundle(_options, bundle) {
       for (const file in bundle) {
         const chunk = bundle[file]

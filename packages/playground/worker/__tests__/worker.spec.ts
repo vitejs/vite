@@ -12,6 +12,11 @@ test('normal', async () => {
   )
 })
 
+test('TS output', async () => {
+  await page.click('.ping-ts-output')
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
+})
+
 test('inlined', async () => {
   await page.click('.ping-inline')
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
@@ -47,8 +52,8 @@ if (isBuild) {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
-    expect(files.length).toBe(3)
+    // should have 3 worker chunk
+    expect(files.length).toBe(4)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -65,5 +70,6 @@ if (isBuild) {
     expect(content).toMatch(`new SharedWorker("/assets`)
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
+    expect(content).toMatch(`window.Blob`)
   })
 }
