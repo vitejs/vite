@@ -235,7 +235,7 @@ export type ResolvedBuildOptions = Required<
   Omit<
     BuildOptions,
     // make deprecated options optional
-    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
+    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize' | 'manualChunks'
   >
 >
 
