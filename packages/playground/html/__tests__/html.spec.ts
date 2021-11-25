@@ -199,11 +199,11 @@ describe('noBody', () => {
 
 describe('unicode path', () => {
   test('direct access', async () => {
-    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html')
+    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글/index.html')
     expect(await page.textContent('h1')).toBe('unicode-path')
   })
   test('spa fallback', async () => {
-    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
+    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글/')
     expect(await page.textContent('h1')).toBe('unicode-path')
   })
 })
