@@ -246,7 +246,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
             } else if (url && !url.match(/\.[mc]?js$/)) {
-              config.logger.warn(`<script src="${url}"> in "${id}" can't be transformed without type="module" attribute`)
+              config.logger.warn(
+                `<script src="${url}"> in "${publicPath}" can't be transformed without type="module" attribute`
+              )
             }
           }
 
