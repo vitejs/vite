@@ -1,7 +1,7 @@
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
+import type { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -11,7 +11,7 @@ import {
   processSrcSet,
   slash
 } from '../utils'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,
@@ -21,12 +21,12 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import {
+import type {
   AttributeNode,
   NodeTransform,
-  NodeTypes,
   ElementNode
 } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)

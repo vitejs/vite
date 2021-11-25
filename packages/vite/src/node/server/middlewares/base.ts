@@ -1,6 +1,6 @@
 import { parse as parseUrl } from 'url'
-import { ViteDevServer } from '..'
-import { Connect } from 'types/connect'
+import type { ViteDevServer } from '..'
+import type { Connect } from 'types/connect'
 
 // this middleware is only active when (config.base !== '/')
 

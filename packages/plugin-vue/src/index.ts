@@ -1,7 +1,7 @@
 import fs from 'fs'
-import { Plugin, ViteDevServer } from 'vite'
+import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
-import {
+import type {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,

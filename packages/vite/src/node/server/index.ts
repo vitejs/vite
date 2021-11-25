@@ -1,22 +1,21 @@
 import fs from 'fs'
 import path from 'path'
-import * as net from 'net'
-import * as http from 'http'
+import type * as net from 'net'
+import type * as http from 'http'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import chalk from 'chalk'
-import { AddressInfo } from 'net'
+import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart,
-  CommonServerOptions
-} from '../http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
-import { createPluginContainer, PluginContainer } from './pluginContainer'
-import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from './ws'
+import type { CommonServerOptions } from '../http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
+import type { InlineConfig, ResolvedConfig } from '../config'
+import { resolveConfig } from '../config'
+import type { PluginContainer } from './pluginContainer'
+import { createPluginContainer } from './pluginContainer'
+import type { FSWatcher, WatchOptions } from 'types/chokidar'
+import type { WebSocketServer } from './ws'
+import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
 import { spaFallbackMiddleware } from './middlewares/spaFallback'
@@ -31,24 +30,22 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph, ModuleNode } from './moduleGraph'
-import { Connect } from 'types/connect'
+import type { ModuleNode } from './moduleGraph'
+import { ModuleGraph } from './moduleGraph'
+import type { Connect } from 'types/connect'
 import { ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
+import type { HmrOptions } from './hmr'
+import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import {
-  TransformOptions,
-  TransformResult,
-  transformRequest
-} from './transformRequest'
-import {
-  transformWithEsbuild,
-  ESBuildTransformResult
-} from '../plugins/esbuild'
-import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
+import type { TransformOptions, TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
+import type { ESBuildTransformResult } from '../plugins/esbuild'
+import { transformWithEsbuild } from '../plugins/esbuild'
+import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
+import type { DepOptimizationMetadata } from '../optimizer'
+import { optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {

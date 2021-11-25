@@ -5,7 +5,7 @@
 import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
-import { ElementHandle } from 'playwright-chromium'
+import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 
 export function slash(p: string): string {

@@ -2,7 +2,7 @@
 import '../nested/main'
 import '../nested-with-extends/main'
 
-import { MainTypeOnlyClass } from './not-used-type'
+import type { MainTypeOnlyClass } from './not-used-type'
 
 class MainBase {
   set data(value: string) {

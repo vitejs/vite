@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { NestedWithExtendsTypeOnlyClass } from './not-used-type'
+import type { NestedWithExtendsTypeOnlyClass } from './not-used-type'
 
 class NestedWithExtendsBase {
   set data(value: string) {
