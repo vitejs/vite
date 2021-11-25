@@ -2,7 +2,8 @@
 import '../nested/main'
 import '../nested-with-extends/main'
 
-import type { MainTypeOnlyClass } from './not-used-type'
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { MainTypeOnlyClass } from './not-used-type'
 
 class MainBase {
   set data(value: string) {
