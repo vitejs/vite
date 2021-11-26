@@ -19,12 +19,18 @@
   <span class="tick-count">0</span>
 </div>
 
+<p>
+  ?worker&url import
+  <code class="worker-url"></code>
+</p>
+
 <script type="module">
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
   import SharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
+  import WorkerUrl from './my-worker?worker&url'
 
   document.querySelector('.mode-true').textContent = mode
 
@@ -66,6 +72,8 @@
   document.querySelector('.ping-ts-output').addEventListener('click', () => {
     inlineWorker.postMessage('ping')
   })
+
+  text('.worker-url', WorkerUrl)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

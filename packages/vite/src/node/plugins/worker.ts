@@ -103,6 +103,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, WorkerFileId)
       }
 
+      if (query.url != null) {
+        return `export default ${JSON.stringify(url)}`
+      }
+
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }

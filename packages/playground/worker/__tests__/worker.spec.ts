@@ -73,3 +73,11 @@ if (isBuild) {
     expect(content).toMatch(`window.Blob`)
   })
 }
+
+test('?worker&url import', async () => {
+  if (isBuild) {
+    expect(await page.textContent('.worker-url')).toMatch('/assets/my-worker.')
+  } else {
+    expect(await page.textContent('.worker-url')).toMatch('/my-worker.ts?worker_file')
+  }
+})
