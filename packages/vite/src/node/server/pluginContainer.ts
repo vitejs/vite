@@ -121,6 +121,7 @@ type PluginContext = Omit<
   | 'isExternal'
   | 'moduleIds'
   | 'resolveId'
+  | 'load'
 >
 
 export let parser = acorn.Parser.extend(
