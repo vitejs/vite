@@ -38,7 +38,7 @@ The supported template presets are:
 ## Scaffolding Your First Vite Project
 
 ::: tip Compatibility Note
-Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
+Vite requires [Node.js](https://nodejs.org/en/) version >=14.0.0.
 :::
 
 With NPM:

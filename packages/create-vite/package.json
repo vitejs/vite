@@ -17,7 +17,7 @@
     "release": "node updateVersions && node ../../scripts/release.js --skipBuild"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.0.0"
   },
   "repository": {
     "type": "git",
