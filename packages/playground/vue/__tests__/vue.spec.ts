@@ -157,6 +157,13 @@ describe('hmr', () => {
     await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
   })
 
+  test('global hmr for some scenarios', async () => {
+    editFile('Hmr.vue', (code) =>
+      code.replace('</template>', '  <Node/>\n' + '</template>')
+    )
+    await untilUpdated(() => page.innerHTML('.node'), 'this is node')
+  })
+
   test('should re-render when template is emptied', async () => {
     editFile('Hmr.vue', () => '')
     await untilUpdated(() => page.innerHTML('.hmr-block'), '<!---->')
