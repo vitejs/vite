@@ -1,3 +1,12 @@
+## [1.10.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0...plugin-vue@1.10.1) (2021-11-26)
+
+
+### Bug Fixes
+
+* **plugin-vue:** fix hmr issue in vuejs/vue-next[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
+
+
+
 # [1.10.0](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0-beta.1...plugin-vue@1.10.0) (2021-11-22)
 
 
