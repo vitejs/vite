@@ -56,7 +56,6 @@ export function resolveScript(
     inlineTemplate: isUseInlineTemplate(descriptor, !options.devServer),
     refTransform: options.refTransform !== false,
     templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr),
-    // @ts-ignore TODO remove ignore when we support this in @vue/compiler-sfc
     sourceMap: options.sourceMap
   })
 

@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import Node from './Node.vue'
 
 let foo: number = 0
 
