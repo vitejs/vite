@@ -1,3 +1,25 @@
+# [2.7.0-beta.9](https://github.com/vitejs/vite/compare/v2.7.0-beta.8...v2.7.0-beta.9) (2021-11-27)
+
+
+### Bug Fixes
+
+* `isBuiltin` using patched native `builtinModules` ([#5827](https://github.com/vitejs/vite/issues/5827)) ([4a05a6e](https://github.com/vitejs/vite/commit/4a05a6e2f69c3a799fee651d182beeb176abfaac))
+* always bundle config file, fix config hmr ([#5779](https://github.com/vitejs/vite/issues/5779)) ([19d2b6a](https://github.com/vitejs/vite/commit/19d2b6ab9cf2c5ba40f52c345f71d67f321c0776))
+* build pluginContext types error ([#5846](https://github.com/vitejs/vite/issues/5846)) ([c278439](https://github.com/vitejs/vite/commit/c2784390ae4cfc1150b63c86a70a240f0f319967))
+* circular dependency hmr causes refresh crash ([#4589](https://github.com/vitejs/vite/issues/4589)) ([00d8c9b](https://github.com/vitejs/vite/commit/00d8c9b7ffcfa2a3f888ef5752f57682cdea91b2))
+* replace asset references in CSS returned to JS ([#5729](https://github.com/vitejs/vite/issues/5729)) ([880026e](https://github.com/vitejs/vite/commit/880026e414d5745233ff2b67799cd386001bddd8))
+* resolve addons using nodeResolve() ([#5809](https://github.com/vitejs/vite/issues/5809)) ([d288772](https://github.com/vitejs/vite/commit/d2887729911d52e3117a7649e85460b346f04b54))
+* throw full error causing preprocessor to not load ([#5816](https://github.com/vitejs/vite/issues/5816)) ([f6fcd21](https://github.com/vitejs/vite/commit/f6fcd2190e18f2ad20766a164411351b2220cf52))
+* unicode path html entry point ([#5821](https://github.com/vitejs/vite/issues/5821)) ([#5823](https://github.com/vitejs/vite/issues/5823)) ([2048195](https://github.com/vitejs/vite/commit/20481950dce58e21d06d0d7da0325a3788e683c5))
+* unminified build breaks __vitePreload ([#5785](https://github.com/vitejs/vite/issues/5785)) ([757a74a](https://github.com/vitejs/vite/commit/757a74aa41f3b12505557637daec2058423cfd23))
+
+
+### Features
+
+* lint for missing type="module" attribute ([#5837](https://github.com/vitejs/vite/issues/5837)) ([#5838](https://github.com/vitejs/vite/issues/5838)) ([494e358](https://github.com/vitejs/vite/commit/494e3586fef5865ddc99f3cff48856495c4373f1))
+
+
+
 # [2.7.0-beta.8](https://github.com/vitejs/vite/compare/v2.7.0-beta.7...v2.7.0-beta.8) (2021-11-19)
 
 
