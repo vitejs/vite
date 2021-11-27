@@ -36,9 +36,9 @@ export const flattenId = (id: string): string =>
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
-  
-const builtins = [...builtinModules]
-if (typeof jest !== 'undefined' && !builtins.includes('fs/promises')) builtins.push('fs/promises')
+
+//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
+const builtins = [...builtinModules, 'assert/strict','diagnostics_channel','dns/promises','fs/promises','path/posix','path/win32' ,'readline/promises','stream/consumers','stream/promises','stream/web','timers/promises','util/types','wasi']
 builtins.forEach(builtin => { builtins.push(`node:${builtin}`) })
 
 export function isBuiltin(id: string): boolean {
