@@ -38,11 +38,25 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
 //TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
-const builtins = [...builtinModules, 'assert/strict','diagnostics_channel','dns/promises','fs/promises','path/posix','path/win32' ,'readline/promises','stream/consumers','stream/promises','stream/web','timers/promises','util/types','wasi']
-builtins.forEach(builtin => { builtins.push(`node:${builtin}`) })
+const builtins = new Set([
+  ...builtinModules,
+  'assert/strict',
+  'diagnostics_channel',
+  'dns/promises',
+  'fs/promises',
+  'path/posix',
+  'path/win32',
+  'readline/promises',
+  'stream/consumers',
+  'stream/promises',
+  'stream/web',
+  'timers/promises',
+  'util/types',
+  'wasi'
+])
 
 export function isBuiltin(id: string): boolean {
-  return builtins.includes(id)
+  return builtins.has(id.replace('node:', ''))
 }
 
 export function moduleListContains(
