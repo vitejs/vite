@@ -236,9 +236,9 @@ export default defineConfig(async ({ command, mode }) => {
       | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
-     * default: 'camelCaseOnly'
+     * default: null
      */
-    localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+    localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly' | null
   }
   ```
 
