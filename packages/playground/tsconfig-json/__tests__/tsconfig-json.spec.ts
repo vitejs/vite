@@ -32,7 +32,7 @@ describe('transformWithEsbuild', () => {
     })
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
     expect(result.code).toContain(
-      'import { MainTypeOnlyClass } from "./not-used-type";'
+      'import "./not-used-type";'
     )
   })
 
@@ -49,7 +49,27 @@ describe('transformWithEsbuild', () => {
     // "importsNotUsedAsValues": "preserve" from tsconfig.json should not be read
     // and defaults to "remove"
     expect(result.code).not.toContain(
+      'import "./not-used-type";'
+    )
+  })
+
+  /* TODO: preserveValueImports isn't in the types definition in esbuild yet
+
+  test('preserveValueImports', async () => {
+    const main = path.resolve(__dirname, '../src/main.ts')
+    const mainContent = fs.readFileSync(main, 'utf-8')
+    const result = await transformWithEsbuild(mainContent, main, {
+      tsconfigRaw: {
+        compilerOptions: {
+          useDefineForClassFields: false,
+          preserveValueImports: true
+        }
+      }
+    })
+    // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
+    expect(result.code).toContain(
       'import { MainTypeOnlyClass } from "./not-used-type";'
     )
   })
+  */
 })

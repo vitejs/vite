@@ -44,6 +44,7 @@ type TSConfigJSON = {
     jsxFragmentFactory?: string
     useDefineForClassFields?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    preserveValueImports?: boolean
   }
   [key: string]: any
 }
@@ -81,7 +82,8 @@ export async function transformWithEsbuild(
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
-      'importsNotUsedAsValues'
+      'importsNotUsedAsValues',
+      'preserveValueImports'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -240,10 +242,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         target: target || undefined,
         ...(minify
           ? {
-              minify,
-              treeShaking: true,
-              format: rollupToEsbuildFormatMap[opts.format]
-            }
+            minify,
+            treeShaking: true,
+            format: rollupToEsbuildFormatMap[opts.format]
+          }
           : undefined)
       })
       return res
