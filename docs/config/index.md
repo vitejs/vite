@@ -786,12 +786,12 @@ export default defineConfig({
 
   By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
-### build.brotliSize
+### build.reportCompressedSize
 
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+  Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
 ### build.chunkSizeWarningLimit
 
