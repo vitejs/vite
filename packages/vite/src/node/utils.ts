@@ -56,7 +56,7 @@ const builtins = new Set([
 ])
 
 export function isBuiltin(id: string): boolean {
-  return builtins.has(id.replace('node:', ''))
+  return builtins.has(id.replace(/^node:/, ''))
 }
 
 export function moduleListContains(
