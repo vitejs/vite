@@ -9,7 +9,10 @@
   <p class="inter">this will be styled with a font-face</p>
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
-  <div>encrypted message: <p class="encrypted-msg">{{ encryptedMsg }}</p></div>
+  <div>
+    encrypted message:
+    <p class="encrypted-msg">{{ encryptedMsg }}</p>
+  </div>
 
   <ImportType />
 </template>
