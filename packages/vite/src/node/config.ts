@@ -733,7 +733,7 @@ function normalizeAlias(o: AliasOptions): Alias[] {
 function normalizeSingleAlias({
   find,
   replacement,
-  customResolver = null
+  customResolver
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
@@ -743,7 +743,15 @@ function normalizeSingleAlias({
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
   }
-  return { find, replacement, customResolver }
+
+  const alias: Alias = {
+    find,
+    replacement
+  }
+  if (customResolver) {
+    alias.customResolver = customResolver
+  }
+  return alias
 }
 
 export function sortUserPlugins(
