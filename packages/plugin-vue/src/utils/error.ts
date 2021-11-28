@@ -11,7 +11,7 @@ export function createRollupError(
     plugin: 'vue',
     message,
     name,
-    stack,
+    stack
   }
 
   if ('code' in error && error.loc) {
