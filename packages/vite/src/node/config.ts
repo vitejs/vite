@@ -730,7 +730,11 @@ function normalizeAlias(o: AliasOptions): Alias[] {
 
 // https://github.com/vitejs/vite/issues/1363
 // work around https://github.com/rollup/plugins/issues/759
-function normalizeSingleAlias({ find, replacement }: Alias): Alias {
+function normalizeSingleAlias({
+  find,
+  replacement,
+  customResolver = null
+}: Alias): Alias {
   if (
     typeof find === 'string' &&
     find.endsWith('/') &&
@@ -739,7 +743,7 @@ function normalizeSingleAlias({ find, replacement }: Alias): Alias {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
   }
-  return { find, replacement }
+  return { find, replacement, customResolver }
 }
 
 export function sortUserPlugins(
