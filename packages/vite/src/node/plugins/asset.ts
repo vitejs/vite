@@ -98,11 +98,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         registerAssetToChunk(chunk, file)
         const outputFilepath = config.base + file + postfix
-        s.overwrite(
-          match.index,
-          match.index + full.length,
-          outputFilepath
-        )
+        s.overwrite(match.index, match.index + full.length, outputFilepath)
       }
 
       if (s) {

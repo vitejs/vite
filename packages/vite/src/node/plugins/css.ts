@@ -1002,12 +1002,16 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
-      throw new Error(`Preprocessor dependency "${lang}" not found. Did you install it?`);
+      throw new Error(
+        `Preprocessor dependency "${lang}" not found. Did you install it?`
+      )
     } else {
-      const message = new Error(`Preprocessor dependency "${lang}" failed to load:\n${e.message}`);
-      message.stack = e.stack + '\n' + message.stack;
-      throw message;
-    } 
+      const message = new Error(
+        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`
+      )
+      message.stack = e.stack + '\n' + message.stack
+      throw message
+    }
   }
 }
 

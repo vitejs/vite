@@ -40,7 +40,6 @@ Vite convention for virtual modules is to prefix the user-facing path with `virt
 
 Note that modules directly derived from a real file, as in the case of a script module in a Single File Component (like a .vue or .svelte SFC) don't need to follow this convention. SFCs generally generate a set of submodules when processed but the code in these can be mapped back to the filesystem. Using `\0` for these submodules would prevent sourcemaps from working correctly.
 
-
 ## Plugins config
 
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
