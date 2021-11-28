@@ -176,38 +176,6 @@ export interface UserConfig {
    * @default 'VITE_'
    */
   envPrefix?: string | string[]
-  /**
-   * Import aliases
-   * @deprecated use `resolve.alias` instead
-   */
-  alias?: AliasOptions
-  /**
-   * Force Vite to always resolve listed dependencies to the same copy (from
-   * project root).
-   * @deprecated use `resolve.dedupe` instead
-   */
-  dedupe?: string[]
-  /**
-   * Worker bundle options
-   */
-  worker?: {
-    /**
-     * Output format for worker bundle
-     * @default 'iife'
-     */
-    format?: 'es' | 'iife'
-    /**
-     * Vite plugins that apply to worker bundle
-     */
-    plugins?: PluginOption[]
-    /**
-     * Rollup options to build worker bundle
-     */
-    rollupOptions?: Omit<
-      RollupOptions,
-      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
-    >
-  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
@@ -235,10 +203,7 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<
-    UserConfig,
-    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
-  > & {
+  Omit<UserConfig, 'plugins' | 'assetsInclude'> & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
@@ -261,7 +226,7 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-    optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
+    optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
@@ -365,17 +330,14 @@ export async function resolveConfig(
   ]
 
   // resolve alias with internal client alias
-  const resolvedAlias = normalizeAlias(
-    mergeAlias(
-      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-      // replacement, but its implementation does work with function values.
-      clientAlias,
-      config.resolve?.alias || config.alias || []
-    )
+  const resolvedAlias = mergeAlias(
+    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+    // replacement, but its implementation does work with function values.
+    clientAlias,
+    config.resolve?.alias || []
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
-    dedupe: config.dedupe,
     ...config.resolve,
     alias: resolvedAlias
   }
@@ -501,7 +463,6 @@ export async function resolveConfig(
     optimizeDeps: {
       ...optimizeDeps,
       esbuildOptions: {
-        keepNames: optimizeDeps.keepNames,
         preserveSymlinks: config.resolve?.preserveSymlinks,
         ...optimizeDeps.esbuildOptions
       }
@@ -540,118 +501,7 @@ export async function resolveConfig(
     })
   }
 
-  // TODO Deprecation warnings - remove when out of beta
-
-  const logDeprecationWarning = (
-    deprecatedOption: string,
-    hint: string,
-    error?: Error
-  ) => {
-    logger.warn(
-      colors.yellow(
-        colors.bold(
-          `(!) "${deprecatedOption}" option is deprecated. ${hint}${
-            error ? `\n${error.stack}` : ''
-          }`
-        )
-      )
-    )
-  }
-
-  if (config.build?.base) {
-    logDeprecationWarning(
-      'build.base',
-      '"base" is now a root-level config option.'
-    )
-    config.base = config.build.base
-  }
-  Object.defineProperty(resolvedBuildOptions, 'base', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'build.base',
-        '"base" is now a root-level config option.',
-        new Error()
-      )
-      return resolved.base
-    }
-  })
-
-  if (config.alias) {
-    logDeprecationWarning('alias', 'Use "resolve.alias" instead.')
-  }
-  Object.defineProperty(resolved, 'alias', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'alias',
-        'Use "resolve.alias" instead.',
-        new Error()
-      )
-      return resolved.resolve.alias
-    }
-  })
-
-  if (config.dedupe) {
-    logDeprecationWarning('dedupe', 'Use "resolve.dedupe" instead.')
-  }
-  Object.defineProperty(resolved, 'dedupe', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'dedupe',
-        'Use "resolve.dedupe" instead.',
-        new Error()
-      )
-      return resolved.resolve.dedupe
-    }
-  })
-
-  if (optimizeDeps.keepNames) {
-    logDeprecationWarning(
-      'optimizeDeps.keepNames',
-      'Use "optimizeDeps.esbuildOptions.keepNames" instead.'
-    )
-  }
-  Object.defineProperty(resolved.optimizeDeps, 'keepNames', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'optimizeDeps.keepNames',
-        'Use "optimizeDeps.esbuildOptions.keepNames" instead.',
-        new Error()
-      )
-      return resolved.optimizeDeps.esbuildOptions?.keepNames
-    }
-  })
-
-  if (config.build?.polyfillDynamicImport) {
-    logDeprecationWarning(
-      'build.polyfillDynamicImport',
-      '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.'
-    )
-  }
-
-  Object.defineProperty(resolvedBuildOptions, 'polyfillDynamicImport', {
-    enumerable: false,
-    get() {
-      logDeprecationWarning(
-        'build.polyfillDynamicImport',
-        '"polyfillDynamicImport" has been removed. Please use @vitejs/plugin-legacy if your target browsers do not support dynamic imports.',
-        new Error()
-      )
-      return false
-    }
-  })
-
-  if (config.build?.cleanCssOptions) {
-    logDeprecationWarning(
-      'build.cleanCssOptions',
-      'Vite now uses esbuild for CSS minification.'
-    )
-  }
-
-  if (config.build?.terserOptions && config.build.minify !== 'terser') {
+  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
