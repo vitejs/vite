@@ -5,16 +5,22 @@ export function createRollupError(
   id: string,
   error: CompilerError | SyntaxError
 ): RollupError {
-  ;(error as RollupError).id = id
-  ;(error as RollupError).plugin = 'vue'
+  const { message, name, stack } = error
+  const rollupError: RollupError = {
+    id,
+    plugin: 'vue',
+    message,
+    name,
+    stack
+  }
 
   if ('code' in error && error.loc) {
-    ;(error as any).loc = {
+    rollupError.loc = {
       file: id,
       line: error.loc.start.line,
       column: error.loc.start.column
     }
   }
 
-  return error as RollupError
+  return rollupError
 }
