@@ -16,7 +16,11 @@ module.exports = {
         noBody: resolve(__dirname, 'noBody.html'),
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
-        inline3: resolve(__dirname, 'inline/unique.html')
+        inline3: resolve(__dirname, 'inline/unique.html'),
+        unicodePath: resolve(
+          __dirname,
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+        )
       }
     }
   },

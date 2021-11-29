@@ -172,6 +172,10 @@ export default defineConfig(async ({ command, mode }) => {
 
   If you have duplicated copies of the same dependency in your app (likely due to hoisting or linked packages in monorepos), use this option to force Vite to always resolve listed dependencies to the same copy (from project root).
 
+  :::warning SSR + ESM
+  For SSR builds, deduplication does not work for ESM build outputs configured from `build.rollupOptions.output`. A workaround is to use CJS build outputs until ESM has better plugin support for module loading.
+  :::
+
 ### resolve.conditions
 
 - **Type:** `string[]`
@@ -232,9 +236,14 @@ export default defineConfig(async ({ command, mode }) => {
       | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
-     * default: 'camelCaseOnly'
+     * default: null
      */
-    localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+    localsConvention?:
+      | 'camelCase'
+      | 'camelCaseOnly'
+      | 'dashes'
+      | 'dashesOnly'
+      | null
   }
   ```
 
@@ -361,9 +370,8 @@ export default defineConfig(async ({ command, mode }) => {
 
   Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
 
-:::warning SECURITY NOTES
-
-- `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+  :::warning SECURITY NOTES
+  `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
   :::
 
 ## Server Options
@@ -685,6 +693,10 @@ export default defineConfig({
 
   If disabled, all CSS in the entire project will be extracted into a single CSS file.
 
+  ::: tip Note
+  If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
+  :::
+
 ### build.cssTarget
 
 - **Type:** `string | string[]`
@@ -779,12 +791,12 @@ export default defineConfig({
 
   By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
-### build.brotliSize
+### build.reportCompressedSize
 
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+  Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
 ### build.chunkSizeWarningLimit
 

@@ -197,6 +197,7 @@ describe('noBody', () => {
   })
 })
 
+
 describe('importAsString', () => {
   // The build-html plugin should not alter HTML that is not an input.
   test('not transformed', async () => {
@@ -213,5 +214,19 @@ describe('importAsString', () => {
     const result = messages.map((m) => m.toString()).join('\n')
     expect(result).toMatch('Some imported HTML')
     expect(result).not.toMatch('This is injected')
+  })
+})
+
+describe('unicode path', () => {
+  test('direct access', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+    )
+    expect(await page.textContent('h1')).toBe('unicode-path')
+  })
+
+  test('spa fallback', async () => {
+    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
+    expect(await page.textContent('h1')).toBe('unicode-path')
   })
 })

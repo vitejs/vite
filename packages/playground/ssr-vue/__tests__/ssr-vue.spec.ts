@@ -13,7 +13,6 @@ test('vuex can be import succeed by named import', async () => {
   expect(storeHtml).toMatch('bar')
 })
 
-
 test('/about', async () => {
   await page.goto(url + '/about')
   expect(await page.textContent('h1')).toMatch('About')
@@ -163,4 +162,10 @@ test('import.meta.url', async () => {
 test('deep import built-in module', async () => {
   await page.goto(url)
   expect(await page.textContent('.file-message')).toMatch('fs/promises')
+})
+
+test('msg should encrypted', async () => {
+  // raw http request
+  const homeHtml = await (await fetch(url + '/')).text()
+  expect(homeHtml).not.toMatch('Secret Message!')
 })
