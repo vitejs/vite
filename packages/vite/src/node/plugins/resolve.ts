@@ -119,9 +119,9 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
       const options: InternalResolveOptions = {
-        ...baseOptions,
-
         isRequire,
+
+        ...baseOptions,
         isFromTsImporter: isTsRequest(importer ?? '')
       }
 
