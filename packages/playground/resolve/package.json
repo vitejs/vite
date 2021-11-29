@@ -17,6 +17,7 @@
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-exports-env": "link:./exports-env",
     "resolve-exports-path": "link:./exports-path",
-    "resolve-linked": "workspace:*"
+    "resolve-linked": "workspace:*",
+    "vant": "^3.3.2"
   }
 }

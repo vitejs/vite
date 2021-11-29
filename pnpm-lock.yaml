@@ -422,6 +422,7 @@ importers:
       resolve-exports-env: link:./exports-env
       resolve-exports-path: link:./exports-path
       resolve-linked: workspace:*
+      vant: ^3.3.2
     dependencies:
       '@babel/runtime': 7.16.0
       es5-ext: 0.10.53
@@ -432,6 +433,7 @@ importers:
       resolve-exports-env: link:exports-env
       resolve-exports-path: link:exports-path
       resolve-linked: link:../resolve-linked
+      vant: 3.3.2
 
   packages/playground/resolve-linked:
     specifiers: {}
@@ -1867,6 +1869,10 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
+  /@popperjs/core/2.11.0:
+    resolution: {integrity: sha512-zrsUxjLOKAzdewIDRWy9nsV1GQsKBCWaGwsZQlCgr6/q+vjyZhFgqedLfFBuI9anTPEUT4APq9Mu0SZBTzIcGQ==}
+    dev: false
+
   /@rollup/plugin-alias/3.1.8_rollup@2.59.0:
     resolution: {integrity: sha512-tf7HeSs/06wO2LPqKNY3Ckbvy0JRe7Jyn98bXnt/gfrxbe+AJucoNJlsEVi9sdgbQtXemjbakCpO/76JVgnHpA==}
     engines: {node: '>=8.0.0'}
@@ -2343,6 +2349,20 @@ packages:
       '@typescript-eslint/types': 5.4.0
       eslint-visitor-keys: 3.1.0
     dev: true
+
+  /@vant/icons/1.7.1:
+    resolution: {integrity: sha512-66LPEq89w4kl258nALZcRNd14eUJC8VajvTJwvZKOaZawz6CUeVZ6ybhedTUhQhRjeA8SyWD7dFt4ALf33Sabw==}
+    dev: false
+
+  /@vant/popperjs/1.1.0:
+    resolution: {integrity: sha512-8MD1gz146awV/uPxYjz4pet22f7a9YVKqk7T+gFkWFwT9mEcrIUEg/xPrdOnWKLP9puXyYtm7oVfSDSefZ/p/w==}
+    dependencies:
+      '@popperjs/core': 2.11.0
+    dev: false
+
+  /@vant/use/1.3.4:
+    resolution: {integrity: sha512-XvZkPCjcmEBhD+T3vB68thOG6P9jazld6aBTMenhbAQd4FT/x9AiKIWPJx4MvhYoSIWt7fju6K01XTJldWs1hw==}
+    dev: false
 
   /@vue/babel-helper-vue-transform-on/1.0.2:
     resolution: {integrity: sha512-hz4R8tS5jMn8lDq6iD+yWL6XNB699pGIVLk7WSJnn1dbpjaazsjZQkieJoRX6gW5zpYSCFqQ7jUquPNY65tQYA==}
@@ -8848,6 +8868,16 @@ packages:
 
   /value-equal/1.0.1:
     resolution: {integrity: sha512-NOJ6JZCAWr0zlxZt+xqCHNTEKOsrks2HQd4MqhP1qy4z1SkbEP467eNx6TgDKXMvUOb+OENfJCZwM+16n7fRfw==}
+    dev: false
+
+  /vant/3.3.2:
+    resolution: {integrity: sha512-2jRO5EOe+1aW7DV40T6A+bHDJ5d2laijtj4noIqy2hOZj+2Z9Vbz3xWZGjUs30D5rUuhYo7CdCHCVi+240a50w==}
+    peerDependencies:
+      vue: ^3.0.0
+    dependencies:
+      '@vant/icons': 1.7.1
+      '@vant/popperjs': 1.1.0
+      '@vant/use': 1.3.4
     dev: false
 
   /vary/1.1.2:

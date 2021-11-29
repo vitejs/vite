@@ -103,3 +103,9 @@ test('resolve package that contains # in path', async () => {
     '[success]'
   )
 })
+
+test('resolve third party module without index', async () => {
+  expect(await page.textContent('.third-party-without-index')).toMatch(
+    'van-button'
+  )
+})

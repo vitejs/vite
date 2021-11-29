@@ -71,6 +71,9 @@
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
 
+<h2>resolve file without index</h2>
+<p class="third-party-without-index"></p>
+
 <script type="module">
   function text(selector, text) {
     document.querySelector(selector).textContent = text
@@ -191,6 +194,9 @@
 
   import es5Ext from 'es5-ext'
   text('.path-contains-sharp-symbol', '[success]')
+
+  import Button from 'vant/lib/button'
+  text('.third-party-without-index', Button.name)
 </script>
 
 <style>
