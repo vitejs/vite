@@ -39,7 +39,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
 
-   Note if you are using React with `@vitejs/plugin-react-refresh`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
+   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
 
    ```html
    <script type="module">

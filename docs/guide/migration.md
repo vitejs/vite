@@ -91,7 +91,7 @@ export default defineConfig({
 
 ## React Support
 
-React Fast Refresh support is now provided via [`@vitejs/plugin-react-refresh`](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh).
+React Fast Refresh support is now provided via [`@vitejs/plugin-react`](https://github.com/vitejs/vite/tree/main/packages/plugin-react).
 
 ## HMR API Change
 
