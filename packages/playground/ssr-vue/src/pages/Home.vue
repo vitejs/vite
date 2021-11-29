@@ -20,7 +20,7 @@
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
-import Button from 'vant/lib/button'
+import { Button } from 'vant'
 import 'vant/lib/index.css'
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>

@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import Button from 'vant/lib/button'
+import { Button } from 'vant'
 import 'vant/lib/index.css'
 
 export default {
