@@ -175,7 +175,6 @@ test('dynamic css file should be loaded advanced', async () => {
       process.cwd(),
       './packages/temp/ssr-vue/dist/client/ssr-manifest.json'
     ))
-
     const depFile = manifest[filename]
     for (const file of depFile) {
       expect(homeHtml).toMatch(file)
