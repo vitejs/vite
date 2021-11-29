@@ -273,12 +273,17 @@ function esbuildScanPlugin(
                 contextMatch &&
                 (contextMatch[1] || contextMatch[2] || contextMatch[3])
               if (
-                (path.endsWith('.vue') && setupRE.test(raw)) ||
+                (path.endsWith('.vue') && setupRE.test(openTag)) ||
                 (path.endsWith('.svelte') && context !== 'module')
               ) {
+                // append imports in TS to prevent esbuild from removing them
+                // since they may be used in the template
+                const localContent =
+                  content +
+                  (loader.startsWith('ts') ? extractImportPaths(content) : '')
                 localScripts[path] = {
                   loader,
-                  contents: content
+                  contents: localContent
                 }
                 js += `import '${virtualModulePrefix}${path}';\n`
               } else {
@@ -286,29 +291,11 @@ function esbuildScanPlugin(
               }
             }
           }
-          // empty singleline & multiline comments to avoid matching comments
-          const code = js
-            .replace(multilineCommentsRE, '/* */')
-            .replace(singlelineCommentsRE, '')
 
-          if (
-            loader.startsWith('ts') &&
-            (path.endsWith('.svelte') ||
-              (path.endsWith('.vue') && setupRE.test(raw)))
-          ) {
-            // when using TS + (Vue + <script setup>) or Svelte, imports may seem
-            // unused to esbuild and dropped in the build output, which prevents
-            // esbuild from crawling further.
-            // the solution is to add `import 'x'` for every source to force
-            // esbuild to keep crawling due to potential side effects.
-            let m
-            while ((m = importsRE.exec(code)) != null) {
-              // This is necessary to avoid infinite loops with zero-width matches
-              if (m.index === importsRE.lastIndex) {
-                importsRE.lastIndex++
-              }
-              js += `\nimport ${m[1]}`
-            }
+          // `<script>` in Svelte has imports that can be used in the template
+          // so we handle them here too
+          if (loader.startsWith('ts') && path.endsWith('.svelte')) {
+            js += extractImportPaths(js)
           }
 
           // This will trigger incorrectly if `export default` is contained
@@ -486,6 +473,31 @@ async function transformGlob(
     s.overwrite(expStart, endIndex, exp)
   }
   return s.toString()
+}
+
+/**
+ * when using TS + (Vue + `<script setup>`) or Svelte, imports may seem
+ * unused to esbuild and dropped in the build output, which prevents
+ * esbuild from crawling further.
+ * the solution is to add `import 'x'` for every source to force
+ * esbuild to keep crawling due to potential side effects.
+ */
+function extractImportPaths(code: string) {
+  // empty singleline & multiline comments to avoid matching comments
+  code = code
+    .replace(multilineCommentsRE, '/* */')
+    .replace(singlelineCommentsRE, '')
+
+  let js = ''
+  let m
+  while ((m = importsRE.exec(code)) != null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === importsRE.lastIndex) {
+      importsRE.lastIndex++
+    }
+    js += `\nimport ${m[1]}`
+  }
+  return js
 }
 
 export function shouldExternalizeDep(
