@@ -7,9 +7,9 @@ const config: Config.InitialOptions = {
     ? ['**/playground/**/*.spec.[jt]s?(x)']
     : ['**/*.spec.[jt]s?(x)'],
   testTimeout: process.env.CI ? 30000 : 10000,
-  globalSetup: './scripts/jestGlobalSetup.js',
-  globalTeardown: './scripts/jestGlobalTeardown.js',
-  testEnvironment: './scripts/jestEnv.js',
+  globalSetup: './scripts/jestGlobalSetup.cjs',
+  globalTeardown: './scripts/jestGlobalTeardown.cjs',
+  testEnvironment: './scripts/jestEnv.cjs',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
   watchPathIgnorePatterns: ['<rootDir>/packages/temp'],
   modulePathIgnorePatterns: ['<rootDir>/packages/temp'],

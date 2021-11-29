@@ -100,7 +100,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "node ../../../scripts/patchFileDeps"
+  "postinstall": "node ../../../scripts/patchFileDeps.cjs"
 }
 ```
 

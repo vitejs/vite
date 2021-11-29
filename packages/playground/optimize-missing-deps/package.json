@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "node server",
-    "postinstall": "node ../../../scripts/patchFileDeps"
+    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
   },
   "dependencies": {
     "missing-dep": "file:./missing-dep",
