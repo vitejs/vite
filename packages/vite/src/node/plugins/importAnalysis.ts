@@ -219,13 +219,15 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
-          url = escapeId(resolved.id.slice(root.length))
+          url = resolved.id.slice(root.length)
         } else if (fs.existsSync(cleanUrl(resolved.id))) {
           // exists but out of root: rewrite to absolute /@fs/ paths
-          url = escapeId(path.posix.join(FS_PREFIX + resolved.id))
+          url = path.posix.join(FS_PREFIX + resolved.id)
         } else {
-          url = escapeId(resolved.id)
+          url = resolved.id
         }
+
+        url = escapeId(url)
 
         if (isExternalUrl(url)) {
           return [url, url]
@@ -633,7 +635,7 @@ export function transformCjsImport(
     node.type === 'ExportNamedDeclaration'
   ) {
     if (!node.specifiers.length) {
-      return `import "${url}"`
+      return `import '${url}'`
     }
 
     const importNames: ImportNameSpecifier[] = []
@@ -679,7 +681,7 @@ export function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`
     )
-    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
+    const lines: string[] = [`import ${cjsModuleName} from '${url}'`]
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(`const ${localName} = ${cjsModuleName}`)
