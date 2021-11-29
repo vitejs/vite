@@ -158,5 +158,3 @@ test('import.meta.url', async () => {
   await page.goto(url)
   expect(await page.textContent('.protocol')).toEqual('file:')
 })
-
-

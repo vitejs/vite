@@ -3,13 +3,13 @@ import { hello } from 'node-addon'
 import readFileContent from 'read-file-content'
 
 export async function render(url, rootDir) {
-  let html = '\n'
+  let html = ''
 
   const nodeAddonMsg = hello()
-  html += `<p class="node-addon-msg">message from node addon: ${nodeAddonMsg}</p>\n`
+  html += `\n<p class="node-addon-msg">message from node addon: ${nodeAddonMsg}</p>`
 
   const fileContent = await readFileContent(path.resolve(rootDir, 'message'))
-  html += `<p class="file-message">msg read via fs/promises: ${fileContent}</p>\n`
+  html += `\n<p class="file-message">msg read via fs/promises: ${fileContent}</p>`
 
-  return html
+  return html + '\n'
 }
