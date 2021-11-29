@@ -13,7 +13,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const useState = __vite__cjsImport0_react["useState"]; ' +
         'const Component = __vite__cjsImport0_react["Component"]'
     )
@@ -23,7 +23,7 @@ describe('transformCjsImport', () => {
     expect(
       transformCjsImport('import React from "react"', url, rawUrl, 0)
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react'
     )
 
@@ -35,7 +35,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react'
     )
   })
@@ -44,7 +44,7 @@ describe('transformCjsImport', () => {
     expect(
       transformCjsImport('import * as react from "react"', url, rawUrl, 0)
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const react = __vite__cjsImport0_react'
     )
   })
@@ -68,7 +68,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const useState = __vite__cjsImport0_react["useState"]; ' +
         'const Component = __vite__cjsImport0_react["Component"]; ' +
         'export { useState, Component }'
@@ -82,7 +82,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const useStateAlias = __vite__cjsImport0_react["useState"]; ' +
         'const ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
         'export { useStateAlias, ComponentAlias }'
@@ -93,7 +93,7 @@ describe('transformCjsImport', () => {
     expect(
       transformCjsImport('export { default } from "react"', url, rawUrl, 0)
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
         'export default __vite__cjsExportDefault_0'
     )
@@ -106,7 +106,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
         'export { React }'
     )
@@ -119,7 +119,7 @@ describe('transformCjsImport', () => {
         0
       )
     ).toBe(
-      'import __vite__cjsImport0_react from "./node_modules/.vite/react.js"; ' +
+      "import __vite__cjsImport0_react from './node_modules/.vite/react.js'; " +
         'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react["Component"]; ' +
         'export default __vite__cjsExportDefault_0'
     )
