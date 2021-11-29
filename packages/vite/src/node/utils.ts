@@ -37,6 +37,15 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
+// https://github.com/rollup/rollup/blob/master/src/utils/escapeId.ts
+const needsEscapeRegEx = /[\\'\r\n\u2028\u2029]/
+const quoteNewlineRegEx = /(['\r\n\u2028\u2029])/g
+const backSlashRegEx = /\\/g
+export function escapeId(id: string): string {
+  if (!id.match(needsEscapeRegEx)) return id
+  return id.replace(backSlashRegEx, '\\\\').replace(quoteNewlineRegEx, '\\$1')
+}
+
 //TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
 const builtins = new Set([
   ...builtinModules,

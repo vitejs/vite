@@ -20,7 +20,8 @@ import {
   normalizePath,
   removeImportQuery,
   unwrapId,
-  moduleListContains
+  moduleListContains,
+  escapeId
 } from '../utils'
 import {
   debugHmr,
@@ -218,12 +219,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
-          url = resolved.id.slice(root.length)
+          url = escapeId(resolved.id.slice(root.length))
         } else if (fs.existsSync(cleanUrl(resolved.id))) {
           // exists but out of root: rewrite to absolute /@fs/ paths
-          url = path.posix.join(FS_PREFIX + resolved.id)
+          url = escapeId(path.posix.join(FS_PREFIX + resolved.id))
         } else {
-          url = resolved.id
+          url = escapeId(resolved.id)
         }
 
         if (isExternalUrl(url)) {
