@@ -61,7 +61,7 @@
   },
   "gitHooks": {
     "pre-commit": "lint-staged --concurrent false",
-    "commit-msg": "node scripts/verifyCommit.js"
+    "commit-msg": "node scripts/verifyCommit.cjs"
   },
   "lint-staged": {
     "*": [
