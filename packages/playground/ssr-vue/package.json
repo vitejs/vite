@@ -16,7 +16,7 @@
   "dependencies": {
     "bcrypt": "^5.0.1",
     "example-external-component": "file:example-external-component",
-    "vant": "^3.2.8",
+    "vant": "^3.3.2",
     "vue": "^3.2.23",
     "vue-router": "^4.0.0",
     "vuex": "^4.0.2"
