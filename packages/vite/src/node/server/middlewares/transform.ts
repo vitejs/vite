@@ -4,7 +4,6 @@ import { Connect } from 'types/connect'
 import {
   cleanUrl,
   createDebugger,
-  escapeId,
   injectQuery,
   isImportRequest,
   isJSRequest,
@@ -55,13 +54,11 @@ export function transformMiddleware(
     if (cacheDirRelative.startsWith('../')) {
       // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
-      cacheDirPrefix = `/@fs/${escapeId(
-        normalizePath(cacheDir).replace(/^\//, '')
-      )}`
+      cacheDirPrefix = `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
     } else {
       // if the cache directory is inside root, the url prefix would be something
       // like '/node_modules/.vite'
-      cacheDirPrefix = `/${escapeId(cacheDirRelative)}`
+      cacheDirPrefix = `/${cacheDirRelative}`
     }
   }
 
