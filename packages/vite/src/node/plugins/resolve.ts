@@ -838,12 +838,21 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    const resolved = tryFsResolve(
+    let resolved
+    resolved = tryFsResolve(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
       targetWeb
     )
+    if (!resolved) {
+      resolved = tryFsResolve(
+        path.join(dir, relativeId),
+        options,
+        true, // try index if not resolved
+        targetWeb
+      )
+    }
     if (resolved) {
       isDebug &&
         debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
