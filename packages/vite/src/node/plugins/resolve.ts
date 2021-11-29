@@ -838,8 +838,7 @@ function resolveDeepImport(
   }
 
   if (relativeId) {
-    let resolved
-    resolved = tryFsResolve(
+    let resolved = tryFsResolve(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
