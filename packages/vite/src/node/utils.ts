@@ -12,7 +12,7 @@ import {
   ENV_PUBLIC_PATH
 } from './constants'
 import resolve from 'resolve'
-import builtins from 'builtin-modules'
+import { builtinModules } from 'module'
 import { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import {
@@ -37,10 +37,26 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
+//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
+const builtins = new Set([
+  ...builtinModules,
+  'assert/strict',
+  'diagnostics_channel',
+  'dns/promises',
+  'fs/promises',
+  'path/posix',
+  'path/win32',
+  'readline/promises',
+  'stream/consumers',
+  'stream/promises',
+  'stream/web',
+  'timers/promises',
+  'util/types',
+  'wasi'
+])
+
 export function isBuiltin(id: string): boolean {
-  const deepMatch = id.match(deepImportRE)
-  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
-  return builtins.includes(id)
+  return builtins.has(id.replace(/^node:/, ''))
 }
 
 export function moduleListContains(
