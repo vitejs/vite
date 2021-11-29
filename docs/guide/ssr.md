@@ -111,7 +111,7 @@ app.use('*', async (req, res) => {
 
     // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
     //    also applies HTML transforms from Vite plugins, e.g. global preambles
-    //    from @vitejs/plugin-react-refresh
+    //    from @vitejs/plugin-react
     template = await vite.transformIndexHtml(url, template)
 
     // 3. Load the server entry. vite.ssrLoadModule automatically transforms
