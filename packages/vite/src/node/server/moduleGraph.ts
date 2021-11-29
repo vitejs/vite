@@ -95,6 +95,13 @@ export class ModuleGraph {
     invalidateSSRModule(mod, seen)
   }
 
+  invalidateId(id: string): void {
+    const mod = this.idToModuleMap.get(id)
+    if (mod) {
+      this.invalidateModule(mod)
+    }
+  }
+
   invalidateAll(): void {
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {

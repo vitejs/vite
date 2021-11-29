@@ -115,12 +115,17 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         addToHTMLProxyCache(config, url, scriptModuleIndex, contents)
 
         // inline js module. convert to src="proxy"
+        const modulePath = `${
+          config.base + htmlPath.slice(1)
+        }?html-proxy&index=${scriptModuleIndex}.js`
+
+        // invalidate the module so the newly cached contents will be served
+        server?.moduleGraph.invalidateId(config.root + modulePath)
+
         s.overwrite(
           node.loc.start.offset,
           node.loc.end.offset,
-          `<script type="module" src="${
-            config.base + url.slice(1)
-          }?html-proxy&index=${scriptModuleIndex}.js"></script>`
+          `<script type="module" src="${modulePath}"></script>`
         )
       }
     }
