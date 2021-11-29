@@ -197,7 +197,6 @@ describe('noBody', () => {
   })
 })
 
-
 describe('importAsString', () => {
   // The build-html plugin should not alter HTML that is not an input.
   test('not transformed', async () => {
