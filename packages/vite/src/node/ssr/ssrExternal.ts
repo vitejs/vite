@@ -1,4 +1,3 @@
-import fs from 'fs'
 import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
@@ -133,23 +132,13 @@ function collectExternals(
       const pkgPath = resolveFrom(`${id}/package.json`, root)
       depsToTrace.add(path.dirname(pkgPath))
     }
-    // has separate esm/require entry, assume require entry is cjs
+    // has separate esm/require entry, assume require entry is CJS
     else if (esmEntry !== requireEntry) {
       ssrExternals.add(id)
     }
-    // if we're externalizing ESM and CJS should basically just always do it?
-    // or are there others like SystemJS / AMD that we'd need to handle?
-    // for now, we'll just leave this as is
+    // always externalize ESM and CJS
     else if (/\.m?js$/.test(esmEntry)) {
-      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
-        ssrExternals.add(id)
-        continue
-      }
-      // check if the entry is cjs
-      const content = fs.readFileSync(esmEntry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
-        ssrExternals.add(id)
-      }
+      ssrExternals.add(id)
     }
   }
 
