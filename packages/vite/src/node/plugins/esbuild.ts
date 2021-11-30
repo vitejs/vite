@@ -242,10 +242,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         target: target || undefined,
         ...(minify
           ? {
-            minify,
-            treeShaking: true,
-            format: rollupToEsbuildFormatMap[opts.format]
-          }
+              minify,
+              treeShaking: true,
+              format: rollupToEsbuildFormatMap[opts.format]
+            }
           : undefined)
       })
       return res
