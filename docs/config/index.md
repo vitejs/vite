@@ -933,9 +933,6 @@ export default defineConfig({
   - `plugins` are merged with Vite's dep plugin
   - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
 
-  See [esbuild documentation](https://esbuild.github.io/api/#simple-options)
-  for more options.
-
 ## SSR Options
 
 :::warning Experimental
