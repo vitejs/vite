@@ -159,7 +159,7 @@ You can also run the above script in your CI setup to enable automatic deploymen
        paths:
          - public
      rules:
-       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
