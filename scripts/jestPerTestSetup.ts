@@ -8,11 +8,12 @@ import {
   ViteDevServer,
   UserConfig,
   PluginOption,
-  ResolvedConfig
+  ResolvedConfig,
+  Logger
 } from 'vite'
 import { Page } from 'playwright-chromium'
 // eslint-disable-next-line node/no-extraneous-import
-import { RollupWatcher, RollupWatcherEvent } from 'rollup'
+import { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
@@ -25,6 +26,7 @@ declare global {
   const page: Page | undefined
 
   const browserLogs: string[]
+  const serverLogs: string[]
   const viteTestUrl: string | undefined
   const watcher: RollupWatcher | undefined
   let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
@@ -34,6 +36,7 @@ declare const global: {
   page?: Page
 
   browserLogs: string[]
+  serverLogs: string[]
   viteTestUrl?: string
   watcher?: RollupWatcher
   beforeAllError: Error | null
@@ -87,6 +90,8 @@ beforeAll(async () => {
         }
       }
 
+      const serverLogs: string[] = []
+
       const options: UserConfig = {
         root: rootDir,
         logLevel: 'silent',
@@ -105,8 +110,11 @@ beforeAll(async () => {
         build: {
           // skip transpilation during tests to make it faster
           target: 'esnext'
-        }
+        },
+        customLogger: createInMemoryLogger(serverLogs)
       }
+
+      global.serverLogs = serverLogs
 
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
@@ -153,6 +161,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   global.page?.off('console', onConsole)
+  global.serverLogs = []
   await global.page?.close()
   await server?.close()
   const beforeAllErr = getBeforeAllError()
@@ -220,4 +229,36 @@ export async function notifyRebuildComplete(
     watcher.on('event', callback)
   })
   return watcher.removeListener('event', callback)
+}
+
+function createInMemoryLogger(logs: string[]): Logger {
+  const loggedErrors = new WeakSet<Error | RollupError>()
+  const warnedMessages = new Set<string>()
+
+  const logger: Logger = {
+    hasWarned: false,
+    hasErrorLogged: (err) => loggedErrors.has(err),
+    clearScreen: () => {},
+    info(msg) {
+      logs.push(msg)
+    },
+    warn(msg) {
+      logs.push(msg)
+      logger.hasWarned = true
+    },
+    warnOnce(msg) {
+      if (warnedMessages.has(msg)) return
+      logs.push(msg)
+      logger.hasWarned = true
+      warnedMessages.add(msg)
+    },
+    error(msg, opts) {
+      logs.push(msg)
+      if (opts?.error) {
+        loggedErrors.add(opts.error)
+      }
+    }
+  }
+
+  return logger
 }
