@@ -166,7 +166,7 @@ export async function optimizeDeps(
   data.browserHash = createHash('sha256')
     .update(data.hash + JSON.stringify(deps))
     .digest('hex')
-    .substr(0, 8)
+    .substring(0, 8)
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
@@ -408,5 +408,5 @@ function getDepHash(root: string, config: ResolvedConfig): string {
       return value
     }
   )
-  return createHash('sha256').update(content).digest('hex').substr(0, 8)
+  return createHash('sha256').update(content).digest('hex').substring(0, 8)
 }
