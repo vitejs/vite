@@ -12,6 +12,7 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
     !config.resolve.dedupe?.length ||
+    config.ssr?.noExternal === true ||
     isBuildOutputEsm(config)
   ) {
     return null

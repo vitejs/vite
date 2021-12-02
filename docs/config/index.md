@@ -920,14 +920,18 @@ export default defineConfig({
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
-### optimizeDeps.keepNames
+### optimizeDeps.esbuildOptions
 
-- **Type:** `boolean`
-- **Default:** `false`
+- **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
 
-  The bundler sometimes needs to rename symbols to avoid collisions.
-  Set this to `true` to keep the `name` property on functions and classes.
-  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
+  Options to pass to esbuild during the dep scanning and optimization.
+
+  Certain options are omitted since changing them would not be compatible
+  with Vite's dep optimization.
+
+  - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
+  - `plugins` are merged with Vite's dep plugin
+  - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
 
 ## SSR Options
 

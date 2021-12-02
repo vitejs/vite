@@ -14,7 +14,6 @@
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
-    "bcrypt": "^5.0.1",
     "example-external-component": "file:example-external-component",
     "vant": "^3.3.2",
     "vue": "^3.2.23",
