@@ -9,7 +9,7 @@
     "postinstall": "node ../../../scripts/patchFileDeps"
   },
   "dependencies": {
-    "node-addon": "file:./node-addon",
+    "node-addon": "link:./node-addon",
     "read-file-content": "file:./read-file-content"
   },
   "devDependencies": {
