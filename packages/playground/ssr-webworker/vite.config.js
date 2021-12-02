@@ -5,6 +5,9 @@ module.exports = {
   build: {
     minify: false
   },
+  resolve: {
+    dedupe: ['react']
+  },
   ssr: {
     target: 'webworker',
     noExternal: true
