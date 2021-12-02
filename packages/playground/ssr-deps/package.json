@@ -6,7 +6,7 @@
     "dev": "node server",
     "serve": "cross-env NODE_ENV=production node server",
     "debug": "node --inspect-brk server",
-    "postinstall": "node ../../../scripts/patchFileDeps"
+    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
   },
   "dependencies": {
     "node-addon": "link:./node-addon",
