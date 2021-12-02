@@ -72,15 +72,15 @@ function collectExternals(
   seen: Set<string>,
   logger: Logger
 ) {
-  const pkgContent = lookupFile(root, ['package.json'])
-  if (!pkgContent) {
+  const rootPkgContent = lookupFile(root, ['package.json'])
+  if (!rootPkgContent) {
     return
   }
 
-  const pkg = JSON.parse(pkgContent)
+  const rootPkg = JSON.parse(rootPkgContent)
   const deps = {
-    ...pkg.devDependencies,
-    ...pkg.dependencies
+    ...rootPkg.devDependencies,
+    ...rootPkg.dependencies
   }
 
   const resolveOptions: InternalResolveOptions = {
