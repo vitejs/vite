@@ -478,6 +478,15 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
