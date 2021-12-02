@@ -482,8 +482,8 @@ async function doBuild(
       if (output.output) {
         config.logger.warn(
           `You've set "rollupOptions.output.output" in your config. ` +
-          `This is deprecated and will override all Vite.js default output options. ` +
-          `Please use "rollupOptions.output" instead.`
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
         )
       }
 
