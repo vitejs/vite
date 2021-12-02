@@ -29,6 +29,7 @@ import { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
   assetUrlRE,
+  isURLRequest,
   registerAssetToChunk,
   fileToUrl,
   checkPublicFile
@@ -161,7 +162,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id) || isURLRequest(id)) {
         return
       }
 
@@ -275,7 +276,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(css, id, options) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id) || isURLRequest(id)) {
         return
       }
 

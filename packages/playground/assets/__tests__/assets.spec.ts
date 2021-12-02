@@ -183,6 +183,13 @@ test('?url import', async () => {
   )
 })
 
+test('?url import on css', async () => {
+  const txt = await page.textContent('.url-css')
+  expect(txt).toEqual(
+    '/foo/css/icons.css'
+  )
+})
+
 describe('unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')

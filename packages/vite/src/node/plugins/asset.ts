@@ -20,6 +20,8 @@ const assetUrlQuotedRE = /"__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?"/g
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
+export const isURLRequest = (id: string) => urlRE.test(id);
+
 export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
