@@ -458,7 +458,7 @@ importers:
     specifiers:
       cross-env: ^7.0.3
       express: ^4.17.1
-      node-addon: file:./node-addon
+      node-addon: link:./node-addon
       read-file-content: file:./read-file-content
     dependencies:
       node-addon: link:node-addon
