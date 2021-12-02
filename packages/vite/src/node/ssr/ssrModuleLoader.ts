@@ -263,23 +263,50 @@ async function nodeImport(
 
   try {
     const mod = await dynamicImport(url)
-    return proxyESM(id, mod)
+    return proxyESM(mod)
   } finally {
     unhookNodeResolve()
   }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  const defaultExport = getDefaultExport(mod)
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
     }
   })
+}
+
+function getDefaultExport(moduleExports: any) {
+  // `moduleExports` is one of the following:
+  //   - `const moduleExports = require(file)`
+  //   - `const moduleExports = await import(file)`
+  let defaultExport =
+    'default' in moduleExports ? moduleExports.default : moduleExports
+
+  // Node.js doesn't support `__esModule`, see https://github.com/nodejs/node/issues/40891
+  // This means we need to unwrap the `__esModule` wrapper ourselves.
+  //
+  // For example:
+  // ```ts
+  // export default 'hi'
+  // ```
+  //
+  // Which TypeScript transpiles to:
+  // ```js
+  // use strict";
+  // exports.__esModule = true;
+  // exports["default"] = 'hi';
+  // ```
+  //
+  // This means that `moduleExports.default` denotes `{ __esModule, default: 'hi }` thus the actual
+  // default lives in `moduleExports.default.default`.
+  if (defaultExport && '__esModule' in defaultExport) {
+    defaultExport = defaultExport.default
+  }
+
+  return defaultExport
 }
