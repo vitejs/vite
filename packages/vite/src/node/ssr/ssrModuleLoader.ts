@@ -284,7 +284,8 @@ function getDefaultExport(moduleExports: any) {
   // `moduleExports` is one of the following:
   //   - `const moduleExports = require(file)`
   //   - `const moduleExports = await import(file)`
-  let defaultExport = moduleExports.default
+  let defaultExport =
+    'default' in moduleExports ? moduleExports.default : moduleExports
 
   // Node.js doesn't support `__esModule`, see https://github.com/nodejs/node/issues/40891
   // This means we need to unwrap the `__esModule` wrapper ourselves.
