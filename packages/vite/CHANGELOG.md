@@ -1,3 +1,17 @@
+# [2.7.0-beta.10](https://github.com/vitejs/vite/compare/v2.7.0-beta.9...v2.7.0-beta.10) (2021-12-02)
+
+
+### Bug Fixes
+
+* invalidate inlined proxy scripts on change ([#5891](https://github.com/vitejs/vite/issues/5891)) ([5b8c58b](https://github.com/vitejs/vite/commit/5b8c58bf9d2fe141cea9bde9492ccbedf9b76213))
+* read the correct package.json in ssrExternal ([#5927](https://github.com/vitejs/vite/issues/5927)) ([7edabb4](https://github.com/vitejs/vite/commit/7edabb46de3ce63e078e0cda7cd3ed9e5cdd0f2a)), closes [#5890](https://github.com/vitejs/vite/issues/5890)
+* **resolve:** dont overwrite `isRequire` from `baseOptions` ([#5872](https://github.com/vitejs/vite/issues/5872)) ([2b91e5a](https://github.com/vitejs/vite/commit/2b91e5aadaee0947eb9864367ae85762573a8dc4))
+* **scan:** handle local scripts with lang=ts ([#5850](https://github.com/vitejs/vite/issues/5850)) ([7ed8702](https://github.com/vitejs/vite/commit/7ed870273206b5e9dcedda6f0149b7b3324dea45))
+* SSR import in dev can't resolve default import (fix [#5706](https://github.com/vitejs/vite/issues/5706)) ([#5923](https://github.com/vitejs/vite/issues/5923)) ([21d79d7](https://github.com/vitejs/vite/commit/21d79d753af145f2c7ebb7dd5b0b1a4a298f96c5))
+* **ssr:** skip dedupe require if noExternal true ([#5928](https://github.com/vitejs/vite/issues/5928)) ([f6aa7fe](https://github.com/vitejs/vite/commit/f6aa7fe401737ef584ccf34b6042a32b8e5e8c5d))
+
+
+
 # [2.7.0-beta.9](https://github.com/vitejs/vite/compare/v2.7.0-beta.8...v2.7.0-beta.9) (2021-11-27)
 
 
