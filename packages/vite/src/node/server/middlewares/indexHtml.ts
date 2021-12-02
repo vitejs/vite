@@ -120,9 +120,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         }?html-proxy&index=${scriptModuleIndex}.js`
 
         // invalidate the module so the newly cached contents will be served
-        const module = server?.moduleGraph.getModuleById(
-          config.root + modulePath
-        )
+        const module = server?.moduleGraph.getModuleById(modulePath)
         if (module) {
           server?.moduleGraph.invalidateModule(module)
         }
