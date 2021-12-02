@@ -115,7 +115,8 @@ Running `vite` starts the dev server using the current working directory as root
 
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here is the default npm scripts in a scaffolded Vite project:
 
-```jsonc
+<!-- prettier-ignore -->
+```json5
 {
   "scripts": {
     "dev": "vite", // start dev server, aliases: `vite dev`, `vite serve`
