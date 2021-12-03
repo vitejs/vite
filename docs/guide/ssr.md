@@ -31,6 +31,7 @@ A typical SSR application will have the following source file structure:
 
 ```
 - index.html
+- server.js # main application server
 - src/
   - main.js          # exports env-agnostic (universal) app code
   - entry-client.js  # mounts the app to a DOM element
