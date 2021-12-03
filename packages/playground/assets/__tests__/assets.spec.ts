@@ -184,8 +184,13 @@ test('?url import', async () => {
 })
 
 test('?url import on css', async () => {
+  const src = readFile('css/icons.css')
   const txt = await page.textContent('.url-css')
-  expect(txt).toEqual('/foo/css/icons.css')
+  expect(txt).toEqual(
+    isBuild
+      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      : '/foo/css/icons.css'
+  )
 })
 
 describe('unicode url', () => {
