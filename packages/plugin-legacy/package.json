@@ -5,7 +5,9 @@
   "author": "Evan You",
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "constants.js",
+    "constants.d.ts"
   ],
   "main": "index.js",
   "types": "index.d.ts",
