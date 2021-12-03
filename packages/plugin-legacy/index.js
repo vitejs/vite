@@ -24,6 +24,8 @@ const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('d
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
+const polyfillsAssetNameLegacy = 'polyfills-legacy'
+
 /**
  * @param {import('.').Options} options
  * @returns {import('vite').Plugin[]}
@@ -166,7 +168,7 @@ function viteLegacyPlugin(options = {}) {
           )
 
         await buildPolyfillChunk(
-          'polyfills-legacy',
+          polyfillsAssetNameLegacy,
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
@@ -700,3 +702,5 @@ viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(systemJSInlineCode).digest('base64'),
   createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]
+viteLegacyPlugin.polyfillsAssetNameLegacy = polyfillsAssetNameLegacy
+viteLegacyPlugin.polyfillId = polyfillId

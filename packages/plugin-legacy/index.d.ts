@@ -33,3 +33,6 @@ declare function createPlugin(options?: Options): Plugin
 export default createPlugin
 
 export const cspHashes: string[]
+
+export const polyfillsAssetNameLegacy: string
+export const polyfillId: string
