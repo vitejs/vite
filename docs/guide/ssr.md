@@ -76,7 +76,7 @@ async function createServer() {
   // Create Vite server in middleware mode. This disables Vite's own HTML
   // serving logic and let the parent server take control.
   //
-  // If you want to use Vite's own HTML serving logic, use 'html' as a middlewareMode 
+  // If you want to use Vite's own HTML serving logic, use 'html' as a middlewareMode
   // (It will use Vite as a development middleware).
   const vite = await createViteServer({
     server: { middlewareMode: 'ssr' }
