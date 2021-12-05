@@ -1,4 +1,9 @@
 import { port } from './serve'
+import { uvuReset, uvuSetup } from '../../testUtils'
+import { test } from 'uvu'
+
+test.before(async () => await uvuSetup(__dirname))
+test.after(uvuReset)
 
 test('cli should work', async () => {
   // this test uses a custom serve implementation, so regular helpers for browserLogs and goto don't work
@@ -16,3 +21,5 @@ test('cli should work', async () => {
     page.off('console', onConsole)
   }
 })
+
+test.run()

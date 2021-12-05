@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import {
   findAssetFile,
   getBg,
@@ -8,8 +7,16 @@ import {
   readManifest,
   readFile,
   editFile,
-  notifyRebuildComplete
+  notifyRebuildComplete,
+  uvuReset,
+  uvuSetup,
+  describe
 } from '../../testUtils'
+
+import { test } from 'uvu'
+
+test.before(async () => await uvuSetup(__dirname))
+test.after(uvuReset)
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -23,7 +30,10 @@ test('should have no 404s', () => {
   })
 })
 
-describe('injected scripts', () => {
+describe('injected scripts', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('@vite/client', async () => {
     const hasClient = await page.$(
       'script[type="module"][src="/foo/@vite/client"]'
@@ -47,7 +57,10 @@ describe('injected scripts', () => {
   })
 })
 
-describe('raw references from /public', () => {
+describe('raw references from /public', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('load raw js from /public', async () => {
     expect(await page.textContent('.raw-js')).toMatch('[success]')
   })
@@ -57,7 +70,10 @@ describe('raw references from /public', () => {
   })
 })
 
-describe('asset imports from js', () => {
+describe('asset imports from js', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(assetMatch)
   })
@@ -71,7 +87,10 @@ describe('asset imports from js', () => {
   })
 })
 
-describe('css url() references', () => {
+describe('css url() references', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('fonts', async () => {
     expect(
       await page.evaluate(() => {
@@ -134,7 +153,10 @@ describe('css url() references', () => {
   }
 })
 
-describe('image', () => {
+describe('image', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
@@ -148,7 +170,10 @@ describe('image', () => {
   })
 })
 
-describe('svg fragments', () => {
+describe('svg fragments', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   // 404 is checked already, so here we just ensure the urls end with #fragment
   test('img url', async () => {
     const img = await page.$('.svg-frag-img')
@@ -183,7 +208,10 @@ test('?url import', async () => {
   )
 })
 
-describe('unicode url', () => {
+describe('unicode url', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
@@ -223,7 +251,10 @@ if (isBuild) {
     }
   })
 }
-describe('css and assets in css in build watch', () => {
+describe('css and assets in css in build watch', (test) => {
+  test.before(async () => await uvuSetup(__dirname))
+  test.after(uvuReset)
+
   if (isBuild) {
     test('css will not be lost and css does not contain undefined', async () => {
       editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
@@ -235,3 +266,5 @@ describe('css and assets in css in build watch', () => {
     })
   }
 })
+
+test.run()

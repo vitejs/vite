@@ -1,4 +1,14 @@
-import { editFile, getColor, untilUpdated } from '../../testUtils'
+import {
+  editFile,
+  getColor,
+  untilUpdated,
+  uvuSetup,
+  uvuReset
+} from '../../testUtils'
+import { test } from 'uvu'
+
+test.before(async () => await uvuSetup(__dirname))
+test.after(uvuReset)
 
 test('fs', async () => {
   expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')
@@ -43,3 +53,5 @@ test('aliased module', async () => {
     '[success] aliased module'
   )
 })
+
+test.run()
