@@ -179,6 +179,7 @@ export async function uvuReset() {
   global.browserLogs = []
   global.page?.off('console', onConsole)
   global.serverLogs = []
+  global.watcher?.close()
   await global.page?.close()
   await server?.close()
   await global.browser?.close()
