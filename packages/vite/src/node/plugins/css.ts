@@ -288,26 +288,26 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return css
         } else {
-          const cssStr = JSON.stringify(css)
           // server only
           if (options?.ssr) {
-            return modulesCode || `export default ${cssStr}`
+            return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
-            return `export default ${cssStr}`
+            return `export default ${JSON.stringify(css)}`
           }
-          const idStr = JSON.stringify(id)
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
-            `__vite__updateStyle(${idStr}, ${cssStr})`,
+            `const __vite__id = ${JSON.stringify(id)}`,
+            `const __vite__css = ${JSON.stringify(css)}`,
+            `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
             `${
               modulesCode ||
-              `import.meta.hot.accept()\nexport default ${cssStr}`
+              `import.meta.hot.accept()\nexport default __vite__css`
             }`,
-            `import.meta.hot.prune(() => __vite__removeStyle(${idStr}))`
+            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
         }
       }
