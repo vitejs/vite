@@ -22,35 +22,35 @@ describe('ssr-deps.spec.ts', () => {
     await page.goto(url)
     expect(await page.textContent('.file-message')).toMatch('File Content!')
   })
-})
 
-test('msg from primitive export', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.primitive-export-message')).toMatch(
-    'Hello World!'
-  )
-})
+  it('msg from primitive export', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.primitive-export-message')).toMatch(
+      'Hello World!'
+    )
+  })
 
-test('msg from TS transpiled exports', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.ts-default-export-message')).toMatch(
-    'Hello World!'
-  )
-  expect(await page.textContent('.ts-named-export-message')).toMatch(
-    'Hello World!'
-  )
-})
+  it('msg from TS transpiled exports', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.ts-default-export-message')).toMatch(
+      'Hello World!'
+    )
+    expect(await page.textContent('.ts-named-export-message')).toMatch(
+      'Hello World!'
+    )
+  })
 
-test('msg from Object.assign exports', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.object-assigned-exports-message')).toMatch(
-    'Hello World!'
-  )
-})
+  it('msg from Object.assign exports', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.object-assigned-exports-message')).toMatch(
+      'Hello World!'
+    )
+  })
 
-test('msg from forwarded exports', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.forwarded-export-message')).toMatch(
-    'Hello World!'
-  )
+  it('msg from forwarded exports', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.forwarded-export-message')).toMatch(
+      'Hello World!'
+    )
+  })
 })
