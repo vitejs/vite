@@ -1,3 +1,12 @@
+# [2.7.0-beta.11](https://github.com/vitejs/vite/compare/v2.7.0-beta.10...v2.7.0-beta.11) (2021-12-06)
+
+
+### Bug Fixes
+
+* **ssr:** allow primitive default exports and forwarded exports ([#5973](https://github.com/vitejs/vite/issues/5973)) ([a47b663](https://github.com/vitejs/vite/commit/a47b663ad06af8c5bf87128035f6b112de0ecd16))
+
+
+
 # [2.7.0-beta.10](https://github.com/vitejs/vite/compare/v2.7.0-beta.9...v2.7.0-beta.10) (2021-12-02)
 
 
