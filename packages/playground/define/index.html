@@ -9,6 +9,9 @@
 <p>process as property: <code class="process-as-property"></code></p>
 <p>spread object: <code class="spread-object"></code></p>
 <p>spread array: <code class="spread-array"></code></p>
+<p>trailing dot: <code class="trailing-dot"></code></p>
+<p>no property: <code class="no-property"></code></p>
+<p>no identifier substring: <span class="no-identifier-substring"></span></p>
 
 <script type="module">
   text('.exp', __EXP__)
@@ -25,6 +28,14 @@
     })
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
+  text('.trailing-dot', __TRAILING_DOT__.prop)
+
+  // make sure these kinds of use are NOT replaced:
+  const obj = { [`${'_'}_EXP__`]: true }
+  text('.no-property', obj.__EXP__)
+
+  window[`${'_'}_EXP__SUBSTR__`] = true
+  text('.no-identifier-substring', __EXP__SUBSTR__)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

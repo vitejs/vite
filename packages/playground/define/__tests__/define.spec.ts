@@ -20,4 +20,7 @@ test('string', async () => {
   expect(await page.textContent('.spread-array')).toBe(
     JSON.stringify([...defines.__STRING__])
   )
+  expect(await page.textContent('.trailing-dot')).toBe(String(true))
+  expect(await page.textContent('.no-identifier-substring')).toBe(String(true))
+  expect(await page.textContent('.no-property')).toBe(String(true))
 })

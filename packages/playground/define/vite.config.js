@@ -15,6 +15,7 @@ module.exports = {
         }
       }
     },
-    'process.env.SOMEVAR': '"SOMEVAR"'
+    'process.env.SOMEVAR': '"SOMEVAR"',
+    '__TRAILING_DOT__.': '({ prop: true }).'
   }
 }
