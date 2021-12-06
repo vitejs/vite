@@ -55,6 +55,7 @@ import {
   rebindErrorStacktrace,
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
+import { ssrTransform } from '../ssr/ssrTransform'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
@@ -207,6 +208,10 @@ export interface ViteDevServer {
     inMap?: object
   ): Promise<ESBuildTransformResult>
   /**
+   * Transform module code into SSR format.
+   */
+  ssrTransform: typeof ssrTransform
+  /**
    * Load a given URL as an instantiated module for SSR.
    */
   ssrLoadModule(url: string): Promise<Record<string, any>>
@@ -337,6 +342,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    ssrTransform,
     transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
