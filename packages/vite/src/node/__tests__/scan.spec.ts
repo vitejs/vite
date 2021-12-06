@@ -1,5 +1,6 @@
 import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import expect from 'expect'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -10,7 +11,7 @@ describe('optimizer-scan:script-test', () => {
         }
       })`
 
-  test('component return value test', () => {
+  it('component return value test', () => {
     scriptRE.lastIndex = 0
     const [, tsOpenTag, tsContent] = scriptRE.exec(
       `<script lang="ts">${scriptContent}</script>`
@@ -26,7 +27,7 @@ describe('optimizer-scan:script-test', () => {
     expect(content).toEqual(scriptContent)
   })
 
-  test('include comments test', () => {
+  it('include comments test', () => {
     scriptRE.lastIndex = 0
     const ret = scriptRE.exec(
       `<template>
@@ -36,7 +37,7 @@ describe('optimizer-scan:script-test', () => {
     expect(ret).toEqual(null)
   })
 
-  test('components with script keyword test', () => {
+  it('components with script keyword test', () => {
     scriptRE.lastIndex = 0
     let ret = scriptRE.exec(`<template><script-develop-pane/></template>`)
     expect(ret).toBe(null)
@@ -54,7 +55,7 @@ describe('optimizer-scan:script-test', () => {
     expect(ret).toBe(null)
   })
 
-  test('ordinary script tag test', () => {
+  it('ordinary script tag test', () => {
     scriptRE.lastIndex = 0
     const [, tag, content] = scriptRE.exec(`<script  >var test = null</script>`)
     expect(tag).toEqual('<script  >')
@@ -66,7 +67,7 @@ describe('optimizer-scan:script-test', () => {
     expect(content1).toEqual('var test = null')
   })
 
-  test('imports regex should work', () => {
+  it('imports regex should work', () => {
     const shouldMatchArray = [
       `import 'vue'`,
       `import { foo } from 'vue'`,
@@ -104,7 +105,7 @@ describe('optimizer-scan:script-test', () => {
     })
   })
 
-  test('script comments test', () => {
+  it('script comments test', () => {
     multilineCommentsRE.lastIndex = 0
     let ret = `/*
       export default { }

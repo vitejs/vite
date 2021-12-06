@@ -1,89 +1,94 @@
-import { getColor, isBuild } from '../../testUtils'
+import { mochaReset, mochaSetup, getColor, isBuild } from '../../testUtils'
 
-test('default + named imports from cjs dep (react)', async () => {
-  expect(await page.textContent('.cjs button')).toBe('count is 0')
-  await page.click('.cjs button')
-  expect(await page.textContent('.cjs button')).toBe('count is 1')
-})
+describe('optimize-deps.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-test('named imports from webpacked cjs (phoenix)', async () => {
-  expect(await page.textContent('.cjs-phoenix')).toBe('ok')
-})
+  it('default + named imports from cjs dep (react)', async () => {
+    expect(await page.textContent('.cjs button')).toBe('count is 0')
+    await page.click('.cjs button')
+    expect(await page.textContent('.cjs button')).toBe('count is 1')
+  })
 
-test('default import from webpacked cjs (clipboard)', async () => {
-  expect(await page.textContent('.cjs-clipboard')).toBe('ok')
-})
+  it('named imports from webpacked cjs (phoenix)', async () => {
+    expect(await page.textContent('.cjs-phoenix')).toBe('ok')
+  })
 
-test('dynamic imports from cjs dep (react)', async () => {
-  expect(await page.textContent('.cjs-dynamic button')).toBe('count is 0')
-  await page.click('.cjs-dynamic button')
-  expect(await page.textContent('.cjs-dynamic button')).toBe('count is 1')
-})
+  it('default import from webpacked cjs (clipboard)', async () => {
+    expect(await page.textContent('.cjs-clipboard')).toBe('ok')
+  })
 
-test('dynamic named imports from webpacked cjs (phoenix)', async () => {
-  expect(await page.textContent('.cjs-dynamic-phoenix')).toBe('ok')
-})
+  it('dynamic imports from cjs dep (react)', async () => {
+    expect(await page.textContent('.cjs-dynamic button')).toBe('count is 0')
+    await page.click('.cjs-dynamic button')
+    expect(await page.textContent('.cjs-dynamic button')).toBe('count is 1')
+  })
 
-test('dynamic default import from webpacked cjs (clipboard)', async () => {
-  expect(await page.textContent('.cjs-dynamic-clipboard')).toBe('ok')
-})
+  it('dynamic named imports from webpacked cjs (phoenix)', async () => {
+    expect(await page.textContent('.cjs-dynamic-phoenix')).toBe('ok')
+  })
 
-test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
-  expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm')).toBe(
-    'ok'
-  )
-})
+  it('dynamic default import from webpacked cjs (clipboard)', async () => {
+    expect(await page.textContent('.cjs-dynamic-clipboard')).toBe('ok')
+  })
 
-test('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
-  expect(await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs')).toBe(
-    'ok'
-  )
-})
+  it('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-esm)', async () => {
+    expect(
+      await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-esm')
+    ).toBe('ok')
+  })
 
-test('dedupe', async () => {
-  expect(await page.textContent('.dedupe button')).toBe('count is 0')
-  await page.click('.dedupe button')
-  expect(await page.textContent('.dedupe button')).toBe('count is 1')
-})
+  it('dynamic default import from cjs (cjs-dynamic-dep-cjs-compiled-from-cjs)', async () => {
+    expect(
+      await page.textContent('.cjs-dynamic-dep-cjs-compiled-from-cjs')
+    ).toBe('ok')
+  })
 
-test('cjs borwser field (axios)', async () => {
-  expect(await page.textContent('.cjs-browser-field')).toBe('pong')
-})
+  it('dedupe', async () => {
+    expect(await page.textContent('.dedupe button')).toBe('count is 0')
+    await page.click('.dedupe button')
+    expect(await page.textContent('.dedupe button')).toBe('count is 1')
+  })
 
-test('dep from linked dep (lodash-es)', async () => {
-  expect(await page.textContent('.deps-linked')).toBe('fooBarBaz')
-})
+  it('cjs borwser field (axios)', async () => {
+    expect(await page.textContent('.cjs-browser-field')).toBe('pong')
+  })
 
-test('forced include', async () => {
-  expect(await page.textContent('.force-include')).toMatch(`[success]`)
-})
+  it('dep from linked dep (lodash-es)', async () => {
+    expect(await page.textContent('.deps-linked')).toBe('fooBarBaz')
+  })
 
-test('import * from optimized dep', async () => {
-  expect(await page.textContent('.import-star')).toMatch(`[success]`)
-})
+  it('forced include', async () => {
+    expect(await page.textContent('.force-include')).toMatch(`[success]`)
+  })
 
-test('dep with css import', async () => {
-  expect(await getColor('h1')).toBe('red')
-})
+  it('import * from optimized dep', async () => {
+    expect(await page.textContent('.import-star')).toMatch(`[success]`)
+  })
 
-test('dep w/ non-js files handled via plugin', async () => {
-  expect(await page.textContent('.plugin')).toMatch(`[success]`)
-})
+  it('dep with css import', async () => {
+    expect(await getColor('h1')).toBe('red')
+  })
 
-test('vue + vuex', async () => {
-  expect(await page.textContent('.vue')).toMatch(`[success]`)
-})
+  it('dep w/ non-js files handled via plugin', async () => {
+    expect(await page.textContent('.plugin')).toMatch(`[success]`)
+  })
 
-test('esbuild-plugin', async () => {
-  expect(await page.textContent('.esbuild-plugin')).toMatch(
-    isBuild ? `Hello from a package` : `Hello from an esbuild plugin`
-  )
-})
+  it('vue + vuex', async () => {
+    expect(await page.textContent('.vue')).toMatch(`[success]`)
+  })
 
-test('import from hidden dir', async () => {
-  expect(await page.textContent('.hidden-dir')).toBe('hello!')
-})
+  it('esbuild-plugin', async () => {
+    expect(await page.textContent('.esbuild-plugin')).toMatch(
+      isBuild ? `Hello from a package` : `Hello from an esbuild plugin`
+    )
+  })
 
-test('import optimize-excluded package that imports optimized-included package', async () => {
-  expect(await page.textContent('.nested-include')).toBe('nested-include')
+  it('import from hidden dir', async () => {
+    expect(await page.textContent('.hidden-dir')).toBe('hello!')
+  })
+
+  it('import optimize-excluded package that imports optimized-included package', async () => {
+    expect(await page.textContent('.nested-include')).toBe('nested-include')
+  })
 })

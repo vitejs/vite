@@ -1,17 +1,17 @@
-import { getColor, isBuild } from '../../testUtils'
+import { getColor, isBuild, mochaSetup, mochaReset } from '../../testUtils'
 
 function testPage(isNested: boolean) {
-  test('pre transform', async () => {
+  it('pre transform', async () => {
     expect(await page.$('head meta[name=viewport]')).toBeTruthy()
   })
 
-  test('string transform', async () => {
+  it('string transform', async () => {
     expect(await page.textContent('h1')).toBe(
       isNested ? 'Nested' : 'Transformed'
     )
   })
 
-  test('tags transform', async () => {
+  it('tags transform', async () => {
     const el = await page.$('head meta[name=description]')
     expect(await el.getAttribute('content')).toBe('a vite app')
 
@@ -19,13 +19,13 @@ function testPage(isNested: boolean) {
     expect(await kw.getAttribute('content')).toBe('es modules')
   })
 
-  test('combined transform', async () => {
+  it('combined transform', async () => {
     expect(await page.title()).toBe('Test HTML transforms')
     // the p should be injected to body
     expect(await page.textContent('body p.inject')).toBe('This is injected')
   })
 
-  test('server only transform', async () => {
+  it('server only transform', async () => {
     if (!isBuild) {
       expect(await page.textContent('body p.server')).toMatch(
         'injected only during dev'
@@ -35,7 +35,7 @@ function testPage(isNested: boolean) {
     }
   })
 
-  test('build only transform', async () => {
+  it('build only transform', async () => {
     if (isBuild) {
       expect(await page.textContent('body p.build')).toMatch(
         'injected only during build'
@@ -45,7 +45,7 @@ function testPage(isNested: boolean) {
     }
   })
 
-  test('conditional transform', async () => {
+  it('conditional transform', async () => {
     if (isNested) {
       expect(await page.textContent('body p.conditional')).toMatch(
         'injected only for /nested/'
@@ -55,158 +55,165 @@ function testPage(isNested: boolean) {
     }
   })
 
-  test('body prepend/append transform', async () => {
+  it('body prepend/append transform', async () => {
     expect(await page.innerHTML('body')).toMatch(
       /prepended to body(.*)appended to body/s
     )
   })
 
-  test('css', async () => {
+  it('css', async () => {
     expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
     expect(await getColor('p')).toBe('grey')
   })
 }
 
-describe('main', () => {
-  testPage(false)
+describe('html.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-  test('preserve comments', async () => {
-    const html = await page.innerHTML('body')
-    expect(html).toMatch(`<!-- comment one -->`)
-    expect(html).toMatch(`<!-- comment two -->`)
-  })
-})
+  describe('main', () => {
+    testPage(false)
 
-describe('nested', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/nested/')
+    it('preserve comments', async () => {
+      const html = await page.innerHTML('body')
+      expect(html).toMatch(`<!-- comment one -->`)
+      expect(html).toMatch(`<!-- comment two -->`)
+    })
   })
 
-  testPage(true)
-})
-
-describe('nested w/ query', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/nested/index.html?v=1')
-  })
-
-  testPage(true)
-})
-
-if (isBuild) {
-  describe('scriptAsync', () => {
-    beforeAll(async () => {
+  describe('nested', () => {
+    before(async () => {
       // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-      await page.goto(viteTestUrl + '/scriptAsync.html')
+      await page.goto(viteTestUrl + '/nested/')
     })
 
-    test('script is async', async () => {
-      expect(await page.$('head script[type=module][async]')).toBeTruthy()
-      expect(await page.$('head script[type=module]:not([async])')).toBeNull()
-    })
+    testPage(true)
   })
 
-  describe('scriptMixed', () => {
-    beforeAll(async () => {
+  describe('nested w/ query', () => {
+    before(async () => {
       // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-      await page.goto(viteTestUrl + '/scriptMixed.html')
+      await page.goto(viteTestUrl + '/nested/index.html?v=1')
     })
 
-    test('script is mixed', async () => {
-      expect(await page.$('head script[type=module][async]')).toBeNull()
-      expect(await page.$('head script[type=module]:not([async])')).toBeTruthy()
-    })
+    testPage(true)
   })
 
-  describe('zeroJS', () => {
-    // Ensure that the modulePreload polyfill is discarded in this case
+  if (isBuild) {
+    describe('scriptAsync', () => {
+      before(async () => {
+        // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+        await page.goto(viteTestUrl + '/scriptAsync.html')
+      })
 
-    beforeAll(async () => {
+      it('script is async', async () => {
+        expect(await page.$('head script[type=module][async]')).toBeTruthy()
+        expect(await page.$('head script[type=module]:not([async])')).toBeNull()
+      })
+    })
+
+    describe('scriptMixed', () => {
+      before(async () => {
+        // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+        await page.goto(viteTestUrl + '/scriptMixed.html')
+      })
+
+      it('script is mixed', async () => {
+        expect(await page.$('head script[type=module][async]')).toBeNull()
+        expect(
+          await page.$('head script[type=module]:not([async])')
+        ).toBeTruthy()
+      })
+    })
+
+    describe('zeroJS', () => {
+      // Ensure that the modulePreload polyfill is discarded in this case
+
+      before(async () => {
+        // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+        await page.goto(viteTestUrl + '/zeroJS.html')
+      })
+
+      it('zeroJS', async () => {
+        expect(await page.$('head script[type=module]')).toBeNull()
+      })
+    })
+
+    describe('inline entry', () => {
+      const _countTags = (selector) => page.$$eval(selector, (t) => t.length)
+      const countScriptTags = _countTags.bind(this, 'script[type=module]')
+      const countPreloadTags = _countTags.bind(this, 'link[rel=modulepreload]')
+
+      it('is inlined', async () => {
+        await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
+        expect(await countScriptTags()).toBeGreaterThan(1)
+        expect(await countPreloadTags()).toBe(0)
+      })
+
+      it('is not inlined', async () => {
+        await page.goto(viteTestUrl + '/inline/unique.html?v=1')
+        expect(await countScriptTags()).toBe(1)
+        expect(await countPreloadTags()).toBeGreaterThan(0)
+      })
+
+      it('execution order when inlined', async () => {
+        await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
+        expect((await page.textContent('#output')).trim()).toBe(
+          'dep1 common dep2 dep3 shared'
+        )
+      })
+
+      it('execution order when not inlined', async () => {
+        await page.goto(viteTestUrl + '/inline/unique.html?v=1')
+        expect((await page.textContent('#output')).trim()).toBe(
+          'dep1 common dep2 unique'
+        )
+      })
+    })
+  }
+
+  describe('noHead', () => {
+    before(async () => {
       // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-      await page.goto(viteTestUrl + '/zeroJS.html')
+      await page.goto(viteTestUrl + '/noHead.html')
     })
 
-    test('zeroJS', async () => {
-      expect(await page.$('head script[type=module]')).toBeNull()
+    it('noHead tags injection', async () => {
+      const el = await page.$('html meta[name=description]')
+      expect(await el.getAttribute('content')).toBe('a vite app')
+
+      const kw = await page.$('html meta[name=keywords]')
+      expect(await kw.getAttribute('content')).toBe('es modules')
     })
   })
 
-  describe('inline entry', () => {
-    const _countTags = (selector) => page.$$eval(selector, (t) => t.length)
-    const countScriptTags = _countTags.bind(this, 'script[type=module]')
-    const countPreloadTags = _countTags.bind(this, 'link[rel=modulepreload]')
-
-    test('is inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/shared-1.html?v=1')
-      expect(await countScriptTags()).toBeGreaterThan(1)
-      expect(await countPreloadTags()).toBe(0)
+  describe('noBody', () => {
+    before(async () => {
+      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      await page.goto(viteTestUrl + '/noBody.html')
     })
 
-    test('is not inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/unique.html?v=1')
-      expect(await countScriptTags()).toBe(1)
-      expect(await countPreloadTags()).toBeGreaterThan(0)
-    })
+    it('noBody tags injection', async () => {
+      // this selects the first noscript in body, even without a body tag
+      const el = await page.$('body noscript')
+      expect(await el.innerHTML()).toMatch(`<!-- this is prepended to body -->`)
 
-    test('execution order when inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/shared-2.html?v=1')
-      expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 dep3 shared'
+      const kw = await page.$('html:last-child')
+      expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
+    })
+  })
+
+  describe('unicode path', () => {
+    it('direct access', async () => {
+      await page.goto(
+        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
       )
+      expect(await page.textContent('h1')).toBe('unicode-path')
     })
 
-    test('execution order when not inlined', async () => {
-      await page.goto(viteTestUrl + '/inline/unique.html?v=1')
-      expect((await page.textContent('#output')).trim()).toBe(
-        'dep1 common dep2 unique'
-      )
+    it('spa fallback', async () => {
+      await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
+      expect(await page.textContent('h1')).toBe('unicode-path')
     })
-  })
-}
-
-describe('noHead', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/noHead.html')
-  })
-
-  test('noHead tags injection', async () => {
-    const el = await page.$('html meta[name=description]')
-    expect(await el.getAttribute('content')).toBe('a vite app')
-
-    const kw = await page.$('html meta[name=keywords]')
-    expect(await kw.getAttribute('content')).toBe('es modules')
-  })
-})
-
-describe('noBody', () => {
-  beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
-    await page.goto(viteTestUrl + '/noBody.html')
-  })
-
-  test('noBody tags injection', async () => {
-    // this selects the first noscript in body, even without a body tag
-    const el = await page.$('body noscript')
-    expect(await el.innerHTML()).toMatch(`<!-- this is prepended to body -->`)
-
-    const kw = await page.$('html:last-child')
-    expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
-  })
-})
-
-describe('unicode path', () => {
-  test('direct access', async () => {
-    await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
-    )
-    expect(await page.textContent('h1')).toBe('unicode-path')
-  })
-
-  test('spa fallback', async () => {
-    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
-    expect(await page.textContent('h1')).toBe('unicode-path')
   })
 })

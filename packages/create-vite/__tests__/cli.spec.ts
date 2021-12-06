@@ -2,6 +2,7 @@
 import { commandSync, ExecaSyncReturnValue, SyncOptions } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
 import { join } from 'path'
+import expect from 'expect'
 
 const CLI_PATH = join(__dirname, '..')
 
@@ -31,44 +32,44 @@ const templateFiles = readdirSync(join(CLI_PATH, 'template-vue'))
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-beforeAll(() => remove(genPath))
+before(() => remove(genPath))
 afterEach(() => remove(genPath))
 
-test('prompts for the project name if none supplied', () => {
+it('prompts for the project name if none supplied', () => {
   const { stdout, exitCode } = run([])
   expect(stdout).toContain('Project name:')
 })
 
-test('prompts for the framework if none supplied', () => {
+it('prompts for the framework if none supplied', () => {
   const { stdout } = run([projectName])
   expect(stdout).toContain('Select a framework:')
 })
 
-test('prompts for the framework on not supplying a value for --template', () => {
+it('prompts for the framework on not supplying a value for --template', () => {
   const { stdout } = run([projectName, '--template'])
   expect(stdout).toContain('Select a framework:')
 })
 
-test('prompts for the framework on supplying an invalid template', () => {
+it('prompts for the framework on supplying an invalid template', () => {
   const { stdout } = run([projectName, '--template', 'unknown'])
   expect(stdout).toContain(
     `"unknown" isn't a valid template. Please choose from below:`
   )
 })
 
-test('asks to overwrite non-empty target directory', () => {
+it('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
   const { stdout } = run([projectName], { cwd: __dirname })
   expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
 })
 
-test('asks to overwrite non-empty current directory', () => {
+it('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
   const { stdout } = run(['.'], { cwd: genPath, input: 'test-app\n' })
   expect(stdout).toContain(`Current directory is not empty.`)
 })
 
-test('successfully scaffolds a project based on vue starter template', () => {
+it('successfully scaffolds a project based on vue starter template', () => {
   const { stdout } = run([projectName, '--template', 'vue'], {
     cwd: __dirname
   })
@@ -79,7 +80,7 @@ test('successfully scaffolds a project based on vue starter template', () => {
   expect(templateFiles).toEqual(generatedFiles)
 })
 
-test('works with the -t alias', () => {
+it('works with the -t alias', () => {
   const { stdout } = run([projectName, '-t', 'vue'], {
     cwd: __dirname
   })

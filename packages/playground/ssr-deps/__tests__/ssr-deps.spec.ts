@@ -1,4 +1,5 @@
 import { port } from './serve'
+import { mochaSetup, mochaReset } from '../../testUtils'
 
 const url = `http://localhost:${port}`
 
@@ -8,14 +9,19 @@ const url = `http://localhost:${port}`
  * NOTE: This test will always succeed now, unless the temporary workaround for Jest can be removed
  * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
  */
-test('msg from node addon', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.node-addon-msg')).toMatch('Hello World!')
-})
+describe('ssr-deps.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-test('msg read by fs/promises', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.file-message')).toMatch('File Content!')
+  it('msg from node addon', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.node-addon-msg')).toMatch('Hello World!')
+  })
+
+  it('msg read by fs/promises', async () => {
+    await page.goto(url)
+    expect(await page.textContent('.file-message')).toMatch('File Content!')
+  })
 })
 
 test('msg from primitive export', async () => {

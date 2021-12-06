@@ -6,9 +6,10 @@ import {
   resolveEnvPrefix,
   UserConfig
 } from '../config'
+import expect from 'expect'
 
 describe('mergeConfig', () => {
-  test('handles configs with different alias schemas', () => {
+  it('handles configs with different alias schemas', () => {
     const baseConfig: UserConfigExport = {
       resolve: {
         alias: [
@@ -51,7 +52,7 @@ describe('mergeConfig', () => {
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
-  test('handles assetsInclude', () => {
+  it('handles assetsInclude', () => {
     const baseConfig: UserConfigExport = {
       assetsInclude: 'some-string'
     }
@@ -67,7 +68,7 @@ describe('mergeConfig', () => {
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
-  test('not handles alias not under `resolve`', () => {
+  it('not handles alias not under `resolve`', () => {
     const baseConfig = {
       custom: {
         alias: {
@@ -101,16 +102,7 @@ describe('mergeConfig', () => {
 })
 
 describe('resolveConfig', () => {
-  beforeAll(() => {
-    // silence deprecation warning
-    jest.spyOn(console, 'warn').mockImplementation(() => {})
-  })
-
-  afterAll(() => {
-    jest.clearAllMocks()
-  })
-
-  test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
+  it('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
     const config: InlineConfig = {
       optimizeDeps: {
         keepNames: false
@@ -126,7 +118,7 @@ describe('resolveConfig', () => {
     })
   })
 
-  test('uses esbuildOptions.keepNames if set', async () => {
+  it('uses esbuildOptions.keepNames if set', async () => {
     const config: InlineConfig = {
       optimizeDeps: {
         keepNames: true,
@@ -147,19 +139,19 @@ describe('resolveConfig', () => {
 })
 
 describe('resolveEnvPrefix', () => {
-  test(`use 'VITE_' as default value`, () => {
+  it(`use 'VITE_' as default value`, () => {
     const config: UserConfig = {}
     expect(resolveEnvPrefix(config)).toMatchObject(['VITE_'])
   })
 
-  test(`throw error if envPrefix contains ''`, () => {
+  it(`throw error if envPrefix contains ''`, () => {
     let config: UserConfig = { envPrefix: '' }
     expect(() => resolveEnvPrefix(config)).toThrow()
     config = { envPrefix: ['', 'CUSTOM_'] }
     expect(() => resolveEnvPrefix(config)).toThrow()
   })
 
-  test('should work correctly for valid envPrefix value', () => {
+  it('should work correctly for valid envPrefix value', () => {
     const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
     expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
@@ -176,7 +168,7 @@ describe('preview config', () => {
     cors: false
   })
 
-  test('preview inherits server config with default port', async () => {
+  it('preview inherits server config with default port', async () => {
     const config: InlineConfig = {
       server: serverConfig()
     }
@@ -188,7 +180,7 @@ describe('preview config', () => {
     })
   })
 
-  test('preview inherits server config with port override', async () => {
+  it('preview inherits server config with port override', async () => {
     const config: InlineConfig = {
       server: serverConfig(),
       preview: {
@@ -213,7 +205,7 @@ describe('preview config', () => {
     cors: true
   })
 
-  test('preview overrides server config', async () => {
+  it('preview overrides server config', async () => {
     const config: InlineConfig = {
       server: serverConfig(),
       preview: previewConfig()

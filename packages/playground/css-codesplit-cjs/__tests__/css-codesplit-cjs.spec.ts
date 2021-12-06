@@ -3,11 +3,11 @@ import {
   getColor,
   isBuild,
   readManifest,
-  mochaReset,
-  mochaSetup
+  mochaSetup,
+  mochaReset
 } from '../../testUtils'
 
-describe('css-codesplit.spec.ts', () => {
+describe('css-codesplit-cjs.spec.ts', () => {
   before(mochaSetup)
   after(mochaReset)
 

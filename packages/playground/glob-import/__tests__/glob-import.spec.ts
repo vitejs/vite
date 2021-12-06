@@ -3,7 +3,9 @@ import {
   editFile,
   isBuild,
   removeFile,
-  untilUpdated
+  untilUpdated,
+  mochaSetup,
+  mochaReset
 } from '../../testUtils'
 
 const filteredResult = {
@@ -45,61 +47,66 @@ const allResult = {
   }
 }
 
-test('should work', async () => {
-  expect(await page.textContent('.result')).toBe(
-    JSON.stringify(allResult, null, 2)
-  )
-})
+describe('glob-import.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-if (!isBuild) {
-  test('hmr for adding/removing files', async () => {
-    addFile('dir/a.js', '')
-    await untilUpdated(
-      () => page.textContent('.result'),
-      JSON.stringify(
-        {
-          '/dir/a.js': {},
-          ...allResult,
-          '/dir/index.js': {
-            modules: {
-              './a.js': {},
-              ...allResult['/dir/index.js'].modules
-            }
-          }
-        },
-        null,
-        2
-      )
-    )
-
-    // edit the added file
-    editFile('dir/a.js', () => 'export const msg ="a"')
-    await untilUpdated(
-      () => page.textContent('.result'),
-      JSON.stringify(
-        {
-          '/dir/a.js': {
-            msg: 'a'
-          },
-          ...allResult,
-          '/dir/index.js': {
-            modules: {
-              './a.js': {
-                msg: 'a'
-              },
-              ...allResult['/dir/index.js'].modules
-            }
-          }
-        },
-        null,
-        2
-      )
-    )
-
-    removeFile('dir/a.js')
-    await untilUpdated(
-      () => page.textContent('.result'),
+  it('should work', async () => {
+    expect(await page.textContent('.result')).toBe(
       JSON.stringify(allResult, null, 2)
     )
   })
-}
+
+  if (!isBuild) {
+    it('hmr for adding/removing files', async () => {
+      addFile('dir/a.js', '')
+      await untilUpdated(
+        () => page.textContent('.result'),
+        JSON.stringify(
+          {
+            '/dir/a.js': {},
+            ...allResult,
+            '/dir/index.js': {
+              modules: {
+                './a.js': {},
+                ...allResult['/dir/index.js'].modules
+              }
+            }
+          },
+          null,
+          2
+        )
+      )
+
+      // edit the added file
+      editFile('dir/a.js', () => 'export const msg ="a"')
+      await untilUpdated(
+        () => page.textContent('.result'),
+        JSON.stringify(
+          {
+            '/dir/a.js': {
+              msg: 'a'
+            },
+            ...allResult,
+            '/dir/index.js': {
+              modules: {
+                './a.js': {
+                  msg: 'a'
+                },
+                ...allResult['/dir/index.js'].modules
+              }
+            }
+          },
+          null,
+          2
+        )
+      )
+
+      removeFile('dir/a.js')
+      await untilUpdated(
+        () => page.textContent('.result'),
+        JSON.stringify(allResult, null, 2)
+      )
+    })
+  }
+})

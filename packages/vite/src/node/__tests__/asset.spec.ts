@@ -1,7 +1,8 @@
 import { assetFileNamesToFileName, getAssetHash } from '../plugins/asset'
+import expect from 'expect'
 
 describe('getAssetHash', () => {
-  test('8-digit hex', () => {
+  it('8-digit hex', () => {
     const hash = getAssetHash(Buffer.alloc(0))
 
     expect(hash).toMatch(/^[\da-f]{8}$/)
@@ -21,7 +22,7 @@ describe('assetFileNamesToFileName', () => {
 
     // basic examples
 
-    test('a string with no placeholders', () => {
+    it('a string with no placeholders', () => {
       const fileName = assetFileNamesToFileName(
         'output.png',
         sourceFilepath,
@@ -32,7 +33,7 @@ describe('assetFileNamesToFileName', () => {
       expect(fileName).toBe('output.png')
     })
 
-    test('a string with placeholders', () => {
+    it('a string with placeholders', () => {
       const fileName = assetFileNamesToFileName(
         'assets/[name]/[ext]/[extname]/[hash]',
         sourceFilepath,
@@ -45,7 +46,7 @@ describe('assetFileNamesToFileName', () => {
 
     // function examples
 
-    test('a function that uses asset information', () => {
+    it('a function that uses asset information', () => {
       const fileName = assetFileNamesToFileName(
         (options) =>
           `assets/${options.name.replace(/^C:|[/\\]/g, '')}/${options.type}/${
@@ -59,7 +60,7 @@ describe('assetFileNamesToFileName', () => {
       expect(fileName).toBe('assets/pathtosourceinput.png/asset/0')
     })
 
-    test('a function that returns a string with no placeholders', () => {
+    it('a function that returns a string with no placeholders', () => {
       const fileName = assetFileNamesToFileName(
         () => 'output.png',
         sourceFilepath,
@@ -70,7 +71,7 @@ describe('assetFileNamesToFileName', () => {
       expect(fileName).toBe('output.png')
     })
 
-    test('a function that returns a string with placeholders', () => {
+    it('a function that returns a string with placeholders', () => {
       const fileName = assetFileNamesToFileName(
         () => 'assets/[name]/[ext]/[extname]/[hash]',
         sourceFilepath,
@@ -83,7 +84,7 @@ describe('assetFileNamesToFileName', () => {
 
     // invalid cases
 
-    test('a string with an invalid placeholder', () => {
+    it('a string with an invalid placeholder', () => {
       expect(() => {
         assetFileNamesToFileName(
           'assets/[invalid]',
@@ -107,7 +108,7 @@ describe('assetFileNamesToFileName', () => {
       )
     })
 
-    test('a function that returns a string with an invalid placeholder', () => {
+    it('a function that returns a string with an invalid placeholder', () => {
       expect(() => {
         assetFileNamesToFileName(
           () => 'assets/[invalid]',
@@ -131,7 +132,7 @@ describe('assetFileNamesToFileName', () => {
       )
     })
 
-    test('a number', () => {
+    it('a number', () => {
       expect(() => {
         assetFileNamesToFileName(
           9876 as unknown as string,
@@ -142,7 +143,7 @@ describe('assetFileNamesToFileName', () => {
       }).toThrowError('assetFileNames must be a string or a function')
     })
 
-    test('a function that returns a number', () => {
+    it('a function that returns a number', () => {
       expect(() => {
         assetFileNamesToFileName(
           () => 9876 as unknown as string,

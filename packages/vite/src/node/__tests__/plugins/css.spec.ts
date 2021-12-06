@@ -2,25 +2,26 @@ import { cssUrlRE, cssPlugin } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+import expect from 'expect'
 
 describe('search css url function', () => {
-  test('some spaces before it', () => {
+  it('some spaces before it', () => {
     expect(
       cssUrlRE.test("list-style-image: url('../images/bullet.jpg');")
     ).toBe(true)
   })
 
-  test('no space after colon', () => {
+  it('no space after colon', () => {
     expect(cssUrlRE.test("list-style-image:url('../images/bullet.jpg');")).toBe(
       true
     )
   })
 
-  test('at the beginning of line', () => {
+  it('at the beginning of line', () => {
     expect(cssUrlRE.test("url('../images/bullet.jpg');")).toBe(true)
   })
 
-  test('as suffix of a function name', () => {
+  it('as suffix of a function name', () => {
     expect(
       cssUrlRE.test(`@function svg-url($string) {
       @return "";
@@ -28,7 +29,7 @@ describe('search css url function', () => {
     ).toBe(false)
   })
 
-  test('after parenthesis', () => {
+  it('after parenthesis', () => {
     expect(
       cssUrlRE.test(
         'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
@@ -36,7 +37,7 @@ describe('search css url function', () => {
     ).toBe(true)
   })
 
-  test('after comma', () => {
+  it('after comma', () => {
     expect(
       cssUrlRE.test(
         'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
@@ -50,7 +51,7 @@ describe('css path resolutions', () => {
   const mockedBarCssRelativePath = '/css/bar.module.css'
   const mockedFooCssRelativePath = '/css/foo.module.css'
 
-  test('cssmodule compose/from path resolutions', async () => {
+  it('cssmodule compose/from path resolutions', async () => {
     const config = await resolveConfig(
       {
         resolve: {

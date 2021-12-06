@@ -1,54 +1,59 @@
-import { isBuild } from 'testUtils'
+import { isBuild, mochaSetup, mochaReset } from '../../testUtils'
 
 const mode = isBuild ? `production` : `development`
 
-test('base', async () => {
-  expect(await page.textContent('.base')).toBe('/')
-})
+describe('env.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-test('mode', async () => {
-  expect(await page.textContent('.mode')).toBe(mode)
-})
+  it('base', async () => {
+    expect(await page.textContent('.base')).toBe('/')
+  })
 
-test('dev', async () => {
-  expect(await page.textContent('.dev')).toBe(String(!isBuild))
-})
+  it('mode', async () => {
+    expect(await page.textContent('.mode')).toBe(mode)
+  })
 
-test('prod', async () => {
-  expect(await page.textContent('.prod')).toBe(String(isBuild))
-})
+  it('dev', async () => {
+    expect(await page.textContent('.dev')).toBe(String(!isBuild))
+  })
 
-test('custom', async () => {
-  expect(await page.textContent('.custom')).toBe('1')
-})
+  it('prod', async () => {
+    expect(await page.textContent('.prod')).toBe(String(isBuild))
+  })
 
-test('custom-prefix', async () => {
-  expect(await page.textContent('.custom-prefix')).toBe('1')
-})
+  it('custom', async () => {
+    expect(await page.textContent('.custom')).toBe('1')
+  })
 
-test('mode file override', async () => {
-  expect(await page.textContent('.mode-file')).toBe(`.env.${mode}`)
-})
+  it('custom-prefix', async () => {
+    expect(await page.textContent('.custom-prefix')).toBe('1')
+  })
 
-test('inline variables', async () => {
-  expect(await page.textContent('.inline')).toBe(
-    isBuild ? `inline-build` : `inline-serve`
-  )
-})
+  it('mode file override', async () => {
+    expect(await page.textContent('.mode-file')).toBe(`.env.${mode}`)
+  })
 
-test('NODE_ENV', async () => {
-  expect(await page.textContent('.node-env')).toBe(mode)
-})
+  it('inline variables', async () => {
+    expect(await page.textContent('.inline')).toBe(
+      isBuild ? `inline-build` : `inline-serve`
+    )
+  })
 
-test('env object', async () => {
-  const envText = await page.textContent('.env-object')
-  expect(JSON.parse(envText)).toMatchObject({
-    VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
-    CUSTOM_PREFIX_ENV_VARIABLE: '1',
-    VITE_CUSTOM_ENV_VARIABLE: '1',
-    BASE_URL: '/',
-    MODE: mode,
-    DEV: !isBuild,
-    PROD: isBuild
+  it('NODE_ENV', async () => {
+    expect(await page.textContent('.node-env')).toBe(mode)
+  })
+
+  it('env object', async () => {
+    const envText = await page.textContent('.env-object')
+    expect(JSON.parse(envText)).toMatchObject({
+      VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
+      CUSTOM_PREFIX_ENV_VARIABLE: '1',
+      VITE_CUSTOM_ENV_VARIABLE: '1',
+      BASE_URL: '/',
+      MODE: mode,
+      DEV: !isBuild,
+      PROD: isBuild
+    })
   })
 })

@@ -3,41 +3,47 @@ import {
   untilUpdated,
   removeFile,
   addFile,
-  isBuild
+  isBuild,
+  mochaSetup,
+  mochaReset
 } from '../../testUtils'
 
-if (!isBuild) {
-  test('should hmr when file is deleted and restored', async () => {
-    await untilUpdated(() => page.textContent('p'), 'Child state 1')
+describe('file-delete-restore.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-    editFile('Child.jsx', (code) =>
-      code.replace('Child state 1', 'Child state 2')
-    )
+  if (!isBuild) {
+    it('should hmr when file is deleted and restored', async () => {
+      await untilUpdated(() => page.textContent('p'), 'Child state 1')
 
-    await untilUpdated(() => page.textContent('p'), 'Child state 2')
+      editFile('Child.jsx', (code) =>
+        code.replace('Child state 1', 'Child state 2')
+      )
 
-    editFile('App.jsx', (code) =>
-      code
-        .replace(`import Child from './Child'`, '')
-        .replace(`<Child />`, '<p>Child deleted</p>')
-    )
-    removeFile('Child.jsx')
-    await untilUpdated(() => page.textContent('p'), 'Child deleted')
+      await untilUpdated(() => page.textContent('p'), 'Child state 2')
 
-    // restore Child.jsx
-    addFile(
-      'Child.jsx',
-      ` export default function Child() {
+      editFile('App.jsx', (code) =>
+        code
+          .replace(`import Child from './Child'`, '')
+          .replace(`<Child />`, '<p>Child deleted</p>')
+      )
+      removeFile('Child.jsx')
+      await untilUpdated(() => page.textContent('p'), 'Child deleted')
+
+      // restore Child.jsx
+      addFile(
+        'Child.jsx',
+        ` export default function Child() {
           return <p>Child state 1</p>
         }
       `
-    )
+      )
 
-    // restore App.jsx
-    editFile(
-      'App.jsx',
-      (code) =>
-        `import { useState } from 'react'
+      // restore App.jsx
+      editFile(
+        'App.jsx',
+        (code) =>
+          `import { useState } from 'react'
       import Child from './Child'
       
       function App() {
@@ -50,12 +56,13 @@ if (!isBuild) {
       
       export default App
       `
-    )
+      )
 
-    await untilUpdated(() => page.textContent('p'), 'Child state 1')
-  })
-} else {
-  test('dummy test to make jest happy', async () => {
-    // Your test suite must contain at least one test.
-  })
-}
+      await untilUpdated(() => page.textContent('p'), 'Child state 1')
+    })
+  } else {
+    it('dummy test to make jest happy', async () => {
+      // Your test suite must contain at least one test.
+    })
+  }
+})

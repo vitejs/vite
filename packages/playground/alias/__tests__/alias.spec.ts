@@ -1,45 +1,56 @@
-import { editFile, getColor, untilUpdated } from '../../testUtils'
+import {
+  editFile,
+  getColor,
+  untilUpdated,
+  mochaSetup,
+  mochaReset
+} from '../../testUtils'
 
-test('fs', async () => {
-  expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')
-})
+describe('alias.spec.ts', () => {
+  before(mochaSetup)
+  after(mochaReset)
 
-test('fs directory', async () => {
-  expect(await page.textContent('.fs-dir')).toMatch(
-    '[success] alias to directory'
-  )
-})
+  it('fs', async () => {
+    expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')
+  })
 
-test('regex', async () => {
-  expect(await page.textContent('.regex')).toMatch(
-    '[success] alias to directory via regex'
-  )
-})
+  it('fs directory', async () => {
+    expect(await page.textContent('.fs-dir')).toMatch(
+      '[success] alias to directory'
+    )
+  })
 
-test('dependency', async () => {
-  expect(await page.textContent('.dep')).toMatch('[success] out of root')
-})
+  it('regex', async () => {
+    expect(await page.textContent('.regex')).toMatch(
+      '[success] alias to directory via regex'
+    )
+  })
 
-test('js via script src', async () => {
-  expect(await page.textContent('.from-script-src')).toMatch(
-    '[success] from script src'
-  )
-})
+  it('dependency', async () => {
+    expect(await page.textContent('.dep')).toMatch('[success] out of root')
+  })
 
-test('css via link', async () => {
-  expect(await getColor('body')).toBe('grey')
-  editFile('dir/test.css', (code) => code.replace('grey', 'red'))
-  await untilUpdated(() => getColor('body'), 'red')
-})
+  it('js via script src', async () => {
+    expect(await page.textContent('.from-script-src')).toMatch(
+      '[success] from script src'
+    )
+  })
 
-test('optimized dep', async () => {
-  expect(await page.textContent('.optimized')).toMatch(
-    '[success] alias optimized'
-  )
-})
+  it('css via link', async () => {
+    expect(await getColor('body')).toBe('grey')
+    editFile('dir/test.css', (code) => code.replace('grey', 'red'))
+    await untilUpdated(() => getColor('body'), 'red')
+  })
 
-test('aliased module', async () => {
-  expect(await page.textContent('.aliased-module')).toMatch(
-    '[success] aliased module'
-  )
+  it('optimized dep', async () => {
+    expect(await page.textContent('.optimized')).toMatch(
+      '[success] alias optimized'
+    )
+  })
+
+  it('aliased module', async () => {
+    expect(await page.textContent('.aliased-module')).toMatch(
+      '[success] aliased module'
+    )
+  })
 })

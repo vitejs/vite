@@ -1,27 +1,28 @@
 import { searchForWorkspaceRoot } from '../searchRoot'
 import { resolve } from 'path'
+import expect from 'expect'
 
 describe('searchForWorkspaceRoot', () => {
-  test('pnpm', () => {
+  it('pnpm', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(__dirname, 'fixtures/pnpm/nested')
     )
     expect(resolved).toBe(resolve(__dirname, 'fixtures/pnpm'))
   })
 
-  test('yarn', () => {
+  it('yarn', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(__dirname, 'fixtures/yarn/nested')
     )
     expect(resolved).toBe(resolve(__dirname, 'fixtures/yarn'))
   })
 
-  test('yarn at root', () => {
+  it('yarn at root', () => {
     const resolved = searchForWorkspaceRoot(resolve(__dirname, 'fixtures/yarn'))
     expect(resolved).toBe(resolve(__dirname, 'fixtures/yarn'))
   })
 
-  test('none', () => {
+  it('none', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(__dirname, 'fixtures/none/nested')
     )

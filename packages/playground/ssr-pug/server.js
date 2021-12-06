@@ -3,7 +3,7 @@ const path = require('path')
 const pug = require('pug')
 const express = require('express')
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITE_TEST_SERVE || !!process.env.VITE_TEST_BUILD
 
 const DYNAMIC_SCRIPTS = `
   <script type="module">

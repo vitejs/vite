@@ -1,9 +1,10 @@
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
 import { resolveConfig } from '..'
+import expect from 'expect'
 
 describe('resolveLibFilename', () => {
-  test('custom filename function', () => {
+  it('custom filename function', () => {
     const filename = resolveLibFilename(
       {
         fileName: (format) => `custom-filename-function.${format}.js`,
@@ -16,7 +17,7 @@ describe('resolveLibFilename', () => {
     expect(filename).toBe('custom-filename-function.es.js')
   })
 
-  test('custom filename string', () => {
+  it('custom filename string', () => {
     const filename = resolveLibFilename(
       {
         fileName: 'custom-filename',
@@ -29,7 +30,7 @@ describe('resolveLibFilename', () => {
     expect(filename).toBe('custom-filename.es.js')
   })
 
-  test('package name as filename', () => {
+  it('package name as filename', () => {
     const filename = resolveLibFilename(
       {
         entry: 'mylib.js'
@@ -41,7 +42,7 @@ describe('resolveLibFilename', () => {
     expect(filename).toBe('mylib.es.js')
   })
 
-  test('custom filename and no package name', () => {
+  it('custom filename and no package name', () => {
     const filename = resolveLibFilename(
       {
         fileName: 'custom-filename',
@@ -54,7 +55,7 @@ describe('resolveLibFilename', () => {
     expect(filename).toBe('custom-filename.es.js')
   })
 
-  test('missing filename', () => {
+  it('missing filename', () => {
     expect(() => {
       resolveLibFilename(
         {
@@ -68,7 +69,7 @@ describe('resolveLibFilename', () => {
 })
 
 describe('resolveBuildOptions', () => {
-  test('resolve build.rollupOptions.input', async () => {
+  it('resolve build.rollupOptions.input', async () => {
     const config = await resolveConfig(
       {
         build: {
@@ -83,7 +84,7 @@ describe('resolveBuildOptions', () => {
 
     expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
   })
-  test('resolve build.rollupOptions.input{}', async () => {
+  it('resolve build.rollupOptions.input{}', async () => {
     const config = await resolveConfig(
       {
         build: {
@@ -103,7 +104,7 @@ describe('resolveBuildOptions', () => {
     )
   })
 
-  test('resolve build.rollupOptions.input[]', async () => {
+  it('resolve build.rollupOptions.input[]', async () => {
     const config = await resolveConfig(
       {
         build: {
@@ -121,13 +122,13 @@ describe('resolveBuildOptions', () => {
     ])
   })
 
-  test('resolve index.html', async () => {
+  it('resolve index.html', async () => {
     const config = await resolveConfig({}, 'build', 'production')
 
     expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
   })
 
-  test('resolve build.outdir', async () => {
+  it('resolve build.outdir', async () => {
     const config = await resolveConfig(
       { build: { outDir: 'outDir' } },
       'build',
@@ -137,13 +138,13 @@ describe('resolveBuildOptions', () => {
     expect(config.build.outDir).toBe(resolve('outDir'))
   })
 
-  test('resolve default build.outdir', async () => {
+  it('resolve default build.outdir', async () => {
     const config = await resolveConfig({}, 'build', 'production')
 
     expect(config.build.outDir).toBe(resolve('dist'))
   })
 
-  test('resolve build.lib.entry', async () => {
+  it('resolve build.lib.entry', async () => {
     const config = await resolveConfig(
       { build: { lib: { entry: 'index.html' } } },
       'build',
@@ -153,7 +154,7 @@ describe('resolveBuildOptions', () => {
     expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
   })
 
-  test('resolve build.ssr', async () => {
+  it('resolve build.ssr', async () => {
     const config = await resolveConfig(
       { build: { ssr: 'ssr.ts' } },
       'build',

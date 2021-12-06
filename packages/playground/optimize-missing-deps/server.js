@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const express = require('express')
 
-const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
+const isTest = process.env.VITE_TEST_SERVE || !!process.env.VITE_TEST_BUILD
 
 async function createServer(root = process.cwd()) {
   const resolve = (p) => path.resolve(__dirname, p)

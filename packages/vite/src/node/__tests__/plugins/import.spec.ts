@@ -1,10 +1,11 @@
 import { transformCjsImport } from '../../plugins/importAnalysis'
+import expect from 'expect'
 
 describe('transformCjsImport', () => {
   const url = './node_modules/.vite/react.js'
   const rawUrl = 'react'
 
-  test('import specifier', () => {
+  it('import specifier', () => {
     expect(
       transformCjsImport(
         'import { useState, Component } from "react"',
@@ -19,7 +20,7 @@ describe('transformCjsImport', () => {
     )
   })
 
-  test('import default specifier', () => {
+  it('import default specifier', () => {
     expect(
       transformCjsImport('import React from "react"', url, rawUrl, 0)
     ).toBe(
@@ -40,7 +41,7 @@ describe('transformCjsImport', () => {
     )
   })
 
-  test('import all specifier', () => {
+  it('import all specifier', () => {
     expect(
       transformCjsImport('import * as react from "react"', url, rawUrl, 0)
     ).toBe(
@@ -49,7 +50,7 @@ describe('transformCjsImport', () => {
     )
   })
 
-  test('export all specifier', () => {
+  it('export all specifier', () => {
     expect(transformCjsImport('export * from "react"', url, rawUrl, 0)).toBe(
       undefined
     )
@@ -59,7 +60,7 @@ describe('transformCjsImport', () => {
     ).toBe(undefined)
   })
 
-  test('export name specifier', () => {
+  it('export name specifier', () => {
     expect(
       transformCjsImport(
         'export { useState, Component } from "react"',
@@ -89,7 +90,7 @@ describe('transformCjsImport', () => {
     )
   })
 
-  test('export default specifier', () => {
+  it('export default specifier', () => {
     expect(
       transformCjsImport('export { default } from "react"', url, rawUrl, 0)
     ).toBe(
