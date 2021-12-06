@@ -70,6 +70,7 @@ import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
 import { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
+import { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
@@ -81,6 +82,7 @@ export interface PluginContainerOptions {
 
 export interface PluginContainer {
   options: InputOptions
+  getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
@@ -119,6 +121,7 @@ type PluginContext = Omit<
   | 'isExternal'
   | 'moduleIds'
   | 'resolveId'
+  | 'load'
 >
 
 export let parser = acorn.Parser.extend(
@@ -128,6 +131,7 @@ export let parser = acorn.Parser.extend(
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
@@ -143,7 +147,6 @@ export async function createPluginContainer(
 
   // ---------------------------------------------------------------------------
 
-  const MODULES = new Map()
   const watchFiles = new Set<string>()
 
   // get rollup version
@@ -165,6 +168,45 @@ export async function createPluginContainer(
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
     )
+  }
+
+  // throw when an unsupported ModuleInfo property is accessed,
+  // so that incompatible plugins fail in a non-cryptic way.
+  const ModuleInfoProxy: ProxyHandler<ModuleInfo> = {
+    get(info: any, key: string) {
+      if (key in info) {
+        return info[key]
+      }
+      throw Error(
+        `[vite] The "${key}" property of ModuleInfo is not supported.`
+      )
+    }
+  }
+
+  // same default value of "moduleInfo.meta" as in Rollup
+  const EMPTY_OBJECT = Object.freeze({})
+
+  function getModuleInfo(id: string) {
+    const module = moduleGraph?.getModuleById(id)
+    if (!module) {
+      return null
+    }
+    if (!module.info) {
+      module.info = new Proxy(
+        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        ModuleInfoProxy
+      )
+    }
+    return module.info
+  }
+
+  function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+    if (meta) {
+      const moduleInfo = getModuleInfo(id)
+      if (moduleInfo) {
+        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+      }
+    }
   }
 
   // we should create a new context for each async hook pipeline so that the
@@ -208,19 +250,13 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      let mod = MODULES.get(id)
-      if (mod) return mod.info
-      mod = {
-        /** @type {import('rollup').ModuleInfo} */
-        // @ts-ignore-next
-        info: {}
-      }
-      MODULES.set(id, mod)
-      return mod.info
+      return getModuleInfo(id)
     }
 
     getModuleIds() {
-      return MODULES.keys()
+      return moduleGraph
+        ? moduleGraph.idToModuleMap.keys()
+        : Array.prototype[Symbol.iterator]()
     }
 
     addWatchFile(id: string) {
@@ -416,6 +452,8 @@ export async function createPluginContainer(
       }
     })(),
 
+    getModuleInfo,
+
     async buildStart() {
       await Promise.all(
         plugins.map((plugin) => {
@@ -500,6 +538,9 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         const result = await plugin.load.call(ctx as any, id, { ssr })
         if (result != null) {
+          if (isObject(result)) {
+            updateModuleInfo(id, result)
+          }
           return result
         }
       }
@@ -531,8 +572,13 @@ export async function createPluginContainer(
             prettifyUrl(id, root)
           )
         if (isObject(result)) {
-          code = result.code || ''
-          if (result.map) ctx.sourcemapChain.push(result.map)
+          if (result.code !== undefined) {
+            code = result.code
+            if (result.map) {
+              ctx.sourcemapChain.push(result.map)
+            }
+          }
+          updateModuleInfo(id, result)
         } else {
           code = result
         }

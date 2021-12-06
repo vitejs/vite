@@ -1,0 +1,11 @@
+{
+  "name": "node-addon",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "install": "node-gyp install && node-gyp rebuild"
+  },
+  "dependencies": {
+    "node-gyp": "^8.4.1"
+  }
+}

@@ -210,7 +210,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const { src, isModule, isAsync } = getScriptInfo(node)
 
             const url = src && src.value && src.value.content
-            if (url && checkPublicFile(url, config)) {
+            const isPublicFile = !!(url && checkPublicFile(url, config))
+            if (isPublicFile) {
               // referencing public dir url, prefix with base
               s.overwrite(
                 src!.value!.loc.start.offset,
@@ -245,6 +246,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               everyScriptIsAsync &&= isAsync
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
+            } else if (url && !isPublicFile) {
+              config.logger.warn(
+                `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
+              )
             }
           }
 

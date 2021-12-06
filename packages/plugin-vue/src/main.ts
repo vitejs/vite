@@ -269,11 +269,7 @@ async function genScriptCode(
       scriptCode = compiler.rewriteDefault(
         script.content,
         '_sfc_main',
-        script.lang === 'ts'
-          ? ['typescript']
-          : script.lang === 'tsx'
-          ? ['typescript', 'jsx']
-          : undefined
+        script.lang === 'ts' ? ['typescript'] : undefined
       )
       map = script.map
     } else {

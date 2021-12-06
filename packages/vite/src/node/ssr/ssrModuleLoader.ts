@@ -1,12 +1,9 @@
-import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '..'
+import { ViteDevServer } from '../server'
 import {
   dynamicImport,
-  cleanUrl,
   isBuiltin,
-  resolveFrom,
   unwrapId,
   usingDynamicImport
 } from '../utils'
@@ -19,6 +16,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
+import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {
   global: typeof globalThis
@@ -96,13 +95,33 @@ async function instantiateModule(
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
 
+  const {
+    isProduction,
+    resolve: { dedupe, preserveSymlinks },
+    root
+  } = server.config
+
+  // The `extensions` and `mainFields` options are used to ensure that
+  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
+  // whenever possible, because `hookNodeResolve` can't intercept them.
+  const resolveOptions: InternalResolveOptions = {
+    dedupe,
+    extensions: ['.js', '.cjs', '.json'],
+    isBuild: true,
+    isProduction,
+    isRequire: true,
+    mainFields: ['main'],
+    preserveSymlinks,
+    root
+  }
+
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file, server.config)
+      return nodeImport(dep, mod.file!, resolveOptions)
     }
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
@@ -185,56 +204,109 @@ async function instantiateModule(
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
-  importer: string | null,
-  config: ViteDevServer['config']
+  importer: string,
+  resolveOptions: InternalResolveOptions
 ) {
+  // Node's module resolution is hi-jacked so Vite can ensure the
+  // configured `resolve.dedupe` and `mode` options are respected.
+  const viteResolve = (
+    id: string,
+    importer: string,
+    options = resolveOptions
+  ) => {
+    const resolved = tryNodeResolve(id, importer, options, false)
+    if (!resolved) {
+      const err: any = new Error(
+        `Cannot find module '${id}' imported from '${importer}'`
+      )
+      err.code = 'ERR_MODULE_NOT_FOUND'
+      throw err
+    }
+    return resolved.id
+  }
+
+  // When an ESM module imports an ESM dependency, this hook is *not* used.
+  const unhookNodeResolve = hookNodeResolve(
+    (nodeResolve) => (id, parent, isMain, options) => {
+      // Fix #5709, use require to resolve files with the '.node' file extension.
+      // See detail, https://nodejs.org/api/addons.html#addons_loading_addons_using_require
+      if (id[0] === '.' || isBuiltin(id) || id.endsWith('.node')) {
+        return nodeResolve(id, parent, isMain, options)
+      }
+      if (parent) {
+        return viteResolve(id, parent.id)
+      }
+      // Importing a CJS module from an ESM module. In this case, the import
+      // specifier is already an absolute path, so this is a no-op.
+      // Options like `resolve.dedupe` and `mode` are not respected.
+      return id
+    }
+  )
+
   let url: string
-  // `resolve` doesn't handle `node:` builtins, so handle them directly
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = resolve(id, importer, config.root, !!config.resolve.preserveSymlinks)
+    url = viteResolve(
+      id,
+      importer,
+      // Non-external modules can import ESM-only modules, but only outside
+      // of test runs, because we use Node `require` in Jest to avoid segfault.
+      typeof jest === 'undefined'
+        ? { ...resolveOptions, tryEsmOnly: true }
+        : resolveOptions
+    )
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
   }
-  const mod = await dynamicImport(url)
-  return proxyESM(id, mod)
+
+  try {
+    const mod = await dynamicImport(url)
+    return proxyESM(mod)
+  } finally {
+    unhookNodeResolve()
+  }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  const defaultExport = getDefaultExport(mod)
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
-      return mod[prop]
+      return mod[prop] ?? defaultExport?.[prop]
     }
   })
 }
 
-const resolveCache = new Map<string, string>()
+function getDefaultExport(moduleExports: any) {
+  // `moduleExports` is one of the following:
+  //   - `const moduleExports = require(file)`
+  //   - `const moduleExports = await import(file)`
+  let defaultExport =
+    'default' in moduleExports ? moduleExports.default : moduleExports
 
-function resolve(
-  id: string,
-  importer: string | null,
-  root: string,
-  preserveSymlinks: boolean
-) {
-  const key = id + importer + root
-  const cached = resolveCache.get(key)
-  if (cached) {
-    return cached
+  // Node.js doesn't support `__esModule`, see https://github.com/nodejs/node/issues/40891
+  // This means we need to unwrap the `__esModule` wrapper ourselves.
+  //
+  // For example:
+  // ```ts
+  // export default 'hi'
+  // ```
+  //
+  // Which TypeScript transpiles to:
+  // ```js
+  // use strict";
+  // exports.__esModule = true;
+  // exports["default"] = 'hi';
+  // ```
+  //
+  // This means that `moduleExports.default` denotes `{ __esModule, default: 'hi }` thus the actual
+  // default lives in `moduleExports.default.default`.
+  if (defaultExport && '__esModule' in defaultExport) {
+    defaultExport = defaultExport.default
   }
-  const resolveDir =
-    importer && fs.existsSync(cleanUrl(importer))
-      ? path.dirname(importer)
-      : root
-  const resolved = resolveFrom(id, resolveDir, preserveSymlinks, true)
-  resolveCache.set(key, resolved)
-  return resolved
+
+  return defaultExport
 }

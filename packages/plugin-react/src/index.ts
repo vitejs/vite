@@ -113,7 +113,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        let plugins = isProjectFile ? [...userPlugins] : []
+        const plugins = isProjectFile ? [...userPlugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -134,11 +134,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
-            const [restoredAst, isCommonJS] = !isProjectFile
-              ? await restoreJSX(babel, code, id)
-              : [null, false]
+            const [restoredAst, isCommonJS] =
+              !isProjectFile && !isJSX
+                ? await restoreJSX(babel, code, id)
+                : [null, false]
 
-            if (isProjectFile || (ast = restoredAst)) {
+            if (isJSX || (ast = restoredAst)) {
               plugins.push([
                 await loadPlugin(
                   '@babel/plugin-transform-react-jsx' +
@@ -197,15 +198,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classPrivateMethods'
         ]
 
-        if (!id.endsWith('.ts')) {
+        if (!extension.endsWith('.ts')) {
           parserPlugins.push('jsx')
         }
 
-        if (/\.tsx?$/.test(id)) {
+        if (/\.tsx?$/.test(extension)) {
           parserPlugins.push('typescript')
         }
 
-        const isReasonReact = id.endsWith('.bs.js')
+        const isReasonReact = extension.endsWith('.bs.js')
 
         const babelOpts: TransformOptions = {
           babelrc: false,
@@ -214,7 +215,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
-          sourceFileName: id,
+          sourceFileName: filepath,
           parserOpts: {
             ...opts.babel?.parserOpts,
             sourceType: 'module',

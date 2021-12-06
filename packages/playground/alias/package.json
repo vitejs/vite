@@ -7,11 +7,11 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview",
-    "postinstall": "node ../../../scripts/patchFileDeps"
+    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
   },
   "dependencies": {
     "aliased-module": "file:./dir/module",
-    "vue": "^3.2.21"
+    "vue": "^3.2.23"
   },
   "devDependencies": {
     "resolve-linked": "workspace:*"

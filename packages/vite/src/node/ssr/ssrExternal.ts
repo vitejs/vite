@@ -3,11 +3,12 @@ import path from 'path'
 import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
 import {
   createDebugger,
+  isDefined,
   lookupFile,
   normalizePath,
   resolveFrom
 } from '../utils'
-import { ResolvedConfig } from '..'
+import { Logger, ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
@@ -32,9 +33,16 @@ export function resolveSSRExternal(
     seen.add(id)
   })
 
-  collectExternals(config.root, ssrExternals, seen)
+  collectExternals(
+    config.root,
+    config.resolve.preserveSymlinks,
+    ssrExternals,
+    seen,
+    config.logger
+  )
 
-  for (const dep of knownImports) {
+  const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
+  for (const dep of importedDeps) {
     // Assume external if not yet seen
     // At this point, the project root and any linked packages have had their dependencies checked,
     // so we can safely mark any knownImports not yet seen as external. They are guaranteed to be
@@ -59,22 +67,25 @@ export function resolveSSRExternal(
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
+  preserveSymlinks: boolean | undefined,
   ssrExternals: Set<string>,
-  seen: Set<string>
+  seen: Set<string>,
+  logger: Logger
 ) {
-  const pkgContent = lookupFile(root, ['package.json'])
-  if (!pkgContent) {
+  const rootPkgContent = lookupFile(root, ['package.json'])
+  if (!rootPkgContent) {
     return
   }
 
-  const pkg = JSON.parse(pkgContent)
+  const rootPkg = JSON.parse(rootPkgContent)
   const deps = {
-    ...pkg.devDependencies,
-    ...pkg.dependencies
+    ...rootPkg.devDependencies,
+    ...rootPkg.dependencies
   }
 
   const resolveOptions: InternalResolveOptions = {
     root,
+    preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
@@ -132,7 +143,15 @@ function collectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
-      if (pkg.type === "module" || esmEntry.endsWith('.mjs')) {
+      const pkgPath = resolveFrom(`${id}/package.json`, root)
+      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
+
+      if (!pkgContent) {
+        continue
+      }
+      const pkg = JSON.parse(pkgContent)
+
+      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
         continue
       }
@@ -140,12 +159,17 @@ function collectExternals(
       const content = fs.readFileSync(esmEntry, 'utf-8')
       if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
         ssrExternals.add(id)
+        continue
       }
+
+      logger.warn(
+        `${id} is incorrectly packaged. Please contact the package author to fix.`
+      )
     }
   }
 
   for (const depRoot of depsToTrace) {
-    collectExternals(depRoot, ssrExternals, seen)
+    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
   }
 }
 
@@ -164,4 +188,14 @@ export function shouldExternalizeForSSR(
     }
   })
   return should
+}
+
+function getNpmPackageName(importPath: string): string | null {
+  const parts = importPath.split('/')
+  if (parts[0].startsWith('@')) {
+    if (!parts[1]) return null
+    return `${parts[0]}/${parts[1]}`
+  } else {
+    return parts[0]
+  }
 }

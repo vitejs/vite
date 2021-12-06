@@ -1,0 +1,19 @@
+{
+  "name": "test-ssr-deps",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "node server",
+    "serve": "cross-env NODE_ENV=production node server",
+    "debug": "node --inspect-brk server",
+    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
+  },
+  "dependencies": {
+    "node-addon": "link:./node-addon",
+    "read-file-content": "file:./read-file-content"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "express": "^4.17.1"
+  }
+}

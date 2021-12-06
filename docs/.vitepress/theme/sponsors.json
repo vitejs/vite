@@ -29,5 +29,17 @@
     "name": "Plaid Inc.",
     "href": "https://plaid.co.jp/",
     "src": "/plaid.svg"
+  },
+  {
+    "id": "divriots",
+    "name": "divriots",
+    "href": "https://divriots.com/",
+    "src": "/divriots.png"
+  },
+  {
+    "id": "finclip",
+    "name": "FinClip",
+    "href": "https://finclip.com/?from=vite",
+    "src": "/finclip.png"
   }
 ]

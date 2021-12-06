@@ -240,7 +240,7 @@ JSON files can be directly imported - named imports are also supported:
 ```js
 // import the entire object
 import json from './example.json'
-// import a root field as named exports - helps with treeshaking!
+// import a root field as named exports - helps with tree-shaking!
 import { field } from './example.json'
 ```
 

@@ -66,10 +66,9 @@ export function createLogger(
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
-  const clear =
+  const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
-      ? clearScreen
-      : () => {}
+  const clear = canClearScreen ? clearScreen : () => {}
 
   function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
@@ -90,17 +89,21 @@ export function createLogger(
       if (options.error) {
         loggedErrors.add(options.error)
       }
-      if (type === lastType && msg === lastMsg) {
-        sameCount++
-        clear()
-        console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
-      } else {
-        sameCount = 0
-        lastMsg = msg
-        lastType = type
-        if (options.clear) {
+      if (canClearScreen) {
+        if (type === lastType && msg === lastMsg) {
+          sameCount++
           clear()
+          console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
+        } else {
+          sameCount = 0
+          lastMsg = msg
+          lastType = type
+          if (options.clear) {
+            clear()
+          }
+          console[method](format())
         }
+      } else {
         console[method](format())
       }
     }
