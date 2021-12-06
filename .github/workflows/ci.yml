@@ -57,6 +57,7 @@ jobs:
         run: pnpm run build-plugin-react
 
       - name: Test serve
+        continue-on-error: true
         run: pnpm run test-serve
 
       - name: Test build
