@@ -58,10 +58,10 @@ jobs:
 
       - name: Test serve
         continue-on-error: true
-        run: pnpm run test-serve
+        run: pnpm run test-serve -- -c
 
       - name: Test build
-        run: pnpm run test-build
+        run: pnpm run test-build -- -c
 
   lint:
     runs-on: ubuntu-latest
