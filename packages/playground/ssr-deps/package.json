@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "node-addon": "link:./node-addon",
-    "read-file-content": "file:./read-file-content"
+    "primitive-export": "link:./primitive-export",
+    "read-file-content": "file:./read-file-content",
+    "ts-transpiled-exports": "link:./ts-transpiled-exports",
+    "object-assigned-exports": "link:./object-assigned-exports",
+    "forwarded-export": "link:./forwarded-export"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

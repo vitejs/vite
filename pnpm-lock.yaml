@@ -458,14 +458,25 @@ importers:
     specifiers:
       cross-env: ^7.0.3
       express: ^4.17.1
+      forwarded-export: link:./forwarded-export
       node-addon: link:./node-addon
+      object-assigned-exports: link:./object-assigned-exports
+      primitive-export: link:./primitive-export
       read-file-content: file:./read-file-content
+      ts-transpiled-exports: link:./ts-transpiled-exports
     dependencies:
+      forwarded-export: link:forwarded-export
       node-addon: link:node-addon
+      object-assigned-exports: link:object-assigned-exports
+      primitive-export: link:primitive-export
       read-file-content: link:read-file-content
+      ts-transpiled-exports: link:ts-transpiled-exports
     devDependencies:
       cross-env: 7.0.3
       express: 4.17.1
+
+  packages/playground/ssr-deps/forwarded-export:
+    specifiers: {}
 
   packages/playground/ssr-deps/node-addon:
     specifiers:
@@ -473,7 +484,16 @@ importers:
     dependencies:
       node-gyp: 8.4.1
 
+  packages/playground/ssr-deps/object-assigned-exports:
+    specifiers: {}
+
+  packages/playground/ssr-deps/primitive-export:
+    specifiers: {}
+
   packages/playground/ssr-deps/read-file-content:
+    specifiers: {}
+
+  packages/playground/ssr-deps/ts-transpiled-exports:
     specifiers: {}
 
   packages/playground/ssr-html:
