@@ -16,7 +16,6 @@ module.exports = {
       }
     },
     'process.env.SOMEVAR': '"SOMEVAR"',
-    '__TRAILING_DOT__.': '({ prop: true }).',
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789
   }

@@ -20,7 +20,6 @@ test('string', async () => {
   expect(await page.textContent('.spread-array')).toBe(
     JSON.stringify([...defines.__STRING__])
   )
-  expect(await page.textContent('.trailing-dot')).toBe(String(true))
   expect(await page.textContent('.dollar-identifier')).toBe(
     String(defines.$DOLLAR)
   )
