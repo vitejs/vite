@@ -63,6 +63,7 @@ import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
+import { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -210,7 +211,7 @@ export interface ViteDevServer {
   /**
    * Transform module code into SSR format.
    */
-  ssrTransform: typeof ssrTransform
+  ssrTransform(code: string, inMap: SourceMap | null, url: string): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
    */
