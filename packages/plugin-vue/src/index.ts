@@ -223,7 +223,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         )
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename, options)!
+        const descriptor = getDescriptor(filename, options, true, id)!
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {

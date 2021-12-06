@@ -12,7 +12,7 @@ export interface SFCParseResult {
   errors: Array<CompilerError | SyntaxError>
 }
 
-const cache = new Map<string, SFCDescriptor>()
+const cache = new Map<string, SFCDescriptor | Array<SFCDescriptor>>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
 
 export function createDescriptor(
@@ -48,10 +48,18 @@ export function setPrevDescriptor(
 export function getDescriptor(
   filename: string,
   options: ResolvedOptions,
-  createIfNotFound = true
+  createIfNotFound = true,
+  id?: string
 ): SFCDescriptor | undefined {
   if (cache.has(filename)) {
-    return cache.get(filename)!
+    const ds = cache.get(filename)
+    if (Array.isArray(ds) && id && id.includes('target')) {
+      const target = id.split('?')[1].split('&').find(d => d.includes('target'))?.split('=')[1]
+      if (target) {
+        return ds.filter(({ filename }) => filename === target)[0] 
+      }
+    }
+    return ds as SFCDescriptor
   }
   if (createIfNotFound) {
     const { descriptor, errors } = createDescriptor(
@@ -67,5 +75,14 @@ export function getDescriptor(
 }
 
 export function setDescriptor(filename: string, entry: SFCDescriptor): void {
+  const ds = cache.get(filename)
+  if (ds) {
+    if (Array.isArray(ds)) {
+      cache.set(filename, [...ds, entry]);
+    } else {
+      cache.set(filename, [ds, entry]);
+    }
+    return;
+  }
   cache.set(filename, entry)
 }
