@@ -21,6 +21,12 @@ test('string', async () => {
     JSON.stringify([...defines.__STRING__])
   )
   expect(await page.textContent('.trailing-dot')).toBe(String(true))
+  expect(await page.textContent('.dollar-identifier')).toBe(
+    String(defines.$DOLLAR)
+  )
+  expect(await page.textContent('.unicode-identifier')).toBe(
+    String(defines.ÖUNICODE_LETTERɵ)
+  )
   expect(await page.textContent('.no-identifier-substring')).toBe(String(true))
   expect(await page.textContent('.no-property')).toBe(String(true))
 })

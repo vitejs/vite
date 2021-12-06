@@ -61,14 +61,18 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const pattern = new RegExp(
       // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
+      '(?<!(?<!\\.\\.)\\.)' +
+        // Must follow beginning of a line or a char that can't be part of an identifier
+        '(?<=^|[^\\p{L}\\p{N}_$])(' +
         Object.keys(replacements)
           .map((str) => {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
           .join('|') +
-        ')\\b',
-      'g'
+        // Must be followed by: end of a line, a char that can't be part of an identifier or
+        // anything following a dot (handles cases where replacement includes a trailing dot)
+        ')(?=$|[^\\p{L}\\p{N}_$]|(?<=\\.).)',
+      'gu'
     )
 
     return [replacements, pattern]
