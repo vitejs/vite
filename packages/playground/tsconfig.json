@@ -9,6 +9,6 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "jsx": "preserve",
-    "types": ["vite/client", "mocha", "node"]
+    "types": ["vite/client", "jest", "node"]
   }
 }
