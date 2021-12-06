@@ -1,5 +1,6 @@
 import babelRestoreJSX from './babel-restore-jsx'
 import * as babel from '@babel/core'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 function jsx(code: string) {
