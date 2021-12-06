@@ -1,4 +1,5 @@
 import { assetFileNamesToFileName, getAssetHash } from '../plugins/asset'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('getAssetHash', () => {

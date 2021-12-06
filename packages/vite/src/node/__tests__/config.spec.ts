@@ -6,6 +6,7 @@ import {
   resolveEnvPrefix,
   UserConfig
 } from '../config'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('mergeConfig', () => {

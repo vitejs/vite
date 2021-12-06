@@ -2,6 +2,7 @@ import { cssUrlRE, cssPlugin } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('search css url function', () => {

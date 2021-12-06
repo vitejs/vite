@@ -1,6 +1,7 @@
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
 import { resolveConfig } from '..'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('resolveLibFilename', () => {

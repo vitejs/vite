@@ -1,5 +1,6 @@
 import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('optimizer-scan:script-test', () => {

@@ -1,5 +1,6 @@
 import { searchForWorkspaceRoot } from '../searchRoot'
 import { resolve } from 'path'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('searchForWorkspaceRoot', () => {

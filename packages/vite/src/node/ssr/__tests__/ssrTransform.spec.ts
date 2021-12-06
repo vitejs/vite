@@ -1,4 +1,5 @@
 import { ssrTransform } from '../ssrTransform'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 it('default import', async () => {

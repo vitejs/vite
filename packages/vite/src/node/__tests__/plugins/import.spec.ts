@@ -1,4 +1,5 @@
 import { transformCjsImport } from '../../plugins/importAnalysis'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 describe('transformCjsImport', () => {

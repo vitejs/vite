@@ -2,6 +2,7 @@ import { resolveConfig, UserConfig } from '../../config'
 import { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
 import { createPluginContainer, PluginContainer } from '../pluginContainer'
+// eslint-disable-next-line node/no-extraneous-import
 import expect from 'expect'
 
 let resolveId: (id: string) => any
