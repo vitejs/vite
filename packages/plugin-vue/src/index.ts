@@ -65,7 +65,8 @@ export interface Options {
 export interface ResolvedOptions extends Options {
   root: string
   sourceMap: boolean
-  devServer?: ViteDevServer
+  devServer?: ViteDevServer,
+  target: string[] | string
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {

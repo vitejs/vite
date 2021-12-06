@@ -198,7 +198,7 @@ export async function transformMain(
     const { code, map } = await transformWithEsbuild(
       resolvedCode,
       filename,
-      { loader: 'ts', sourcemap: options.sourceMap },
+      { loader: 'ts', sourcemap: options.sourceMap, target: options.target },
       resolvedMap
     )
     resolvedCode = code
