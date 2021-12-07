@@ -127,7 +127,7 @@ export default defineConfig(async ({ command, mode }) => {
   Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
   :::
 
-  Because it's implemented as straightforward [RegExp-based](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/define.ts#L62-L76) text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
+  Because it's implemented as straightforward [RegExp-based](https://github.com/vitejs/vite/blob/2e16e5d4346c010034d417d27d029588b82dd261/packages/vite/src/node/plugins/define.ts#L62-L76) text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 
