@@ -377,6 +377,7 @@ test('overwrite bindings', async () => {
 })
 
 test('Empty array pattern', async () => {
-  expect((await ssrTransform(`const [, LHS, RHS] = inMatch;`, null, null)).code)
-    .toMatchInlineSnapshot(`"const [, LHS, RHS] = inMatch;"`)
+  expect(
+    (await ssrTransform(`const [, LHS, RHS] = inMatch;`, null, null)).code
+  ).toMatchInlineSnapshot(`"const [, LHS, RHS] = inMatch;"`)
 })
