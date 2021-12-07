@@ -54,9 +54,12 @@ export function getDescriptor(
   if (cache.has(filename)) {
     const ds = cache.get(filename)
     if (Array.isArray(ds) && id && id.includes('target')) {
-      const target = id.split('?')[1].split('&').find(d => d.includes('target'))?.split('=')[1]
+      let target = /target=(.+)/.exec(id)?.[1]
+      if (target?.includes('&')) {
+        target = /(.+)&/.exec(target)?.[1]
+      }
       if (target) {
-        return ds.filter(({ filename }) => filename === target)[0] 
+        return ds.find(({ filename }) => filename === target)
       }
     }
     return ds as SFCDescriptor
@@ -78,11 +81,11 @@ export function setDescriptor(filename: string, entry: SFCDescriptor): void {
   const ds = cache.get(filename)
   if (ds) {
     if (Array.isArray(ds)) {
-      cache.set(filename, [...ds, entry]);
+      cache.set(filename, [...ds, entry])
     } else {
-      cache.set(filename, [ds, entry]);
+      cache.set(filename, [ds, entry])
     }
-    return;
+    return
   }
   cache.set(filename, entry)
 }
