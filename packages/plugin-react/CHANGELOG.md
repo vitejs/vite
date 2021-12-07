@@ -1,3 +1,7 @@
+## [1.1.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0...plugin-react@1.1.1) (2021-12-07)
+
+
+
 # [1.1.0](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.1...plugin-react@1.1.0) (2021-11-22)
 
 
