@@ -210,6 +210,7 @@ export interface ViteDevServer {
   ): Promise<ESBuildTransformResult>
   /**
    * Transform module code into SSR format.
+   * @experimental
    */
   ssrTransform(
     code: string,
