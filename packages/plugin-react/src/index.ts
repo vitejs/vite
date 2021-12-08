@@ -186,8 +186,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           return // Avoid parsing if no plugins exist.
         }
 
-        const parserPlugins: typeof userParserPlugins = [
-          ...userParserPlugins,
+        const defaultParserPlugins = [
           'importMeta',
           // This plugin is applied before esbuild transforms the code,
           // so we need to enable some stage 3 syntax that is supported in
@@ -196,6 +195,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           'classProperties',
           'classPrivateProperties',
           'classPrivateMethods'
+        ] as const
+
+        const parserPlugins: typeof userParserPlugins = [
+          ...userParserPlugins,
+          ...defaultParserPlugins
         ]
 
         if (!extension.endsWith('.ts')) {
