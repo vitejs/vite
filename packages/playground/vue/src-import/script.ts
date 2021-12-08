@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue'
-import A from './a.vue'
-import B from './b.vue'
+import A from './srcImportStyle.vue'
+import B from './srcImportStyle2.vue'
 
 export default defineComponent({
   components: {
