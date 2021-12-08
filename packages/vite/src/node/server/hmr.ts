@@ -62,6 +62,10 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true }
     )
     await server.restart()
+    if (config.server.host !== server.config.server.host) {
+      config.logger.info('')
+      server.printUrls()
+    }
     return
   }
 
