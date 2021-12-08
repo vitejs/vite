@@ -1,11 +1,11 @@
 import { defineComponent } from 'vue'
-import A from './srcImportStyle.vue'
-import B from './srcImportStyle2.vue'
+import SrcImportStyle from './srcImportStyle.vue'
+import SrcImportStyle2 from './srcImportStyle2.vue'
 
 export default defineComponent({
   components: {
-    A,
-    B
+    SrcImportStyle,
+    SrcImportStyle2
   },
   setup() {
     return {
