@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import type { ViteDevServer } from '..'
 import { openBrowser, resolveBrowserUrl } from './openBrowser'
 
@@ -57,6 +58,23 @@ export const SHORTCUTS: Shortcut[] = [
     name: 'force restart',
     action(server: ViteDevServer): void {
       server.restart(true)
+    }
+  },
+  {
+    key: 'h',
+    name: 'toggle hmr',
+    action({ config }: ViteDevServer): void {
+      /**
+       * Mutating the server config works because Vite reads from
+       * it on every file change, instead of caching its value.
+       *
+       * Since `undefined` is treated as `true`, we have to
+       * use `!== true` to flip the boolean value.
+       */
+      config.server.hmr = config.server.hmr !== true
+      config.logger.info(
+        chalk.cyanBright(`hmr ${config.server.hmr ? `enabled` : `disabled`}`)
+      )
     }
   }
 ]
