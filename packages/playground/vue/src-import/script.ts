@@ -4,7 +4,8 @@ import B from './srcImportStyle2.vue'
 
 export default defineComponent({
   components: {
-    A, B
+    A,
+    B
   },
   setup() {
     return {

@@ -68,7 +68,7 @@ export function getDescriptor(
 
 export function getSrcDescriptor(
   filename: string,
-  query: VueQuery,
+  query: VueQuery
 ): SFCDescriptor {
   return cache.get(`${filename}?src=${query.src}`)!
 }
