@@ -20,6 +20,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         let options = config.server.hmr
         options = options && typeof options !== 'boolean' ? options : {}
         const host = options.host || null
+        const socketHost = options.socketHost || null
         const protocol = options.protocol || null
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
@@ -46,6 +47,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
+          .replace(`__HMR_SOCKET_HOST__`, JSON.stringify(socketHost))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))

@@ -18,6 +18,7 @@ const normalizedClientDir = normalizePath(CLIENT_DIR)
 export interface HmrOptions {
   protocol?: string
   host?: string
+  socketHost?: string
   port?: number
   clientPort?: number
   path?: string
