@@ -9,7 +9,7 @@ import {
 } from '@vue/compiler-sfc'
 import { compiler } from './compiler'
 import { parseVueRequest } from './utils/query'
-import { getDescriptor } from './utils/descriptorCache'
+import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
 import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
@@ -223,7 +223,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         )
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename, options)!
+        const descriptor = query.src
+          ? getSrcDescriptor(filename, query)!
+          : getDescriptor(filename, options)!
+
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {
