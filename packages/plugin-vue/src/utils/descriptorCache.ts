@@ -3,7 +3,7 @@ import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
 import { CompilerError, SFCDescriptor } from '@vue/compiler-sfc'
-import { ResolvedOptions } from '..'
+import { ResolvedOptions, VueQuery } from '..'
 import { compiler } from '../compiler'
 
 // node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
@@ -66,6 +66,15 @@ export function getDescriptor(
   }
 }
 
-export function setDescriptor(filename: string, entry: SFCDescriptor): void {
-  cache.set(filename, entry)
+export function getSrcDescriptor(
+  filename: string,
+  query: VueQuery
+): SFCDescriptor {
+  return cache.get(`${filename}?src=${query.src}`)!
+}
+
+export function setSrcDescriptor(filename: string, entry: SFCDescriptor): void {
+  // if multiple Vue files use the same src file, they will be overwritten
+  // should use other key
+  cache.set(`${filename}?src=${entry.id}`, entry)
 }
