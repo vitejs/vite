@@ -7,6 +7,7 @@ import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { VERSION } from './constants'
 import { resolveConfig } from '.'
+import { bindShortcuts } from './server/shortcuts'
 
 const cli = cac('vite')
 
@@ -117,6 +118,10 @@ cli
       )
 
       server.printUrls()
+
+      if (options.bindShortcuts !== false) {
+        bindShortcuts(server)
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         colors.red(`error when starting dev server:\n${e.stack}`),
