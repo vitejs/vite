@@ -98,6 +98,13 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Disable key bindings for the server by setting this to `false`. This can be
+   * useful if you need the `process.stdin` stream for another purpose.
+   *
+   * @default true
+   */
+  bindShortcuts?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {

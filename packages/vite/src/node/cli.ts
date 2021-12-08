@@ -6,6 +6,7 @@ import { ServerOptions } from './server'
 import { createLogger, LogLevel } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
+import { bindShortcuts } from './server/shortcuts'
 
 const cli = cac('vite')
 
@@ -105,6 +106,9 @@ cli
       )
 
       server.printUrls()
+      if (options.bindShortcuts !== false) {
+        bindShortcuts(server)
+      }
 
       // @ts-ignore
       if (global.__vite_start_time) {
