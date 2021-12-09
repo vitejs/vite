@@ -176,10 +176,10 @@ function collectExternals(
 export function shouldExternalizeForSSR(
   id: string,
   externals: string[],
-  noExternals?: string | RegExp | (string | RegExp)[] | true
+  noExternals: string | RegExp | (string | RegExp)[] | true
 ): boolean {
   const noExternalsArr: RegExp[] =
-    noExternals && noExternals !== true
+    noExternals !== true
       ? (Array.isArray(noExternals) ? noExternals : [noExternals]).map(
           (item) => {
             if (typeof item === 'string') {
