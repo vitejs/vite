@@ -11,4 +11,3 @@ explorations
 /packages/vite/LICENSE
 *.cpuprofile
 /.vscode/
-/packages/playground/ssr-deps/node-addon/build/

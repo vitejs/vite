@@ -9,12 +9,12 @@
     "postinstall": "node ../../../scripts/patchFileDeps.cjs"
   },
   "dependencies": {
-    "node-addon": "link:./node-addon",
-    "primitive-export": "link:./primitive-export",
+    "bcrypt": "^5.0.1",
+    "forwarded-export": "file:./forwarded-export",
+    "object-assigned-exports": "file:./object-assigned-exports",
+    "primitive-export": "file:./primitive-export",
     "read-file-content": "file:./read-file-content",
-    "ts-transpiled-exports": "link:./ts-transpiled-exports",
-    "object-assigned-exports": "link:./object-assigned-exports",
-    "forwarded-export": "link:./forwarded-export"
+    "ts-transpiled-exports": "file:./ts-transpiled-exports"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

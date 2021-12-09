@@ -1,16 +1,16 @@
 import path from 'path'
-import { hello } from 'node-addon'
 import readFileContent from 'read-file-content'
 import primitiveExport from 'primitive-export'
 import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'
 import objectAssignedExports from 'object-assigned-exports'
 import forwardedExport from 'forwarded-export'
+import bcrypt from 'bcrypt'
 
 export async function render(url, rootDir) {
   let html = ''
 
-  const nodeAddonMsg = hello()
-  html += `\n<p class="node-addon-msg">message from node addon: ${nodeAddonMsg}</p>`
+  const encryptedMsg = await bcrypt.hash('Secret Message!', 10)
+  html += `\n<p class="encrypted-msg">encrypted message: ${encryptedMsg}</p>`
 
   const fileContent = await readFileContent(path.resolve(rootDir, 'message'))
   html += `\n<p class="file-message">msg read via fs/promises: ${fileContent}</p>`
