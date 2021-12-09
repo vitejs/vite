@@ -10,7 +10,9 @@ const url = `http://localhost:${port}`
  */
 test('msg should be encrypted', async () => {
   await page.goto(url)
-  expect(await page.textContent('.encrypted-msg')).not.toMatch('Secret Message!')
+  expect(await page.textContent('.encrypted-msg')).not.toMatch(
+    'Secret Message!'
+  )
 })
 
 test('msg read by fs/promises', async () => {
