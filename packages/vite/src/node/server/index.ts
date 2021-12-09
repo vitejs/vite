@@ -70,6 +70,7 @@ import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { bindShortcuts } from './shortcuts'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -263,6 +264,11 @@ export interface ViteDevServer {
    */
   restart(forceOptimize?: boolean): Promise<void>
   /**
+   * Listen to `process.stdin` for pre-defined keyboard shortcuts, which are
+   * printed to the terminal by this method.
+   */
+  bindShortcuts(): void
+  /**
    * @internal
    */
   _importGlobMap: Map<string, string[][]>
@@ -427,6 +433,11 @@ export async function createServer(
         })
       }
       return server._restartPromise
+    },
+    bindShortcuts() {
+      if (serverConfig.bindShortcuts !== false) {
+        bindShortcuts(server)
+      }
     },
 
     _ssrExternals: null,
