@@ -3,11 +3,11 @@
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
   const modules = import.meta.glob(
+    '/dir/**'
     // for test: annotation contain ")"
     /*
      * for test: annotation contain ")"
      * */
-    '/dir/**'
   )
 
   for (const path in modules) {
