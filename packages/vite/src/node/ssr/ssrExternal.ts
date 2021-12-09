@@ -190,11 +190,6 @@ export function shouldExternalizeForSSR(
         )
       : []
   const should = externals.some((e) => {
-    for (const r of noExternalsArr) {
-      if (r.test(id)) {
-        return false
-      }
-    }
     if (id === e) {
       return true
     }
@@ -204,6 +199,11 @@ export function shouldExternalizeForSSR(
       return true
     }
   })
+  for (const e of noExternalsArr) {
+    if (e.test(id)) {
+      return false
+    }
+  }
   return should
 }
 
