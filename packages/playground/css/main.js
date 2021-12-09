@@ -68,3 +68,7 @@ if (import.meta.env.DEV) {
 // inlined
 import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
+
+// async css modules
+import('./async-modules/blue')
+import('./async-modules/red')
