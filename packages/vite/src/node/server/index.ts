@@ -62,6 +62,7 @@ import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
+import { bindShortcuts } from './shortcuts'
 import { invalidatePackageData } from '../packages'
 import { SourceMap } from 'rollup'
 
@@ -251,6 +252,11 @@ export interface ViteDevServer {
    */
   restart(forceOptimize?: boolean): Promise<void>
   /**
+   * Listen to `process.stdin` for pre-defined keyboard shortcuts, which are
+   * printed to the terminal by this method.
+   */
+  bindShortcuts(): void
+  /**
    * @internal
    */
   _optimizeDepsMetadata: DepOptimizationMetadata | null
@@ -409,6 +415,11 @@ export async function createServer(
         })
       }
       return server._restartPromise
+    },
+    bindShortcuts() {
+      if (serverConfig.bindShortcuts !== false) {
+        bindShortcuts(server)
+      }
     },
 
     _optimizeDepsMetadata: null,
