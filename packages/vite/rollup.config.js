@@ -133,7 +133,8 @@ const createNodeConfig = (isProduction) => {
         ...(isProduction
           ? {}
           : {
-              tsconfig: 'tsconfig.base.json',
+              tsconfig: 'src/node/tsconfig.json',
+              module: 'esnext',
               declaration: true,
               declarationDir: path.resolve(__dirname, 'dist/')
             })
