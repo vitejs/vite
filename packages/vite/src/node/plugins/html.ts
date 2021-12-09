@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
+import { OutputAsset, OutputBundle, OutputChunk, PluginContext } from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -25,8 +25,10 @@ import {
   AttributeNode,
   NodeTransform,
   NodeTypes,
-  ElementNode
+  ElementNode,
+  TextNode
 } from '@vue/compiler-dom'
+import { compileHTMLCSS } from "./css"
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -162,6 +164,19 @@ function formatParseError(e: any, id: string, html: string): Error {
 }
 
 /**
+ * compile style / inline-style with css plugin
+ */
+async function getAssetsFromStyle (code: string, config: ResolvedConfig, ctx: PluginContext): Promise<string> {
+  const compileCSSResult = await compileHTMLCSS(
+    "index.html.css",
+    code,
+    config,
+    ctx
+  )
+  return compileCSSResult.code
+}
+
+/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -198,6 +213,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
 
+        const resolveStyleAssetsTask: Array<Promise<any>> = []
         await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -282,6 +298,34 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
+          // for style tag and inline style use url(...) for assets references, also generate an import
+          const inlineStyle = node.props.find(prop => (prop.name === 'style' && prop.type === NodeTypes.ATTRIBUTE)) as AttributeNode
+          if (inlineStyle && inlineStyle.value) {
+            const styleNode = inlineStyle.value
+            resolveStyleAssetsTask.push(
+              getAssetsFromStyle(styleNode.content, config, this)
+                .then(newStyleCode => {
+                  s.overwrite(
+                    styleNode.loc.start.offset,
+                    styleNode.loc.end.offset,
+                    `"${newStyleCode}"`
+                  )
+                })
+            )
+          }
+          if (node.tag === 'style' && node.children.length) {
+            const styleNode = node.children.pop() as TextNode
+            resolveStyleAssetsTask.push(
+              getAssetsFromStyle(styleNode.content, config, this)
+                .then(newStyleCode => {
+                  s.overwrite(
+                    styleNode.loc.start.offset,
+                    styleNode.loc.end.offset,
+                    newStyleCode
+                  )
+                })
+            )
+          }
 
           if (shouldRemove) {
             // remove the script tag from the html. we are going to inject new
@@ -289,6 +333,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.remove(node.loc.start.offset, node.loc.end.offset)
           }
         })
+        await Promise.all(resolveStyleAssetsTask)
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
 

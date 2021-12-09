@@ -140,10 +140,18 @@
 </p>
 
 <h2>url in style tag</h2>
-<h1 style="background: url(/icon.png);">hai</h1>
+<h1 style="background: url(./nested/asset.png);">hai</h1>
+<!-- base64 -->
+<h1 style="background: url(./static/icon.png);">hai</h1>
 <style>
   .style-url-assets {
-    background: url('/icon.png');
+    background: url('./nested/asset.png');
+  }
+</style>
+<!-- base64 -->
+<style>
+  .style-url-assets {
+    background: url('./static/icon.png');
   }
 </style>
 <p class="style-url-assets">hai</p>
