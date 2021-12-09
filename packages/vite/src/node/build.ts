@@ -797,7 +797,9 @@ function resolveExternal(
   config: ResolvedConfig
 ): ExternalOption {
   return ((id, parentId, isResolved) => {
-    if (shouldExternalizeForSSR(id, ssrExternals, config.ssr?.noExternal ?? [])) {
+    if (
+      shouldExternalizeForSSR(id, ssrExternals, config.ssr?.noExternal ?? [])
+    ) {
       return true
     }
     if (user) {
