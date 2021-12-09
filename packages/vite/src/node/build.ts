@@ -443,7 +443,8 @@ async function doBuild(
     }
     external = resolveExternal(
       resolveSSRExternal(config, knownImports),
-      userExternal
+      userExternal,
+      config
     )
   }
 
@@ -792,10 +793,11 @@ export function onRollupWarning(
 
 function resolveExternal(
   ssrExternals: string[],
-  user: ExternalOption | undefined
+  user: ExternalOption | undefined,
+  config: ResolvedConfig
 ): ExternalOption {
   return ((id, parentId, isResolved) => {
-    if (shouldExternalizeForSSR(id, ssrExternals)) {
+    if (shouldExternalizeForSSR(id, ssrExternals, config.ssr?.noExternal ?? [])) {
       return true
     }
     if (user) {
