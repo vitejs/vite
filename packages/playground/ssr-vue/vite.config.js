@@ -22,6 +22,10 @@ module.exports = {
       }
     }
   ],
+  ssr: {
+    external: ['vant'],
+    noExternal: [/vant.*?style/]
+  },
   build: {
     minify: false
   }

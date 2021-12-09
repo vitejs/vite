@@ -16,6 +16,9 @@
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
+import { Button } from 'vant'
+import 'vant/es/button/style/index.js'
+
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)
