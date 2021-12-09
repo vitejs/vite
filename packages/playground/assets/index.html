@@ -140,9 +140,9 @@
 </p>
 
 <h2>url in style tag</h2>
-<h1 style="background: url(./nested/asset.png);">hai</h1>
+<h1 style="background: url(./nested/asset.png)">hai</h1>
 <!-- base64 -->
-<h1 style="background: url(./static/icon.png);">hai</h1>
+<h1 style="background: url(./static/icon.png)">hai</h1>
 <style>
   .style-url-assets {
     background: url('./nested/asset.png');
@@ -153,6 +153,10 @@
   .style-url-assets {
     background: url('./static/icon.png');
   }
+</style>
+<!-- @import -->
+<style>
+  @import url('./css//css-url.css');
 </style>
 <p class="style-url-assets">hai</p>
 

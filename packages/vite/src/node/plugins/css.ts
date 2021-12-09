@@ -779,7 +779,7 @@ async function compileCSS(
   }
 }
 
-export function compileHTMLCSS (
+export function compileHTMLCSS(
   id: string,
   code: string,
   config: ResolvedConfig,
@@ -803,13 +803,7 @@ export function compileHTMLCSS (
     return url
   }
 
-  return compileCSS(
-    id,
-    code,
-    config,
-    urlReplacer,
-    atImportResolvers,
-  )
+  return compileCSS(id, code, config, urlReplacer, atImportResolvers)
 }
 
 interface PostCSSConfigResult {
