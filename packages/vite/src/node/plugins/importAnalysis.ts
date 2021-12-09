@@ -363,7 +363,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             if (
               server._ssrExternals &&
-              shouldExternalizeForSSR(specifier, server._ssrExternals, config.ssr?.noExternal ?? [])
+              shouldExternalizeForSSR(
+                specifier,
+                server._ssrExternals,
+                config.ssr?.noExternal ?? []
+              )
             ) {
               continue
             }
