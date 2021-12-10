@@ -140,25 +140,36 @@
 </p>
 
 <h2>url in style tag</h2>
-<h1 style="background: url(./nested/asset.png)">hai</h1>
-<!-- base64 -->
-<h1 style="background: url(./static/icon.png)">hai</h1>
-<style>
+<h3>url</h3>
+<style class="style-url">
   .style-url-assets {
     background: url('./nested/asset.png');
+    background-size: 10px 10px;
   }
 </style>
-<!-- base64 -->
-<style>
-  .style-url-assets {
+<div
+  class="inline-style-url"
+  style="background: url('./nested/asset.png'); background-size: 10px 10px"
+>
+  inline style
+</div>
+<div class="style-url-assets">use style class</div>
+
+<h3>base64</h3>
+<style class="style-base64">
+  .style-base64-assets {
     background: url('./static/icon.png');
   }
 </style>
-<!-- @import -->
-<style>
-  @import url('./css//css-url.css');
+<p class="inline-style-base64" style="background: url(./static/icon.png)">
+  inline style
+</p>
+<p class="style-base64-assets">use style class</p>
+
+<h3>@import</h3>
+<style class="style-import">
+  @import url('./css/css-url.css');
 </style>
-<p class="style-url-assets">hai</p>
 
 <script type="module">
   import './css/fonts.css'
