@@ -161,7 +161,39 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  return [pattern, code.indexOf(`)`, i) + 1]
+
+  const endIndex = getEndIndex(code, i)
+  return [pattern, endIndex + 1]
+}
+
+// reg without the 'g' option, only matches the first match
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
+const singlelineCommentsRE = /\/\/.*/
+
+function getEndIndex(code: string, i: number): number {
+  const findStart = i
+  const endIndex = code.indexOf(`)`, findStart)
+  const subCode = code.substring(findStart)
+
+  const matched =
+    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
+  if (!matched) {
+    return endIndex
+  }
+
+  const str = matched[0]
+  const index = matched.index
+  if (!index) {
+    return endIndex
+  }
+
+  const commentStart = findStart + index
+  const commentEnd = commentStart + str.length
+  if (endIndex > commentStart && endIndex < commentEnd) {
+    return getEndIndex(code, commentEnd)
+  } else {
+    return endIndex
+  }
 }
 
 function error(pos: number) {
