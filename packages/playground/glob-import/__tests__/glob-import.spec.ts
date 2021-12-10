@@ -45,9 +45,16 @@ const allResult = {
   }
 }
 
+const resultNodeModules = {
+  '/dir/node_modules/hoge.js': { msg: 'hoge' }
+}
+
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
+  )
+  expect(await page.textContent('.result-node_modules')).toBe(
+    JSON.stringify(resultNodeModules, null, 2)
   )
 })
 
