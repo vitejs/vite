@@ -1,3 +1,4 @@
+// prettier-ignore
 Object.defineProperties    (    exports    , {
   hello: {
     value() {
