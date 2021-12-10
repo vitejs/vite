@@ -20,7 +20,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
     const val = config.define[key]
-    userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
+    if (typeof val !== 'string') {
+      throw new TypeError('values of define option should be string')
+    }
+    userDefine[key] = val
   }
 
   // during dev, import.meta properties are handled by importAnalysis plugin

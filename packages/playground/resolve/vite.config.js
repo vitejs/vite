@@ -11,7 +11,7 @@ module.exports = {
     conditions: ['custom']
   },
   define: {
-    VITE_CONFIG_DEP_TEST: a
+    VITE_CONFIG_DEP_TEST: JSON.stringify(a)
   },
   plugins: [
     {

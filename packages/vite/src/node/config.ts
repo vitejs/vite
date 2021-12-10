@@ -112,7 +112,7 @@ export interface UserConfig {
    * Define global variable replacements.
    * Entries will be defined on `window` during dev and replaced during build.
    */
-  define?: Record<string, any>
+  define?: Record<string, string>
   /**
    * Array of vite plugins to use.
    */

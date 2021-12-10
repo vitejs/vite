@@ -480,9 +480,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         for (const key in config.define) {
           if (key.startsWith(`import.meta.env.`)) {
             const val = config.define[key]
-            env += `${key} = ${
-              typeof val === 'string' ? val : JSON.stringify(val)
-            };`
+            env += `${key} = ${val};`
           }
         }
         str().prepend(env)
