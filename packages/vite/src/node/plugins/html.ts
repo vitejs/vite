@@ -1,7 +1,7 @@
 import path from 'path'
 import { Plugin } from '../plugin'
 import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk, PluginContext } from 'rollup'
+import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
