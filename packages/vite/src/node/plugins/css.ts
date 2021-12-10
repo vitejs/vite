@@ -779,31 +779,28 @@ async function compileCSS(
   }
 }
 
-export function compileHTMLCSS(
-  id: string,
-  code: string,
-  config: ResolvedConfig,
-  ctx: PluginContext
-) {
+export function createHTMLCSSCompiler(config: ResolvedConfig) {
   const resolveUrl = config.createResolver({
     preferRelative: true,
     tryIndex: false,
     extensions: []
   })
   const atImportResolvers = createCSSResolvers(config)
-
-  const urlReplacer: CssUrlReplacer = async (url, importer) => {
-    if (checkPublicFile(url, config)) {
-      return config.base + url.slice(1)
+  return {
+    compile: (id: string, code: string, ctx: PluginContext) => {
+      const urlReplacer: CssUrlReplacer = async (url, importer) => {
+        if (checkPublicFile(url, config)) {
+          return config.base + url.slice(1)
+        }
+        const resolved = await resolveUrl(url, importer)
+        if (resolved) {
+          return fileToUrl(resolved, config, ctx)
+        }
+        return url
+      }
+      return compileCSS(id, code, config, urlReplacer, atImportResolvers)
     }
-    const resolved = await resolveUrl(url, importer)
-    if (resolved) {
-      return fileToUrl(resolved, config, ctx)
-    }
-    return url
   }
-
-  return compileCSS(id, code, config, urlReplacer, atImportResolvers)
 }
 
 interface PostCSSConfigResult {

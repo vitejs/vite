@@ -28,7 +28,7 @@ import {
   ElementNode,
   TextNode
 } from '@vue/compiler-dom'
-import { compileHTMLCSS } from './css'
+import { createHTMLCSSCompiler } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -164,23 +164,6 @@ function formatParseError(e: any, id: string, html: string): Error {
 }
 
 /**
- * compile style / inline-style with css plugin
- */
-async function getAssetsFromStyle(
-  code: string,
-  config: ResolvedConfig,
-  ctx: PluginContext
-): Promise<string> {
-  const compileCSSResult = await compileHTMLCSS(
-    'index.html.css',
-    code,
-    config,
-    ctx
-  )
-  return compileCSSResult.code
-}
-
-/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -191,6 +174,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
+  const cssCompiler = createHTMLCSSCompiler(config)
 
   return {
     name: 'vite:build-html',
@@ -304,17 +288,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
           // for style tag and inline style use url(...) for assets references, also generate an import
           const inlineStyle = node.props.find(
-            (prop) => prop.name === 'style' && prop.type === NodeTypes.ATTRIBUTE
+            (prop) => prop.name === 'style' && prop.type === NodeTypes.ATTRIBUTE && prop.value
           ) as AttributeNode
-          if (inlineStyle && inlineStyle.value) {
-            const styleNode = inlineStyle.value
+          if (inlineStyle) {
+            const styleNode = inlineStyle.value!
             resolveStyleAssetsTask.push(
-              getAssetsFromStyle(styleNode.content, config, this).then(
-                (newStyleCode) => {
+              cssCompiler.compile("index.html.css", styleNode.content, this).then(
+                (compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
-                    `"${newStyleCode}"`
+                    `"${compileResult.code}"`
                   )
                 }
               )
@@ -323,12 +307,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (node.tag === 'style' && node.children.length) {
             const styleNode = node.children.pop() as TextNode
             resolveStyleAssetsTask.push(
-              getAssetsFromStyle(styleNode.content, config, this).then(
-                (newStyleCode) => {
+              cssCompiler.compile("index.html.css", styleNode.content, this).then(
+                (compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
-                    newStyleCode
+                    compileResult.code
                   )
                 }
               )
