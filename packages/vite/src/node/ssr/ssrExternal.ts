@@ -157,7 +157,9 @@ function collectExternals(
       }
       // check if the entry is cjs
       const content = fs.readFileSync(esmEntry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
+      const CJS_CONTENT_RE =
+        /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
+      if (CJS_CONTENT_RE.test(content)) {
         ssrExternals.add(id)
         continue
       }

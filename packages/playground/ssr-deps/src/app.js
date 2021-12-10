@@ -5,6 +5,9 @@ import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'
 import objectAssignedExports from 'object-assigned-exports'
 import forwardedExport from 'forwarded-export'
 import bcrypt from 'bcrypt'
+import definePropertiesExports from 'define-properties-exports'
+import definePropertyExports from 'define-property-exports'
+import onlyObjectAssignedExports from 'only-object-assigned-exports'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -28,6 +31,15 @@ export async function render(url, rootDir) {
 
   const forwardedExportMessage = forwardedExport.hello()
   html += `\n<p class="forwarded-export-message">message from forwarded-export: ${forwardedExportMessage}</p>`
+
+  const definePropertiesExportsMsg = definePropertiesExports.hello()
+  html += `\n<p class="define-properties-exports-msg">message from define-properties-exports: ${definePropertiesExportsMsg}</p>`
+
+  const definePropertyExportsMsg = definePropertyExports.hello()
+  html += `\n<p class="define-property-exports-msg">message from define-property-exports: ${definePropertyExportsMsg}</p>`
+
+  const onlyObjectAssignedExportsMessage = onlyObjectAssignedExports.hello()
+  html += `\n<p class="only-object-assigned-exports-msg">message from only-object-assigned-exports: ${onlyObjectAssignedExportsMessage}</p>`
 
   return html + '\n'
 }

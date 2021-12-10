@@ -458,16 +458,22 @@ importers:
     specifiers:
       bcrypt: ^5.0.1
       cross-env: ^7.0.3
+      define-properties-exports: file:./define-properties-exports
+      define-property-exports: file:./define-property-exports
       express: ^4.17.1
       forwarded-export: file:./forwarded-export
       object-assigned-exports: file:./object-assigned-exports
+      only-object-assigned-exports: file:./only-object-assigned-exports
       primitive-export: file:./primitive-export
       read-file-content: file:./read-file-content
       ts-transpiled-exports: file:./ts-transpiled-exports
     dependencies:
       bcrypt: 5.0.1
+      define-properties-exports: link:define-properties-exports
+      define-property-exports: link:define-property-exports
       forwarded-export: link:forwarded-export
       object-assigned-exports: link:object-assigned-exports
+      only-object-assigned-exports: link:only-object-assigned-exports
       primitive-export: link:primitive-export
       read-file-content: link:read-file-content
       ts-transpiled-exports: link:ts-transpiled-exports
@@ -475,10 +481,19 @@ importers:
       cross-env: 7.0.3
       express: 4.17.1
 
+  packages/playground/ssr-deps/define-properties-exports:
+    specifiers: {}
+
+  packages/playground/ssr-deps/define-property-exports:
+    specifiers: {}
+
   packages/playground/ssr-deps/forwarded-export:
     specifiers: {}
 
   packages/playground/ssr-deps/object-assigned-exports:
+    specifiers: {}
+
+  packages/playground/ssr-deps/only-object-assigned-exports:
     specifiers: {}
 
   packages/playground/ssr-deps/primitive-export:
