@@ -297,7 +297,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = inlineStyle.value!
             resolveStyleAssetsTask.push(
               cssCompiler
-                .compile('index.html.css', styleNode.content, this)
+                .compile(id + '.css', styleNode.content, this)
                 .then((compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
@@ -311,7 +311,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = node.children.pop() as TextNode
             resolveStyleAssetsTask.push(
               cssCompiler
-                .compile('index.html.css', styleNode.content, this)
+                .compile(id + '.css', styleNode.content, this)
                 .then((compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
