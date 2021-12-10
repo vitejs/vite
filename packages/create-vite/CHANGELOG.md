@@ -1,3 +1,12 @@
+# [2.7.0](https://github.com/vitejs/vite/compare/create-vite@2.6.6...create-vite@2.7.0) (2021-12-07)
+
+
+### Bug Fixes
+
+* **create-vite:** update vue-tsc for dts flags ([#5453](https://github.com/vitejs/vite/issues/5453)) ([c93bc3d](https://github.com/vitejs/vite/commit/c93bc3df90b5c4e8e25ffd864ae53a3ae7559315))
+
+
+
 ## [2.6.6](https://github.com/vitejs/vite/compare/create-vite@2.6.5...create-vite@2.6.6) (2021-10-07)
 
 

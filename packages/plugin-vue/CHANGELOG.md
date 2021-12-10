@@ -1,3 +1,12 @@
+## [1.10.2](https://github.com/vitejs/vite/compare/plugin-vue@1.10.1...plugin-vue@1.10.2) (2021-12-07)
+
+
+### Bug Fixes
+
+* **plugin-vue:** misleading error thrown after refresh or hmr ([#5870](https://github.com/vitejs/vite/issues/5870)) ([5c07cec](https://github.com/vitejs/vite/commit/5c07cec7214948da73fbbc33c7f5c83bf7f6cd2e))
+
+
+
 ## [1.10.1](https://github.com/vitejs/vite/compare/plugin-vue@1.10.0...plugin-vue@1.10.1) (2021-11-26)
 
 
