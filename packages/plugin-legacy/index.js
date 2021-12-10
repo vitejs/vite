@@ -476,7 +476,7 @@ function viteLegacyPlugin(options = {}) {
           define: {
             'import.meta.env.LEGACY':
               env.command === 'serve' || config.build.ssr
-                ? false
+                ? JSON.stringify(false)
                 : legacyEnvVarMarker
           }
         }
