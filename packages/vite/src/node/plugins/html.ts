@@ -288,34 +288,37 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
           // for style tag and inline style use url(...) for assets references, also generate an import
           const inlineStyle = node.props.find(
-            (prop) => prop.name === 'style' && prop.type === NodeTypes.ATTRIBUTE && prop.value
+            (prop) =>
+              prop.name === 'style' &&
+              prop.type === NodeTypes.ATTRIBUTE &&
+              prop.value
           ) as AttributeNode
           if (inlineStyle) {
             const styleNode = inlineStyle.value!
             resolveStyleAssetsTask.push(
-              cssCompiler.compile("index.html.css", styleNode.content, this).then(
-                (compileResult) => {
+              cssCompiler
+                .compile('index.html.css', styleNode.content, this)
+                .then((compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
                     `"${compileResult.code}"`
                   )
-                }
-              )
+                })
             )
           }
           if (node.tag === 'style' && node.children.length) {
             const styleNode = node.children.pop() as TextNode
             resolveStyleAssetsTask.push(
-              cssCompiler.compile("index.html.css", styleNode.content, this).then(
-                (compileResult) => {
+              cssCompiler
+                .compile('index.html.css', styleNode.content, this)
+                .then((compileResult) => {
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
                     compileResult.code
                   )
-                }
-              )
+                })
             )
           }
 
