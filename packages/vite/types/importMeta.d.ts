@@ -57,6 +57,8 @@ interface ImportMeta {
       [key: string]: any
     }
   >
+
+  globEagerDefault(pattern: string): Record<string, any>
 }
 
 interface ImportMetaEnv {
