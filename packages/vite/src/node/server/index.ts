@@ -740,14 +740,19 @@ async function restartServer(server: ViteDevServer) {
       server[key] = newServer[key]
     }
   }
-  if (!server.config.server.middlewareMode) {
-    await server.listen(undefined, true)
-    server.config.logger.info('server restarted.', { timestamp: true })
-    if (prevPort !== server.config.server.port) {
-      server.config.logger.info('\n')
+
+  const {
+    logger,
+    server: { port, middlewareMode }
+  } = server.config
+  if (!middlewareMode) {
+    await server.listen(port, true)
+    logger.info('server restarted.', { timestamp: true })
+    if (prevPort !== port) {
+      logger.info('\n')
       server.printUrls()
     }
   } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
+    logger.info('server restarted.', { timestamp: true })
   }
 }
