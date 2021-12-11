@@ -55,8 +55,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: true || config?.define.__VUE_OPTIONS_API__,
-          __VUE_PROD_DEVTOOLS__: false || config?.define.__VUE_PROD_DEVTOOLS__
+          __VUE_OPTIONS_API__: true || config.define?.__VUE_OPTIONS_API__,
+          __VUE_PROD_DEVTOOLS__: false || config.define?.__VUE_PROD_DEVTOOLS__
         }
       }
     },
