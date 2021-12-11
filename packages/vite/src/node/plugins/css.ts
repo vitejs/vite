@@ -779,7 +779,13 @@ async function compileCSS(
   }
 }
 
-export function createHTMLCSSCompiler(config: ResolvedConfig) {
+export function createHTMLCSSCompiler(config: ResolvedConfig): {
+  compile: (
+    id: string,
+    code: string,
+    ctx: PluginContext
+  ) => ReturnType<typeof compileCSS>
+} {
   const resolveUrl = config.createResolver({
     preferRelative: true,
     tryIndex: false,
