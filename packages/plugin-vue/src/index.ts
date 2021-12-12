@@ -58,16 +58,6 @@ export interface Options {
   reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * @deprecated use `reactivityTransform` instead.
-   */
-  refTransform?: any
-
-  /**
-   * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
-   */
-  ssr?: boolean
-
-  /**
    * Use custom compiler-sfc instance. Can be used to force a specific version.
    */
   compiler?: typeof _compiler
@@ -117,7 +107,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   // Temporal handling for 2.7 breaking change
   const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
     opt === undefined
-      ? !!options.ssr
+      ? false
       : typeof opt === 'boolean'
       ? opt
       : opt?.ssr === true
