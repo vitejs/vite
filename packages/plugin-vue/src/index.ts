@@ -33,7 +33,6 @@ export interface Options {
 
   /**
    * Transform Vue SFCs into custom elements.
-   * **requires Vue \>= 3.2.0 & Vite \>= 2.4.4**
    * - `true`: all `*.vue` imports are converted into custom elements
    * - `string | RegExp`: matched files are converted into custom elements
    *
@@ -44,9 +43,6 @@ export interface Options {
   /**
    * Enable Vue reactivity transform (experimental).
    * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
-   *
-   * **requires vue\@^3.2.25**
-   *
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
