@@ -750,7 +750,7 @@ async function restartServer(server: ViteDevServer) {
       await server.listen(port, true)
     } catch (e) {
       logger.error(chalk.red(e))
-      return
+      throw e
     }
     logger.info('server restarted.', { timestamp: true })
     if (prevPort !== port) {
