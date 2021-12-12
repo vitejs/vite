@@ -99,8 +99,10 @@ importers:
   packages/playground:
     specifiers:
       css-color-names: ^1.0.1
+      vue: ^3.2.25
     devDependencies:
       css-color-names: 1.0.1
+      vue: 3.2.25
 
   packages/playground/alias:
     specifiers:
