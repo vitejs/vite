@@ -22,7 +22,7 @@ export interface Options {
   isProduction?: boolean
 
   /**
-   * Transform Vue SFCs into custom elements (requires Vue >= 3.2.0)
+   * Transform Vue SFCs into custom elements (requires vue@^3.2.0)
    * - `true` -> all `*.vue` imports are converted into custom elements
    * - `string | RegExp` -> matched files are converted into custom elements
    *
@@ -31,10 +31,8 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * Enable Vue ref transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
-   *
-   * **requires Vue \>= 3.2.5**
+   * Enable Vue reactivity transform (experimental, requires vue@^3.2.25).
+   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
    *
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
@@ -44,7 +42,7 @@ export interface Options {
    *
    * @default false
    */
-  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
