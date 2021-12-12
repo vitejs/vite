@@ -64,6 +64,9 @@ export function resolveSSRExternal(
   return externals
 }
 
+const CJS_CONTENT_RE =
+  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
+
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
@@ -157,8 +160,6 @@ function collectExternals(
       }
       // check if the entry is cjs
       const content = fs.readFileSync(esmEntry, 'utf-8')
-      const CJS_CONTENT_RE =
-        /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
       if (CJS_CONTENT_RE.test(content)) {
         ssrExternals.add(id)
         continue
