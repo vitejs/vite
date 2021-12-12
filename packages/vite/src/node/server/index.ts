@@ -746,12 +746,7 @@ async function restartServer(server: ViteDevServer) {
     server: { port, middlewareMode }
   } = server.config
   if (!middlewareMode) {
-    try {
-      await server.listen(port, true)
-    } catch (e) {
-      logger.error(chalk.red(e))
-      throw e
-    }
+    await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
     if (prevPort !== port) {
       logger.info('\n')
