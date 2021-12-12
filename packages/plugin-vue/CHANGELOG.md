@@ -1,3 +1,30 @@
+# [2.0.0](https://github.com/vitejs/vite/compare/plugin-vue@1.10.2...plugin-vue@2.0.0) (2021-12-12)
+
+
+### Bug Fixes
+
+* allow overwriting `define` options in vue & vue-jsx plugins ([#6072](https://github.com/vitejs/vite/issues/6072)) ([5f3f6b7](https://github.com/vitejs/vite/commit/5f3f6b7b406cb3371084057c74814eb36175e5cf))
+* **plugin-vue:** multiple vue files using the same src file (fix [#5925](https://github.com/vitejs/vite/issues/5925), [#5447](https://github.com/vitejs/vite/issues/5447)) ([#5994](https://github.com/vitejs/vite/issues/5994)) ([df7aec7](https://github.com/vitejs/vite/commit/df7aec7d2a567af1dfbab76e5765aba80dc3cb5c))
+
+
+### Code Refactoring
+
+* **plugin-vue:** resolve vue/compiler-sfc from project root ([ce8b0fe](https://github.com/vitejs/vite/commit/ce8b0feae334cc224b3f4d2fdb2bffbb62322acf))
+
+
+### Features
+
+* **plugin-vue:** add `reactivityTransform` option. ([955d0fe](https://github.com/vitejs/vite/commit/955d0fecd936b8175d7a7e4355eab855eb4567f8))
+
+
+### BREAKING CHANGES
+
+* **plugin-vue:** `refTransform` option has been replaced by
+`reactivityTransform` option. Now also requires vue@^3.2.25.
+* **plugin-vue:** now requires vue@^3.2.13 as peer dep
+
+
+
 ## [1.10.2](https://github.com/vitejs/vite/compare/plugin-vue@1.10.1...plugin-vue@1.10.2) (2021-12-07)
 
 

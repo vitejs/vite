@@ -58,7 +58,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (result) {
+        if (typeof result === 'string') {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
