@@ -672,7 +672,6 @@ importers:
     specifiers:
       '@rollup/pluginutils': ^4.1.1
       '@types/hash-sum': ^1.0.0
-      '@vue/compiler-sfc': ^3.2.23
       debug: ^4.3.2
       hash-sum: ^2.0.0
       rollup: ^2.59.0
@@ -682,7 +681,6 @@ importers:
     devDependencies:
       '@rollup/pluginutils': 4.1.1
       '@types/hash-sum': 1.0.0
-      '@vue/compiler-sfc': 3.2.23
       debug: 4.3.2
       hash-sum: 2.0.0
       rollup: 2.59.0

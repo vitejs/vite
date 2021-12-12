@@ -6,8 +6,9 @@ import {
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
   SFCTemplateCompileOptions
-} from '@vue/compiler-sfc'
-import { compiler } from './compiler'
+} from 'vue/compiler-sfc'
+import * as _compiler from 'vue/compiler-sfc'
+import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
@@ -25,7 +26,7 @@ export interface Options {
 
   isProduction?: boolean
 
-  // options to pass on to @vue/compiler-sfc
+  // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
@@ -60,9 +61,15 @@ export interface Options {
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
    */
   ssr?: boolean
+
+  /**
+   * Use custom compiler-sfc instance. Can be used to force a specific version.
+   */
+  compiler?: typeof _compiler
 }
 
 export interface ResolvedOptions extends Options {
+  compiler: typeof _compiler
   root: string
   sourceMap: boolean
   devServer?: ViteDevServer
@@ -90,9 +97,6 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       ? createFilter(/\.(j|t)sx?$/, /node_modules/)
       : createFilter(refTransform)
 
-  // compat for older versions
-  const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
-
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
     ...rawOptions,
@@ -101,7 +105,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     customElement,
     refTransform,
     root: process.cwd(),
-    sourceMap: true
+    sourceMap: true,
+    compiler: null as any // to be set in configResolved
   }
 
   // Temporal handling for 2.7 breaking change
@@ -122,7 +127,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       return handleHotUpdate(ctx, options)
     },
 
-    config(config) {
+    config() {
       return {
         define: {
           __VUE_OPTIONS_API__: true,
@@ -139,7 +144,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction
+        isProduction: config.isProduction,
+        compiler: options.compiler || resolveCompiler(config.root)
       }
     },
 
@@ -198,15 +204,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         return
       }
       if (!filter(filename) && !query.vue) {
-        if (!query.vue && refTransformFilter(filename)) {
-          if (!canUseRefTransform) {
-            this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
-          } else if (compiler.shouldTransformRef(code)) {
-            return compiler.transformRef(code, {
-              filename,
-              sourceMap: true
-            })
-          }
+        if (
+          !query.vue &&
+          refTransformFilter(filename) &&
+          options.compiler.shouldTransformRef(code)
+        ) {
+          return options.compiler.transformRef(code, {
+            filename,
+            sourceMap: true
+          })
         }
         return
       }

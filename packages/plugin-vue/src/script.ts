@@ -1,7 +1,6 @@
-import { SFCDescriptor, SFCScriptBlock } from '@vue/compiler-sfc'
+import { SFCDescriptor, SFCScriptBlock } from 'vue/compiler-sfc'
 import { ResolvedOptions } from '.'
 import { resolveTemplateCompilerOptions } from './template'
-import { compiler } from './compiler'
 
 // ssr and non ssr builds would output different script content
 const clientCache = new WeakMap<SFCDescriptor, SFCScriptBlock | null>()
@@ -49,7 +48,7 @@ export function resolveScript(
 
   let resolved: SFCScriptBlock | null = null
 
-  resolved = compiler.compileScript(descriptor, {
+  resolved = options.compiler.compileScript(descriptor, {
     ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
