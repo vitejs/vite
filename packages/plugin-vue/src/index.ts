@@ -42,10 +42,10 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * Enable Vue ref transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
+   * Enable Vue reactivity transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
    *
-   * **requires Vue \>= 3.2.5**
+   * **requires vue\@^3.2.25**
    *
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
@@ -55,7 +55,12 @@ export interface Options {
    *
    * @default false
    */
-  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  /**
+   * @deprecated use `reactivityTransform` instead.
+   */
+  refTransform?: any
 
   /**
    * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
@@ -80,7 +85,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     include = /\.vue$/,
     exclude,
     customElement = /\.ce\.vue$/,
-    refTransform = false
+    reactivityTransform = false
   } = rawOptions
 
   const filter = createFilter(include, exclude)
@@ -91,11 +96,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       : createFilter(customElement)
 
   const refTransformFilter =
-    refTransform === false
+    reactivityTransform === false
       ? () => false
-      : refTransform === true
+      : reactivityTransform === true
       ? createFilter(/\.(j|t)sx?$/, /node_modules/)
-      : createFilter(refTransform)
+      : createFilter(reactivityTransform)
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
@@ -103,7 +108,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     include,
     exclude,
     customElement,
-    refTransform,
+    reactivityTransform,
     root: process.cwd(),
     sourceMap: true,
     compiler: null as any // to be set in configResolved

@@ -32,7 +32,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
     "vite": "^2.5.10",
-    "vue": "^3.2.13"
+    "vue": "^3.2.25"
   },
   "devDependencies": {
     "@rollup/pluginutils": "^4.1.1",
@@ -42,6 +42,6 @@
     "rollup": "^2.59.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.23"
+    "vue": "^3.2.25"
   }
 }
