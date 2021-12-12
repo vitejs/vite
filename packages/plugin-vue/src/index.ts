@@ -132,7 +132,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       return handleHotUpdate(ctx, options)
     },
 
-    config() {
+    config(config) {
       return {
         define: {
           __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
