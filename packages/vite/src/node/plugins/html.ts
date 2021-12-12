@@ -28,7 +28,6 @@ import {
   ElementNode,
   TextNode
 } from '@vue/compiler-dom'
-import { createHTMLCSSCompiler } from './css'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -163,6 +162,18 @@ function formatParseError(e: any, id: string, html: string): Error {
   return e
 }
 
+function findCssPlugin(config: ResolvedConfig) {
+  const pluginName = 'vite:css'
+  const plugin = config.plugins.find((p) => p.name === pluginName)
+  if (!plugin) {
+    throw new Error(`failed to find plugin ${pluginName}`)
+  }
+  if (!plugin.transform) {
+    throw new Error(`plugin ${pluginName} has no transform`)
+  }
+  return plugin
+}
+
 /**
  * Compiles index.html into an entry js module
  */
@@ -174,7 +185,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
-  const cssCompiler = createHTMLCSSCompiler(config)
+  let cssPlugin: Plugin | null = null
 
   return {
     name: 'vite:build-html',
@@ -294,31 +305,49 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               prop.value
           ) as AttributeNode
           if (inlineStyle) {
+            if (!cssPlugin) {
+              cssPlugin = findCssPlugin(config)
+            }
             const styleNode = inlineStyle.value!
             resolveStyleAssetsTask.push(
-              cssCompiler
-                .compile(id + '.css', styleNode.content, this)
-                .then((compileResult) => {
+              Promise.resolve(
+                cssPlugin.transform!.call(this, styleNode.content, id + '.css')
+              ).then((compileResult) => {
+                if (compileResult) {
+                  const code =
+                    typeof compileResult === 'string'
+                      ? compileResult
+                      : compileResult.code || ''
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
-                    `"${compileResult.code}"`
+                    `"${code}"`
                   )
-                })
+                }
+              })
             )
           }
           if (node.tag === 'style' && node.children.length) {
+            if (!cssPlugin) {
+              cssPlugin = findCssPlugin(config)
+            }
             const styleNode = node.children.pop() as TextNode
             resolveStyleAssetsTask.push(
-              cssCompiler
-                .compile(id + '.css', styleNode.content, this)
-                .then((compileResult) => {
+              Promise.resolve(
+                cssPlugin.transform!.call(this, styleNode.content, id + '.css')
+              ).then((compileResult) => {
+                if (compileResult) {
+                  const code =
+                    typeof compileResult === 'string'
+                      ? compileResult
+                      : compileResult.code || ''
                   s.overwrite(
                     styleNode.loc.start.offset,
                     styleNode.loc.end.offset,
-                    compileResult.code
+                    code
                   )
-                })
+                }
+              })
             )
           }
 

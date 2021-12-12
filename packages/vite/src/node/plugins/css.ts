@@ -20,8 +20,7 @@ import {
   OutputChunk,
   RenderedChunk,
   RollupError,
-  SourceMap,
-  PluginContext
+  SourceMap
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
@@ -776,36 +775,6 @@ async function compileCSS(
     map: postcssResult.map as any,
     modules,
     deps
-  }
-}
-
-export function createHTMLCSSCompiler(config: ResolvedConfig): {
-  compile: (
-    id: string,
-    code: string,
-    ctx: PluginContext
-  ) => ReturnType<typeof compileCSS>
-} {
-  const resolveUrl = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
-  const atImportResolvers = createCSSResolvers(config)
-  return {
-    compile: (id: string, code: string, ctx: PluginContext) => {
-      const urlReplacer: CssUrlReplacer = async (url, importer) => {
-        if (checkPublicFile(url, config)) {
-          return config.base + url.slice(1)
-        }
-        const resolved = await resolveUrl(url, importer)
-        if (resolved) {
-          return fileToUrl(resolved, config, ctx)
-        }
-        return url
-      }
-      return compileCSS(id, code, config, urlReplacer, atImportResolvers)
-    }
   }
 }
 
