@@ -704,6 +704,12 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.0
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.1
@@ -727,7 +733,7 @@ importers:
       '@types/resolve': ^1.20.1
       '@types/sass': ~1.43.0
       '@types/stylus': ^0.48.36
-      '@types/ws': ^8.2.0
+      '@types/ws': ^8.2.2
       '@vue/compiler-dom': ^3.2.22
       acorn: ^8.6.0
       acorn-class-fields: ^1.0.0
@@ -775,7 +781,7 @@ importers:
       tsconfck: 1.1.1
       tslib: ^2.3.1
       types: link:./types
-      ws: ^8.2.3
+      ws: ^8.3.0
     dependencies:
       esbuild: 0.13.12
       postcss: 8.3.11
@@ -805,7 +811,7 @@ importers:
       '@types/resolve': 1.20.1
       '@types/sass': 1.43.0
       '@types/stylus': 0.48.36
-      '@types/ws': 8.2.0
+      '@types/ws': 8.2.2
       '@vue/compiler-dom': 3.2.22
       acorn: 8.6.0
       acorn-class-fields: 1.0.0_acorn@8.6.0
@@ -848,7 +854,7 @@ importers:
       tsconfck: 1.1.1_typescript@4.4.4
       tslib: 2.3.1
       types: link:types
-      ws: 8.2.3
+      ws: 8.3.0
 
 packages:
 
@@ -2279,8 +2285,8 @@ packages:
       '@types/node': 16.11.9
     dev: true
 
-  /@types/ws/8.2.0:
-    resolution: {integrity: sha512-cyeefcUCgJlEk+hk2h3N+MqKKsPViQgF5boi9TTHSK+PoR9KWBb/C5ccPcDyAqgsbAYHTwulch725DV84+pSpg==}
+  /@types/ws/8.2.2:
+    resolution: {integrity: sha512-NOn5eIcgWLOo6qW8AcuLZ7G8PycXu0xTxxkS6Q18VWFxgPUSOwV0pBj2a/4viNZVu25i7RIB7GttdkAIUUXOOg==}
     dependencies:
       '@types/node': 16.11.9
     dev: true
@@ -9188,8 +9194,8 @@ packages:
         optional: true
     dev: true
 
-  /ws/8.2.3:
-    resolution: {integrity: sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==}
+  /ws/8.3.0:
+    resolution: {integrity: sha512-Gs5EZtpqZzLvmIM59w4igITU57lrtYVFneaa434VROv4thzJyV6UjIL3D42lslWlI+D4KzLYnxSwtfuiO79sNw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
