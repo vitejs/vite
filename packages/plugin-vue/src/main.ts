@@ -1,7 +1,6 @@
 import qs from 'querystring'
 import path from 'path'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
-import { compiler } from './compiler'
+import { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import { ResolvedOptions } from '.'
 import {
   createDescriptor,
@@ -266,7 +265,7 @@ async function genScriptCode(
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
     if ((!script.lang || script.lang === 'ts') && !script.src) {
-      scriptCode = compiler.rewriteDefault(
+      scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
         script.lang === 'ts' ? ['typescript'] : undefined

@@ -1,5 +1,5 @@
 import _debug from 'debug'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import {
   createDescriptor,
   getDescriptor,
