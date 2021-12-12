@@ -16,20 +16,20 @@ To develop and test the core `vite` package:
 
 You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
 
-   ```json
-   {
-     "dependencies": {
-       "vite": "^2.0.0"
-     },
-     "pnpm": {
-       "overrides": {
-         "vite": "link:../path/to/vite/packages/vite"
-       }
-     }
-   }
-   ```
+```json
+{
+  "dependencies": {
+    "vite": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "link:../path/to/vite/packages/vite"
+    }
+  }
+}
+```
 
-   And re-run `pnpm install` to link the package.
+And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
