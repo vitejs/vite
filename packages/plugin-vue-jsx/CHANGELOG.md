@@ -1,3 +1,12 @@
+## [1.3.2](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.1...plugin-vue-jsx@1.3.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* allow overwriting `define` options in vue & vue-jsx plugins ([#6072](https://github.com/vitejs/vite/issues/6072)) ([5f3f6b7](https://github.com/vitejs/vite/commit/5f3f6b7b406cb3371084057c74814eb36175e5cf))
+
+
+
 ## [1.3.1](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.0...plugin-vue-jsx@1.3.1) (2021-12-07)
 
 
