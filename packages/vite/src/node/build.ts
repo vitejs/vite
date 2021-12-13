@@ -236,7 +236,8 @@ export type ResolvedBuildOptions = Required<
 
 export function resolveBuildOptions(
   root: string,
-  raw?: BuildOptions
+  raw?: BuildOptions,
+  isBuild?: boolean
 ): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
@@ -291,14 +292,12 @@ export function resolveBuildOptions(
           ])
         )
       : resolve(raw.rollupOptions.input)
-  } else {
-    input = resolve(
-      raw?.lib
-        ? raw.lib.entry
-        : typeof raw?.ssr === 'string'
-        ? raw.ssr
-        : 'index.html'
-    )
+  } else if (raw?.lib && isBuild) {
+    input = resolve(raw.lib.entry)
+  } else if (typeof raw?.ssr === 'string') {
+    input = resolve(raw.ssr)
+  } else if (isBuild) {
+    input = resolve('index.html')
   }
 
   if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -308,7 +307,9 @@ export function resolveBuildOptions(
     )
   }
 
-  resolved.rollupOptions.input = input
+  if (input) {
+    resolved.rollupOptions.input = input
+  }
 
   // handle special build targets
   if (resolved.target === 'modules') {
