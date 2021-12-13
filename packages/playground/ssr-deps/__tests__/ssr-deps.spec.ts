@@ -50,3 +50,24 @@ test('msg from forwarded exports', async () => {
     'Hello World!'
   )
 })
+
+test('msg from define properties exports', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.define-properties-exports-msg')).toMatch(
+    'Hello World!'
+  )
+})
+
+test('msg from define property exports', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.define-property-exports-msg')).toMatch(
+    'Hello World!'
+  )
+})
+
+test('msg from only object assigned exports', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.only-object-assigned-exports-msg')).toMatch(
+    'Hello World!'
+  )
+})
