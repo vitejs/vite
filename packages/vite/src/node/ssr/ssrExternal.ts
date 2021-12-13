@@ -163,7 +163,7 @@ function collectExternals(
       }
 
       logger.warn(
-        `${id} is incorrectly packaged. Please contact the package author to fix.`
+        `${id} is not written in CJS, but also doesn't have "type": "module" or an .mjs extension for the entry point. Please contact the package author to fix.`
       )
     }
   }
