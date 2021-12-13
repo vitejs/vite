@@ -18,6 +18,7 @@ declare const __HMR_HOSTNAME__: string
 declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __HMR_RETRY__: boolean
 
 console.log('[vite] connecting...')
 
@@ -219,6 +220,10 @@ async function waitForSuccessfulPing(ms = 1000) {
 // ping server
 socket.addEventListener('close', async ({ wasClean }) => {
   if (wasClean) return
+  if (!__HMR_RETRY__) {
+    console.warn(`[vite] server connection lost. Manual refresh and try again.`)
+    return
+  }
   console.log(`[vite] server connection lost. polling for restart...`)
   await waitForSuccessfulPing()
   location.reload()

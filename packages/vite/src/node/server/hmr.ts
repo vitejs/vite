@@ -24,6 +24,7 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
+  retry?: boolean
 }
 
 export interface HmrContext {
