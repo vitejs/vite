@@ -18,7 +18,7 @@
     "lit": "^2.0.2"
   },
   "devDependencies": {
-    "vite": "^2.7.0",
+    "vite": "^2.7.1",
     "typescript": "^4.4.4"
   }
 }
