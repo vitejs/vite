@@ -61,7 +61,11 @@ export async function handleHMRUpdate(
       ),
       { clear: true, timestamp: true }
     )
-    await server.restart()
+    try {
+      await server.restart()
+    } catch (e) {
+      config.logger.error(chalk.red(e))
+    }
     return
   }
 
