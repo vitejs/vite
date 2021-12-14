@@ -58,7 +58,7 @@ export function getDescriptor(
       fs.readFileSync(filename, 'utf-8'),
       options
     )
-    if (errors) {
+    if (errors.length) {
       throw errors[0]
     }
     return descriptor
