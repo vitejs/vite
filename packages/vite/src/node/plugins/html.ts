@@ -305,9 +305,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         for (const attr of assetUrls) {
           const value = attr.value;
           if (
-            value.content !== '' && // Empty attribute
-            !namedOutput.includes(value.content) && // Direct reference to named output
-            !namedOutput.includes(value.content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+            value?.content !== '' && // Empty attribute
+            !namedOutput.includes(value?.content) && // Direct reference to named output
+            !namedOutput.includes(value?.content?.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =
