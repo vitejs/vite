@@ -304,10 +304,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const namedOutput = Object.keys(config?.build?.rollupOptions?.input || {});
         for (const attr of assetUrls) {
           const value = attr.value;
+          const content = value.content || '';
           if (
-            value?.content !== '' && // Empty attribute
-            !namedOutput.includes(value?.content) && // Direct reference to named output
-            !namedOutput.includes(value?.content?.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+            content !== '' && // Empty attribute
+            !namedOutput.includes(content) && // Direct reference to named output
+            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
               const url =
