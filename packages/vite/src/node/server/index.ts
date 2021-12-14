@@ -720,7 +720,7 @@ export function resolveServerOptions(
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
-  const { port: prevPort } = server.config.server
+  const { port: prevPort, host: prevHost } = server.config.server
 
   await server.close()
 
@@ -743,12 +743,12 @@ async function restartServer(server: ViteDevServer) {
 
   const {
     logger,
-    server: { port, middlewareMode }
+    server: { port, host, middlewareMode }
   } = server.config
   if (!middlewareMode) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
-    if (prevPort !== port) {
+    if (port !== prevPort || host !== prevHost) {
       logger.info('\n')
       server.printUrls()
     }
