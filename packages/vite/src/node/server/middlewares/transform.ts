@@ -81,7 +81,7 @@ export function transformMiddleware(
           // If the refresh has not happened after timeout, Vite considers
           // something unexpected has happened. In this case, Vite
           // returns an empty response that will error.
-          new Promise<void>((_, reject) =>
+          new Promise((_, reject) =>
             setTimeout(reject, NEW_DEPENDENCY_BUILD_TIMEOUT)
           )
         ])
