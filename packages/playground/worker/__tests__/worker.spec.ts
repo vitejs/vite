@@ -48,12 +48,12 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
 })
 
 if (isBuild) {
+  const assetsDir = path.resolve(testDir, 'dist/assets')
   // assert correct files
   test('inlined code generation', async () => {
-    const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
     // should have 3 worker chunk
-    expect(files.length).toBe(4)
+    expect(files.length).toBe(5)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -71,5 +71,16 @@ if (isBuild) {
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
+  })
+
+  test('new url import worker need bundle', () => {
+    const files = fs.readdirSync(assetsDir)
+    const urlworker = files.find((f) => f.includes('url-worker'))
+    const workerContent = fs.readFileSync(
+      path.resolve(assetsDir, urlworker),
+      'utf-8'
+    )
+    // need bundled with iife
+    expect(workerContent.startsWith('(function(){')).toBe(true)
   })
 }

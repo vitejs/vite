@@ -70,4 +70,12 @@
   function text(el, text) {
     document.querySelector(el).textContent = text
   }
+
+  // url import worker
+  const w = new Worker(new URL('./newUrl/url-worker.js', import.meta.url), {
+    type: 'module',
+  });
+  w.addEventListener('message', (ev) =>
+    document.body.append(JSON.stringify(ev.data))
+  );
 </script>
