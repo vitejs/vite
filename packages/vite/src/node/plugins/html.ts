@@ -306,7 +306,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         for (const attr of assetUrls) {
           const value = attr.value!
-          const content = value?.content || ''
+          const content = value.content
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
@@ -321,8 +321,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   : await urlToBuiltUrl(content, id, config, this)
 
               s.overwrite(
-                value?.loc?.start?.offset || 0,
-                value?.loc?.end?.offset || 0,
+                value.loc.start.offset,
+                value.loc.end.offset,
                 `"${url}"`
               )
             } catch (e) {
