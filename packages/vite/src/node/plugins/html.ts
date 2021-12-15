@@ -304,7 +304,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const namedOutput = Object.keys(config?.build?.rollupOptions?.input || {});
         for (const attr of assetUrls) {
           const value = attr.value;
-          const content = value.content || '';
+          const content = value?.content || '';
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
@@ -313,14 +313,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             try {
               const url =
                 attr.name === 'srcset'
-                  ? await processSrcSet(value.content, ({ url }) =>
+                  ? await processSrcSet(content, ({ url }) =>
                       urlToBuiltUrl(url, id, config, this)
                     )
-                  : await urlToBuiltUrl(value.content, id, config, this)
+                  : await urlToBuiltUrl(content, id, config, this)
 
               s.overwrite(
-                value.loc.start.offset,
-                value.loc.end.offset,
+                value?.loc?.start?.offset || 0,
+                value?.loc?.end?.offset || 0,
                 `"${url}"`
               )
             } catch (e) {
