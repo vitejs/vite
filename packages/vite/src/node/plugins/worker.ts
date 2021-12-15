@@ -77,10 +77,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           // inline as blob data url
           return `const encodedJs = "${content.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
+            export default function WorkerWrapper(workerOptions) {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
+                return objURL ? new Worker(objURL) : new Worker(
+                  "data:application/javascript;base64," + encodedJs,
+                  Object.assign({ type: "module" }, workerOptions)
+                );
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
@@ -105,12 +108,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
-      const workerOptions = { type: 'module' }
 
-      return `export default function WorkerWrapper() {
-        return new ${workerConstructor}(${JSON.stringify(
-        url
-      )}, ${JSON.stringify(workerOptions, null, 2)})
+      return `export default function WorkerWrapper(workerOptions) {
+        return new ${workerConstructor}(
+          ${JSON.stringify(url)},
+          Object.assign({ type: "module" }, workerOptions)
+        )
       }`
     }
   }
