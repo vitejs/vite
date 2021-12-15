@@ -357,7 +357,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
