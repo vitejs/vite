@@ -22,6 +22,11 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
+test('worker options', async () => {
+  await page.click('.ping-classic')
+  await untilUpdated(() => page.textContent('.pong-classic'), 'pong')
+})
+
 const waitSharedWorkerTick = (
   (resolvedSharedWorkerCount: number) => async (page: Page) => {
     await untilUpdated(async () => {

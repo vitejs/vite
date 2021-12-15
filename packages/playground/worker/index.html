@@ -7,6 +7,9 @@
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
 
+<button class="ping-classic">Ping Classic Worker</button>
+<div>Response from classic worker: <span class="pong-classic"></span></div>
+
 <button class="ping-ts-output">Ping Possible Compiled TS Worker</button>
 <div>
   Response from worker imported from code that might be compiled TS:
@@ -22,6 +25,7 @@
 <script type="module">
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
+  import ClassicWorker from './classic-worker?worker'
   import SharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
@@ -45,6 +49,15 @@
 
   document.querySelector('.ping-inline').addEventListener('click', () => {
     inlineWorker.postMessage('ping')
+  })
+
+  const classicWorker = new ClassicWorker({ type: 'classic' })
+  classicWorker.addEventListener('message', (e) => {
+    text('.pong-classic', e.data)
+  })
+
+  document.querySelector('.ping-classic').addEventListener('click', () => {
+    classicWorker.postMessage('ping')
   })
 
   const sharedWorker = new SharedWorker()
