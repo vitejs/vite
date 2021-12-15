@@ -19,6 +19,9 @@
   <span class="tick-count">0</span>
 </div>
 
+<p>new Worker(new Url(import.meta.url))</p>
+<div class="worker-import-meta-url"></div>
+
 <script type="module">
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
@@ -73,9 +76,20 @@
 
   // url import worker
   const w = new Worker(new URL('./newUrl/url-worker.js', import.meta.url), {
-    type: 'module',
-  });
+    type: 'module'
+  })
   w.addEventListener('message', (ev) =>
-    document.body.append(JSON.stringify(ev.data))
-  );
+    text(
+      '.worker-import-meta-url',
+      'worker import.meta.url' + JSON.stringify(ev.data)
+    )
+  )
+
+  // const pattern = 'newUrl'
+  // const w2 = new Worker(new URL(`./${pattern}/url-worker.js`, import.meta.url), {
+  //   type: 'module',
+  // });
+  // w2.addEventListener('message', (ev) =>
+  //   document.body.append('string pattern worker import.meta.url', JSON.stringify(ev.data))
+  // );
 </script>

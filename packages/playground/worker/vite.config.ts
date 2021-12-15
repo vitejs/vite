@@ -1,7 +1,7 @@
-import { defineConfig } from "vite"
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    assetsInlineLimit: 200,
+    assetsInlineLimit: 200
   }
 })
