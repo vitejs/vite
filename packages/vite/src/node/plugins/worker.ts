@@ -1,3 +1,5 @@
+
+import fs from 'fs'
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
@@ -5,9 +7,16 @@ import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
-import { ENV_PUBLIC_PATH } from '../constants'
+import { ENV_PUBLIC_PATH, ENV_ENTRY } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+
+function loadEnvScript(): string {
+  const script = fs.readFileSync(ENV_ENTRY, 'utf-8');
+  return script.replace(/\n\/\/# sourceMappingURL=.*\n/, '\n');
+}
+
+console.log(loadEnvScript())
 
 function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
@@ -80,8 +89,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper(workerOptions) {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL) : new Worker(
-                  "data:application/javascript;base64," + encodedJs,
+                return new Worker(
+                  objURL || ("data:application/javascript;base64," + encodedJs),
                   Object.assign({ type: "module" }, workerOptions)
                 );
               } finally {
