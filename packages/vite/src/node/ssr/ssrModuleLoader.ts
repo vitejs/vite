@@ -217,7 +217,7 @@ async function nodeImport(
     const resolved = tryNodeResolve(id, importer, options, false)
     if (!resolved) {
       if (path.isAbsolute(id)) {
-        return id;
+        return id
       }
       const err: any = new Error(
         `Cannot find module '${id}' imported from '${importer}'`
