@@ -1,5 +1,4 @@
 
-import fs from 'fs'
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
@@ -7,16 +6,9 @@ import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import Rollup from 'rollup'
-import { ENV_PUBLIC_PATH, ENV_ENTRY } from '../constants'
+import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-
-function loadEnvScript(): string {
-  const script = fs.readFileSync(ENV_ENTRY, 'utf-8');
-  return script.replace(/\n\/\/# sourceMappingURL=.*\n/, '\n');
-}
-
-console.log(loadEnvScript())
 
 function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
@@ -27,6 +19,7 @@ function parseWorkerRequest(id: string): Record<string, string> | null {
 }
 
 const WorkerFileId = 'worker_file'
+const ClassicWorkerQuery = 'classic'
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -49,8 +42,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     async transform(_, id) {
       const query = parseWorkerRequest(id)
       if (query && query[WorkerFileId] != null) {
-        return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + _
+        if (query[ClassicWorkerQuery] != null) {
+          return {
+            code: `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)})\n` + _
+          }
+        } else {
+          return {
+            code: `import '${ENV_PUBLIC_PATH}'\n` + _
+          }
         }
       }
       if (
@@ -60,7 +59,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      let url: string
+      const workerConstructor =
+        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
@@ -97,33 +98,40 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
             }`
-        } else {
+        } else { // isBuild: true, inline: false
           const basename = path.parse(cleanUrl(id)).name
           const contentHash = getAssetHash(content)
           const fileName = path.posix.join(
             config.build.assetsDir,
             `${basename}.${contentHash}.js`
           )
-          url = `__VITE_ASSET__${this.emitFile({
+          const url = `__VITE_ASSET__${this.emitFile({
             fileName,
             type: 'asset',
             source: code
           })}__`
+
+          return `export default function WorkerWrapper(workerOptions) {
+            return new ${workerConstructor}(
+              ${JSON.stringify(url)},
+              Object.assign({ type: "module" }, workerOptions)
+            )
+          }`
         }
-      } else {
-        url = await fileToUrl(cleanUrl(id), config, this)
+      } else { // isBuild: false
+        let url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WorkerFileId)
+
+        return `export default function WorkerWrapper(workerOptions) {
+          workerOptions = Object.assign({ type: "module" }, workerOptions)
+          let url = ${JSON.stringify(url)}
+          if (workerOptions.type !== "module") {
+            url += ${JSON.stringify('&' + ClassicWorkerQuery)}
+          }
+          return new ${workerConstructor}(url, workerOptions)
+        }`
       }
 
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
-
-      return `export default function WorkerWrapper(workerOptions) {
-        return new ${workerConstructor}(
-          ${JSON.stringify(url)},
-          Object.assign({ type: "module" }, workerOptions)
-        )
-      }`
     }
   }
 }
