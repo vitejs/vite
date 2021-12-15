@@ -301,10 +301,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(config?.build?.rollupOptions?.input || {});
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {}
+        )
         for (const attr of assetUrls) {
-          const value = attr.value;
-          const content = value?.content || '';
+          const value = attr.value!
+          const content = value?.content || ''
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
