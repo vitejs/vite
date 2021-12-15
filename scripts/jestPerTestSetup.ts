@@ -70,8 +70,7 @@ beforeAll(async () => {
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      const playgroundRoot = resolve(__dirname, '../packages/playground')
-      tempDir = resolve(__dirname, '../packages/temp/', testName)
+      tempDir = resolve(__dirname, '../temp/', testName)
 
       // when `root` dir is present, use it as vite's root
       const testCustomRoot = resolve(tempDir, 'root')

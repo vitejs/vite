@@ -8,4 +8,4 @@ LICENSE.md
 .prettierignore
 pnpm-lock.yaml
 pnpm-workspace.yaml
-packages/playground/tsconfig-json-load-error/has-error/tsconfig.json
+playground/tsconfig-json-load-error/has-error/tsconfig.json

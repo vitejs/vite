@@ -2,7 +2,7 @@
   "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
   "labels": ["dependencies"],
   "ignorePaths": [
-    "packages/playground/**",
+    "playground/**",
     "packages/create-vite/template-*/**",
     "**/__tests__/**"
   ],

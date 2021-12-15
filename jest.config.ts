@@ -14,11 +14,11 @@ const config: Config.InitialOptions = {
   watchPathIgnorePatterns: ['<rootDir>/packages/temp'],
   modulePathIgnorePatterns: ['<rootDir>/packages/temp'],
   moduleNameMapper: {
-    testUtils: '<rootDir>/packages/playground/testUtils.ts'
+    testUtils: '<rootDir>/playground/testUtils.ts'
   },
   globals: {
     'ts-jest': {
-      tsconfig: './packages/playground/tsconfig.json'
+      tsconfig: './playground/tsconfig.json'
     }
   }
 }

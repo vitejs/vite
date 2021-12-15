@@ -33,7 +33,7 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
     const console = this.global.console
     const warn = console.warn
     console.warn = (msg, ...args) => {
-      if (!msg.includes('@vue/compiler-sfc')) {
+      if (!msg.includes('@vue/')) {
         warn.call(console, msg, ...args)
       }
     }
