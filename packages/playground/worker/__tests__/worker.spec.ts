@@ -66,7 +66,9 @@ if (isBuild) {
       path.resolve(assetsDir, worker),
       'utf-8'
     )
-    const importMetaUrlWorker = files.find((f) => f.includes('import-meta-url-worker'))
+    const importMetaUrlWorker = files.find((f) =>
+      f.includes('import-meta-url-worker')
+    )
     const importMetaUrlWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, importMetaUrlWorker),
       'utf-8'
