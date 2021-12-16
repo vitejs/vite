@@ -76,7 +76,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
       return null
     }
 
-    const name = getJSXIdentifier(node)
+    const name = getJSXIdentifier(node, true)
     if (name != null) {
       return name
     }
@@ -152,9 +152,9 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     return children
   }
 
-  function getJSXIdentifier(node: any) {
+  function getJSXIdentifier(node: any, tag = false) {
     //TODO: JSXNamespacedName
-    if (t.isIdentifier(node)) {
+    if (t.isIdentifier(node) && (!tag || node.name.match(/^[A-Z]/))) {
       return t.jsxIdentifier(node.name)
     }
     if (t.isStringLiteral(node)) {
