@@ -59,12 +59,12 @@
   sharedWorker.port.start()
 
   const tsOutputWorker = new TSOutputWorker()
-  worker.addEventListener('message', (e) => {
+  tsOutputWorker.addEventListener('message', (e) => {
     text('.pong-ts-output', e.data.msg)
   })
 
   document.querySelector('.ping-ts-output').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
+    tsOutputWorker.postMessage('ping')
   })
 
   function text(el, text) {
