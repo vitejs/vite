@@ -130,6 +130,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             } else {
               url = await fileToUrl(cleanUrl(file), config, this)
               url = injectQuery(url, WorkerFileId)
+              url = JSON.stringify(url)
             }
             s.overwrite(start, end, url)
           })
