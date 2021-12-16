@@ -169,7 +169,7 @@ declare module '*.pdf' {
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
-    new (): Worker
+    new (workerOptions?: WorkerOptions): Worker
   }
   export default workerConstructor
 }

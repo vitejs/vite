@@ -44,7 +44,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (query && query[WorkerFileId] != null) {
         if (query[ClassicWorkerQuery] != null) {
           return {
-            code: `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)})\n` + _
+            code: `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)});\n` + _
           }
         } else {
           return {
