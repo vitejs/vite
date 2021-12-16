@@ -47,8 +47,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const query = parseWorkerRequest(id)
       if (query && query[WorkerFileId] != null) {
         // For classic workers where `import` is unavailable, we use `importScripts` to inject env.
-        // Note that `importScripts` is not suitable for module workers, because imported modules
-        // would be executed before the env script.
         const importEnvCode =
           query[ClassicWorkerQuery] != null ? classicImportEnv : esImportEnv
         return {
