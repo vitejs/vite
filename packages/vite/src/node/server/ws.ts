@@ -114,6 +114,9 @@ export function createWebSocketServer(
 
     close() {
       return new Promise((resolve, reject) => {
+        wss.clients.forEach((client) => {
+          client.terminate()
+        })
         wss.close((err) => {
           if (err) {
             reject(err)
