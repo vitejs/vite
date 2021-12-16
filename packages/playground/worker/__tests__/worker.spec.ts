@@ -53,7 +53,7 @@ if (isBuild) {
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
     // should have 3 worker chunk
-    expect(files.length).toBe(5)
+    expect(files.length).toBe(6)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
