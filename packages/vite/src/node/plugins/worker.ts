@@ -53,26 +53,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        // bundle the file as entry to support imports
-        const rollup = require('rollup') as typeof Rollup
-        const bundle = await rollup.rollup({
-          input: cleanUrl(id),
-          plugins: await resolvePlugins({ ...config }, [], [], []),
-          onwarn(warning, warn) {
-            onRollupWarning(warning, warn, config)
-          }
-        })
-        let code: string
-        try {
-          const { output } = await bundle.generate({
-            format: 'iife',
-            sourcemap: config.build.sourcemap
-          })
-          code = output[0].code
-        } finally {
-          await bundle.close()
-        }
-        const content = Buffer.from(code)
+        const { code, content } = await bundleWorkerEntry(id, config)
         if (query.inline != null) {
           // inline as blob data url
           return `const encodedJs = "${content.toString('base64')}";
@@ -114,4 +95,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }`
     }
   }
+}
+
+export async function bundleWorkerEntry(
+  id: string,
+  config: ResolvedConfig
+): Promise<{ code: string; content: Buffer }> {
+  // bundle the file as entry to support imports
+  const rollup = require('rollup') as typeof Rollup
+  const bundle = await rollup.rollup({
+    input: cleanUrl(id),
+    plugins: await resolvePlugins({ ...config }, [], [], []),
+    onwarn(warning, warn) {
+      onRollupWarning(warning, warn, config)
+    }
+  })
+  let code: string
+  try {
+    const { output } = await bundle.generate({
+      format: 'iife',
+      sourcemap: config.build.sourcemap
+    })
+    code = output[0].code
+  } finally {
+    await bundle.close()
+  }
+  return { code, content: Buffer.from(code) }
 }

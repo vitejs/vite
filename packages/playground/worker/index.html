@@ -4,6 +4,13 @@
   Response from worker: <span class="pong"></span><span class="mode"></span>
 </div>
 
+<button class="ping-import-meta-url">Ping Import Meta Url Worker</button>
+<div>
+  Response from import meta url worker:
+  <span class="pong-import-meta-url"></span>
+  <span class="mode-import-meta-url"></span>
+</div>
+
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
 
@@ -20,7 +27,7 @@
 </div>
 
 <script type="module">
-  import Worker from './my-worker?worker'
+  import MyWorker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
   import SharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
@@ -28,7 +35,7 @@
 
   document.querySelector('.mode-true').textContent = mode
 
-  const worker = new Worker()
+  const worker = new MyWorker()
   worker.addEventListener('message', (e) => {
     text('.pong', e.data.msg)
     text('.mode', e.data.mode)
@@ -36,6 +43,21 @@
 
   document.querySelector('.ping').addEventListener('click', () => {
     worker.postMessage('ping')
+  })
+
+  const importMetaUrlWorker = new Worker(
+    new URL(`./my-worker.ts`, import.meta.url),
+    {
+      type: 'module'
+    }
+  )
+  importMetaUrlWorker.addEventListener('message', (e) => {
+    text('.pong-import-meta-url', e.data.msg)
+    text('.mode-import-meta-url', e.data.mode)
+  })
+
+  document.querySelector('.ping-import-meta-url').addEventListener('click', () => {
+    importMetaUrlWorker.postMessage('ping')
   })
 
   const inlineWorker = new InlineWorker()
@@ -59,12 +81,12 @@
   sharedWorker.port.start()
 
   const tsOutputWorker = new TSOutputWorker()
-  worker.addEventListener('message', (e) => {
+  tsOutputWorker.addEventListener('message', (e) => {
     text('.pong-ts-output', e.data.msg)
   })
 
   document.querySelector('.ping-ts-output').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
+    tsOutputWorker.postMessage('ping')
   })
 
   function text(el, text) {

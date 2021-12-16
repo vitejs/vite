@@ -78,14 +78,6 @@ importers:
       vitepress: 0.20.1
       yorkie: 2.0.0
 
-  packages/create-app:
-    specifiers:
-      create-vite: latest
-      kolorist: ^1.5.0
-    dependencies:
-      create-vite: link:../create-vite
-      kolorist: 1.5.0
-
   packages/create-vite:
     specifiers:
       kolorist: ^1.5.0

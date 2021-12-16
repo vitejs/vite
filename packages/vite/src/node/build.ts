@@ -39,6 +39,7 @@ import { isCSSRequest } from './plugins/css'
 import { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
+import { workerImportMetaUrlPlugin } from './plugins/workerImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
 
@@ -355,6 +356,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
+      workerImportMetaUrlPlugin(config),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
