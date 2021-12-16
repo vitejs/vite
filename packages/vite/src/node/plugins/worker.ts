@@ -20,6 +20,11 @@ function parseWorkerRequest(id: string): Record<string, string> | null {
 const WorkerFileId = 'worker_file'
 const ClassicWorkerQuery = 'classic'
 
+const esImportEnv = `import ${JSON.stringify(ENV_PUBLIC_PATH)}\n`
+const classicImportEnv = `self.importScripts(${JSON.stringify(
+  ENV_PUBLIC_PATH
+)});\n`
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
@@ -41,15 +46,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     async transform(_, id) {
       const query = parseWorkerRequest(id)
       if (query && query[WorkerFileId] != null) {
-        if (query[ClassicWorkerQuery] != null) {
-          return {
-            code:
-              `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)});\n` + _
-          }
-        } else {
-          return {
-            code: `import '${ENV_PUBLIC_PATH}'\n` + _
-          }
+        // For classic workers where `import` is unavailable, we use `importScripts` to inject env.
+        // Note that `importScripts` is not suitable for module workers, because imported modules
+        // would be executed before the env script.
+        const importEnvCode =
+          query[ClassicWorkerQuery] != null ? classicImportEnv : esImportEnv
+        return {
+          code: importEnvCode + _
         }
       }
       if (
