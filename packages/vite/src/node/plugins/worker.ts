@@ -1,4 +1,3 @@
-
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
@@ -44,7 +43,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (query && query[WorkerFileId] != null) {
         if (query[ClassicWorkerQuery] != null) {
           return {
-            code: `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)});\n` + _
+            code:
+              `self.importScripts(${JSON.stringify(ENV_PUBLIC_PATH)});\n` + _
           }
         } else {
           return {
@@ -98,7 +98,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
             }`
-        } else { // isBuild: true, inline: false
+        } else {
+          // isBuild: true, inline: false
           const basename = path.parse(cleanUrl(id)).name
           const contentHash = getAssetHash(content)
           const fileName = path.posix.join(
@@ -118,7 +119,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             )
           }`
         }
-      } else { // isBuild: false
+      } else {
+        // isBuild: false
         let url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WorkerFileId)
 
@@ -131,7 +133,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           return new ${workerConstructor}(url, workerOptions)
         }`
       }
-
     }
   }
 }
