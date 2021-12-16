@@ -169,7 +169,7 @@
   text('.unicode-url', unicodeUrl)
 
   // const url = new URL('non_existent_file.png', import.meta.url)
-  const metaUrl = new URL('./nested/asset.png', import.meta.url)
+  const metaUrl = new window.URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
   /**
