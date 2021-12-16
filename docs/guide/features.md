@@ -336,13 +336,26 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-The worker script can also use `import` statements instead of `importScripts()` - note during dev this relies on browser native support and currently only works in Chrome, but for the production build it is compiled away.
-
 By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker as base64 strings, add the `inline` query:
 
 ```js
 import MyWorker from './worker?worker&inline'
 ```
+
+The custom worker constructor accepts an optional parameter `options`. It will be passed as the second parameter to the [`Worker`](http://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker) constructor, with the caveat that the default value of field `type` is `"module"`, so if you wish to create a classic worker, `{ type: "classic" }` must be explicity passed:
+
+```js
+import MyClassicWorker from './classic-worker?worker'
+
+const worker = new MyClassicWorker({ type: 'classic' })
+```
+
+### Worker Type Comparisons
+
+|                      | Can use `import` | Browser Support During Development                                                              | Browser Support of Production Build |
+| -------------------- | ---------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `"module"` (default) | Yes              | Safari 15+ and Chrome ([caniuse](https://caniuse.com/mdn-api_worker_worker_ecmascript_modules)) | All                                 |
+| `"classic"`          | No               | All                                                                                             | All                                 |
 
 ## Build Optimizations
 
