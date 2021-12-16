@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { getAssetHash } from './asset'
 import { ResolvedConfig } from '../config'
-import { cleanUrl, multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 import { bundleWorkerEntry } from './worker'
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {

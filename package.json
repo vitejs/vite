@@ -80,5 +80,8 @@
       "vite": "workspace:*",
       "@vitejs/plugin-vue": "workspace:*"
     }
+  },
+  "dependencies": {
+    "jest-environment-node": "^27.4.4"
   }
 }

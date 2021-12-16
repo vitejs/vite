@@ -46,7 +46,7 @@
   })
 
   const importMetaUrlWorker = new Worker(
-    new URL(`./my-worker.ts`, import.meta.url),
+    new URL(`./import-meta-url-worker.ts`, import.meta.url),
     {
       type: 'module'
     }

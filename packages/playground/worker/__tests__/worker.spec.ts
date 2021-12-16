@@ -47,13 +47,18 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
+test('new URL(workerUrl, import.meta.url)', async () => {
+  await page.click('.ping-import-meta-url')
+  await untilUpdated(() => page.textContent('.pong-import-meta-url'), 'pong')
+})
+
 if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 3 worker chunk
-    expect(files.length).toBe(4)
+    // should have 4 worker chunk
+    expect(files.length).toBe(5)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -61,15 +66,24 @@ if (isBuild) {
       path.resolve(assetsDir, worker),
       'utf-8'
     )
+    const importMetaUrlWorker = files.find((f) => f.includes('import-meta-url-worker'))
+    const importMetaUrlWorkerContent = fs.readFileSync(
+      path.resolve(assetsDir, importMetaUrlWorker),
+      'utf-8'
+    )
 
     // worker should have all imports resolved and no exports
     expect(workerContent).not.toMatch(`import`)
     expect(workerContent).not.toMatch(`export`)
+    // import meta url worker should have all imports resolved and no exports
+    expect(importMetaUrlWorkerContent).not.toMatch(`import`)
+    expect(importMetaUrlWorkerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker("/assets`)
     expect(content).toMatch(`new SharedWorker("/assets`)
+    expect(content).toMatch(`new Worker(new URL("/assets`)
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
+    expect(content).toMatch(`(window.URL || window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
   })
 }
