@@ -170,6 +170,21 @@ const createNodeConfig = (isProduction) => {
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: eval('require'),`
+          },
+          // vite imports acorn.mjs while these plugins acorn.js
+          // acorn provides own instance to plugins so force rollup
+          // to not bundle acorn from plugins
+          'acorn-class-fields/index.js': {
+            src: 'require("acorn")',
+            replacement: `eval('require')('acorn')`
+          },
+          'acorn-static-class-features/index.js': {
+            src: 'require("acorn")',
+            replacement: `eval('require')('acorn')`
+          },
+          'acorn-private-class-elements/index.js': {
+            src: 'require("acorn")',
+            replacement: `eval('require')('acorn')`
           }
         }),
       commonjs({
