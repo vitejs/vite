@@ -50,6 +50,10 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
 test('new URL(workerUrl, import.meta.url)', async () => {
   await page.click('.ping-import-meta-url')
   await untilUpdated(() => page.textContent('.pong-import-meta-url'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.mode-import-meta-url'),
+    isBuild ? 'production' : 'development'
+  )
 })
 
 if (isBuild) {

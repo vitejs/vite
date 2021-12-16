@@ -6,6 +6,6 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "preview": "vite preview --port 4444"
+    "preview": "vite preview"
   }
 }
