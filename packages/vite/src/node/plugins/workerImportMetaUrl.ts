@@ -44,7 +44,7 @@ function workerImportMetaUrl(
     code.includes(`import.meta.url`)
   ) {
     const importMetaUrlRE =
-      /\bnew\s+[window.|self.]*(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+      /\bnew\s+[window\.|self\.|globalThis\.]*(Worker|SharedWorker)\s*\(\s*(new\s+[window\.|self\.|globalThis\.]*URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
     const noCommentsCode = code
       .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
       .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
