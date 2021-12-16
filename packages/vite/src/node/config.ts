@@ -666,13 +666,13 @@ function resolveBaseUrl(
 }
 
 function mergeConfigRecursively(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   rootPath: string
 ) {
-  const merged: Record<string, any> = { ...a }
-  for (const key in b) {
-    const value = b[key]
+  const merged: Record<string, any> = { ...defaults }
+  for (const key in overrides) {
+    const value = overrides[key]
     if (value == null) {
       continue
     }
@@ -710,11 +710,11 @@ function mergeConfigRecursively(
 }
 
 export function mergeConfig(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   isRoot = true
 ): Record<string, any> {
-  return mergeConfigRecursively(a, b, isRoot ? '' : '.')
+  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
 function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
