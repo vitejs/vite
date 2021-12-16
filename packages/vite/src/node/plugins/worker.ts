@@ -79,10 +79,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const content = await bundleWorkerScript(config, id)
+        const code = await bundleWorkerScript(config, id)
         if (query.inline != null) {
           // inline as blob data url
-          return `const encodedJs = "${content.toString('base64')}";
+          return `const encodedJs = "${code.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
@@ -94,7 +94,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }`
         } else {
           const basename = path.parse(cleanUrl(id)).name
-          const contentHash = getAssetHash(content)
+          const contentHash = getAssetHash(code)
           const fileName = path.posix.join(
             config.build.assetsDir,
             `${basename}.${contentHash}.js`
@@ -102,7 +102,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url = `__VITE_ASSET__${this.emitFile({
             fileName,
             type: 'asset',
-            source: _
+            source: code
           })}__`
         }
       } else {
