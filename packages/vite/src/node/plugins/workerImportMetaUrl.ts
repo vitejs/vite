@@ -1,17 +1,28 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
-import { getAssetHash } from './asset'
-import { cleanUrl } from '../utils'
+import { getAssetHash, fileToUrl } from './asset'
+import { cleanUrl, injectQuery, multilineCommentsRE, singlelineCommentsRE  } from '../utils'
 import { TransformPluginContext } from 'rollup'
 import path from 'path'
 import { bundleWorkerScript } from './worker'
-import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
+import { parse as parseUrl, URLSearchParams } from 'url'
+
+const WorkerFileId = 'worker_url_file'
 
 interface URLWithImportMetaUrl {
   start: number
   end: number
   file: string
+}
+
+function parseWorkerRequest(id: string): Record<string, string> | null {
+  const { search } = parseUrl(id)
+  if (!search) {
+    return null
+  }
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
 
 function workerImportMetaUrl(
@@ -64,27 +75,41 @@ function workerImportMetaUrl(
 }
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  const isBuild = config.command === 'build'
+
   return {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
+      const query = parseWorkerRequest(id)
+      if (query && query[WorkerFileId] != null) {
+        return {
+          code: `import '${ENV_PUBLIC_PATH}'\n` + code
+        }
+      }
       const needBundedWorkers = workerImportMetaUrl(this, code, id, options)
       if (needBundedWorkers.length) {
         const s = new MagicString(code)
         await Promise.all(
           needBundedWorkers.map(async ({ file, start, end }) => {
-            const content = await bundleWorkerScript(config, file)
-            const basename = path.parse(cleanUrl(file)).name
-            const contentHash = getAssetHash(content)
-            const fileName = path.posix.join(
-              config.build.assetsDir,
-              `${basename}.${contentHash}.js`
-            )
-            const url = `__VITE_ASSET__${this.emitFile({
-              fileName,
-              type: 'asset',
-              source: content
-            })}__`
+            let url: string
+            if (isBuild) {
+              const content = await bundleWorkerScript(config, file)
+              const basename = path.parse(cleanUrl(file)).name
+              const contentHash = getAssetHash(content)
+              const fileName = path.posix.join(
+                config.build.assetsDir,
+                `${basename}.${contentHash}.js`
+              )
+              url = `__VITE_ASSET__${this.emitFile({
+                fileName,
+                type: 'asset',
+                source: content
+              })}__`
+            } else {
+              url = await fileToUrl(cleanUrl(file), config, this)
+              url = injectQuery(url, WorkerFileId)
+            }
             s.overwrite(start, end, JSON.stringify(url))
           })
         )
