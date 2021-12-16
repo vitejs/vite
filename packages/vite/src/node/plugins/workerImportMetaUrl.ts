@@ -1,7 +1,12 @@
 import { ResolvedConfig } from '../config'
 import { Plugin } from '../plugin'
 import { getAssetHash, fileToUrl } from './asset'
-import { cleanUrl, injectQuery, multilineCommentsRE, singlelineCommentsRE  } from '../utils'
+import {
+  cleanUrl,
+  injectQuery,
+  multilineCommentsRE,
+  singlelineCommentsRE
+} from '../utils'
 import { TransformPluginContext } from 'rollup'
 import path from 'path'
 import { bundleWorkerScript } from './worker'
