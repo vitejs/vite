@@ -19,6 +19,7 @@ const WorkerFileId = 'worker_url_file'
 interface URLWithImportMetaUrl {
   start: number
   end: number
+  workerConstruct: string
   file: string
 }
 
@@ -43,14 +44,14 @@ function workerImportMetaUrl(
     code.includes(`import.meta.url`)
   ) {
     const importMetaUrlRE =
-      /\bnew\s+[window.|self.]*Worker\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+      /\bnew\s+[window.|self.]*(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
     const noCommentsCode = code
       .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
       .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
     let match: RegExpExecArray | null
     while ((match = importMetaUrlRE.exec(noCommentsCode))) {
-      const { 0: allexp, 1: exp, 2: rawUrl, index } = match
-      const urlIndex = allexp.indexOf(exp) + index
+      const { 0: allExp, 1: workerConstruct, 2: exp, 3: rawUrl, index } = match
+      const urlIndex = allExp.indexOf(exp) + index
 
       if (options?.ssr) {
         ctx.error(
@@ -70,6 +71,7 @@ function workerImportMetaUrl(
       const url = rawUrl.slice(1, -1)
       const file = path.resolve(path.dirname(id), url)
       result.push({
+        workerConstruct,
         start: urlIndex,
         end: urlIndex + exp.length,
         file
@@ -92,11 +94,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           code: `import '${ENV_PUBLIC_PATH}'\n` + code
         }
       }
-      const needBundedWorkers = workerImportMetaUrl(this, code, id, options)
-      if (needBundedWorkers.length) {
+      const needBundledWorkers = workerImportMetaUrl(this, code, id, options)
+      if (needBundledWorkers.length) {
         const s = new MagicString(code)
         await Promise.all(
-          needBundedWorkers.map(async ({ file, start, end }) => {
+          needBundledWorkers.map(async ({ file, start, end }) => {
             let url: string
             if (isBuild) {
               const content = await bundleWorkerScript(config, file)
