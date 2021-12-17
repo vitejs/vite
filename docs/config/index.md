@@ -131,9 +131,14 @@ export default defineConfig(async ({ command, mode }) => {
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 
+  ::: tip NOTE
+  For using with TypeScript, make sure to add the type declarations in the
+  `env.d.ts` or `vite-env.d.ts` file in order to pass type checking.
+  :::
+
 ### plugins
 
-- **Type:** ` (Plugin | Plugin[])[]`
+- **Type:** `(Plugin | Plugin[])[]`
 
   Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
