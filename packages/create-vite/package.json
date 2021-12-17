@@ -32,8 +32,5 @@
     "kolorist": "^1.5.0",
     "minimist": "^1.2.5",
     "prompts": "^2.4.2"
-  },
-  "devDependencies": {
-    "@types/prompts": "~2.0.14"
   }
 }

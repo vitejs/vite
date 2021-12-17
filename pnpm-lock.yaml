@@ -12,6 +12,7 @@ importers:
       '@types/fs-extra': ^9.0.13
       '@types/jest': ^27.0.3
       '@types/node': ^16.11.14
+      '@types/prompts': ^2.0.14
       '@types/semver': ^7.3.9
       '@typescript-eslint/eslint-plugin': ^5.7.0
       '@typescript-eslint/parser': ^5.7.0
@@ -47,6 +48,7 @@ importers:
       '@types/fs-extra': 9.0.13
       '@types/jest': 27.0.3
       '@types/node': 16.11.14
+      '@types/prompts': 2.0.14
       '@types/semver': 7.3.9
       '@typescript-eslint/eslint-plugin': 5.7.0_d7a0d6b59468b4d2ea38f782f4f112e3
       '@typescript-eslint/parser': 5.7.0_eslint@8.4.1+typescript@4.4.4
@@ -80,7 +82,6 @@ importers:
 
   packages/create-vite:
     specifiers:
-      '@types/prompts': ~2.0.14
       kolorist: ^1.5.0
       minimist: ^1.2.5
       prompts: ^2.4.2
@@ -88,8 +89,6 @@ importers:
       kolorist: 1.5.0
       minimist: 1.2.5
       prompts: 2.4.2
-    devDependencies:
-      '@types/prompts': 2.0.14
 
   packages/playground:
     specifiers:
