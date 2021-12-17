@@ -29,7 +29,7 @@ import {
   TextNode
 } from '@vue/compiler-dom'
 
-const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
+const htmlProxyRE = /\?html-proxy&index=(\d+)\.(js|css)$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -38,9 +38,9 @@ export const htmlProxyMap = new WeakMap<
   Map<string, Array<string>>
 >()
 
-export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
+export function htmlInlineScriptStyleProxyPlugin(config: ResolvedConfig): Plugin {
   return {
-    name: 'vite:html-inline-script-proxy',
+    name: 'vite:html-inline-script-style-proxy',
 
     resolveId(id) {
       if (htmlProxyRE.test(id)) {
@@ -162,18 +162,6 @@ function formatParseError(e: any, id: string, html: string): Error {
   return e
 }
 
-function findCssPlugin(config: ResolvedConfig) {
-  const pluginName = 'vite:css'
-  const plugin = config.plugins.find((p) => p.name === pluginName)
-  if (!plugin) {
-    throw new Error(`failed to find plugin ${pluginName}`)
-  }
-  if (!plugin.transform) {
-    throw new Error(`plugin ${pluginName} has no transform`)
-  }
-  return plugin
-}
-
 /**
  * Compiles index.html into an entry js module
  */
@@ -185,7 +173,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
-  let cssPlugin: Plugin | null = null
 
   return {
     name: 'vite:build-html',
@@ -212,7 +199,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let someScriptsAreAsync = false
         let someScriptsAreDefer = false
 
-        const resolveStyleAssetsTask: Array<Promise<any>> = []
         await traverseHtml(html, id, (node) => {
           if (node.type !== NodeTypes.ELEMENT) {
             return
@@ -302,53 +288,56 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             (prop) =>
               prop.name === 'style' &&
               prop.type === NodeTypes.ATTRIBUTE &&
-              prop.value
+              prop.value &&
+              prop.value.content.includes('url(')
           ) as AttributeNode
           if (inlineStyle) {
-            if (!cssPlugin) {
-              cssPlugin = findCssPlugin(config)
-            }
+            inlineModuleIndex++
+            const classPropsNode = node.props.find(
+              (prop) =>
+                prop.name === 'class' &&
+                prop.type === NodeTypes.ATTRIBUTE &&
+                prop.value
+            ) as AttributeNode
             const styleNode = inlineStyle.value!
-            resolveStyleAssetsTask.push(
-              Promise.resolve(
-                cssPlugin.transform!.call(this, styleNode.content, id + '.css')
-              ).then((compileResult) => {
-                if (compileResult) {
-                  const code =
-                    typeof compileResult === 'string'
-                      ? compileResult
-                      : compileResult.code || ''
-                  s.overwrite(
-                    styleNode.loc.start.offset,
-                    styleNode.loc.end.offset,
-                    `"${code}"`
-                  )
-                }
-              })
+            const code = styleNode.content!
+            const filePath = id.replace(normalizePath(config.root), '')
+            const scopedName = `__vite_inline${inlineModuleIndex}`
+            addToHTMLProxyCache(
+              config,
+              filePath,
+              inlineModuleIndex,
+              `.${scopedName}{ ${code} }`
             )
+            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+            if (classPropsNode) {
+              const classPropValue = classPropsNode.value!
+              s.remove(inlineStyle.loc.start.offset, inlineStyle.loc.end.offset)
+              s.overwrite(
+                classPropValue.loc.start.offset,
+                classPropValue.loc.end.offset,
+                `"${classPropValue.content} ${scopedName}"`
+              )
+            } else {
+              s.overwrite(
+                inlineStyle.loc.start.offset,
+                inlineStyle.loc.end.offset,
+                `class="${scopedName}"`
+              )
+            }
           }
           if (node.tag === 'style' && node.children.length) {
-            if (!cssPlugin) {
-              cssPlugin = findCssPlugin(config)
-            }
             const styleNode = node.children.pop() as TextNode
-            resolveStyleAssetsTask.push(
-              Promise.resolve(
-                cssPlugin.transform!.call(this, styleNode.content, id + '.css')
-              ).then((compileResult) => {
-                if (compileResult) {
-                  const code =
-                    typeof compileResult === 'string'
-                      ? compileResult
-                      : compileResult.code || ''
-                  s.overwrite(
-                    styleNode.loc.start.offset,
-                    styleNode.loc.end.offset,
-                    code
-                  )
-                }
-              })
+            const filePath = id.replace(normalizePath(config.root), '')
+            inlineModuleIndex++
+            addToHTMLProxyCache(
+              config,
+              filePath,
+              inlineModuleIndex,
+              styleNode.content
             )
+            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+            shouldRemove = true
           }
 
           if (shouldRemove) {
@@ -357,7 +346,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.remove(node.loc.start.offset, node.loc.end.offset)
           }
         })
-        await Promise.all(resolveStyleAssetsTask)
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
 
