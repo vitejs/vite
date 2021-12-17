@@ -55,7 +55,11 @@ function rewriteFile(file: string): void {
       const source = statement.source
       const absoluteTypePath = resolve(typesDir, source.value.slice(6))
       const relativeTypePath = slash(relative(dirname(file), absoluteTypePath))
-      str.overwrite(source.start, source.end, JSON.stringify(relativeTypePath))
+      str.overwrite(
+        source.start!,
+        source.end!,
+        JSON.stringify(relativeTypePath)
+      )
     }
   }
   writeFileSync(file, str.toString())
