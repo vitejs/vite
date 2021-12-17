@@ -9,7 +9,7 @@ import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
 
-function parseWorkerRequest(id: string): Record<string, string> | null {
+export function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
   if (!search) {
     return null

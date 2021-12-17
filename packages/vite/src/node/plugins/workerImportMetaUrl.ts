@@ -9,10 +9,9 @@ import {
 } from '../utils'
 import { TransformPluginContext } from 'rollup'
 import path from 'path'
-import { bundleWorkerEntry } from './worker'
+import { parseWorkerRequest, bundleWorkerEntry } from './worker'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
-import { parse as parseUrl, URLSearchParams } from 'url'
 
 const WorkerFileId = 'worker_url_file'
 
@@ -23,14 +22,6 @@ interface URLWithImportMetaUrl {
   file: string
 }
 
-function parseWorkerRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
-}
-
 function workerImportMetaUrl(
   ctx: TransformPluginContext,
   code: string,
@@ -39,12 +30,12 @@ function workerImportMetaUrl(
 ): URLWithImportMetaUrl[] {
   const result: URLWithImportMetaUrl[] = []
   if (
-    code.includes('new Worker') &&
+    (code.includes('new Worker') && code.includes('new ShareWorker')) &&
     code.includes('new URL') &&
     code.includes(`import.meta.url`)
   ) {
     const importMetaUrlRE =
-      /\bnew\s+[window\.|self\.|globalThis\.]*(Worker|SharedWorker)\s*\(\s*(new\s+[window\.|self\.|globalThis\.]*URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+      /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
     const noCommentsCode = code
       .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
       .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
