@@ -95,19 +95,10 @@
     }
   )
   w2.port.addEventListener('message', (ev) => {
-    console.log(w2, ev)
     text(
       '.shared-worker-import-meta-url',
       'shared-worker import.meta.url' + JSON.stringify(ev.data)
     )
   })
   w2.port.start()
-
-  // const pattern = 'newUrl'
-  // const w2 = new Worker(new URL(`./${pattern}/url-worker.js`, import.meta.url), {
-  //   type: 'module',
-  // });
-  // w2.addEventListener('message', (ev) =>
-  //   document.body.append('string pattern worker import.meta.url', JSON.stringify(ev.data))
-  // );
 </script>

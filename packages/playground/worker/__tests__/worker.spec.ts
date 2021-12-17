@@ -75,12 +75,18 @@ if (isBuild) {
 
   test('new url import worker need bundle', () => {
     const files = fs.readdirSync(assetsDir)
-    const urlworker = files.find((f) => f.includes('url-worker'))
+    const urlWorker = files.find((f) => f.includes('url-worker'))
+    const urlSharedWorker = files.find((f) => f.includes('url-shared-worker'))
     const workerContent = fs.readFileSync(
-      path.resolve(assetsDir, urlworker),
+      path.resolve(assetsDir, urlWorker),
+      'utf-8'
+    )
+    const sharedWorkerContent = fs.readFileSync(
+      path.resolve(assetsDir, urlSharedWorker),
       'utf-8'
     )
     // need bundled with iife
     expect(workerContent.startsWith('(function(){')).toBe(true)
+    expect(sharedWorkerContent.startsWith('(function(){')).toBe(true)
   })
 }
