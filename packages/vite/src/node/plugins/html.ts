@@ -38,7 +38,9 @@ export const htmlProxyMap = new WeakMap<
   Map<string, Array<string>>
 >()
 
-export function htmlInlineScriptStyleProxyPlugin(config: ResolvedConfig): Plugin {
+export function htmlInlineScriptStyleProxyPlugin(
+  config: ResolvedConfig
+): Plugin {
   return {
     name: 'vite:html-inline-script-style-proxy',
 
