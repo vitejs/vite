@@ -28,7 +28,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
       if (
-        (code.includes('new Worker') && code.includes('new ShareWorker')) &&
+        (code.includes('new Worker') || code.includes('new ShareWorker')) &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
