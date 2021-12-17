@@ -285,7 +285,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
-          // for style tag and inline style use url(...) for assets references, also generate an import
+          // <tag style="... url(...) ..."></tag>
+          // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.props.find(
             (prop) =>
               prop.name === 'style' &&
