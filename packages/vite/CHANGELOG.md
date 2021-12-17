@@ -1,3 +1,29 @@
+## [2.7.3](https://github.com/vitejs/vite/compare/v2.7.2...v2.7.3) (2021-12-16)
+
+
+### Bug Fixes
+
+* do not overwrite rollupOptions.input in dev ([#6025](https://github.com/vitejs/vite/issues/6025)) ([6cdf13a](https://github.com/vitejs/vite/commit/6cdf13ae808a99b7aca6d278bee2ebe6e51d0846))
+* Improve post-build asset update check ([#6113](https://github.com/vitejs/vite/issues/6113)) ([611fa03](https://github.com/vitejs/vite/commit/611fa037a72a1179c27794353ffad6ed27e10d1a))
+* improve warning message for malformed packages ([#6086](https://github.com/vitejs/vite/issues/6086)) ([717cb08](https://github.com/vitejs/vite/commit/717cb08f8611fd1a15cfd614d346185ffe8a61fd))
+* pending reload never timeout ([#6120](https://github.com/vitejs/vite/issues/6120)) ([e002f4f](https://github.com/vitejs/vite/commit/e002f4f4a578ae63156e756abac0487f42b4cdcd))
+* respect new port when change the config file ([#6075](https://github.com/vitejs/vite/issues/6075)) ([3ceffcc](https://github.com/vitejs/vite/commit/3ceffcca66311f9a7d71612a596b84888c3f843b))
+* **ssr:** robust regexp to check cjs content ([#6053](https://github.com/vitejs/vite/issues/6053)) ([0373441](https://github.com/vitejs/vite/commit/03734417cde10807ab2dd0d71b08c26081aac0b7))
+* terminate WebSocket connections before closing WebSocket server ([#6115](https://github.com/vitejs/vite/issues/6115)) ([b9871bb](https://github.com/vitejs/vite/commit/b9871bbed57c5964b3393e798b0ef2526471d692))
+
+
+
+## [2.7.2](https://github.com/vitejs/vite/compare/v2.7.1...v2.7.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* **html:** empty script ([#6057](https://github.com/vitejs/vite/issues/6057)) ([1487223](https://github.com/vitejs/vite/commit/1487223f39b7555b1050b660d847eabf4d20249f))
+* **lexGlobPattern:** edge case of glob import ([#6022](https://github.com/vitejs/vite/issues/6022)) ([d4c5cff](https://github.com/vitejs/vite/commit/d4c5cff551ad9fb721243f8abdbf0c78f5b5a7ec))
+* ws types ([#6083](https://github.com/vitejs/vite/issues/6083)) ([1ded1a8](https://github.com/vitejs/vite/commit/1ded1a835bfb64f2c70c8c153e979b7911c9a8c1))
+
+
+
 ## [2.7.1](https://github.com/vitejs/vite/compare/v2.7.0...v2.7.1) (2021-12-07)
 
 

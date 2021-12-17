@@ -48,6 +48,8 @@ export async function restoreJSX(
   babelRestoreJSX ||= import('./babel-restore-jsx')
 
   const result = await babel.transformAsync(code, {
+    babelrc: false,
+    configFile: false,
     ast: true,
     code: false,
     filename,

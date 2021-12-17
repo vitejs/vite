@@ -1,25 +1,30 @@
 // extend the descriptor so we can store the scopeId on it
-declare module '@vue/compiler-sfc' {
+declare module 'vue/compiler-sfc' {
   interface SFCDescriptor {
     id: string
   }
 }
 
-import * as _compiler from '@vue/compiler-sfc'
+import * as _compiler from 'vue/compiler-sfc'
 
-export let compiler: typeof _compiler
+export function resolveCompiler(root: string): typeof _compiler {
+  // resolve from project root first, then fallback to peer dep (if any)
+  const compiler =
+    tryRequire('vue/compiler-sfc', root) || tryRequire('vue/compiler-sfc')
 
-try {
-  // Vue 3.2.13+ ships the SFC compiler directly under the `vue` package
-  // making it no longer necessary to have @vue/compiler-sfc separately installed.
-  compiler = require('vue/compiler-sfc')
-} catch (e) {
-  try {
-    compiler = require('@vue/compiler-sfc')
-  } catch (e) {
+  if (!compiler) {
     throw new Error(
-      `@vitejs/plugin-vue requires vue (>=3.2.13) or @vue/compiler-sfc ` +
+      `Failed to resolve vue/compiler-sfc.\n` +
+        `@vitejs/plugin-vue requires vue (>=3.2.13) or @vue/compiler-sfc ` +
         `to be present in the dependency tree.`
     )
   }
+
+  return compiler
+}
+
+function tryRequire(id: string, from?: string) {
+  try {
+    return from ? require(require.resolve(id, { paths: [from] })) : require(id)
+  } catch (e) {}
 }
