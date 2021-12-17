@@ -7,7 +7,7 @@ import type {
   SFCStyleCompileOptions,
   SFCTemplateCompileOptions
 } from 'vue/compiler-sfc'
-import * as _compiler from 'vue/compiler-sfc'
+import type * as _compiler from 'vue/compiler-sfc'
 import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'

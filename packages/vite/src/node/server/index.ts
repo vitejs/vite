@@ -60,7 +60,7 @@ import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
-import { SourceMap } from 'rollup'
+import type { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
