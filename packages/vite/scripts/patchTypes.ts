@@ -1,11 +1,13 @@
-// @ts-check
-const fs = require('fs')
-const path = require('path')
-const chalk = require('chalk')
-const { parse } = require('@babel/parser')
-const MagicString = require('magic-string').default
-const tempDir = path.resolve(__dirname, '../temp/node')
-const typesDir = path.resolve(__dirname, '../types')
+import type { ParseResult } from '@babel/parser'
+import { parse } from '@babel/parser'
+import type { File } from '@babel/types'
+import chalk from 'chalk'
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
+import MagicString from 'magic-string'
+import { dirname, relative, resolve } from 'path'
+
+const tempDir = resolve(__dirname, '../temp/node')
+const typesDir = resolve(__dirname, '../types')
 
 // walk through the temp dts dir, find all import/export of types/*
 // and rewrite them into relative imports - so that api-extractor actually
@@ -13,18 +15,15 @@ const typesDir = path.resolve(__dirname, '../types')
 walkDir(tempDir)
 console.log(chalk.green.bold(`patched types/* imports`))
 
-function slash(p) {
+function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-/**
- * @param {string} dir
- */
-function walkDir(dir) {
-  const files = fs.readdirSync(dir)
+function walkDir(dir: string): void {
+  const files = readdirSync(dir)
   for (const file of files) {
-    const resolved = path.resolve(dir, file)
-    const isDir = fs.statSync(resolved).isDirectory()
+    const resolved = resolve(dir, file)
+    const isDir = statSync(resolved).isDirectory()
     if (isDir) {
       walkDir(resolved)
     } else {
@@ -33,13 +32,10 @@ function walkDir(dir) {
   }
 }
 
-/**
- * @param {string} file
- */
-function rewriteFile(file) {
-  const content = fs.readFileSync(file, 'utf-8')
+function rewriteFile(file: string): void {
+  const content = readFileSync(file, 'utf-8')
   const str = new MagicString(content)
-  let ast
+  let ast: ParseResult<File>
   try {
     ast = parse(content, {
       sourceType: 'module',
@@ -54,17 +50,13 @@ function rewriteFile(file) {
       (statement.type === 'ImportDeclaration' ||
         statement.type === 'ExportNamedDeclaration' ||
         statement.type === 'ExportAllDeclaration') &&
-      statement.source &&
-      statement.source.value.startsWith('types/')
+      statement.source?.value.startsWith('types/')
     ) {
       const source = statement.source
-      const absoluteTypePath = path.resolve(typesDir, source.value.slice(6))
-      const relativeTypePath = slash(
-        path.relative(path.dirname(file), absoluteTypePath)
-      )
-      // @ts-ignore
+      const absoluteTypePath = resolve(typesDir, source.value.slice(6))
+      const relativeTypePath = slash(relative(dirname(file), absoluteTypePath))
       str.overwrite(source.start, source.end, JSON.stringify(relativeTypePath))
     }
   }
-  fs.writeFileSync(file, str.toString())
+  writeFileSync(file, str.toString())
 }
