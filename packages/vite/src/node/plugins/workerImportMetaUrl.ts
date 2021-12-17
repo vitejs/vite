@@ -9,7 +9,7 @@ import {
 } from '../utils'
 import { TransformPluginContext } from 'rollup'
 import path from 'path'
-import { bundleWorkerScript } from './worker'
+import { bundleWorkerEntry } from './worker'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import { parse as parseUrl, URLSearchParams } from 'url'
@@ -101,7 +101,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           needBundledWorkers.map(async ({ file, start, end }) => {
             let url: string
             if (isBuild) {
-              const content = await bundleWorkerScript(config, file)
+              const content = await bundleWorkerEntry(config, file)
               const basename = path.parse(cleanUrl(file)).name
               const contentHash = getAssetHash(content)
               const fileName = path.posix.join(

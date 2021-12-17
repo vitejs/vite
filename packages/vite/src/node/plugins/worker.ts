@@ -19,7 +19,7 @@ function parseWorkerRequest(id: string): Record<string, string> | null {
 
 const WorkerFileId = 'worker_file'
 
-export async function bundleWorkerScript(
+export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string
 ): Promise<Buffer> {
@@ -79,7 +79,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const code = await bundleWorkerScript(config, id)
+        const code = await bundleWorkerEntry(config, id)
         if (query.inline != null) {
           // inline as blob data url
           return `const encodedJs = "${code.toString('base64')}";
