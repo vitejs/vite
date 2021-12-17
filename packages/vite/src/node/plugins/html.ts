@@ -292,16 +292,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               prop.name === 'style' &&
               prop.type === NodeTypes.ATTRIBUTE &&
               prop.value &&
-              prop.value.content.includes('url(')
+              prop.value.content.includes('url(') // only url(...) in css need to emit file
           ) as AttributeNode
           if (inlineStyle) {
             inlineModuleIndex++
-            const classPropsNode = node.props.find(
-              (prop) =>
-                prop.name === 'class' &&
-                prop.type === NodeTypes.ATTRIBUTE &&
-                prop.value
-            ) as AttributeNode
+            // replace `inline style` to class
+            // and import css in js code
             const styleNode = inlineStyle.value!
             const code = styleNode.content!
             const filePath = id.replace(normalizePath(config.root), '')
@@ -313,7 +309,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               `.${scopedName}{ ${code} }`
             )
             js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+
             // Add the scopedName class to the tag
+            const classPropsNode = node.props.find(
+              (prop) =>
+                prop.name === 'class' &&
+                prop.type === NodeTypes.ATTRIBUTE &&
+                prop.value
+            ) as AttributeNode
             if (classPropsNode) {
               const classPropValue = classPropsNode.value!
               s.remove(inlineStyle.loc.start.offset, inlineStyle.loc.end.offset)
@@ -330,6 +333,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               )
             }
           }
+
+          // <style>...</style>
           if (node.tag === 'style' && node.children.length) {
             const styleNode = node.children.pop() as TextNode
             const filePath = id.replace(normalizePath(config.root), '')
