@@ -312,6 +312,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               `.${scopedName}{ ${code} }`
             )
             js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+            // Add the scopedName class to the tag
             if (classPropsNode) {
               const classPropValue = classPropsNode.value!
               s.remove(inlineStyle.loc.start.offset, inlineStyle.loc.end.offset)
