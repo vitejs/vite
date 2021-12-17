@@ -749,7 +749,7 @@ async function restartServer(server: ViteDevServer) {
     await server.listen(port, true)
     logger.info('server restarted.', { timestamp: true })
     if (port !== prevPort || host !== prevHost) {
-      logger.info('\n')
+      logger.info('')
       server.printUrls()
     }
   } else {
