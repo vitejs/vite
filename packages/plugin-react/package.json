@@ -33,12 +33,12 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react#readme",
   "dependencies": {
-    "@babel/core": "^7.16.0",
-    "@babel/plugin-transform-react-jsx": "^7.16.0",
-    "@babel/plugin-transform-react-jsx-development": "^7.16.0",
-    "@babel/plugin-transform-react-jsx-self": "^7.16.0",
-    "@babel/plugin-transform-react-jsx-source": "^7.16.0",
-    "@rollup/pluginutils": "^4.1.1",
+    "@babel/core": "^7.16.5",
+    "@babel/plugin-transform-react-jsx": "^7.16.5",
+    "@babel/plugin-transform-react-jsx-development": "^7.16.5",
+    "@babel/plugin-transform-react-jsx-self": "^7.16.5",
+    "@babel/plugin-transform-react-jsx-source": "^7.16.5",
+    "@rollup/pluginutils": "^4.1.2",
     "react-refresh": "^0.11.0",
     "resolve": "^1.20.0"
   }
