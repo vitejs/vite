@@ -80,6 +80,7 @@ importers:
 
   packages/create-vite:
     specifiers:
+      '@types/prompts': ~2.0.14
       kolorist: ^1.5.0
       minimist: ^1.2.5
       prompts: ^2.4.2
@@ -87,6 +88,8 @@ importers:
       kolorist: 1.5.0
       minimist: 1.2.5
       prompts: 2.4.2
+    devDependencies:
+      '@types/prompts': 2.0.14
 
   packages/playground:
     specifiers:
@@ -2289,6 +2292,12 @@ packages:
 
   /@types/prettier/2.4.1:
     resolution: {integrity: sha512-Fo79ojj3vdEZOHg3wR9ksAMRz4P3S5fDB5e/YWZiFnyFQI1WY2Vftu9XoXVVtJfxB7Bpce/QTqWSSntkz2Znrw==}
+    dev: true
+
+  /@types/prompts/2.0.14:
+    resolution: {integrity: sha512-HZBd99fKxRWpYCErtm2/yxUZv6/PBI9J7N4TNFffl5JbrYMHBwF25DjQGTW3b3jmXq+9P6/8fCIb2ee57BFfYA==}
+    dependencies:
+      '@types/node': 16.11.14
     dev: true
 
   /@types/resolve/1.17.1:
