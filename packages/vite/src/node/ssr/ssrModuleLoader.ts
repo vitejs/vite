@@ -263,23 +263,34 @@ async function nodeImport(
 
   try {
     const mod = await dynamicImport(url)
-    return proxyESM(id, mod)
+    return proxyESM(mod)
   } finally {
     unhookNodeResolve()
   }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  // This is the only sensible option when the exports object is a primitve
+  if (isPrimitive(mod)) return { default: mod }
+
+  let defaultExport = 'default' in mod ? mod.default : mod
+
+  if (!isPrimitive(defaultExport) && '__esModule' in defaultExport) {
+    mod = defaultExport
+    if ('default' in defaultExport) {
+      defaultExport = defaultExport.default
+    }
+  }
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
     }
   })
+}
+
+function isPrimitive(value: any) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function')
 }

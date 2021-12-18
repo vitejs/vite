@@ -87,7 +87,7 @@ Now the `preview` method will launch the server at http://localhost:8080.
    # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
 
    # if you are deploying to https://<USERNAME>.github.io/<REPO>
-   # git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
+   # git push -f git@github.com:<USERNAME>/<REPO>.git main:gh-pages
 
    cd -
    ```
@@ -127,7 +127,7 @@ You can also run the above script in your CI setup to enable automatic deploymen
      github_token: $GITHUB_TOKEN
      keep_history: true
      on:
-       branch: master
+       branch: main
    ```
 
 ## GitLab Pages and GitLab CI
@@ -259,7 +259,7 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
    ```bash
    # publish site
-   $ git push heroku master
+   $ git push heroku main
 
    # opens a browser to view the Dashboard version of Heroku CI
    $ heroku open

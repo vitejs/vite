@@ -347,7 +347,7 @@ function walk(
               }
             })
           } else if (node.id.type === 'ArrayPattern') {
-            node.id.elements.forEach((element) => {
+            node.id.elements.filter(Boolean).forEach((element) => {
               setScope(parentFunction, (element as Identifier).name)
             })
           } else {

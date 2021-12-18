@@ -58,7 +58,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (result) {
+        if (typeof result === 'string') {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
@@ -299,27 +299,36 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // for each encountered asset url, rewrite original html so that it
-        // references the post-build location.
+        // references the post-build location, ignoring empty attributes and
+        // attributes that directly reference named output.
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {}
+        )
         for (const attr of assetUrls) {
           const value = attr.value!
-          try {
-            const url =
-              attr.name === 'srcset'
-                ? await processSrcSet(value.content, ({ url }) =>
-                    urlToBuiltUrl(url, id, config, this)
-                  )
-                : await urlToBuiltUrl(value.content, id, config, this)
+          const content = value.content
+          if (
+            content !== '' && // Empty attribute
+            !namedOutput.includes(content) && // Direct reference to named output
+            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+          ) {
+            try {
+              const url =
+                attr.name === 'srcset'
+                  ? await processSrcSet(content, ({ url }) =>
+                      urlToBuiltUrl(url, id, config, this)
+                    )
+                  : await urlToBuiltUrl(content, id, config, this)
 
-            s.overwrite(
-              value.loc.start.offset,
-              value.loc.end.offset,
-              `"${url}"`
-            )
-          } catch (e) {
-            // #1885 preload may be pointing to urls that do not exist
-            // locally on disk
-            if (e.code !== 'ENOENT') {
-              throw e
+              s.overwrite(
+                value.loc.start.offset,
+                value.loc.end.offset,
+                `"${url}"`
+              )
+            } catch (e) {
+              if (e.code !== 'ENOENT') {
+                throw e
+              }
             }
           }
         }

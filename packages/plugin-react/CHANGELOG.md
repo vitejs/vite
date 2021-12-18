@@ -1,3 +1,25 @@
+## [1.1.3](https://github.com/vitejs/vite/compare/plugin-react@1.1.2...plugin-react@1.1.3) (2021-12-13)
+
+
+### Bug Fixes
+
+* **plugin-react:** only detect preamble in hmr context ([#6096](https://github.com/vitejs/vite/issues/6096)) ([8735294](https://github.com/vitejs/vite/commit/8735294055ce16308a6b8302eba4538f4a2931d0))
+
+
+
+## [1.1.2](https://github.com/vitejs/vite/compare/plugin-react@1.1.1...plugin-react@1.1.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* ignore babel config when running restore-jsx ([#6047](https://github.com/vitejs/vite/issues/6047)) ([9c2843c](https://github.com/vitejs/vite/commit/9c2843cf0506844ee32f042a04c22c440434df2a))
+
+
+
+## [1.1.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0...plugin-react@1.1.1) (2021-12-07)
+
+
+
 # [1.1.0](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.1...plugin-react@1.1.0) (2021-11-22)
 
 

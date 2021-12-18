@@ -1,3 +1,7 @@
+## [1.6.4](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.3...plugin-legacy@1.6.4) (2021-12-07)
+
+
+
 ## [1.6.3](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.2...plugin-legacy@1.6.3) (2021-11-22)
 
 

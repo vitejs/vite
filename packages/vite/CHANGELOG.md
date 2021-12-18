@@ -1,3 +1,102 @@
+## [2.7.3](https://github.com/vitejs/vite/compare/v2.7.2...v2.7.3) (2021-12-16)
+
+
+### Bug Fixes
+
+* do not overwrite rollupOptions.input in dev ([#6025](https://github.com/vitejs/vite/issues/6025)) ([6cdf13a](https://github.com/vitejs/vite/commit/6cdf13ae808a99b7aca6d278bee2ebe6e51d0846))
+* Improve post-build asset update check ([#6113](https://github.com/vitejs/vite/issues/6113)) ([611fa03](https://github.com/vitejs/vite/commit/611fa037a72a1179c27794353ffad6ed27e10d1a))
+* improve warning message for malformed packages ([#6086](https://github.com/vitejs/vite/issues/6086)) ([717cb08](https://github.com/vitejs/vite/commit/717cb08f8611fd1a15cfd614d346185ffe8a61fd))
+* pending reload never timeout ([#6120](https://github.com/vitejs/vite/issues/6120)) ([e002f4f](https://github.com/vitejs/vite/commit/e002f4f4a578ae63156e756abac0487f42b4cdcd))
+* respect new port when change the config file ([#6075](https://github.com/vitejs/vite/issues/6075)) ([3ceffcc](https://github.com/vitejs/vite/commit/3ceffcca66311f9a7d71612a596b84888c3f843b))
+* **ssr:** robust regexp to check cjs content ([#6053](https://github.com/vitejs/vite/issues/6053)) ([0373441](https://github.com/vitejs/vite/commit/03734417cde10807ab2dd0d71b08c26081aac0b7))
+* terminate WebSocket connections before closing WebSocket server ([#6115](https://github.com/vitejs/vite/issues/6115)) ([b9871bb](https://github.com/vitejs/vite/commit/b9871bbed57c5964b3393e798b0ef2526471d692))
+
+
+
+## [2.7.2](https://github.com/vitejs/vite/compare/v2.7.1...v2.7.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* **html:** empty script ([#6057](https://github.com/vitejs/vite/issues/6057)) ([1487223](https://github.com/vitejs/vite/commit/1487223f39b7555b1050b660d847eabf4d20249f))
+* **lexGlobPattern:** edge case of glob import ([#6022](https://github.com/vitejs/vite/issues/6022)) ([d4c5cff](https://github.com/vitejs/vite/commit/d4c5cff551ad9fb721243f8abdbf0c78f5b5a7ec))
+* ws types ([#6083](https://github.com/vitejs/vite/issues/6083)) ([1ded1a8](https://github.com/vitejs/vite/commit/1ded1a835bfb64f2c70c8c153e979b7911c9a8c1))
+
+
+
+## [2.7.1](https://github.com/vitejs/vite/compare/v2.7.0...v2.7.1) (2021-12-07)
+
+
+### Bug Fixes
+
+* **ssr:** `ssrTransform` handling for empty ArrayPattern ([#5988](https://github.com/vitejs/vite/issues/5988)) ([79aa687](https://github.com/vitejs/vite/commit/79aa68744cf17553448bce5c175a25f785e4a743))
+
+
+
+# [2.7.0](https://github.com/vitejs/vite/compare/v2.7.0-beta.11...v2.7.0) (2021-12-07)
+
+- 🎉 Revamped SSR dependency handling
+- 🧩 API consolidation
+- 🛑 server.fs.strict by default
+
+### BREAKING CHANGES
+
+- `server.fs.strict` is `true` by default ([#5341](https://github.com/vitejs/vite/pull/5341))
+  See [server filesystem restriction docs](https://vitejs.dev/config/#server-fs-strict) for more details.
+- Plugin hooks `ssr` param to object in `resolveId`, `load`, and `transform` ([#5253](https://github.com/vitejs/vite/pull/5253))
+  Previous to this release, the `ssr` param was passed as a `boolean` in the last parameter of each hook. The new interface for these hooks is now:
+  ```ts
+  export interface Plugin extends RollupPlugin {
+    // ... other hooks
+    resolveId?(this: PluginContext, source: string, importer: string | undefined, options: {
+        custom?: CustomPluginOptions;
+        ssr?: boolean;
+    }): Promise<ResolveIdResult> | ResolveIdResult;
+    load?(this: PluginContext, id: string, options?: {
+        ssr?: boolean;
+    }): Promise<LoadResult> | LoadResult;
+    transform?(this: TransformPluginContext, code: string, id: string, options?: {
+        ssr?: boolean;
+    }): Promise<TransformResult> | TransformResult;
+  }
+  ```
+  In your plugins, you can check if the last param is a boolean or an object to be backward compatible with 2.6 and give some time to users to migrate to Vite 2.7.
+- `server.pluginContainer` options object for `resolveId`, `load`, and `transform` ([#5294](https://github.com/vitejs/vite/pull/5294))
+- Normalize scripts and commands naming ([#5207](https://github.com/vitejs/vite/pull/5207))
+  Adds a new `vite dev` command alias for `vite serve`, preparing for the new release of create-vite where package scripts are renamed to `dev`, `build`, and `preview`.
+- Align experimental `preview` api ([#5407](https://github.com/vitejs/vite/pull/5407))
+  This API was first introduced in 2.6 and it is still in flux.
+- resolve `rollupOptions.input` paths ([#5601](https://github.com/vitejs/vite/pull/5601))
+
+### Features
+
+* expose `ssrTransform` to server ([#5983](https://github.com/vitejs/vite/issues/5983)) ([8184feb](https://github.com/vitejs/vite/commit/8184feba29c6a89d58bc4437977d22658e946e0c))
+
+
+
+# [2.7.0-beta.11](https://github.com/vitejs/vite/compare/v2.7.0-beta.10...v2.7.0-beta.11) (2021-12-06)
+
+
+### Bug Fixes
+
+* **ssr:** allow primitive default exports and forwarded exports ([#5973](https://github.com/vitejs/vite/issues/5973)) ([a47b663](https://github.com/vitejs/vite/commit/a47b663ad06af8c5bf87128035f6b112de0ecd16))
+
+
+
+# [2.7.0-beta.10](https://github.com/vitejs/vite/compare/v2.7.0-beta.9...v2.7.0-beta.10) (2021-12-02)
+
+
+### Bug Fixes
+
+* invalidate inlined proxy scripts on change ([#5891](https://github.com/vitejs/vite/issues/5891)) ([5b8c58b](https://github.com/vitejs/vite/commit/5b8c58bf9d2fe141cea9bde9492ccbedf9b76213))
+* read the correct package.json in ssrExternal ([#5927](https://github.com/vitejs/vite/issues/5927)) ([7edabb4](https://github.com/vitejs/vite/commit/7edabb46de3ce63e078e0cda7cd3ed9e5cdd0f2a)), closes [#5890](https://github.com/vitejs/vite/issues/5890)
+* **resolve:** dont overwrite `isRequire` from `baseOptions` ([#5872](https://github.com/vitejs/vite/issues/5872)) ([2b91e5a](https://github.com/vitejs/vite/commit/2b91e5aadaee0947eb9864367ae85762573a8dc4))
+* **scan:** handle local scripts with lang=ts ([#5850](https://github.com/vitejs/vite/issues/5850)) ([7ed8702](https://github.com/vitejs/vite/commit/7ed870273206b5e9dcedda6f0149b7b3324dea45))
+* SSR import in dev can't resolve default import (fix [#5706](https://github.com/vitejs/vite/issues/5706)) ([#5923](https://github.com/vitejs/vite/issues/5923)) ([21d79d7](https://github.com/vitejs/vite/commit/21d79d753af145f2c7ebb7dd5b0b1a4a298f96c5))
+* **ssr:** skip dedupe require if noExternal true ([#5928](https://github.com/vitejs/vite/issues/5928)) ([f6aa7fe](https://github.com/vitejs/vite/commit/f6aa7fe401737ef584ccf34b6042a32b8e5e8c5d))
+
+
+
 # [2.7.0-beta.9](https://github.com/vitejs/vite/compare/v2.7.0-beta.8...v2.7.0-beta.9) (2021-11-27)
 
 
@@ -127,35 +226,6 @@
 
 
 # [2.7.0-beta.0](https://github.com/vitejs/vite/compare/v2.6.13...v2.7.0-beta.0) (2021-10-28)
-
-
-### BREAKING CHANGES
-
-- `server.fs.strict` is `true` by default ([#5341](https://github.com/vitejs/vite/pull/5341))
-  See [server filesystem restriction docs](https://vitejs.dev/config/#server-fs-strict) for more details.
-- Plugin hooks `ssr` param to object in `resolveId`, `load`, and `transform` ([#5253](https://github.com/vitejs/vite/pull/5253))
-  Previous to this release, the `ssr` param was passed as a `boolean` in the last parameter of each hook. The new interface for these hooks is now:
-  ```ts
-  export interface Plugin extends RollupPlugin {
-    // ... other hooks
-    resolveId?(this: PluginContext, source: string, importer: string | undefined, options: {
-        custom?: CustomPluginOptions;
-        ssr?: boolean;
-    }): Promise<ResolveIdResult> | ResolveIdResult;
-    load?(this: PluginContext, id: string, options?: {
-        ssr?: boolean;
-    }): Promise<LoadResult> | LoadResult;
-    transform?(this: TransformPluginContext, code: string, id: string, options?: {
-        ssr?: boolean;
-    }): Promise<TransformResult> | TransformResult;
-  }
-  ```
-  In your plugins, you can check if the last param is a boolean or an object to be backward compatible with 2.6 and give some time to users to migrate to Vite 2.7.
-- `server.pluginContainer` options object for `resolveId`, `load`, and `transform` ([#5294](https://github.com/vitejs/vite/pull/5294))
-- Normalize scripts and commands naming ([#5207](https://github.com/vitejs/vite/pull/5207))
-  Adds a new `vite dev` command alias for `vite serve`, preparing for the new release of create-vite where package scripts are renamed to `dev`, `build`, and `preview`.
-- Align experimental `preview` api ([#5407](https://github.com/vitejs/vite/pull/5407))
-  This API was first introduced in 2.6 and it is still in flux.
 
 ### Bug Fixes
 

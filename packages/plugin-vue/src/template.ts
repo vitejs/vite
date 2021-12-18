@@ -10,7 +10,6 @@ import { PluginContext, TransformPluginContext } from 'rollup'
 import { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
-import { compiler } from './compiler'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -70,7 +69,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compiler.compileTemplate({
+  const result = options.compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })
@@ -111,10 +110,10 @@ export function resolveTemplateCompilerOptions(
   const { id, filename, cssVars } = descriptor
 
   let transformAssetUrls = options.template?.transformAssetUrls
-  // @vue/compiler-sfc/dist/compiler-sfc.d.ts should export `AssetURLOptions`
+  // compiler-sfc should export `AssetURLOptions`
   let assetUrlOptions //: AssetURLOptions | undefined
   if (options.devServer) {
-    // during dev, inject vite base so that @vue/compiler-sfc can transform
+    // during dev, inject vite base so that compiler-sfc can transform
     // relative paths directly to absolute paths without incurring an extra import
     // request
     if (filename.startsWith(options.root)) {

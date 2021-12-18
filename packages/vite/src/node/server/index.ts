@@ -55,6 +55,7 @@ import {
   rebindErrorStacktrace,
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
+import { ssrTransform } from '../ssr/ssrTransform'
 import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
@@ -62,6 +63,7 @@ import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
+import { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -207,6 +209,15 @@ export interface ViteDevServer {
     inMap?: object
   ): Promise<ESBuildTransformResult>
   /**
+   * Transform module code into SSR format.
+   * @experimental
+   */
+  ssrTransform(
+    code: string,
+    inMap: SourceMap | null,
+    url: string
+  ): Promise<TransformResult | null>
+  /**
    * Load a given URL as an instantiated module for SSR.
    */
   ssrLoadModule(url: string): Promise<Record<string, any>>
@@ -337,6 +348,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    ssrTransform,
     transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
@@ -708,7 +720,7 @@ export function resolveServerOptions(
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
-  const { port } = server.config.server
+  const { port: prevPort, host: prevHost } = server.config.server
 
   await server.close()
 
@@ -728,9 +740,19 @@ async function restartServer(server: ViteDevServer) {
       server[key] = newServer[key]
     }
   }
-  if (!server.config.server.middlewareMode) {
+
+  const {
+    logger,
+    server: { port, host, middlewareMode }
+  } = server.config
+  if (!middlewareMode) {
     await server.listen(port, true)
+    logger.info('server restarted.', { timestamp: true })
+    if (port !== prevPort || host !== prevHost) {
+      logger.info('')
+      server.printUrls()
+    }
   } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
+    logger.info('server restarted.', { timestamp: true })
   }
 }
