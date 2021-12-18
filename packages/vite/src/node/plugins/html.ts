@@ -42,7 +42,7 @@ export function htmlInlineScriptStyleProxyPlugin(
   config: ResolvedConfig
 ): Plugin {
   return {
-    name: 'vite:html-inline-script-style-proxy',
+    name: 'vite:html-inline-proxy',
 
     resolveId(id) {
       if (htmlProxyRE.test(id)) {
