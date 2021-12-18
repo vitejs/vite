@@ -35,12 +35,12 @@
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "ci-build": "rimraf dist && run-s build-bundle build-types",
-    "patch-types": "node scripts/patchTypes.cjs",
+    "patch-types": "ts-node scripts/patchTypes.ts",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
-    "release": "node ../../scripts/release.cjs"
+    "release": "ts-node ../../scripts/release.ts"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
