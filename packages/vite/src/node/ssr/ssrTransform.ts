@@ -324,7 +324,8 @@ function walk(
                 (parent?.type === 'AssignmentPattern' &&
                   parent?.right === child) ||
                 (parent?.type === 'TemplateLiteral' &&
-                  parent?.expressions.includes(child))
+                  parent?.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent?.callee === child)
               ) {
                 return
               }
