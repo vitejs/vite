@@ -101,7 +101,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * disable dot rule to support dot in route
    */
-   disableDotRule?: boolean
+  disableDotRule?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
