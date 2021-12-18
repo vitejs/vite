@@ -631,12 +631,3 @@ export const usingDynamicImport = typeof jest === 'undefined'
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : require
-
-export function isQuoted(val: string): boolean {
-  if (/^(["'`])(.*)\1$/.test(val)) {
-    // Regex for checking if there are any unescaped quotations.
-    const regex: RegExp = new RegExp(`${val[0]}(?<!\\\\${val[0]})`)
-    return !regex.test(val.slice(1, -1))
-  }
-  return false
-}

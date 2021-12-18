@@ -160,7 +160,7 @@ test('import.meta.url', async () => {
   expect(await page.textContent('.protocol')).toEqual('file:')
 })
 
-test('dynamic css file should be loaded advanced', async () => {
+test('dynamic css file should be preloaded', async () => {
   if (isBuild) {
     await page.goto(url)
     const homeHtml = await (await fetch(url)).text()
