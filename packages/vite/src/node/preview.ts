@@ -70,7 +70,7 @@ export async function preview(
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
+    await resolveHttpsConfig(config.preview?.https)
   )
 
   // cors

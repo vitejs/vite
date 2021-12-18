@@ -14,7 +14,8 @@
     "dist",
     "client.d.ts",
     "src/client",
-    "types"
+    "types",
+    "dev-cert.pem"
   ],
   "engines": {
     "node": ">=12.2.0"
@@ -36,6 +37,7 @@
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "ci-build": "rimraf dist && run-s build-bundle build-types",
     "patch-types": "ts-node scripts/patchTypes.ts",
+    "generate-selfsigned": "ts-node scripts/generateSelfsignedCertificate.cjs",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
