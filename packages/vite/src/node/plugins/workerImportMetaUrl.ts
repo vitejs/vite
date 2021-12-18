@@ -33,7 +33,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes(`import.meta.url`)
       ) {
         const importMetaUrlRE =
-          /\bnew\s+(Worker|SharedWorker)+\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+          /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
