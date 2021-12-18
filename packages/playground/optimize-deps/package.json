@@ -7,7 +7,7 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview",
-    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
+    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
     "axios": "^0.24.0",

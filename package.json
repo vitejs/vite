@@ -28,6 +28,7 @@
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.0.3",
     "@types/node": "^16.11.14",
+    "@types/prompts": "^2.0.14",
     "@types/semver": "^7.3.9",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
@@ -61,7 +62,7 @@
   },
   "gitHooks": {
     "pre-commit": "lint-staged --concurrent false",
-    "commit-msg": "node scripts/verifyCommit.cjs"
+    "commit-msg": "ts-node scripts/verifyCommit.ts"
   },
   "lint-staged": {
     "*": [

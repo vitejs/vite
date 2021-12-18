@@ -1,37 +1,26 @@
-// @ts-check
-
 /**
  * modified from https://github.com/vuejs/vue-next/blob/master/scripts/release.js
  */
-const execa = require('execa')
-const path = require('path')
-const fs = require('fs')
+import chalk from 'chalk'
+import type { ExecaChildProcess, Options as ExecaOptions } from 'execa'
+import execa from 'execa'
+import { readFileSync, writeFileSync } from 'fs'
+import path from 'path'
+import prompts from 'prompts'
+import type { ReleaseType } from 'semver'
+import semver from 'semver'
+
 const args = require('minimist')(process.argv.slice(2))
-const semver = require('semver')
-const chalk = require('chalk')
-const prompts = require('prompts')
 
 const pkgDir = process.cwd()
 const pkgPath = path.resolve(pkgDir, 'package.json')
-/**
- * @type {{ name: string, version: string }}
- */
-const pkg = require(pkgPath)
+const pkg: { name: string; version: string } = require(pkgPath)
 const pkgName = pkg.name.replace(/^@vitejs\//, '')
 const currentVersion = pkg.version
-/**
- * @type {boolean}
- */
-const isDryRun = args.dry
-/**
- * @type {boolean}
- */
-const skipBuild = args.skipBuild
+const isDryRun: boolean = args.dry
+const skipBuild: boolean = args.skipBuild
 
-/**
- * @type {import('semver').ReleaseType[]}
- */
-const versionIncrements = [
+const versionIncrements: ReleaseType[] = [
   'patch',
   'minor',
   'major',
@@ -41,43 +30,33 @@ const versionIncrements = [
   'prerelease'
 ]
 
-/**
- * @param {import('semver').ReleaseType} i
- */
-const inc = (i) => semver.inc(currentVersion, i, 'beta')
+const inc: (i: ReleaseType) => string = (i) =>
+  semver.inc(currentVersion, i, 'beta')
 
-/**
- * @param {string} bin
- * @param {string[]} args
- * @param {object} opts
- */
-const run = (bin, args, opts = {}) =>
+type RunFn = (
+  bin: string,
+  args: string[],
+  opts?: ExecaOptions<string>
+) => ExecaChildProcess<string>
+
+const run: RunFn = (bin, args, opts = {}) =>
   execa(bin, args, { stdio: 'inherit', ...opts })
 
-/**
- * @param {string} bin
- * @param {string[]} args
- * @param {object} opts
- */
-const dryRun = (bin, args, opts = {}) =>
+type DryRunFn = (bin: string, args: string[], opts?: any) => void
+
+const dryRun: DryRunFn = (bin, args, opts: any) =>
   console.log(chalk.blue(`[dryrun] ${bin} ${args.join(' ')}`), opts)
 
 const runIfNotDry = isDryRun ? dryRun : run
 
-/**
- * @param {string} msg
- */
-const step = (msg) => console.log(chalk.cyan(msg))
+const step: (msg: string) => void = (msg) => console.log(chalk.cyan(msg))
 
-async function main() {
-  let targetVersion = args._[0]
+async function main(): Promise<void> {
+  let targetVersion: string | undefined = args._[0]
 
   if (!targetVersion) {
     // no explicit version, offer suggestions
-    /**
-     * @type {{ release: string }}
-     */
-    const { release } = await prompts({
+    const { release }: { release: string } = await prompts({
       type: 'select',
       name: 'release',
       message: 'Select release type',
@@ -88,10 +67,7 @@ async function main() {
     })
 
     if (release === 'custom') {
-      /**
-       * @type {{ version: string }}
-       */
-      const res = await prompts({
+      const res: { version: string } = await prompts({
         type: 'text',
         name: 'version',
         message: 'Input custom version',
@@ -111,10 +87,7 @@ async function main() {
     pkgName === 'vite' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
 
   if (targetVersion.includes('beta') && !args.tag) {
-    /**
-     * @type {{ tagBeta: boolean }}
-     */
-    const { tagBeta } = await prompts({
+    const { tagBeta }: { tagBeta: boolean } = await prompts({
       type: 'confirm',
       name: 'tagBeta',
       message: `Publish under dist-tag "beta"?`
@@ -123,10 +96,7 @@ async function main() {
     if (tagBeta) args.tag = 'beta'
   }
 
-  /**
-   * @type {{ yes: boolean }}
-   */
-  const { yes } = await prompts({
+  const { yes }: { yes: boolean } = await prompts({
     type: 'confirm',
     name: 'yes',
     message: `Releasing ${tag}. Confirm?`
@@ -173,20 +143,16 @@ async function main() {
   console.log()
 }
 
-/**
- * @param {string} version
- */
-function updateVersion(version) {
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+function updateVersion(version: string): void {
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
   pkg.version = version
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
-/**
- * @param {string} version
- * @param {Function} runIfNotDry
- */
-async function publishPackage(version, runIfNotDry) {
+async function publishPackage(
+  version: string,
+  runIfNotDry: RunFn | DryRunFn
+): Promise<void> {
   const publicArgs = [
     'publish',
     '--no-git-tag-version',

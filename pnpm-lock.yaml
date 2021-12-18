@@ -12,6 +12,7 @@ importers:
       '@types/fs-extra': ^9.0.13
       '@types/jest': ^27.0.3
       '@types/node': ^16.11.14
+      '@types/prompts': ^2.0.14
       '@types/semver': ^7.3.9
       '@typescript-eslint/eslint-plugin': ^5.7.0
       '@typescript-eslint/parser': ^5.7.0
@@ -47,6 +48,7 @@ importers:
       '@types/fs-extra': 9.0.13
       '@types/jest': 27.0.3
       '@types/node': 16.11.14
+      '@types/prompts': 2.0.14
       '@types/semver': 7.3.9
       '@typescript-eslint/eslint-plugin': 5.7.0_d7a0d6b59468b4d2ea38f782f4f112e3
       '@typescript-eslint/parser': 5.7.0_eslint@8.4.1+typescript@4.4.4
@@ -2289,6 +2291,12 @@ packages:
 
   /@types/prettier/2.4.1:
     resolution: {integrity: sha512-Fo79ojj3vdEZOHg3wR9ksAMRz4P3S5fDB5e/YWZiFnyFQI1WY2Vftu9XoXVVtJfxB7Bpce/QTqWSSntkz2Znrw==}
+    dev: true
+
+  /@types/prompts/2.0.14:
+    resolution: {integrity: sha512-HZBd99fKxRWpYCErtm2/yxUZv6/PBI9J7N4TNFffl5JbrYMHBwF25DjQGTW3b3jmXq+9P6/8fCIb2ee57BFfYA==}
+    dependencies:
+      '@types/node': 16.11.14
     dev: true
 
   /@types/resolve/1.17.1:
