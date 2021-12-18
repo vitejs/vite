@@ -5,10 +5,12 @@ import { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'
 
 export function spaFallbackMiddleware(
-  root: string
+  root: string,
+  disableDotRule: boolean = false
 ): Connect.NextHandleFunction {
   const historySpaFallbackMiddleware = history({
     logger: createDebugger('vite:spa-fallback'),
+    disableDotRule,
     // support /dir/ without explicit index.html
     rewrites: [
       {

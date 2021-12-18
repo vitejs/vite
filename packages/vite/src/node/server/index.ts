@@ -98,6 +98,10 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * disable dot rule to support dot in route
+   */
+   disableDotRule?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -531,7 +535,7 @@ export async function createServer(
 
   // spa fallback
   if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(spaFallbackMiddleware(root))
+    middlewares.use(spaFallbackMiddleware(root, serverConfig.disableDotRule))
   }
 
   // run post config hooks
