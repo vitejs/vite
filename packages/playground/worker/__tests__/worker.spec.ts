@@ -73,20 +73,18 @@ if (isBuild) {
     expect(content).toMatch(`window.Blob`)
   })
 
-  test('new url import worker need bundle', () => {
-    const files = fs.readdirSync(assetsDir)
-    const urlWorker = files.find((f) => f.includes('url-worker'))
-    const urlSharedWorker = files.find((f) => f.includes('url-shared-worker'))
-    const workerContent = fs.readFileSync(
-      path.resolve(assetsDir, urlWorker),
-      'utf-8'
-    )
-    const sharedWorkerContent = fs.readFileSync(
-      path.resolve(assetsDir, urlSharedWorker),
-      'utf-8'
-    )
-    // need bundled with iife
-    expect(workerContent.startsWith('(function(){')).toBe(true)
-    expect(sharedWorkerContent.startsWith('(function(){')).toBe(true)
+  test('worker need bundle', () => {
+    fs.readdirSync(assetsDir)
+      .filter((file) =>
+        file.includes('url-worker') ||
+        file.includes('url-shared-worker')
+      )
+      .forEach(file => {
+        const content = fs.readFileSync(
+          path.resolve(assetsDir, file),
+          'utf-8'
+        )
+        expect(content.startsWith('(function(){')).toBe(true)
+      })
   })
 }
