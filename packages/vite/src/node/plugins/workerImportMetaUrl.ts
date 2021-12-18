@@ -61,8 +61,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           if (!s) s = new MagicString(code)
 
-          const basename = rawUrl.slice(1, -1)
-          const file = path.resolve(path.dirname(id), basename)
+          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
             const content = await bundleWorkerEntry(config, file)

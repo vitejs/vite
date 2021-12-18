@@ -75,15 +75,12 @@ if (isBuild) {
 
   test('worker need bundle', () => {
     fs.readdirSync(assetsDir)
-      .filter((file) =>
-        file.includes('url-worker') ||
-        file.includes('url-shared-worker')
+      .filter(
+        (file) =>
+          file.includes('url-worker') || file.includes('url-shared-worker')
       )
-      .forEach(file => {
-        const content = fs.readFileSync(
-          path.resolve(assetsDir, file),
-          'utf-8'
-        )
+      .forEach((file) => {
+        const content = fs.readFileSync(path.resolve(assetsDir, file), 'utf-8')
         expect(content.startsWith('(function(){')).toBe(true)
       })
   })
