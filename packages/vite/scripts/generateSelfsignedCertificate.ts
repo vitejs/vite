@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+// @ts-ignore
 import { generate } from 'selfsigned'
 
 /**
