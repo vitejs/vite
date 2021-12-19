@@ -1,18 +1,13 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from './plugin'
-import { BuildOptions, resolveBuildOptions } from './build'
-import {
-  ResolvedServerOptions,
-  resolveServerOptions,
-  ServerOptions
-} from './server'
-import {
-  ResolvedPreviewOptions,
-  resolvePreviewOptions,
-  PreviewOptions
-} from './preview'
-import { CSSOptions } from './plugins/css'
+import type { Plugin } from './plugin'
+import type { BuildOptions } from './build'
+import { resolveBuildOptions } from './build'
+import type { ResolvedServerOptions, ServerOptions } from './server'
+import { resolveServerOptions } from './server'
+import type { ResolvedPreviewOptions, PreviewOptions } from './preview'
+import { resolvePreviewOptions } from './preview'
+import type { CSSOptions } from './plugins/css'
 import {
   arraify,
   createDebugger,
@@ -24,30 +19,26 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import chalk from 'chalk'
-import { ESBuildOptions } from './plugins/esbuild'
+import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
-import { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
-import {
-  InternalResolveOptions,
-  ResolveOptions,
-  resolvePlugin
-} from './plugins/resolve'
-import { createLogger, Logger, LogLevel } from './logger'
-import { DepOptimizationOptions } from './optimizer'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import { resolvePlugin } from './plugins/resolve'
+import type { Logger, LogLevel } from './logger'
+import { createLogger } from './logger'
+import type { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
-import { ResolvedBuildOptions } from '.'
+import type { ResolvedBuildOptions } from '.'
 import { parse as parseUrl } from 'url'
-import { JsonOptions } from './plugins/json'
-import {
-  createPluginContainer,
-  PluginContainer
-} from './server/pluginContainer'
+import type { JsonOptions } from './plugins/json'
+import type { PluginContainer } from './server/pluginContainer'
+import { createPluginContainer } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
-import { PackageCache } from './packages'
+import type { PackageCache } from './packages'
 
 const debug = createDebugger('vite:config')
 
@@ -367,7 +358,11 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(resolvedRoot, config.build)
+  const resolvedBuildOptions = resolveBuildOptions(
+    resolvedRoot,
+    config.build,
+    command === 'build'
+  )
 
   // resolve cache directory
   const pkgPath = lookupFile(
@@ -662,13 +657,13 @@ function resolveBaseUrl(
 }
 
 function mergeConfigRecursively(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   rootPath: string
 ) {
-  const merged: Record<string, any> = { ...a }
-  for (const key in b) {
-    const value = b[key]
+  const merged: Record<string, any> = { ...defaults }
+  for (const key in overrides) {
+    const value = overrides[key]
     if (value == null) {
       continue
     }
@@ -706,11 +701,11 @@ function mergeConfigRecursively(
 }
 
 export function mergeConfig(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   isRoot = true
 ): Record<string, any> {
-  return mergeConfigRecursively(a, b, isRoot ? '' : '.')
+  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
 function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
@@ -829,13 +824,13 @@ export async function loadConfigFromFile(
 
     if (isESM) {
       const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const bundled = await bundleConfigFile(resolvedPath, true)
+      dependencies = bundled.dependencies
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const bundled = await bundleConfigFile(resolvedPath, true)
-        dependencies = bundled.dependencies
         fs.writeFileSync(resolvedPath + '.js', bundled.code)
         userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
@@ -850,34 +845,8 @@ export async function loadConfigFromFile(
       }
     }
 
-    if (!isTS && !isESM) {
-      // 1. try to directly require the module (assuming commonjs)
-      try {
-        // clear cache in case of server restart
-        delete require.cache[require.resolve(resolvedPath)]
-        userConfig = require(resolvedPath)
-        debug(`cjs config loaded in ${getTime()}`)
-      } catch (e) {
-        const ignored = new RegExp(
-          [
-            `Cannot use import statement`,
-            `Must use import to load ES Module`,
-            // #1635, #2050 some Node 12.x versions don't have esm detection
-            // so it throws normal syntax errors when encountering esm syntax
-            `Unexpected token`,
-            `Unexpected identifier`
-          ].join('|')
-        )
-        if (!ignored.test(e.message)) {
-          throw e
-        }
-      }
-    }
-
     if (!userConfig) {
-      // 2. if we reach here, the file is ts or using es import syntax, or
-      // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using esbuild.
+      // Bundle config file and transpile it to cjs using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)

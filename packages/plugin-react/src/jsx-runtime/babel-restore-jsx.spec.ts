@@ -108,4 +108,10 @@ describe('babel-restore-jsx', () => {
       )
     ).toMatchInlineSnapshot(`"<h1>{foo ? <p /> : null}</h1>;"`)
   })
+
+  it('should handle lowercase component names', () => {
+    expect(jsx('React.createElement(aaa)')).toMatchInlineSnapshot(
+      `"React.createElement(aaa);"`
+    )
+  })
 })

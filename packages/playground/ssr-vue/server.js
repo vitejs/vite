@@ -66,7 +66,7 @@ async function createServer(
         render = require('./dist/server/entry-server.js').render
       }
 
-      const [appHtml, preloadLinks] = await render(url, manifest, __dirname)
+      const [appHtml, preloadLinks] = await render(url, manifest)
 
       const html = template
         .replace(`<!--preload-links-->`, preloadLinks)

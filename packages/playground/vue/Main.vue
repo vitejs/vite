@@ -18,7 +18,7 @@
   <Suspense>
     <AsyncComponent />
   </Suspense>
-  <RefTransform />
+  <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
 </template>
 
@@ -33,7 +33,7 @@ import SrcImport from './src-import/SrcImport.vue'
 import Slotted from './Slotted.vue'
 import ScanDep from './ScanDep.vue'
 import AsyncComponent from './AsyncComponent.vue'
-import RefTransform from './RefTransform.vue'
+import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 
 import { ref } from 'vue'

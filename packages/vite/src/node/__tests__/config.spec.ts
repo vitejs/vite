@@ -1,11 +1,6 @@
-import { InlineConfig } from '..'
-import {
-  mergeConfig,
-  resolveConfig,
-  UserConfigExport,
-  resolveEnvPrefix,
-  UserConfig
-} from '../config'
+import type { InlineConfig } from '..'
+import type { UserConfigExport, UserConfig } from '../config'
+import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {

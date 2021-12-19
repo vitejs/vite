@@ -1,14 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import { ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { createDebugger, normalizePath } from '../utils'
-import { ModuleNode } from './moduleGraph'
-import { Update } from 'types/hmrPayload'
+import type { ModuleNode } from './moduleGraph'
+import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
-import { RollupError } from 'rollup'
+import type { RollupError } from 'rollup'
 import { isMatch } from 'micromatch'
-import { Server } from 'http'
+import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -61,7 +61,11 @@ export async function handleHMRUpdate(
       ),
       { clear: true, timestamp: true }
     )
-    await server.restart()
+    try {
+      await server.restart()
+    } catch (e) {
+      config.logger.error(chalk.red(e))
+    }
     return
   }
 

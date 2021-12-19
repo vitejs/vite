@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
-import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import { ResolvedConfig } from '../config'
+import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import { build } from 'esbuild'
+import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
@@ -166,7 +167,7 @@ export async function optimizeDeps(
   data.browserHash = createHash('sha256')
     .update(data.hash + JSON.stringify(deps))
     .digest('hex')
-    .substr(0, 8)
+    .substring(0, 8)
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
@@ -408,5 +409,5 @@ function getDepHash(root: string, config: ResolvedConfig): string {
       return value
     }
   )
-  return createHash('sha256').update(content).digest('hex').substr(0, 8)
+  return createHash('sha256').update(content).digest('hex').substring(0, 8)
 }

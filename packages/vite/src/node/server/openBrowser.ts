@@ -13,7 +13,7 @@ import open from 'open'
 import execa from 'execa'
 import chalk from 'chalk'
 import { execSync } from 'child_process'
-import { Logger } from '../logger'
+import type { Logger } from '../logger'
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome'

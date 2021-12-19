@@ -1,5 +1,6 @@
 /* eslint-disable node/no-extraneous-import */
-import { commandSync, ExecaSyncReturnValue, SyncOptions } from 'execa'
+import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
+import { commandSync } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
 import { join } from 'path'
 
