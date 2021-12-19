@@ -8,7 +8,14 @@ import {
 import { cleanUrl, normalizePath } from './utils'
 import { RollupError } from 'rollup'
 
-function formatGlobRelativePattern(base: string, pattern: string) {
+interface GlobParams {
+  base: string
+  pattern: string
+  parentDepth: number
+  isAbsolute: boolean
+}
+
+function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
   let parentDepth = 0
   while (pattern.startsWith('../')) {
     pattern = pattern.slice(3)
@@ -55,17 +62,7 @@ export async function transformImportGlob(
 
   const [userPattern, endIndex] = lexGlobPattern(source, pos)
 
-  let globParams: {
-    base: string
-    pattern: string
-    parentDepth: number
-    isAbsolute: boolean
-  } = {
-    base: '',
-    pattern: userPattern,
-    parentDepth: 0,
-    isAbsolute: false
-  }
+  let globParams: GlobParams | null = null
   if (userPattern.startsWith('/')) {
     globParams = {
       isAbsolute: true,
@@ -76,7 +73,7 @@ export async function transformImportGlob(
   } else if (userPattern.startsWith('.')) {
     globParams = formatGlobRelativePattern(
       path.dirname(importer),
-      globParams.pattern
+      userPattern
     )
   } else if (resolve) {
     const resolvedId = await resolve(userPattern, importer)
@@ -89,12 +86,12 @@ export async function transformImportGlob(
     }
   }
 
-  const { base, parentDepth, isAbsolute, pattern } = globParams
-  if (!base) {
+  if (!globParams) {
     throw err(
       `pattern must start with "." or "/" (relative to project root) or alias path`
     )
   }
+  const { base, parentDepth, isAbsolute, pattern } = globParams
 
   const files = glob.sync(pattern, {
     cwd: base,
