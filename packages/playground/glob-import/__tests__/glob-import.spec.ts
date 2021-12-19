@@ -72,6 +72,7 @@ if (!isBuild) {
           '/dir/a.js': {},
           ...allResult,
           '/dir/index.js': {
+            ...allResult['/dir/index.js'],
             modules: {
               './a.js': {},
               ...allResult['/dir/index.js'].modules
@@ -94,6 +95,7 @@ if (!isBuild) {
           },
           ...allResult,
           '/dir/index.js': {
+            ...allResult['/dir/index.js'],
             modules: {
               './a.js': {
                 msg: 'a'
