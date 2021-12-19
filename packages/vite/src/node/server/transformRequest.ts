@@ -2,8 +2,8 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
-import { SourceDescription, SourceMap } from 'rollup'
-import { ViteDevServer } from '..'
+import type { SourceDescription, SourceMap } from 'rollup'
+import type { ViteDevServer } from '..'
 import chalk from 'chalk'
 import {
   createDebugger,

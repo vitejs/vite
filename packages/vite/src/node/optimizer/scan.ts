@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import { ResolvedConfig } from '..'
-import { Loader, Plugin, build, transform, OnLoadResult } from 'esbuild'
+import type { ResolvedConfig } from '..'
+import type { Loader, Plugin, OnLoadResult } from 'esbuild'
+import { build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -22,10 +23,8 @@ import {
   virtualModuleRE,
   virtualModulePrefix
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import type { PluginContainer } from '../server/pluginContainer'
+import { createPluginContainer } from '../server/pluginContainer'
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'

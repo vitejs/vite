@@ -6,7 +6,7 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { cleanUrl, normalizePath } from './utils'
-import { RollupError } from 'rollup'
+import type { RollupError } from 'rollup'
 
 interface GlobParams {
   base: string
