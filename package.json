@@ -2,7 +2,7 @@
   "name": "vite-monorepo",
   "private": true,
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=12.2.0"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
