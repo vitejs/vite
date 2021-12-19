@@ -1,9 +1,10 @@
 import path from 'path'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
-import { ImportSpecifier, init, parse as parseImports } from 'es-module-lexer'
-import { OutputChunk } from 'rollup'
+import type { ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports } from 'es-module-lexer'
+import type { OutputChunk } from 'rollup'
 import {
   chunkToEmittedCssFileMap,
   isCSSRequest,
