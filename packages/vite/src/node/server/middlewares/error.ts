@@ -69,7 +69,23 @@ export function errorMiddleware(
       next()
     } else {
       res.statusCode = 500
-      res.end()
+      res.end(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Error</title>
+            <script type="module">
+              import { ErrorOverlay } from '/@vite/client'
+              document.body.appendChild(new ErrorOverlay(${JSON.stringify(
+                prepareError(err)
+              ).replace(/</g, '\\u003c')}))
+            </script>
+          </head>
+          <body>
+          </body>
+        </html>
+      `)
     }
   }
 }
