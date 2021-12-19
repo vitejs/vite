@@ -35,6 +35,11 @@ const allResult = {
     msg: 'foo'
   },
   '/dir/index.js': {
+    "globWithAlias": {
+      "../../assets/foo.js": {
+        "default": "hi"
+      }
+    },
     modules: filteredResult
   },
   '/dir/nested/bar.js': {
