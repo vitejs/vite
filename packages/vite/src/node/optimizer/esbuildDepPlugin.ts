@@ -1,7 +1,7 @@
 import path from 'path'
-import { Loader, Plugin, ImportKind } from 'esbuild'
+import type { Loader, Plugin, ImportKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
-import { ResolvedConfig } from '..'
+import type { ResolvedConfig } from '..'
 import {
   isRunningWithYarnPnp,
   flattenId,
@@ -10,7 +10,7 @@ import {
   moduleListContains
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
-import { ExportsData } from '.'
+import type { ExportsData } from '.'
 
 const externalTypes = [
   'css',

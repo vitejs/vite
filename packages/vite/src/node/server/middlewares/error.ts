@@ -1,10 +1,10 @@
 import chalk from 'chalk'
-import { RollupError } from 'rollup'
-import { ViteDevServer } from '../..'
-import { Connect } from 'types/connect'
+import type { RollupError } from 'rollup'
+import type { ViteDevServer } from '../..'
+import type { Connect } from 'types/connect'
 import { pad } from '../../utils'
 import strip from 'strip-ansi'
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // only copy the information we need and avoid serializing unnecessary

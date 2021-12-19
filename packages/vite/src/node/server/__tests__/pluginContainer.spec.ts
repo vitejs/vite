@@ -1,7 +1,9 @@
-import { resolveConfig, UserConfig } from '../../config'
-import { Plugin } from '../../plugin'
+import type { UserConfig } from '../../config'
+import { resolveConfig } from '../../config'
+import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
-import { createPluginContainer, PluginContainer } from '../pluginContainer'
+import type { PluginContainer } from '../pluginContainer'
+import { createPluginContainer } from '../pluginContainer'
 
 let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph

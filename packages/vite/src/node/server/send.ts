@@ -1,6 +1,6 @@
-import { IncomingMessage, ServerResponse } from 'http'
+import type { IncomingMessage, ServerResponse } from 'http'
 import getEtag from 'etag'
-import { SourceMap } from 'rollup'
+import type { SourceMap } from 'rollup'
 
 const isDebug = process.env.DEBUG
 

@@ -1,4 +1,4 @@
-import { Plugin } from 'vite'
+import type { Plugin } from 'vite'
 
 export const vueI18nPlugin: Plugin = {
   name: 'vue-i18n',

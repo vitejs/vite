@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { optimizeDeps } from '.'
-import { ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**

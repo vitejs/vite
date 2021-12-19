@@ -1,13 +1,13 @@
 import fs from 'fs'
-import { Plugin, ViteDevServer } from 'vite'
+import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
-import {
+import type {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
   SFCTemplateCompileOptions
 } from 'vue/compiler-sfc'
-import * as _compiler from 'vue/compiler-sfc'
+import type * as _compiler from 'vue/compiler-sfc'
 import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'

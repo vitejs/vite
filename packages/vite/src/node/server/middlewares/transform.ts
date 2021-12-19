@@ -1,6 +1,6 @@
 import path from 'path'
-import { ViteDevServer } from '..'
-import { Connect } from 'types/connect'
+import type { ViteDevServer } from '..'
+import type { Connect } from 'types/connect'
 import {
   cleanUrl,
   createDebugger,

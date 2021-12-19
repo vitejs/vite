@@ -28,8 +28,8 @@ THE SOFTWARE.
 */
 /// <reference types="node" />
 
-import * as fs from 'fs'
-import { Matcher } from './anymatch'
+import type * as fs from 'fs'
+import type { Matcher } from './anymatch'
 
 export interface FSWatcher extends fs.FSWatcher {
   options: WatchOptions

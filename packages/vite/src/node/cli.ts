@@ -1,9 +1,10 @@
 import { cac } from 'cac'
 import chalk from 'chalk'
 import { performance } from 'perf_hooks'
-import { BuildOptions } from './build'
-import { ServerOptions } from './server'
-import { createLogger, LogLevel } from './logger'
+import type { BuildOptions } from './build'
+import type { ServerOptions } from './server'
+import type { LogLevel } from './logger'
+import { createLogger } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
 

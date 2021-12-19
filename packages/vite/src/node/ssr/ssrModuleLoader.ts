@@ -1,6 +1,6 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '../server'
+import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
@@ -16,7 +16,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {

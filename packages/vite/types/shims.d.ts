@@ -38,7 +38,7 @@ declare module 'launch-editor-middleware' {
 }
 
 declare module 'postcss-load-config' {
-  import { ProcessOptions, Plugin } from 'postcss'
+  import type { ProcessOptions, Plugin } from 'postcss'
   function load(
     inline: any,
     root: string
@@ -50,7 +50,7 @@ declare module 'postcss-load-config' {
 }
 
 declare module 'postcss-import' {
-  import { Plugin } from 'postcss'
+  import type { Plugin } from 'postcss'
   const plugin: (options: {
     resolve: (
       id: string,
@@ -62,13 +62,13 @@ declare module 'postcss-import' {
 }
 
 declare module 'postcss-modules' {
-  import { Plugin } from 'postcss'
+  import type { Plugin } from 'postcss'
   const plugin: (options: any) => Plugin
   export = plugin
 }
 
 declare module '@rollup/plugin-dynamic-import-vars' {
-  import { Plugin } from 'rollup'
+  import type { Plugin } from 'rollup'
 
   interface Options {
     include?: string | RegExp | (string | RegExp)[]
@@ -81,7 +81,7 @@ declare module '@rollup/plugin-dynamic-import-vars' {
 }
 
 declare module 'rollup-plugin-web-worker-loader' {
-  import { Plugin } from 'rollup'
+  import type { Plugin } from 'rollup'
 
   interface Options {
     targetPlatform?: string

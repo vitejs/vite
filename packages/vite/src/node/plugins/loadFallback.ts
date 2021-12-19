@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs'
-import { Plugin } from '..'
+import type { Plugin } from '..'
 import { cleanUrl } from '../utils'
 
 /**

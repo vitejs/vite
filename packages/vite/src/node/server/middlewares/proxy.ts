@@ -1,11 +1,11 @@
-import * as http from 'http'
+import type * as http from 'http'
 import { createDebugger, isObject } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { Connect } from 'types/connect'
-import { HttpProxy } from 'types/http-proxy'
+import type { Connect } from 'types/connect'
+import type { HttpProxy } from 'types/http-proxy'
 import chalk from 'chalk'
-import { ResolvedConfig } from '../..'
+import type { ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 

@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import chalk from 'chalk'
 import {
   FS_PREFIX,
@@ -29,15 +29,11 @@ import {
   isPossibleTsOutput,
   getTsSrcPath
 } from '../utils'
-import { ViteDevServer, SSROptions } from '..'
-import { PartialResolvedId } from 'rollup'
+import type { ViteDevServer, SSROptions } from '..'
+import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
-import {
-  loadPackageData,
-  PackageCache,
-  PackageData,
-  resolvePackageData
-} from '../packages'
+import type { PackageCache, PackageData } from '../packages'
+import { loadPackageData, resolvePackageData } from '../packages'
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module

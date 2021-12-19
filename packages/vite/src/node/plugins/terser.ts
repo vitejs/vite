@@ -1,7 +1,7 @@
-import { Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import { Worker } from 'okie'
-import { Terser } from 'types/terser'
-import { ResolvedConfig } from '..'
+import type { Terser } from 'types/terser'
+import type { ResolvedConfig } from '..'
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const worker = new Worker(

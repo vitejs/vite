@@ -1,5 +1,5 @@
-import { CompilerError } from 'vue/compiler-sfc'
-import { RollupError } from 'rollup'
+import type { CompilerError } from 'vue/compiler-sfc'
+import type { RollupError } from 'rollup'
 
 export function createRollupError(
   id: string,

@@ -1,3 +1,4 @@
+import type * as babelCore from '@babel/core'
 import type { PluginItem, types as t } from '@babel/core'
 
 type RestoredJSX = [result: t.File | null | undefined, isCommonJS: boolean]
@@ -8,7 +9,7 @@ const jsxNotFound: RestoredJSX = [null, false]
 
 /** Restore JSX from `React.createElement` calls */
 export async function restoreJSX(
-  babel: typeof import('@babel/core'),
+  babel: typeof babelCore,
   code: string,
   filename: string
 ): Promise<RestoredJSX> {

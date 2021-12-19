@@ -2,7 +2,7 @@
  * https://github.com/flying-sheep/babel-plugin-transform-react-createelement-to-jsx
  * @license GNU General Public License v3.0
  */
-import * as babel from '@babel/core'
+import type * as babel from '@babel/core'
 
 /**
  * Visitor factory for babel, converting React.createElement(...) to <jsx ...>...</jsx>

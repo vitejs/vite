@@ -1,6 +1,6 @@
 import path from 'path'
 import { promises as fs } from 'fs'
-import { Logger } from '../logger'
+import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG

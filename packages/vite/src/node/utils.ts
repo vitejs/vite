@@ -13,9 +13,9 @@ import {
 } from './constants'
 import resolve from 'resolve'
 import { builtinModules } from 'module'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import {
+import type {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'

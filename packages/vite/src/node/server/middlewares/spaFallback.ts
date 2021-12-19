@@ -1,7 +1,7 @@
 import fs from 'fs'
 import history from 'connect-history-api-fallback'
 import path from 'path'
-import { Connect } from 'types/connect'
+import type { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'
 
 export function spaFallbackMiddleware(

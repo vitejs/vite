@@ -1,5 +1,6 @@
-import { SourceMapConsumer, RawSourceMap } from 'source-map'
-import { ModuleGraph } from '../server/moduleGraph'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer } from 'source-map'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 let offset: number
 try {

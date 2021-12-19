@@ -1,5 +1,5 @@
 import { extname } from 'path'
-import { ModuleInfo, PartialResolvedId } from 'rollup'
+import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
@@ -9,7 +9,7 @@ import {
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { TransformResult } from './transformRequest'
+import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
   /**
