@@ -310,7 +310,13 @@ function esbuildScanPlugin(
             return {
               // transformGlob already transforms to js
               loader: 'js',
-              contents: await transformGlob(js, path, config.root, loader, resolve)
+              contents: await transformGlob(
+                js,
+                path,
+                config.root,
+                loader,
+                resolve
+              )
             }
           }
 
@@ -427,12 +433,16 @@ function esbuildScanPlugin(
         }
 
         if (contents.includes('import.meta.glob')) {
-          return transformGlob(contents, id, config.root, ext as Loader, resolve).then(
-            (contents) => ({
-              loader: ext as Loader,
-              contents
-            })
-          )
+          return transformGlob(
+            contents,
+            id,
+            config.root,
+            ext as Loader,
+            resolve
+          ).then((contents) => ({
+            loader: ext as Loader,
+            contents
+          }))
         }
         return {
           loader: ext as Loader,
@@ -448,7 +458,7 @@ async function transformGlob(
   importer: string,
   root: string,
   loader: Loader,
-  resolve: (url: string, importer?: string) => Promise<string | undefined>,
+  resolve: (url: string, importer?: string) => Promise<string | undefined>
 ) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {

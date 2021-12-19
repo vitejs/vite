@@ -11,7 +11,7 @@ const filteredResult = {
     msg: 'foo'
   },
   './alias.js': {
-    'default': 'hi'
+    default: 'hi'
   }
 }
 
@@ -40,7 +40,7 @@ const allResult = {
   '/dir/index.js': {
     globWithAlias: {
       './alias.js': {
-        'default': 'hi'
+        default: 'hi'
       }
     },
     modules: filteredResult
