@@ -532,8 +532,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
-        while ((match = inlineCSSRE.exec(html))) {
-          s = s || (s = new MagicString(html))
+        while ((match = inlineCSSRE.exec(result))) {
+          s = s || (s = new MagicString(result))
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
           s.overwrite(
