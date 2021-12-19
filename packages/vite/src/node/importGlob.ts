@@ -5,8 +5,25 @@ import {
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
-import { cleanUrl } from './utils'
+import { cleanUrl, normalizePath } from './utils'
 import { ResolvedId, RollupError } from 'rollup'
+
+function formatGlobRelativePattern (
+  base: string,
+  pattern: string,
+) {
+  let parentDepth = 0
+  while (pattern.startsWith('../')) {
+    pattern = pattern.slice(3)
+    base = path.resolve(base, '../')
+    parentDepth++
+  }
+  if (pattern.startsWith('./')) {
+    pattern = pattern.slice(2)
+  }
+
+  return { base, pattern, parentDepth }
+}
 
 export async function transformImportGlob(
   source: string,
@@ -50,21 +67,26 @@ export async function transformImportGlob(
       base = path.resolve(root)
       pattern = pattern.slice(1)
     } else {
-      base = path.dirname(importer)
-      while (pattern.startsWith('../')) {
-        pattern = pattern.slice(3)
-        base = path.resolve(base, '../')
-        parentDepth++
-      }
-      if (pattern.startsWith('./')) {
-        pattern = pattern.slice(2)
-      }
+      const formatGlobResult = formatGlobRelativePattern(
+        path.dirname(importer),
+        pattern
+      )
+      base = formatGlobResult.base
+      pattern = formatGlobResult.pattern
+      parentDepth = formatGlobResult.parentDepth
     }
   } else if (resolve) {
     const resolveId = await resolve(pattern)
     if (resolveId) {
-      isAbsolute = true
-      base = resolveId.id
+      isAbsolute = false
+      base = path.dirname(importer)
+      const formatGlobResult = formatGlobRelativePattern(
+        base,
+        normalizePath(path.relative(base, resolveId.id))
+      )
+      base = formatGlobResult.base
+      pattern = formatGlobResult.pattern
+      parentDepth = formatGlobResult.parentDepth
     } else {
       throw err(`pattern must start with "." or "/" (relative to project root) or alias path`)
     }
