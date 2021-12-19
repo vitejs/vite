@@ -1,7 +1,12 @@
 import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
-import type { OutputAsset, OutputBundle, OutputChunk, RollupError } from 'rollup'
+import type {
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
+  RollupError
+} from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -150,7 +155,7 @@ function formatParseError(
   id: string,
   html: string
 ): RollupError {
-  const formattedError: RollupError = { ...compilerError as any }
+  const formattedError: RollupError = { ...(compilerError as any) }
   if (compilerError.loc) {
     formattedError.frame = generateCodeFrame(
       html,
