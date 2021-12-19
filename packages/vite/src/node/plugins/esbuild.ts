@@ -244,7 +244,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
               ...config.esbuild
             }
           : config.esbuild),
-        target: target || undefined,
+        target: target || undefined
       })
       return res
     }
