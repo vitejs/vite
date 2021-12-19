@@ -6,7 +6,7 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { cleanUrl, normalizePath } from './utils'
-import { ResolvedId, RollupError } from 'rollup'
+import { RollupError } from 'rollup'
 
 function formatGlobRelativePattern(base: string, pattern: string) {
   let parentDepth = 0
