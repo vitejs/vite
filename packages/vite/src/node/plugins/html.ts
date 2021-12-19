@@ -536,7 +536,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s = s || (s = new MagicString(html))
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
-          s.overwrite(match.index, match.index + full.length, cssTransformedCode)
+          s.overwrite(
+            match.index,
+            match.index + full.length,
+            cssTransformedCode
+          )
         }
         if (s) {
           result = s.toString()
