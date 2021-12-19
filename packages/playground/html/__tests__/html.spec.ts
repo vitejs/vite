@@ -223,9 +223,7 @@ if (!isBuild) {
       const message = await errorOverlay.$$eval('.message-body', (m) => {
         return m[0].innerHTML
       })
-      expect(message).toMatch(
-        /^Unable to parse {"file":".*","line":.*,"column":.*}/
-      )
+      expect(message).toMatch(/^Unable to parse HTML/)
     })
 
     test('should reload when fixed', async () => {
