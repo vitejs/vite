@@ -24,7 +24,6 @@ import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
   NodeTransform,
-  NodeTypes,
   ElementNode,
   CompilerError
 } from '@vue/compiler-dom'
