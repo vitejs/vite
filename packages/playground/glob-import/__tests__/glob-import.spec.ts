@@ -9,6 +9,9 @@ import {
 const filteredResult = {
   './foo.js': {
     msg: 'foo'
+  },
+  './alias.js': {
+    'default': 'hi'
   }
 }
 
@@ -36,8 +39,8 @@ const allResult = {
   },
   '/dir/index.js': {
     globWithAlias: {
-      '../../assets/foo.js': {
-        default: 'hi'
+      './alias.js': {
+        'default': 'hi'
       }
     },
     modules: filteredResult

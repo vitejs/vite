@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   resolve: {
     alias: {
-      '@asset': path.resolve('../assets/')
+      '@dir': path.resolve('../dir/')
     }
   }
 })
