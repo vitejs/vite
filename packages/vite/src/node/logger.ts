@@ -1,13 +1,14 @@
 /* eslint no-console: 0 */
 
 import chalk from 'chalk'
-import { AddressInfo, Server } from 'net'
+import type { AddressInfo, Server } from 'net'
 import os from 'os'
 import readline from 'readline'
-import { RollupError } from 'rollup'
-import { ResolvedConfig } from '.'
-import { CommonServerOptions } from './http'
-import { Hostname, resolveHostname } from './utils'
+import type { RollupError } from 'rollup'
+import type { ResolvedConfig } from '.'
+import type { CommonServerOptions } from './http'
+import type { Hostname } from './utils'
+import { resolveHostname } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'

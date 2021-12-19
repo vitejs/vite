@@ -1,7 +1,7 @@
 import { relative } from 'path'
 import { normalizePath } from '@rollup/pluginutils'
-import { ResolvedConfig } from '..'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '..'
+import type { Plugin } from '../plugin'
 import { chunkToEmittedCssFileMap } from '../plugins/css'
 import { chunkToEmittedAssetsMap } from '../plugins/asset'
 

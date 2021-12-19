@@ -6,7 +6,7 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
-import { RollupError } from 'rollup'
+import type { RollupError } from 'rollup'
 
 export async function transformImportGlob(
   source: string,

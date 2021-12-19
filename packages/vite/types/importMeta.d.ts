@@ -1,3 +1,11 @@
+import type { CustomEventName } from './customEvent'
+import type {
+  ErrorPayload,
+  FullReloadPayload,
+  PrunePayload,
+  UpdatePayload
+} from './hmrPayload'
+
 interface ImportMeta {
   url: string
 
@@ -19,24 +27,15 @@ interface ImportMeta {
     invalidate(): void
 
     on: {
-      (
-        event: 'vite:beforeUpdate',
-        cb: (payload: import('./hmrPayload').UpdatePayload) => void
-      ): void
-      (
-        event: 'vite:beforePrune',
-        cb: (payload: import('./hmrPayload').PrunePayload) => void
-      ): void
+      (event: 'vite:beforeUpdate', cb: (payload: UpdatePayload) => void): void
+      (event: 'vite:beforePrune', cb: (payload: PrunePayload) => void): void
       (
         event: 'vite:beforeFullReload',
-        cb: (payload: import('./hmrPayload').FullReloadPayload) => void
+        cb: (payload: FullReloadPayload) => void
       ): void
-      (
-        event: 'vite:error',
-        cb: (payload: import('./hmrPayload').ErrorPayload) => void
-      ): void
+      (event: 'vite:error', cb: (payload: ErrorPayload) => void): void
       <T extends string>(
-        event: import('./customEvent').CustomEventName<T>,
+        event: CustomEventName<T>,
         cb: (data: any) => void
       ): void
     }

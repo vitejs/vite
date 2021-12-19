@@ -1,7 +1,12 @@
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
+import type {
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
+  RollupError
+} from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -11,7 +16,7 @@ import {
   processSrcSet,
   slash
 } from '../utils'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,
@@ -21,13 +26,14 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import {
+import type {
   AttributeNode,
   NodeTransform,
-  NodeTypes,
+  TextNode,
   ElementNode,
-  TextNode
+  CompilerError
 } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.(js|css)$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -115,14 +121,7 @@ export async function traverseHtml(
       nodeTransforms: [visitor]
     })
   } catch (e) {
-    const parseError = {
-      loc: filePath,
-      frame: '',
-      ...formatParseError(e, filePath, html)
-    }
-    throw new Error(
-      `Unable to parse ${JSON.stringify(parseError.loc)}\n${parseError.frame}`
-    )
+    handleParseError(e, html, filePath)
   }
 }
 
@@ -149,17 +148,44 @@ export function getScriptInfo(node: ElementNode): {
   return { src, isModule, isAsync }
 }
 
-function formatParseError(e: any, id: string, html: string): Error {
-  // normalize the error to rollup format
-  if (e.loc) {
-    e.frame = generateCodeFrame(html, e.loc.start.offset)
-    e.loc = {
+/**
+ * Format Vue @type {CompilerError} to @type {RollupError}
+ */
+function formatParseError(
+  compilerError: CompilerError,
+  id: string,
+  html: string
+): RollupError {
+  const formattedError: RollupError = { ...(compilerError as any) }
+  if (compilerError.loc) {
+    formattedError.frame = generateCodeFrame(
+      html,
+      compilerError.loc.start.offset
+    )
+    formattedError.loc = {
       file: id,
-      line: e.loc.start.line,
-      column: e.loc.start.column
+      line: compilerError.loc.start.line,
+      column: compilerError.loc.start.column
     }
   }
-  return e
+  return formattedError
+}
+
+function handleParseError(
+  compilerError: CompilerError,
+  html: string,
+  filePath: string
+) {
+  const parseError = {
+    loc: filePath,
+    frame: '',
+    ...formatParseError(compilerError, filePath, html)
+  }
+  throw new Error(
+    `Unable to parse HTML; ${compilerError.message}\n at ${JSON.stringify(
+      parseError.loc
+    )}\n${parseError.frame}`
+  )
 }
 
 /**
