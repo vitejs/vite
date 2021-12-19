@@ -236,15 +236,15 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, {
-        ...config.esbuild,
-        target: target || undefined,
         ...(minify
           ? {
               minify,
               treeShaking: true,
-              format: rollupToEsbuildFormatMap[opts.format]
+              format: rollupToEsbuildFormatMap[opts.format],
+              ...config.esbuild
             }
-          : undefined)
+          : config.esbuild),
+        target: target || undefined,
       })
       return res
     }
