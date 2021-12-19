@@ -38,7 +38,7 @@ The supported template presets are:
 ## Scaffolding Your First Vite Project
 
 ::: tip Compatibility Note
-Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
+Vite requires [Node.js](https://nodejs.org/en/) version >=12.2.0. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 :::
 
 With NPM:
@@ -115,7 +115,8 @@ Running `vite` starts the dev server using the current working directory as root
 
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here is the default npm scripts in a scaffolded Vite project:
 
-```jsonc
+<!-- prettier-ignore -->
+```json5
 {
   "scripts": {
     "dev": "vite", // start dev server, aliases: `vite dev`, `vite serve`

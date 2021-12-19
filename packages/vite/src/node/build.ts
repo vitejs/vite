@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
-import Rollup, {
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import type {
   Plugin,
   RollupBuild,
   RollupOptions,
@@ -18,25 +19,26 @@ import Rollup, {
   RollupError,
   ModuleFormat
 } from 'rollup'
+import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { Terser } from 'types/terser'
+import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import { Logger } from './logger'
-import { TransformOptions } from 'esbuild'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { Logger } from './logger'
+import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
-import { DepOptimizationMetadata } from './optimizer'
+import type { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -236,7 +238,8 @@ export type ResolvedBuildOptions = Required<
 
 export function resolveBuildOptions(
   root: string,
-  raw?: BuildOptions
+  raw?: BuildOptions,
+  isBuild?: boolean
 ): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
@@ -291,14 +294,12 @@ export function resolveBuildOptions(
           ])
         )
       : resolve(raw.rollupOptions.input)
-  } else {
-    input = resolve(
-      raw?.lib
-        ? raw.lib.entry
-        : typeof raw?.ssr === 'string'
-        ? raw.ssr
-        : 'index.html'
-    )
+  } else if (raw?.lib && isBuild) {
+    input = resolve(raw.lib.entry)
+  } else if (typeof raw?.ssr === 'string') {
+    input = resolve(raw.ssr)
+  } else if (isBuild) {
+    input = resolve('index.html')
   }
 
   if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -308,7 +309,9 @@ export function resolveBuildOptions(
     )
   }
 
-  resolved.rollupOptions.input = input
+  if (input) {
+    resolved.rollupOptions.input = input
+  }
 
   // handle special build targets
   if (resolved.target === 'modules') {
@@ -356,7 +359,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
@@ -478,6 +481,15 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',

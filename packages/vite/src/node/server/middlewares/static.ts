@@ -1,8 +1,10 @@
 import path from 'path'
-import { ServerResponse } from 'http'
-import sirv, { Options } from 'sirv'
-import { Connect } from 'types/connect'
-import { normalizePath, ViteDevServer } from '../..'
+import type { ServerResponse } from 'http'
+import type { Options } from 'sirv'
+import sirv from 'sirv'
+import type { Connect } from 'types/connect'
+import type { ViteDevServer } from '../..'
+import { normalizePath } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,

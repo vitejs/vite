@@ -1,7 +1,7 @@
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk, RollupError } from 'rollup'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
+import type { OutputAsset, OutputBundle, OutputChunk, RollupError } from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -11,7 +11,7 @@ import {
   processSrcSet,
   slash
 } from '../utils'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,
@@ -21,13 +21,14 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import {
+import type {
   AttributeNode,
   NodeTransform,
   NodeTypes,
   ElementNode,
   CompilerError
 } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -59,7 +60,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (result) {
+        if (typeof result === 'string') {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
@@ -231,7 +232,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const { src, isModule, isAsync } = getScriptInfo(node)
 
             const url = src && src.value && src.value.content
-            if (url && checkPublicFile(url, config)) {
+            const isPublicFile = !!(url && checkPublicFile(url, config))
+            if (isPublicFile) {
               // referencing public dir url, prefix with base
               s.overwrite(
                 src!.value!.loc.start.offset,
@@ -266,6 +268,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               everyScriptIsAsync &&= isAsync
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
+            } else if (url && !isPublicFile) {
+              config.logger.warn(
+                `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
+              )
             }
           }
 
@@ -315,27 +321,36 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // for each encountered asset url, rewrite original html so that it
-        // references the post-build location.
+        // references the post-build location, ignoring empty attributes and
+        // attributes that directly reference named output.
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {}
+        )
         for (const attr of assetUrls) {
           const value = attr.value!
-          try {
-            const url =
-              attr.name === 'srcset'
-                ? await processSrcSet(value.content, ({ url }) =>
-                    urlToBuiltUrl(url, id, config, this)
-                  )
-                : await urlToBuiltUrl(value.content, id, config, this)
+          const content = value.content
+          if (
+            content !== '' && // Empty attribute
+            !namedOutput.includes(content) && // Direct reference to named output
+            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+          ) {
+            try {
+              const url =
+                attr.name === 'srcset'
+                  ? await processSrcSet(content, ({ url }) =>
+                      urlToBuiltUrl(url, id, config, this)
+                    )
+                  : await urlToBuiltUrl(content, id, config, this)
 
-            s.overwrite(
-              value.loc.start.offset,
-              value.loc.end.offset,
-              `"${url}"`
-            )
-          } catch (e) {
-            // #1885 preload may be pointing to urls that do not exist
-            // locally on disk
-            if (e.code !== 'ENOENT') {
-              throw e
+              s.overwrite(
+                value.loc.start.offset,
+                value.loc.end.offset,
+                `"${url}"`
+              )
+            } catch (e) {
+              if (e.code !== 'ENOENT') {
+                throw e
+              }
             }
           }
         }

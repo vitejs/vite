@@ -1,4 +1,4 @@
-import {
+import type {
   ErrorPayload,
   FullReloadPayload,
   HMRPayload,
@@ -6,7 +6,7 @@ import {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
-import { CustomEventName } from 'types/customEvent'
+import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'

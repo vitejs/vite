@@ -124,6 +124,8 @@ const createNodeConfig = (isProduction) => {
       }),
       nodeResolve({ preferBuiltins: true }),
       typescript({
+        tsconfig: 'src/node/tsconfig.json',
+        module: 'esnext',
         target: 'es2019',
         include: ['src/**/*.ts', 'types/**'],
         exclude: ['src/**/__tests__/**'],
@@ -133,7 +135,6 @@ const createNodeConfig = (isProduction) => {
         ...(isProduction
           ? {}
           : {
-              tsconfig: 'tsconfig.base.json',
               declaration: true,
               declarationDir: path.resolve(__dirname, 'dist/')
             })
