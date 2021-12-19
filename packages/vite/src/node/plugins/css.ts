@@ -10,7 +10,8 @@ import {
   isDataUrl,
   isObject,
   normalizePath,
-  processSrcSet
+  processSrcSet,
+  parseRequest
 } from '../utils'
 import { Plugin } from '../plugin'
 import { ResolvedConfig } from '../config'
@@ -43,6 +44,7 @@ import type Less from 'less'
 import { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
+import { addToHTMLProxyTransformResult } from './html'
 
 // const debug = createDebugger('vite:css')
 
@@ -86,6 +88,7 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const usedRE = /(\?|&)used\b/
@@ -279,7 +282,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const query = parseRequest(id)
       const inlined = inlineRE.test(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
@@ -312,6 +317,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // build CSS handling ----------------------------------------------------
 
       // record css
+      // cache css compile result to map
+      if (inlined && isHTMLProxy) {
+        addToHTMLProxyTransformResult(
+          `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
+          css
+        )
+        // and replace inline style when `renderChunk` in vite:html-inline-proxy plugin
+        return `export default ''`
+      }
       if (!inlined) {
         styles.set(id, css)
       }

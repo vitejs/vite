@@ -29,7 +29,8 @@ import {
   TextNode
 } from '@vue/compiler-dom'
 
-const htmlProxyRE = /\?html-proxy&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy[&inline]*&index=(\d+)\.(js|css)$/
+const inlineCSSRE = /__VITE_INLINECSS__([^_]+_\d+)__/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -37,6 +38,9 @@ export const htmlProxyMap = new WeakMap<
   ResolvedConfig,
   Map<string, Array<string>>
 >()
+
+//  HTML Proxy Transform result are stored by config config -> hash
+export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   return {
@@ -69,7 +73,18 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-/** Add script to cache */
+export function htmlInlineProxyPostPlugin(config: ResolvedConfig): Plugin {
+  return {
+    name: 'vite:html-inline-proxy-post',
+
+    renderChunk(code) {
+      console.log(code);
+      return code
+    }
+  }
+}
+
+/** Add html proxy to cache */
 export function addToHTMLProxyCache(
   config: ResolvedConfig,
   filePath: string,
@@ -83,6 +98,11 @@ export function addToHTMLProxyCache(
     htmlProxyMap.get(config)!.set(filePath, [])
   }
   htmlProxyMap.get(config)!.get(filePath)![index] = code
+}
+
+/* Add transform result to cache */
+export function addToHTMLProxyTransformResult(hash: string, code: string) {
+  htmlProxyResult.set(hash, code)
 }
 
 // this extends the config in @vue/compiler-sfc with <link href>
@@ -299,37 +319,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = inlineStyle.value!
             const code = styleNode.content!
             const filePath = id.replace(normalizePath(config.root), '')
-            const scopedName = `__vite_inline${inlineModuleIndex}`
-            addToHTMLProxyCache(
-              config,
-              filePath,
-              inlineModuleIndex,
-              `.${scopedName}{ ${code} }`
-            )
-            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
+            // will transform with css plugin and cache result with css-post plugin
+            js += `\nimport "${id}?html-proxy&inline&index=${inlineModuleIndex}.css"`
 
-            // Add the scopedName class to the tag
-            const classPropsNode = node.props.find(
-              (prop) =>
-                prop.name === 'class' &&
-                prop.type === NodeTypes.ATTRIBUTE &&
-                prop.value
-            ) as AttributeNode
-            if (classPropsNode) {
-              const classPropValue = classPropsNode.value!
-              s.remove(inlineStyle.loc.start.offset, inlineStyle.loc.end.offset)
-              s.overwrite(
-                classPropValue.loc.start.offset,
-                classPropValue.loc.end.offset,
-                `"${classPropValue.content} ${scopedName}"`
-              )
-            } else {
-              s.overwrite(
-                inlineStyle.loc.start.offset,
-                inlineStyle.loc.end.offset,
-                `class="${scopedName}"`
-              )
-            }
+            // will transfrom in `applyHtmlTransforms`
+            s.overwrite(
+              styleNode.loc.start.offset,
+              styleNode.loc.end.offset,
+              `"__VITE_INLINECSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
+            )
           }
 
           // <style>...</style>
@@ -641,6 +640,19 @@ export async function applyHtmlTransforms(
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
+
+  // no use assets plugin because it will emit file
+  let match: RegExpExecArray | null
+  let s: MagicString | undefined
+  while ((match = inlineCSSRE.exec(html))) {
+    s = s || (s = new MagicString(html))
+    const { 0: full, 1: scopedName } = match
+    const cssTransformedCode = htmlProxyResult.get(scopedName)!
+    s.overwrite(match.index, match.index + full.length, cssTransformedCode)
+  }
+  if (s) {
+    html = s.toString()
+  }
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)

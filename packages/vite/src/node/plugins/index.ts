@@ -8,7 +8,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlInlineProxyPlugin } from './html'
+import { htmlInlineProxyPlugin, htmlInlineProxyPostPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -61,6 +61,7 @@ export async function resolvePlugins(
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
+    htmlInlineProxyPostPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,
