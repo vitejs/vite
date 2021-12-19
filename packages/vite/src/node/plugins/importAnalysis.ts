@@ -96,7 +96,11 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-
+  const resolve = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
   let server: ViteDevServer
 
   return {
@@ -328,12 +332,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               root,
               normalizeUrl,
-              async (url, importer) => {
-                const resolveId = await this.resolve(url, importer, {
-                  custom: config.plugins
-                })
-                return resolveId?.id
-              }
+              resolve
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
