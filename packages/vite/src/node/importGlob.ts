@@ -8,10 +8,7 @@ import {
 import { cleanUrl, normalizePath } from './utils'
 import { ResolvedId, RollupError } from 'rollup'
 
-function formatGlobRelativePattern (
-  base: string,
-  pattern: string,
-) {
+function formatGlobRelativePattern(base: string, pattern: string) {
   let parentDepth = 0
   while (pattern.startsWith('../')) {
     pattern = pattern.slice(3)
@@ -58,7 +55,7 @@ export async function transformImportGlob(
 
   let [pattern, endIndex] = lexGlobPattern(source, pos)
 
-  let base: string = ""
+  let base: string = ''
   let parentDepth = 0
   let isAbsolute: boolean
   if (pattern.startsWith('.') || pattern.startsWith('/')) {
@@ -88,10 +85,14 @@ export async function transformImportGlob(
       pattern = formatGlobResult.pattern
       parentDepth = formatGlobResult.parentDepth
     } else {
-      throw err(`pattern must start with "." or "/" (relative to project root) or alias path`)
+      throw err(
+        `pattern must start with "." or "/" (relative to project root) or alias path`
+      )
     }
   } else {
-    throw err(`pattern must start with "." or "/" (relative to project root) or alias path`)
+    throw err(
+      `pattern must start with "." or "/" (relative to project root) or alias path`
+    )
   }
 
   const files = glob.sync(pattern, {
