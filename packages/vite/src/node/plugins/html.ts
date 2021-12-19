@@ -38,9 +38,7 @@ export const htmlProxyMap = new WeakMap<
   Map<string, Array<string>>
 >()
 
-export function htmlInlineProxyPlugin(
-  config: ResolvedConfig
-): Plugin {
+export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:html-inline-proxy',
 
