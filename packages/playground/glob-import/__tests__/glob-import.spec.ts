@@ -7,11 +7,11 @@ import {
 } from '../../testUtils'
 
 const filteredResult = {
-  './foo.js': {
-    msg: 'foo'
-  },
   './alias.js': {
     default: 'hi'
+  },
+  './foo.js': {
+    msg: 'foo'
   }
 }
 
@@ -33,6 +33,9 @@ const json = isBuild
 
 const allResult = {
   // JSON file should be properly transformed
+  '/dir/alias.js': {
+    default: 'hi'
+  },
   '/dir/baz.json': json,
   '/dir/foo.js': {
     msg: 'foo'
