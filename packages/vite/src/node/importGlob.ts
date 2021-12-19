@@ -73,7 +73,7 @@ export async function transformImportGlob(
       parentDepth = formatGlobResult.parentDepth
     }
   } else if (resolve) {
-    const resolveId = await resolve(pattern, importer)
+    const resolvedId = await resolve(pattern, importer)
     if (resolveId) {
       isAbsolute = false
       base = path.dirname(importer)
