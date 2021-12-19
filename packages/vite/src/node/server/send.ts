@@ -12,9 +12,9 @@ const alias: Record<string, string | undefined> = {
 }
 
 export interface SendOptions {
-  etag?: string,
-  cacheControl?: string,
-  headers?: OutgoingHttpHeaders,
+  etag?: string
+  cacheControl?: string
+  headers?: OutgoingHttpHeaders
   map?: SourceMap | null
 }
 

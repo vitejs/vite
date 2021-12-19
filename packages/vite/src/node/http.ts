@@ -1,6 +1,9 @@
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
-import type { OutgoingHttpHeaders as HttpServerHeaders, Server as HttpServer } from 'http'
+import type {
+  OutgoingHttpHeaders as HttpServerHeaders,
+  Server as HttpServer
+} from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -61,7 +64,7 @@ export interface CommonServerOptions {
    * Set to `true` to allow all methods from any origin, or configure separately
    * using an object.
    */
-  cors?: CorsOptions | boolean,
+  cors?: CorsOptions | boolean
   /**
    * Specify server response headers.
    */
