@@ -67,7 +67,7 @@ import {
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
@@ -161,9 +161,9 @@ export async function createPluginContainer(
 
   function warnIncompatibleMethod(method: string, plugin: string) {
     logger.warn(
-      chalk.cyan(`[plugin:${plugin}] `) +
-        chalk.yellow(
-          `context method ${chalk.bold(
+      colors.cyan(`[plugin:${plugin}] `) +
+        colors.yellow(
+          `context method ${colors.bold(
             `${method}()`
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
@@ -290,7 +290,7 @@ export async function createPluginContainer(
       const err = formatError(e, position, this)
       const msg = buildErrorMessage(
         err,
-        [chalk.yellow(`warning: ${err.message}`)],
+        [colors.yellow(`warning: ${err.message}`)],
         false
       )
       logger.warn(msg, {
@@ -332,7 +332,7 @@ export async function createPluginContainer(
           errLocation = numberToPos(ctx._activeCode, pos)
         } catch (err2) {
           logger.error(
-            chalk.red(
+            colors.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`
             ),
             // print extra newline to separate the two errors
@@ -516,7 +516,9 @@ export async function createPluginContainer(
         if (!seenResolves[key]) {
           seenResolves[key] = true
           debugResolve(
-            `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+            `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
+              id
+            )}`
           )
         }
       }

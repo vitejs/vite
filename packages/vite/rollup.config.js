@@ -8,7 +8,7 @@ import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
@@ -369,7 +369,7 @@ function licensePlugin() {
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync('LICENSE.md', licenseText)
         console.warn(
-          chalk.yellow(
+          colors.yellow(
             '\nLICENSE.md updated. You should commit the updated file.\n'
           )
         )
