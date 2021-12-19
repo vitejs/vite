@@ -29,7 +29,7 @@ export async function transformImportGlob(
   importIndex: number,
   root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
-  resolve?: (url: string) => Promise<ResolvedId | null>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
 ): Promise<{
   importsString: string
@@ -73,13 +73,13 @@ export async function transformImportGlob(
       parentDepth = formatGlobResult.parentDepth
     }
   } else if (resolve) {
-    const resolveId = await resolve(pattern)
+    const resolveId = await resolve(pattern, importer)
     if (resolveId) {
       isAbsolute = false
       base = path.dirname(importer)
       const formatGlobResult = formatGlobRelativePattern(
         base,
-        normalizePath(path.relative(base, resolveId.id))
+        normalizePath(path.relative(base, resolveId))
       )
       base = formatGlobResult.base
       pattern = formatGlobResult.pattern

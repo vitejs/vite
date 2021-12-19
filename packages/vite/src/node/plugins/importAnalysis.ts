@@ -328,7 +328,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               root,
               normalizeUrl,
-              (url) => this.resolve(url, importer, { custom: config.plugins })
+              async (url, importer) => {
+                const resolveId = await this.resolve(url, importer, {
+                  custom: config.plugins
+                })
+                return resolveId?.id
+              }
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
