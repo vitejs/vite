@@ -73,17 +73,6 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function htmlInlineProxyPostPlugin(config: ResolvedConfig): Plugin {
-  return {
-    name: 'vite:html-inline-proxy-post',
-
-    renderChunk(code) {
-      console.log(code);
-      return code
-    }
-  }
-}
-
 /** Add html proxy to cache */
 export function addToHTMLProxyCache(
   config: ResolvedConfig,
@@ -488,9 +477,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
         // resolve asset url references
-        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return config.base + getAssetFilename(fileHash, config) + postfix
-        })
+        let result = html
 
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
@@ -542,11 +529,26 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
+        // no use assets plugin because it will emit file
+        let match: RegExpExecArray | null
+        let s: MagicString | undefined
+        while ((match = inlineCSSRE.exec(html))) {
+          s = s || (s = new MagicString(html))
+          const { 0: full, 1: scopedName } = match
+          const cssTransformedCode = htmlProxyResult.get(scopedName)!
+          s.overwrite(match.index, match.index + full.length, cssTransformedCode)
+        }
+        if (s) {
+          result = s.toString()
+        }
         result = await applyHtmlTransforms(result, postHooks, {
           path: '/' + shortEmitName,
           filename: id,
           bundle,
           chunk
+        })
+        result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          return config.base + getAssetFilename(fileHash, config) + postfix
         })
 
         if (chunk && canInlineEntry) {
@@ -640,19 +642,6 @@ export async function applyHtmlTransforms(
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
-
-  // no use assets plugin because it will emit file
-  let match: RegExpExecArray | null
-  let s: MagicString | undefined
-  while ((match = inlineCSSRE.exec(html))) {
-    s = s || (s = new MagicString(html))
-    const { 0: full, 1: scopedName } = match
-    const cssTransformedCode = htmlProxyResult.get(scopedName)!
-    s.overwrite(match.index, match.index + full.length, cssTransformedCode)
-  }
-  if (s) {
-    html = s.toString()
-  }
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)
