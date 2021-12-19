@@ -66,9 +66,6 @@ export async function transformImportGlob(
     parentDepth: 0,
     isAbsolute: false
   }
-  const errResolvePattern = err(
-    `pattern must start with "." or "/" (relative to project root) or alias path`
-  )
   if (userPattern.startsWith('/')) {
     globParams = {
       isAbsolute: true,
@@ -89,14 +86,15 @@ export async function transformImportGlob(
         importerDirname,
         normalizePath(path.relative(importerDirname, resolvedId))
       )
-    } else {
-      throw errResolvePattern
     }
-  } else {
-    throw errResolvePattern
   }
 
   const { base, parentDepth, isAbsolute, pattern } = globParams
+  if (!base) {
+    throw err(
+      `pattern must start with "." or "/" (relative to project root) or alias path`
+    )
+  }
 
   const files = glob.sync(pattern, {
     cwd: base,
