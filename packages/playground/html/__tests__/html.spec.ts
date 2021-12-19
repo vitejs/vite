@@ -223,9 +223,8 @@ if (!isBuild) {
       const message = await errorOverlay.$$eval('.message-body', (m) => {
         return m[0].innerHTML
       })
-      // use regex with variable filename and position values because they are different on win
       expect(message).toMatch(
-        /^Unable to parse {"file":"\/invalid.html","line":.*,"column":.*}/
+        /^Unable to parse {"file":".*","line":.*,"column":.*}/
       )
     })
 
