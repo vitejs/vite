@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import { createHash } from 'crypto'
-import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import { ResolvedConfig } from '../config'
+import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import { build } from 'esbuild'
+import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
