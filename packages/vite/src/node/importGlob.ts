@@ -19,7 +19,7 @@ function formatGlobRelativePattern(base: string, pattern: string) {
     pattern = pattern.slice(2)
   }
 
-  return { base, pattern, parentDepth }
+  return { base, pattern, parentDepth, isAbsolute: false }
 }
 
 export async function transformImportGlob(
@@ -53,47 +53,50 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, endIndex] = lexGlobPattern(source, pos)
+  const [userPattern, endIndex] = lexGlobPattern(source, pos)
 
-  let base: string = ''
-  let parentDepth = 0
-  let isAbsolute: boolean
-  if (pattern.startsWith('.') || pattern.startsWith('/')) {
-    isAbsolute = pattern.startsWith('/')
-    if (isAbsolute) {
-      base = path.resolve(root)
-      pattern = pattern.slice(1)
-    } else {
-      const formatGlobResult = formatGlobRelativePattern(
-        path.dirname(importer),
-        pattern
-      )
-      base = formatGlobResult.base
-      pattern = formatGlobResult.pattern
-      parentDepth = formatGlobResult.parentDepth
+  let globParams: {
+    base: string
+    pattern: string
+    parentDepth: number
+    isAbsolute: boolean
+  } = {
+    base: '',
+    pattern: userPattern,
+    parentDepth: 0,
+    isAbsolute: false
+  }
+  const errResolvePattern = err(
+    `pattern must start with "." or "/" (relative to project root) or alias path`
+  )
+  if (userPattern.startsWith('/')) {
+    globParams = {
+      isAbsolute: true,
+      base: path.resolve(root),
+      pattern: userPattern.slice(1),
+      parentDepth: 0
     }
+  } else if (userPattern.startsWith('.')) {
+    globParams = formatGlobRelativePattern(
+      path.dirname(importer),
+      globParams.pattern
+    )
   } else if (resolve) {
-    const resolvedId = await resolve(pattern, importer)
-    if (resolveId) {
-      isAbsolute = false
-      base = path.dirname(importer)
-      const formatGlobResult = formatGlobRelativePattern(
-        base,
-        normalizePath(path.relative(base, resolveId))
+    const resolvedId = await resolve(userPattern, importer)
+    if (resolvedId) {
+      const importerDirname = path.dirname(importer)
+      globParams = formatGlobRelativePattern(
+        importerDirname,
+        normalizePath(path.relative(importerDirname, resolvedId))
       )
-      base = formatGlobResult.base
-      pattern = formatGlobResult.pattern
-      parentDepth = formatGlobResult.parentDepth
     } else {
-      throw err(
-        `pattern must start with "." or "/" (relative to project root) or alias path`
-      )
+      throw errResolvePattern
     }
   } else {
-    throw err(
-      `pattern must start with "." or "/" (relative to project root) or alias path`
-    )
+    throw errResolvePattern
   }
+
+  const { base, parentDepth, isAbsolute, pattern } = globParams
 
   const files = glob.sync(pattern, {
     cwd: base,
