@@ -6,7 +6,7 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
-import { RollupError } from 'rollup'
+import { ResolvedId, RollupError } from 'rollup'
 
 export async function transformImportGlob(
   source: string,
@@ -15,6 +15,7 @@ export async function transformImportGlob(
   importIndex: number,
   root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string) => Promise<ResolvedId | null>,
   preload = true
 ): Promise<{
   importsString: string
@@ -39,26 +40,38 @@ export async function transformImportGlob(
   const importerBasename = path.basename(importer)
 
   let [pattern, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
-    throw err(`pattern must start with "." or "/" (relative to project root)`)
-  }
-  let base: string
+
+  let base: string = ""
   let parentDepth = 0
-  const isAbsolute = pattern.startsWith('/')
-  if (isAbsolute) {
-    base = path.resolve(root)
-    pattern = pattern.slice(1)
+  let isAbsolute: boolean
+  if (pattern.startsWith('.') || pattern.startsWith('/')) {
+    isAbsolute = pattern.startsWith('/')
+    if (isAbsolute) {
+      base = path.resolve(root)
+      pattern = pattern.slice(1)
+    } else {
+      base = path.dirname(importer)
+      while (pattern.startsWith('../')) {
+        pattern = pattern.slice(3)
+        base = path.resolve(base, '../')
+        parentDepth++
+      }
+      if (pattern.startsWith('./')) {
+        pattern = pattern.slice(2)
+      }
+    }
+  } else if (resolve) {
+    const resolveId = await resolve(pattern)
+    if (resolveId) {
+      isAbsolute = true
+      base = resolveId.id
+    } else {
+      throw err(`pattern must start with "." or "/" (relative to project root) or alias path`)
+    }
   } else {
-    base = path.dirname(importer)
-    while (pattern.startsWith('../')) {
-      pattern = pattern.slice(3)
-      base = path.resolve(base, '../')
-      parentDepth++
-    }
-    if (pattern.startsWith('./')) {
-      pattern = pattern.slice(2)
-    }
+    throw err(`pattern must start with "." or "/" (relative to project root) or alias path`)
   }
+
   const files = glob.sync(pattern, {
     cwd: base,
     ignore: ['**/node_modules/**']

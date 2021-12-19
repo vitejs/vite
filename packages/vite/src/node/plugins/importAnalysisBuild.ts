@@ -155,6 +155,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               config.root,
               undefined,
+              (url) => this.resolve(url, importer, { custom: config.plugins }),
               insertPreload
             )
           str().prepend(importsString)

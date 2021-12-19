@@ -327,7 +327,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer,
               index,
               root,
-              normalizeUrl
+              normalizeUrl,
+              (url) => this.resolve(url, importer, { custom: config.plugins })
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)
