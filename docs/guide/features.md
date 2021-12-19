@@ -344,6 +344,22 @@ By default, the worker script will be emitted as a separate chunk in the product
 import MyWorker from './worker?worker&inline'
 ```
 
+## Node Worker Threads
+
+Just like Web Workers Node.js worker threads are supported out of the box. You will need to set build target to nodeN and add native modules as external dependencies in rollup options in config. A Node.js worker script can imported by appending `?worker` to the import request. The default export will be the Worker class from the native 'worker_threads' module. Typescript worker file is also supported.
+
+```js
+import MyWorker from './worker?worker'
+
+const worker = new MyWorker()
+```
+
+By default, the worker script will be emitted as a separate chunk in the production build. If you wish to inline the worker, add the `inline` query. Inline code will be added with `{eval: true}`
+
+```js
+import MyWorker from './worker?worker&inline'
+```
+
 ## Build Optimizations
 
 > Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.

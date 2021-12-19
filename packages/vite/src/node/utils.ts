@@ -607,6 +607,22 @@ export function resolveHostname(
   return { host, name }
 }
 
+export function isTargetNode(target: string | false | string[]): boolean {
+  if (!target) {
+    return false
+  }
+
+  if (typeof target === 'string') {
+    return target.includes('node')
+  }
+
+  if (Array.isArray(target)) {
+    return target.some((f) => f.includes('node'))
+  }
+
+  return false
+}
+
 export function arraify<T>(target: T | T[]): T[] {
   return Array.isArray(target) ? target : [target]
 }
@@ -616,6 +632,7 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 }
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
+
 export const singlelineCommentsRE = /\/\/.*/g
 
 export const usingDynamicImport = typeof jest === 'undefined'

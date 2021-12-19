@@ -3,7 +3,7 @@ import { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
 import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
+import { cleanUrl, injectQuery, isTargetNode } from '../utils'
 import Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
@@ -52,28 +52,52 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
+      const isNode = isTargetNode(config?.build?.target)
+
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
+          ...config?.build?.rollupOptions,
           plugins: await resolvePlugins({ ...config }, [], [], []),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }
         })
+
         let code: string
         try {
-          const { output } = await bundle.generate({
-            format: 'iife',
-            sourcemap: config.build.sourcemap
-          })
-          code = output[0].code
+          if (isNode) {
+            const { output } = await bundle.generate({
+              format: 'cjs',
+              sourcemap: config.build.sourcemap
+            })
+            code = output[0].code
+          } else {
+            const { output } = await bundle.generate({
+              format: 'iife',
+              sourcemap: config.build.sourcemap
+            })
+            code = output[0].code
+          }
         } finally {
           await bundle.close()
         }
         const content = Buffer.from(code)
         if (query.inline != null) {
+          if (isNode) {
+            let code = content.toString().trim()
+            code = code.replace(/\r?\n|\r/g, '')
+
+            return `
+            import { Worker } from "worker_threads" \n
+            import { join } from "path" \n
+            export default function WorkerWrapper() {
+              return new Worker(\'${code}', { eval: true })
+            }
+          `
+          }
           // inline as blob data url
           return `const encodedJs = "${content.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
@@ -106,6 +130,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }
+
+      if (isNode) {
+        return `
+        import { Worker } from "worker_threads" \n
+        import { join } from "path" \n
+        export default function WorkerWrapper() {
+          return new Worker(join(__dirname, ${JSON.stringify(
+            url
+          )}), ${JSON.stringify(workerOptions, null, 2)})
+        }
+        `
+      }
 
       return `export default function WorkerWrapper() {
         return new ${workerConstructor}(${JSON.stringify(
