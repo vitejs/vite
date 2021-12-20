@@ -296,15 +296,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
           return [
-            `import { updateStyle, removeStyle } from ${JSON.stringify(
+            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
-            `const id = ${JSON.stringify(id)}`,
-            `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
+            `const __vite__id = ${JSON.stringify(id)}`,
+            `const __vite__css = ${JSON.stringify(css)}`,
+            `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
+            `${
+              modulesCode ||
+              `import.meta.hot.accept()\nexport default __vite__css`
+            }`,
+            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
         }
       }
