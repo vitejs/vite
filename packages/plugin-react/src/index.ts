@@ -11,7 +11,15 @@ import {
 } from './fast-refresh'
 import { babelImportToRequire } from './jsx-runtime/babel-import-to-require'
 import { restoreJSX } from './jsx-runtime/restore-jsx'
-import { createFileFilter, FilterOptions, loadPlugin } from './utils'
+import {
+  createFileFilter,
+  FileFilter,
+  FilterOptions,
+  loadPlugin
+} from './utils'
+
+export type BabelOptions = Omit<TransformOptions, keyof FilterOptions> &
+  FilterOptions
 
 export interface Options {
   /**
@@ -34,7 +42,7 @@ export interface Options {
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: TransformOptions
+  babel?: BabelOptions
   /**
    * @deprecated Use `babel.parserOpts.plugins` instead
    */
@@ -46,8 +54,29 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let base = '/'
   let isProduction = true
   let projectRoot = process.cwd()
-  let shouldUseFastRefresh = createFileFilter(opts.fastRefresh ?? true)
   let skipReactImport = false
+  let shouldProjectInclude: FileFilter
+  let shouldProjectExclude: FileFilter
+  let shouldUseFastRefresh: FileFilter
+  initializeFilters()
+
+  function initializeFilters(command?: string) {
+    shouldProjectInclude = createFileFilter(
+      { include: opts.babel?.include },
+      false,
+      projectRoot
+    )
+    shouldProjectExclude = createFileFilter(
+      { include: opts.babel?.exclude },
+      false,
+      projectRoot
+    )
+    shouldUseFastRefresh = createFileFilter(
+      !(isProduction || command === 'build') && opts.fastRefresh,
+      true,
+      projectRoot
+    )
+  }
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
@@ -71,12 +100,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       base = config.base
       projectRoot = config.root
       isProduction = config.isProduction
-      shouldUseFastRefresh = createFileFilter(
-        isProduction || config.command === 'build'
-          ? false
-          : opts.fastRefresh ?? true,
-        projectRoot
-      )
+      initializeFilters(config.command)
 
       const jsxInject = config.esbuild && config.esbuild.jsxInject
       if (jsxInject && importReactRE.test(jsxInject)) {
@@ -111,6 +135,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
+            ? !shouldProjectExclude(id)
+            : shouldProjectInclude(id)
 
         const plugins = isProjectFile ? [...userPlugins] : []
 

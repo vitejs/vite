@@ -12,15 +12,20 @@ export interface FilterOptions {
 const returnTrue = () => true
 const returnFalse = () => false
 
-type FileFilter = (id: string) => boolean
+export type FileFilter = (id: string) => boolean
 
 export function createFileFilter(
-  arg: boolean | FilterOptions,
+  arg: boolean | FilterOptions | undefined,
+  defaultArg: boolean,
   resolve?: string
 ): FileFilter {
-  return arg === false
-    ? returnFalse
-    : arg === true || (!arg.include && !arg.exclude)
+  return arg === true
     ? returnTrue
-    : createFilter(arg.include, arg.exclude, { resolve })
+    : arg === false
+    ? returnFalse
+    : arg && (arg.include || arg.exclude)
+    ? createFilter(arg.include, arg.exclude, { resolve })
+    : defaultArg
+    ? returnTrue
+    : returnFalse
 }
