@@ -1,3 +1,14 @@
+## [2.7.4](https://github.com/vitejs/vite/compare/v2.7.3...v2.7.4) (2021-12-20)
+
+
+### Bug Fixes
+
+* duplicate variable declaration caused by css modules ([#5873](https://github.com/vitejs/vite/issues/5873)) ([8e16a78](https://github.com/vitejs/vite/commit/8e16a78a2d556b9480e8b2e19ec41fa522621256))
+* improve error message for HTML compilation error (fix [#5769](https://github.com/vitejs/vite/issues/5769)) ([#5777](https://github.com/vitejs/vite/issues/5777)) ([79d1397](https://github.com/vitejs/vite/commit/79d139783868bfe2a2741f6e8cffcb72cee65351))
+* **ssr:** ssrTransfrom function argument destructure ([#6171](https://github.com/vitejs/vite/issues/6171)) ([2762a0e](https://github.com/vitejs/vite/commit/2762a0e7f0a599ced2c25c9d2baf06ec99ad8cfb))
+
+
+
 ## [2.7.3](https://github.com/vitejs/vite/compare/v2.7.2...v2.7.3) (2021-12-16)
 
 
