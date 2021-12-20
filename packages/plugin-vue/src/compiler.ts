@@ -10,7 +10,7 @@ import type * as _compiler from 'vue/compiler-sfc'
 export function resolveCompiler(root: string): typeof _compiler {
   // resolve from project root first, then fallback to peer dep (if any)
   const compiler =
-    tryRequire('vue/compiler-sfc', root) || tryRequire('vue/compiler-sfc')
+    tryRequire('vue/compiler-sfc', root) || tryRequire('vue/compiler-sfc') || tryRequire('@vue/compiler-sfc')
 
   if (!compiler) {
     throw new Error(
