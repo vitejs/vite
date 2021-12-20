@@ -36,7 +36,7 @@ import type {
 import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy[&inline]*&index=(\d+)\.(js|css)$/
-const inlineCSSRE = /__VITE_INLINECSS__([^_]+_\d+)__/g
+const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -342,7 +342,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `"__VITE_INLINECSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
+              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
             )
           }
 
