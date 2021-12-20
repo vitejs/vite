@@ -7,7 +7,7 @@
  */
 export interface RollupCommonJSOptions {
   /**
-   * A minimatch pattern, or array of patterns, which specifies the files in
+   * A picomatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should operate on. By default, all files with
    * extension `".cjs"` or those in `extensions` are included, but you can narrow
    * this list by only including specific files. These files will be analyzed
@@ -17,7 +17,7 @@ export interface RollupCommonJSOptions {
    */
   include?: string | RegExp | readonly (string | RegExp)[]
   /**
-   * A minimatch pattern, or array of patterns, which specifies the files in
+   * A picomatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should _ignore_. By default, all files with
    * extensions other than those in `extensions` or `".cjs"` are ignored, but you
    * can exclude additional files. See also the `include` option.

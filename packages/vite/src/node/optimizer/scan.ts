@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import { ResolvedConfig } from '..'
-import { Loader, Plugin, build, transform, OnLoadResult } from 'esbuild'
+import type { ResolvedConfig } from '..'
+import type { Loader, Plugin, OnLoadResult } from 'esbuild'
+import { build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -19,12 +20,11 @@ import {
   dataUrlRE,
   multilineCommentsRE,
   singlelineCommentsRE,
-  virtualModuleRE
+  virtualModuleRE,
+  virtualModulePrefix
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import type { PluginContainer } from '../server/pluginContainer'
+import { createPluginContainer } from '../server/pluginContainer'
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
@@ -189,7 +189,7 @@ function esbuildScanPlugin(
   return {
     name: 'vite:dep-scan',
     setup(build) {
-      const moduleScripts: Record<string, OnLoadResult> = {}
+      const localScripts: Record<string, OnLoadResult> = {}
 
       // external urls
       build.onResolve({ filter: externalRE }, ({ path }) => ({
@@ -203,15 +203,18 @@ function esbuildScanPlugin(
         external: true
       }))
 
-      build.onResolve(
-        { filter: virtualModuleRE },
-        async ({ path, importer }) => {
-          return {
-            path,
-            namespace: 'html'
-          }
+      // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
+      build.onResolve({ filter: virtualModuleRE }, ({ path }) => {
+        return {
+          // strip prefix to get valid filesystem path so esbuild can resolve imports in the file
+          path: path.replace(virtualModulePrefix, ''),
+          namespace: 'local-script'
         }
-      )
+      })
+
+      build.onLoad({ filter: /.*/, namespace: 'local-script' }, ({ path }) => {
+        return localScripts[path]
+      })
 
       // html types: extract script contents -----------------------------------
       build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
@@ -220,13 +223,6 @@ function esbuildScanPlugin(
           namespace: 'html'
         }
       })
-
-      build.onLoad(
-        { filter: virtualModuleRE, namespace: 'html' },
-        async ({ path }) => {
-          return moduleScripts[path]
-        }
-      )
 
       // extract scripts inside HTML-like files and treat it as a js module
       build.onLoad(
@@ -276,43 +272,29 @@ function esbuildScanPlugin(
                 contextMatch &&
                 (contextMatch[1] || contextMatch[2] || contextMatch[3])
               if (
-                (path.endsWith('.vue') && setupRE.test(raw)) ||
+                (path.endsWith('.vue') && setupRE.test(openTag)) ||
                 (path.endsWith('.svelte') && context !== 'module')
               ) {
-                const id = `virtual-module:${path}`
-                moduleScripts[id] = {
+                // append imports in TS to prevent esbuild from removing them
+                // since they may be used in the template
+                const localContent =
+                  content +
+                  (loader.startsWith('ts') ? extractImportPaths(content) : '')
+                localScripts[path] = {
                   loader,
-                  contents: content
+                  contents: localContent
                 }
-                js += `import '${id}';\n`
+                js += `import '${virtualModulePrefix}${path}';\n`
               } else {
                 js += content + '\n'
               }
             }
           }
-          // empty singleline & multiline comments to avoid matching comments
-          const code = js
-            .replace(multilineCommentsRE, '/* */')
-            .replace(singlelineCommentsRE, '')
 
-          if (
-            loader.startsWith('ts') &&
-            (path.endsWith('.svelte') ||
-              (path.endsWith('.vue') && setupRE.test(raw)))
-          ) {
-            // when using TS + (Vue + <script setup>) or Svelte, imports may seem
-            // unused to esbuild and dropped in the build output, which prevents
-            // esbuild from crawling further.
-            // the solution is to add `import 'x'` for every source to force
-            // esbuild to keep crawling due to potential side effects.
-            let m
-            while ((m = importsRE.exec(code)) != null) {
-              // This is necessary to avoid infinite loops with zero-width matches
-              if (m.index === importsRE.lastIndex) {
-                importsRE.lastIndex++
-              }
-              js += `\nimport ${m[1]}`
-            }
+          // `<script>` in Svelte has imports that can be used in the template
+          // so we handle them here too
+          if (loader.startsWith('ts') && path.endsWith('.svelte')) {
+            js += extractImportPaths(js)
           }
 
           // This will trigger incorrectly if `export default` is contained
@@ -490,6 +472,31 @@ async function transformGlob(
     s.overwrite(expStart, endIndex, exp)
   }
   return s.toString()
+}
+
+/**
+ * when using TS + (Vue + `<script setup>`) or Svelte, imports may seem
+ * unused to esbuild and dropped in the build output, which prevents
+ * esbuild from crawling further.
+ * the solution is to add `import 'x'` for every source to force
+ * esbuild to keep crawling due to potential side effects.
+ */
+function extractImportPaths(code: string) {
+  // empty singleline & multiline comments to avoid matching comments
+  code = code
+    .replace(multilineCommentsRE, '/* */')
+    .replace(singlelineCommentsRE, '')
+
+  let js = ''
+  let m
+  while ((m = importsRE.exec(code)) != null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === importsRE.lastIndex) {
+      importsRE.lastIndex++
+    }
+    js += `\nimport ${m[1]}`
+  }
+  return js
 }
 
 export function shouldExternalizeDep(

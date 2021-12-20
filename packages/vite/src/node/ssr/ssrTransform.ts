@@ -1,8 +1,8 @@
 import MagicString from 'magic-string'
-import { SourceMap } from 'rollup'
-import { TransformResult } from '../server/transformRequest'
+import type { SourceMap } from 'rollup'
+import type { TransformResult } from '../server/transformRequest'
 import { parser } from '../server/pluginContainer'
-import {
+import type {
   Identifier,
   Node as _Node,
   Property,
@@ -11,7 +11,7 @@ import {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 
 type Node = _Node & {
   start: number
@@ -315,20 +315,21 @@ function walk(
         node.params.forEach((p) =>
           (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              if (child.type !== 'Identifier') return
+              // do not record as scope variable if is a destructuring keyword
+              if (isStaticPropertyKey(child, parent)) return
+              // do not record if this is a default value
+              // assignment of a destructuring variable
               if (
-                child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructuring key
-                !isStaticPropertyKey(child, parent) &&
-                // do not record if this is a default value
-                // assignment of a destructuring variable
-                !(
-                  parent &&
-                  parent.type === 'AssignmentPattern' &&
-                  parent.right === child
-                )
+                (parent?.type === 'AssignmentPattern' &&
+                  parent?.right === child) ||
+                (parent?.type === 'TemplateLiteral' &&
+                  parent?.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent?.callee === child)
               ) {
-                setScope(node, child.name)
+                return
               }
+              setScope(node, child.name)
             }
           })
         )
@@ -345,6 +346,10 @@ function walk(
               } else {
                 setScope(parentFunction, (property.value as Identifier).name)
               }
+            })
+          } else if (node.id.type === 'ArrayPattern') {
+            node.id.elements.filter(Boolean).forEach((element) => {
+              setScope(parentFunction, (element as Identifier).name)
             })
           } else {
             setScope(parentFunction, (node.id as Identifier).name)

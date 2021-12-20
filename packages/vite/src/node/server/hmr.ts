@@ -1,16 +1,15 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import { createServer, ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { createDebugger, normalizePath } from '../utils'
-import { ModuleNode } from './moduleGraph'
-import { Update } from 'types/hmrPayload'
+import type { ModuleNode } from './moduleGraph'
+import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
-import { RollupError } from 'rollup'
-import match from 'minimatch'
-import { Server } from 'http'
+import type { RollupError } from 'rollup'
+import { isMatch } from 'micromatch'
+import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
-import { performance } from 'perf_hooks'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -50,7 +49,9 @@ export async function handleHMRUpdate(
   const isConfigDependency = config.configFileDependencies.some(
     (name) => file === path.resolve(name)
   )
-  const isEnv = config.inlineConfig.envFile !== false && (file === '.env' || file.startsWith('.env.'))
+  const isEnv =
+    config.inlineConfig.envFile !== false &&
+    (file === '.env' || file.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${chalk.dim(shortFile)}`)
@@ -60,7 +61,11 @@ export async function handleHMRUpdate(
       ),
       { clear: true, timestamp: true }
     )
-    await restartServer(server)
+    try {
+      await server.restart()
+    } catch (e) {
+      config.logger.error(chalk.red(e))
+    }
     return
   }
 
@@ -189,7 +194,10 @@ export async function handleFileAddUnlink(
     for (const i in server._globImporters) {
       const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
-        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
+        if (
+          isMatch(file, pattern) ||
+          isMatch(path.relative(base, file), pattern)
+        ) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.
@@ -455,35 +463,5 @@ async function readModifiedFile(file: string): Promise<string> {
     return fs.readFileSync(file, 'utf-8')
   } else {
     return content
-  }
-}
-
-async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
-  global.__vite_start_time = performance.now()
-  const { port } = server.config.server
-
-  await server.close()
-
-  let newServer = null
-  try {
-    newServer = await createServer(server.config.inlineConfig)
-  } catch (err: any) {
-    server.config.logger.error(err.message, {
-      timestamp: true
-    })
-    return
-  }
-
-  for (const key in newServer) {
-    if (key !== 'app') {
-      // @ts-ignore
-      server[key] = newServer[key]
-    }
-  }
-  if (!server.config.server.middlewareMode) {
-    await server.listen(port, true)
-  } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
   }
 }

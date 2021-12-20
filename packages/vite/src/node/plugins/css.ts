@@ -12,10 +12,10 @@ import {
   normalizePath,
   processSrcSet
 } from '../utils'
-import { Plugin } from '../plugin'
-import { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
-import {
+import type {
   NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
@@ -25,7 +25,7 @@ import {
 import { dataToEsm } from '@rollup/pluginutils'
 import chalk from 'chalk'
 import { CLIENT_PUBLIC_PATH } from '../constants'
-import { ResolveFn, ViteDevServer } from '../'
+import type { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
   assetUrlRE,
@@ -34,13 +34,13 @@ import {
   checkPublicFile
 } from './asset'
 import MagicString from 'magic-string'
-import * as Postcss from 'postcss'
+import type * as Postcss from 'postcss'
 import type Sass from 'sass'
 // We need to disable check of extraneous import which is buggy for stylus,
 // and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
 import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
-import { Alias } from 'types/alias'
+import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 
@@ -218,7 +218,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                   : await moduleGraph.ensureEntryFromUrl(
                       (
                         await fileToUrl(file, config, this)
-                      ).replace((config.server?.origin ?? '') + config.base, '/')
+                      ).replace(
+                        (config.server?.origin ?? '') + config.base,
+                        '/'
+                      )
                     )
               )
             }
@@ -293,15 +296,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
           return [
-            `import { updateStyle, removeStyle } from ${JSON.stringify(
+            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
-            `const id = ${JSON.stringify(id)}`,
-            `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
+            `const __vite__id = ${JSON.stringify(id)}`,
+            `const __vite__css = ${JSON.stringify(css)}`,
+            `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
+            `${
+              modulesCode ||
+              `import.meta.hot.accept()\nexport default __vite__css`
+            }`,
+            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
         }
       }
@@ -998,9 +1004,17 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
-    throw new Error(
-      `Preprocessor dependency "${lang}" not found. Did you install it?`
-    )
+    if (e.code === 'MODULE_NOT_FOUND') {
+      throw new Error(
+        `Preprocessor dependency "${lang}" not found. Did you install it?`
+      )
+    } else {
+      const message = new Error(
+        `Preprocessor dependency "${lang}" failed to load:\n${e.message}`
+      )
+      message.stack = e.stack + '\n' + message.stack
+      throw message
+    }
   }
 }
 

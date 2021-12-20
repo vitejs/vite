@@ -188,6 +188,48 @@ test('do not rewrite when variable is in scope', async () => {
   expect(result.deps).toEqual(['vue'])
 })
 
+// #5472
+test('do not rewrite when variable is in scope with object destructuring', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ let {fn, test} = {fn: 'foo', test: 'bar'}; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
+// #5472
+test('do not rewrite when variable is in scope with array destructuring', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A(){ let [fn, test] = ['foo', 'bar']; return { fn }; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
+// #5727
+test('rewrite variable in string interpolation in function nested arguments', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A({foo = \`test\${fn}\`} = {}){ return {}; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A({foo = \`test\${__vite_ssr_import_0__.fn}\`} = {}){ return {}; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransform(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
@@ -330,6 +372,37 @@ test('overwrite bindings', async () => {
     function f() {  console.log(__vite_ssr_import_0__.inject) }
     function e() { const { inject } = { inject: true } }
     function g() { const f = () => { const inject = true }; console.log(__vite_ssr_import_0__.inject) }
+    "
+  `)
+})
+
+test('Empty array pattern', async () => {
+  expect(
+    (await ssrTransform(`const [, LHS, RHS] = inMatch;`, null, null)).code
+  ).toMatchInlineSnapshot(`"const [, LHS, RHS] = inMatch;"`)
+})
+
+test('function argument destructure', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { foo, bar } from 'foo'
+const a = ({ _ = foo() }) => {}
+function b({ _ = bar() }) {}
+function c({ _ = bar() + foo() }) {}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const a = ({ _ = __vite_ssr_import_0__.foo() }) => {}
+    function b({ _ = __vite_ssr_import_0__.bar() }) {}
+    function c({ _ = __vite_ssr_import_0__.bar() + __vite_ssr_import_0__.foo() }) {}
     "
   `)
 })
