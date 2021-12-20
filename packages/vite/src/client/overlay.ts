@@ -124,6 +124,8 @@ export class ErrorOverlay extends HTMLElement {
     this.root.innerHTML = template
 
     if (!err) {
+      // In SSR, the overlay element can be directly injected in
+      // the HTML response with the error information as attributes.
       err = {
         id: this.getAttribute('id') || undefined,
         message: this.getAttribute('message') || '',
