@@ -55,7 +55,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const userParserPlugins =
     opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
 
-  // Support pattens like:
+  // Support patterns like:
   // - import * as React from 'react';
   // - import React from 'react';
   // - import React, {useEffect} from 'react';
