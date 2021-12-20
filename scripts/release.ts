@@ -31,7 +31,7 @@ const versionIncrements: ReleaseType[] = [
 ]
 
 const inc: (i: ReleaseType) => string = (i) =>
-  semver.inc(currentVersion, i, 'beta')
+  semver.inc(currentVersion, i, 'beta')!
 
 type RunFn = (
   bin: string,
@@ -75,7 +75,7 @@ async function main(): Promise<void> {
       })
       targetVersion = res.version
     } else {
-      targetVersion = release.match(/\((.*)\)/)[1]
+      targetVersion = release.match(/\((.*)\)/)![1]
     }
   }
 
@@ -171,7 +171,7 @@ async function publishPackage(
       stdio: 'pipe'
     })
     console.log(chalk.green(`Successfully published ${pkgName}@${version}`))
-  } catch (e) {
+  } catch (e: any) {
     if (e.stderr.match(/previously published/)) {
       console.log(chalk.red(`Skipping already published: ${pkgName}`))
     } else {
