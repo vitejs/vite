@@ -1,18 +1,19 @@
 import qs from 'querystring'
 import path from 'path'
-import { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
-import { ResolvedOptions } from '.'
+import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
+import type { ResolvedOptions } from '.'
 import {
   createDescriptor,
   getPrevDescriptor,
   setSrcDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
 import { resolveScript, isUseInlineTemplate } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
-import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 import { transformWithEsbuild } from 'vite'
 import { EXPORT_HELPER_ID } from './helper'

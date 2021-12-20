@@ -2,18 +2,17 @@ import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve, dirname } from 'path'
 import sirv from 'sirv'
-import {
-  createServer,
-  build,
+import type {
   ViteDevServer,
   UserConfig,
   PluginOption,
   ResolvedConfig,
   Logger
 } from 'vite'
-import { Page } from 'playwright-chromium'
+import { createServer, build } from 'vite'
+import type { Page } from 'playwright-chromium'
 // eslint-disable-next-line node/no-extraneous-import
-import { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
+import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 

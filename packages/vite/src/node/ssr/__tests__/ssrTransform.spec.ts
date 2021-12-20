@@ -381,3 +381,28 @@ test('Empty array pattern', async () => {
     (await ssrTransform(`const [, LHS, RHS] = inMatch;`, null, null)).code
   ).toMatchInlineSnapshot(`"const [, LHS, RHS] = inMatch;"`)
 })
+
+test('function argument destructure', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { foo, bar } from 'foo'
+const a = ({ _ = foo() }) => {}
+function b({ _ = bar() }) {}
+function c({ _ = bar() + foo() }) {}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const a = ({ _ = __vite_ssr_import_0__.foo() }) => {}
+    function b({ _ = __vite_ssr_import_0__.bar() }) {}
+    function c({ _ = __vite_ssr_import_0__.bar() + __vite_ssr_import_0__.foo() }) {}
+    "
+  `)
+})

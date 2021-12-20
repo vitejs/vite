@@ -1,6 +1,6 @@
 import MagicString from 'magic-string'
-import { ResolvedConfig } from '..'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '..'
+import type { Plugin } from '../plugin'
 import { arraify } from '../utils'
 
 /**
