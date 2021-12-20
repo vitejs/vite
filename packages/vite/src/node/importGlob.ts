@@ -71,10 +71,7 @@ export async function transformImportGlob(
       parentDepth: 0
     }
   } else if (userPattern.startsWith('.')) {
-    globParams = formatGlobRelativePattern(
-      path.dirname(importer),
-      userPattern
-    )
+    globParams = formatGlobRelativePattern(path.dirname(importer), userPattern)
   } else if (resolve) {
     const resolvedId = await resolve(userPattern, importer)
     if (resolvedId) {
