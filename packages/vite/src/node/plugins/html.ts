@@ -30,11 +30,13 @@ import type {
   AttributeNode,
   NodeTransform,
   ElementNode,
-  CompilerError
+  CompilerError,
+  TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
+const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -276,6 +278,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               config.logger.warn(
                 `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
               )
+            } else if (node.children.length) {
+              const scriptNode = node.children.pop()! as TextNode
+              const code = scriptNode.content
+              let match: RegExpExecArray | null
+              let s: MagicString | undefined
+              while ((match = inlineImportRE.exec(code))) {
+                s = s || (s = new MagicString(code))
+                const { 0: full, 1: packageName, index } = match
+                // emit as asset
+              }
             }
           }
 
