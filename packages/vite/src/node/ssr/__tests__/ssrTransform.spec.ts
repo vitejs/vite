@@ -415,6 +415,7 @@ test('object destructure alias', async () => {
 import { n } from 'foo'
 const a = () => {
   const { type: n = 'bar' } = {}
+  console.log(n)
 }
 `,
         null,
@@ -426,7 +427,8 @@ const a = () => {
     const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
 
     const a = () => {
-      const { type: __vite_ssr_import_0__.n = 'bar' } = {}
+      const { type: n = 'bar' } = {}
+      console.log(n)
     }
     "
   `)
