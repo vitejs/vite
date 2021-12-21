@@ -12,6 +12,8 @@ To develop and test the core `vite` package:
 
 2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
+You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
+
 ## Testing Vite against external packages
 
 You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
