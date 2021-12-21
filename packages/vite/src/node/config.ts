@@ -252,6 +252,7 @@ export type ResolvedConfig = Readonly<
     env: Record<string, any>
     resolve: ResolveOptions & {
       alias: Alias[]
+      cjsInclude?: (string | RegExp)[]
     }
     plugins: readonly Plugin[]
     server: ResolvedServerOptions
@@ -363,22 +364,6 @@ export async function resolveConfig(
     { find: /^[\/]?@vite\/client/, replacement: () => CLIENT_ENTRY }
   ]
 
-  // resolve alias with internal client alias
-  const resolvedAlias = normalizeAlias(
-    mergeAlias(
-      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-      // replacement, but its implementation does work with function values.
-      clientAlias,
-      config.resolve?.alias || config.alias || []
-    )
-  )
-
-  const resolveOptions: ResolvedConfig['resolve'] = {
-    dedupe: config.dedupe,
-    ...config.resolve,
-    alias: resolvedAlias
-  }
-
   // load .env files
   const envDir = config.envDir
     ? normalizePath(path.resolve(resolvedRoot, config.envDir))
@@ -399,6 +384,46 @@ export async function resolveConfig(
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(config.build)
+
+  let cjsInclude = resolvedBuildOptions.commonjsOptions.include
+  if (cjsInclude !== undefined) {
+    const include = (cjsInclude = arraify(cjsInclude))
+
+    // HACK: This uses an object that looks/acts like a RegExp
+    // but is actually dynamic so that symlinked files can be
+    // analyzed by CommonJS as their symlinks are resolved.
+    let cachedLength = include.length
+    let cachedFilter = createFilter(include)
+    resolvedBuildOptions.commonjsOptions.include = {
+      // Only this method is needed to be `createFilter` compatible.
+      // It assumes the `include` array length only ever increases if mutated.
+      test(id: string) {
+        if (include.length !== cachedLength) {
+          cachedLength = include.length
+          cachedFilter = createFilter(include)
+        }
+        return cachedFilter(id)
+      },
+      // Ensure "instanceof RegExp" returns true.
+      __proto__: RegExp.prototype
+    } as any
+  }
+
+  // resolve alias with internal client alias
+  const resolvedAlias = normalizeAlias(
+    mergeAlias(
+      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+      // replacement, but its implementation does work with function values.
+      clientAlias,
+      config.resolve?.alias || config.alias || []
+    )
+  )
+
+  const resolveOptions: ResolvedConfig['resolve'] = {
+    dedupe: config.dedupe,
+    ...config.resolve,
+    alias: resolvedAlias
+  }
 
   // resolve cache directory
   const pkgPath = lookupFile(

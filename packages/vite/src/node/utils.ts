@@ -610,7 +610,7 @@ export function resolveHostname(
   return { host, name }
 }
 
-export function arraify<T>(target: T | T[]): T[] {
+export function arraify<T>(target: T | readonly T[]): T[] {
   return Array.isArray(target) ? target : [target]
 }
 

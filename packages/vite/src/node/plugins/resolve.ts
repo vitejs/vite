@@ -58,6 +58,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   isProduction: boolean
   ssrConfig?: SSROptions
   packageCache?: PackageCache
+  cjsInclude?: (string | RegExp)[]
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -81,6 +82,7 @@ export interface InternalResolveOptions extends ResolveOptions {
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
+    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
@@ -119,6 +121,9 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
         ...baseOptions,
         isFromTsImporter: isTsRequest(importer ?? '')
+      }
+      if (!options.isBuild) {
+        options.cjsInclude = undefined
       }
 
       let res: string | PartialResolvedId | undefined
@@ -520,7 +525,13 @@ export function tryNodeResolve(
 
   let pkg: PackageData | undefined
   const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
+    pkg = resolvePackageData(
+      pkgId,
+      basedir,
+      preserveSymlinks,
+      packageCache,
+      options.cjsInclude
+    )!
     return pkg
   })!
 

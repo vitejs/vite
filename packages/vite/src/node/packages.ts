@@ -48,7 +48,8 @@ export function resolvePackageData(
   id: string,
   basedir: string,
   preserveSymlinks = false,
-  packageCache?: PackageCache
+  packageCache?: PackageCache,
+  cjsInclude?: (string | RegExp)[]
 ): PackageData | null {
   let pkg: PackageData | undefined
   let cacheKey: string | undefined
@@ -60,8 +61,8 @@ export function resolvePackageData(
   }
   let pkgPath: string | undefined
   try {
-    pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
-    pkg = loadPackageData(pkgPath, true, packageCache)
+    pkgPath = resolveFrom(`${id}/package.json`, basedir, true)
+    pkg = loadPackageData(pkgPath, preserveSymlinks, packageCache, cjsInclude)
     if (packageCache) {
       packageCache.set(cacheKey!, pkg)
     }
@@ -81,10 +82,22 @@ export function resolvePackageData(
 export function loadPackageData(
   pkgPath: string,
   preserveSymlinks?: boolean,
-  packageCache?: PackageCache
+  packageCache?: PackageCache,
+  cjsInclude?: (string | RegExp)[]
 ): PackageData {
   if (!preserveSymlinks) {
+    const originalPkgPath = pkgPath
     pkgPath = fs.realpathSync.native(pkgPath)
+
+    // In case a linked package is a local clone of a CommonJS dependency,
+    // we need to ensure @rollup/plugin-commonjs analyzes the package even
+    // after it's been resolved to its actual file location.
+    if (cjsInclude && pkgPath !== originalPkgPath) {
+      const filter = createFilter(cjsInclude, undefined, { resolve: false })
+      if (!filter(pkgPath) && filter(originalPkgPath)) {
+        cjsInclude.push(path.dirname(pkgPath) + '/**')
+      }
+    }
   }
 
   let cached: PackageData | undefined
