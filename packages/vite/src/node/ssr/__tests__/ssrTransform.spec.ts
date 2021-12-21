@@ -406,3 +406,28 @@ function c({ _ = bar() + foo() }) {}
     "
   `)
 })
+
+test('object destructure alias', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { n } from 'foo'
+const a = () => {
+  const { type: n = 'bar' } = {}
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const a = () => {
+      const { type: __vite_ssr_import_0__.n = 'bar' } = {}
+    }
+    "
+  `)
+})
