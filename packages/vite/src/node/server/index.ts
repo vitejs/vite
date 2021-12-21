@@ -321,8 +321,8 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
-    container.resolveId(url)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
+    container.resolveId(url, undefined, { ssr })
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)

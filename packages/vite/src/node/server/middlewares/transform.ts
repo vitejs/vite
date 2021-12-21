@@ -111,7 +111,7 @@ export function transformMiddleware(
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
         const originalUrl = url.replace(/\.map($|\?)/, '$1')
-        const map = (await moduleGraph.getModuleByUrl(originalUrl))
+        const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
           ?.transformResult?.map
         if (map) {
           return send(req, res, JSON.stringify(map), 'json')
@@ -164,8 +164,8 @@ export function transformMiddleware(
         const ifNoneMatch = req.headers['if-none-match']
         if (
           ifNoneMatch &&
-          (await moduleGraph.getModuleByUrl(url))?.transformResult?.etag ===
-            ifNoneMatch
+          (await moduleGraph.getModuleByUrl(url, false))?.transformResult
+            ?.etag === ifNoneMatch
         ) {
           isDebug && debugCache(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304

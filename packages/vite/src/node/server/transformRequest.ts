@@ -65,7 +65,7 @@ async function doTransform(
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
-  const module = await server.moduleGraph.getModuleByUrl(url)
+  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
   // check if we have a fresh cache
   const cached =
@@ -82,7 +82,8 @@ async function doTransform(
   }
 
   // resolve
-  const id = (await pluginContainer.resolveId(url))?.id || url
+  const id =
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
   const file = cleanUrl(id)
 
   let code: string | null = null
@@ -147,7 +148,7 @@ async function doTransform(
   }
 
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
