@@ -98,6 +98,11 @@ export async function resolveHttpServer(
     return require('http2').createSecureServer(
       {
         ...httpsOptions,
+
+        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+        // errors on large numbers of requests
+        maxSessionMemory: (httpsOptions as any).maxSessionMemory ?? 1000,
+
         allowHTTP1: true
       },
       app
@@ -123,6 +128,7 @@ export async function resolveHttpsConfig(
   if (!httpsOption.key || !httpsOption.cert) {
     httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
   }
+
   return httpsOption
 }
 
