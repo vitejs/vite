@@ -45,11 +45,12 @@ test('generates assets', async () => {
   )
 })
 
-
 if (isBuild) {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
     expect(manifest['../../../vite/legacy-polyfills']).toBeDefined()
-    expect(manifest['../../../vite/legacy-polyfills'].src).toBe('../../../vite/legacy-polyfills')
+    expect(manifest['../../../vite/legacy-polyfills'].src).toBe(
+      '../../../vite/legacy-polyfills'
+    )
   })
 }
