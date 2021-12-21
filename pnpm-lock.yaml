@@ -760,7 +760,7 @@ importers:
       fast-glob: ^3.2.7
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
-      launch-editor-middleware: ^2.2.1
+      launch-editor-middleware: ^2.3.0
       magic-string: ^0.25.7
       micromatch: ^4.0.4
       mime: ^3.0.0
@@ -836,7 +836,7 @@ importers:
       execa: 5.1.1
       fast-glob: 3.2.7
       http-proxy: 1.18.1_debug@4.3.3
-      launch-editor-middleware: 2.2.1
+      launch-editor-middleware: 2.3.0
       magic-string: 0.25.7
       micromatch: 4.0.4
       mime: 3.0.0
@@ -4753,6 +4753,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.14.5_debug@4.3.3:
+    resolution: {integrity: sha512-wtphSXy7d4/OR+MvIFbCVBDzZ5520qV8XfPklSN5QtxuMUJZ+b0Wnst1e1lCDocfzuCkHqj8k0FpZqO+UIaKNA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.3
+    dev: true
 
   /form-data/3.0.1:
     resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
@@ -5003,7 +5016,7 @@ packages:
       source-map: 0.6.1
       wordwrap: 1.0.0
     optionalDependencies:
-      uglify-js: 3.14.3
+      uglify-js: 3.14.5
     dev: true
 
   /hard-rejection/2.1.0:
@@ -5160,7 +5173,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.5
+      follow-redirects: 1.14.5_debug@4.3.3
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -6228,16 +6241,16 @@ packages:
     resolution: {integrity: sha512-pPobydIHK884YBtkS/tWSZXpSAEpcMbilyun3KL37ot935qL2HNKm/tI45i/Rd+MxdIWEhm7/LmUQzWZYK+Qhg==}
     dev: false
 
-  /launch-editor-middleware/2.2.1:
-    resolution: {integrity: sha512-s0UO2/gEGiCgei3/2UN3SMuUj1phjQN8lcpnvgLSz26fAzNWPQ6Nf/kF5IFClnfU2ehp6LrmKdMU/beveO+2jg==}
+  /launch-editor-middleware/2.3.0:
+    resolution: {integrity: sha512-GJR64trLdFFwCoL9DMn/d1SZX0OzTDPixu4mcfWTShQ4tIqCHCGvlg9fOEYQXyBlrSMQwylsJfUWncheShfV2w==}
     dependencies:
-      launch-editor: 2.2.1
+      launch-editor: 2.3.0
     dev: true
 
-  /launch-editor/2.2.1:
-    resolution: {integrity: sha512-On+V7K2uZK6wK7x691ycSUbLD/FyKKelArkbaAMSSJU8JmqmhwN2+mnJDNINuJWSrh2L0kDk+ZQtbC/gOWUwLw==}
+  /launch-editor/2.3.0:
+    resolution: {integrity: sha512-3QrsCXejlWYHjBPFXTyGNhPj4rrQdB+5+r5r3wArpLH201aR+nWUgw/zKKkTmilCfY/sv6u8qo98pNvtg8LUTA==}
     dependencies:
-      chalk: 2.4.2
+      picocolors: 1.0.0
       shell-quote: 1.7.3
     dev: true
 
@@ -8926,8 +8939,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /uglify-js/3.14.3:
-    resolution: {integrity: sha512-mic3aOdiq01DuSVx0TseaEzMIVqebMZ0Z3vaeDhFEh9bsc24hV1TFvN74reA2vs08D0ZWfNjAcJ3UbVLaBss+g==}
+  /uglify-js/3.14.5:
+    resolution: {integrity: sha512-qZukoSxOG0urUTvjc2ERMTcAy+BiFh3weWAkeurLwjrCba73poHmG3E36XEjd/JGukMzwTL7uCxZiAexj8ppvQ==}
     engines: {node: '>=0.8.0'}
     hasBin: true
     requiresBuild: true
