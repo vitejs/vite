@@ -133,7 +133,7 @@ if (!isBuild) {
       'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
       (code) => code.replace('title', 'title2')
     )
-    await page.waitForTimeout(200)
+    await page.waitForEvent('load')
     await untilUpdated(
       async () => (await page.$('#app')).textContent(),
       'title2'
