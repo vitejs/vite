@@ -289,7 +289,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 p.value &&
                 assetAttrs.includes(p.name)
               ) {
-                const url = p.value.content
+                // assetsUrl may be encodeURI
+                const url = decodeURI(p.value.content)
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
@@ -332,7 +333,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         for (const attr of assetUrls) {
           const value = attr.value!
-          const content = value.content
+          // assetsUrl may be encodeURI
+          const content = decodeURI(value.content)
           if (
             content !== '' && // Empty attribute
             !namedOutput.includes(content) && // Direct reference to named output
