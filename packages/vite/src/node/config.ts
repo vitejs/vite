@@ -64,6 +64,8 @@ import type { PackageCache } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
+import { createSymlinkResolver } from './symlinks'
+import type { SymlinkResolver } from './symlinks'
 
 const debug = createDebugger('vite:config')
 
@@ -348,6 +350,8 @@ export type ResolvedConfig = Readonly<
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: DepOptimizationOptions
     /** @internal */
+    symlinkResolver: SymlinkResolver
+    /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
@@ -558,6 +562,7 @@ export async function resolveConfig(
               aliasPlugin({ entries: resolved.resolve.alias }),
               resolvePlugin({
                 ...resolved.resolve,
+                symlinkResolver: resolved.symlinkResolver,
                 root: resolvedRoot,
                 isProduction,
                 isBuild: command === 'build',
@@ -655,6 +660,7 @@ export async function resolveConfig(
     },
     logger,
     packageCache: new Map(),
+    symlinkResolver: createSymlinkResolver(resolvedRoot),
     createResolver,
     optimizeDeps: {
       disabled: 'build',

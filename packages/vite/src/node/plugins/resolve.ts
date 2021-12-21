@@ -22,6 +22,7 @@ import {
   ensureVolumeInPath,
   fsPathFromId,
   getPotentialTsSrcPaths,
+  getRealPath,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -44,6 +45,7 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
+import type { SymlinkResolver } from '../symlinks'
 import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -81,6 +83,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   isProduction: boolean
   ssrConfig?: SSROptions
   packageCache?: PackageCache
+  symlinkResolver?: SymlinkResolver
   /**
    * src code mode also attempts the following:
    * - resolving /xxx as URLs
@@ -535,13 +538,21 @@ function tryResolveFile(
 ): string | undefined {
   if (isFileReadable(file)) {
     if (!fs.statSync(file).isDirectory()) {
-      return getRealPath(file, options.preserveSymlinks) + postfix
+      file = ensureVolumeInPath(file)
+      if (file !== browserExternalId) {
+        file = getRealPath(
+          file,
+          options.symlinkResolver,
+          options.preserveSymlinks
+        )
+      }
+      return normalizePath(file) + postfix
     } else if (tryIndex) {
       if (!skipPackageJson) {
         const pkgPath = file + '/package.json'
         try {
           // path points to a node package
-          const pkg = loadPackageData(pkgPath, options.preserveSymlinks)
+          const pkg = loadPackageData(pkgPath, options)
           const resolved = resolvePackageEntry(file, pkg, targetWeb, options)
           return resolved
         } catch (e) {
@@ -600,7 +611,7 @@ export function tryNodeResolve(
   externalize?: boolean,
   allowLinkedExternal: boolean = true
 ): PartialResolvedId | undefined {
-  const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
+  const { root, dedupe, isBuild } = options
 
   ssr ??= false
 
@@ -653,7 +664,7 @@ export function tryNodeResolve(
 
   // nested node module, step-by-step resolve to the basedir of the nestedPath
   if (nestedRoot) {
-    basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
+    basedir = nestedResolveFrom(nestedRoot, basedir, options)
   }
 
   // nearest package.json
@@ -662,22 +673,12 @@ export function tryNodeResolve(
   let pkg: PackageData | undefined
 
   let pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    nearestPkg = resolvePackageData(
-      pkgId,
-      basedir,
-      preserveSymlinks,
-      packageCache
-    )!
+    nearestPkg = resolvePackageData(pkgId, basedir, options)!
     return nearestPkg
   })!
 
   const rootPkgId = possiblePkgIds[0]
-  const rootPkg = resolvePackageData(
-    rootPkgId,
-    basedir,
-    preserveSymlinks,
-    packageCache
-  )!
+  const rootPkg = resolvePackageData(rootPkgId, basedir, options)!
   if (rootPkg?.data?.exports) {
     pkg = rootPkg
     pkgId = rootPkgId
@@ -1219,22 +1220,12 @@ function equalWithoutSuffix(path: string, key: string, suffix: string) {
   return key.endsWith(suffix) && key.slice(0, -suffix.length) === path
 }
 
-function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
-  resolved = ensureVolumeInPath(resolved)
-  if (!preserveSymlinks && browserExternalId !== resolved) {
-    resolved = fs.realpathSync(resolved)
-  }
-  return normalizePath(resolved)
-}
-
 /**
  * if importer was not resolved by vite's resolver previously
  * (when esbuild resolved it)
  * resolve importer's pkg and add to idToPkgMap
  */
 function resolvePkg(importer: string, options: InternalResolveOptions) {
-  const { root, preserveSymlinks, packageCache } = options
-
   if (importer.includes('\x00')) {
     return null
   }
@@ -1254,7 +1245,7 @@ function resolvePkg(importer: string, options: InternalResolveOptions) {
 
   let pkg: PackageData | undefined
   possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
+    pkg = resolvePackageData(pkgId, options.root, options)!
     return pkg
   })!
 

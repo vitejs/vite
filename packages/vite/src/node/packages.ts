@@ -1,8 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createDebugger, createFilter, resolveFrom } from './utils'
+import { createDebugger, createFilter, getRealPath, resolveFrom } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
+import type { SymlinkResolver } from './symlinks'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -45,27 +46,52 @@ export function invalidatePackageData(
   })
 }
 
+/**
+ * Find and load the `package.json` associated with a module id.
+ *
+ * Using the `options.packageCache` argument is highly recommended for
+ * performance. The easiest way is setting it to the `packageCache`
+ * property of the `vite.ResolvedConfig` object.
+ */
 export function resolvePackageData(
   id: string,
   basedir: string,
-  preserveSymlinks = false,
+  options?: LoadPackageOptions
+): PackageData | null
+
+/** @deprecated Use `options` object argument instead */
+export function resolvePackageData(
+  id: string,
+  basedir: string,
+  preserveSymlinks: boolean | undefined,
   packageCache?: PackageCache
+): PackageData | null
+
+export function resolvePackageData(
+  id: string,
+  basedir: string,
+  arg3?: boolean | LoadPackageOptions,
+  arg4?: PackageCache
 ): PackageData | null {
+  const options =
+    typeof arg3 === 'boolean'
+      ? { preserveSymlinks: arg3, packageCache: arg4 }
+      : arg3 || {}
+
   let pkg: PackageData | undefined
   let cacheKey: string | undefined
-  if (packageCache) {
-    cacheKey = `${id}&${basedir}&${preserveSymlinks}`
-    if ((pkg = packageCache.get(cacheKey))) {
+  if (options.packageCache) {
+    cacheKey = `${id}&${basedir}&${options.preserveSymlinks || false}`
+    if ((pkg = options.packageCache.get(cacheKey))) {
       return pkg
     }
   }
+
   let pkgPath: string | undefined
   try {
-    pkgPath = resolveFrom(`${id}/package.json`, basedir, preserveSymlinks)
-    pkg = loadPackageData(pkgPath, true, packageCache)
-    if (packageCache) {
-      packageCache.set(cacheKey!, pkg)
-    }
+    pkgPath = resolveFrom(`${id}/package.json`, basedir, true)
+    pkg = loadPackageData(pkgPath, options)
+    options.packageCache?.set(cacheKey!, pkg)
     return pkg
   } catch (e) {
     if (e instanceof SyntaxError) {
@@ -79,17 +105,67 @@ export function resolvePackageData(
   return null
 }
 
+export type LoadPackageOptions = {
+  preserveSymlinks?: boolean
+  symlinkResolver?: SymlinkResolver
+  packageCache?: PackageCache
+  cjsInclude?: (string | RegExp)[]
+}
+
+/**
+ * Load a `package.json` file into memory.
+ *
+ * Using the `options.packageCache` argument is highly recommended for
+ * performance. The easiest way is setting it to the `packageCache`
+ * property of the `vite.ResolvedConfig` object.
+ */
 export function loadPackageData(
   pkgPath: string,
-  preserveSymlinks?: boolean,
+  options?: LoadPackageOptions
+): PackageData
+
+/** @deprecated Use `options` object argument instead */
+export function loadPackageData(
+  pkgPath: string,
+  preserveSymlinks: boolean | undefined,
   packageCache?: PackageCache
+): PackageData
+
+export function loadPackageData(
+  pkgPath: string,
+  arg2?: boolean | LoadPackageOptions,
+  arg3?: PackageCache
 ): PackageData {
-  if (!preserveSymlinks) {
-    pkgPath = fs.realpathSync.native(pkgPath)
+  const options =
+    typeof arg2 === 'boolean'
+      ? { preserveSymlinks: arg2, packageCache: arg3 }
+      : arg2 || {}
+
+  if (options.preserveSymlinks !== true) {
+    const originalPkgPath = pkgPath
+
+    // Support uncached realpath calls for backwards compatibility.
+    pkgPath = getRealPath(
+      pkgPath,
+      options.symlinkResolver,
+      options.preserveSymlinks
+    )
+
+    // In case a linked package is a local clone of a CommonJS dependency,
+    // we need to ensure @rollup/plugin-commonjs analyzes the package even
+    // after it's been resolved to its actual file location.
+    if (options.cjsInclude && pkgPath !== originalPkgPath) {
+      const filter = createFilter(options.cjsInclude, undefined, {
+        resolve: false
+      })
+      if (!filter(pkgPath) && filter(originalPkgPath)) {
+        options.cjsInclude.push(path.dirname(pkgPath) + '/**')
+      }
+    }
   }
 
   let cached: PackageData | undefined
-  if ((cached = packageCache?.get(pkgPath))) {
+  if ((cached = options.packageCache?.get(pkgPath))) {
     return cached
   }
 
@@ -127,7 +203,7 @@ export function loadPackageData(
     }
   }
 
-  packageCache?.set(pkgPath, pkg)
+  options.packageCache?.set(pkgPath, pkg)
   return pkg
 }
 

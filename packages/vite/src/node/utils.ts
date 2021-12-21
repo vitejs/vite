@@ -34,6 +34,7 @@ import {
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls } from './server'
+import type { SymlinkResolver } from './symlinks'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -159,12 +160,17 @@ export function resolveFrom(
 export function nestedResolveFrom(
   id: string,
   basedir: string,
-  preserveSymlinks = false
+  options?: { symlinkResolver?: SymlinkResolver; preserveSymlinks?: boolean }
 ): string {
   const pkgs = id.split('>').map((pkg) => pkg.trim())
   try {
     for (const pkg of pkgs) {
-      basedir = resolveFrom(pkg, basedir, preserveSymlinks)
+      basedir = resolveFrom(pkg, basedir, true)
+      basedir = getRealPath(
+        basedir,
+        options?.symlinkResolver,
+        options?.preserveSymlinks
+      )
     }
   } catch {}
   return basedir
@@ -1266,4 +1272,30 @@ export function arrayEqual(a: any[], b: any[]): boolean {
     if (a[i] !== b[i]) return false
   }
   return true
+}
+
+export function getRealPath(file: string, preserveSymlinks?: boolean): string
+export function getRealPath(
+  file: string,
+  resolver: SymlinkResolver | undefined,
+  preserveSymlinks?: boolean
+): string
+export function getRealPath(
+  file: string,
+  arg2?: boolean | SymlinkResolver,
+  preserveSymlinks?: boolean
+): string {
+  let symlinkResolver: SymlinkResolver | undefined
+  if (typeof arg2 === 'boolean') {
+    preserveSymlinks = arg2
+  } else {
+    symlinkResolver = arg2
+  }
+  if (preserveSymlinks) {
+    return file
+  }
+  if (symlinkResolver) {
+    return symlinkResolver.realpathSync(file)
+  }
+  return fs.realpathSync.native(file)
 }
