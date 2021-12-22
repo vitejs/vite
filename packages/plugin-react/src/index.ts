@@ -41,7 +41,9 @@ export interface Options {
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: BabelOptions
+  babel?:
+    | BabelOptions
+    | ((id: string, options?: { ssr?: boolean }) => BabelOptions)
 }
 
 export type BabelOptions = Omit<
@@ -89,23 +91,19 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
-  const babelOptions = {
-    babelrc: false,
-    configFile: false,
-    ...opts.babel
-  } as ReactBabelOptions
+  let babelOptions: ReactBabelOptions
 
-  babelOptions.plugins ||= []
-  babelOptions.presets ||= []
-  babelOptions.overrides ||= []
-  babelOptions.parserOpts ||= {} as any
-  babelOptions.parserOpts.plugins ||= []
+  if (typeof opts.babel !== 'function') {
+    babelOptions = createBabelOptions(opts.babel)
+  }
 
   // Support patterns like:
   // - import * as React from 'react';
   // - import React from 'react';
   // - import React, {useEffect} from 'react';
   const importReactRE = /(^|\n)import\s+(\*\s+as\s+)?React(,|\s+)/
+
+  let resolvedConfig: ResolvedConfig
 
   // Any extension, including compound ones like '.bs.js'
   const fileExtensionRE = /\.[^\/\s\?]+$/
@@ -141,11 +139,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
           )
-
-        if (plugin.api?.reactBabel) {
-          plugin.api.reactBabel(babelOptions, config)
-        }
       })
+
+      if (typeof opts.babel !== 'function') {
+        runPluginOverrides(config, babelOptions)
+      }
+
+      resolvedConfig = config
     },
     async transform(code, id, options) {
       const ssr = typeof options === 'boolean' ? options : options?.ssr === true
@@ -161,6 +161,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
+
+        if (typeof opts.babel === 'function') {
+          const resolvedOpts = opts.babel(id, options)
+          babelOptions = createBabelOptions(resolvedOpts)
+          runPluginOverrides(resolvedConfig, babelOptions)
+        }
 
         const plugins = isProjectFile ? [...babelOptions.plugins] : []
 
@@ -367,4 +373,31 @@ viteReact.preambleCode = preambleCode
 
 function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
+}
+
+function createBabelOptions(rawOptions?: BabelOptions) {
+  const babelOptions = {
+    babelrc: false,
+    configFile: false,
+    ...rawOptions
+  } as ReactBabelOptions
+
+  babelOptions.plugins ||= []
+  babelOptions.presets ||= []
+  babelOptions.overrides ||= []
+  babelOptions.parserOpts ||= {} as any
+  babelOptions.parserOpts.plugins ||= []
+
+  return babelOptions
+}
+
+function runPluginOverrides(
+  config: ResolvedConfig,
+  babelOptions: ReactBabelOptions
+) {
+  config.plugins.forEach((plugin) => {
+    if (plugin.api?.reactBabel) {
+      plugin.api.reactBabel(babelOptions, config)
+    }
+  })
 }
