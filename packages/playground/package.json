@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "devDependencies": {
-    "css-color-names": "^1.0.1"
+    "css-color-names": "^1.0.1",
+    "@vitejs/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue-jsx": "workspace:*"
   }
 }
