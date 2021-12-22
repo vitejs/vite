@@ -41,7 +41,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             const ext = path.extname(name)
             name = name.slice(0, -ext.length) + `-legacy` + ext
           }
-          return name
+          return name.replace(/\0/g, '')
         } else {
           return `_` + path.basename(chunk.fileName)
         }
