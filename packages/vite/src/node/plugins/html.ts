@@ -293,7 +293,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 const { 0: full, 1: url, index } = match
                 const startUrl = full.indexOf(url)
                 const start = scriptNode.loc.start.offset + index + startUrl + 1
-                const end = scriptNode.loc.start.offset + index + startUrl + url.length - 1
+                const end = start + url.length - 2
                 scriptUrls.push({ start, end, url: url.slice(1, -1) })
               }
             }
@@ -380,18 +380,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
-           if (!isExcludedUrl(url)) {
-            s.overwrite(
-              start,
-              end,
-              await urlToBuiltUrl(url, id, config, this)
-            )
+          if (!isExcludedUrl(url)) {
+            s.overwrite(start, end, await urlToBuiltUrl(url, id, config, this))
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(
-              start,
-              end,
-              config.base + url.slice(1)
-            )
+            s.overwrite(start, end, config.base + url.slice(1))
           }
         }
 
