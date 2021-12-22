@@ -1,3 +1,12 @@
+## [2.7.6](https://github.com/vitejs/vite/compare/v2.7.5...v2.7.6) (2021-12-22)
+
+
+### Bug Fixes
+
+* remove virtual module prefix while generating manifest ([#6225](https://github.com/vitejs/vite/issues/6225)) ([d51259b](https://github.com/vitejs/vite/commit/d51259b73c484dea67d4c4afb6b76fbbb866631c))
+
+
+
 ## [2.7.5](https://github.com/vitejs/vite/compare/v2.7.4...v2.7.5) (2021-12-21)
 
 
