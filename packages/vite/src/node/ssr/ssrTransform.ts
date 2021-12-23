@@ -343,6 +343,11 @@ function walk(
             node.id.properties.forEach((property) => {
               if (property.type === 'RestElement') {
                 setScope(parentFunction, (property.argument as Identifier).name)
+              } else if (property.value.type === 'AssignmentPattern') {
+                setScope(
+                  parentFunction,
+                  (property.value.left as Identifier).name
+                )
               } else {
                 setScope(parentFunction, (property.value as Identifier).name)
               }
