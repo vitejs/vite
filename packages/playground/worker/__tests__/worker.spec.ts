@@ -10,6 +10,7 @@ test('normal', async () => {
     () => page.textContent('.mode'),
     isBuild ? 'production' : 'development'
   )
+  await untilUpdated(() => page.textContent('.bundle-with-plugin'), 'worker bundle with plugin success!')
 })
 
 test('TS output', async () => {

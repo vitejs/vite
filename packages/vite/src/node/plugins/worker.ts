@@ -1,6 +1,5 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { resolvePlugins } from '../plugins'
 import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
@@ -57,7 +56,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const rollup = require('rollup') as typeof Rollup
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
-          plugins: await resolvePlugins({ ...config }, [], [], []),
+          plugins: config.plugins.map(plugin => plugin),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }

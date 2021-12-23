@@ -3,6 +3,9 @@
 <div>
   Response from worker: <span class="pong"></span><span class="mode"></span>
 </div>
+<div>
+  bundle-with-plugin: <span class="bundle-with-plugin"></span>
+</div>
 
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
@@ -19,8 +22,6 @@
   <span class="tick-count">0</span>
 </div>
 
-<script type="module" src="./main.ts"></script>
-
 <script type="module">
   import Worker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
@@ -34,6 +35,7 @@
   worker.addEventListener('message', (e) => {
     text('.pong', e.data.msg)
     text('.mode', e.data.mode)
+    text('.bundle-with-plugin', e.data['bundle-with-plugin'])
   })
 
   document.querySelector('.ping').addEventListener('click', () => {
