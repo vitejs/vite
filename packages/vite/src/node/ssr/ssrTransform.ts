@@ -7,8 +7,7 @@ import type {
   Node as _Node,
   Property,
   Function as FunctionNode,
-  Pattern,
-  RestElement
+  Pattern
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
