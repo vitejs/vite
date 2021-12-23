@@ -320,12 +320,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // record css
       // cache css compile result to map
+      // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
           css
         )
-        // and replace inline style when `renderChunk` in vite:html-inline-proxy plugin
         return `export default ''`
       }
       if (!inlined) {
