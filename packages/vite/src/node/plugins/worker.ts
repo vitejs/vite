@@ -56,7 +56,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const rollup = require('rollup') as typeof Rollup
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
-          plugins: config.plugins.map(plugin => plugin),
+          plugins: config.plugins.map((plugin) => plugin),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }
