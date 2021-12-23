@@ -501,7 +501,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
-        // resolve asset url references
         let result = html
 
         // find corresponding entry chunk
@@ -576,6 +575,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           bundle,
           chunk
         })
+        // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return config.base + getAssetFilename(fileHash, config) + postfix
         })
