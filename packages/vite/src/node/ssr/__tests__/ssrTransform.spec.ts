@@ -433,3 +433,68 @@ const a = () => {
     "
   `)
 })
+
+test('nested object destructure alias', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { remove, add, get, set, rest, objRest } from 'vue'
+
+function a() {
+  const {
+    o: { remove },
+    a: { b: { c: [ add ] }},
+    d: [{ get }, set, ...rest],
+    ...objRest
+  } = foo
+
+  remove()
+  add()
+  get()
+  set()
+  rest()
+  objRest()
+}
+
+remove()
+add()
+get()
+set()
+rest()
+objRest()
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    function a() {
+      const {
+        o: { remove },
+        a: { b: { c: [ add ] }},
+        d: [{ get }, set, ...rest],
+        ...objRest
+      } = foo
+
+      remove()
+      add()
+      get()
+      set()
+      rest()
+      objRest()
+    }
+
+    __vite_ssr_import_0__.remove()
+    __vite_ssr_import_0__.add()
+    __vite_ssr_import_0__.get()
+    __vite_ssr_import_0__.set()
+    __vite_ssr_import_0__.rest()
+    __vite_ssr_import_0__.objRest()
+    "
+  `)
+})
