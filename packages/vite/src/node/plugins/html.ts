@@ -80,7 +80,6 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-/** Add html proxy to cache */
 export function addToHTMLProxyCache(
   config: ResolvedConfig,
   filePath: string,
@@ -96,7 +95,6 @@ export function addToHTMLProxyCache(
   htmlProxyMap.get(config)!.get(filePath)![index] = code
 }
 
-/* Add transform result to cache */
 export function addToHTMLProxyTransformResult(hash: string, code: string) {
   htmlProxyResult.set(hash, code)
 }
