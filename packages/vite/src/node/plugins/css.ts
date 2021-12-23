@@ -91,6 +91,7 @@ const directRequestRE = /(\?|&)direct\b/
 const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
+const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
 
 const enum PreprocessLang {
@@ -284,6 +285,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       const query = parseRequest(id)
       const inlined = inlineRE.test(id)
+      const inlineCSS = inlineCSSRE.test(id)
       const isHTMLProxy = htmlProxyRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
@@ -318,7 +320,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // record css
       // cache css compile result to map
-      if (inlined && isHTMLProxy) {
+      if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
           css

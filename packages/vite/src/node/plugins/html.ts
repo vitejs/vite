@@ -45,7 +45,8 @@ export const htmlProxyMap = new WeakMap<
   Map<string, Array<string>>
 >()
 
-//  HTML Proxy Transform result are stored by config config -> hash
+// HTML Proxy Transform result are stored by config
+// `${importer}_${query.index}` -> transformed css code
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
@@ -336,7 +337,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const filePath = id.replace(normalizePath(config.root), '')
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
             // will transform with css plugin and cache result with css-post plugin
-            js += `\nimport "${id}?html-proxy&inline&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
 
             // will transfrom in `applyHtmlTransforms`
             s.overwrite(
