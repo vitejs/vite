@@ -641,7 +641,10 @@ importers:
     specifiers: {}
 
   packages/playground/worker:
-    specifiers: {}
+    specifiers:
+      '@vitejs/plugin-vue-jsx': workspace:*
+    devDependencies:
+      '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
 
   packages/plugin-legacy:
     specifiers:
