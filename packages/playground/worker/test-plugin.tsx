@@ -1,3 +1,1 @@
-self.postMessage({
-  'bundle-with-plugin': 'worker bundle with plugin success!' as string
-})
+export const bundleWithPlugin: string = 'worker bundle with plugin success!'
