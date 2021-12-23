@@ -6,7 +6,8 @@ import type {
   Identifier,
   Node as _Node,
   Property,
-  Function as FunctionNode
+  Function as FunctionNode,
+  Pattern
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
@@ -339,26 +340,31 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
-          if (node.id.type === 'ObjectPattern') {
-            node.id.properties.forEach((property) => {
-              if (property.type === 'RestElement') {
-                setScope(parentFunction, (property.argument as Identifier).name)
-              } else if (property.value.type === 'AssignmentPattern') {
-                setScope(
-                  parentFunction,
-                  (property.value.left as Identifier).name
-                )
-              } else {
-                setScope(parentFunction, (property.value as Identifier).name)
-              }
-            })
-          } else if (node.id.type === 'ArrayPattern') {
-            node.id.elements.filter(Boolean).forEach((element) => {
-              setScope(parentFunction, (element as Identifier).name)
-            })
-          } else {
-            setScope(parentFunction, (node.id as Identifier).name)
+          const handlePattern = (p: Pattern) => {
+            if (p.type === 'Identifier') {
+              setScope(parentFunction, p.name)
+            } else if (p.type === 'RestElement') {
+              handlePattern(p.argument)
+            } else if (p.type === 'ObjectPattern') {
+              p.properties.forEach((property) => {
+                if (property.type === 'RestElement') {
+                  setScope(
+                    parentFunction,
+                    (property.argument as Identifier).name
+                  )
+                } else handlePattern(property.value)
+              })
+            } else if (p.type === 'ArrayPattern') {
+              p.elements.forEach((element) => {
+                if (element) handlePattern(element)
+              })
+            } else if (p.type === 'AssignmentPattern') {
+              handlePattern(p.left)
+            } else {
+              setScope(parentFunction, (p as any).name)
+            }
           }
+          handlePattern(node.id)
         }
       }
     },
