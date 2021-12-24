@@ -15,7 +15,7 @@ export function resolveCompiler(root: string): typeof _compiler {
   if (!compiler) {
     throw new Error(
       `Failed to resolve vue/compiler-sfc.\n` +
-        `@vitejs/plugin-vue requires vue (>=3.2.13) or @vue/compiler-sfc ` +
+        `@vitejs/plugin-vue requires vue (>=3.2.25) ` +
         `to be present in the dependency tree.`
     )
   }
