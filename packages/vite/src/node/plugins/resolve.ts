@@ -104,7 +104,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // fast path for commonjs proxy modules
-      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
+      if (/commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
 
@@ -805,7 +805,7 @@ function resolveDeepImport(
   // id might contain ?query
   // e.g. when using `<style src="some-pkg/dist/style.css"></style>` in .vue file
   // the id will be ./dist/style.css?vue&type=style&index=0&src=xxx&lang.css
-  id = id.replace(/\?.*$/, '')
+  id = id.split('?')[0]
 
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
