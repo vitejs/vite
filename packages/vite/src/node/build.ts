@@ -649,10 +649,13 @@ function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
+      !isCSSRequest(id)
     ) {
-      return 'vendor'
+      if (staticImportedByEntry(id, getModuleInfo, cache)) {
+        return 'vendor'
+      } else {
+        return 'async-vendor';
+      }
     }
   }
 }
