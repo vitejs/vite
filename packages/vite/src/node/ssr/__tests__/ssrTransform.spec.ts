@@ -498,3 +498,34 @@ objRest()
     "
   `)
 })
+
+test('class props', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { remove, add } from 'vue'
+
+class A {
+  remove = 1
+  add = null
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    const add = __vite_ssr_import_0__.add;
+    const remove = __vite_ssr_import_0__.remove;
+    class A {
+      remove = 1
+      add = null
+    }
+    "
+  `)
+})
