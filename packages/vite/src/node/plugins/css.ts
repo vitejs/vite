@@ -283,10 +283,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const query = parseRequest(id)
       const inlined = inlineRE.test(id)
-      const inlineCSS = inlineCSSRE.test(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
@@ -321,6 +318,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // record css
       // cache css compile result to map
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
+      const inlineCSS = inlineCSSRE.test(id)
+      const query = parseRequest(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
