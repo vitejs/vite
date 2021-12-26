@@ -499,7 +499,7 @@ objRest()
   `)
 })
 
-test.only('class props', async () => {
+test('class props', async () => {
   expect(
     (
       await ssrTransform(
