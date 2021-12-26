@@ -25,7 +25,7 @@ import type {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
-import { CLIENT_PUBLIC_PATH } from '../constants'
+import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
@@ -165,7 +165,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id, options) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (!isCSSRequest(id) || commonjsProxyRE.test(id) || SPECIAL_QUERY_RE.test(id)) {
         return
       }
       const ssr = options?.ssr === true
@@ -282,7 +282,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(css, id, options) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id)) {
+      if (
+        !isCSSRequest(id) ||
+        commonjsProxyRE.test(id) ||
+        SPECIAL_QUERY_RE.test(id)
+      ) {
         return
       }
 
