@@ -558,7 +558,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         let s: MagicString | undefined
         while ((match = inlineCSSRE.exec(result))) {
-          s = s || (s = new MagicString(result))
+          s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
           s.overwrite(
