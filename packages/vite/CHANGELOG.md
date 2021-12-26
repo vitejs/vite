@@ -1,3 +1,13 @@
+## [2.7.7](https://github.com/vitejs/vite/compare/v2.7.6...v2.7.7) (2021-12-26)
+
+
+### Bug Fixes
+
+* **ssr:** nested destucture ([#6249](https://github.com/vitejs/vite/issues/6249)) ([485e298](https://github.com/vitejs/vite/commit/485e298e72599679e97f0ed1f4315ac5da55da2c))
+* **ssr:** transform class props ([#6261](https://github.com/vitejs/vite/issues/6261)) ([2e3fe59](https://github.com/vitejs/vite/commit/2e3fe5932c962d447a4faa4b0ce996ead70c7d34))
+
+
+
 ## [2.7.6](https://github.com/vitejs/vite/compare/v2.7.5...v2.7.6) (2021-12-22)
 
 
