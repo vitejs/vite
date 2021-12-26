@@ -180,6 +180,7 @@ export async function ssrTransform(
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
+      const grandparent = parentStack[parentStack.length - 2]
       const binding = idToImportMap.get(id.name)
       if (!binding) {
         return
@@ -195,8 +196,9 @@ export async function ssrTransform(
           s.appendLeft(id.end, `: ${binding}`)
         }
       } else if (
-        parent.type === 'ClassDeclaration' &&
-        id === parent.superClass
+        (parent.type === 'PropertyDefinition' &&
+          grandparent?.type === 'ClassBody') ||
+        (parent.type === 'ClassDeclaration' && id === parent.superClass)
       ) {
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
