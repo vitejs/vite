@@ -96,7 +96,7 @@ export function addToHTMLProxyCache(
   htmlProxyMap.get(config)!.get(filePath)![index] = code
 }
 
-export function addToHTMLProxyTransformResult(hash: string, code: string) {
+export function addToHTMLProxyTransformResult(hash: string, code: string): void {
   htmlProxyResult.set(hash, code)
 }
 
