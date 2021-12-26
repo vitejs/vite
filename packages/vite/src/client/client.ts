@@ -485,3 +485,5 @@ export function injectQuery(url: string, queryToInject: string): string {
     hash || ''
   }`
 }
+
+export { ErrorOverlay }
