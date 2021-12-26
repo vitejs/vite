@@ -104,7 +104,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // fast path for commonjs proxy modules
-      if (id.includes('commonjs') {
+      if (/commonjs/.test(id) || id === 'commonjsHelpers.js') {
         return
       }
 
