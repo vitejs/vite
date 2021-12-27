@@ -509,14 +509,6 @@ const extractSourceMapData = (fileContetnt: string) => {
   return match[1]
 }
 
-const findRealPath = (
-  fileName: string,
-  sources: string[]
-): string | undefined => {
-  const filePath = new URL(fileName).pathname
-  return sources.find((path) => path.includes(filePath))
-}
-
 const getSourceMapForFile = async (
   fileName: string
 ): Promise<{
@@ -540,7 +532,7 @@ const getSourceMapForFile = async (
 
     return {
       baseSource: source,
-      sourceMapConsumer,
+      sourceMapConsumer
     }
   }
 
@@ -577,20 +569,6 @@ const generateFrame = (
   return result.join('\n')
 }
 
-// const regexValidFrame_Chrome = /^\s*(at|in)\s.+(:\d+)/;
-// const regexValidFrame_FireFox = /(^|@)\S+:\d+|.+line\s+\d+\s+>\s+(eval|Function).+/;
-
-// const transformStack = (stack: string) => {
-//   return stack.split('\n')
-//   .filter(
-//     e => regexValidFrame_Chrome.test(e) || regexValidFrame_FireFox.test(e)
-//   )
-//   .map((e) => {
-//     return e
-//   })
-//   .join('\n')
-// }
-
 const exceptionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: ErrorEvent): Promise<void> => {
@@ -600,14 +578,17 @@ const exceptionHandler =
     let position = { column: e.colno, line: e.lineno }
     let stack = e.error.stack
     try {
-      const {
-        sourceMapConsumer,
-        baseSource,
-      } = await getSourceMapForFile(e.filename)
+      const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
+        e.filename
+      )
 
-      let source = baseSource;
+      let source = baseSource
       if (sourceMapConsumer instanceof SourceMapConsumer) {
-        const { line, column, source: sourceFileName } = sourceMapConsumer.originalPositionFor({
+        const {
+          line,
+          column,
+          source: sourceFileName
+        } = sourceMapConsumer.originalPositionFor({
           line: e.lineno,
           column: e.colno
         })
@@ -620,8 +601,6 @@ const exceptionHandler =
       }
 
       frame = generateFrame(position.line, position.column, source)
-
-      // stack = transformStack(stack)
     } catch (err: Error) {
       // TODO handle errors that we throw
       console.log(err)
@@ -652,6 +631,8 @@ const showErrorOverlay = (err: ErrorPayload['err']) => {
 window.addEventListener('error', exceptionHandler(showErrorOverlay))
 // window.addEventListener('unhandledrejection', rejectionHandler(showErrorOverlay))
 
-setTimeout(() => {throw new Error('External Module Error')}, 2000)
+// setTimeout(() => {
+//   throw new Error('External Module Error')
+// }, 2000)
 
 export { ErrorOverlay }
