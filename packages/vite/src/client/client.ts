@@ -697,7 +697,6 @@ const exceptionHandler =
 const rejectionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: PromiseRejectionEvent): Promise<void> => {
-    
     // TODO: get frame from stack trace
     const payload: ErrorPayload['err'] = {
       message: e.reason.message,
