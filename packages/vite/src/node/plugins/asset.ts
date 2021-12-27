@@ -1,4 +1,4 @@
-import path from 'path'
+import path, { resolve } from 'path';
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
 import mime from 'mime/lite'
@@ -33,6 +33,8 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+  let viteConfig: ResolvedConfig;
+
   return {
     name: 'vite:asset',
 
@@ -109,6 +111,47 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       } else {
         return null
       }
+    },
+
+    configResolved (resolvedConfig) {
+      viteConfig = resolvedConfig;
+    },
+
+    writeBundle(options, bundle) {
+      if (!viteConfig.build || !viteConfig.build.lib || options.format !== 'es') {
+        // only for lib mode and es build
+        return;
+      }
+      const assets = [];
+      let entry = null;
+      for (const key in bundle) {
+        if (
+          bundle[key].type === 'asset' &&
+          /.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$/.test(
+            key
+          )
+        ) {
+          assets.push(key);
+          // @ts-ignore
+        } else if (bundle[key].isEntry) {
+          entry = bundle[key];
+        }
+      }
+      if (!entry) {
+        return;
+      }
+      const outDir = viteConfig.build.outDir || 'dist';
+      const filePath = resolve(viteConfig.root, outDir, entry.fileName);
+      let data = fs.readFileSync(filePath, {
+        encoding: 'utf8',
+      });
+      assets.forEach((asset) => {
+        data = data.replace(
+          new RegExp(`var (.+?) = "${viteConfig.base || '/'}${asset}";`),
+          `import $1 from "./${asset}";`
+        );
+      });
+      fs.writeFileSync(filePath, data);
     },
 
     generateBundle(_, bundle) {
