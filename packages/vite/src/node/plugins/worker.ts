@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../config'
+import { sortUserPlugins } from '../config'
 import type { Plugin } from '../plugin'
 import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
@@ -7,6 +8,7 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+import { resolvePlugins } from '.'
 
 function parseWorkerRequest(id: string): Record<string, string> | null {
   const { search } = parseUrl(id)
@@ -20,6 +22,12 @@ const WorkerFileId = 'worker_file'
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+
+  const workerBundleOption = {
+    format: config.worker?.format || 'iife',
+    plugins: sortUserPlugins(config.worker?.plugins),
+    rollupOptions: config.worker?.rollupOptions || {}
+  }
 
   return {
     name: 'vite:worker',
@@ -54,17 +62,25 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
+        const { plugins, rollupOptions, format } = workerBundleOption
+        const [prePlugins, normalPlugins, postPlugins] = plugins
         const bundle = await rollup.rollup({
           input: cleanUrl(id),
-          plugins: config.plugins.map((plugin) => plugin),
+          plugins: await resolvePlugins(
+            { ...config },
+            prePlugins,
+            normalPlugins,
+            postPlugins
+          ),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
-          }
+          },
+          ...rollupOptions
         })
         let code: string
         try {
           const { output } = await bundle.generate({
-            format: 'iife',
+            format: format,
             sourcemap: config.build.sourcemap
           })
           code = output[0].code

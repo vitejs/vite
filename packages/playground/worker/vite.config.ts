@@ -5,8 +5,11 @@ import { defineConfig } from 'vite'
  * @type {import('vite').UserConfig}
  */
 export default defineConfig({
-  plugins: [vueJsx()],
+  plugins: [],
   build: {
     target: process.env.NODE_ENV === 'production' ? 'chrome60' : 'esnext'
+  },
+  worker: {
+    plugins: [vueJsx()]
   }
 })

@@ -39,6 +39,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
+import type { ModuleFormat, RollupOptions } from 'rollup'
 
 const debug = createDebugger('vite:config')
 
@@ -185,6 +186,23 @@ export interface UserConfig {
    * @deprecated use `resolve.dedupe` instead
    */
   dedupe?: string[]
+  /**
+   * worker bundle option
+   */
+  worker?: {
+    /**
+     * worker output format
+     */
+    format?: ModuleFormat
+    /**
+     * Array of vite plugins to use.
+     */
+    plugins?: (Plugin | Plugin[])[]
+    /**
+     * rollup Option to build worker bundle
+     */
+    rollupOptions?: Omit<RollupOptions, 'plugins' | 'input' | 'onwarn'>
+  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
