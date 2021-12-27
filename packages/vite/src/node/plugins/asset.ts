@@ -33,7 +33,6 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
-  let viteConfig: ResolvedConfig;
 
   return {
     name: 'vite:asset',
@@ -113,12 +112,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    configResolved (resolvedConfig) {
-      viteConfig = resolvedConfig;
-    },
-
     writeBundle(options, bundle) {
-      if (!viteConfig.build || !viteConfig.build.lib || options.format !== 'es') {
+      if (!config || !config.build || !config.build.lib || options.format !== 'es') {
         // only for lib mode and es build
         return;
       }
@@ -140,14 +135,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (!entry) {
         return;
       }
-      const outDir = viteConfig.build.outDir || 'dist';
-      const filePath = resolve(viteConfig.root, outDir, entry.fileName);
+      const outDir = config.build.outDir || 'dist';
+      const filePath = resolve(config.root, outDir, entry.fileName);
       let data = fs.readFileSync(filePath, {
         encoding: 'utf8',
       });
       assets.forEach((asset) => {
         data = data.replace(
-          new RegExp(`var (.+?) = "${viteConfig.base || '/'}${asset}";`),
+          new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
           `import $1 from "./${asset}";`
         );
       });
@@ -333,7 +328,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (
-    (config.build.lib && config.build.lib.noForceInlineAssets) ||
+    (config.build.lib && !config.build.lib.noForceInlineAssets) ||
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {
