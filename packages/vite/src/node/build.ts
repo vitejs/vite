@@ -647,12 +647,12 @@ function getPkgName(root: string) {
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
   const cache = new Map<string, boolean>()
   return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
+    if (id.includes('node_modules') && !isCSSRequest(id)) {
+      if (staticImportedByEntry(id, getModuleInfo, cache)) {
+        return 'vendor'
+      } else {
+        return 'async-vendor'
+      }
     }
   }
 }
