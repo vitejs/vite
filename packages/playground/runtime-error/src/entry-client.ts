@@ -5,3 +5,11 @@ document.querySelector<HTMLButtonElement>('#throwBtn').onclick = () => {
 document.querySelector<HTMLButtonElement>('#invalidAccessor').onclick = () => {
   window.doesnt.exists = 5
 }
+
+const asyncFunc = async () => {
+  throw new Error('async failure')
+}
+
+document.querySelector<HTMLButtonElement>('#promise').onclick = async () => {
+  await asyncFunc()
+}

@@ -694,6 +694,25 @@ const exceptionHandler =
     callback(payload)
   }
 
+const rejectionHandler =
+  (callback: ErrorOverlayCallback) =>
+  async (e: PromiseRejectionEvent): Promise<void> => {
+    
+    // TODO: get frame from stack trace
+    const payload: ErrorPayload['err'] = {
+      message: e.reason.message,
+      stack: await transformStackTrace(e.reason.stack)
+      // loc: {
+      //   column: position.column,
+      //   line: position.line,
+      //   file: fileName
+      // },
+      // frame
+    }
+
+    callback(payload)
+  }
+
 const showErrorOverlay = (err: ErrorPayload['err']) => {
   console.log(err)
   const overlay = new ErrorOverlay(err)
@@ -702,7 +721,10 @@ const showErrorOverlay = (err: ErrorPayload['err']) => {
 
 // TODO: respect __HMR_ENABLE_OVERLAY__
 window.addEventListener('error', exceptionHandler(showErrorOverlay))
-// window.addEventListener('unhandledrejection', rejectionHandler(showErrorOverlay))
+window.addEventListener(
+  'unhandledrejection',
+  rejectionHandler(showErrorOverlay)
+)
 
 // setTimeout(() => {
 //   throw new Error('External Module Error')
