@@ -80,7 +80,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         let code: string
         try {
           const { output } = await bundle.generate({
-            format: format,
+            format,
             sourcemap: config.build.sourcemap
           })
           code = output[0].code
