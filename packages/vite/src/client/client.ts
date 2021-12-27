@@ -521,14 +521,13 @@ const getSourceMapForFile = async (
   fileName: string
 ): Promise<{
   sourceMapConsumer?: SourceMapConsumer
-  source: string
-  fileName?: string
+  baseSource: string
 }> => {
   const source = await (await fetch(fileName)).text()
   const sourceMapData = extractSourceMapData(source)
 
   if (!sourceMapData) {
-    return { source }
+    return { baseSource: source }
   }
 
   // TODO: extract this string to a const
@@ -538,19 +537,10 @@ const getSourceMapForFile = async (
     const sourceMapConsumer = new SourceMapConsumer(
       JSON.parse(sm) as RawSourceMap
     )
-    const realPath = findRealPath(
-      fileName,
-      sourceMapConsumer.sources as string[]
-    )
-
-    if (!realPath) {
-      return { source }
-    }
 
     return {
+      baseSource: source,
       sourceMapConsumer,
-      source: sourceMapConsumer.sourceContentFor(realPath),
-      fileName: realPath
     }
   }
 
@@ -612,17 +602,20 @@ const exceptionHandler =
     try {
       const {
         sourceMapConsumer,
-        source,
-        fileName: sourceMapFileName
+        baseSource,
       } = await getSourceMapForFile(e.filename)
+
+      let source = baseSource;
       if (sourceMapConsumer instanceof SourceMapConsumer) {
-        const { line, column } = sourceMapConsumer.originalPositionFor({
+        const { line, column, source: sourceFileName } = sourceMapConsumer.originalPositionFor({
           line: e.lineno,
           column: e.colno
         })
+
+        source = sourceMapConsumer.sourceContentFor(sourceFileName)
         position = { line, column }
-        if (sourceMapFileName) {
-          fileName = sourceMapFileName
+        if (sourceFileName && !fileName.includes('@vite')) {
+          fileName = sourceFileName
         }
       }
 
@@ -658,5 +651,7 @@ const showErrorOverlay = (err: ErrorPayload['err']) => {
 // TODO: respect __HMR_ENABLE_OVERLAY__
 window.addEventListener('error', exceptionHandler(showErrorOverlay))
 // window.addEventListener('unhandledrejection', rejectionHandler(showErrorOverlay))
+
+setTimeout(() => {throw new Error('External Module Error')}, 2000)
 
 export { ErrorOverlay }
