@@ -48,7 +48,7 @@ import type {
   RollupError,
   TransformResult
 } from 'rollup'
-import acorn from 'acorn'
+import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
