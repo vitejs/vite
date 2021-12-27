@@ -10,6 +10,8 @@ import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer } from 'source-map'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
@@ -485,5 +487,176 @@ export function injectQuery(url: string, queryToInject: string): string {
     hash || ''
   }`
 }
+
+type ErrorOverlayCallback = (err: ErrorPayload['err']) => void
+
+const extractSourceMapData = (fileContetnt: string) => {
+  const re = /[#@]\ssourceMappingURL=\s*(\S+)/gm
+  let match: RegExpExecArray | null = null
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let next = re.exec(fileContetnt)
+    if (next === null) {
+      break
+    }
+    match = next
+  }
+
+  if (!(match && match[0])) {
+    return null
+  }
+
+  return match[1]
+}
+
+const findRealPath = (
+  fileName: string,
+  sources: string[]
+): string | undefined => {
+  const filePath = new URL(fileName).pathname
+  return sources.find((path) => path.includes(filePath))
+}
+
+const getSourceMapForFile = async (
+  fileName: string
+): Promise<{
+  sourceMapConsumer?: SourceMapConsumer
+  source: string
+  fileName?: string
+}> => {
+  const source = await (await fetch(fileName)).text()
+  const sourceMapData = extractSourceMapData(source)
+
+  if (!sourceMapData) {
+    return { source }
+  }
+
+  // TODO: extract this string to a const
+  if (sourceMapData.indexOf('data:application/json;base64,') === 0) {
+    let sm = sourceMapData.substring('data:application/json;base64,'.length)
+    sm = window.atob(sm)
+    const sourceMapConsumer = new SourceMapConsumer(
+      JSON.parse(sm) as RawSourceMap
+    )
+    const realPath = findRealPath(
+      fileName,
+      sourceMapConsumer.sources as string[]
+    )
+
+    if (!realPath) {
+      return { source }
+    }
+
+    return {
+      sourceMapConsumer,
+      source: sourceMapConsumer.sourceContentFor(realPath),
+      fileName: realPath
+    }
+  }
+
+  // TODO: add support for url source maps
+  throw new Error('Only base64 source maps are supported')
+}
+
+const generateFrame = (
+  line: number,
+  column: number,
+  source: string,
+  count = 2
+): string => {
+  const lines = source.split('\n')
+  const result: string[] = []
+
+  for (
+    let index = Math.max(0, line - 1 - count);
+    index <= Math.min(lines.length - 1, line - 1 + count);
+    ++index
+  ) {
+    const lineNumber = index + 1
+    result.push(`${lineNumber}  |  ${lines[index]}`)
+    if (index === line - 1) {
+      result.push(
+        Array(index.toString().length).fill(' ').join('') +
+          '  |  ' +
+          Array(column).fill(' ').join('') +
+          '^'
+      )
+    }
+  }
+
+  return result.join('\n')
+}
+
+// const regexValidFrame_Chrome = /^\s*(at|in)\s.+(:\d+)/;
+// const regexValidFrame_FireFox = /(^|@)\S+:\d+|.+line\s+\d+\s+>\s+(eval|Function).+/;
+
+// const transformStack = (stack: string) => {
+//   return stack.split('\n')
+//   .filter(
+//     e => regexValidFrame_Chrome.test(e) || regexValidFrame_FireFox.test(e)
+//   )
+//   .map((e) => {
+//     return e
+//   })
+//   .join('\n')
+// }
+
+const exceptionHandler =
+  (callback: ErrorOverlayCallback) =>
+  async (e: ErrorEvent): Promise<void> => {
+    console.log(e)
+    let frame: string = ''
+    let fileName = e.filename
+    let position = { column: e.colno, line: e.lineno }
+    let stack = e.error.stack
+    try {
+      const {
+        sourceMapConsumer,
+        source,
+        fileName: sourceMapFileName
+      } = await getSourceMapForFile(e.filename)
+      if (sourceMapConsumer instanceof SourceMapConsumer) {
+        const { line, column } = sourceMapConsumer.originalPositionFor({
+          line: e.lineno,
+          column: e.colno
+        })
+        position = { line, column }
+        if (sourceMapFileName) {
+          fileName = sourceMapFileName
+        }
+      }
+
+      frame = generateFrame(position.line, position.column, source)
+
+      // stack = transformStack(stack)
+    } catch (err: Error) {
+      // TODO handle errors that we throw
+      console.log(err)
+      // frame = err.message;
+    }
+
+    const payload: ErrorPayload['err'] = {
+      message: e.error.message,
+      stack,
+      loc: {
+        column: position.column,
+        line: position.line,
+        file: fileName
+      },
+      frame
+    }
+
+    callback(payload)
+  }
+
+const showErrorOverlay = (err: ErrorPayload['err']) => {
+  console.log(err)
+  const overlay = new ErrorOverlay(err)
+  document.body.appendChild(overlay)
+}
+
+// TODO: respect __HMR_ENABLE_OVERLAY__
+window.addEventListener('error', exceptionHandler(showErrorOverlay))
+// window.addEventListener('unhandledrejection', rejectionHandler(showErrorOverlay))
 
 export { ErrorOverlay }
