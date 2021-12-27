@@ -12,7 +12,7 @@ import { parseWorkerRequest, bundleWorkerEntry } from './worker'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 
-const WorkerFileId = 'worker_url_file'
+const WORKER_FILE_ID = 'worker_url_file'
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -22,7 +22,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(code, id, options) {
       const query = parseWorkerRequest(id)
-      if (query && query[WorkerFileId] != null) {
+      if (query && query[WORKER_FILE_ID] != null) {
         return {
           code: `import '${ENV_PUBLIC_PATH}'\n` + code
         }
@@ -59,7 +59,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          if (!s) s = new MagicString(code)
+          s ||= new MagicString(code)
 
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
@@ -78,7 +78,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             })}__`
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WorkerFileId)
+            url = injectQuery(url, WORKER_FILE_ID)
           }
           s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url))
         }
