@@ -124,33 +124,49 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
       const assets = []
       let entry = null
+      let css = null
       for (const key in bundle) {
-        if (bundle[key].type === 'asset') {
-          assets.push(key)
+        if (key.endsWith('.css')) {
+          css = bundle[key]
           // @ts-ignore
         } else if (bundle[key].isEntry) {
           entry = bundle[key]
+        } else if (bundle[key].type === 'asset') {
+          assets.push(key)
         }
       }
-      if (!entry) {
-        return
+      if (entry) {
+        const outDir = config.build.outDir || 'dist'
+        const filePath = resolve(config.root, outDir, entry.fileName)
+        let data = fs.readFileSync(filePath, {
+          encoding: 'utf8'
+        })
+        assets.forEach((asset) => {
+          if (asset.endsWith('.css')) {
+            data = `import './${asset}';\n${data}`
+          } else {
+            data = data.replace(
+              new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
+              `import $1 from "./${asset}";`
+            )
+          }
+        })
+        fs.writeFileSync(filePath, data)
       }
-      const outDir = config.build.outDir || 'dist'
-      const filePath = resolve(config.root, outDir, entry.fileName)
-      let data = fs.readFileSync(filePath, {
-        encoding: 'utf8'
-      })
-      assets.forEach((asset) => {
-        if (asset.endsWith('.css')) {
-          data = `import './${asset}';\n${data}`
-        } else {
+      if (css) {
+        const outDir = config.build.outDir || 'dist'
+        const filePath = resolve(config.root, outDir, css.fileName)
+        let data = fs.readFileSync(filePath, {
+          encoding: 'utf8'
+        })
+        assets.forEach((asset) => {
           data = data.replace(
-            new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
-            `import $1 from "./${asset}";`
+            new RegExp(`${config.base || '/'}${asset}`),
+            `./${asset}`
           )
-        }
-      })
-      fs.writeFileSync(filePath, data)
+        })
+        fs.writeFileSync(filePath, data)
+      }
     },
 
     generateBundle(_, bundle) {
