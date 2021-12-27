@@ -21,6 +21,17 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:terser',
 
     async renderChunk(code, _chunk, outputOptions) {
+      // This plugin is included for any non-false value of config.build.minify,
+      // so that normal chunks can use the preferred minifier, and legacy chunks
+      // can use terser.
+      if (
+        config.build.minify !== 'terser' &&
+        // @ts-ignore injected by @vitejs/plugin-legacy
+        !outputOptions.__vite_force_terser__
+      ) {
+        return null
+      }
+
       // Do not minify ES lib output since that would remove pure annotations
       // and break tree-shaking
       if (config.build.lib && outputOptions.format === 'es') {
