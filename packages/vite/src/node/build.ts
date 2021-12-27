@@ -783,9 +783,9 @@ export function onRollupWarning(
       userOnWarn(warning, warn)
     } else if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
-        `${colors.bold(colors.yellow(`[plugin:${warning.plugin}]`))} ${colors.yellow(
-          warning.message
-        )}`
+        `${colors.bold(
+          colors.yellow(`[plugin:${warning.plugin}]`)
+        )} ${colors.yellow(warning.message)}`
       )
     } else {
       warn(warning)
