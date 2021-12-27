@@ -142,14 +142,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           encoding: 'utf8'
         })
         assets.forEach((asset) => {
-          if (asset.endsWith('.css')) {
-            data = `import './${asset}';\n${data}`
-          } else {
-            data = data.replace(
-              new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
-              `import $1 from "./${asset}";`
-            )
-          }
+          data = data.replace(
+            new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
+            `import $1 from "./${asset}";`
+          )
         })
         fs.writeFileSync(filePath, data)
       }
