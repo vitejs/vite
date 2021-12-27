@@ -495,8 +495,8 @@ const extractSourceMapData = (fileContetnt: string) => {
   let match: RegExpExecArray | null = null
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    let next = re.exec(fileContetnt)
-    if (next === null) {
+    const next = re.exec(fileContetnt)
+    if (next == null) {
       break
     }
     match = next
@@ -569,14 +569,87 @@ const generateFrame = (
   return result.join('\n')
 }
 
+const RE_CHROME_STACKTRACE =
+  /^ {4}at (?:(.+?)\s+\()?(?:(.+?)\?+)(?:(?:.+?):(\d+)(?::(\d+))?)\)?/
+
+const RE_FIREFOX_STACKTRACE =
+  /(?:(?:(^|.+?)@)(?:(.+?)\?+))(?:(?:.+?):(\d+)(?::(\d+))?)\)?/
+
+const transformStackTrace = async (stack: string) => {
+  const getStackInformation = (line: string) => {
+    let match = RE_CHROME_STACKTRACE.exec(line)
+    if (match) {
+      return {
+        input: match[0],
+        varName: match[1],
+        url: match[2],
+        lineNo: match[3],
+        columnNo: match[4],
+        vendor: 'chrome' as const
+      }
+    }
+    match = RE_FIREFOX_STACKTRACE.exec(line)
+    if (match) {
+      // TODO Handle cl
+      return {
+        input: match[0],
+        varName: match[1],
+        url: match[2],
+        lineNo: match[3],
+        columnNo: match[4],
+        vendor: 'firefox' as const
+      }
+    }
+
+    return {
+      input: line
+    }
+  }
+
+  return (
+    await Promise.all(
+      stack.split('\n').map(async (line) => {
+        const { input, varName, url, lineNo, columnNo, vendor } =
+          getStackInformation(line)
+
+        if (!url) return input
+
+        const { sourceMapConsumer } = await getSourceMapForFile(url)
+
+        if (!(sourceMapConsumer instanceof SourceMapConsumer)) {
+          return input
+        }
+
+        const pos = sourceMapConsumer.originalPositionFor({
+          line: Number(lineNo),
+          column: Number(columnNo)
+        })
+
+        if (!pos.source) {
+          return input
+        }
+
+        if (vendor === 'chrome') {
+          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
+          if (!varName || varName === 'eval') {
+            return `    at ${source}`
+          } else {
+            return `    at ${varName} (${source})`
+          }
+        } else {
+          return `${varName}@${pos.source}:${pos.line || 0}:${pos.column || 0}`
+        }
+      })
+    )
+  ).join('\n')
+}
+
 const exceptionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: ErrorEvent): Promise<void> => {
-    console.log(e)
     let frame: string = ''
     let fileName = e.filename
     let position = { column: e.colno, line: e.lineno }
-    let stack = e.error.stack
     try {
       const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
         e.filename
@@ -609,7 +682,7 @@ const exceptionHandler =
 
     const payload: ErrorPayload['err'] = {
       message: e.error.message,
-      stack,
+      stack: await transformStackTrace(e.error.stack),
       loc: {
         column: position.column,
         line: position.line,
