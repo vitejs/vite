@@ -1,4 +1,4 @@
-import path, { resolve } from 'path';
+import path, { resolve } from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
 import mime from 'mime/lite'
@@ -113,39 +113,44 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     writeBundle(options, bundle) {
-      if (!config || !config.build || !config.build.lib || options.format !== 'es') {
+      if (
+        !config ||
+        !config.build ||
+        !config.build.lib ||
+        options.format !== 'es'
+      ) {
         // only for lib mode and es build
-        return;
+        return
       }
-      const assets = [];
-      let entry = null;
+      const assets = []
+      let entry = null
       for (const key in bundle) {
         if (bundle[key].type === 'asset') {
-          assets.push(key);
+          assets.push(key)
           // @ts-ignore
         } else if (bundle[key].isEntry) {
-          entry = bundle[key];
+          entry = bundle[key]
         }
       }
       if (!entry) {
-        return;
+        return
       }
-      const outDir = config.build.outDir || 'dist';
-      const filePath = resolve(config.root, outDir, entry.fileName);
+      const outDir = config.build.outDir || 'dist'
+      const filePath = resolve(config.root, outDir, entry.fileName)
       let data = fs.readFileSync(filePath, {
-        encoding: 'utf8',
-      });
+        encoding: 'utf8'
+      })
       assets.forEach((asset) => {
         if (asset.endsWith('.css')) {
-          data = `import './${asset}';\n${data}`;
+          data = `import './${asset}';\n${data}`
         } else {
           data = data.replace(
             new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
             `import $1 from "./${asset}";`
-          );
+          )
         }
-      });
-      fs.writeFileSync(filePath, data);
+      })
+      fs.writeFileSync(filePath, data)
     },
 
     generateBundle(_, bundle) {
