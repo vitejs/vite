@@ -120,12 +120,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       const assets = [];
       let entry = null;
       for (const key in bundle) {
-        if (
-          bundle[key].type === 'asset' &&
-          /.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$/.test(
-            key
-          )
-        ) {
+        if (bundle[key].type === 'asset') {
           assets.push(key);
           // @ts-ignore
         } else if (bundle[key].isEntry) {
@@ -141,10 +136,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         encoding: 'utf8',
       });
       assets.forEach((asset) => {
-        data = data.replace(
-          new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
-          `import $1 from "./${asset}";`
-        );
+        if (asset.endsWith('.css')) {
+          data = `import './${asset}';\n${data}`;
+        } else {
+          data = data.replace(
+            new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
+            `import $1 from "./${asset}";`
+          );
+        }
       });
       fs.writeFileSync(filePath, data);
     },
