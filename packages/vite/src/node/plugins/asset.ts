@@ -333,7 +333,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (
-    config.build.lib ||
+    (config.build.lib && config.build.lib.noForceInlineAssets) ||
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {
