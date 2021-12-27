@@ -135,7 +135,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer
-            )} file format.`
+            )} file format, or add "**/*${path.extname(importer)}" to \`assetsInclude\` to your configuration.`
 
         this.error(
           `Failed to parse source for import analysis because the content ` +
