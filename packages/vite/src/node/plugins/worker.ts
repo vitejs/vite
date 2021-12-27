@@ -23,7 +23,7 @@ const WorkerFileId = 'worker_file'
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
-  const workerBundleOption = {
+  const workerBundleOptions = {
     format: config.worker?.format || 'iife',
     plugins: sortUserPlugins(config.worker?.plugins),
     rollupOptions: config.worker?.rollupOptions || {}
@@ -62,9 +62,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
-        const { plugins, rollupOptions, format } = workerBundleOption
+        const { plugins, rollupOptions, format } = workerBundleOptions
         const [prePlugins, normalPlugins, postPlugins] = plugins
         const bundle = await rollup.rollup({
+          ...rollupOptions,
           input: cleanUrl(id),
           plugins: await resolvePlugins(
             { ...config },
@@ -74,8 +75,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           ),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
-          },
-          ...rollupOptions
+          }
         })
         let code: string
         try {
