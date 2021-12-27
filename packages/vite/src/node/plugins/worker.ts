@@ -95,7 +95,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
+                return objURL ? new Worker(objURL) : new Worker("data:application/javascript;base64," + encodedJs, ${
+                  format === 'es' ? '{type: "module"}' : '{}'
+                });
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
