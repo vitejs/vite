@@ -193,7 +193,7 @@ export interface UserConfig {
     /**
      * worker output format
      */
-    format?: ModuleFormat
+    format?: "es" | "iife"
     /**
      * Array of vite plugins to use.
      */
