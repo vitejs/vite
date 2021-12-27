@@ -96,7 +96,7 @@
     "execa": "^5.1.1",
     "fast-glob": "^3.2.7",
     "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.2.1",
+    "launch-editor-middleware": "^2.3.0",
     "magic-string": "^0.25.7",
     "micromatch": "^4.0.4",
     "mime": "^3.0.0",
