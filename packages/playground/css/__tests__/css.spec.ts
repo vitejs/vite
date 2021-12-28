@@ -261,7 +261,7 @@ test('async chunk', async () => {
 })
 
 test('public assets in css', async () => {
-  const img = await page.$(".img-assets")
+  const img = await page.$('.img-assets')
   expect(await img.getAttribute('src')).toBe('/ok.png')
 
   const bg = await page.$('.bg-assets')
