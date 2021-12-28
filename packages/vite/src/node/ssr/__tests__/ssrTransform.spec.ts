@@ -568,11 +568,11 @@ bbb()
 
 
     function foobar() {
-      __vite_ssr_import_0__.ddd()
+      ddd()
 
       const aaa = () => {
-        __vite_ssr_import_0__.bbb(__vite_ssr_import_0__.ccc)
-        __vite_ssr_import_0__.ddd()
+        bbb(ccc)
+        ddd()
       }
       const bbb = () => {
         console.log('hi')

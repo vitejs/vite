@@ -268,6 +268,7 @@ function walk(
 ) {
   const parentStack: Node[] = []
   const scopeMap = new WeakMap<_Node, Set<string>>()
+  const identifiers: [id: any, stack: Node[]][] = []
 
   const setScope = (node: FunctionNode, name: string) => {
     let scopeIds = scopeMap.get(node)
@@ -281,7 +282,7 @@ function walk(
     scopeIds.add(name)
   }
 
-  function hasScope(name: string, parents: Node[]) {
+  function isInScope(name: string, parents: Node[]) {
     return parents.some((node) => node && scopeMap.get(node)?.has(name))
   }
 
@@ -301,10 +302,11 @@ function walk(
 
       if (node.type === 'Identifier') {
         if (
-          !hasScope(node.name, parentStack) &&
+          !isInScope(node.name, parentStack) &&
           isRefIdentifier(node, parent!, parentStack)
         ) {
-          onIdentifier(node, parent!, parentStack)
+          // record the identifier, for DFS -> BFS
+          identifiers.push([node, parentStack.slice(0)])
         }
       } else if (isFunction(node)) {
         // If it is a function declaration, it could be shadowing an import
@@ -376,6 +378,13 @@ function walk(
     leave(node: Node, parent: Node | null) {
       parent && parentStack.shift()
     }
+  })
+
+  // emit the identifier events in BFS so the hoisted declarations
+  // can be captured correctly
+  identifiers.forEach(([node, stack])=>{
+    if (!isInScope(node.name, stack))
+      onIdentifier(node, stack[0], stack)
   })
 }
 
