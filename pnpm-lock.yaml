@@ -16,7 +16,7 @@ importers:
       '@types/semver': ^7.3.9
       '@typescript-eslint/eslint-plugin': ^5.7.0
       '@typescript-eslint/parser': ^5.7.0
-      chalk: ^4.1.2
+      chalk: ^5.0.0
       conventional-changelog-cli: ^2.1.1
       cross-env: ^7.0.3
       esbuild: ^0.13.12
@@ -52,7 +52,7 @@ importers:
       '@types/semver': 7.3.9
       '@typescript-eslint/eslint-plugin': 5.7.0_d7a0d6b59468b4d2ea38f782f4f112e3
       '@typescript-eslint/parser': 5.7.0_eslint@8.4.1+typescript@4.4.4
-      chalk: 4.1.2
+      chalk: 5.0.0
       conventional-changelog-cli: 2.1.1
       cross-env: 7.0.3
       esbuild: 0.13.12
@@ -3182,6 +3182,11 @@ packages:
     dependencies:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
+
+  /chalk/5.0.0:
+    resolution: {integrity: sha512-/duVOqst+luxCQRKEo4bNxinsOQtMP80ZYm7mMqzuh5PociNL0PvmHFvREJ9ueYL2TxlHjBcmLCdmocx9Vg+IQ==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+    dev: true
 
   /char-regex/1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
