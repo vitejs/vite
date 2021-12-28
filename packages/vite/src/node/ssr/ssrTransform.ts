@@ -7,7 +7,8 @@ import type {
   Node as _Node,
   Property,
   Function as FunctionNode,
-  Pattern
+  Pattern,
+  BlockStatement,
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
@@ -266,7 +267,6 @@ function walk(
   { onIdentifier, onImportMeta, onDynamicImport }: Visitors
 ) {
   const parentStack: Node[] = []
-  const scope: Record<string, number> = Object.create(null)
   const scopeMap = new WeakMap<_Node, Set<string>>()
 
   const setScope = (node: FunctionNode, name: string) => {
@@ -274,16 +274,15 @@ function walk(
     if (scopeIds && scopeIds.has(name)) {
       return
     }
-    if (name in scope) {
-      scope[name]++
-    } else {
-      scope[name] = 1
-    }
     if (!scopeIds) {
       scopeIds = new Set()
       scopeMap.set(node, scopeIds)
     }
     scopeIds.add(name)
+  }
+
+  function hasScope(name: string, parents: Node[]) {
+    return parents.some(node => node && scopeMap.get(node)?.has(name))
   }
 
   ;(eswalk as any)(root, {
@@ -301,7 +300,7 @@ function walk(
       }
 
       if (node.type === 'Identifier') {
-        if (!scope[node.name] && isRefIdentifier(node, parent!, parentStack)) {
+        if (!hasScope(node.name, parentStack) && isRefIdentifier(node, parent!, parentStack)) {
           onIdentifier(node, parent!, parentStack)
         }
       } else if (isFunction(node)) {
@@ -373,15 +372,6 @@ function walk(
 
     leave(node: Node, parent: Node | null) {
       parent && parentStack.pop()
-      const scopeIds = scopeMap.get(node)
-      if (scopeIds) {
-        scopeIds.forEach((id: string) => {
-          scope[id]--
-          if (scope[id] === 0) {
-            delete scope[id]
-          }
-        })
-      }
     }
   })
 }
