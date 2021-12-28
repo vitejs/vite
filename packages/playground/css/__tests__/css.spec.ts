@@ -260,6 +260,14 @@ test('async chunk', async () => {
   }
 })
 
+test('public assets in css', async () => {
+  const img = await page.$(".img-assets")
+  expect(await img.getAttribute('src')).toBe('/ok.png')
+
+  const bg = await page.$('.bg-assets')
+  expect(await getBg(bg)).toMatch(/[^assets]\/ok.png/)
+})
+
 test('treeshaken async chunk', async () => {
   if (isBuild) {
     // should be absent in prod

@@ -1,5 +1,7 @@
 import './minify.css'
 
+import './public-assets.css'
+
 import css from './imported.css'
 text('.imported-css', css)
 
