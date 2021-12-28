@@ -713,6 +713,12 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.5
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.2
@@ -738,9 +744,7 @@ importers:
       '@types/stylus': ^0.48.36
       '@types/ws': ^8.2.2
       '@vue/compiler-dom': ^3.2.26
-      acorn: ^8.6.0
-      acorn-class-fields: ^1.0.0
-      acorn-static-class-features: ^1.0.0
+      acorn: ^8.7.0
       cac: 6.7.9
       chalk: ^4.1.2
       chokidar: ^3.5.2
@@ -816,9 +820,7 @@ importers:
       '@types/stylus': 0.48.36
       '@types/ws': 8.2.2
       '@vue/compiler-dom': 3.2.26
-      acorn: 8.6.0
-      acorn-class-fields: 1.0.0_acorn@8.6.0
-      acorn-static-class-features: 1.0.0_acorn@8.6.0
+      acorn: 8.7.0
       cac: 6.7.9
       chalk: 4.1.2
       chokidar: 3.5.2
@@ -853,7 +855,7 @@ importers:
       source-map: 0.6.1
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
-      terser: 5.10.0_acorn@8.6.0
+      terser: 5.10.0_acorn@8.7.0
       tsconfck: 1.1.1_typescript@4.4.4
       tslib: 2.3.1
       types: link:types
@@ -2673,16 +2675,6 @@ packages:
       negotiator: 0.6.2
     dev: true
 
-  /acorn-class-fields/1.0.0_acorn@8.6.0:
-    resolution: {integrity: sha512-l+1FokF34AeCXGBHkrXFmml9nOIRI+2yBnBpO5MaVAaTIJ96irWLtcCxX+7hAp6USHFCe+iyyBB4ZhxV807wmA==}
-    engines: {node: '>=4.8.2'}
-    peerDependencies:
-      acorn: ^6 || ^7 || ^8
-    dependencies:
-      acorn: 8.6.0
-      acorn-private-class-elements: 1.0.0_acorn@8.6.0
-    dev: true
-
   /acorn-globals/6.0.0:
     resolution: {integrity: sha512-ZQl7LOWaF5ePqqcX4hLuv/bLXYQNfNWw2c0/yX/TsPRKamzHcTGQnlCjHT3TsmkOUVEPS3crCxiPfdzE/Trlhg==}
     dependencies:
@@ -2706,25 +2698,6 @@ packages:
       xtend: 4.0.2
     dev: false
 
-  /acorn-private-class-elements/1.0.0_acorn@8.6.0:
-    resolution: {integrity: sha512-zYNcZtxKgVCg1brS39BEou86mIao1EV7eeREG+6WMwKbuYTeivRRs6S2XdWnboRde6G9wKh2w+WBydEyJsJ6mg==}
-    engines: {node: '>=4.8.2'}
-    peerDependencies:
-      acorn: ^6.1.0 || ^7 || ^8
-    dependencies:
-      acorn: 8.6.0
-    dev: true
-
-  /acorn-static-class-features/1.0.0_acorn@8.6.0:
-    resolution: {integrity: sha512-XZJECjbmMOKvMHiNzbiPXuXpLAJfN3dAKtfIYbk1eHiWdsutlek+gS7ND4B8yJ3oqvHo1NxfafnezVmq7NXK0A==}
-    engines: {node: '>=4.8.2'}
-    peerDependencies:
-      acorn: ^6.1.0 || ^7 || ^8
-    dependencies:
-      acorn: 8.6.0
-      acorn-private-class-elements: 1.0.0_acorn@8.6.0
-    dev: true
-
   /acorn-walk/7.2.0:
     resolution: {integrity: sha512-OPdCF6GsMIP+Az+aWfAAOEt2/+iVDKE7oy6lJ098aoe59oAmK76qV6Gw60SbZ8jHuG2wH058GF4pLFbYamYrVA==}
     engines: {node: '>=0.4.0'}
@@ -2747,6 +2720,12 @@ packages:
 
   /acorn/8.6.0:
     resolution: {integrity: sha512-U1riIR+lBSNi3IbxtaHOIKdH8sLFv3NYfNv8sg7ZsNhcfl4HF2++BfqqrNAxoCLQW1iiylOj76ecnaUxz+z9yw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+    dev: true
+
+  /acorn/8.7.0:
+    resolution: {integrity: sha512-V/LGr1APy+PXIwKebEWrkZPwoeoF+w1jiOBUmuxuiUIaOHtob8Qc9BTrYo7VuI5fR8tqsy+buA2WFooR5olqvQ==}
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
@@ -8607,7 +8586,7 @@ packages:
       supports-hyperlinks: 2.2.0
     dev: true
 
-  /terser/5.10.0_acorn@8.6.0:
+  /terser/5.10.0_acorn@8.7.0:
     resolution: {integrity: sha512-AMmF99DMfEDiRJfxfY5jj5wNH/bYO09cniSqhfoyxc8sFoYIgkJy86G04UoZU5VjlpnplVu0K6Tx6E9b5+DlHA==}
     engines: {node: '>=10'}
     hasBin: true
@@ -8617,7 +8596,7 @@ packages:
       acorn:
         optional: true
     dependencies:
-      acorn: 8.6.0
+      acorn: 8.7.0
       commander: 2.20.3
       source-map: 0.7.3
       source-map-support: 0.5.21

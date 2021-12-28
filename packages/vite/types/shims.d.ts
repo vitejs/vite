@@ -17,16 +17,6 @@ declare module 'http-proxy' {
   export = proxy
 }
 
-declare module 'acorn-class-fields' {
-  const plugin: any
-  export = plugin
-}
-
-declare module 'acorn-static-class-features' {
-  const plugin: any
-  export default plugin
-}
-
 declare module 'connect-history-api-fallback' {
   const plugin: any
   export = plugin
