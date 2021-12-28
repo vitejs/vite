@@ -740,7 +740,6 @@ importers:
       '@vue/compiler-dom': ^3.2.26
       acorn: ^8.7.0
       cac: 6.7.9
-      chalk: ^4.1.2
       chokidar: ^3.5.2
       compression: ^1.7.4
       connect: ^3.7.0
@@ -765,6 +764,7 @@ importers:
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
+      picocolors: ^1.0.0
       postcss: ^8.4.5
       postcss-import: ^14.0.2
       postcss-load-config: ^3.1.0
@@ -816,7 +816,6 @@ importers:
       '@vue/compiler-dom': 3.2.26
       acorn: 8.7.0
       cac: 6.7.9
-      chalk: 4.1.2
       chokidar: 3.5.2
       compression: 1.7.4
       connect: 3.7.0
@@ -839,6 +838,7 @@ importers:
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
+      picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.5
       postcss-load-config: 3.1.0_ts-node@10.4.0
       postcss-modules: 4.2.2_postcss@8.4.5

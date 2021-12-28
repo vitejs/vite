@@ -4,7 +4,7 @@ import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
@@ -45,7 +45,7 @@ export function proxyMiddleware(
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
     proxy.on('error', (err) => {
-      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
+      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err
       })

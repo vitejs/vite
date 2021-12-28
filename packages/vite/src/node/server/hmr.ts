@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import { createDebugger, normalizePath } from '../utils'
 import type { ModuleNode } from './moduleGraph'
@@ -54,9 +54,9 @@ export async function handleHMRUpdate(
     (file === '.env' || file.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
-    debugHmr(`[config change] ${chalk.dim(shortFile)}`)
+    debugHmr(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
-      chalk.green(
+      colors.green(
         `${path.relative(process.cwd(), file)} changed, restarting server...`
       ),
       { clear: true, timestamp: true }
@@ -64,12 +64,12 @@ export async function handleHMRUpdate(
     try {
       await server.restart()
     } catch (e) {
-      config.logger.error(chalk.red(e))
+      config.logger.error(colors.red(e))
     }
     return
   }
 
-  debugHmr(`[file change] ${chalk.dim(shortFile)}`)
+  debugHmr(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
@@ -104,7 +104,7 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
         clear: true,
         timestamp: true
       })
@@ -116,7 +116,7 @@ export async function handleHMRUpdate(
       })
     } else {
       // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${chalk.dim(shortFile)}`)
+      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
     }
     return
   }
@@ -161,7 +161,7 @@ function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
+    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
       clear: true,
       timestamp: true
     })
@@ -171,7 +171,7 @@ function updateModules(
   } else {
     config.logger.info(
       updates
-        .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
         .join('\n'),
       { clear: true, timestamp: true }
     )
@@ -304,7 +304,7 @@ export function handlePrunedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
-    debugHmr(`[dispose] ${chalk.dim(mod.file)}`)
+    debugHmr(`[dispose] ${colors.dim(mod.file)}`)
   })
   ws.send({
     type: 'prune',

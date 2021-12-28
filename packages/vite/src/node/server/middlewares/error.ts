@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ViteDevServer } from '../..'
 import type { Connect } from 'types/connect'
@@ -25,9 +25,9 @@ export function buildErrorMessage(
   args: string[] = [],
   includeStack = true
 ): string {
-  if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
-  if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
-  if (err.frame) args.push(chalk.yellow(pad(err.frame)))
+  if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
+  if (err.id) args.push(`  File: ${colors.cyan(err.id)}`)
+  if (err.frame) args.push(colors.yellow(pad(err.frame)))
   if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')
 }
@@ -41,7 +41,7 @@ function cleanStack(stack: string) {
 
 export function logError(server: ViteDevServer, err: RollupError): void {
   const msg = buildErrorMessage(err, [
-    chalk.red(`Internal server error: ${err.message}`)
+    colors.red(`Internal server error: ${err.message}`)
   ])
 
   server.config.logger.error(msg, {

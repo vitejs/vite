@@ -4,7 +4,7 @@ import type * as net from 'net'
 import type * as http from 'http'
 import connect from 'connect'
 import corsMiddleware from 'cors'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
@@ -624,7 +624,9 @@ async function startServer(
         const outPath = path.resolve('./vite-profile.cpuprofile')
         fs.writeFileSync(outPath, JSON.stringify(profile))
         info(
-          chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}\n`)
+          colors.yellow(
+            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
+          )
         )
       } else {
         throw err

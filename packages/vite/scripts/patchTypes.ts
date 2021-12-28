@@ -1,7 +1,7 @@
 import type { ParseResult } from '@babel/parser'
 import { parse } from '@babel/parser'
 import type { File } from '@babel/types'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import MagicString from 'magic-string'
 import { dirname, relative, resolve } from 'path'
@@ -13,7 +13,7 @@ const typesDir = resolve(__dirname, '../types')
 // and rewrite them into relative imports - so that api-extractor actually
 // includes them in the rolled-up final d.ts file.
 walkDir(tempDir)
-console.log(chalk.green.bold(`patched types/* imports`))
+console.log(colors.green(colors.bold(`patched types/* imports`)))
 
 function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -42,7 +42,7 @@ function rewriteFile(file: string): void {
       plugins: ['typescript', 'classProperties']
     })
   } catch (e) {
-    console.log(chalk.red(`failed to parse ${file}`))
+    console.log(colors.red(`failed to parse ${file}`))
     throw e
   }
   for (const statement of ast.program.body) {

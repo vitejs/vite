@@ -23,7 +23,7 @@ import type {
   SourceMap
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import type { ResolveFn, ViteDevServer } from '../'
 import {
@@ -768,7 +768,7 @@ async function compileCSS(
           column: message.column
         })}`
       }
-      config.logger.warn(chalk.yellow(msg))
+      config.logger.warn(colors.yellow(msg))
     }
   }
 
@@ -917,7 +917,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   if (warnings.length) {
     const msgs = await formatMessages(warnings, { kind: 'warning' })
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+      colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
     )
   }
   return code

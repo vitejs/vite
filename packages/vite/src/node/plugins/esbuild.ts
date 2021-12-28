@@ -1,5 +1,5 @@
 import path from 'path'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import type {
   Message,
@@ -253,7 +253,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 }
 
 function prettifyMessage(m: Message, code: string): string {
-  let res = chalk.yellow(m.text)
+  let res = colors.yellow(m.text)
   if (m.location) {
     const lines = code.split(/\r?\n/g)
     const line = Number(m.location.line)

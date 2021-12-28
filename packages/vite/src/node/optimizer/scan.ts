@@ -29,7 +29,7 @@ import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 import { performance } from 'perf_hooks'
-import chalk from 'chalk'
+import colors from 'picocolors'
 
 const debug = createDebugger('vite:deps')
 
@@ -87,7 +87,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   if (!entries.length) {
     if (!explicitEntryPatterns && !config.optimizeDeps.include) {
       config.logger.warn(
-        chalk.yellow(
+        colors.yellow(
           '(!) Could not auto-determine entry point from rollupOptions or html files ' +
             'and there are no explicit optimizeDeps.include patterns. ' +
             'Skipping dependency pre-bundling.'

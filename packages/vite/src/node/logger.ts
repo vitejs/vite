@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { AddressInfo, Server } from 'net'
 import os from 'os'
 import readline from 'readline'
@@ -78,11 +78,11 @@ export function createLogger(
         if (options.timestamp) {
           const tag =
             type === 'info'
-              ? chalk.cyan.bold(prefix)
+              ? colors.cyan(colors.bold(prefix))
               : type === 'warn'
-              ? chalk.yellow.bold(prefix)
-              : chalk.red.bold(prefix)
-          return `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
+              ? colors.yellow(colors.bold(prefix))
+              : colors.red(colors.bold(prefix))
+          return `${colors.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
         } else {
           return msg
         }
@@ -94,7 +94,7 @@ export function createLogger(
         if (type === lastType && msg === lastMsg) {
           sameCount++
           clear()
-          console[method](format(), chalk.yellow(`(x${sameCount + 1})`))
+          console[method](format(), colors.yellow(`(x${sameCount + 1})`))
         } else {
           sameCount = 0
           lastMsg = msg
@@ -182,10 +182,10 @@ function printServerUrls(
   info: Logger['info']
 ): void {
   if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${chalk.bold(port)}${base}`
-    info(`  > Local: ${chalk.cyan(url)}`)
+    const url = `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+    info(`  > Local: ${colors.cyan(url)}`)
     if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${chalk.dim('use `--host` to expose')}`)
+      info(`  > Network: ${colors.dim('use `--host` to expose')}`)
     }
   } else {
     Object.values(os.networkInterfaces())
@@ -196,8 +196,8 @@ function printServerUrls(
           ? 'Local:   '
           : 'Network: '
         const host = detail.address.replace('127.0.0.1', hostname.name)
-        const url = `${protocol}://${host}:${chalk.bold(port)}${base}`
-        return `  > ${type} ${chalk.cyan(url)}`
+        const url = `${protocol}://${host}:${colors.bold(port)}${base}`
+        return `  > ${type} ${colors.cyan(url)}`
       })
       .forEach((msg) => info(msg))
   }
