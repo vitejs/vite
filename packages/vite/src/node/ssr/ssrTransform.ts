@@ -7,8 +7,7 @@ import type {
   Node as _Node,
   Property,
   Function as FunctionNode,
-  Pattern,
-  BlockStatement
+  Pattern
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
@@ -382,9 +381,8 @@ function walk(
 
   // emit the identifier events in BFS so the hoisted declarations
   // can be captured correctly
-  identifiers.forEach(([node, stack])=>{
-    if (!isInScope(node.name, stack))
-      onIdentifier(node, stack[0], stack)
+  identifiers.forEach(([node, stack]) => {
+    if (!isInScope(node.name, stack)) onIdentifier(node, stack[0], stack)
   })
 }
 
