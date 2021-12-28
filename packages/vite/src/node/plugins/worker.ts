@@ -22,10 +22,9 @@ const WorkerFileId = 'worker_file'
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-
   const workerBundleOptions = {
     format: config.worker?.format || 'iife',
-    plugins: sortUserPlugins(config.worker?.plugins),
+    plugins: sortUserPlugins(config.worker?.plugins as Plugin[]),
     rollupOptions: config.worker?.rollupOptions || {}
   }
 

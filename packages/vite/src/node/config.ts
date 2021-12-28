@@ -187,19 +187,19 @@ export interface UserConfig {
    */
   dedupe?: string[]
   /**
-   * worker bundle option
+   * Worker bundle options
    */
   worker?: {
     /**
-     * worker output format
+     * Output format for worker bundle
      */
     format?: 'es' | 'iife'
     /**
-     * Array of vite plugins to use.
+     * Vite plugins that apply to worker bundle
      */
-    plugins?: (Plugin | Plugin[])[]
+    plugins?: (PluginOption | PluginOption[])[]
     /**
-     * rollup Option to build worker bundle
+     * Rollup options to build worker bundle
      */
     rollupOptions?: Omit<RollupOptions, 'plugins' | 'input' | 'onwarn'>
   }
