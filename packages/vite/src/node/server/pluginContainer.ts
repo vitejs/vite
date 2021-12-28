@@ -49,8 +49,6 @@ import type {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import acornClassFields from 'acorn-class-fields'
-import acornStaticClassFeatures from 'acorn-static-class-features'
 import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
@@ -124,10 +122,7 @@ type PluginContext = Omit<
   | 'load'
 >
 
-export let parser = acorn.Parser.extend(
-  acornClassFields,
-  acornStaticClassFeatures
-)
+export let parser = acorn.Parser
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -439,11 +434,7 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          ...[acornClassFields, acornStaticClassFeatures].concat(
-            options.acornInjectPlugins
-          )
-        )
+        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
       }
       return {
         acorn,
