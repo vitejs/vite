@@ -8,7 +8,7 @@ import type {
   Property,
   Function as FunctionNode,
   Pattern,
-  BlockStatement,
+  BlockStatement
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
@@ -181,7 +181,7 @@ export async function ssrTransform(
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
-      const grandparent = parentStack[parentStack.length - 2]
+      const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
       if (!binding) {
         return
@@ -204,7 +204,7 @@ export async function ssrTransform(
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
           // locate the top-most node containing the class declaration
-          const topNode = parentStack[1]
+          const topNode = parentStack[parentStack.length - 2]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
@@ -282,7 +282,7 @@ function walk(
   }
 
   function hasScope(name: string, parents: Node[]) {
-    return parents.some(node => node && scopeMap.get(node)?.has(name))
+    return parents.some((node) => node && scopeMap.get(node)?.has(name))
   }
 
   ;(eswalk as any)(root, {
@@ -291,7 +291,7 @@ function walk(
         return this.skip()
       }
 
-      parent && parentStack.push(parent)
+      parent && parentStack.unshift(parent)
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
         onImportMeta(node)
@@ -300,7 +300,10 @@ function walk(
       }
 
       if (node.type === 'Identifier') {
-        if (!hasScope(node.name, parentStack) && isRefIdentifier(node, parent!, parentStack)) {
+        if (
+          !hasScope(node.name, parentStack) &&
+          isRefIdentifier(node, parent!, parentStack)
+        ) {
           onIdentifier(node, parent!, parentStack)
         }
       } else if (isFunction(node)) {
@@ -371,7 +374,7 @@ function walk(
     },
 
     leave(node: Node, parent: Node | null) {
-      parent && parentStack.pop()
+      parent && parentStack.shift()
     }
   })
 }
@@ -449,12 +452,7 @@ function isFunction(node: _Node): node is FunctionNode {
 }
 
 function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  for (let i = parentStack.length - 1; i >= 0; i--) {
-    const node = parentStack[i]
-    if (isFunction(node)) {
-      return node
-    }
-  }
+  return parentStack.find((i) => isFunction(i)) as FunctionNode
 }
 
 function isInDestructuringAssignment(
@@ -465,15 +463,7 @@ function isInDestructuringAssignment(
     parent &&
     (parent.type === 'Property' || parent.type === 'ArrayPattern')
   ) {
-    let i = parentStack.length
-    while (i--) {
-      const p = parentStack[i]
-      if (p.type === 'AssignmentExpression') {
-        return true
-      } else if (p.type !== 'Property' && !p.type.endsWith('Pattern')) {
-        break
-      }
-    }
+    return parentStack.some((i) => i.type === 'AssignmentExpression')
   }
   return false
 }
