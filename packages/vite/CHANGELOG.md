@@ -1,3 +1,7 @@
+## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
+
+
+
 ## [2.7.8](https://github.com/vitejs/vite/compare/v2.7.7...v2.7.8) (2021-12-28)
 
 
