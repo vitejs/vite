@@ -192,6 +192,7 @@ export interface UserConfig {
   worker?: {
     /**
      * Output format for worker bundle
+     * @default 'iife'
      */
     format?: 'es' | 'iife'
     /**
