@@ -356,7 +356,7 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
-  // resolve public "base" url
+  // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(
     resolvedRoot,
