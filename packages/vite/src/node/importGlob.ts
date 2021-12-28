@@ -8,7 +8,7 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
-import { RollupError } from 'rollup'
+import type { RollupError } from 'rollup'
 
 export interface AssertOptions {
   assert?: {
@@ -176,7 +176,8 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  const endIndex = code.indexOf(`)`, i)
+
+  const endIndex = getEndIndex(code, i)
   const options = code.substring(i + 1, endIndex)
   const commaIndex = options.indexOf(`,`)
   let assert = {}
@@ -184,6 +185,36 @@ function lexGlobPattern(
     assert = JSON5.parse(options.substr(commaIndex + 1))
   }
   return [pattern, assert, endIndex + 1]
+}
+
+// reg without the 'g' option, only matches the first match
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
+const singlelineCommentsRE = /\/\/.*/
+
+function getEndIndex(code: string, i: number): number {
+  const findStart = i
+  const endIndex = code.indexOf(`)`, findStart)
+  const subCode = code.substring(findStart)
+
+  const matched =
+    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
+  if (!matched) {
+    return endIndex
+  }
+
+  const str = matched[0]
+  const index = matched.index
+  if (!index) {
+    return endIndex
+  }
+
+  const commentStart = findStart + index
+  const commentEnd = commentStart + str.length
+  if (endIndex > commentStart && endIndex < commentEnd) {
+    return getEndIndex(code, commentEnd)
+  } else {
+    return endIndex
+  }
 }
 
 function error(pos: number) {

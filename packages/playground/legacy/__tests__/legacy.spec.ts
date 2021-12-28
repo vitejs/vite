@@ -1,4 +1,4 @@
-import { isBuild, untilUpdated } from '../../testUtils'
+import { isBuild, readManifest, untilUpdated } from '../../testUtils'
 
 test('should work', async () => {
   expect(await page.textContent('#app')).toMatch('Hello')
@@ -44,3 +44,13 @@ test('generates assets', async () => {
     true
   )
 })
+
+if (isBuild) {
+  test('should generate correct manifest', async () => {
+    const manifest = readManifest()
+    expect(manifest['../../../vite/legacy-polyfills']).toBeDefined()
+    expect(manifest['../../../vite/legacy-polyfills'].src).toBe(
+      '../../../vite/legacy-polyfills'
+    )
+  })
+}

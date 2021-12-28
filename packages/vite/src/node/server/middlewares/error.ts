@@ -1,10 +1,10 @@
 import chalk from 'chalk'
-import { RollupError } from 'rollup'
-import { ViteDevServer } from '../..'
-import { Connect } from 'types/connect'
+import type { RollupError } from 'rollup'
+import type { ViteDevServer } from '../..'
+import type { Connect } from 'types/connect'
 import { pad } from '../../utils'
 import strip from 'strip-ansi'
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // only copy the information we need and avoid serializing unnecessary
@@ -69,7 +69,23 @@ export function errorMiddleware(
       next()
     } else {
       res.statusCode = 500
-      res.end()
+      res.end(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Error</title>
+            <script type="module">
+              import { ErrorOverlay } from '/@vite/client'
+              document.body.appendChild(new ErrorOverlay(${JSON.stringify(
+                prepareError(err)
+              ).replace(/</g, '\\u003c')}))
+            </script>
+          </head>
+          <body>
+          </body>
+        </html>
+      `)
     }
   }
 }

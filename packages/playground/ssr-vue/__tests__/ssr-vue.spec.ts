@@ -150,14 +150,11 @@ test('client navigation', async () => {
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
+  await page.click('a[href="/"]')
+  await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
 })
 
 test('import.meta.url', async () => {
   await page.goto(url)
   expect(await page.textContent('.protocol')).toEqual('file:')
-})
-
-test('deep import built-in module', async () => {
-  await page.goto(url)
-  expect(await page.textContent('.file-message')).toMatch('fs/promises')
 })

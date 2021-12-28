@@ -12,10 +12,10 @@ import {
   ENV_PUBLIC_PATH
 } from './constants'
 import resolve from 'resolve'
-import builtins from 'builtin-modules'
-import { FSWatcher } from 'chokidar'
+import { builtinModules } from 'module'
+import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import {
+import type {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
@@ -37,10 +37,26 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
+//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
+const builtins = new Set([
+  ...builtinModules,
+  'assert/strict',
+  'diagnostics_channel',
+  'dns/promises',
+  'fs/promises',
+  'path/posix',
+  'path/win32',
+  'readline/promises',
+  'stream/consumers',
+  'stream/promises',
+  'stream/web',
+  'timers/promises',
+  'util/types',
+  'wasi'
+])
+
 export function isBuiltin(id: string): boolean {
-  const deepMatch = id.match(deepImportRE)
-  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
-  return builtins.includes(id)
+  return builtins.has(id.replace(/^node:/, ''))
 }
 
 export function moduleListContains(
@@ -152,7 +168,8 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
-export const virtualModuleRE = /virtual-module:.*/
+export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModulePrefix = 'virtual-module:'
 
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
@@ -172,7 +189,7 @@ export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)$/, '.$1ts$3')
+  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
@@ -497,13 +514,11 @@ export async function processSrcSet(
     })
   )
 
-  const url = ret.reduce((prev, { url, descriptor }, index) => {
+  return ret.reduce((prev, { url, descriptor }, index) => {
     descriptor = descriptor || ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
-
-  return url
 }
 
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221

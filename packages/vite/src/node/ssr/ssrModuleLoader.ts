@@ -1,6 +1,6 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '../server'
+import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
@@ -16,7 +16,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {
@@ -97,20 +98,21 @@ async function instantiateModule(
 
   const {
     isProduction,
-    resolve: { dedupe },
+    resolve: { dedupe, preserveSymlinks },
     root
   } = server.config
 
+  // The `extensions` and `mainFields` options are used to ensure that
+  // CommonJS modules are preferred. We want to avoid ESM->ESM imports
+  // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
-    conditions: ['node'],
     dedupe,
-    // Prefer CommonJS modules.
-    extensions: ['.js', '.mjs', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: ['.js', '.cjs', '.json'],
     isBuild: true,
     isProduction,
-    // Disable "module" condition.
     isRequire: true,
     mainFields: ['main'],
+    preserveSymlinks,
     root
   }
 
@@ -208,8 +210,12 @@ async function nodeImport(
 ) {
   // Node's module resolution is hi-jacked so Vite can ensure the
   // configured `resolve.dedupe` and `mode` options are respected.
-  const viteResolve = (id: string, importer: string) => {
-    const resolved = tryNodeResolve(id, importer, resolveOptions, false)
+  const viteResolve = (
+    id: string,
+    importer: string,
+    options = resolveOptions
+  ) => {
+    const resolved = tryNodeResolve(id, importer, options, false)
     if (!resolved) {
       const err: any = new Error(
         `Cannot find module '${id}' imported from '${importer}'`
@@ -223,22 +229,34 @@ async function nodeImport(
   // When an ESM module imports an ESM dependency, this hook is *not* used.
   const unhookNodeResolve = hookNodeResolve(
     (nodeResolve) => (id, parent, isMain, options) => {
-      if (id[0] === '.' || isBuiltin(id)) {
+      // Fix #5709, use require to resolve files with the '.node' file extension.
+      // See detail, https://nodejs.org/api/addons.html#addons_loading_addons_using_require
+      if (id[0] === '.' || isBuiltin(id) || id.endsWith('.node')) {
         return nodeResolve(id, parent, isMain, options)
       }
-      if (!parent) {
-        return id
+      if (parent) {
+        return viteResolve(id, parent.id)
       }
-      return viteResolve(id, parent.id)
+      // Importing a CJS module from an ESM module. In this case, the import
+      // specifier is already an absolute path, so this is a no-op.
+      // Options like `resolve.dedupe` and `mode` are not respected.
+      return id
     }
   )
 
   let url: string
-  // `resolve` doesn't handle `node:` builtins, so handle them directly
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(id, importer)
+    url = viteResolve(
+      id,
+      importer,
+      // Non-external modules can import ESM-only modules, but only outside
+      // of test runs, because we use Node `require` in Jest to avoid segfault.
+      typeof jest === 'undefined'
+        ? { ...resolveOptions, tryEsmOnly: true }
+        : resolveOptions
+    )
     if (usingDynamicImport) {
       url = pathToFileURL(url).toString()
     }
@@ -246,23 +264,34 @@ async function nodeImport(
 
   try {
     const mod = await dynamicImport(url)
-    return proxyESM(id, mod)
+    return proxyESM(mod)
   } finally {
     unhookNodeResolve()
   }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  // This is the only sensible option when the exports object is a primitve
+  if (isPrimitive(mod)) return { default: mod }
+
+  let defaultExport = 'default' in mod ? mod.default : mod
+
+  if (!isPrimitive(defaultExport) && '__esModule' in defaultExport) {
+    mod = defaultExport
+    if ('default' in defaultExport) {
+      defaultExport = defaultExport.default
+    }
+  }
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
     }
   })
+}
+
+function isPrimitive(value: any) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function')
 }

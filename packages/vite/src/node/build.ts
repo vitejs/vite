@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
-import Rollup, {
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import type {
   Plugin,
   RollupBuild,
   RollupOptions,
@@ -18,28 +19,30 @@ import Rollup, {
   RollupError,
   ModuleFormat
 } from 'rollup'
+import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { Terser } from 'types/terser'
+import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import { Logger } from './logger'
-import { TransformOptions } from 'esbuild'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { Logger } from './logger'
+import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
-import { DepOptimizationMetadata } from './optimizer'
+import type { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import { watchPackageDataPlugin } from './packages'
 
 export interface BuildOptions {
   /**
@@ -233,7 +236,11 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  root: string,
+  raw?: BuildOptions,
+  isBuild?: boolean
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -269,7 +276,8 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     }
   }
 
-  const resolve = (p: string) => p.startsWith('\0') ? p : path.resolve(root, p)
+  const resolve = (p: string) =>
+    p.startsWith('\0') ? p : path.resolve(root, p)
 
   resolved.outDir = resolve(resolved.outDir)
 
@@ -277,21 +285,21 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
 
   if (raw?.rollupOptions?.input) {
     input = Array.isArray(raw.rollupOptions.input)
-      ? raw.rollupOptions.input.map(input => resolve(input))
+      ? raw.rollupOptions.input.map((input) => resolve(input))
       : typeof raw.rollupOptions.input === 'object'
-      ? Object.assign(
-          // @ts-ignore
-          ...Object.keys(raw.rollupOptions.input).map(key => ({ [key]: resolve(raw.rollupOptions.input[key]) }))
+      ? Object.fromEntries(
+          Object.entries(raw.rollupOptions.input).map(([key, value]) => [
+            key,
+            resolve(value)
+          ])
         )
       : resolve(raw.rollupOptions.input)
-  } else {
-    input = resolve(
-      raw?.lib
-        ? raw.lib.entry
-        : typeof raw?.ssr === 'string'
-        ? raw.ssr
-        : 'index.html'
-    )
+  } else if (raw?.lib && isBuild) {
+    input = resolve(raw.lib.entry)
+  } else if (typeof raw?.ssr === 'string') {
+    input = resolve(raw.ssr)
+  } else if (isBuild) {
+    input = resolve('index.html')
   }
 
   if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -301,7 +309,9 @@ export function resolveBuildOptions(root: string, raw?: BuildOptions): ResolvedB
     )
   }
 
-  resolved.rollupOptions.input = input
+  if (input) {
+    resolved.rollupOptions.input = input
+  }
 
   // handle special build targets
   if (resolved.target === 'modules') {
@@ -342,13 +352,14 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   const options = config.build
   return {
     pre: [
+      watchPackageDataPlugin(config),
       buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
@@ -470,6 +481,15 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -627,12 +647,12 @@ function getPkgName(root: string) {
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
   const cache = new Map<string, boolean>()
   return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
+    if (id.includes('node_modules') && !isCSSRequest(id)) {
+      if (staticImportedByEntry(id, getModuleInfo, cache)) {
+        return 'vendor'
+      } else {
+        return 'async-vendor'
+      }
     }
   }
 }

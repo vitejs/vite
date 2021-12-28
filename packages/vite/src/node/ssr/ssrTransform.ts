@@ -1,17 +1,18 @@
 import MagicString from 'magic-string'
-import { SourceMap } from 'rollup'
-import { TransformResult } from '../server/transformRequest'
+import type { SourceMap } from 'rollup'
+import type { TransformResult } from '../server/transformRequest'
 import { parser } from '../server/pluginContainer'
-import {
+import type {
   Identifier,
   Node as _Node,
   Property,
-  Function as FunctionNode
+  Function as FunctionNode,
+  Pattern
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 
 type Node = _Node & {
   start: number
@@ -179,6 +180,7 @@ export async function ssrTransform(
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
+      const grandparent = parentStack[parentStack.length - 2]
       const binding = idToImportMap.get(id.name)
       if (!binding) {
         return
@@ -194,8 +196,9 @@ export async function ssrTransform(
           s.appendLeft(id.end, `: ${binding}`)
         }
       } else if (
-        parent.type === 'ClassDeclaration' &&
-        id === parent.superClass
+        (parent.type === 'PropertyDefinition' &&
+          grandparent?.type === 'ClassBody') ||
+        (parent.type === 'ClassDeclaration' && id === parent.superClass)
       ) {
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
@@ -315,20 +318,21 @@ function walk(
         node.params.forEach((p) =>
           (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              if (child.type !== 'Identifier') return
+              // do not record as scope variable if is a destructuring keyword
+              if (isStaticPropertyKey(child, parent)) return
+              // do not record if this is a default value
+              // assignment of a destructuring variable
               if (
-                child.type === 'Identifier' &&
-                // do not record as scope variable if is a destructuring key
-                !isStaticPropertyKey(child, parent) &&
-                // do not record if this is a default value
-                // assignment of a destructuring variable
-                !(
-                  parent &&
-                  parent.type === 'AssignmentPattern' &&
-                  parent.right === child
-                )
+                (parent?.type === 'AssignmentPattern' &&
+                  parent?.right === child) ||
+                (parent?.type === 'TemplateLiteral' &&
+                  parent?.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent?.callee === child)
               ) {
-                setScope(node, child.name)
+                return
               }
+              setScope(node, child.name)
             }
           })
         )
@@ -338,17 +342,31 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
-          if (node.id.type === 'ObjectPattern') {
-            node.id.properties.forEach((property) => {
-              if (property.type === 'RestElement') {
-                setScope(parentFunction, (property.argument as Identifier).name)
-              } else {
-                setScope(parentFunction, (property.value as Identifier).name)
-              }
-            })
-          } else {
-            setScope(parentFunction, (node.id as Identifier).name)
+          const handlePattern = (p: Pattern) => {
+            if (p.type === 'Identifier') {
+              setScope(parentFunction, p.name)
+            } else if (p.type === 'RestElement') {
+              handlePattern(p.argument)
+            } else if (p.type === 'ObjectPattern') {
+              p.properties.forEach((property) => {
+                if (property.type === 'RestElement') {
+                  setScope(
+                    parentFunction,
+                    (property.argument as Identifier).name
+                  )
+                } else handlePattern(property.value)
+              })
+            } else if (p.type === 'ArrayPattern') {
+              p.elements.forEach((element) => {
+                if (element) handlePattern(element)
+              })
+            } else if (p.type === 'AssignmentPattern') {
+              handlePattern(p.left)
+            } else {
+              setScope(parentFunction, (p as any).name)
+            }
           }
+          handlePattern(node.id)
         }
       }
     },
