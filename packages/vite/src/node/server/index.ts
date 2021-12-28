@@ -499,7 +499,7 @@ export async function createServer(
   }
 
   // base
-  if (config.base !== '/') {
+  if (!['/', './'].includes(config.base)) {
     middlewares.use(baseMiddleware(server))
   }
 

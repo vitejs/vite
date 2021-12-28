@@ -119,7 +119,7 @@ beforeAll(async () => {
         process.env.VITE_INLINE = 'inline-serve'
         server = await (await createServer(options)).listen()
         // use resolved port/base from server
-        const base = server.config.base === '/' ? '' : server.config.base
+        const base = ['/', './'].includes(server.config.base) ? '' : server.config.base
         const url =
           (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
         await page.goto(url)
@@ -176,7 +176,7 @@ function startStaticServer(): Promise<string> {
   try {
     config = require(configFile)
   } catch (e) {}
-  const base = (config?.base || '/') === '/' ? '' : config.base
+  const base = ['/', './'].includes(config?.base) ? '' : config.base
 
   // @ts-ignore
   if (config && config.__test__) {

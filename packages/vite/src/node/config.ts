@@ -356,7 +356,7 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
 
-  // resolve public base url
+  // resolve public "base" url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(
     resolvedRoot,
@@ -618,7 +618,7 @@ function resolveBaseUrl(
 ): string {
   // #1669 special treatment for empty for same dir relative base
   if (base === '' || base === './') {
-    return isBuild ? base : '/'
+    return '/'
   }
   if (base.startsWith('.')) {
     logger.warn(
