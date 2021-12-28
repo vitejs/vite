@@ -118,8 +118,7 @@ const createNodeConfig = (isProduction) => {
         entries: {
           '@vue/compiler-dom': require.resolve(
             '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-          ),
-          'big.js': require.resolve('big.js/big.js')
+          )
         }
       }),
       nodeResolve({ preferBuiltins: true }),
