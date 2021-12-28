@@ -530,7 +530,7 @@ class A {
   `)
 })
 
-test('delcare scope', async () => {
+test('declare scope', async () => {
   expect(
     (
       await ssrTransform(
