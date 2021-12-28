@@ -310,9 +310,11 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context
   ) {
-    const err = (typeof e === 'string' ? new Error(e) : e) as postcss.CssSyntaxError & RollupError
+    const err = (
+      typeof e === 'string' ? new Error(e) : e
+    ) as postcss.CssSyntaxError & RollupError
     if (err.file && err.name === 'CssSyntaxError') {
-      err.id =  normalizePath(err.file)
+      err.id = normalizePath(err.file)
     }
     if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
     if (ctx._activeId && !err.id) err.id = ctx._activeId
