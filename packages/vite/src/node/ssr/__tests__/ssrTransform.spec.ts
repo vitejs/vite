@@ -529,3 +529,64 @@ class A {
     "
   `)
 })
+
+test('delcare scope', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { aaa, bbb, ccc, ddd } from 'vue'
+
+function foobar() {
+  ddd()
+
+  const aaa = () => {
+    bbb(ccc)
+    ddd()
+  }
+  const bbb = () => {
+    console.log('hi')
+  }
+  const ccc = 1
+  function ddd() {}
+
+  aaa()
+  bbb()
+  ccc()
+}
+
+aaa()
+bbb()
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    function foobar() {
+      ddd()
+
+      const aaa = () => {
+        bbb(ccc)
+        ddd()
+      }
+      const bbb = () => {
+        console.log('hi')
+      }
+      const ccc = 1
+      function ddd() {}
+
+      aaa()
+      bbb()
+      ccc()
+    }
+
+    __vite_ssr_import_0__.aaa()
+    __vite_ssr_import_0__.bbb()
+    "
+  `)
+})
