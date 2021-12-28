@@ -70,7 +70,7 @@ import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
-import { type CssSyntaxError } from 'postcss'
+import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -310,7 +310,7 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context
   ) {
-    const err = (typeof e === 'string' ? new Error(e) : e) as CssSyntaxError & RollupError
+    const err = (typeof e === 'string' ? new Error(e) : e) as postcss.CssSyntaxError & RollupError
     if (err.file && err.name === 'CssSyntaxError') {
       err.id =  normalizePath(err.file)
     }
