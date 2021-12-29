@@ -570,10 +570,10 @@ const generateFrame = (
 }
 
 const RE_CHROME_STACKTRACE =
-  /^ {4}at (?:(.+?)\s+\()?(?:(.+?)\?+)(?:(?:.+?):(\d+)(?::(\d+))?)\)?/
+  /^ {4}at (?:(.+?)\s+)?\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
 const RE_FIREFOX_STACKTRACE =
-  /(?:(?:(^|.+?)@)(?:(.+?)\?+))(?:(?:.+?):(\d+)(?::(\d+))?)\)?/
+  /^(?:(?:(^|.+?)@))\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
 const transformStackTrace = async (stack: string) => {
   const getStackInformation = (line: string) => {
