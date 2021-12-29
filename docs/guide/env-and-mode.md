@@ -24,7 +24,7 @@ It will also replace these strings appearing in JavaScript strings and Vue templ
 
 ## `.env` Files
 
-Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir):
+Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir) (if define the same variables will override variables in the following order):
 
 ```
 .env                # loaded in all cases
