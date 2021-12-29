@@ -99,10 +99,16 @@ export function transformMiddleware(
       }
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
-      NULL_BYTE_PLACEHOLDER,
-      '\0'
-    )
+    let url:string
+    try {
+      url = decodeURI(removeTimestampQuery(req.url!)).replace(
+        NULL_BYTE_PLACEHOLDER,
+        '\0'
+      )
+    } catch (e) {
+      res.end(`Bad request: ${e.message}`)
+      return
+    }
 
     const withoutQuery = cleanUrl(url)
 
