@@ -95,6 +95,12 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Pre-transform known direct imports
+   * 
+   * @default true
+   */
+  preTransformRequests?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -692,7 +698,10 @@ export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
-  const server = raw || {}
+  const server: ResolvedServerOptions = {
+    preTransformRequests: true,
+    ...raw as ResolvedServerOptions,
+  }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
@@ -713,7 +722,7 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
-  return server as ResolvedServerOptions
+  return server
 }
 
 async function restartServer(server: ViteDevServer) {
