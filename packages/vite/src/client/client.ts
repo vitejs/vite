@@ -555,7 +555,7 @@ const generateFrame = (
     ++index
   ) {
     const lineNumber = index + 1
-    result.push(`${lineNumber}  |  ${lines[index]}`)
+    result.push(`${lineNumber.toString().padEnd(3)}|  ${lines[index]}`)
     if (index === line - 1) {
       result.push(
         Array(index.toString().length).fill(' ').join('') +
