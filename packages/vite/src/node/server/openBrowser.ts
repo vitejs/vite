@@ -10,7 +10,7 @@
 
 import path from 'path'
 import open from 'open'
-import execa from 'execa'
+import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import { execSync } from 'child_process'
 import type { Logger } from '../logger'
@@ -40,7 +40,7 @@ export function openBrowser(
 
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   const extraArgs = process.argv.slice(2)
-  const child = execa('node', [scriptPath, ...extraArgs, url], {
+  const child = spawn(process.execPath, [scriptPath, ...extraArgs, url], {
     stdio: 'inherit'
   })
   child.on('close', (code) => {
