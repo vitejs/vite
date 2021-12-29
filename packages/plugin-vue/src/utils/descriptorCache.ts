@@ -2,11 +2,10 @@ import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { CompilerError, SFCDescriptor } from '@vue/compiler-sfc'
-import { ResolvedOptions, VueQuery } from '..'
-import { compiler } from '../compiler'
+import type { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
+import type { ResolvedOptions, VueQuery } from '..'
 
-// node_modules/@vue/compiler-sfc/dist/compiler-sfc.d.ts SFCParseResult should be exported so it can be re-used
+// compiler-sfc should be exported so it can be re-used
 export interface SFCParseResult {
   descriptor: SFCDescriptor
   errors: Array<CompilerError | SyntaxError>
@@ -18,7 +17,7 @@ const prevCache = new Map<string, SFCDescriptor | undefined>()
 export function createDescriptor(
   filename: string,
   source: string,
-  { root, isProduction, sourceMap }: ResolvedOptions
+  { root, isProduction, sourceMap, compiler }: ResolvedOptions
 ): SFCParseResult {
   const { descriptor, errors } = compiler.parse(source, {
     filename,
@@ -59,7 +58,7 @@ export function getDescriptor(
       fs.readFileSync(filename, 'utf-8'),
       options
     )
-    if (errors) {
+    if (errors.length) {
       throw errors[0]
     }
     return descriptor

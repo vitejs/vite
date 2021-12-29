@@ -1,7 +1,12 @@
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ViteDevServer } from '../server'
-import { OutputAsset, OutputBundle, OutputChunk } from 'rollup'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
+import type {
+  OutputAsset,
+  OutputBundle,
+  OutputChunk,
+  RollupError
+} from 'rollup'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -11,7 +16,7 @@ import {
   processSrcSet,
   slash
 } from '../utils'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
 import {
   checkPublicFile,
@@ -21,12 +26,13 @@ import {
 } from './asset'
 import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import {
+import type {
   AttributeNode,
   NodeTransform,
-  NodeTypes,
-  ElementNode
+  ElementNode,
+  CompilerError
 } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
 
 const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -58,7 +64,7 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (result) {
+        if (typeof result === 'string') {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
@@ -114,14 +120,7 @@ export async function traverseHtml(
       nodeTransforms: [visitor]
     })
   } catch (e) {
-    const parseError = {
-      loc: filePath,
-      frame: '',
-      ...formatParseError(e, filePath, html)
-    }
-    throw new Error(
-      `Unable to parse ${JSON.stringify(parseError.loc)}\n${parseError.frame}`
-    )
+    handleParseError(e, html, filePath)
   }
 }
 
@@ -148,17 +147,44 @@ export function getScriptInfo(node: ElementNode): {
   return { src, isModule, isAsync }
 }
 
-function formatParseError(e: any, id: string, html: string): Error {
-  // normalize the error to rollup format
-  if (e.loc) {
-    e.frame = generateCodeFrame(html, e.loc.start.offset)
-    e.loc = {
+/**
+ * Format Vue @type {CompilerError} to @type {RollupError}
+ */
+function formatParseError(
+  compilerError: CompilerError,
+  id: string,
+  html: string
+): RollupError {
+  const formattedError: RollupError = { ...(compilerError as any) }
+  if (compilerError.loc) {
+    formattedError.frame = generateCodeFrame(
+      html,
+      compilerError.loc.start.offset
+    )
+    formattedError.loc = {
       file: id,
-      line: e.loc.start.line,
-      column: e.loc.start.column
+      line: compilerError.loc.start.line,
+      column: compilerError.loc.start.column
     }
   }
-  return e
+  return formattedError
+}
+
+function handleParseError(
+  compilerError: CompilerError,
+  html: string,
+  filePath: string
+) {
+  const parseError = {
+    loc: filePath,
+    frame: '',
+    ...formatParseError(compilerError, filePath, html)
+  }
+  throw new Error(
+    `Unable to parse HTML; ${compilerError.message}\n at ${JSON.stringify(
+      parseError.loc
+    )}\n${parseError.frame}`
+  )
 }
 
 /**
@@ -263,7 +289,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 p.value &&
                 assetAttrs.includes(p.name)
               ) {
-                const url = p.value.content
+                // assetsUrl may be encodeURI
+                const url = decodeURI(p.value.content)
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
@@ -299,27 +326,37 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // for each encountered asset url, rewrite original html so that it
-        // references the post-build location.
+        // references the post-build location, ignoring empty attributes and
+        // attributes that directly reference named output.
+        const namedOutput = Object.keys(
+          config?.build?.rollupOptions?.input || {}
+        )
         for (const attr of assetUrls) {
           const value = attr.value!
-          try {
-            const url =
-              attr.name === 'srcset'
-                ? await processSrcSet(value.content, ({ url }) =>
-                    urlToBuiltUrl(url, id, config, this)
-                  )
-                : await urlToBuiltUrl(value.content, id, config, this)
+          // assetsUrl may be encodeURI
+          const content = decodeURI(value.content)
+          if (
+            content !== '' && // Empty attribute
+            !namedOutput.includes(content) && // Direct reference to named output
+            !namedOutput.includes(content.replace(/^\//, '')) // Allow for absolute references as named output can't be an absolute path
+          ) {
+            try {
+              const url =
+                attr.name === 'srcset'
+                  ? await processSrcSet(content, ({ url }) =>
+                      urlToBuiltUrl(url, id, config, this)
+                    )
+                  : await urlToBuiltUrl(content, id, config, this)
 
-            s.overwrite(
-              value.loc.start.offset,
-              value.loc.end.offset,
-              `"${url}"`
-            )
-          } catch (e) {
-            // #1885 preload may be pointing to urls that do not exist
-            // locally on disk
-            if (e.code !== 'ENOENT') {
-              throw e
+              s.overwrite(
+                value.loc.start.offset,
+                value.loc.end.offset,
+                `"${url}"`
+              )
+            } catch (e) {
+              if (e.code !== 'ENOENT') {
+                throw e
+              }
             }
           }
         }

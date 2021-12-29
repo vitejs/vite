@@ -31,8 +31,8 @@ SOFTWARE.
 
 import fs from 'fs'
 import { resolve, join } from 'path'
-import { Plugin } from '../plugin'
-import {
+import type { Plugin } from '../plugin'
+import type {
   InputOptions,
   MinimalPluginContext,
   OutputOptions,
@@ -49,12 +49,10 @@ import {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import acornClassFields from 'acorn-class-fields'
-import acornStaticClassFeatures from 'acorn-static-class-features'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -68,9 +66,9 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import chalk from 'chalk'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
-import { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
@@ -124,10 +122,7 @@ type PluginContext = Omit<
   | 'load'
 >
 
-export let parser = acorn.Parser.extend(
-  acornClassFields,
-  acornStaticClassFeatures
-)
+export let parser = acorn.Parser
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -439,11 +434,7 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          ...[acornClassFields, acornStaticClassFeatures].concat(
-            options.acornInjectPlugins
-          )
-        )
+        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
       }
       return {
         acorn,
