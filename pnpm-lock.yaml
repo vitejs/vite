@@ -726,6 +726,7 @@ importers:
       '@rollup/plugin-typescript': ^8.3.0
       '@rollup/pluginutils': ^4.1.2
       '@types/convert-source-map': ^1.5.2
+      '@types/cross-spawn': ^6.0.2
       '@types/debug': ^4.1.7
       '@types/estree': ^0.0.50
       '@types/etag': ^1.8.1
@@ -746,6 +747,7 @@ importers:
       connect-history-api-fallback: ^1.6.0
       convert-source-map: ^1.8.0
       cors: ^2.8.5
+      cross-spawn: ^7.0.3
       debug: ^4.3.3
       dotenv: ^10.0.0
       dotenv-expand: ^5.1.0
@@ -753,7 +755,6 @@ importers:
       esbuild: 0.14.3
       estree-walker: ^2.0.2
       etag: ^1.8.1
-      execa: ^5.1.1
       fast-glob: ^3.2.7
       fsevents: ~2.3.2
       http-proxy: ^1.18.1
@@ -804,6 +805,7 @@ importers:
       '@rollup/plugin-typescript': 8.3.0_7c5ff569c0887b4f0035eb7cb6988163
       '@rollup/pluginutils': 4.1.2
       '@types/convert-source-map': 1.5.2
+      '@types/cross-spawn': 6.0.2
       '@types/debug': 4.1.7
       '@types/estree': 0.0.50
       '@types/etag': 1.8.1
@@ -824,13 +826,13 @@ importers:
       connect-history-api-fallback: 1.6.0
       convert-source-map: 1.8.0
       cors: 2.8.5
+      cross-spawn: 7.0.3
       debug: 4.3.3
       dotenv: 10.0.0
       dotenv-expand: 5.1.0
       es-module-lexer: 0.9.3
       estree-walker: 2.0.2
       etag: 1.8.1
-      execa: 5.1.1
       fast-glob: 3.2.7
       http-proxy: 1.18.1_debug@4.3.3
       launch-editor-middleware: 2.3.0
@@ -2133,6 +2135,12 @@ packages:
 
   /@types/convert-source-map/1.5.2:
     resolution: {integrity: sha512-tHs++ZeXer40kCF2JpE51Hg7t4HPa18B1b1Dzy96S0eCw8QKECNMYMfwa1edK/x8yCN0r4e6ewvLcc5CsVGkdg==}
+    dev: true
+
+  /@types/cross-spawn/6.0.2:
+    resolution: {integrity: sha512-KuwNhp3eza+Rhu8IFI5HUXRP0LIhqH5cAjubUvGXXthh4YYBuP2ntwEX+Cz8GJoZUHlKo247wPWOfA9LYEq4cw==}
+    dependencies:
+      '@types/node': 16.11.17
     dev: true
 
   /@types/debug/4.1.7:
