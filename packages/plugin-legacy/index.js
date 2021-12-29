@@ -105,23 +105,6 @@ function viteLegacyPlugin(options = {}) {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
-    config() {
-      return {
-        build: {
-          minify: 'terser'
-        }
-      }
-    },
-
-    configResolved(config) {
-      if (!config.build.ssr && genLegacy && config.build.minify === 'esbuild') {
-        throw new Error(
-          `Can't use esbuild as the minifier when targeting legacy browsers ` +
-            `because esbuild minification is not legacy safe.`
-        )
-      }
-    },
-
     async generateBundle(opts, bundle) {
       if (config.build.ssr) {
         return
@@ -296,6 +279,11 @@ function viteLegacyPlugin(options = {}) {
       // @ts-ignore avoid esbuild transform on legacy chunks since it produces
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
+
+      // @ts-ignore force terser for legacy chunks. This only takes effect if
+      // minification isn't disabled, because that leaves out the terser plugin
+      // entirely.
+      opts.__vite_force_terser__ = true
 
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
