@@ -35,7 +35,7 @@
     "chalk": "^4.1.2",
     "conventional-changelog-cli": "^2.1.1",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.13.12",
+    "esbuild": "0.14.3",
     "eslint": "^8.4.1",
     "eslint-define-config": "^1.2.0",
     "eslint-plugin-node": "^11.1.0",
