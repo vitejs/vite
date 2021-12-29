@@ -280,8 +280,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
-                  console.log('deps', filename, chunk?.imports)
                   if (chunk) {
+                    chunk.imports.forEach(addDeps)
                     deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
@@ -289,7 +289,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
-                    chunk.imports.forEach(addDeps)
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
@@ -311,8 +310,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   path.posix.dirname(chunk.fileName),
                   url
                 )
-                console.log();
-                console.log('start deps', normalizedFile);
                 addDeps(normalizedFile)
               }
 
@@ -323,8 +320,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
 
               if (markPos > 0) {
-                console.log()
-                console.log('generate', name, [...deps])
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
