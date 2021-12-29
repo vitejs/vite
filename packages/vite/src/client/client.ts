@@ -575,37 +575,37 @@ const RE_CHROME_STACKTRACE =
 const RE_FIREFOX_STACKTRACE =
   /^(?:(?:(^|.+?)@))\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
-const transformStackTrace = async (stack: string) => {
-  const getStackInformation = (line: string) => {
-    let match = RE_CHROME_STACKTRACE.exec(line)
-    if (match) {
-      return {
-        input: match[0],
-        varName: match[1],
-        url: match[2],
-        lineNo: match[3],
-        columnNo: match[4],
-        vendor: 'chrome' as const
-      }
-    }
-    match = RE_FIREFOX_STACKTRACE.exec(line)
-    if (match) {
-      // TODO Handle cl
-      return {
-        input: match[0],
-        varName: match[1],
-        url: match[2],
-        lineNo: match[3],
-        columnNo: match[4],
-        vendor: 'firefox' as const
-      }
-    }
-
+const getStackInformation = (line: string) => {
+  let match = RE_CHROME_STACKTRACE.exec(line)
+  if (match) {
     return {
-      input: line
+      input: match[0],
+      varName: match[1],
+      url: match[2],
+      lineNo: match[3],
+      columnNo: match[4],
+      vendor: 'chrome' as const
+    }
+  }
+  match = RE_FIREFOX_STACKTRACE.exec(line)
+  if (match) {
+    // TODO Handle cl
+    return {
+      input: match[0],
+      varName: match[1],
+      url: match[2],
+      lineNo: match[3],
+      columnNo: match[4],
+      vendor: 'firefox' as const
     }
   }
 
+  return {
+    input: line
+  }
+}
+
+const transformStackTrace = async (stack: string) => {
   return (
     await Promise.all(
       stack.split('\n').map(async (line) => {
@@ -697,16 +697,64 @@ const exceptionHandler =
 const rejectionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: PromiseRejectionEvent): Promise<void> => {
-    // TODO: get frame from stack trace
+    // Since promisejectection doesn't return the file we have to get it from the stack trace
+    const stackLines = e.reason.stack.split('\n')
+    let stackInfo = getStackInformation(stackLines[0])
+    // Chromes will include the erroe message as the first line of the stack trace so we have to check for a match or check the next line
+    if (!stackInfo.url) {
+      stackInfo = getStackInformation(stackLines[1])
+      console.log(stackInfo);
+      if (!stackInfo.url) {
+        console.error('failed to get source info for rejection')
+        return
+      }
+    }
+
+    let fileName = stackInfo.url
+    let position = {
+      line: Number(stackInfo.lineNo),
+      column: Number(stackInfo.columnNo)
+    }
+    let frame = undefined
+    try {
+      const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
+        fileName
+      )
+
+      let source = baseSource
+      if (sourceMapConsumer instanceof SourceMapConsumer) {
+        const {
+          line,
+          column,
+          source: sourceFileName
+        } = sourceMapConsumer.originalPositionFor({
+          line: position.line,
+          column: position.column
+        })
+
+        source = sourceMapConsumer.sourceContentFor(sourceFileName)
+        position = { line, column }
+        if (sourceFileName && !fileName.includes('@vite')) {
+          fileName = sourceFileName
+        }
+      }
+
+      frame = generateFrame(position.line, position.column, source)
+    } catch (err: Error) {
+      // TODO handle errors that we throw
+      console.log(err)
+      // frame = err.message;
+    }
+
     const payload: ErrorPayload['err'] = {
       message: e.reason.message,
-      stack: await transformStackTrace(e.reason.stack)
-      // loc: {
-      //   column: position.column,
-      //   line: position.line,
-      //   file: fileName
-      // },
-      // frame
+      stack: await transformStackTrace(e.reason.stack),
+      loc: {
+        column: position.column,
+        line: position.line,
+        file: fileName
+      },
+      frame
     }
 
     callback(payload)
