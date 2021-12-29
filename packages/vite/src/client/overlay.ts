@@ -158,9 +158,9 @@ export class ErrorOverlay extends HTMLElement {
     if (!linkFiles) {
       el.textContent = text
     } else {
-      if(!fileRE.test(text)){
+      if (!fileRE.test(text)) {
         el.textContent = text
-        return;
+        return
       } else {
         fileRE.lastIndex = 0
       }

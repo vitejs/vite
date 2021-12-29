@@ -16,7 +16,7 @@ document.querySelector<HTMLButtonElement>('#promise').onclick = async () => {
 }
 
 document.querySelector<HTMLButtonElement>('#throwStr').onclick = () => {
-  throw "String Error"
+  throw 'String Error'
 }
 
 document.querySelector<HTMLButtonElement>('#throwNum').onclick = () => {

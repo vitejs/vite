@@ -557,7 +557,8 @@ const generateFrame = (
     const lineNumber = index + 1
     result.push(`${lineNumber.toString().padEnd(3)}|  ${lines[index]}`)
     if (index === line - 1) {
-      result.push(" ".padStart(Math.max(index.toString().length, 3)) +
+      result.push(
+        ' '.padStart(Math.max(index.toString().length, 3)) +
           '|  ' +
           '^'.padStart(column + 1)
       )
@@ -643,14 +644,21 @@ const transformStackTrace = async (stack: string) => {
   ).join('\n')
 }
 
-const generateErrorPayload = async (message: string, filename: string, lineno: number, colno: number, stack: string): Promise<ErrorPayload['err']> => {
-  const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
-    filename
-  )
+//TODO: better support for files without source maps
+const generateErrorPayload = async (
+  message: string,
+  filename: string,
+  lineno: number,
+  colno: number,
+  stack: string
+): Promise<ErrorPayload['err']> => {
+  const { sourceMapConsumer, baseSource } = await getSourceMapForFile(filename)
 
   let source = baseSource
   let loc = {
-    line: lineno, column: colno, file: filename
+    line: lineno,
+    column: colno,
+    file: filename
   }
   if (sourceMapConsumer instanceof SourceMapConsumer) {
     const {
@@ -663,11 +671,17 @@ const generateErrorPayload = async (message: string, filename: string, lineno: n
     })
 
     source = sourceMapConsumer.sourceContentFor(sourceFileName)
-    loc = {file: sourceFileName && !filename.includes('@vite') ? sourceFileName : loc.file, line,column }
+    loc = {
+      file:
+        sourceFileName && !filename.includes('@vite')
+          ? sourceFileName
+          : loc.file,
+      line,
+      column
+    }
   }
 
   const frame = generateFrame(loc.line, loc.column, source)
-
 
   return {
     message,
@@ -678,8 +692,8 @@ const generateErrorPayload = async (message: string, filename: string, lineno: n
 }
 
 const transformError = (error: any): Error => {
-  if(error instanceof Error) {
-    return error;
+  if (error instanceof Error) {
+    return error
   }
 
   const e = Error(error ?? 'unknown')
@@ -694,9 +708,15 @@ const exceptionHandler =
       console.log(e)
       const error = transformError(e.error)
 
-      const payload = await generateErrorPayload(error.message, e.filename, e.lineno, e.colno, error.stack!)
+      const payload = await generateErrorPayload(
+        error.message,
+        e.filename,
+        e.lineno,
+        e.colno,
+        error.stack!
+      )
 
-      callback(payload);
+      callback(payload)
     } catch (err: Error) {
       // TODO handle errors that we throw
       console.log(err)
@@ -720,15 +740,20 @@ const rejectionHandler =
     }
 
     try {
-      const payload = await generateErrorPayload(e.reason.message, stackInfo.url, Number(stackInfo.lineNo), Number(stackInfo.columnNo), e.reason.stack)
+      const payload = await generateErrorPayload(
+        e.reason.message,
+        stackInfo.url,
+        Number(stackInfo.lineNo),
+        Number(stackInfo.columnNo),
+        e.reason.stack
+      )
 
-      callback(payload);
+      callback(payload)
     } catch (err: Error) {
       // TODO handle errors that we throw
       console.log(err)
       // frame = err.message;
     }
-
   }
 
 const showErrorOverlay = (err: ErrorPayload['err']) => {
