@@ -557,11 +557,9 @@ const generateFrame = (
     const lineNumber = index + 1
     result.push(`${lineNumber.toString().padEnd(3)}|  ${lines[index]}`)
     if (index === line - 1) {
-      result.push(
-        Array(index.toString().length).fill(' ').join('') +
-          '  |  ' +
-          Array(column).fill(' ').join('') +
-          '^'
+      result.push(" ".padStart(Math.max(index.toString().length, 3)) +
+          '|  ' +
+          '^'.padStart(column + 1)
       )
     }
   }
@@ -637,6 +635,7 @@ const transformStackTrace = async (stack: string) => {
             return `    at ${varName} (${source})`
           }
         } else {
+          // TODO: strip eval and function
           return `${varName}@${pos.source}:${pos.line || 0}:${pos.column || 0}`
         }
       })
@@ -644,54 +643,65 @@ const transformStackTrace = async (stack: string) => {
   ).join('\n')
 }
 
+const generateErrorPayload = async (message: string, filename: string, lineno: number, colno: number, stack: string): Promise<ErrorPayload['err']> => {
+  const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
+    filename
+  )
+
+  let source = baseSource
+  let loc = {
+    line: lineno, column: colno, file: filename
+  }
+  if (sourceMapConsumer instanceof SourceMapConsumer) {
+    const {
+      line,
+      column,
+      source: sourceFileName
+    } = sourceMapConsumer.originalPositionFor({
+      line: lineno,
+      column: colno
+    })
+
+    source = sourceMapConsumer.sourceContentFor(sourceFileName)
+    loc = {file: sourceFileName && !filename.includes('@vite') ? sourceFileName : loc.file, line,column }
+  }
+
+  const frame = generateFrame(loc.line, loc.column, source)
+
+
+  return {
+    message,
+    stack: await transformStackTrace(stack),
+    loc,
+    frame
+  }
+}
+
+const transformError = (error: any): Error => {
+  if(error instanceof Error) {
+    return error;
+  }
+
+  const e = Error(error ?? 'unknown')
+  e.stack = `a non-error was thrown please check your browser's devtools for more information`
+  return e
+}
+
 const exceptionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: ErrorEvent): Promise<void> => {
-    let frame: string = ''
-    let fileName = e.filename
-    let position = { column: e.colno, line: e.lineno }
     try {
-      const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
-        e.filename
-      )
+      console.log(e)
+      const error = transformError(e.error)
 
-      let source = baseSource
-      if (sourceMapConsumer instanceof SourceMapConsumer) {
-        const {
-          line,
-          column,
-          source: sourceFileName
-        } = sourceMapConsumer.originalPositionFor({
-          line: e.lineno,
-          column: e.colno
-        })
+      const payload = await generateErrorPayload(error.message, e.filename, e.lineno, e.colno, error.stack!)
 
-        source = sourceMapConsumer.sourceContentFor(sourceFileName)
-        position = { line, column }
-        if (sourceFileName && !fileName.includes('@vite')) {
-          fileName = sourceFileName
-        }
-      }
-
-      frame = generateFrame(position.line, position.column, source)
+      callback(payload);
     } catch (err: Error) {
       // TODO handle errors that we throw
       console.log(err)
       // frame = err.message;
     }
-
-    const payload: ErrorPayload['err'] = {
-      message: e.error.message,
-      stack: await transformStackTrace(e.error.stack),
-      loc: {
-        column: position.column,
-        line: position.line,
-        file: fileName
-      },
-      frame
-    }
-
-    callback(payload)
   }
 
 const rejectionHandler =
@@ -709,54 +719,16 @@ const rejectionHandler =
       }
     }
 
-    let fileName = stackInfo.url
-    let position = {
-      line: Number(stackInfo.lineNo),
-      column: Number(stackInfo.columnNo)
-    }
-    let frame = undefined
     try {
-      const { sourceMapConsumer, baseSource } = await getSourceMapForFile(
-        fileName
-      )
+      const payload = await generateErrorPayload(e.reason.message, stackInfo.url, Number(stackInfo.lineNo), Number(stackInfo.columnNo), e.reason.stack)
 
-      let source = baseSource
-      if (sourceMapConsumer instanceof SourceMapConsumer) {
-        const {
-          line,
-          column,
-          source: sourceFileName
-        } = sourceMapConsumer.originalPositionFor({
-          line: position.line,
-          column: position.column
-        })
-
-        source = sourceMapConsumer.sourceContentFor(sourceFileName)
-        position = { line, column }
-        if (sourceFileName && !fileName.includes('@vite')) {
-          fileName = sourceFileName
-        }
-      }
-
-      frame = generateFrame(position.line, position.column, source)
+      callback(payload);
     } catch (err: Error) {
       // TODO handle errors that we throw
       console.log(err)
       // frame = err.message;
     }
 
-    const payload: ErrorPayload['err'] = {
-      message: e.reason.message,
-      stack: await transformStackTrace(e.reason.stack),
-      loc: {
-        column: position.column,
-        line: position.line,
-        file: fileName
-      },
-      frame
-    }
-
-    callback(payload)
   }
 
 const showErrorOverlay = (err: ErrorPayload['err']) => {
@@ -771,9 +743,5 @@ window.addEventListener(
   'unhandledrejection',
   rejectionHandler(showErrorOverlay)
 )
-
-// setTimeout(() => {
-//   throw new Error('External Module Error')
-// }, 2000)
 
 export { ErrorOverlay }
