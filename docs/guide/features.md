@@ -70,6 +70,7 @@ But a few libraries haven't transitioned to this new default yet, including [`li
 
 - [`extends`](https://www.typescriptlang.org/tsconfig#extends)
 - [`importsNotUsedAsValues`](https://www.typescriptlang.org/tsconfig#importsNotUsedAsValues)
+- [`preserveValueImports`](https://www.typescriptlang.org/tsconfig#preserveValueImports)
 - [`jsxFactory`](https://www.typescriptlang.org/tsconfig#jsxFactory)
 - [`jsxFragmentFactory`](https://www.typescriptlang.org/tsconfig#jsxFragmentFactory)
 

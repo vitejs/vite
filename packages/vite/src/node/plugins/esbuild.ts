@@ -45,6 +45,7 @@ type TSConfigJSON = {
     jsxFragmentFactory?: string
     useDefineForClassFields?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    preserveValueImports?: boolean
   }
   [key: string]: any
 }
@@ -82,7 +83,8 @@ export async function transformWithEsbuild(
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
-      'importsNotUsedAsValues'
+      'importsNotUsedAsValues',
+      'preserveValueImports'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
