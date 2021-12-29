@@ -1,4 +1,4 @@
-import { getColor, isBuild } from '../../testUtils'
+import { getColor, isBuild, editFile } from '../../testUtils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -210,3 +210,29 @@ describe('unicode path', () => {
     expect(await page.textContent('h1')).toBe('unicode-path')
   })
 })
+
+if (!isBuild) {
+  describe('invalid', () => {
+    test('should be 500 with overlay', async () => {
+      const response = await page.goto(viteTestUrl + '/invalid.html')
+      expect(response.status()).toBe(500)
+
+      const errorOverlay = await page.waitForSelector('vite-error-overlay')
+      expect(errorOverlay).toBeTruthy()
+
+      const message = await errorOverlay.$$eval('.message-body', (m) => {
+        return m[0].innerHTML
+      })
+      expect(message).toMatch(/^Unable to parse HTML/)
+    })
+
+    test('should reload when fixed', async () => {
+      const response = await page.goto(viteTestUrl + '/invalid.html')
+      await editFile('invalid.html', (content) => {
+        return content.replace('<div Bad', '<div> Good')
+      })
+      const content = await page.waitForSelector('text=Good Html')
+      expect(content).toBeTruthy()
+    })
+  })
+}

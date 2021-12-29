@@ -1,10 +1,11 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ResolvedConfig } from '../config'
-import chalk from 'chalk'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import colors from 'picocolors'
 import MagicString from 'magic-string'
-import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
+import type { ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports } from 'es-module-lexer'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   isBuiltin,
@@ -35,7 +36,7 @@ import {
   VALID_ID_PREFIX,
   NULL_BYTE_PLACEHOLDER
 } from '../constants'
-import { ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
@@ -111,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -147,7 +148,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         isDebug &&
           debug(
-            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
+            `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -448,11 +449,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
-                chalk.cyan(importerModule.file) +
+                colors.cyan(importerModule.file) +
                 `\n` +
                 generateCodeFrame(source, start) +
                 `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${chalk.blue(
+                `See ${colors.blue(
                   `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
                 )} ` +
                 `for supported dynamic import formats. ` +
@@ -557,7 +558,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       isDebug &&
         debug(
-          `${timeFrom(start)} ${chalk.dim(
+          `${timeFrom(start)} ${colors.dim(
             `[${importedUrls.size} imports rewritten] ${prettyImporter}`
           )}`
         )

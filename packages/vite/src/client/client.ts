@@ -1,4 +1,4 @@
-import {
+import type {
   ErrorPayload,
   FullReloadPayload,
   HMRPayload,
@@ -6,7 +6,7 @@ import {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
-import { CustomEventName } from 'types/customEvent'
+import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
@@ -100,7 +100,7 @@ async function handleMessage(payload: HMRPayload) {
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
-        const pagePath = location.pathname
+        const pagePath = decodeURI(location.pathname)
         const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
@@ -485,3 +485,5 @@ export function injectQuery(url: string, queryToInject: string): string {
     hash || ''
   }`
 }
+
+export { ErrorOverlay }

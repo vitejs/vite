@@ -31,8 +31,8 @@ SOFTWARE.
 
 import fs from 'fs'
 import { resolve, join } from 'path'
-import { Plugin } from '../plugin'
-import {
+import type { Plugin } from '../plugin'
+import type {
   InputOptions,
   MinimalPluginContext,
   OutputOptions,
@@ -49,12 +49,10 @@ import {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import acornClassFields from 'acorn-class-fields'
-import acornStaticClassFeatures from 'acorn-static-class-features'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -67,10 +65,10 @@ import {
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../config'
+import colors from 'picocolors'
+import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
-import { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
 
 export interface PluginContainerOptions {
@@ -124,10 +122,7 @@ type PluginContext = Omit<
   | 'load'
 >
 
-export let parser = acorn.Parser.extend(
-  acornClassFields,
-  acornStaticClassFeatures
-)
+export let parser = acorn.Parser
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -161,9 +156,9 @@ export async function createPluginContainer(
 
   function warnIncompatibleMethod(method: string, plugin: string) {
     logger.warn(
-      chalk.cyan(`[plugin:${plugin}] `) +
-        chalk.yellow(
-          `context method ${chalk.bold(
+      colors.cyan(`[plugin:${plugin}] `) +
+        colors.yellow(
+          `context method ${colors.bold(
             `${method}()`
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
@@ -290,7 +285,7 @@ export async function createPluginContainer(
       const err = formatError(e, position, this)
       const msg = buildErrorMessage(
         err,
-        [chalk.yellow(`warning: ${err.message}`)],
+        [colors.yellow(`warning: ${err.message}`)],
         false
       )
       logger.warn(msg, {
@@ -332,7 +327,7 @@ export async function createPluginContainer(
           errLocation = numberToPos(ctx._activeCode, pos)
         } catch (err2) {
           logger.error(
-            chalk.red(
+            colors.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`
             ),
             // print extra newline to separate the two errors
@@ -439,11 +434,7 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          ...[acornClassFields, acornStaticClassFeatures].concat(
-            options.acornInjectPlugins
-          )
-        )
+        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
       }
       return {
         acorn,
@@ -516,7 +507,9 @@ export async function createPluginContainer(
         if (!seenResolves[key]) {
           seenResolves[key] = true
           debugResolve(
-            `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+            `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
+              id
+            )}`
           )
         }
       }

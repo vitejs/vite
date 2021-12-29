@@ -15,6 +15,7 @@ module.exports = {
         }
       }
     },
+    __VAR_NAME__: false,
     'process.env.SOMEVAR': '"SOMEVAR"'
   }
 }

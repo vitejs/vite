@@ -1,3 +1,7 @@
+---
+title: Configuring Vite
+---
+
 # Configuring Vite
 
 ## Config File
@@ -131,9 +135,21 @@ export default defineConfig(async ({ command, mode }) => {
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 
+  ::: tip NOTE
+  For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
+
+  Example:
+
+  ```ts
+  // vite-env.d.ts
+  declare const __APP_VERSION__: string
+  ```
+
+  :::
+
 ### plugins
 
-- **Type:** ` (Plugin | Plugin[])[]`
+- **Type:** `(Plugin | Plugin[])[]`
 
   Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
@@ -236,9 +252,14 @@ export default defineConfig(async ({ command, mode }) => {
       | ((name: string, filename: string, css: string) => string)
     hashPrefix?: string
     /**
-     * default: 'camelCaseOnly'
+     * default: null
      */
-    localsConvention?: 'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly'
+    localsConvention?:
+      | 'camelCase'
+      | 'camelCaseOnly'
+      | 'dashes'
+      | 'dashesOnly'
+      | null
   }
   ```
 
@@ -786,12 +807,12 @@ export default defineConfig({
 
   By default, Vite will empty the `outDir` on build if it is inside project root. It will emit a warning if `outDir` is outside of root to avoid accidentally removing important files. You can explicitly set this option to suppress the warning. This is also available via command line as `--emptyOutDir`.
 
-### build.brotliSize
+### build.reportCompressedSize
 
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Enable/disable brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+  Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
 ### build.chunkSizeWarningLimit
 
@@ -915,14 +936,17 @@ export default defineConfig({
 
   By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
-### optimizeDeps.keepNames
+### optimizeDeps.esbuildOptions
 
-- **Type:** `boolean`
-- **Default:** `false`
+- **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
 
-  The bundler sometimes needs to rename symbols to avoid collisions.
-  Set this to `true` to keep the `name` property on functions and classes.
-  See [`keepNames`](https://esbuild.github.io/api/#keep-names).
+  Options to pass to esbuild during the dep scanning and optimization.
+
+  Certain options are omitted since changing them would not be compatible with Vite's dep optimization.
+
+  - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
+  - `plugins` are merged with Vite's dep plugin
+  - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
 
 ## SSR Options
 

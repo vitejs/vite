@@ -1,6 +1,6 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '../server'
+import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
@@ -16,7 +16,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {
@@ -263,23 +264,34 @@ async function nodeImport(
 
   try {
     const mod = await dynamicImport(url)
-    return proxyESM(id, mod)
+    return proxyESM(mod)
   } finally {
     unhookNodeResolve()
   }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  // This is the only sensible option when the exports object is a primitve
+  if (isPrimitive(mod)) return { default: mod }
+
+  let defaultExport = 'default' in mod ? mod.default : mod
+
+  if (!isPrimitive(defaultExport) && '__esModule' in defaultExport) {
+    mod = defaultExport
+    if ('default' in defaultExport) {
+      defaultExport = defaultExport.default
+    }
+  }
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
     }
   })
+}
+
+function isPrimitive(value: any) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function')
 }

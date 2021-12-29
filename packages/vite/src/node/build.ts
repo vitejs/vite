@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
-import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
-import Rollup, {
+import colors from 'picocolors'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import type {
   Plugin,
   RollupBuild,
   RollupOptions,
@@ -18,25 +19,26 @@ import Rollup, {
   RollupError,
   ModuleFormat
 } from 'rollup'
+import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { Terser } from 'types/terser'
+import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import { Logger } from './logger'
-import { TransformOptions } from 'esbuild'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { Logger } from './logger'
+import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
-import { DepOptimizationMetadata } from './optimizer'
+import type { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -236,7 +238,8 @@ export type ResolvedBuildOptions = Required<
 
 export function resolveBuildOptions(
   root: string,
-  raw?: BuildOptions
+  raw?: BuildOptions,
+  isBuild?: boolean
 ): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
@@ -291,14 +294,12 @@ export function resolveBuildOptions(
           ])
         )
       : resolve(raw.rollupOptions.input)
-  } else {
-    input = resolve(
-      raw?.lib
-        ? raw.lib.entry
-        : typeof raw?.ssr === 'string'
-        ? raw.ssr
-        : 'index.html'
-    )
+  } else if (raw?.lib && isBuild) {
+    input = resolve(raw.lib.entry)
+  } else if (typeof raw?.ssr === 'string') {
+    input = resolve(raw.ssr)
+  } else if (isBuild) {
+    input = resolve('index.html')
   }
 
   if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
@@ -308,7 +309,9 @@ export function resolveBuildOptions(
     )
   }
 
-  resolved.rollupOptions.input = input
+  if (input) {
+    resolved.rollupOptions.input = input
+  }
 
   // handle special build targets
   if (resolved.target === 'modules') {
@@ -356,13 +359,13 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify === 'terser' ? [terserPlugin(config)] : []),
+      ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
@@ -410,8 +413,8 @@ async function doBuild(
   const libOptions = options.lib
 
   config.logger.info(
-    chalk.cyan(
-      `vite v${require('vite/package.json').version} ${chalk.green(
+    colors.cyan(
+      `vite v${require('vite/package.json').version} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
       )}`
     )
@@ -464,20 +467,29 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      msg += `\nfile: ${chalk.cyan(
+      msg += `\nfile: ${colors.cyan(
         e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
       )}`
     }
     if (e.frame) {
-      msg += `\n` + chalk.yellow(e.frame)
+      msg += `\n` + colors.yellow(e.frame)
     }
     config.logger.error(msg, { error: e })
   }
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -519,7 +531,7 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+      config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -551,13 +563,13 @@ async function doBuild(
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+          config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
             prepareOutDir(outDir, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
+          config.logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
         }
@@ -610,9 +622,9 @@ function prepareOutDir(
     ) {
       // warn if outDir is outside of root
       config.logger.warn(
-        chalk.yellow(
-          `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
-            outDir
+        colors.yellow(
+          `\n${colors.bold(`(!)`)} outDir ${colors.white(
+            colors.dim(outDir)
           )} is not inside project root and will not be emptied.\n` +
             `Use --emptyOutDir to override.\n`
         )
@@ -723,7 +735,7 @@ function resolveBuildOutputs(
     } else if (libOptions.formats) {
       // user explicitly specifying own output array
       logger.warn(
-        chalk.yellow(
+        colors.yellow(
           `"build.lib.formats" will be ignored because ` +
             `"build.rollupOptions.output" is already an array format`
         )
@@ -771,9 +783,9 @@ export function onRollupWarning(
       userOnWarn(warning, warn)
     } else if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
-        `${chalk.bold.yellow(`[plugin:${warning.plugin}]`)} ${chalk.yellow(
-          warning.message
-        )}`
+        `${colors.bold(
+          colors.yellow(`[plugin:${warning.plugin}]`)
+        )} ${colors.yellow(warning.message)}`
       )
     } else {
       warn(warning)

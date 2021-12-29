@@ -1,6 +1,6 @@
 import path from 'path'
-import { ViteDevServer } from '..'
-import { Connect } from 'types/connect'
+import type { ViteDevServer } from '..'
+import type { Connect } from 'types/connect'
 import {
   cleanUrl,
   createDebugger,
@@ -16,7 +16,7 @@ import {
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
@@ -74,23 +74,29 @@ export function transformMiddleware(
       !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
       !req.url?.includes('vite/dist/client')
     ) {
-      // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() =>
-        // If the refresh has not happened after timeout, Vite considers
-        // something unexpected has happened. In this case, Vite
-        // returns an empty response that will error.
-        setTimeout(() => {
-          // Don't do anything if response has already been sent
-          if (res.writableEnded) return
+      try {
+        // missing dep pending reload, hold request until reload happens
+        await Promise.race([
+          server._pendingReload,
+          // If the refresh has not happened after timeout, Vite considers
+          // something unexpected has happened. In this case, Vite
+          // returns an empty response that will error.
+          new Promise((_, reject) =>
+            setTimeout(reject, NEW_DEPENDENCY_BUILD_TIMEOUT)
+          )
+        ])
+      } catch {
+        // Don't do anything if response has already been sent
+        if (!res.writableEnded) {
           // status code request timeout
           res.statusCode = 408
           res.end(
             `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
               `<p>The current page should have reloaded by now</p>`
           )
-        }, NEW_DEPENDENCY_BUILD_TIMEOUT)
-      )
-      return
+        }
+        return
+      }
     }
 
     let url = decodeURI(removeTimestampQuery(req.url!)).replace(
@@ -122,9 +128,9 @@ export function transformMiddleware(
         // warn explicit public paths
         if (url.startsWith(publicPath)) {
           logger.warn(
-            chalk.yellow(
+            colors.yellow(
               `files in the public directory are served at the root path.\n` +
-                `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
+                `Instead of ${colors.cyan(url)}, use ${colors.cyan(
                   url.replace(publicPath, '/')
                 )}.`
             )

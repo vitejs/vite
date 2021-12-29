@@ -11,9 +11,9 @@
 import path from 'path'
 import open from 'open'
 import execa from 'execa'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { execSync } from 'child_process'
-import { Logger } from '../logger'
+import type { Logger } from '../logger'
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome'
@@ -46,8 +46,8 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   child.on('close', (code) => {
     if (code !== 0) {
       logger.error(
-        chalk.red(
-          `\nThe script specified as BROWSER environment variable failed.\n\n${chalk.cyan(
+        colors.red(
+          `\nThe script specified as BROWSER environment variable failed.\n\n${colors.cyan(
             scriptPath
           )} exited with code ${code}.`
         ),

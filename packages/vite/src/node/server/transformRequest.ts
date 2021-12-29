@@ -2,9 +2,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
-import { SourceDescription, SourceMap } from 'rollup'
-import { ViteDevServer } from '..'
-import chalk from 'chalk'
+import type { SourceDescription, SourceMap } from 'rollup'
+import type { ViteDevServer } from '..'
+import colors from 'picocolors'
 import {
   createDebugger,
   cleanUrl,
@@ -163,7 +163,7 @@ async function doTransform(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(transformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
