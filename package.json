@@ -39,7 +39,7 @@
     "eslint": "^8.4.1",
     "eslint-define-config": "^1.2.0",
     "eslint-plugin-node": "^11.1.0",
-    "execa": "^5.1.1",
+    "execa": "^6.0.0",
     "fs-extra": "^10.0.0",
     "jest": "^27.4.5",
     "lint-staged": "^12.1.2",

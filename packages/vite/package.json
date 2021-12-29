@@ -91,7 +91,7 @@
     "es-module-lexer": "^0.9.3",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
-    "execa": "^5.1.1",
+    "execa": "^6.0.0",
     "fast-glob": "^3.2.7",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.3.0",
