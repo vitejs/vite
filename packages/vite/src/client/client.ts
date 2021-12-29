@@ -703,7 +703,6 @@ const rejectionHandler =
     // Chromes will include the erroe message as the first line of the stack trace so we have to check for a match or check the next line
     if (!stackInfo.url) {
       stackInfo = getStackInformation(stackLines[1])
-      console.log(stackInfo);
       if (!stackInfo.url) {
         console.error('failed to get source info for rejection')
         return
