@@ -274,11 +274,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
+                // dfs add deps let the upper-level had a higher priority (#3924)
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
+                  console.log('deps', filename, chunk?.imports)
                   if (chunk) {
                     deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
@@ -309,6 +311,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   path.posix.dirname(chunk.fileName),
                   url
                 )
+                console.log();
+                console.log('start deps', normalizedFile);
                 addDeps(normalizedFile)
               }
 
@@ -319,6 +323,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
 
               if (markPos > 0) {
+                console.log()
+                console.log('generate', name, [...deps])
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
