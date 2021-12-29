@@ -49,14 +49,14 @@ describe('transformWithEsbuild', () => {
     expect(result.code).not.toContain('import "./not-used-type";')
   })
 
-  test.skip('preserveValueImports', async () => {
+  test('preserveValueImports', async () => {
     const main = path.resolve(__dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
         compilerOptions: {
-          useDefineForClassFields: false
-          // preserveValueImports: true // TODO: preserveValueImports isn't in the types definition in esbuild yet
+          useDefineForClassFields: false,
+          preserveValueImports: true
         }
       }
     })
