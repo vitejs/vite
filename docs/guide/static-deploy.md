@@ -164,17 +164,20 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 ## Netlify
 
+::: tip Note
+If you're building an SPA, make sure to handle redirects in the `netlify.toml` file:
+```
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+```
+:::
+
 1. On [Netlify](https://netlify.com), setup up a new project from GitHub with the following settings:
 
    - **Build Command:** `vite build` or `npm run build`
    - **Publish directory:** `dist`
-   - **Basic netlify.toml**
-   ```
-    [[redirects]]
-      from = "/*"
-      to = "/index.html"
-      status = 200
-   ```
 
 2. Hit the deploy button.
 
