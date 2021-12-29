@@ -1,7 +1,7 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
-import mime from 'mime/lite'
+// import mime from 'mime/lite'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
@@ -295,7 +295,8 @@ async function fileToBuiltUrl(
       content.length < Number(config.build.assetsInlineLimit))
   ) {
     // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    // url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    url = ''
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
