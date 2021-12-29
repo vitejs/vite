@@ -110,7 +110,7 @@
     "resolve.exports": "^1.1.0",
     "rollup-plugin-license": "^2.6.0",
     "sirv": "^2.0.0",
-    "source-map": "^0.6.1",
+    "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^6.0.1",
     "terser": "^5.10.0",
