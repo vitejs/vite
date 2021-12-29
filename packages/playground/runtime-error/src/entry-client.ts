@@ -1,3 +1,5 @@
+import { externalThrow } from './external'
+
 document.querySelector<HTMLButtonElement>('#throwBtn').onclick = () => {
   throw new Error('Why did you click the button')
 }
@@ -22,3 +24,17 @@ document.querySelector<HTMLButtonElement>('#throwStr').onclick = () => {
 document.querySelector<HTMLButtonElement>('#throwNum').onclick = () => {
   throw 42
 }
+
+document.querySelector<HTMLButtonElement>('#throwExternal').onclick = () => {
+  externalThrow()
+}
+
+document.querySelector<HTMLButtonElement>('#rejectExternal').onclick =
+  async () => {
+    ;(await import('./external')).externalAsync()
+  }
+
+document.querySelector<HTMLButtonElement>('#rejectExternalModule').onclick =
+  async () => {
+    await import('./module-thrown')
+  }
