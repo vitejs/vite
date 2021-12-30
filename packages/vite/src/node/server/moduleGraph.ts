@@ -62,11 +62,17 @@ export class ModuleGraph {
   safeModulesPath = new Set<string>()
 
   constructor(
-    private resolveId: (url: string) => Promise<PartialResolvedId | null>
+    private resolveId: (
+      url: string,
+      ssr: boolean
+    ) => Promise<PartialResolvedId | null>
   ) {}
 
-  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
-    const [url] = await this.resolveUrl(rawUrl)
+  async getModuleByUrl(
+    rawUrl: string,
+    ssr?: boolean
+  ): Promise<ModuleNode | undefined> {
+    const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
   }
 
@@ -111,7 +117,8 @@ export class ModuleGraph {
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
     acceptedModules: Set<string | ModuleNode>,
-    isSelfAccepting: boolean
+    isSelfAccepting: boolean,
+    ssr?: boolean
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
@@ -121,7 +128,7 @@ export class ModuleGraph {
     for (const imported of importedModules) {
       const dep =
         typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported)
+          ? await this.ensureEntryFromUrl(imported, ssr)
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
@@ -141,15 +148,15 @@ export class ModuleGraph {
     for (const accepted of acceptedModules) {
       const dep =
         typeof accepted === 'string'
-          ? await this.ensureEntryFromUrl(accepted)
+          ? await this.ensureEntryFromUrl(accepted, ssr)
           : accepted
       deps.add(dep)
     }
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl)
+  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
@@ -197,9 +204,9 @@ export class ModuleGraph {
   // 1. remove the HMR timestamp query (?t=xxxx)
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
-  async resolveUrl(url: string): Promise<ResolvedUrl> {
+  async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolved = await this.resolveId(url)
+    const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)

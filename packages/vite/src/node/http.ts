@@ -1,6 +1,9 @@
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
-import type { Server as HttpServer } from 'http'
+import type {
+  OutgoingHttpHeaders as HttpServerHeaders,
+  Server as HttpServer
+} from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -62,6 +65,10 @@ export interface CommonServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+  /**
+   * Specify server response headers.
+   */
+  headers?: HttpServerHeaders
 }
 
 /**
@@ -87,6 +94,14 @@ export async function resolveHttpServer(
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
+  /*
+   * Some Node.js packages are known to be using this undocumented function,
+   * notably "compression" middleware.
+   */
+  app.prototype._implicitHeader = function _implicitHeader() {
+    this.writeHead(this.statusCode)
+  }
+
   if (!httpsOptions) {
     return require('http').createServer(app)
   }
