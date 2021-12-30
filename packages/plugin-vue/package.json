@@ -6,14 +6,15 @@
   "files": [
     "dist"
   ],
+  "module": "dist/index.mjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "rimraf dist && run-p dev-types dev-watch",
+    "dev": "rimraf dist && rollup -c -w",
     "dev-types": "tsc -p . -w --incremental --emitDeclarationOnly",
     "dev-watch": "esbuild src/index.ts --watch --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --external:vue/compiler-sfc --external:vite --outfile=dist/index.js",
     "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --external:vue/compiler-sfc --external:vite --outfile=dist/index.js",
+    "build-bundle": "rollup -c",
     "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-vue",
     "release": "ts-node ../../scripts/release.ts"
@@ -35,11 +36,14 @@
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "rollup": "^2.59.0",
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "13.1.1",
+    "@rollup/plugin-typescript": "^8.3.0",
     "@rollup/pluginutils": "^4.1.2",
     "@types/hash-sum": "^1.0.0",
     "debug": "^4.3.3",
     "hash-sum": "^2.0.0",
-    "rollup": "^2.59.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
     "vue": "^3.2.26"

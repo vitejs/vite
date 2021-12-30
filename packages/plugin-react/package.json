@@ -11,11 +11,12 @@
     "src"
   ],
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsc -p . -w --incremental",
     "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@babel/* --external:@rollup/* --external:resolve --external:react-refresh/* --outfile=dist/index.js",
+    "build-bundle": "rollup -c",
     "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-react",
     "release": "ts-node ../../scripts/release.ts"
@@ -41,5 +42,10 @@
     "@rollup/pluginutils": "^4.1.2",
     "react-refresh": "^0.11.0",
     "resolve": "^1.20.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "13.1.1",
+    "@rollup/plugin-typescript": "^8.3.0"
   }
 }

@@ -664,6 +664,9 @@ importers:
       '@babel/plugin-transform-react-jsx-development': ^7.16.5
       '@babel/plugin-transform-react-jsx-self': ^7.16.5
       '@babel/plugin-transform-react-jsx-source': ^7.16.5
+      '@rollup/plugin-commonjs': ^21.0.1
+      '@rollup/plugin-node-resolve': 13.1.1
+      '@rollup/plugin-typescript': ^8.3.0
       '@rollup/pluginutils': ^4.1.2
       react-refresh: ^0.11.0
       resolve: ^1.20.0
@@ -676,9 +679,16 @@ importers:
       '@rollup/pluginutils': 4.1.2
       react-refresh: 0.11.0
       resolve: 1.20.0
+    devDependencies:
+      '@rollup/plugin-commonjs': 21.0.1_rollup@2.62.0
+      '@rollup/plugin-node-resolve': 13.1.1_rollup@2.62.0
+      '@rollup/plugin-typescript': 8.3.0_rollup@2.62.0+typescript@4.5.4
 
   packages/plugin-vue:
     specifiers:
+      '@rollup/plugin-commonjs': ^21.0.1
+      '@rollup/plugin-node-resolve': 13.1.1
+      '@rollup/plugin-typescript': ^8.3.0
       '@rollup/pluginutils': ^4.1.2
       '@types/hash-sum': ^1.0.0
       debug: ^4.3.3
@@ -688,6 +698,9 @@ importers:
       source-map: ^0.6.1
       vue: ^3.2.26
     devDependencies:
+      '@rollup/plugin-commonjs': 21.0.1_rollup@2.62.0
+      '@rollup/plugin-node-resolve': 13.1.1_rollup@2.62.0
+      '@rollup/plugin-typescript': 8.3.0_rollup@2.62.0+typescript@4.5.4
       '@rollup/pluginutils': 4.1.2
       '@types/hash-sum': 1.0.0
       debug: 4.3.3
@@ -2016,6 +2029,20 @@ packages:
       typescript: 4.5.4
     dev: true
 
+  /@rollup/plugin-typescript/8.3.0_rollup@2.62.0+typescript@4.5.4:
+    resolution: {integrity: sha512-I5FpSvLbtAdwJ+naznv+B4sjXZUcIvLLceYpITAn7wAP8W0wqc5noLdGIp9HGVntNhRWXctwPYrSSFQxtl0FPA==}
+    engines: {node: '>=8.0.0'}
+    peerDependencies:
+      rollup: ^2.14.0
+      tslib: '*'
+      typescript: '>=3.7.0'
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.62.0
+      resolve: 1.20.0
+      rollup: 2.62.0
+      typescript: 4.5.4
+    dev: true
+
   /@rollup/pluginutils/3.1.0_rollup@2.62.0:
     resolution: {integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg==}
     engines: {node: '>= 8.0.0'}
@@ -3227,6 +3254,7 @@ packages:
 
   /commander/2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
+    requiresBuild: true
     dev: true
 
   /commander/7.2.0:

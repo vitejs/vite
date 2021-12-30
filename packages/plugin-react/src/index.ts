@@ -321,7 +321,3 @@ viteReact.preambleCode = preambleCode
 function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
 }
-
-// overwrite for cjs require('...')() usage
-module.exports = viteReact
-viteReact['default'] = viteReact
