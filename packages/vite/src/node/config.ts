@@ -202,7 +202,10 @@ export interface UserConfig {
     /**
      * Rollup options to build worker bundle
      */
-    rollupOptions?: Omit<RollupOptions, 'plugins' | 'input' | 'onwarn'>
+    rollupOptions?: Omit<
+      RollupOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
   }
 }
 
