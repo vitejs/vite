@@ -95,6 +95,13 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Pre-transform known direct imports
+   *
+   * @experimental this option is experimental and might be changed in the future
+   * @default true
+   */
+  preTransformRequests?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -321,8 +328,8 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
-    container.resolveId(url)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
+    container.resolveId(url, undefined, { ssr })
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
@@ -692,7 +699,10 @@ export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
-  const server = raw || {}
+  const server: ResolvedServerOptions = {
+    preTransformRequests: true,
+    ...(raw as ResolvedServerOptions)
+  }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
@@ -713,7 +723,7 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
-  return server as ResolvedServerOptions
+  return server
 }
 
 async function restartServer(server: ViteDevServer) {
