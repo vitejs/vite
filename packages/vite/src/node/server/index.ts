@@ -98,7 +98,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Pre-transform known direct imports
    *
-   * @expiremental this options is expiremental and might be changed in the future
+   * @experimental this option is experimental and might be changed in the future
    * @default true
    */
   preTransformRequests?: boolean
