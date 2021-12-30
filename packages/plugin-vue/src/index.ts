@@ -66,7 +66,6 @@ export interface ResolvedOptions extends Options {
   devServer?: ViteDevServer
 }
 
-
 export default vuePlugin
 function vuePlugin(rawOptions: Options = {}): Plugin {
   const {

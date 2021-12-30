@@ -19,18 +19,11 @@ const createNodeConfig = (isProduction) => {
         file: path.resolve(__dirname, 'dist/index.js'),
         inlineDynamicImports: true,
         exports: 'named',
-        format: 'commonjs'
-      },
-      {
-        file: path.resolve(__dirname, 'dist/index.mjs'),
-        inlineDynamicImports: true,
-        exports: 'named',
-        format: 'esm'
+        format: 'commonjs',
+        freeze: false
       }
     ],
-    external: [
-      ...Object.keys(require('./package.json').dependencies)
-    ],
+    external: [...Object.keys(require('./package.json').dependencies)],
     plugins: [
       nodeResolve({ preferBuiltins: true }),
       typescript({
@@ -38,7 +31,7 @@ const createNodeConfig = (isProduction) => {
         module: 'esnext',
         target: 'es2019',
         include: ['src/**/*.ts'],
-        esModuleInterop: true,
+        esModuleInterop: true
       }),
       commonjs({
         extensions: ['.js']
@@ -53,7 +46,5 @@ export default (commandLineArgs) => {
   const isDev = commandLineArgs.watch
   const isProduction = !isDev
 
-  return [
-    createNodeConfig(isProduction)
-  ]
+  return [createNodeConfig(isProduction)]
 }
