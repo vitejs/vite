@@ -20,6 +20,7 @@ const createNodeConfig = (isProduction) => {
         inlineDynamicImports: true,
         exports: 'named',
         format: 'commonjs',
+        externalLiveBindings: false,
         freeze: false
       }
     ],
@@ -34,7 +35,9 @@ const createNodeConfig = (isProduction) => {
         esModuleInterop: true
       }),
       commonjs({
-        extensions: ['.js']
+        extensions: ['.js'],
+        transformMixedEsModules: true,
+        requireReturnsDefault: true
       })
     ]
   }
