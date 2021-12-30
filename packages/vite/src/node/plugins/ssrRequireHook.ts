@@ -31,7 +31,8 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
         return {
           code: s.toString(),
           map: s.generateMap({
-            source: id
+            source: id,
+            hires: true
           })
         }
       }
