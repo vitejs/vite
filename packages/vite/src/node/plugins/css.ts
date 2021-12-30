@@ -24,7 +24,7 @@ import type {
   SourceMap
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { CLIENT_PUBLIC_PATH } from '../constants'
 import type { ResolveFn, ViteDevServer } from '../'
 import {
@@ -300,15 +300,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
           return [
-            `import { updateStyle, removeStyle } from ${JSON.stringify(
+            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
-            `const id = ${JSON.stringify(id)}`,
-            `const css = ${JSON.stringify(css)}`,
-            `updateStyle(id, css)`,
+            `const __vite__id = ${JSON.stringify(id)}`,
+            `const __vite__css = ${JSON.stringify(css)}`,
+            `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default css`}`,
-            `import.meta.hot.prune(() => removeStyle(id))`
+            `${
+              modulesCode ||
+              `import.meta.hot.accept()\nexport default __vite__css`
+            }`,
+            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
         }
       }
@@ -781,7 +784,7 @@ async function compileCSS(
           column: message.column
         })}`
       }
-      config.logger.warn(chalk.yellow(msg))
+      config.logger.warn(colors.yellow(msg))
     }
   }
 
@@ -930,7 +933,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   if (warnings.length) {
     const msgs = await formatMessages(warnings, { kind: 'warning' })
     config.logger.warn(
-      chalk.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+      colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
     )
   }
   return code

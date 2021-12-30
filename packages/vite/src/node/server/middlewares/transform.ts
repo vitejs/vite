@@ -16,7 +16,7 @@ import {
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
@@ -128,9 +128,9 @@ export function transformMiddleware(
         // warn explicit public paths
         if (url.startsWith(publicPath)) {
           logger.warn(
-            chalk.yellow(
+            colors.yellow(
               `files in the public directory are served at the root path.\n` +
-                `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
+                `Instead of ${colors.cyan(url)}, use ${colors.cyan(
                   url.replace(publicPath, '/')
                 )}.`
             )
