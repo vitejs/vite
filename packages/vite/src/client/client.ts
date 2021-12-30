@@ -210,8 +210,10 @@ async function waitForSuccessfulPing(ms = 1000) {
     try {
       const pingResponse = await fetch(`${base}__vite_ping`)
 
-      if (pingResponse.ok) break // success - 2xx status code
-      else throw new Error() // failure - non-2xx status code
+      // success - 2xx status code
+      if (pingResponse.ok) break
+      // failure - non-2xx status code
+      else throw new Error()
     } catch (e) {
       // wait ms before attempting to ping again
       await new Promise((resolve) => setTimeout(resolve, ms))
