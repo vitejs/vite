@@ -66,6 +66,7 @@ export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
+export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,

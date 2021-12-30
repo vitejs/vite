@@ -189,7 +189,9 @@ export function indexHtmlMiddleware(
         try {
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html')
+          return send(req, res, html, 'html', {
+            headers: server.config.server.headers
+          })
         } catch (e) {
           return next(e)
         }

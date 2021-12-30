@@ -167,6 +167,9 @@ describe('preview config', () => {
     host: true,
     open: true,
     https: true,
+    headers: {
+      'Cache-Control': 'no-store'
+    },
     proxy: { '/foo': 'http://localhost:4567' },
     cors: false
   })

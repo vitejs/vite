@@ -33,7 +33,8 @@ export function resolvePreviewOptions(
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
-    cors: preview?.cors ?? server.cors
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers
   }
 }
 
