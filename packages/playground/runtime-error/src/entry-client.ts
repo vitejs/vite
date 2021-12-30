@@ -10,11 +10,7 @@ document.querySelector<HTMLButtonElement>('#invalidAccessor').onclick = () => {
 }
 
 const asyncFunc = async () => {
-  throw new Error('async failure')
-}
-
-document.querySelector<HTMLButtonElement>('#promise').onclick = async () => {
-  await asyncFunc()
+  Promise.reject(new Error('async failure'))
 }
 
 document.querySelector<HTMLButtonElement>('#throwStr').onclick = () => {
@@ -29,12 +25,16 @@ document.querySelector<HTMLButtonElement>('#throwExternal').onclick = () => {
   externalThrow()
 }
 
-document.querySelector<HTMLButtonElement>('#rejectExternal').onclick =
-  async () => {
-    ;(await import('./external')).externalAsync()
-  }
+document.querySelector<HTMLButtonElement>('#reject').onclick = async () => {
+  await asyncFunc()
+}
 
 document.querySelector<HTMLButtonElement>('#rejectExternalModule').onclick =
   async () => {
     await import('./module-thrown')
+  }
+
+document.querySelector<HTMLButtonElement>('#rejectExternal').onclick =
+  async () => {
+    ;(await import('./external')).externalAsync()
   }

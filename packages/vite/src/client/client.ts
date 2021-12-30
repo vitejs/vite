@@ -490,12 +490,12 @@ export function injectQuery(url: string, queryToInject: string): string {
 
 type ErrorOverlayCallback = (err: ErrorPayload['err']) => void
 
-const extractSourceMapData = (fileContetnt: string) => {
+const extractSourceMapData = (fileContent: string) => {
   const re = /[#@]\ssourceMappingURL=\s*(\S+)/gm
   let match: RegExpExecArray | null = null
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const next = re.exec(fileContetnt)
+    const next = re.exec(fileContent)
     if (next == null) {
       break
     }
@@ -705,7 +705,6 @@ const exceptionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: ErrorEvent): Promise<void> => {
     try {
-      console.log(e)
       const error = transformError(e.error)
 
       const payload = await generateErrorPayload(
@@ -728,13 +727,14 @@ const rejectionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: PromiseRejectionEvent): Promise<void> => {
     const error = transformError(e.reason)
-    // Since promisejectection doesn't return the file we have to get it from the stack trace
+    // Since promise rejection doesn't return the file we have to get it from the stack trace
     const stackLines = error.stack!.split('\n')
     let stackInfo = getStackInformation(stackLines[0])
     // Chromes will include the error message as the first line of the stack trace so we have to check for a match or check the next line
     if (!stackInfo.url) {
       stackInfo = getStackInformation(stackLines[1])
       if (!stackInfo.url) {
+        // no stack trace create a basic overlay
         const payload: ErrorPayload['err'] = {
           message: error.message,
           stack: error.stack!
@@ -762,7 +762,6 @@ const rejectionHandler =
   }
 
 const showErrorOverlay = (err: ErrorPayload['err']) => {
-  console.log(err)
   const overlay = new ErrorOverlay(err)
   document.body.appendChild(overlay)
 }

@@ -3,5 +3,5 @@ export const externalThrow = () => {
 }
 
 export const externalAsync = async () => {
-  throw new Error('Rejection from externalAsync')
+  return Promise.reject('Reject from externalAsync')
 }
