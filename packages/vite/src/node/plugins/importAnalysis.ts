@@ -259,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url)
+            const depModule = await moduleGraph.ensureEntryFromUrl(url, ssr)
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
@@ -518,7 +518,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(markExplicitImport(url))
+          toAbsoluteUrl(markExplicitImport(url)),
+          ssr
         )
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized))
@@ -549,7 +550,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           importerModule,
           importedUrls,
           normalizedAcceptedUrls,
-          isSelfAccepting
+          isSelfAccepting,
+          ssr
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)

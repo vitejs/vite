@@ -65,7 +65,7 @@ async function instantiateModule(
   urlStack: string[] = []
 ): Promise<SSRModule> {
   const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
 
   if (mod.ssrModule) {
     return mod.ssrModule
