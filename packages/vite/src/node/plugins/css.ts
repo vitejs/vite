@@ -10,7 +10,8 @@ import {
   isDataUrl,
   isObject,
   normalizePath,
-  processSrcSet
+  processSrcSet,
+  parseRequest
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -43,6 +44,7 @@ import type Less from 'less'
 import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
+import { addToHTMLProxyTransformResult } from './html'
 
 // const debug = createDebugger('vite:css')
 
@@ -86,8 +88,10 @@ const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
+const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
+const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
 
 const enum PreprocessLang {
@@ -318,6 +322,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // build CSS handling ----------------------------------------------------
 
       // record css
+      // cache css compile result to map
+      // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
+      const inlineCSS = inlineCSSRE.test(id)
+      const query = parseRequest(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
+      if (inlineCSS && isHTMLProxy) {
+        addToHTMLProxyTransformResult(
+          `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
+          css
+        )
+        return `export default ''`
+      }
       if (!inlined) {
         styles.set(id, css)
       }

@@ -20,6 +20,7 @@ import type {
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
 import { performance } from 'perf_hooks'
+import { parse as parseUrl, URLSearchParams } from 'url'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -633,3 +634,11 @@ export const usingDynamicImport = typeof jest === 'undefined'
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : require
+
+export function parseRequest(id: string): Record<string, string> | null {
+  const { search } = parseUrl(id)
+  if (!search) {
+    return null
+  }
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+}

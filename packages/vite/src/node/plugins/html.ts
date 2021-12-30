@@ -29,12 +29,14 @@ import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
   NodeTransform,
+  TextNode,
   ElementNode,
   CompilerError
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 
-const htmlProxyRE = /\?html-proxy&index=(\d+)\.js$/
+const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
+const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -43,9 +45,14 @@ export const htmlProxyMap = new WeakMap<
   Map<string, Array<string>>
 >()
 
-export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
+// HTML Proxy Transform result are stored by config
+// `${importer}_${query.index}` -> transformed css code
+// PS: key like `/vite/packages/playground/assets/index.html_1`
+export const htmlProxyResult = new Map<string, string>()
+
+export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
   return {
-    name: 'vite:html-inline-script-proxy',
+    name: 'vite:html-inline-proxy',
 
     resolveId(id) {
       if (htmlProxyRE.test(id)) {
@@ -74,7 +81,6 @@ export function htmlInlineScriptProxyPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-/** Add script to cache */
 export function addToHTMLProxyCache(
   config: ResolvedConfig,
   filePath: string,
@@ -88,6 +94,13 @@ export function addToHTMLProxyCache(
     htmlProxyMap.get(config)!.set(filePath, [])
   }
   htmlProxyMap.get(config)!.get(filePath)![index] = code
+}
+
+export function addToHTMLProxyTransformResult(
+  hash: string,
+  code: string
+): void {
+  htmlProxyResult.set(hash, code)
 }
 
 // this extends the config in @vue/compiler-sfc with <link href>
@@ -309,6 +322,48 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
+          // <tag style="... url(...) ..."></tag>
+          // extract inline styles as virtual css and add class attribute to tag for selecting
+          const inlineStyle = node.props.find(
+            (prop) =>
+              prop.name === 'style' &&
+              prop.type === NodeTypes.ATTRIBUTE &&
+              prop.value &&
+              prop.value.content.includes('url(') // only url(...) in css need to emit file
+          ) as AttributeNode
+          if (inlineStyle) {
+            inlineModuleIndex++
+            // replace `inline style` to class
+            // and import css in js code
+            const styleNode = inlineStyle.value!
+            const code = styleNode.content!
+            const filePath = id.replace(normalizePath(config.root), '')
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
+            // will transform with css plugin and cache result with css-post plugin
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+
+            // will transfrom in `applyHtmlTransforms`
+            s.overwrite(
+              styleNode.loc.start.offset,
+              styleNode.loc.end.offset,
+              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
+            )
+          }
+
+          // <style>...</style>
+          if (node.tag === 'style' && node.children.length) {
+            const styleNode = node.children.pop() as TextNode
+            const filePath = id.replace(normalizePath(config.root), '')
+            inlineModuleIndex++
+            addToHTMLProxyCache(
+              config,
+              filePath,
+              inlineModuleIndex,
+              styleNode.content
+            )
+            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
+            shouldRemove = true
+          }
 
           if (shouldRemove) {
             // remove the script tag from the html. we are going to inject new
@@ -452,10 +507,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
-        // resolve asset url references
-        let result = html.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return config.base + getAssetFilename(fileHash, config) + postfix
-        })
+        let result = html
 
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
@@ -507,11 +559,31 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         const shortEmitName = path.posix.relative(config.root, id)
+        // no use assets plugin because it will emit file
+        let match: RegExpExecArray | null
+        let s: MagicString | undefined
+        while ((match = inlineCSSRE.exec(result))) {
+          s ||= new MagicString(result)
+          const { 0: full, 1: scopedName } = match
+          const cssTransformedCode = htmlProxyResult.get(scopedName)!
+          s.overwrite(
+            match.index,
+            match.index + full.length,
+            cssTransformedCode
+          )
+        }
+        if (s) {
+          result = s.toString()
+        }
         result = await applyHtmlTransforms(result, postHooks, {
           path: '/' + shortEmitName,
           filename: id,
           bundle,
           chunk
+        })
+        // resolve asset url references
+        result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          return config.base + getAssetFilename(fileHash, config) + postfix
         })
 
         if (chunk && canInlineEntry) {
