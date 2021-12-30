@@ -1,3 +1,18 @@
+## [2.7.10](https://github.com/vitejs/vite/compare/v2.7.9...v2.7.10) (2021-12-30)
+
+
+### Bug Fixes
+
+* **ssr:** move `vite:ssr-require-hook` after user plugins ([#6306](https://github.com/vitejs/vite/issues/6306)) ([9ccad0e](https://github.com/vitejs/vite/commit/9ccad0ea2a16d67d49823447b72a0ddced6da699))
+* use `hires: true` for SSR require hook source map ([#6310](https://github.com/vitejs/vite/issues/6310)) ([6231f9f](https://github.com/vitejs/vite/commit/6231f9f871b43859022768de8a30d1fac4df2bc3))
+
+
+### Features
+
+* option to disable pre-transform ([#6309](https://github.com/vitejs/vite/issues/6309)) ([c338501](https://github.com/vitejs/vite/commit/c338501bcdbf38f5fcf4a15bbac44c4c1d827ca8))
+
+
+
 ## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
 
 
