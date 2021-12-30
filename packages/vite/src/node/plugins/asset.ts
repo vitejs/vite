@@ -6,7 +6,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import type { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
+import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
@@ -15,8 +15,6 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
-
-export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -96,7 +94,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        registerAssetToChunk(chunk, file)
+        chunk.importedAssets.add(cleanUrl(file))
         const outputFilepath = config.base + file + postfix
         s.overwrite(match.index, match.index + full.length, outputFilepath)
       }
@@ -125,15 +123,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
-  let emitted = chunkToEmittedAssetsMap.get(chunk)
-  if (!emitted) {
-    emitted = new Set()
-    chunkToEmittedAssetsMap.set(chunk, emitted)
-  }
-  emitted.add(cleanUrl(file))
 }
 
 export function checkPublicFile(
@@ -365,4 +354,10 @@ export async function urlToBuiltUrl(
     // skip public check since we just did it above
     true
   )
+}
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    importedAssets: Set<string>
+  }
 }
