@@ -762,7 +762,7 @@ importers:
       launch-editor-middleware: ^2.3.0
       magic-string: ^0.25.7
       micromatch: ^4.0.4
-      mime: ^3.0.0
+      mrmime: ^1.0.0
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -802,7 +802,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': 1.4.2_rollup@2.62.0
       '@rollup/plugin-json': 4.1.0_rollup@2.62.0
       '@rollup/plugin-node-resolve': 13.1.1_rollup@2.62.0
-      '@rollup/plugin-typescript': 8.3.0_7c5ff569c0887b4f0035eb7cb6988163
+      '@rollup/plugin-typescript': 8.3.0_rollup@2.62.0+tslib@2.3.1
       '@rollup/pluginutils': 4.1.2
       '@types/convert-source-map': 1.5.2
       '@types/cross-spawn': 6.0.2
@@ -838,13 +838,13 @@ importers:
       launch-editor-middleware: 2.3.0
       magic-string: 0.25.7
       micromatch: 4.0.4
-      mime: 3.0.0
+      mrmime: 1.0.0
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.5
-      postcss-load-config: 3.1.0_ts-node@10.4.0
+      postcss-load-config: 3.1.0
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
@@ -854,7 +854,7 @@ importers:
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.10.0_acorn@8.7.0
-      tsconfck: 1.1.1_typescript@4.5.4
+      tsconfck: 1.1.1
       tslib: 2.3.1
       types: link:types
       ws: 8.4.0
@@ -1995,7 +1995,7 @@ packages:
       rollup: 2.62.0
     dev: true
 
-  /@rollup/plugin-typescript/8.3.0_7c5ff569c0887b4f0035eb7cb6988163:
+  /@rollup/plugin-typescript/8.3.0_rollup@2.62.0+tslib@2.3.1:
     resolution: {integrity: sha512-I5FpSvLbtAdwJ+naznv+B4sjXZUcIvLLceYpITAn7wAP8W0wqc5noLdGIp9HGVntNhRWXctwPYrSSFQxtl0FPA==}
     engines: {node: '>=8.0.0'}
     peerDependencies:
@@ -2007,7 +2007,6 @@ packages:
       resolve: 1.20.0
       rollup: 2.62.0
       tslib: 2.3.1
-      typescript: 4.5.4
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.62.0:
@@ -4557,6 +4556,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.14.6_debug@4.3.3:
+    resolution: {integrity: sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.3
+    dev: true
 
   /form-data/3.0.1:
     resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
@@ -4948,7 +4960,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.6
+      follow-redirects: 1.14.6_debug@4.3.3
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -6334,12 +6346,6 @@ packages:
     hasBin: true
     dev: true
 
-  /mime/3.0.0:
-    resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
-    engines: {node: '>=10.0.0'}
-    hasBin: true
-    dev: true
-
   /mimic-fn/2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
     engines: {node: '>=6'}
@@ -6996,6 +7002,20 @@ packages:
       postcss: 8.4.5
     dev: false
 
+  /postcss-load-config/3.1.0:
+    resolution: {integrity: sha512-ipM8Ds01ZUophjDTQYSVP70slFSYg3T0/zyfII5vzhN6V57YSxMgG5syXuwi5VtS8wSf3iL30v0uBdoIVx4Q0g==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      ts-node:
+        optional: true
+    dependencies:
+      import-cwd: 3.0.0
+      lilconfig: 2.0.4
+      yaml: 1.10.2
+    dev: true
+
   /postcss-load-config/3.1.0_ts-node@10.4.0:
     resolution: {integrity: sha512-ipM8Ds01ZUophjDTQYSVP70slFSYg3T0/zyfII5vzhN6V57YSxMgG5syXuwi5VtS8wSf3iL30v0uBdoIVx4Q0g==}
     engines: {node: '>= 10'}
@@ -7009,6 +7029,7 @@ packages:
       lilconfig: 2.0.4
       ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
       yaml: 1.10.2
+    dev: false
 
   /postcss-modules-extract-imports/3.0.0_postcss@8.4.5:
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
@@ -8525,7 +8546,7 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.1.1_typescript@4.5.4:
+  /tsconfck/1.1.1:
     resolution: {integrity: sha512-uEsCWef+3lA9/YqpGt/mdr+nDovhlr+f0zoycYiOyVDDOUb3BjYFA71+Ee3LB/GiZBRDyTfKBK1kGN2iuPPuEA==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16, pnpm: '>=6.7.0'}
     hasBin: true
@@ -8534,8 +8555,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-    dependencies:
-      typescript: 4.5.4
     dev: true
 
   /tslib/1.14.1:
