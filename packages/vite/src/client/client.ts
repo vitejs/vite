@@ -727,14 +727,19 @@ const exceptionHandler =
 const rejectionHandler =
   (callback: ErrorOverlayCallback) =>
   async (e: PromiseRejectionEvent): Promise<void> => {
+    const error = transformError(e.reason)
     // Since promisejectection doesn't return the file we have to get it from the stack trace
-    const stackLines = e.reason.stack.split('\n')
+    const stackLines = error.stack!.split('\n')
     let stackInfo = getStackInformation(stackLines[0])
-    // Chromes will include the erroe message as the first line of the stack trace so we have to check for a match or check the next line
+    // Chromes will include the error message as the first line of the stack trace so we have to check for a match or check the next line
     if (!stackInfo.url) {
       stackInfo = getStackInformation(stackLines[1])
       if (!stackInfo.url) {
-        console.error('failed to get source info for rejection')
+        const payload: ErrorPayload['err'] = {
+          message: error.message,
+          stack: error.stack!
+        }
+        callback(payload)
         return
       }
     }
