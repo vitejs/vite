@@ -44,7 +44,13 @@ const testErrorOverlay = async (
   })
 }
 
-if (!isBuild) {
+if (isBuild) {
+  test('Should not show overlay in build', async () => {
+    await (await page.$('#throwBtn')).click()
+    const overlay = await page.$('vite-error-overlay')
+    expect(overlay).toBeFalsy()
+  })
+} else {
   beforeEach(async () => {
     // reset the page before each run
     // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
