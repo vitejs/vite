@@ -97,7 +97,7 @@ export interface ServerOptions extends CommonServerOptions {
   origin?: string
   /**
    * Pre-transform known direct imports
-   * 
+   *
    * @default true
    */
   preTransformRequests?: boolean
@@ -700,7 +700,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    ...raw as ResolvedServerOptions,
+    ...(raw as ResolvedServerOptions)
   }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
