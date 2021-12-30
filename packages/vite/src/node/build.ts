@@ -651,7 +651,7 @@ function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
       if (staticImportedByEntry(id, getModuleInfo, cache)) {
         return 'vendor'
       } else {
-        const entryName = getDynamicImportEntry(id, getModuleInfo, [])
+        const entryName = resolveDynamicImportEntry(id, getModuleInfo, [])
         if (entryName) {
           return `async-vendor-${entryName}`
         }
@@ -696,7 +696,7 @@ function staticImportedByEntry(
   return someImporterIs
 }
 
-function getDynamicImportEntry(
+function resolveDynamicImportEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
   importStack: string[] = []
@@ -710,12 +710,21 @@ function getDynamicImportEntry(
     mod.dynamicImporters.length > 0 &&
     mod.dynamicImporters.some((importer) => !importer.includes('node_modules'))
   ) {
+    if (id.includes('node_modules')) {
+      const dirs = id.split(path.sep)
+      const nodeModulesIndex = dirs.lastIndexOf('node_modules')
+      let packageName = dirs[nodeModulesIndex + 1]
+      if (packageName.startsWith('@')) {
+        packageName = path.join(packageName, dirs[nodeModulesIndex + 2])
+      }
+      return packageName
+    }
     return path.basename(id, path.extname(id))
   }
 
   let entry
   for (const importer of mod.importers) {
-    entry = getDynamicImportEntry(
+    entry = resolveDynamicImportEntry(
       importer,
       getModuleInfo,
       importStack.concat(id)
