@@ -31,8 +31,8 @@ SOFTWARE.
 
 import fs from 'fs'
 import { resolve, join } from 'path'
-import { Plugin } from '../plugin'
-import {
+import type { Plugin } from '../plugin'
+import type {
   InputOptions,
   MinimalPluginContext,
   OutputOptions,
@@ -49,12 +49,10 @@ import {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import acornClassFields from 'acorn-class-fields'
-import acornStaticClassFeatures from 'acorn-static-class-features'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -67,10 +65,12 @@ import {
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../config'
+import colors from 'picocolors'
+import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
+import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
+import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -81,6 +81,7 @@ export interface PluginContainerOptions {
 
 export interface PluginContainer {
   options: InputOptions
+  getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
@@ -119,15 +120,14 @@ type PluginContext = Omit<
   | 'isExternal'
   | 'moduleIds'
   | 'resolveId'
+  | 'load'
 >
 
-export let parser = acorn.Parser.extend(
-  acornClassFields,
-  acornStaticClassFeatures
-)
+export let parser = acorn.Parser
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
@@ -143,7 +143,6 @@ export async function createPluginContainer(
 
   // ---------------------------------------------------------------------------
 
-  const MODULES = new Map()
   const watchFiles = new Set<string>()
 
   // get rollup version
@@ -158,13 +157,52 @@ export async function createPluginContainer(
 
   function warnIncompatibleMethod(method: string, plugin: string) {
     logger.warn(
-      chalk.cyan(`[plugin:${plugin}] `) +
-        chalk.yellow(
-          `context method ${chalk.bold(
+      colors.cyan(`[plugin:${plugin}] `) +
+        colors.yellow(
+          `context method ${colors.bold(
             `${method}()`
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
     )
+  }
+
+  // throw when an unsupported ModuleInfo property is accessed,
+  // so that incompatible plugins fail in a non-cryptic way.
+  const ModuleInfoProxy: ProxyHandler<ModuleInfo> = {
+    get(info: any, key: string) {
+      if (key in info) {
+        return info[key]
+      }
+      throw Error(
+        `[vite] The "${key}" property of ModuleInfo is not supported.`
+      )
+    }
+  }
+
+  // same default value of "moduleInfo.meta" as in Rollup
+  const EMPTY_OBJECT = Object.freeze({})
+
+  function getModuleInfo(id: string) {
+    const module = moduleGraph?.getModuleById(id)
+    if (!module) {
+      return null
+    }
+    if (!module.info) {
+      module.info = new Proxy(
+        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        ModuleInfoProxy
+      )
+    }
+    return module.info
+  }
+
+  function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+    if (meta) {
+      const moduleInfo = getModuleInfo(id)
+      if (moduleInfo) {
+        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+      }
+    }
   }
 
   // we should create a new context for each async hook pipeline so that the
@@ -208,19 +246,13 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      let mod = MODULES.get(id)
-      if (mod) return mod.info
-      mod = {
-        /** @type {import('rollup').ModuleInfo} */
-        // @ts-ignore-next
-        info: {}
-      }
-      MODULES.set(id, mod)
-      return mod.info
+      return getModuleInfo(id)
     }
 
     getModuleIds() {
-      return MODULES.keys()
+      return moduleGraph
+        ? moduleGraph.idToModuleMap.keys()
+        : Array.prototype[Symbol.iterator]()
     }
 
     addWatchFile(id: string) {
@@ -254,7 +286,7 @@ export async function createPluginContainer(
       const err = formatError(e, position, this)
       const msg = buildErrorMessage(
         err,
-        [chalk.yellow(`warning: ${err.message}`)],
+        [colors.yellow(`warning: ${err.message}`)],
         false
       )
       logger.warn(msg, {
@@ -278,7 +310,12 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context
   ) {
-    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+    const err = (
+      typeof e === 'string' ? new Error(e) : e
+    ) as postcss.CssSyntaxError & RollupError
+    if (err.file && err.name === 'CssSyntaxError') {
+      err.id = normalizePath(err.file)
+    }
     if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
     if (ctx._activeId && !err.id) err.id = ctx._activeId
     if (ctx._activeCode) {
@@ -296,7 +333,7 @@ export async function createPluginContainer(
           errLocation = numberToPos(ctx._activeCode, pos)
         } catch (err2) {
           logger.error(
-            chalk.red(
+            colors.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`
             ),
             // print extra newline to separate the two errors
@@ -327,7 +364,7 @@ export async function createPluginContainer(
           line: (err as any).line,
           column: (err as any).column
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+        err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
       }
     }
     return err
@@ -403,11 +440,7 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          ...[acornClassFields, acornStaticClassFeatures].concat(
-            options.acornInjectPlugins
-          )
-        )
+        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
       }
       return {
         acorn,
@@ -415,6 +448,8 @@ export async function createPluginContainer(
         ...options
       }
     })(),
+
+    getModuleInfo,
 
     async buildStart() {
       await Promise.all(
@@ -478,7 +513,9 @@ export async function createPluginContainer(
         if (!seenResolves[key]) {
           seenResolves[key] = true
           debugResolve(
-            `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+            `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
+              id
+            )}`
           )
         }
       }
@@ -500,6 +537,9 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         const result = await plugin.load.call(ctx as any, id, { ssr })
         if (result != null) {
+          if (isObject(result)) {
+            updateModuleInfo(id, result)
+          }
           return result
         }
       }
@@ -531,8 +571,13 @@ export async function createPluginContainer(
             prettifyUrl(id, root)
           )
         if (isObject(result)) {
-          code = result.code || ''
-          if (result.map) ctx.sourcemapChain.push(result.map)
+          if (result.code !== undefined) {
+            code = result.code
+            if (result.map) {
+              ctx.sourcemapChain.push(result.map)
+            }
+          }
+          updateModuleInfo(id, result)
         } else {
           code = result
         }

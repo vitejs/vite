@@ -1,12 +1,17 @@
 import path from 'path'
 import { promises as fs } from 'fs'
-import { Logger } from '../logger'
+import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true
 })
+
+// Virtual modules should be prefixed with a null byte to avoid a
+// false positive "missing source" warning. We also check for certain
+// prefixes used for special handling in esbuildDepPlugin.
+const virtualSourceRE = /^(\0|dep:|browser-external:)/
 
 interface SourceMapLike {
   sources: string[]
@@ -30,7 +35,7 @@ export async function injectSourcesContent(
   const missingSources: string[] = []
   map.sourcesContent = await Promise.all(
     map.sources.map((sourcePath) => {
-      if (sourcePath) {
+      if (sourcePath && !virtualSourceRE.test(sourcePath)) {
         sourcePath = decodeURI(sourcePath)
         if (sourceRoot) {
           sourcePath = path.resolve(sourceRoot, sourcePath)

@@ -1,19 +1,19 @@
 import qs from 'querystring'
 import path from 'path'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
-import { compiler } from './compiler'
-import { ResolvedOptions } from '.'
+import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
+import type { ResolvedOptions } from '.'
 import {
   createDescriptor,
   getPrevDescriptor,
-  setDescriptor
+  setSrcDescriptor
 } from './utils/descriptorCache'
-import { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
-import { resolveScript } from './script'
+import { resolveScript, isUseInlineTemplate } from './script'
 import { transformTemplateInMain } from './template'
 import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
-import { RawSourceMap, SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
 import { createRollupError } from './utils/error'
 import { transformWithEsbuild } from 'vite'
 import { EXPORT_HELPER_ID } from './helper'
@@ -53,14 +53,8 @@ export async function transformMain(
   )
 
   // template
-  // Check if we can use compile template as inlined render function
-  // inside <script setup>. This can only be done for build because
-  // inlined template cannot be individually hot updated.
-  const useInlineTemplate =
-    !devServer &&
-    descriptor.scriptSetup &&
-    !(descriptor.template && descriptor.template.src)
-  const hasTemplateImport = descriptor.template && !useInlineTemplate
+  const hasTemplateImport =
+    descriptor.template && !isUseInlineTemplate(descriptor, !devServer)
 
   let templateCode = ''
   let templateMap: RawSourceMap | undefined
@@ -243,7 +237,7 @@ async function genTemplateCode(
       await linkSrcToDescriptor(template.src, descriptor, pluginContext)
     }
     const src = template.src || descriptor.filename
-    const srcQuery = template.src ? `&src` : ``
+    const srcQuery = template.src ? `&src=${descriptor.id}` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
@@ -272,14 +266,10 @@ async function genScriptCode(
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
     if ((!script.lang || script.lang === 'ts') && !script.src) {
-      scriptCode = compiler.rewriteDefault(
+      scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
-        script.lang === 'ts'
-          ? ['typescript']
-          : script.lang === 'tsx'
-          ? ['typescript', 'jsx']
-          : undefined
+        script.lang === 'ts' ? ['typescript'] : undefined
       )
       map = script.map
     } else {
@@ -289,7 +279,7 @@ async function genScriptCode(
       const src = script.src || descriptor.filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
       const attrsQuery = attrsToQuery(script.attrs, langFallback)
-      const srcQuery = script.src ? `&src` : ``
+      const srcQuery = script.src ? `&src=${descriptor.id}` : ``
       const query = `?vue&type=script${srcQuery}${attrsQuery}`
       const request = JSON.stringify(src + query)
       scriptCode =
@@ -320,7 +310,7 @@ async function genStyleCode(
       // do not include module in default query, since we use it to indicate
       // that the module needs to export the modules json
       const attrsQuery = attrsToQuery(style.attrs, 'css')
-      const srcQuery = style.src ? `&src` : ``
+      const srcQuery = style.src ? `&src=${descriptor.id}` : ``
       const directQuery = asCustomElement ? `&inline` : ``
       const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
       const styleRequest = src + query + attrsQuery
@@ -407,7 +397,7 @@ async function linkSrcToDescriptor(
     (await pluginContext.resolve(src, descriptor.filename))?.id || src
   // #1812 if the src points to a dep file, the resolved id may contain a
   // version query.
-  setDescriptor(srcFile.replace(/\?.*$/, ''), descriptor)
+  setSrcDescriptor(srcFile.replace(/\?.*$/, ''), descriptor)
 }
 
 // these are built-in query parameters so should be ignored

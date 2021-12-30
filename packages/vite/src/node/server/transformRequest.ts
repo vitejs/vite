@@ -2,9 +2,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
-import { SourceDescription, SourceMap } from 'rollup'
-import { ViteDevServer } from '..'
-import chalk from 'chalk'
+import type { SourceDescription, SourceMap } from 'rollup'
+import type { ViteDevServer } from '..'
+import colors from 'picocolors'
 import {
   createDebugger,
   cleanUrl,
@@ -43,20 +43,15 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
-  const pending = server._pendingRequests[url]
-  if (pending) {
-    debugTransform(
-      `[reuse pending] for ${prettifyUrl(url, server.config.root)}`
-    )
-    return pending
+  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
+  let request = server._pendingRequests.get(cacheKey)
+  if (!request) {
+    request = doTransform(url, server, options)
+    server._pendingRequests.set(cacheKey, request)
+    const done = () => server._pendingRequests.delete(cacheKey)
+    request.then(done, done)
   }
-  const result = doTransform(url, server, options)
-  server._pendingRequests[url] = result
-  const onDone = () => {
-    server._pendingRequests[url] = null
-  }
-  result.then(onDone, onDone)
-  return result
+  return request
 }
 
 async function doTransform(
@@ -70,7 +65,7 @@ async function doTransform(
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
-  const module = await server.moduleGraph.getModuleByUrl(url)
+  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
   // check if we have a fresh cache
   const cached =
@@ -87,7 +82,8 @@ async function doTransform(
   }
 
   // resolve
-  const id = (await pluginContainer.resolveId(url))?.id || url
+  const id =
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
   const file = cleanUrl(id)
 
   let code: string | null = null
@@ -152,7 +148,7 @@ async function doTransform(
   }
 
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
@@ -168,7 +164,7 @@ async function doTransform(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(transformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)

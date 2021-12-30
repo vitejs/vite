@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import { ResolvedConfig } from '..'
-import { Loader, Plugin, build, transform } from 'esbuild'
+import type { ResolvedConfig } from '..'
+import type { Loader, Plugin, OnLoadResult } from 'esbuild'
+import { build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -18,21 +19,23 @@ import {
   externalRE,
   dataUrlRE,
   multilineCommentsRE,
-  singlelineCommentsRE
+  singlelineCommentsRE,
+  virtualModuleRE,
+  virtualModulePrefix
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import type { PluginContainer } from '../server/pluginContainer'
+import { createPluginContainer } from '../server/pluginContainer'
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 import { performance } from 'perf_hooks'
-import chalk from 'chalk'
+import colors from 'picocolors'
 
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro)$/
+
+const setupRE = /<script\s+setup/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since
@@ -84,7 +87,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   if (!entries.length) {
     if (!explicitEntryPatterns && !config.optimizeDeps.include) {
       config.logger.warn(
-        chalk.yellow(
+        colors.yellow(
           '(!) Could not auto-determine entry point from rollupOptions or html files ' +
             'and there are no explicit optimizeDeps.include patterns. ' +
             'Skipping dependency pre-bundling.'
@@ -146,6 +149,7 @@ export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
+const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
 function esbuildScanPlugin(
   config: ResolvedConfig,
@@ -185,6 +189,8 @@ function esbuildScanPlugin(
   return {
     name: 'vite:dep-scan',
     setup(build) {
+      const localScripts: Record<string, OnLoadResult> = {}
+
       // external urls
       build.onResolve({ filter: externalRE }, ({ path }) => ({
         path,
@@ -196,6 +202,19 @@ function esbuildScanPlugin(
         path,
         external: true
       }))
+
+      // local scripts (`<script>` in Svelte and `<script setup>` in Vue)
+      build.onResolve({ filter: virtualModuleRE }, ({ path }) => {
+        return {
+          // strip prefix to get valid filesystem path so esbuild can resolve imports in the file
+          path: path.replace(virtualModulePrefix, ''),
+          namespace: 'local-script'
+        }
+      })
+
+      build.onLoad({ filter: /.*/, namespace: 'local-script' }, ({ path }) => {
+        return localScripts[path]
+      })
 
       // html types: extract script contents -----------------------------------
       build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
@@ -220,11 +239,10 @@ function esbuildScanPlugin(
           let match: RegExpExecArray | null
           while ((match = regex.exec(raw))) {
             const [, openTag, content] = match
-            const srcMatch = openTag.match(srcRE)
             const typeMatch = openTag.match(typeRE)
-            const langMatch = openTag.match(langRE)
             const type =
               typeMatch && (typeMatch[1] || typeMatch[2] || typeMatch[3])
+            const langMatch = openTag.match(langRE)
             const lang =
               langMatch && (langMatch[1] || langMatch[2] || langMatch[3])
             // skip type="application/ld+json" and other non-JS types
@@ -241,36 +259,42 @@ function esbuildScanPlugin(
             if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
               loader = lang
             }
+            const srcMatch = openTag.match(srcRE)
             if (srcMatch) {
               const src = srcMatch[1] || srcMatch[2] || srcMatch[3]
               js += `import ${JSON.stringify(src)}\n`
             } else if (content.trim()) {
-              js += content + '\n'
+              // There can be module scripts (`<script context="module">` in Svelte and `<script>` in Vue)
+              // or local scripts (`<script>` in Svelte and `<script setup>` in Vue)
+              // We need to handle these separately in case variable names are reused between them
+              const contextMatch = openTag.match(contextRE)
+              const context =
+                contextMatch &&
+                (contextMatch[1] || contextMatch[2] || contextMatch[3])
+              if (
+                (path.endsWith('.vue') && setupRE.test(openTag)) ||
+                (path.endsWith('.svelte') && context !== 'module')
+              ) {
+                // append imports in TS to prevent esbuild from removing them
+                // since they may be used in the template
+                const localContent =
+                  content +
+                  (loader.startsWith('ts') ? extractImportPaths(content) : '')
+                localScripts[path] = {
+                  loader,
+                  contents: localContent
+                }
+                js += `import '${virtualModulePrefix}${path}';\n`
+              } else {
+                js += content + '\n'
+              }
             }
           }
-          // empty singleline & multiline comments to avoid matching comments
-          const code = js
-            .replace(multilineCommentsRE, '/* */')
-            .replace(singlelineCommentsRE, '')
 
-          if (
-            loader.startsWith('ts') &&
-            (path.endsWith('.svelte') ||
-              (path.endsWith('.vue') && /<script\s+setup/.test(raw)))
-          ) {
-            // when using TS + (Vue + <script setup>) or Svelte, imports may seem
-            // unused to esbuild and dropped in the build output, which prevents
-            // esbuild from crawling further.
-            // the solution is to add `import 'x'` for every source to force
-            // esbuild to keep crawling due to potential side effects.
-            let m
-            while ((m = importsRE.exec(code)) != null) {
-              // This is necessary to avoid infinite loops with zero-width matches
-              if (m.index === importsRE.lastIndex) {
-                importsRE.lastIndex++
-              }
-              js += `\nimport ${m[1]}`
-            }
+          // `<script>` in Svelte has imports that can be used in the template
+          // so we handle them here too
+          if (loader.startsWith('ts') && path.endsWith('.svelte')) {
+            js += extractImportPaths(js)
           }
 
           // This will trigger incorrectly if `export default` is contained
@@ -448,6 +472,31 @@ async function transformGlob(
     s.overwrite(expStart, endIndex, exp)
   }
   return s.toString()
+}
+
+/**
+ * when using TS + (Vue + `<script setup>`) or Svelte, imports may seem
+ * unused to esbuild and dropped in the build output, which prevents
+ * esbuild from crawling further.
+ * the solution is to add `import 'x'` for every source to force
+ * esbuild to keep crawling due to potential side effects.
+ */
+function extractImportPaths(code: string) {
+  // empty singleline & multiline comments to avoid matching comments
+  code = code
+    .replace(multilineCommentsRE, '/* */')
+    .replace(singlelineCommentsRE, '')
+
+  let js = ''
+  let m
+  while ((m = importsRE.exec(code)) != null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === importsRE.lastIndex) {
+      importsRE.lastIndex++
+    }
+    js += `\nimport ${m[1]}`
+  }
+  return js
 }
 
 export function shouldExternalizeDep(

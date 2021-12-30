@@ -1,15 +1,15 @@
-import chalk from 'chalk'
-import { Server, STATUS_CODES } from 'http'
-import {
-  createServer as createHttpsServer,
-  ServerOptions as HttpsServerOptions
-} from 'https'
-import WebSocket from 'ws'
-import { WebSocket as WebSocketTypes } from 'types/ws'
-import { ErrorPayload, HMRPayload } from 'types/hmrPayload'
-import { ResolvedConfig } from '..'
+import colors from 'picocolors'
+import type { Server } from 'http'
+import { STATUS_CODES } from 'http'
+import type { ServerOptions as HttpsServerOptions } from 'https'
+import { createServer as createHttpsServer } from 'https'
+import type { ServerOptions } from 'ws'
+import { WebSocketServer as WebSocket } from 'ws'
+import type { WebSocket as WebSocketTypes } from 'types/ws'
+import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import { Socket } from 'net'
+import type { Socket } from 'net'
 export const HMR_HEADER = 'vite-hmr'
 
 export interface WebSocketServer {
@@ -24,14 +24,14 @@ export function createWebSocketServer(
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions
 ): WebSocketServer {
-  let wss: WebSocket.Server
+  let wss: WebSocket
   let httpsServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const wsServer = (hmr && hmr.server) || server
 
   if (wsServer) {
-    wss = new WebSocket.Server({ noServer: true })
+    wss = new WebSocket({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
       if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
@@ -40,7 +40,7 @@ export function createWebSocketServer(
       }
     })
   } else {
-    const websocketServerOptions: WebSocket.ServerOptions = {}
+    const websocketServerOptions: ServerOptions = {}
     const port = (hmr && hmr.port) || 24678
     if (httpsOptions) {
       // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
@@ -68,7 +68,7 @@ export function createWebSocketServer(
     }
 
     // vite dev server in middleware mode
-    wss = new WebSocket.Server(websocketServerOptions)
+    wss = new WebSocket(websocketServerOptions)
   }
 
   wss.on('connection', (socket) => {
@@ -82,7 +82,7 @@ export function createWebSocketServer(
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
       config.logger.error(
-        chalk.red(`WebSocket server error:\n${e.stack || e.message}`),
+        colors.red(`WebSocket server error:\n${e.stack || e.message}`),
         { error: e }
       )
     }
@@ -105,7 +105,8 @@ export function createWebSocketServer(
 
       const stringified = JSON.stringify(payload)
       wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        // readyState 1 means the connection is open
+        if (client.readyState === 1) {
           client.send(stringified)
         }
       })
@@ -113,6 +114,9 @@ export function createWebSocketServer(
 
     close() {
       return new Promise((resolve, reject) => {
+        wss.clients.forEach((client) => {
+          client.terminate()
+        })
         wss.close((err) => {
           if (err) {
             reject(err)
