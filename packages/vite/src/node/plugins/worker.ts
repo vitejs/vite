@@ -72,6 +72,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             normalPlugins,
             postPlugins
           ),
+          preserveEntrySignatures: false,
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           }
