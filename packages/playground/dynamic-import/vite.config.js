@@ -2,6 +2,9 @@ const fs = require('fs')
 const path = require('path')
 
 module.exports = {
+  resolve: {
+    preserveSymlinks: true
+  },
   plugins: [
     {
       name: 'copy',

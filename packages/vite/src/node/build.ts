@@ -647,12 +647,15 @@ function getPkgName(root: string) {
 function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
   const cache = new Map<string, boolean>()
   return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
+    if (id.includes('node_modules') && !isCSSRequest(id)) {
+      if (staticImportedByEntry(id, getModuleInfo, cache)) {
+        return 'vendor'
+      } else {
+        const entryName = getDynamicImportEntry(id, getModuleInfo, [])
+        if (entryName) {
+          return `async-vendor-${entryName}`
+        }
+      }
     }
   }
 }
@@ -691,6 +694,36 @@ function staticImportedByEntry(
   )
   cache.set(id, someImporterIs)
   return someImporterIs
+}
+
+function getDynamicImportEntry(
+  id: string,
+  getModuleInfo: GetModuleInfo,
+  importStack: string[] = []
+): string | void {
+  const mod = getModuleInfo(id)
+  if (!mod || importStack.includes(id)) {
+    return
+  }
+
+  if (
+    mod.dynamicImporters.length > 0 &&
+    mod.dynamicImporters.some((importer) => !importer.includes('node_modules'))
+  ) {
+    return path.basename(id, path.extname(id))
+  }
+
+  let entry
+  for (const importer of mod.importers) {
+    entry = getDynamicImportEntry(
+      importer,
+      getModuleInfo,
+      importStack.concat(id)
+    )
+    if (entry) {
+      return entry
+    }
+  }
 }
 
 export function resolveLibFilename(

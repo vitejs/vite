@@ -7,5 +7,8 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "dep-a": "file:./dep-a"
   }
 }
