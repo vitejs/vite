@@ -763,6 +763,7 @@ importers:
       magic-string: ^0.25.7
       micromatch: ^4.0.4
       mrmime: ^1.0.0
+      node-forge: ^0.10.0
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -775,7 +776,6 @@ importers:
       resolve.exports: ^1.1.0
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.0
-      selfsigned: ^1.10.11
       sirv: ^1.0.19
       source-map: ^0.6.1
       source-map-support: ^0.5.21
@@ -839,6 +839,7 @@ importers:
       magic-string: 0.25.7
       micromatch: 4.0.4
       mrmime: 1.0.0
+      node-forge: 0.10.0
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
@@ -848,7 +849,6 @@ importers:
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
-      selfsigned: 1.10.11
       sirv: 1.0.19
       source-map: 0.6.1
       source-map-support: 0.5.21
