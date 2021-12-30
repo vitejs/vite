@@ -1,21 +1,12 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { resolvePlugins } from '../plugins'
-import { parse as parseUrl, URLSearchParams } from 'url'
 import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
+import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-
-function parseWorkerRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
-}
 
 const WorkerFileId = 'worker_file'
 
@@ -27,7 +18,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (isBuild) {
-        const parsedQuery = parseWorkerRequest(id)
+        const parsedQuery = parseRequest(id)
         if (
           parsedQuery &&
           (parsedQuery.worker ?? parsedQuery.sharedworker) != null
@@ -38,7 +29,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(_, id) {
-      const query = parseWorkerRequest(id)
+      const query = parseRequest(id)
       if (query && query[WorkerFileId] != null) {
         return {
           code: `import '${ENV_PUBLIC_PATH}'\n` + _
