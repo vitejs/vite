@@ -549,14 +549,14 @@ async function doBuild(
         watch: {
           ...watcherOptions,
           chokidar: {
+            ignoreInitial: true,
+            ignorePermissionErrors: true,
+            ...watcherOptions.chokidar,
             ignored: [
               '**/node_modules/**',
               '**/.git/**',
               ...(watcherOptions?.chokidar?.ignored || [])
-            ],
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar
+            ]
           }
         }
       })
