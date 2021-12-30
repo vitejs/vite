@@ -39,7 +39,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
-import type { RollupOptions } from 'rollup'
+import type { RenderedChunk, RollupOptions } from 'rollup'
 
 const debug = createDebugger('vite:config')
 

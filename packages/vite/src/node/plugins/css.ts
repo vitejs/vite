@@ -120,11 +120,6 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const chunkToEmittedCssFileMap = new WeakMap<
-  RenderedChunk,
-  Set<string>
->()
-
 export const removedPureCssFilesCache = new WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
@@ -370,6 +365,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      chunk.importedCss = new Set()
+
       if (!chunkCSS) {
         return null
       }
@@ -427,10 +424,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(
-            chunk,
-            new Set([this.getFileName(fileHandle)])
-          )
+          chunk.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
@@ -488,17 +482,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunks.has(file)) {
-                const css = chunkToEmittedCssFileMap.get(
-                  bundle[file] as OutputChunk
-                )
-                if (css) {
-                  let existing = chunkToEmittedCssFileMap.get(chunk)
-                  if (!existing) {
-                    existing = new Set()
-                  }
-                  css.forEach((file) => existing!.add(file))
-                  chunkToEmittedCssFileMap.set(chunk, existing)
-                }
+                const { importedCss } = bundle[file] as OutputChunk
+                importedCss.forEach((file) => chunk.importedCss.add(file))
                 return false
               }
               return true
@@ -1309,4 +1294,10 @@ const preProcessors = Object.freeze({
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
+}
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    importedCss: Set<string>
+  }
 }

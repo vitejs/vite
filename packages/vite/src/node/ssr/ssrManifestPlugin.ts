@@ -4,7 +4,6 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { chunkToEmittedCssFileMap } from '../plugins/css'
 import { chunkToEmittedAssetsMap } from '../plugins/asset'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import { normalizePath } from '../utils'
@@ -22,9 +21,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
         if (chunk.type === 'chunk') {
           // links for certain entry chunks are already generated in static HTML
           // in those cases we only need to record info for non-entry chunks
-          const cssFiles = chunk.isEntry
-            ? null
-            : chunkToEmittedCssFileMap.get(chunk)
+          const cssFiles = chunk.isEntry ? null : chunk.importedCss
           const assetFiles = chunkToEmittedAssetsMap.get(chunk)
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
