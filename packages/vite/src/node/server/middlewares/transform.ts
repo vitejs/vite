@@ -98,7 +98,6 @@ export function transformMiddleware(
         return
       }
     }
-
     let url: string
     try {
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
@@ -106,8 +105,7 @@ export function transformMiddleware(
         '\0'
       )
     } catch (e) {
-      res.end(`Bad request: ${e.message}`)
-      return
+      return next(e)
     }
 
     const withoutQuery = cleanUrl(url)
