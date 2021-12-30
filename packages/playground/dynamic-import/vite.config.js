@@ -5,6 +5,9 @@ module.exports = {
   resolve: {
     preserveSymlinks: true
   },
+  optimizeDeps: {
+    exclude: ['dep-a']
+  },
   plugins: [
     {
       name: 'copy',
