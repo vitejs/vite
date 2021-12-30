@@ -5,7 +5,7 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./types",
-    "rootDir": "./src",
+    "rootDirs": ["./src", "./"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
