@@ -566,7 +566,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
-      if (staticImportedUrls.size) {
+      if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach((url) => {
           transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
         })
