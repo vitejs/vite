@@ -540,6 +540,8 @@ interface CSSAtImportResolvers {
   less: ResolveFn
 }
 
+const SASS_EXTENSIONS = ['.scss', '.sass', '.css']
+
 function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
   let cssResolve: ResolveFn | undefined
   let sassResolve: ResolveFn | undefined
@@ -561,7 +563,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (
         sassResolve ||
         (sassResolve = config.createResolver({
-          extensions: ['.scss', '.sass', '.css'],
+          extensions: SASS_EXTENSIONS,
           mainFields: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
@@ -1056,7 +1058,44 @@ const scss: SassStylePreprocessor = async (
       }
     })
   }
-  const importer = [internalImporter]
+
+  const globImporter: Sass.Importer = (url, importer) => {
+    if (!glob.isDynamicPattern(url)) {
+      return null
+    }
+
+    let includePaths: string[] = []
+    if (path.isAbsolute(importer)) {
+      includePaths.push(path.dirname(importer))
+    }
+    includePaths = [...new Set([...includePaths, ...options.includePaths!])]
+
+    const filePaths = new Set<string>()
+    includePaths.forEach((includePath) => {
+      const globPaths = glob.sync(url, { cwd: includePath })
+
+      globPaths.forEach((relativePath) => {
+        filePaths.add(
+          path
+            .resolve(includePath, relativePath)
+            // This fixes a problem with importing absolute paths on Windows.
+            .split(`\\`)
+            .join(`/`)
+        )
+      })
+    })
+
+    let contents: string = ''
+    for (const filePath of filePaths) {
+      if (SASS_EXTENSIONS.some((ext) => filePath.endsWith(ext))) {
+        contents += `@import '${filePath}';\n`
+      }
+    }
+
+    return { contents }
+  }
+
+  const importer = [internalImporter, globImporter]
   if (options.importer) {
     Array.isArray(options.importer)
       ? importer.push(...options.importer)
