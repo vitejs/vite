@@ -1,7 +1,7 @@
 /**
  * modified from https://github.com/vuejs/vue-next/blob/master/scripts/release.js
  */
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ExecaChildProcess, Options as ExecaOptions } from 'execa'
 import execa from 'execa'
 import { readFileSync, writeFileSync } from 'fs'
@@ -45,11 +45,11 @@ const run: RunFn = (bin, args, opts = {}) =>
 type DryRunFn = (bin: string, args: string[], opts?: any) => void
 
 const dryRun: DryRunFn = (bin, args, opts: any) =>
-  console.log(chalk.blue(`[dryrun] ${bin} ${args.join(' ')}`), opts)
+  console.log(colors.blue(`[dryrun] ${bin} ${args.join(' ')}`), opts)
 
 const runIfNotDry = isDryRun ? dryRun : run
 
-const step: (msg: string) => void = (msg) => console.log(chalk.cyan(msg))
+const step: (msg: string) => void = (msg) => console.log(colors.cyan(msg))
 
 async function main(): Promise<void> {
   let targetVersion: string | undefined = args._[0]
@@ -170,10 +170,10 @@ async function publishPackage(
     await runIfNotDry('yarn', publicArgs, {
       stdio: 'pipe'
     })
-    console.log(chalk.green(`Successfully published ${pkgName}@${version}`))
+    console.log(colors.green(`Successfully published ${pkgName}@${version}`))
   } catch (e: any) {
     if (e.stderr.match(/previously published/)) {
-      console.log(chalk.red(`Skipping already published: ${pkgName}`))
+      console.log(colors.red(`Skipping already published: ${pkgName}`))
     } else {
       throw e
     }
