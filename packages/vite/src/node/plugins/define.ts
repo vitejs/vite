@@ -63,14 +63,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const pattern = new RegExp(
       // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(` +
-        Object.keys(replacements)
+      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(
+        ${Object.keys(replacements)
           .map((str) => {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
-          .join('|') +
-        // prevent trailing assignments
-        `)\\b(?!${characters})(?!\\s*?=[^=])`,
+          .join('|')}
+        )\\b(?!${characters})(?!\\s*?=[^=])`,
+      // prevent trailing assignments
       'g'
     )
 
