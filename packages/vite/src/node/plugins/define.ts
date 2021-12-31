@@ -61,15 +61,15 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const characters = '[\'"`\\/]'
 
+    const replacementsStr = Object.keys(replacements)
+      .map((str) => {
+        return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+      })
+      .join('|')
+
     const pattern = new RegExp(
       // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(
-        ${Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|')}
-        )\\b(?!${characters})(?!\\s*?=[^=])`,
+      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(${replacementsStr})\\b(?!${characters})(?!\\s*?=[^=])`,
       // prevent trailing assignments
       'g'
     )
