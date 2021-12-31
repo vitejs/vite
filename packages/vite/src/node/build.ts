@@ -700,7 +700,7 @@ function resolveDynamicImportEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
   importStack: string[] = []
-): string | void {
+): string | undefined {
   const mod = getModuleInfo(id)
   if (!mod || importStack.includes(id)) {
     return
@@ -710,8 +710,8 @@ function resolveDynamicImportEntry(
     mod.dynamicImporters.length > 0 &&
     mod.dynamicImporters.some((importer) => !importer.includes('node_modules'))
   ) {
+    const dirs = id.split(path.sep)
     if (id.includes('node_modules')) {
-      const dirs = id.split(path.sep)
       const nodeModulesIndex = dirs.lastIndexOf('node_modules')
       let packageName = dirs[nodeModulesIndex + 1]
       if (packageName.startsWith('@')) {
@@ -719,10 +719,12 @@ function resolveDynamicImportEntry(
       }
       return packageName
     }
-    return path.basename(id, path.extname(id))
+    let [parentDir, basename] = dirs.slice(-2)
+    basename = basename.replace(path.extname(basename), '')
+    return `${parentDir}-${basename}`
   }
 
-  let entry
+  let entry: string | undefined
   for (const importer of mod.importers) {
     entry = resolveDynamicImportEntry(
       importer,
@@ -733,6 +735,7 @@ function resolveDynamicImportEntry(
       return entry
     }
   }
+  return
 }
 
 export function resolveLibFilename(
