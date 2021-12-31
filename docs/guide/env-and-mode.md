@@ -39,7 +39,7 @@ An env file for a specific mode (e.g. `.env.production`) will take higher priori
 
 In addition, environment variables that already exist when Vite is executed have the highest priority and will not be overwritten by `.env` files.
 
-.env files are loaded at the start of vite. Restart the service after making changes.
+`.env` files are loaded at the start of Vite. Restart the server after making changes.
 :::
 
 Loaded env variables are also exposed to your client source code via `import.meta.env`.
