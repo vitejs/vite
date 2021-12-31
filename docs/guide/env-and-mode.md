@@ -24,7 +24,7 @@ It will also replace these strings appearing in JavaScript strings and Vue templ
 
 ## `.env` Files
 
-Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir) (if define the same variables will override variables in the following reverse order):
+Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir):
 
 ```
 .env                # loaded in all cases
@@ -32,6 +32,15 @@ Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional enviro
 .env.[mode]         # only loaded in specified mode
 .env.[mode].local   # only loaded in specified mode, ignored by git
 ```
+
+:::tip Env Loading Priorities
+
+  An env file for a specific mode (e.g. `.env.production`) will take higher priority than a generic one (e.g. `.env`).
+
+  In addition, environment variables that already exist when vite is executed have the highest priority and will not be overwritten by .env files.
+
+  .env files are loaded at the start of vite. Restart the service after making changes.
+:::
 
 Loaded env variables are also exposed to your client source code via `import.meta.env`.
 
