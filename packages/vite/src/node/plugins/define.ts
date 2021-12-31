@@ -59,16 +59,18 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...processEnv
     }
 
+    const characters = '[\'"`\\/]'
+
     const pattern = new RegExp(
       // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
+      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(` +
         Object.keys(replacements)
           .map((str) => {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
           .join('|') +
         // prevent trailing assignments
-        ')\\b(?!\\s*?=[^=])',
+        `)\\b(?!${characters})(?!\\s*?=[^=])`,
       'g'
     )
 
