@@ -9,7 +9,7 @@
   <p class="inter">this will be styled with a font-face</p>
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
-  <Button>DynamicButton</Button>
+  <Button>CommonButton</Button>
   <div>
     encrypted message:
     <p class="encrypted-msg">{{ encryptedMsg }}</p>
@@ -20,8 +20,7 @@
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
-import { Button } from 'vant'
-import 'vant/lib/index.css'
+import Button from '../components/button'
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)

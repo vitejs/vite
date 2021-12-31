@@ -1,12 +1,11 @@
 <template>
   <h1>{{ msg }}</h1>
   <p class="import-meta-url">{{ url }}</p>
-  <Button>DynamicButton</Button>
+  <Button>CommonButton</Button>
 </template>
 
 <script>
-import { Button } from 'vant'
-import 'vant/lib/index.css'
+import Button from '../components/button'
 
 export default {
   async setup() {
