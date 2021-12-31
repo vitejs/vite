@@ -356,3 +356,40 @@ test('minify css', async () => {
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
 })
+
+test('sass glob import', async () => {
+  const el1 = await page.$('.sass-glob-foo')
+  const el2 = await page.$('.sass-glob-bar')
+  const el3 = await page.$('.sass-glob-baz')
+
+  expect(await getColor(el1)).toBe('lightblue')
+  expect(await getColor(el2)).toBe('lightblue')
+  expect(await getColor(el3)).toBe('lightblue')
+
+  if (!isBuild) {
+    editFile('sass-glob/foo.scss', (code) =>
+      code.replace('color: lightblue', 'color: blue')
+    )
+    await untilUpdated(() => getColor(el1), 'blue')
+    expect(await getColor(el2)).toBe('lightblue')
+    expect(await getColor(el3)).toBe('lightblue')
+
+    editFile('sass-glob/bar.sass', (code) =>
+      code.replace('color: lightblue', 'color: red')
+    )
+    await untilUpdated(() => getColor(el2), 'red')
+    expect(await getColor(el1)).toBe('blue')
+    expect(await getColor(el3)).toBe('lightblue')
+
+    editFile('sass-glob/baz.css', (code) =>
+      code.replace('color: lightblue', 'color: green')
+    )
+    await untilUpdated(() => getColor(el3), 'green')
+    expect(await getColor(el1)).toBe('blue')
+    expect(await getColor(el2)).toBe('red')
+
+    // test add/remove
+    removeFile('sass-glob/baz.css')
+    await untilUpdated(() => getColor(el3), 'black')
+  }
+})

@@ -1059,9 +1059,9 @@ const scss: SassStylePreprocessor = async (
     })
   }
 
-  const globImporter: Sass.Importer = (url, importer) => {
+  const globImporter: Sass.Importer = (url, importer, done) => {
     if (!glob.isDynamicPattern(url)) {
-      return null
+      return done?.(null)
     }
 
     let includePaths: string[] = []
@@ -1092,7 +1092,7 @@ const scss: SassStylePreprocessor = async (
       }
     }
 
-    return { contents }
+    return done?.({ contents })
   }
 
   const importer = [internalImporter, globImporter]
