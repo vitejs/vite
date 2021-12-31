@@ -33,6 +33,15 @@ Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional enviro
 .env.[mode].local   # only loaded in specified mode, ignored by git
 ```
 
+:::tip Env Loading Priorities
+
+An env file for a specific mode (e.g. `.env.production`) will take higher priority than a generic one (e.g. `.env`).
+
+In addition, environment variables that already exist when Vite is executed have the highest priority and will not be overwritten by `.env` files.
+
+`.env` files are loaded at the start of Vite. Restart the server after making changes.
+:::
+
 Loaded env variables are also exposed to your client source code via `import.meta.env`.
 
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
