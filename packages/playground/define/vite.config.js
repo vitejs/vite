@@ -17,8 +17,8 @@ module.exports = {
     },
     __VAR_NAME__: false,
     'process.env.SOMEVAR': '"SOMEVAR"',
-    __IMPORT_FILE_NAME__: 'importFileName',
-    __EXPORT_FILE_NAME__: 'exportFileName',
-    PATH: 'filePath'
+    __IMPORT_FILE_NAME__: '"importFileName"',
+    __EXPORT_FILE_NAME__: '"exportFileName"',
+    PATH: '"filePath"'
   }
 }
