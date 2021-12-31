@@ -114,7 +114,9 @@ export function transformMiddleware(
         const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
           ?.transformResult?.map
         if (map) {
-          return send(req, res, JSON.stringify(map), 'json')
+          return send(req, res, JSON.stringify(map), 'json', {
+            headers: server.config.server.headers
+          })
         } else {
           return next()
         }
@@ -181,16 +183,13 @@ export function transformMiddleware(
           const isDep =
             DEP_VERSION_RE.test(url) ||
             (cacheDirPrefix && url.startsWith(cacheDirPrefix))
-          return send(
-            req,
-            res,
-            result.code,
-            type,
-            result.etag,
+          return send(req, res, result.code, type, {
+            etag: result.etag,
             // allow browser to cache npm deps!
-            isDep ? 'max-age=31536000,immutable' : 'no-cache',
-            result.map
-          )
+            cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
+            headers: server.config.server.headers,
+            map: result.map
+          })
         }
       }
     } catch (e) {
