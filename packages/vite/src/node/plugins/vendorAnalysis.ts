@@ -56,10 +56,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (!impName) continue
                   const varName = alias || impName
 
-                  redirects.set(
-                    info.id + '/+/' + varName,
-                    id + '/+/' + impName
-                  )
+                  redirects.set(info.id + '/+/' + varName, id + '/+/' + impName)
                 }
               }
             }
@@ -76,9 +73,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
         const addImport = async (imp: string) => {
           // if it's a redirect, use the resolved id
           const getTrueImp = (imp: string): string =>
-            redirects.has(imp)
-              ? getTrueImp(redirects.get(imp)!)
-              : imp
+            redirects.has(imp) ? getTrueImp(redirects.get(imp)!) : imp
           const trueImp = getTrueImp(imp)
           const impId = trueImp.split('/+/')[0]
           imps.add(trueImp)
