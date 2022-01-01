@@ -10,7 +10,8 @@ const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:vendor-analysis')
 
 /**
- * Build only.
+ * Build only. Analyze which modules are used by entries and
+ * generate manualChunks config to split those files to vendor.
  */
 export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
   const vendorImports = new Set<string>()
