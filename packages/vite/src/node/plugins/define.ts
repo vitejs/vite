@@ -59,7 +59,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...processEnv
     }
 
-    const characters = '[\'"`\\/]'
+    // The following characters are not allowed as word boundaries
+    const characters = '[\'"`\\/-_]'
 
     const replacementsStr = Object.keys(replacements)
       .map((str) => {
@@ -68,9 +69,13 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       .join('|')
 
     const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      `(?<!${characters})(?<!(?<!\\.\\.)\\.)\\b(${replacementsStr})\\b(?!${characters})(?!\\s*?=[^=])`,
-      // prevent trailing assignments
+      `(?<!${characters})` +
+        // Do not allow preceding '.', but do allow preceding '...' for spread operations
+        '(?<!(?<!\\.\\.)\\.)' +
+        `\\b(${replacementsStr})\\b` +
+        `(?!${characters})` +
+        // prevent trailing assignments
+        '(?!\\s*?=[^=])',
       'g'
     )
 
