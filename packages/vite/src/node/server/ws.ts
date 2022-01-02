@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { Server } from 'http'
 import { STATUS_CODES } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
@@ -82,7 +82,7 @@ export function createWebSocketServer(
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code !== 'EADDRINUSE') {
       config.logger.error(
-        chalk.red(`WebSocket server error:\n${e.stack || e.message}`),
+        colors.red(`WebSocket server error:\n${e.stack || e.message}`),
         { error: e }
       )
     }

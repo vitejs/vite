@@ -1,4 +1,5 @@
 <pre class="result"></pre>
+<pre class="globraw"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -24,4 +25,19 @@
     })
     document.querySelector('.result').textContent = JSON.stringify(res, null, 2)
   })
+</script>
+
+<script type="module">
+  const rawModules = import.meta.globEager('/dir/*.json', {
+    assert: { type: 'raw' }
+  })
+  const globraw = {}
+  Object.keys(rawModules).forEach((key) => {
+    globraw[key] = JSON.parse(rawModules[key])
+  })
+  document.querySelector('.globraw').textContent = JSON.stringify(
+    globraw,
+    null,
+    2
+  )
 </script>

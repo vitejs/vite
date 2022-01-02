@@ -44,7 +44,6 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
-    config.build.ssr ? ssrRequireHookPlugin(config) : null,
     htmlInlineScriptProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
@@ -61,6 +60,7 @@ export async function resolvePlugins(
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
+    config.build.ssr ? ssrRequireHookPlugin(config) : null,
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,

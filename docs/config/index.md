@@ -1,3 +1,7 @@
+---
+title: Configuring Vite
+---
+
 # Configuring Vite
 
 ## Config File

@@ -18,7 +18,7 @@ import {
   dynamicImport
 } from './utils'
 import { resolvePlugins } from './plugins'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
@@ -515,10 +515,12 @@ export async function resolveConfig(
     error?: Error
   ) => {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
-          error ? `\n${error.stack}` : ''
-        }`
+      colors.yellow(
+        colors.bold(
+          `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+            error ? `\n${error.stack}` : ''
+          }`
+        )
       )
     )
   }
@@ -618,7 +620,7 @@ export async function resolveConfig(
 
   if (config.build?.terserOptions && config.build.minify === 'esbuild') {
     logger.warn(
-      chalk.yellow(
+      colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
           `Note Vite now defaults to use esbuild for minification. If you still ` +
           `prefer Terser, set build.minify to "terser".`
@@ -644,9 +646,11 @@ function resolveBaseUrl(
   }
   if (base.startsWith('.')) {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-          `URL, ./, or an empty string.`
+      colors.yellow(
+        colors.bold(
+          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+            `URL, ./, or an empty string.`
+        )
       )
     )
     base = '/'
@@ -663,7 +667,9 @@ function resolveBaseUrl(
     // ensure leading slash
     if (!base.startsWith('/')) {
       logger.warn(
-        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+        colors.yellow(
+          colors.bold(`(!) "base" option should start with a slash.`)
+        )
       )
       base = '/' + base
     }
@@ -671,7 +677,9 @@ function resolveBaseUrl(
 
   // ensure ending slash
   if (!base.endsWith('/')) {
-    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+    )
     base += '/'
   }
 
@@ -888,7 +896,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`failed to load config from ${resolvedPath}`),
+      colors.red(`failed to load config from ${resolvedPath}`),
       { error: e }
     )
     throw e
