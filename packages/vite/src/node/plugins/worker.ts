@@ -75,7 +75,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
           },
-          preserveEntrySignatures: format === 'es' ? false : undefined
+          preserveEntrySignatures: false
         })
         let code: string
         try {
