@@ -213,7 +213,7 @@ export function buildVendorAnalysisPlugin(): Plugin {
       await traceImport(entryIds, vendorImps)
       isDebug && debug(`${timeFrom(startTrace)} trace imports`)
 
-      /* collect all files imported by entry */
+      // collect all files imported by entry
       for (const imp of vendorImps) {
         const file = imp.split('/+/', 2)[0]
         if (file.includes('node_modules')) vendorImports.add(file)
