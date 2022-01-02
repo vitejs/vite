@@ -16,7 +16,6 @@ importers:
       '@types/semver': ^7.3.9
       '@typescript-eslint/eslint-plugin': ^5.8.1
       '@typescript-eslint/parser': ^5.8.1
-      chalk: ^4.1.2
       conventional-changelog-cli: ^2.2.2
       cross-env: ^7.0.3
       esbuild: 0.14.3
@@ -30,6 +29,7 @@ importers:
       minimist: ^1.2.5
       node-fetch: ^2.6.6
       npm-run-all: ^4.1.5
+      picocolors: ^1.0.0
       playwright-chromium: ^1.17.1
       prettier: 2.5.1
       prompts: ^2.4.2
@@ -52,7 +52,6 @@ importers:
       '@types/semver': 7.3.9
       '@typescript-eslint/eslint-plugin': 5.8.1_3a47348159e115370aa4cba56aba33b6
       '@typescript-eslint/parser': 5.8.1_eslint@8.5.0+typescript@4.5.4
-      chalk: 4.1.2
       conventional-changelog-cli: 2.2.2
       cross-env: 7.0.3
       esbuild: 0.14.3
@@ -66,6 +65,7 @@ importers:
       minimist: 1.2.5
       node-fetch: 2.6.6
       npm-run-all: 4.1.5
+      picocolors: 1.0.0
       playwright-chromium: 1.17.1
       prettier: 2.5.1
       prompts: 2.4.2
@@ -765,7 +765,8 @@ importers:
       launch-editor-middleware: ^2.3.0
       magic-string: ^0.25.7
       micromatch: ^4.0.4
-      mime: ^3.0.0
+      mrmime: ^1.0.0
+      node-forge: ^0.10.0
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -778,7 +779,6 @@ importers:
       resolve.exports: ^1.1.0
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.0
-      selfsigned: ^1.10.11
       sirv: ^1.0.19
       source-map: ^0.6.1
       source-map-support: ^0.5.21
@@ -841,7 +841,8 @@ importers:
       launch-editor-middleware: 2.3.0
       magic-string: 0.25.7
       micromatch: 4.0.4
-      mime: 3.0.0
+      mrmime: 1.0.0
+      node-forge: 0.10.0
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
@@ -851,7 +852,6 @@ importers:
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
-      selfsigned: 1.10.11
       sirv: 1.0.19
       source-map: 0.6.1
       source-map-support: 0.5.21
@@ -6334,12 +6334,6 @@ packages:
   /mime/2.6.0:
     resolution: {integrity: sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg==}
     engines: {node: '>=4.0.0'}
-    hasBin: true
-    dev: true
-
-  /mime/3.0.0:
-    resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
-    engines: {node: '>=10.0.0'}
     hasBin: true
     dev: true
 

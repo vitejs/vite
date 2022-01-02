@@ -147,6 +147,35 @@
   <code class="dynamic-import-meta-url-2"></code>
 </p>
 
+<h2>url in style tag</h2>
+<h3>url</h3>
+<style class="style-url">
+  .style-url-assets {
+    background: url('./nested/asset.png');
+    background-size: 10px 10px;
+  }
+</style>
+<div style="background: url('./nested/asset.png'); background-size: 10px 10px">
+  inline style
+</div>
+<div class="style-url-assets">use style class</div>
+
+<h3>base64</h3>
+<style class="style-base64">
+  .style-base64-assets {
+    background: url('./static/icon.png');
+  }
+</style>
+<p class="inline-style-base64" style="background: url(./static/icon.png)">
+  inline style
+</p>
+<p class="style-base64-assets">use style class</p>
+
+<h3 class="import-css">@import</h3>
+<style class="style-import">
+  @import url('./css/import.css');
+</style>
+
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
