@@ -203,9 +203,14 @@ importers:
 
   packages/playground/json:
     specifiers:
+      json-module: file:./json-module
       vue: ^3.2.25
     devDependencies:
+      json-module: link:json-module
       vue: 3.2.26
+
+  packages/playground/json/json-module:
+    specifiers: {}
 
   packages/playground/legacy:
     specifiers:
