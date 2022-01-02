@@ -79,6 +79,13 @@ describe('plugin mock', () => {
         export const foo = 1
       `,
       '/node_modules/dep/dep3.js': `
+        import 'dep4'
+        export * from 'dep5'
+      `,
+      '/node_modules/dep/dep4.js': `
+        export default 4
+      `,
+      '/node_modules/dep/dep5.js': `
         export default 2
         export const foo = 3
       `
@@ -90,7 +97,9 @@ describe('plugin mock', () => {
       dep: '/node_modules/dep/index.js',
       dep1: '/node_modules/dep/dep1.js',
       dep2: '/node_modules/dep/dep2.js',
-      dep3: '/node_modules/dep/dep3.js'
+      dep3: '/node_modules/dep/dep3.js',
+      dep4: '/node_modules/dep/dep4.js',
+      dep5: '/node_modules/dep/dep5.js'
     }
 
     const getModuleInfo = (id: string): ModuleInfo | null => {
@@ -134,7 +143,11 @@ describe('plugin mock', () => {
     expect(manualChunks('/node_modules/dep/dep1.js')).toBeUndefined()
     // dep2 shouldn't since it's not imported by index.js
     expect(manualChunks('/node_modules/dep/dep2.js')).toBeUndefined()
-    // dep3 should be a vendor chunk
-    expect(manualChunks('/node_modules/dep/dep3.js')).toBe('vendor')
+    // dep3 shouldn't, rollup will handle this
+    expect(manualChunks('/node_modules/dep/dep3.js')).toBeUndefined()
+    // dep4 should since it's imported by dep3
+    expect(manualChunks('/node_modules/dep/dep4.js')).toBe('vendor')
+    // dep5 should since it's imported by dep3
+    expect(manualChunks('/node_modules/dep/dep5.js')).toBe('vendor')
   })
 })

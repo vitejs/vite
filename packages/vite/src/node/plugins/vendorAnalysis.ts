@@ -120,7 +120,7 @@ export function buildVendorAnalysisPlugin(): Plugin {
                   redirects.set(info.id + '/+/' + exp, id + '/+/' + exp)
                 }
               } else {
-                // match export from statement
+                // export { foo } from "foo.js"
                 const [, imps] = statment.match(exportFromRE) || []
                 // named imports
                 if (imps) {
@@ -148,11 +148,18 @@ export function buildVendorAnalysisPlugin(): Plugin {
       const traceImport = async (ids: Set<string>, imps: Set<string>) => {
         const nextids = new Set<string>()
         // push the import to vendor
-        const addImport = (imp: string) => {
+        const addImport = async (imp: string) => {
           // if it's a redirect, use the resolved id
-          const getTrueImp = (imp: string): string =>
-            redirects.has(imp) ? getTrueImp(redirects.get(imp)!) : imp
-          const trueImp = getTrueImp(imp)
+          const getTrueImp = async (imp: string): Promise<string> => {
+            const file = imp.split('/+/', 2)[0]
+            nextids.add(file)
+            if (redirects.has(imp)) {
+              const target = redirects.get(imp)!
+              return getTrueImp(target)
+            }
+            return imp
+          }
+          const trueImp = await getTrueImp(imp)
           const impId = trueImp.split('/+/', 2)[0]
           imps.add(trueImp)
           nextids.add(impId)
@@ -180,6 +187,7 @@ export function buildVendorAnalysisPlugin(): Plugin {
               ) {
                 // import "foo.js"
                 // import * as foo from "foo.js"
+                await addImport(id + '/+/*')
                 nextids.add(id)
               } else if (!statment.startsWith('export')) {
                 // import def, { foo, bar } from "foo.js"
@@ -192,14 +200,14 @@ export function buildVendorAnalysisPlugin(): Plugin {
 
                 // default import
                 if (impDef) {
-                  addImport(id + '/+/default')
+                  await addImport(id + '/+/default')
                 }
                 // named imports
                 if (imps) {
                   for (const name of imps.split(',')) {
                     const [, impName] = name.trim().match(splitAsRE) || []
                     if (!impName) continue
-                    addImport(id + '/+/' + impName)
+                    await addImport(id + '/+/' + impName)
                   }
                 }
               }
