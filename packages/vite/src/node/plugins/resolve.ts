@@ -725,8 +725,7 @@ export function resolvePackageEntry(
         }
       }
     }
-
-    entryPoint = entryPoint || data.main || 'index.js'
+    entryPoint = entryPoint || data.main || 'index'
 
     // make sure we don't get scripts when looking for sass
     if (
