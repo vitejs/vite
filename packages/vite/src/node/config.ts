@@ -692,10 +692,7 @@ function mergeConfigRecursively(
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [
-        ...(Array.isArray(existing) ? existing : [existing]),
-        ...(Array.isArray(value) ? value : [value])
-      ]
+      merged[key] = [...arraify(existing), ...arraify(value)]
       continue
     }
     if (isObject(existing) && isObject(value)) {
