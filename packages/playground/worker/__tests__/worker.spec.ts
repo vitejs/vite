@@ -10,6 +10,10 @@ test('normal', async () => {
     () => page.textContent('.mode'),
     isBuild ? 'production' : 'development'
   )
+  await untilUpdated(
+    () => page.textContent('.bundle-with-plugin'),
+    'worker bundle with plugin success!'
+  )
 })
 
 test('TS output', async () => {
@@ -52,7 +56,6 @@ if (isBuild) {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 3 worker chunk
     expect(files.length).toBe(4)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')

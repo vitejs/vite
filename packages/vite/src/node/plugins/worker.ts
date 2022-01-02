@@ -1,17 +1,23 @@
 import type { ResolvedConfig } from '../config'
+import { sortUserPlugins } from '../config'
 import type { Plugin } from '../plugin'
-import { resolvePlugins } from '../plugins'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+import { resolvePlugins } from '.'
 
 const WorkerFileId = 'worker_file'
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const workerBundleOptions = {
+    format: config.worker?.format || 'iife',
+    plugins: sortUserPlugins(config.worker?.plugins as Plugin[]),
+    rollupOptions: config.worker?.rollupOptions || {}
+  }
 
   return {
     name: 'vite:worker',
@@ -46,17 +52,26 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild) {
         // bundle the file as entry to support imports
         const rollup = require('rollup') as typeof Rollup
+        const { plugins, rollupOptions, format } = workerBundleOptions
+        const [prePlugins, normalPlugins, postPlugins] = plugins
         const bundle = await rollup.rollup({
+          ...rollupOptions,
           input: cleanUrl(id),
-          plugins: await resolvePlugins({ ...config }, [], [], []),
+          plugins: await resolvePlugins(
+            { ...config },
+            prePlugins,
+            normalPlugins,
+            postPlugins
+          ),
           onwarn(warning, warn) {
             onRollupWarning(warning, warn, config)
-          }
+          },
+          preserveEntrySignatures: false
         })
         let code: string
         try {
           const { output } = await bundle.generate({
-            format: 'iife',
+            format,
             sourcemap: config.build.sourcemap
           })
           code = output[0].code
@@ -65,13 +80,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
         const content = Buffer.from(code)
         if (query.inline != null) {
+          const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
           return `const encodedJs = "${content.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
+                return objURL ? new Worker(objURL, ${workerOptions}) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
