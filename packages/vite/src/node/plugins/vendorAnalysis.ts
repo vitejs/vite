@@ -148,9 +148,9 @@ export function buildVendorAnalysisPlugin(): Plugin {
       const traceImport = async (ids: Set<string>, imps: Set<string>) => {
         const nextids = new Set<string>()
         // push the import to vendor
-        const addImport = async (imp: string) => {
+        const addImport = (imp: string) => {
           // if it's a redirect, use the resolved id
-          const getTrueImp = async (imp: string): Promise<string> => {
+          const getTrueImp = (imp: string): string => {
             const file = imp.split('/+/', 2)[0]
             nextids.add(file)
             if (redirects.has(imp)) {
@@ -159,7 +159,7 @@ export function buildVendorAnalysisPlugin(): Plugin {
             }
             return imp
           }
-          const trueImp = await getTrueImp(imp)
+          const trueImp = getTrueImp(imp)
           const impId = trueImp.split('/+/', 2)[0]
           imps.add(trueImp)
           nextids.add(impId)
@@ -187,7 +187,7 @@ export function buildVendorAnalysisPlugin(): Plugin {
               ) {
                 // import "foo.js"
                 // import * as foo from "foo.js"
-                await addImport(id + '/+/*')
+                addImport(id + '/+/*')
                 nextids.add(id)
               } else if (!statment.startsWith('export')) {
                 // import def, { foo, bar } from "foo.js"
@@ -200,14 +200,14 @@ export function buildVendorAnalysisPlugin(): Plugin {
 
                 // default import
                 if (impDef) {
-                  await addImport(id + '/+/default')
+                  addImport(id + '/+/default')
                 }
                 // named imports
                 if (imps) {
                   for (const name of imps.split(',')) {
                     const [, impName] = name.trim().match(splitAsRE) || []
                     if (!impName) continue
-                    await addImport(id + '/+/' + impName)
+                    addImport(id + '/+/' + impName)
                   }
                 }
               }
