@@ -1,4 +1,3 @@
-import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ModuleInfo } from 'rollup'
 import type { ImportSpecifier } from 'es-module-lexer'
@@ -10,18 +9,26 @@ import { performance } from 'perf_hooks'
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:vendor-analysis')
 
+export const exportFromRE = /export\s+{([^}]+)/
+export const importRE = /import\s+(?:([^,\s{]+)\s*)?(?:\s*,\s*)?(?:\{([^\}]+))?/
+export const splitAsRE = /([\S]+)(?:\s+as\s+([\S]+))?/
+
 /**
  * Build only. Analyze which modules are used by entries and
  * generate manualChunks config to split those files to vendor.
+ *
+ * It scans all redirect exports (eg. `export * from './foo.js'`) and marks
+ * only the target files (eg. `foo.js`) as vendor, make it consistent with
+ * rollup's code splitting algorithm.
  */
-export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
+export function buildVendorAnalysisPlugin(): Plugin {
   const vendorImports = new Set<string>()
   return {
     name: 'vite:vendor-analysis',
     async buildEnd() {
       await init
 
-      const entrieIds = new Set<string>()
+      const entryIds = new Set<string>()
       const importsCache = new Map<string, readonly ImportSpecifier[]>()
       const exportsCache = new Map<string, readonly string[]>()
       const parseImps = async (
@@ -40,25 +47,27 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
         const exports = [...exps]
 
         // process export *
-        for (const imp of imports) {
-          // don't process dynamic imports
-          if (imp.d !== -1 || !imp.n) continue
-          // resolve the absolute id
-          const id = (await this.resolve(imp.n, info.id))?.id
-          if (!id) continue
-          const rinfo = this.getModuleInfo(id)
-          if (!rinfo || !rinfo.code) continue
-          const statment: string = info.code!.substring(imp.ss, imp.se)
-          if (
-            statment.startsWith('export *') &&
-            !statment.startsWith('export * as')
-          ) {
-            // merge all exports from module
-            ;(await findExports(rinfo, trace)).forEach((exp) => {
-              exports.push(exp)
-            })
-          }
-        }
+        await Promise.all(
+          imports.map(async (imp) => {
+            // don't process dynamic imports
+            if (imp.d !== -1 || !imp.n) return
+            // resolve the absolute id
+            const id = (await this.resolve(imp.n, info.id))?.id
+            if (!id) return
+            const rinfo = this.getModuleInfo(id)
+            if (!rinfo || !rinfo.code) return
+            const statment: string = info.code!.substring(imp.ss, imp.se)
+            if (
+              statment.startsWith('export *') &&
+              !statment.startsWith('export * as')
+            ) {
+              // merge all exports from module
+              for (const exp of await findExports(rinfo, trace)) {
+                exports.push(exp)
+              }
+            }
+          })
+        )
 
         importsCache.set(info.id, imports)
         exportsCache.set(info.id, exports)
@@ -79,7 +88,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
         return (await parseImps(info, trace))[1]
       }
 
-      /* find all redirects */
+      // find all redirects
       const redirects = new Map<string, string>()
       let modulesAnalyzed = 0
       const collectRedirectsStart = performance.now()
@@ -88,7 +97,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
           modulesAnalyzed++
           const info = this.getModuleInfo(module)
           if (info && info.code) {
-            if (info.isEntry) entrieIds.add(module)
+            if (info.isEntry) entryIds.add(module)
             // get all imports from module
             const imports = await findImports(info)
             for (const imp of imports) {
@@ -112,17 +121,12 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else {
                 // match export from statement
-                const [, impDef, imps] =
-                  statment.match(/export\s+(?:([^,]+)\s*,\s*)?{([^}]+)/) || []
-                // default import
-                if (impDef) {
-                  redirects.set(info.id + '/+/' + impDef, id + '/+/default')
-                }
+                const [, imps] = statment.match(exportFromRE) || []
                 // named imports
                 if (imps) {
                   for (const name of imps.split(',')) {
                     const [, impName, alias] =
-                      name.trim().match(/([\S]+)(?:\s+as\s+([\S]+))?/) || []
+                      name.trim().match(splitAsRE) || []
                     if (!impName) continue
                     const varName = alias || impName
 
@@ -139,7 +143,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
       )
       isDebug && debug(`${timeFrom(collectRedirectsStart)} collect redirects`)
 
-      /* trace all files imported by entry */
+      // trace all files imported by entry
       const traced = new Set<string>()
       const traceImport = async (ids: Set<string>, imps: Set<string>) => {
         const nextids = new Set<string>()
@@ -155,6 +159,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
         await Promise.all(
           Array.from(ids).map(async (module) => {
+            // circular dependency
             if (traced.has(module)) return
             traced.add(module)
             const info = this.getModuleInfo(module)
@@ -176,15 +181,14 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // import "foo.js"
                 // import * as foo from "foo.js"
                 nextids.add(id)
-              } else {
+              } else if (!statment.startsWith('export')) {
                 // import def, { foo, bar } from "foo.js"
+                // don't worry about export since it's already handled
+                // by processing redirects in addImport
 
                 // impDef: def
                 // imps:  foo, bar
-                const [, impDef, imps] =
-                  statment.match(
-                    /(?:import|export)\s+(?:([^,\s{]+)\s*)?(?:\s*,\s*)?(?:\{([^\}]+))?/
-                  ) || []
+                const [, impDef, imps] = statment.match(importRE) || []
 
                 // default import
                 if (impDef) {
@@ -193,8 +197,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // named imports
                 if (imps) {
                   for (const name of imps.split(',')) {
-                    const [, impName] =
-                      name.trim().match(/([\S]+)(?:\s+as\s+([\S]+))?/) || []
+                    const [, impName] = name.trim().match(splitAsRE) || []
                     if (!impName) continue
                     addImport(id + '/+/' + impName)
                   }
@@ -207,7 +210,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
       const vendorImps = new Set<string>()
       const startTrace = performance.now()
-      await traceImport(entrieIds, vendorImps)
+      await traceImport(entryIds, vendorImps)
       isDebug && debug(`${timeFrom(startTrace)} trace imports`)
 
       /* collect all files imported by entry */
@@ -218,7 +221,7 @@ export function buildVendorAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       isDebug &&
         debug(
-          `${modulesAnalyzed} modules analyzed, ${entrieIds.size} entries, ${vendorImports.size} vendor files`
+          `${modulesAnalyzed} modules analyzed, ${entryIds.size} entries, ${vendorImports.size} vendor files`
         )
     },
     outputOptions(options) {
