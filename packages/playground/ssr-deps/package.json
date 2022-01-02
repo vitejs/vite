@@ -6,7 +6,7 @@
     "dev": "node server",
     "serve": "cross-env NODE_ENV=production node server",
     "debug": "node --inspect-brk server",
-    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
+    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",

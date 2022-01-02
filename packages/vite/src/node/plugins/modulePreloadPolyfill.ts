@@ -1,5 +1,5 @@
-import { ResolvedConfig } from '..'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '..'
+import type { Plugin } from '../plugin'
 import { isModernFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'

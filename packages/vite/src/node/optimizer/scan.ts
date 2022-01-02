@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import { ResolvedConfig } from '..'
-import { Loader, Plugin, build, transform, OnLoadResult } from 'esbuild'
+import type { ResolvedConfig } from '..'
+import type { Loader, Plugin, OnLoadResult } from 'esbuild'
+import { build, transform } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -22,15 +23,13 @@ import {
   virtualModuleRE,
   virtualModulePrefix
 } from '../utils'
-import {
-  createPluginContainer,
-  PluginContainer
-} from '../server/pluginContainer'
+import type { PluginContainer } from '../server/pluginContainer'
+import { createPluginContainer } from '../server/pluginContainer'
 import { init, parse } from 'es-module-lexer'
 import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
 import { performance } from 'perf_hooks'
-import chalk from 'chalk'
+import colors from 'picocolors'
 
 const debug = createDebugger('vite:deps')
 
@@ -88,7 +87,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   if (!entries.length) {
     if (!explicitEntryPatterns && !config.optimizeDeps.include) {
       config.logger.warn(
-        chalk.yellow(
+        colors.yellow(
           '(!) Could not auto-determine entry point from rollupOptions or html files ' +
             'and there are no explicit optimizeDeps.include patterns. ' +
             'Skipping dependency pre-bundling.'

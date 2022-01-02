@@ -1,18 +1,13 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from './plugin'
-import { BuildOptions, resolveBuildOptions } from './build'
-import {
-  ResolvedServerOptions,
-  resolveServerOptions,
-  ServerOptions
-} from './server'
-import {
-  ResolvedPreviewOptions,
-  resolvePreviewOptions,
-  PreviewOptions
-} from './preview'
-import { CSSOptions } from './plugins/css'
+import type { Plugin } from './plugin'
+import type { BuildOptions } from './build'
+import { resolveBuildOptions } from './build'
+import type { ResolvedServerOptions, ServerOptions } from './server'
+import { resolveServerOptions } from './server'
+import type { ResolvedPreviewOptions, PreviewOptions } from './preview'
+import { resolvePreviewOptions } from './preview'
+import type { CSSOptions } from './plugins/css'
 import {
   arraify,
   createDebugger,
@@ -23,31 +18,27 @@ import {
   dynamicImport
 } from './utils'
 import { resolvePlugins } from './plugins'
-import chalk from 'chalk'
-import { ESBuildOptions } from './plugins/esbuild'
+import colors from 'picocolors'
+import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
-import { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
-import {
-  InternalResolveOptions,
-  ResolveOptions,
-  resolvePlugin
-} from './plugins/resolve'
-import { createLogger, Logger, LogLevel } from './logger'
-import { DepOptimizationOptions } from './optimizer'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import { resolvePlugin } from './plugins/resolve'
+import type { Logger, LogLevel } from './logger'
+import { createLogger } from './logger'
+import type { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
-import { ResolvedBuildOptions } from '.'
+import type { ResolvedBuildOptions } from '.'
 import { parse as parseUrl } from 'url'
-import { JsonOptions } from './plugins/json'
-import {
-  createPluginContainer,
-  PluginContainer
-} from './server/pluginContainer'
+import type { JsonOptions } from './plugins/json'
+import type { PluginContainer } from './server/pluginContainer'
+import { createPluginContainer } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
-import { PackageCache } from './packages'
+import type { PackageCache } from './packages'
 
 const debug = createDebugger('vite:config')
 
@@ -502,10 +493,12 @@ export async function resolveConfig(
     error?: Error
   ) => {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
-          error ? `\n${error.stack}` : ''
-        }`
+      colors.yellow(
+        colors.bold(
+          `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+            error ? `\n${error.stack}` : ''
+          }`
+        )
       )
     )
   }
@@ -605,7 +598,7 @@ export async function resolveConfig(
 
   if (config.build?.terserOptions && config.build.minify === 'esbuild') {
     logger.warn(
-      chalk.yellow(
+      colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
           `Note Vite now defaults to use esbuild for minification. If you still ` +
           `prefer Terser, set build.minify to "terser".`
@@ -631,9 +624,11 @@ function resolveBaseUrl(
   }
   if (base.startsWith('.')) {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-          `URL, ./, or an empty string.`
+      colors.yellow(
+        colors.bold(
+          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+            `URL, ./, or an empty string.`
+        )
       )
     )
     base = '/'
@@ -650,7 +645,9 @@ function resolveBaseUrl(
     // ensure leading slash
     if (!base.startsWith('/')) {
       logger.warn(
-        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+        colors.yellow(
+          colors.bold(`(!) "base" option should start with a slash.`)
+        )
       )
       base = '/' + base
     }
@@ -658,7 +655,9 @@ function resolveBaseUrl(
 
   // ensure ending slash
   if (!base.endsWith('/')) {
-    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+    )
     base += '/'
   }
 
@@ -875,7 +874,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`failed to load config from ${resolvedPath}`),
+      colors.red(`failed to load config from ${resolvedPath}`),
       { error: e }
     )
     throw e

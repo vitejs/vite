@@ -1,6 +1,6 @@
-import { SFCDescriptor } from 'vue/compiler-sfc'
-import { TransformPluginContext } from 'rollup'
-import { ResolvedOptions } from '.'
+import type { SFCDescriptor } from 'vue/compiler-sfc'
+import type { TransformPluginContext } from 'rollup'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformStyle(

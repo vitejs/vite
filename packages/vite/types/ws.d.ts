@@ -12,7 +12,7 @@
 /// <reference types="node" />
 
 import { EventEmitter } from 'events'
-import {
+import type {
   Agent,
   ClientRequest,
   ClientRequestArgs,
@@ -20,11 +20,11 @@ import {
   OutgoingHttpHeaders,
   Server as HTTPServer
 } from 'http'
-import { Server as HTTPSServer } from 'https'
-import { Duplex, DuplexOptions } from 'stream'
-import { SecureContextOptions } from 'tls'
-import { URL } from 'url'
-import { ZlibOptions } from 'zlib'
+import type { Server as HTTPSServer } from 'https'
+import type { Duplex, DuplexOptions } from 'stream'
+import type { SecureContextOptions } from 'tls'
+import type { URL } from 'url'
+import type { ZlibOptions } from 'zlib'
 
 // WebSocket socket.
 declare class WebSocket extends EventEmitter {

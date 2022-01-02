@@ -1,11 +1,6 @@
-import { InlineConfig } from '..'
-import {
-  mergeConfig,
-  resolveConfig,
-  UserConfigExport,
-  resolveEnvPrefix,
-  UserConfig
-} from '../config'
+import type { InlineConfig } from '..'
+import type { UserConfigExport, UserConfig } from '../config'
+import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -172,6 +167,9 @@ describe('preview config', () => {
     host: true,
     open: true,
     https: true,
+    headers: {
+      'Cache-Control': 'no-store'
+    },
     proxy: { '/foo': 'http://localhost:4567' },
     cors: false
   })

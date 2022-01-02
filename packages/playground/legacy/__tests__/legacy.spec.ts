@@ -1,4 +1,9 @@
-import { isBuild, untilUpdated } from '../../testUtils'
+import {
+  findAssetFile,
+  isBuild,
+  readManifest,
+  untilUpdated
+} from '../../testUtils'
 
 test('should work', async () => {
   expect(await page.textContent('#app')).toMatch('Hello')
@@ -44,3 +49,28 @@ test('generates assets', async () => {
     true
   )
 })
+
+if (isBuild) {
+  test('should generate correct manifest', async () => {
+    const manifest = readManifest()
+    expect(manifest['../../../vite/legacy-polyfills']).toBeDefined()
+    expect(manifest['../../../vite/legacy-polyfills'].src).toBe(
+      '../../../vite/legacy-polyfills'
+    )
+  })
+
+  test('should minify legacy chunks with terser', async () => {
+    // This is a ghetto heuristic, but terser output seems to reliably start
+    // with one of the following, and non-terser output (including unminified or
+    // ebuild-minified) does not!
+    const terserPatt = /^(?:!function|System.register)/
+
+    expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPatt)
+    expect(findAssetFile(/chunk-async\./)).not.toMatch(terserPatt)
+    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPatt)
+    expect(findAssetFile(/immutable-chunk\./)).not.toMatch(terserPatt)
+    expect(findAssetFile(/index-legacy/)).toMatch(terserPatt)
+    expect(findAssetFile(/index\./)).not.toMatch(terserPatt)
+    expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPatt)
+  })
+}
