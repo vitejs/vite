@@ -6,7 +6,6 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import { resolvePlugins } from '.'
 
 const WorkerFileId = 'worker_file'
 
@@ -17,16 +16,10 @@ export async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
   const { plugins, rollupOptions, format } = config.worker
-  const [prePlugins, normalPlugins, postPlugins] = plugins
   const bundle = await rollup.rollup({
     ...rollupOptions,
     input: cleanUrl(id),
-    plugins: await resolvePlugins(
-      { ...config },
-      prePlugins,
-      normalPlugins,
-      postPlugins
-    ),
+    plugins,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },

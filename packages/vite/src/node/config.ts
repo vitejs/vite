@@ -224,7 +224,7 @@ export interface SSROptions {
 
 export interface ResolveWorkerOptions {
   format: 'es' | 'iife'
-  plugins: readonly Plugin[][]
+  plugins: Plugin[]
   rollupOptions: RollupOptions
 }
 
@@ -336,7 +336,7 @@ export async function resolveConfig(
   // resolve worker
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: config.worker?.format || 'iife',
-    plugins: sortUserPlugins(config.worker?.plugins as Plugin[]),
+    plugins: [],
     rollupOptions: config.worker?.rollupOptions || {}
   }
 
@@ -505,6 +505,16 @@ export async function resolveConfig(
     worker: resolvedWorkerOptions
   }
 
+  // flat config.worker.plugin
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(config.worker?.plugins as Plugin[])
+
+  resolved.worker.plugins = await resolvePlugins(
+    { ...resolved },
+    workerPrePlugins,
+    workerNormalPlugins,
+    workerPostPlugins
+  )
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
