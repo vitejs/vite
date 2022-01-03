@@ -499,6 +499,15 @@ export async function createServer(
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
+  // escape colon in path
+  middlewares.use(function escapeColonMiddleware(req, res, next) {
+    if (req.url) {
+      // example url: /node_modules/.vite/node:stream.js?v=xxxxxxxx
+      req.url = req.url.replace(/:/g, '_')
+    }
+    next()
+  })
+
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
