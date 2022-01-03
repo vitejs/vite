@@ -186,16 +186,18 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-    rebindErrorStacktrace(e, stacktrace)
-    server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${stacktrace}`,
-      {
-        timestamp: true,
-        clear: server.config.clearScreen,
-        error: e
-      }
-    )
+    if (e.stack) {
+      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+      rebindErrorStacktrace(e, stacktrace)
+      server.config.logger.error(
+        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        {
+          timestamp: true,
+          clear: server.config.clearScreen,
+          error: e
+        }
+      )
+    }
     throw e
   }
 
