@@ -608,6 +608,7 @@ importers:
   packages/playground/vue:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
+      css-with-exports-field: ^1.0.0
       js-yaml: ^4.1.0
       less: ^4.1.2
       lodash-es: ^4.17.21
@@ -620,6 +621,7 @@ importers:
       vue: 3.2.26
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
+      css-with-exports-field: 1.0.0
       js-yaml: 4.1.0
       less: 4.1.2
       pug: 3.0.2
@@ -3542,6 +3544,16 @@ packages:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
 
+  /create-vite/2.7.2:
+    resolution: {integrity: sha512-4Eint1oL6GcZWGkgLbSmbzY1UNTkqQyjD9T4aM1YQsltKQ5ZNWDy+rvgYRPV9dR0XD6eLPs8TUUoge1xQCd4BA==}
+    engines: {node: '>=12.0.0'}
+    hasBin: true
+    dependencies:
+      kolorist: 1.5.0
+      minimist: 1.2.5
+      prompts: 2.4.2
+    dev: false
+
   /cross-env/7.0.3:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
     engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
@@ -3596,6 +3608,10 @@ packages:
   /css-unit-converter/1.1.2:
     resolution: {integrity: sha512-IiJwMC8rdZE0+xiEZHeru6YoONC4rfPMqGm2W85jMIbkFvv5nFTwJVFHam2eFrN6txmoUYFAFXiv8ICVeTO0MA==}
     dev: false
+
+  /css-with-exports-field/1.0.0:
+    resolution: {integrity: sha512-YCPKv36/w3+SrxwZ8E1FJXhDGTeGTKQmNA00VSePNTaO4VqSUdgB5XkhLL9qbF07m7Y+3nlTQJL5YLgRoewKFQ==}
+    dev: true
 
   /css/3.0.0:
     resolution: {integrity: sha512-DG9pFfwOrzc+hawpmqX/dHYHJG+Bsdb0klhyi1sDneOgGOXy9wQIC8hzyVp1e4NRYDBdxcylvywPkkXCHAzTyQ==}
