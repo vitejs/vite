@@ -36,7 +36,7 @@ importers:
       rimraf: ^3.0.2
       rollup: ^2.59.0
       semver: ^7.3.5
-      sirv: ^1.0.19
+      sirv: ^2.0.0
       ts-jest: ^27.1.2
       ts-node: ^10.4.0
       typescript: ~4.5.4
@@ -72,7 +72,7 @@ importers:
       rimraf: 3.0.2
       rollup: 2.62.0
       semver: 7.3.5
-      sirv: 1.0.19
+      sirv: 2.0.0
       ts-jest: 27.1.2_1b5a1be2010a86e622f02a11eaeb730f
       ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
       typescript: 4.5.4
@@ -779,7 +779,7 @@ importers:
       resolve.exports: ^1.1.0
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.0
-      sirv: ^1.0.19
+      sirv: ^2.0.0
       source-map: ^0.6.1
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
@@ -852,7 +852,7 @@ importers:
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
-      sirv: 1.0.19
+      sirv: 2.0.0
       source-map: 0.6.1
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
@@ -7825,13 +7825,13 @@ packages:
       is-arrayish: 0.3.2
     dev: false
 
-  /sirv/1.0.19:
-    resolution: {integrity: sha512-JuLThK3TnZG1TAKDwNIqNq6QA2afLOCcm+iE8D1Kj3GA40pSPsxQjjJl0J8X3tsR7T+CP1GavpzLwYkgVLWrZQ==}
+  /sirv/2.0.0:
+    resolution: {integrity: sha512-TT+4+zSM9LR8soWT5/4gOYHfB5a5XEOSV2LtmBRN5MUxi8kh7BSRGuoRYjeBaqhR4w+yx+k6t0OibDNgoLfF7w==}
     engines: {node: '>= 10'}
     dependencies:
       '@polka/url': 1.0.0-next.21
       mrmime: 1.0.0
-      totalist: 1.1.0
+      totalist: 2.0.0
     dev: true
 
   /sisteransi/1.0.5:
@@ -8422,8 +8422,8 @@ packages:
     resolution: {integrity: sha1-zCAOqyYT9BZtJ/+a/HylbUnfbrQ=}
     dev: true
 
-  /totalist/1.1.0:
-    resolution: {integrity: sha512-gduQwd1rOdDMGxFG1gEvhV88Oirdo2p+KjoYFU7k2g+i7n6AFFbDQ5kMPUsW0pNbfQsB/cwXvT1i4Bue0s9g5g==}
+  /totalist/2.0.0:
+    resolution: {integrity: sha512-+Y17F0YzxfACxTyjfhnJQEe7afPA0GSpYlFkl2VFMxYP7jshQf9gXV7cH47EfToBumFThfKBvfAcoUn6fdNeRQ==}
     engines: {node: '>=6'}
     dev: true
 
