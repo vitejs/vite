@@ -39,6 +39,8 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
+import type { RollupOptions } from 'rollup'
+import type { ResolveWorkerOptions } from './plugins/worker'
 
 const debug = createDebugger('vite:config')
 
@@ -185,6 +187,27 @@ export interface UserConfig {
    * @deprecated use `resolve.dedupe` instead
    */
   dedupe?: string[]
+  /**
+   * Worker bundle options
+   */
+  worker?: {
+    /**
+     * Output format for worker bundle
+     * @default 'iife'
+     */
+    format?: 'es' | 'iife'
+    /**
+     * Vite plugins that apply to worker bundle
+     */
+    plugins?: (PluginOption | PluginOption[])[]
+    /**
+     * Rollup options to build worker bundle
+     */
+    rollupOptions?: Omit<
+      RollupOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
@@ -208,7 +231,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps'
+    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -233,6 +256,7 @@ export type ResolvedConfig = Readonly<
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
     /** @internal */
     packageCache: PackageCache
+    worker: ResolveWorkerOptions
   }
 >
 
@@ -303,6 +327,13 @@ export async function resolveConfig(
   }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
+
+  // resolve worker
+  const resolvedWorkerOptions: ResolveWorkerOptions = {
+    format: config.worker?.format || 'iife',
+    plugins: sortUserPlugins(config.worker?.plugins as Plugin[]),
+    rollupOptions: config.worker?.rollupOptions || {}
+  }
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -465,7 +496,8 @@ export async function resolveConfig(
         preserveSymlinks: config.resolve?.preserveSymlinks,
         ...config.optimizeDeps?.esbuildOptions
       }
-    }
+    },
+    worker: resolvedWorkerOptions
   }
 
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
