@@ -8,7 +8,8 @@ import {
   singlelineCommentsRE
 } from '../utils'
 import path from 'path'
-import { parseWorkerRequest, bundleWorkerEntry } from './worker'
+import { bundleWorkerEntry } from './worker'
+import { parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 
@@ -21,7 +22,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const query = parseWorkerRequest(id)
+      const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
         return {
           code: `import '${ENV_PUBLIC_PATH}'\n` + code
