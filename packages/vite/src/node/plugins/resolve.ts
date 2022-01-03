@@ -725,13 +725,15 @@ export function resolvePackageEntry(
         }
       }
     }
-    entryPoint = entryPoint || data.main
+    entryPoint ||= data.main
 
-    // entry also emtry, should try default entry
+    // try default entry when entry is not define
     // https://nodejs.org/api/modules.html#all-together
-    for (let entry of entryPoint
+    const entryPoints = entryPoint
       ? [entryPoint]
-      : ['index.js', 'index.json', 'index.node']) {
+      : ['index.js', 'index.json', 'index.node']
+
+    for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
       if (
         options.mainFields?.[0] === 'sass' &&
