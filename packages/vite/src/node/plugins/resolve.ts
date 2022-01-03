@@ -725,7 +725,7 @@ export function resolvePackageEntry(
         }
       }
     }
-    entryPoint = entryPoint || data.main || 'index'
+    entryPoint = entryPoint || data.main
 
     // make sure we don't get scripts when looking for sass
     if (
@@ -742,21 +742,25 @@ export function resolvePackageEntry(
       entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
     }
 
-    entryPoint = path.join(dir, entryPoint)
-    const resolvedEntryPoint = tryFsResolve(entryPoint, options)
-
-    if (resolvedEntryPoint) {
-      isDebug &&
-        debug(
-          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
-            resolvedEntryPoint
-          )}`
-        )
-      setResolvedCache('.', resolvedEntryPoint, targetWeb)
-      return resolvedEntryPoint
-    } else {
-      packageEntryFailure(id)
+    // entry also emtry, should try default entry
+    // https://nodejs.org/api/modules.html#all-together
+    for (const entry of entryPoint
+      ? [entryPoint]
+      : ['index.js', 'index.json', 'index.node']) {
+      const entryPointPath = path.join(dir, entry)
+      const resolvedEntryPoint = tryFsResolve(entryPointPath, options)
+      if (resolvedEntryPoint) {
+        isDebug &&
+          debug(
+            `[package entry] ${colors.cyan(id)} -> ${colors.dim(
+              resolvedEntryPoint
+            )}`
+          )
+        setResolvedCache('.', resolvedEntryPoint, targetWeb)
+        return resolvedEntryPoint
+      }
     }
+    packageEntryFailure(id)
   } catch (e) {
     packageEntryFailure(id, e.message)
   }
