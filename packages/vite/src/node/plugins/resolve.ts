@@ -727,26 +727,26 @@ export function resolvePackageEntry(
     }
     entryPoint = entryPoint || data.main
 
-    // make sure we don't get scripts when looking for sass
-    if (
-      options.mainFields?.[0] === 'sass' &&
-      !options.extensions?.includes(path.extname(entryPoint))
-    ) {
-      entryPoint = ''
-      options.skipPackageJson = true
-    }
-
-    // resolve object browser field in package.json
-    const { browser: browserField } = data
-    if (targetWeb && isObject(browserField)) {
-      entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
-    }
-
     // entry also emtry, should try default entry
     // https://nodejs.org/api/modules.html#all-together
     for (const entry of entryPoint
       ? [entryPoint]
       : ['index.js', 'index.json', 'index.node']) {
+      // make sure we don't get scripts when looking for sass
+      if (
+        options.mainFields?.[0] === 'sass' &&
+        !options.extensions?.includes(path.extname(entryPoint))
+      ) {
+        entryPoint = ''
+        options.skipPackageJson = true
+      }
+
+      // resolve object browser field in package.json
+      const { browser: browserField } = data
+      if (targetWeb && isObject(browserField)) {
+        entryPoint = mapWithBrowserField(entryPoint, browserField) || entryPoint
+      }
+
       const entryPointPath = path.join(dir, entry)
       const resolvedEntryPoint = tryFsResolve(entryPointPath, options)
       if (resolvedEntryPoint) {
