@@ -40,7 +40,6 @@ import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
 import type { RollupOptions } from 'rollup'
-import type { ResolveWorkerOptions } from './plugins/worker'
 
 const debug = createDebugger('vite:config')
 
@@ -221,6 +220,12 @@ export interface SSROptions {
    * Default: 'node'
    */
   target?: SSRTarget
+}
+
+export interface ResolveWorkerOptions {
+  format: 'es' | 'iife'
+  plugins: readonly Plugin[][]
+  rollupOptions: RollupOptions
 }
 
 export interface InlineConfig extends UserConfig {

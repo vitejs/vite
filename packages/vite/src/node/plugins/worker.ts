@@ -7,15 +7,8 @@ import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
 import { resolvePlugins } from '.'
-import type { RollupOptions } from 'rollup'
 
 const WorkerFileId = 'worker_file'
-
-export interface ResolveWorkerOptions {
-  format: 'es' | 'iife'
-  plugins: readonly Plugin[][]
-  rollupOptions: RollupOptions
-}
 
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
