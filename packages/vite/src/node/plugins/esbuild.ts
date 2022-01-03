@@ -1,13 +1,13 @@
 import path from 'path'
-import chalk from 'chalk'
-import { Plugin } from '../plugin'
-import {
-  transform,
+import colors from 'picocolors'
+import type { Plugin } from '../plugin'
+import type {
   Message,
   Loader,
   TransformOptions,
   TransformResult
 } from 'esbuild'
+import { transform } from 'esbuild'
 import {
   cleanUrl,
   createDebugger,
@@ -15,12 +15,13 @@ import {
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
-import { SourceMap } from 'rollup'
-import { ResolvedConfig, ViteDevServer } from '..'
+import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { SourceMap } from 'rollup'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
-import { parse, TSConfckParseError, TSConfckParseResult } from 'tsconfck'
+import type { TSConfckParseResult } from 'tsconfck'
+import { parse, TSConfckParseError } from 'tsconfck'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -44,6 +45,7 @@ type TSConfigJSON = {
     jsxFragmentFactory?: string
     useDefineForClassFields?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    preserveValueImports?: boolean
   }
   [key: string]: any
 }
@@ -81,7 +83,8 @@ export async function transformWithEsbuild(
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
-      'importsNotUsedAsValues'
+      'importsNotUsedAsValues',
+      'preserveValueImports'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -202,7 +205,16 @@ const rollupToEsbuildFormatMap: Record<
 > = {
   es: 'esm',
   cjs: 'cjs',
-  iife: 'iife'
+
+  // passing `var Lib = (() => {})()` to esbuild with format = "iife"
+  // will turn it to `(() => { var Lib = (() => {})() })()`,
+  // so we remove the format config to tell esbuild not doing this
+  //
+  // although esbuild doesn't change format, there is still possibility
+  // that `{ treeShaking: true }` removes a top-level no-side-effect variable
+  // like: `var Lib = 1`, which becomes `` after esbuild transforming,
+  // but thankfully rollup does not do this optimization now
+  iife: undefined
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
@@ -227,6 +239,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, {
+        ...config.esbuild,
         target: target || undefined,
         ...(minify
           ? {
@@ -242,7 +255,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 }
 
 function prettifyMessage(m: Message, code: string): string {
-  let res = chalk.yellow(m.text)
+  let res = colors.yellow(m.text)
   if (m.location) {
     const lines = code.split(/\r?\n/g)
     const line = Number(m.location.line)

@@ -37,3 +37,9 @@ test('optimized dep', async () => {
     '[success] alias optimized'
   )
 })
+
+test('aliased module', async () => {
+  expect(await page.textContent('.aliased-module')).toMatch(
+    '[success] aliased module'
+  )
+})

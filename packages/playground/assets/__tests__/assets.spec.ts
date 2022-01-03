@@ -196,6 +196,19 @@ describe('unicode url', () => {
   })
 })
 
+describe('encodeURI', () => {
+  if (isBuild) {
+    test('img src with encodeURI', async () => {
+      const img = await page.$('.encodeURI')
+      expect(
+        await (
+          await img.getAttribute('src')
+        ).startsWith('data:image/png;base64')
+      ).toBe(true)
+    })
+  }
+})
+
 test('new URL(..., import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
 })

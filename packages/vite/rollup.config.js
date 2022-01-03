@@ -8,7 +8,7 @@ import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
@@ -118,12 +118,13 @@ const createNodeConfig = (isProduction) => {
         entries: {
           '@vue/compiler-dom': require.resolve(
             '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-          ),
-          'big.js': require.resolve('big.js/big.js')
+          )
         }
       }),
       nodeResolve({ preferBuiltins: true }),
       typescript({
+        tsconfig: 'src/node/tsconfig.json',
+        module: 'esnext',
         target: 'es2019',
         include: ['src/**/*.ts', 'types/**'],
         exclude: ['src/**/__tests__/**'],
@@ -133,7 +134,6 @@ const createNodeConfig = (isProduction) => {
         ...(isProduction
           ? {}
           : {
-              tsconfig: 'tsconfig.base.json',
               declaration: true,
               declarationDir: path.resolve(__dirname, 'dist/')
             })
@@ -368,7 +368,7 @@ function licensePlugin() {
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync('LICENSE.md', licenseText)
         console.warn(
-          chalk.yellow(
+          colors.yellow(
             '\nLICENSE.md updated. You should commit the updated file.\n'
           )
         )

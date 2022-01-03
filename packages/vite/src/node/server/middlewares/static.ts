@@ -1,8 +1,10 @@
 import path from 'path'
-import { ServerResponse } from 'http'
-import sirv, { Options } from 'sirv'
-import { Connect } from 'types/connect'
-import { normalizePath, ViteDevServer } from '../..'
+import type { ServerResponse } from 'http'
+import type { Options } from 'sirv'
+import sirv from 'sirv'
+import type { Connect } from 'types/connect'
+import type { ViteDevServer } from '../..'
+import { normalizePath } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
@@ -14,7 +16,7 @@ import {
   slash,
   isFileReadable
 } from '../../utils'
-import match from 'minimatch'
+import { isMatch } from 'micromatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -149,7 +151,7 @@ export function isFileServingAllowed(
   const cleanedUrl = cleanUrl(url)
   const file = ensureLeadingSlash(normalizePath(cleanedUrl))
 
-  if (server.config.server.fs.deny.some((i) => match(file, i, _matchOptions)))
+  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
     return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true

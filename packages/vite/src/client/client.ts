@@ -1,4 +1,4 @@
-import {
+import type {
   ErrorPayload,
   FullReloadPayload,
   HMRPayload,
@@ -6,7 +6,7 @@ import {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
-import { CustomEventName } from 'types/customEvent'
+import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
@@ -78,10 +78,8 @@ async function handleMessage(payload: HMRPayload) {
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
-          const el = (
-            [].slice.call(
-              document.querySelectorAll(`link`)
-            ) as HTMLLinkElement[]
+          const el = Array.from(
+            document.querySelectorAll<HTMLLinkElement>('link')
           ).find((e) => e.href.includes(path))
           if (el) {
             const newPath = `${base}${path.slice(1)}${
@@ -102,7 +100,7 @@ async function handleMessage(payload: HMRPayload) {
       if (payload.path && payload.path.endsWith('.html')) {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
-        const pagePath = location.pathname
+        const pagePath = decodeURI(location.pathname)
         const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
@@ -275,8 +273,6 @@ export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-ignore
-      const index = document.adoptedStyleSheets.indexOf(style)
       // @ts-ignore
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
@@ -489,3 +485,5 @@ export function injectQuery(url: string, queryToInject: string): string {
     hash || ''
   }`
 }
+
+export { ErrorOverlay }

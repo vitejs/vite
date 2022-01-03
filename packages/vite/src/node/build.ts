@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
-import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
-import Rollup, {
+import colors from 'picocolors'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import type {
   Plugin,
   RollupBuild,
   RollupOptions,
@@ -18,28 +19,30 @@ import Rollup, {
   RollupError,
   ModuleFormat
 } from 'rollup'
+import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { Terser } from 'types/terser'
+import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import { Logger } from './logger'
-import { TransformOptions } from 'esbuild'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { Logger } from './logger'
+import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { isCSSRequest } from './plugins/css'
-import { DepOptimizationMetadata } from './optimizer'
+import type { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import { watchPackageDataPlugin } from './packages'
 
 export interface BuildOptions {
   /**
@@ -233,7 +236,11 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  root: string,
+  raw?: BuildOptions,
+  isBuild?: boolean
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -267,6 +274,43 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     }
+  }
+
+  const resolve = (p: string) =>
+    p.startsWith('\0') ? p : path.resolve(root, p)
+
+  resolved.outDir = resolve(resolved.outDir)
+
+  let input
+
+  if (raw?.rollupOptions?.input) {
+    input = Array.isArray(raw.rollupOptions.input)
+      ? raw.rollupOptions.input.map((input) => resolve(input))
+      : typeof raw.rollupOptions.input === 'object'
+      ? Object.fromEntries(
+          Object.entries(raw.rollupOptions.input).map(([key, value]) => [
+            key,
+            resolve(value)
+          ])
+        )
+      : resolve(raw.rollupOptions.input)
+  } else if (raw?.lib && isBuild) {
+    input = resolve(raw.lib.entry)
+  } else if (typeof raw?.ssr === 'string') {
+    input = resolve(raw.ssr)
+  } else if (isBuild) {
+    input = resolve('index.html')
+  }
+
+  if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
+  if (input) {
+    resolved.rollupOptions.input = input
   }
 
   // handle special build targets
@@ -308,19 +352,20 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   const options = config.build
   return {
     pre: [
+      watchPackageDataPlugin(config),
       buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
       buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify === 'terser' ? [terserPlugin(config)] : []),
+      ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
@@ -362,32 +407,18 @@ async function doBuild(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
+  const input = options.rollupOptions.input
+  const outDir = options.outDir
   const ssr = !!options.ssr
   const libOptions = options.lib
 
   config.logger.info(
-    chalk.cyan(
-      `vite v${require('vite/package.json').version} ${chalk.green(
+    colors.cyan(
+      `vite v${require('vite/package.json').version} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
       )}`
     )
   )
-
-  const resolve = (p: string) => path.resolve(config.root, p)
-  const input = libOptions
-    ? resolve(libOptions.entry)
-    : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
-
-  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
-    throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
-    )
-  }
-
-  const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
@@ -421,7 +452,6 @@ async function doBuild(
 
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
-    input,
     context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
@@ -437,20 +467,29 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      msg += `\nfile: ${chalk.cyan(
+      msg += `\nfile: ${colors.cyan(
         e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
       )}`
     }
     if (e.frame) {
-      msg += `\n` + chalk.yellow(e.frame)
+      msg += `\n` + colors.yellow(e.frame)
     }
     config.logger.error(msg, { error: e })
   }
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -492,7 +531,7 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+      config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -510,27 +549,27 @@ async function doBuild(
         watch: {
           ...watcherOptions,
           chokidar: {
+            ignoreInitial: true,
+            ignorePermissionErrors: true,
+            ...watcherOptions.chokidar,
             ignored: [
               '**/node_modules/**',
               '**/.git/**',
               ...(watcherOptions?.chokidar?.ignored || [])
-            ],
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar
+            ]
           }
         }
       })
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+          config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
             prepareOutDir(outDir, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
+          config.logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
         }
@@ -583,9 +622,9 @@ function prepareOutDir(
     ) {
       // warn if outDir is outside of root
       config.logger.warn(
-        chalk.yellow(
-          `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
-            outDir
+        colors.yellow(
+          `\n${colors.bold(`(!)`)} outDir ${colors.white(
+            colors.dim(outDir)
           )} is not inside project root and will not be emptied.\n` +
             `Use --emptyOutDir to override.\n`
         )
@@ -696,7 +735,7 @@ function resolveBuildOutputs(
     } else if (libOptions.formats) {
       // user explicitly specifying own output array
       logger.warn(
-        chalk.yellow(
+        colors.yellow(
           `"build.lib.formats" will be ignored because ` +
             `"build.rollupOptions.output" is already an array format`
         )
@@ -744,9 +783,9 @@ export function onRollupWarning(
       userOnWarn(warning, warn)
     } else if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
-        `${chalk.bold.yellow(`[plugin:${warning.plugin}]`)} ${chalk.yellow(
-          warning.message
-        )}`
+        `${colors.bold(
+          colors.yellow(`[plugin:${warning.plugin}]`)
+        )} ${colors.yellow(warning.message)}`
       )
     } else {
       warn(warning)

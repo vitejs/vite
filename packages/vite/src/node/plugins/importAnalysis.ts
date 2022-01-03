@@ -1,10 +1,11 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from '../plugin'
-import { ResolvedConfig } from '../config'
-import chalk from 'chalk'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import colors from 'picocolors'
 import MagicString from 'magic-string'
-import { init, parse as parseImports, ImportSpecifier } from 'es-module-lexer'
+import type { ImportSpecifier } from 'es-module-lexer'
+import { init, parse as parseImports } from 'es-module-lexer'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   isBuiltin,
@@ -35,7 +36,7 @@ import {
   VALID_ID_PREFIX,
   NULL_BYTE_PLACEHOLDER
 } from '../constants'
-import { ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
@@ -111,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -147,7 +148,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         isDebug &&
           debug(
-            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
+            `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -258,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url)
+            const depModule = await moduleGraph.ensureEntryFromUrl(url, ssr)
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
@@ -448,11 +449,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
-                chalk.cyan(importerModule.file) +
+                colors.cyan(importerModule.file) +
                 `\n` +
                 generateCodeFrame(source, start) +
                 `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${chalk.blue(
+                `See ${colors.blue(
                   `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
                 )} ` +
                 `for supported dynamic import formats. ` +
@@ -517,7 +518,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(markExplicitImport(url))
+          toAbsoluteUrl(markExplicitImport(url)),
+          ssr
         )
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized))
@@ -538,11 +540,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           ).forEach(([url]) => importedUrls.add(url))
         }
+        // HMR transforms are no-ops in SSR, so an `accept` call will
+        // never be injected. Avoid updating the `isSelfAccepting`
+        // property for our module node in that case.
+        if (ssr && importerModule.isSelfAccepting) {
+          isSelfAccepting = true
+        }
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
           normalizedAcceptedUrls,
-          isSelfAccepting
+          isSelfAccepting,
+          ssr
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)
@@ -551,13 +560,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       isDebug &&
         debug(
-          `${timeFrom(start)} ${chalk.dim(
+          `${timeFrom(start)} ${colors.dim(
             `[${importedUrls.size} imports rewritten] ${prettyImporter}`
           )}`
         )
 
       // pre-transform known direct imports
-      if (staticImportedUrls.size) {
+      if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach((url) => {
           transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
         })
@@ -608,7 +617,7 @@ type ImportNameSpecifier = { importedName: string; localName: string }
  *
  * Credits \@csr632 via #837
  */
-function transformCjsImport(
+export function transformCjsImport(
   importExp: string,
   url: string,
   rawUrl: string,
@@ -621,12 +630,17 @@ function transformCjsImport(
     }) as any
   ).body[0] as Node
 
-  if (node.type === 'ImportDeclaration') {
+  if (
+    node.type === 'ImportDeclaration' ||
+    node.type === 'ExportNamedDeclaration'
+  ) {
     if (!node.specifiers.length) {
       return `import "${url}"`
     }
 
     const importNames: ImportNameSpecifier[] = []
+    const exportNames: string[] = []
+    let defaultExports: string = ''
     for (const spec of node.specifiers) {
       if (
         spec.type === 'ImportSpecifier' &&
@@ -642,6 +656,23 @@ function transformCjsImport(
         })
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
+      } else if (
+        spec.type === 'ExportSpecifier' &&
+        spec.exported.type === 'Identifier'
+      ) {
+        // for ExportSpecifier, local name is same as imported name
+        const importedName = spec.local.name
+        // we want to specify exported name as variable and re-export it
+        const exportedName = spec.exported.name
+        if (exportedName === 'default') {
+          defaultExports = makeLegalIdentifier(
+            `__vite__cjsExportDefault_${importIndex}`
+          )
+          importNames.push({ importedName, localName: defaultExports })
+        } else {
+          importNames.push({ importedName, localName: exportedName })
+          exportNames.push(exportedName)
+        }
       }
     }
 
@@ -662,6 +693,13 @@ function transformCjsImport(
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
+    if (defaultExports) {
+      lines.push(`export default ${defaultExports}`)
+    }
+    if (exportNames.length) {
+      lines.push(`export { ${exportNames.join(', ')} }`)
+    }
+
     return lines.join('; ')
   }
 }

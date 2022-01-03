@@ -1,3 +1,41 @@
+## [1.1.3](https://github.com/vitejs/vite/compare/plugin-react@1.1.2...plugin-react@1.1.3) (2021-12-13)
+
+
+### Bug Fixes
+
+* **plugin-react:** only detect preamble in hmr context ([#6096](https://github.com/vitejs/vite/issues/6096)) ([8735294](https://github.com/vitejs/vite/commit/8735294055ce16308a6b8302eba4538f4a2931d0))
+
+
+
+## [1.1.2](https://github.com/vitejs/vite/compare/plugin-react@1.1.1...plugin-react@1.1.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* ignore babel config when running restore-jsx ([#6047](https://github.com/vitejs/vite/issues/6047)) ([9c2843c](https://github.com/vitejs/vite/commit/9c2843cf0506844ee32f042a04c22c440434df2a))
+
+
+
+## [1.1.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0...plugin-react@1.1.1) (2021-12-07)
+
+
+
+# [1.1.0](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.1...plugin-react@1.1.0) (2021-11-22)
+
+
+
+# [1.1.0-beta.1](https://github.com/vitejs/vite/compare/plugin-react@1.1.0-beta.0...plugin-react@1.1.0-beta.1) (2021-11-19)
+
+
+### Bug Fixes
+
+* **plugin-react:** apply `babel.plugins` to project files only ([#5255](https://github.com/vitejs/vite/issues/5255)) ([377d0be](https://github.com/vitejs/vite/commit/377d0be5cf85a50240e160beaaafda77b7199452))
+* **plugin-react:** remove querystring from sourcemap filename ([#5760](https://github.com/vitejs/vite/issues/5760)) ([d93a9fa](https://github.com/vitejs/vite/commit/d93a9fab8986f3659e79d7b0b065e99ef625a5dd))
+* **plugin-react:** restore usage of extension instead of id ([#5761](https://github.com/vitejs/vite/issues/5761)) ([59471b1](https://github.com/vitejs/vite/commit/59471b186612d3da0083543e23d660747d3287f3))
+* **plugin-react:** uncompiled JSX in linked pkgs ([#5669](https://github.com/vitejs/vite/issues/5669)) ([41a7c9c](https://github.com/vitejs/vite/commit/41a7c9ccfbc1a7bc60aec672056eac3966ddd036))
+
+
+
 # [1.1.0-beta.0](https://github.com/vitejs/vite/compare/plugin-react@1.0.6...plugin-react@1.1.0-beta.0) (2021-10-28)
 
 

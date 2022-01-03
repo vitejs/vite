@@ -6,28 +6,32 @@ Hi! We are really excited that you are interested in contributing to Vite. Befor
 
 The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
 
-To development and test the core `vite` package:
+To develop and test the core `vite` package:
 
-1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+1. Run `pnpm i` in Vite's root folder
 
-2. Run `pnpm link` in `packages/vite`. This links `vite` globally so that you can:
+2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
-   - Run `pnpm link vite` in another Vite project to use the locally built Vite;
-   - Use the `vite` binary anywhere.
+You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
-   If your project has `vite` as a nested dependency, you can customize the dependency resolution instead depending on the package manager used. For pnpm, add this in your project's root `package.json`:
+## Testing Vite against external packages
 
-   ```json
-   {
-     "pnpm": {
-       "overrides": {
-         "vite": "link:../path/to/vite/packages/vite"
-       }
-     }
-   }
-   ```
+You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
 
-   And re-run `pnpm install` to link the package.
+```json
+{
+  "dependencies": {
+    "vite": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "link:../path/to/vite/packages/vite"
+    }
+  }
+}
+```
+
+And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
@@ -98,7 +102,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "node ../../../scripts/patchFileDeps"
+  "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
 }
 ```
 

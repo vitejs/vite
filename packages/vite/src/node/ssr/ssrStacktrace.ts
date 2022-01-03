@@ -1,5 +1,6 @@
-import { SourceMapConsumer, RawSourceMap } from 'source-map'
-import { ModuleGraph } from '../server/moduleGraph'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer } from 'source-map'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 let offset: number
 try {
@@ -31,6 +32,8 @@ export function ssrRewriteStacktrace(
             return input
           }
 
+          // In `source-map:v0.7.0+` this constructor returns a Promise...
+          // How can we make this block async?
           const consumer = new SourceMapConsumer(
             rawSourceMap as unknown as RawSourceMap
           )
