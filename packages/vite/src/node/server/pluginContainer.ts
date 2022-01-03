@@ -70,6 +70,7 @@ import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
+import { SourceMapConsumer } from 'source-map'
 import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
@@ -313,6 +314,9 @@ export async function createPluginContainer(
     const err = (
       typeof e === 'string' ? new Error(e) : e
     ) as postcss.CssSyntaxError & RollupError
+    if (err.pluginCode) {
+      return err // The plugin likely called `this.error`
+    }
     if (err.file && err.name === 'CssSyntaxError') {
       err.id = normalizePath(err.file)
     }
@@ -320,6 +324,7 @@ export async function createPluginContainer(
     if (ctx._activeId && !err.id) err.id = ctx._activeId
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
+
       const pos =
         position != null
           ? position
@@ -327,6 +332,7 @@ export async function createPluginContainer(
           ? err.pos
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
+
       if (pos != null) {
         let errLocation
         try {
@@ -365,6 +371,21 @@ export async function createPluginContainer(
           column: (err as any).column
         }
         err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
+      }
+
+      if (err.loc && ctx instanceof TransformContext) {
+        const rawSourceMap = ctx._getCombinedSourcemap()
+        if (rawSourceMap) {
+          const consumer = new SourceMapConsumer(rawSourceMap as any)
+          const { source, line, column } = consumer.originalPositionFor({
+            line: Number(err.loc.line),
+            column: Number(err.loc.column),
+            bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+          })
+          if (source) {
+            err.loc = { file: source, line, column }
+          }
+        }
       }
     }
     return err
