@@ -508,12 +508,16 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-
+  const workerResolved = { ...resolved }
   resolved.worker.plugins = await resolvePlugins(
-    { ...resolved },
+    workerResolved,
     workerPrePlugins,
     workerNormalPlugins,
     workerPostPlugins
+  )
+  // call configResolved worker plugins hooks
+  await Promise.all(
+    resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))
   )
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
@@ -523,7 +527,9 @@ export async function resolveConfig(
   )
 
   // call configResolved hooks
-  await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
+  await Promise.all(
+    userPlugins.concat().map((p) => p.configResolved?.(resolved))
+  )
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
