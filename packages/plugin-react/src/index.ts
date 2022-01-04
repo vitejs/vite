@@ -43,11 +43,21 @@ export interface Options {
   parserPlugins?: ParserOptions['plugins']
 }
 
+type SupportedBabelOptions = Exclude<
+  keyof TransformOptions,
+  | 'ast'
+  | 'filename'
+  | 'root'
+  | 'sourceFileName'
+  | 'sourceMaps'
+  | 'inlineSourceMap'
+>
+
 type ReactBabelOptions = {
-  [P in keyof TransformOptions]-?: (P extends 'parserOpts'
-    ? { plugins: Exclude<ParserOptions['plugins'], undefined> }
-    : unknown) &
-    Exclude<TransformOptions[P], null | undefined>
+  [P in SupportedBabelOptions]: Exclude<TransformOptions[P], null | undefined> &
+    (P extends 'parserOpts'
+      ? { plugins: Exclude<ParserOptions['plugins'], undefined> }
+      : unknown)
 }
 
 declare module 'vite' {
