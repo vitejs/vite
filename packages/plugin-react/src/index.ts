@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -43,6 +43,24 @@ export interface Options {
   parserPlugins?: ParserOptions['plugins']
 }
 
+type ReactBabelOptions = {
+  [P in keyof TransformOptions]-?: (P extends 'parserOpts'
+    ? { plugins: Exclude<ParserOptions['plugins'], undefined> }
+    : unknown) &
+    Exclude<TransformOptions[P], null | undefined>
+}
+
+declare module 'vite' {
+  export interface Plugin {
+    api?: {
+      /**
+       * Manipulate the Babel options of `@vitejs/plugin-react`
+       */
+      reactBabel?: (options: ReactBabelOptions, config: ResolvedConfig) => void
+    }
+  }
+}
+
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let base = '/'
@@ -54,11 +72,18 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
 
-  const userPlugins = opts.babel?.plugins || []
-  const userParserPlugins =
-    opts.parserPlugins || opts.babel?.parserOpts?.plugins || []
+  const babelOptions = {
+    babelrc: false,
+    configFile: false,
+    ...opts.babel
+  } as ReactBabelOptions
 
-  // Support pattens like:
+  babelOptions.plugins ||= []
+  babelOptions.presets ||= []
+  babelOptions.parserOpts ||= {} as any
+  babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
+
+  // Support patterns like:
   // - import * as React from 'react';
   // - import React from 'react';
   // - import React, {useEffect} from 'react';
@@ -88,15 +113,21 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         )
       }
 
-      config.plugins.forEach(
-        (plugin) =>
-          (plugin.name === 'react-refresh' ||
-            (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')) &&
-          config.logger.warn(
+      config.plugins.forEach((plugin) => {
+        const hasConflict =
+          plugin.name === 'react-refresh' ||
+          (plugin !== viteReactJsx && plugin.name === 'vite:react-jsx')
+
+        if (hasConflict)
+          return config.logger.warn(
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
           )
-      )
+
+        if (plugin.api?.reactBabel) {
+          plugin.api.reactBabel(babelOptions, config)
+        }
+      })
     },
     async transform(code, id, options) {
       const ssr = typeof options === 'boolean' ? options : options?.ssr === true
@@ -113,7 +144,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        const plugins = isProjectFile ? [...userPlugins] : []
+        const plugins = isProjectFile ? [...babelOptions.plugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -179,15 +210,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         // module, including node_modules and linked packages.
         const shouldSkip =
           !plugins.length &&
-          !opts.babel?.configFile &&
-          !(isProjectFile && opts.babel?.babelrc)
+          !babelOptions.configFile &&
+          !(isProjectFile && babelOptions.babelrc)
 
         if (shouldSkip) {
           return // Avoid parsing if no plugins exist.
         }
 
-        const parserPlugins: typeof userParserPlugins = [
-          ...userParserPlugins,
+        const parserPlugins: typeof babelOptions.parserOpts.plugins = [
+          ...babelOptions.parserOpts.plugins,
           'importMeta',
           // This plugin is applied before esbuild transforms the code,
           // so we need to enable some stage 3 syntax that is supported in
@@ -206,35 +237,32 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           parserPlugins.push('typescript')
         }
 
-        const isReasonReact = extension.endsWith('.bs.js')
+        const transformAsync = ast
+          ? babel.transformFromAstAsync.bind(babel, ast, code)
+          : babel.transformAsync.bind(babel, code)
 
-        const babelOpts: TransformOptions = {
-          babelrc: false,
-          configFile: false,
-          ...opts.babel,
+        const isReasonReact = extension.endsWith('.bs.js')
+        const result = await transformAsync({
+          ...babelOptions,
           ast: !isReasonReact,
           root: projectRoot,
           filename: id,
           sourceFileName: filepath,
           parserOpts: {
-            ...opts.babel?.parserOpts,
+            ...babelOptions.parserOpts,
             sourceType: 'module',
             allowAwaitOutsideFunction: true,
             plugins: parserPlugins
           },
           generatorOpts: {
-            ...opts.babel?.generatorOpts,
+            ...babelOptions.generatorOpts,
             decoratorsBeforeExport: true
           },
           plugins,
           sourceMaps: true,
           // Vite handles sourcemap flattening
           inputSourceMap: false as any
-        }
-
-        const result = ast
-          ? await babel.transformFromAstAsync(ast, code, babelOpts)
-          : await babel.transformAsync(code, babelOpts)
+        })
 
         if (result) {
           let code = result.code!
