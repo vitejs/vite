@@ -3,6 +3,7 @@
 <div>
   Response from worker: <span class="pong"></span><span class="mode"></span>
 </div>
+<div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
 
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
@@ -32,6 +33,7 @@
   worker.addEventListener('message', (e) => {
     text('.pong', e.data.msg)
     text('.mode', e.data.mode)
+    text('.bundle-with-plugin', e.data.bundleWithPlugin)
   })
 
   document.querySelector('.ping').addEventListener('click', () => {
@@ -59,12 +61,12 @@
   sharedWorker.port.start()
 
   const tsOutputWorker = new TSOutputWorker()
-  worker.addEventListener('message', (e) => {
+  tsOutputWorker.addEventListener('message', (e) => {
     text('.pong-ts-output', e.data.msg)
   })
 
   document.querySelector('.ping-ts-output').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
+    tsOutputWorker.postMessage('ping')
   })
 
   function text(el, text) {

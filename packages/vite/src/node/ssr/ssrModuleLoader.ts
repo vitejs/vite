@@ -1,6 +1,6 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '../server'
+import type { ViteDevServer } from '../server'
 import {
   dynamicImport,
   isBuiltin,
@@ -16,7 +16,8 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 
 interface SSRContext {
@@ -64,7 +65,7 @@ async function instantiateModule(
   urlStack: string[] = []
 ): Promise<SSRModule> {
   const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
 
   if (mod.ssrModule) {
     return mod.ssrModule
@@ -185,16 +186,18 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-    rebindErrorStacktrace(e, stacktrace)
-    server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${stacktrace}`,
-      {
-        timestamp: true,
-        clear: server.config.clearScreen,
-        error: e
-      }
-    )
+    if (e.stack) {
+      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+      rebindErrorStacktrace(e, stacktrace)
+      server.config.logger.error(
+        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        {
+          timestamp: true,
+          clear: server.config.clearScreen,
+          error: e
+        }
+      )
+    }
     throw e
   }
 

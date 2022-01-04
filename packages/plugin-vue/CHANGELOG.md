@@ -1,3 +1,12 @@
+## [2.0.1](https://github.com/vitejs/vite/compare/plugin-vue@2.0.0...plugin-vue@2.0.1) (2021-12-14)
+
+
+### Bug Fixes
+
+* **plugin-vue:** error.length is zero ([#6106](https://github.com/vitejs/vite/issues/6106)) ([5ec49be](https://github.com/vitejs/vite/commit/5ec49befad4d7b5e7cc14f14520ba96d5b6f6d69))
+
+
+
 # [2.0.0](https://github.com/vitejs/vite/compare/plugin-vue@1.10.2...plugin-vue@2.0.0) (2021-12-12)
 
 

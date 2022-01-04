@@ -1,22 +1,21 @@
 import fs from 'fs'
 import path from 'path'
-import * as net from 'net'
-import * as http from 'http'
+import type * as net from 'net'
+import type * as http from 'http'
 import connect from 'connect'
 import corsMiddleware from 'cors'
-import chalk from 'chalk'
-import { AddressInfo } from 'net'
+import colors from 'picocolors'
+import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart,
-  CommonServerOptions
-} from '../http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '../config'
-import { createPluginContainer, PluginContainer } from './pluginContainer'
-import { FSWatcher, WatchOptions } from 'types/chokidar'
-import { createWebSocketServer, WebSocketServer } from './ws'
+import type { CommonServerOptions } from '../http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
+import type { InlineConfig, ResolvedConfig } from '../config'
+import { resolveConfig } from '../config'
+import type { PluginContainer } from './pluginContainer'
+import { createPluginContainer } from './pluginContainer'
+import type { FSWatcher, WatchOptions } from 'types/chokidar'
+import type { WebSocketServer } from './ws'
+import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
 import { spaFallbackMiddleware } from './middlewares/spaFallback'
@@ -31,24 +30,22 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph, ModuleNode } from './moduleGraph'
-import { Connect } from 'types/connect'
+import type { ModuleNode } from './moduleGraph'
+import { ModuleGraph } from './moduleGraph'
+import type { Connect } from 'types/connect'
 import { ensureLeadingSlash, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import { handleHMRUpdate, HmrOptions, handleFileAddUnlink } from './hmr'
+import type { HmrOptions } from './hmr'
+import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
 import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
-import {
-  TransformOptions,
-  TransformResult,
-  transformRequest
-} from './transformRequest'
-import {
-  transformWithEsbuild,
-  ESBuildTransformResult
-} from '../plugins/esbuild'
-import { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { DepOptimizationMetadata, optimizeDeps } from '../optimizer'
+import type { TransformOptions, TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
+import type { ESBuildTransformResult } from '../plugins/esbuild'
+import { transformWithEsbuild } from '../plugins/esbuild'
+import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
+import type { DepOptimizationMetadata } from '../optimizer'
+import { optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -63,7 +60,7 @@ import { CLIENT_DIR } from '../constants'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
-import { SourceMap } from 'rollup'
+import type { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -98,6 +95,13 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Pre-transform known direct imports
+   *
+   * @experimental this option is experimental and might be changed in the future
+   * @default true
+   */
+  preTransformRequests?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -324,8 +328,8 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
-    container.resolveId(url)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
+    container.resolveId(url, undefined, { ssr })
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
@@ -627,7 +631,9 @@ async function startServer(
         const outPath = path.resolve('./vite-profile.cpuprofile')
         fs.writeFileSync(outPath, JSON.stringify(profile))
         info(
-          chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}\n`)
+          colors.yellow(
+            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
+          )
         )
       } else {
         throw err
@@ -693,7 +699,10 @@ export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
-  const server = raw || {}
+  const server: ResolvedServerOptions = {
+    preTransformRequests: true,
+    ...(raw as ResolvedServerOptions)
+  }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
@@ -714,13 +723,13 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
-  return server as ResolvedServerOptions
+  return server
 }
 
 async function restartServer(server: ViteDevServer) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
-  const { port } = server.config.server
+  const { port: prevPort, host: prevHost } = server.config.server
 
   await server.close()
 
@@ -740,9 +749,19 @@ async function restartServer(server: ViteDevServer) {
       server[key] = newServer[key]
     }
   }
-  if (!server.config.server.middlewareMode) {
+
+  const {
+    logger,
+    server: { port, host, middlewareMode }
+  } = server.config
+  if (!middlewareMode) {
     await server.listen(port, true)
+    logger.info('server restarted.', { timestamp: true })
+    if (port !== prevPort || host !== prevHost) {
+      logger.info('')
+      server.printUrls()
+    }
   } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
+    logger.info('server restarted.', { timestamp: true })
   }
 }

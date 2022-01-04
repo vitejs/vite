@@ -1,5 +1,5 @@
-import { SFCDescriptor, SFCScriptBlock } from 'vue/compiler-sfc'
-import { ResolvedOptions } from '.'
+import type { SFCDescriptor, SFCScriptBlock } from 'vue/compiler-sfc'
+import type { ResolvedOptions } from '.'
 import { resolveTemplateCompilerOptions } from './template'
 
 // ssr and non ssr builds would output different script content

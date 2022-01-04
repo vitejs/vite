@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
 import hash from 'hash-sum'
-import { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
-import { ResolvedOptions, VueQuery } from '..'
+import type { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
+import type { ResolvedOptions, VueQuery } from '..'
 
 // compiler-sfc should be exported so it can be re-used
 export interface SFCParseResult {
@@ -58,7 +58,7 @@ export function getDescriptor(
       fs.readFileSync(filename, 'utf-8'),
       options
     )
-    if (errors) {
+    if (errors.length) {
       throw errors[0]
     }
     return descriptor

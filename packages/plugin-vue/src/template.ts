@@ -1,13 +1,13 @@
 import path from 'path'
 import slash from 'slash'
-import {
+import type {
   SFCDescriptor,
   SFCTemplateCompileOptions,
   SFCTemplateCompileResults,
   CompilerOptions
 } from 'vue/compiler-sfc'
-import { PluginContext, TransformPluginContext } from 'rollup'
-import { ResolvedOptions } from '.'
+import type { PluginContext, TransformPluginContext } from 'rollup'
+import type { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
 

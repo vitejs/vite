@@ -1,18 +1,19 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import { AttributeNode, NodeTypes } from '@vue/compiler-dom'
-import { Connect } from 'types/connect'
+import type { AttributeNode } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import type { Connect } from 'types/connect'
+import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
   getScriptInfo,
-  IndexHtmlTransformHook,
   resolveHtmlTransforms,
   traverseHtml
 } from '../../plugins/html'
-import { ResolvedConfig, ViteDevServer } from '../..'
+import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
@@ -188,7 +189,9 @@ export function indexHtmlMiddleware(
         try {
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html')
+          return send(req, res, html, 'html', {
+            headers: server.config.server.headers
+          })
         } catch (e) {
           return next(e)
         }
