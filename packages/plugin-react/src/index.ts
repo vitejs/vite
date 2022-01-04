@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
+import type { Plugin, PluginOption } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
