@@ -50,7 +50,7 @@ type SupportedBabelOptions = Exclude<
   | 'root'
   | 'sourceFileName'
   | 'sourceMaps'
-  | 'inlineSourceMap'
+  | 'inputSourceMap'
 >
 
 type ReactBabelOptions = {
