@@ -135,7 +135,7 @@ const createNodeConfig = (isProduction) => {
           ? {}
           : {
               declaration: true,
-              declarationDir: path.resolve(__dirname, 'dist/')
+              declarationDir: path.resolve(__dirname, 'dist/node')
             })
       }),
       // Some deps have try...catch require of optional deps, but rollup will
