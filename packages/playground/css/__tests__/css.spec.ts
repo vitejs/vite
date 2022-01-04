@@ -287,9 +287,13 @@ test('treeshaken async chunk', async () => {
 test('async css modules', async () => {
   const blue = await page.$('.async-modules-blue')
   const red = await page.$('.async-modules-red')
+  const green = await page.$('.async-modules-green')
+  const blue2 = await page.$('.async-modules-blue2')
 
   expect(await getColor(blue)).toBe('blue')
   expect(await getColor(red)).toBe('red')
+  expect(await getColor(green)).toBe('green')
+  expect(await getColor(blue2)).toBe('blue')
 })
 
 test('PostCSS dir-dependency', async () => {
