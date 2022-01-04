@@ -22,9 +22,6 @@ module.exports = {
       }
     }
   ],
-  optimizeDeps: {
-    include: ['example-style-external-component']
-  },
   ssr: {
     external: ['example-style-external-component'],
     noExternal: [/example-style-external-component.*?style/]

@@ -2,5 +2,6 @@
   "name": "example-style-external-component",
   "private": true,
   "version": "0.0.0",
-  "main": "index.js"
+  "main": "index.js",
+  "module": "esm.js"
 }
