@@ -1,3 +1,87 @@
+## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
+
+
+
+## [2.7.8](https://github.com/vitejs/vite/compare/v2.7.7...v2.7.8) (2021-12-28)
+
+
+### Bug Fixes
+
+* **html:** show error overlay when parsing invalid file ([#6184](https://github.com/vitejs/vite/issues/6184)) ([1f945f6](https://github.com/vitejs/vite/commit/1f945f62bf4a722c95a7b8f9c14c32a6f2be5c3f))
+* seperate source and dep for dymamic import after build ([#6251](https://github.com/vitejs/vite/issues/6251)) ([49da986](https://github.com/vitejs/vite/commit/49da98619692779df58673b9cc6004dd824a6f15))
+* **ssr:** capture scope declaration correctly ([#6281](https://github.com/vitejs/vite/issues/6281)) ([60ce7f9](https://github.com/vitejs/vite/commit/60ce7f9a1d1c730a244bc621675240d74f58af3e))
+* upgrade to launch-editor with picocolors ([#6209](https://github.com/vitejs/vite/issues/6209)) ([394539c](https://github.com/vitejs/vite/commit/394539c613b1fdee444079dae4275027705e85ae))
+
+
+
+## [2.7.7](https://github.com/vitejs/vite/compare/v2.7.6...v2.7.7) (2021-12-26)
+
+
+### Bug Fixes
+
+* **ssr:** nested destucture ([#6249](https://github.com/vitejs/vite/issues/6249)) ([485e298](https://github.com/vitejs/vite/commit/485e298e72599679e97f0ed1f4315ac5da55da2c))
+* **ssr:** transform class props ([#6261](https://github.com/vitejs/vite/issues/6261)) ([2e3fe59](https://github.com/vitejs/vite/commit/2e3fe5932c962d447a4faa4b0ce996ead70c7d34))
+
+
+
+## [2.7.6](https://github.com/vitejs/vite/compare/v2.7.5...v2.7.6) (2021-12-22)
+
+
+### Bug Fixes
+
+* remove virtual module prefix while generating manifest ([#6225](https://github.com/vitejs/vite/issues/6225)) ([d51259b](https://github.com/vitejs/vite/commit/d51259b73c484dea67d4c4afb6b76fbbb866631c))
+
+
+
+## [2.7.5](https://github.com/vitejs/vite/compare/v2.7.4...v2.7.5) (2021-12-21)
+
+
+### Bug Fixes
+
+* **asset:** import assets from encodeURI([#6195](https://github.com/vitejs/vite/issues/6195)) ([#6199](https://github.com/vitejs/vite/issues/6199)) ([4114f84](https://github.com/vitejs/vite/commit/4114f844f876fabfa9beaa6ec65e4002d7c36fbb))
+* hmr full-reload encodeURI path ([#6212](https://github.com/vitejs/vite/issues/6212)) ([46b862a](https://github.com/vitejs/vite/commit/46b862a6880a6e83d1e0e451376177c0e5cab0ba))
+* remove top-level imports in importMeta.d.ts, fixes augmentation ([#6214](https://github.com/vitejs/vite/issues/6214)) ([6b8d94d](https://github.com/vitejs/vite/commit/6b8d94dca2a1a8b4952e3e3fcd0aed1aedb94215)), closes [#6194](https://github.com/vitejs/vite/issues/6194) [#6211](https://github.com/vitejs/vite/issues/6211) [#6206](https://github.com/vitejs/vite/issues/6206) [#6205](https://github.com/vitejs/vite/issues/6205)
+* **ssr:** handle object destructure alias, close [#6222](https://github.com/vitejs/vite/issues/6222) ([#6224](https://github.com/vitejs/vite/issues/6224)) ([1d97ec3](https://github.com/vitejs/vite/commit/1d97ec336a6ee2915faae42d5f82110226929347))
+
+
+
+## [2.7.4](https://github.com/vitejs/vite/compare/v2.7.3...v2.7.4) (2021-12-20)
+
+
+### Bug Fixes
+
+* duplicate variable declaration caused by css modules ([#5873](https://github.com/vitejs/vite/issues/5873)) ([8e16a78](https://github.com/vitejs/vite/commit/8e16a78a2d556b9480e8b2e19ec41fa522621256))
+* improve error message for HTML compilation error (fix [#5769](https://github.com/vitejs/vite/issues/5769)) ([#5777](https://github.com/vitejs/vite/issues/5777)) ([79d1397](https://github.com/vitejs/vite/commit/79d139783868bfe2a2741f6e8cffcb72cee65351))
+* **ssr:** `ssrTransform` function argument destructure ([#6171](https://github.com/vitejs/vite/issues/6171)) ([2762a0e](https://github.com/vitejs/vite/commit/2762a0e7f0a599ced2c25c9d2baf06ec99ad8cfb))
+
+
+
+## [2.7.3](https://github.com/vitejs/vite/compare/v2.7.2...v2.7.3) (2021-12-16)
+
+
+### Bug Fixes
+
+* do not overwrite rollupOptions.input in dev ([#6025](https://github.com/vitejs/vite/issues/6025)) ([6cdf13a](https://github.com/vitejs/vite/commit/6cdf13ae808a99b7aca6d278bee2ebe6e51d0846))
+* Improve post-build asset update check ([#6113](https://github.com/vitejs/vite/issues/6113)) ([611fa03](https://github.com/vitejs/vite/commit/611fa037a72a1179c27794353ffad6ed27e10d1a))
+* improve warning message for malformed packages ([#6086](https://github.com/vitejs/vite/issues/6086)) ([717cb08](https://github.com/vitejs/vite/commit/717cb08f8611fd1a15cfd614d346185ffe8a61fd))
+* pending reload never timeout ([#6120](https://github.com/vitejs/vite/issues/6120)) ([e002f4f](https://github.com/vitejs/vite/commit/e002f4f4a578ae63156e756abac0487f42b4cdcd))
+* respect new port when change the config file ([#6075](https://github.com/vitejs/vite/issues/6075)) ([3ceffcc](https://github.com/vitejs/vite/commit/3ceffcca66311f9a7d71612a596b84888c3f843b))
+* **ssr:** robust regexp to check cjs content ([#6053](https://github.com/vitejs/vite/issues/6053)) ([0373441](https://github.com/vitejs/vite/commit/03734417cde10807ab2dd0d71b08c26081aac0b7))
+* terminate WebSocket connections before closing WebSocket server ([#6115](https://github.com/vitejs/vite/issues/6115)) ([b9871bb](https://github.com/vitejs/vite/commit/b9871bbed57c5964b3393e798b0ef2526471d692))
+
+
+
+## [2.7.2](https://github.com/vitejs/vite/compare/v2.7.1...v2.7.2) (2021-12-13)
+
+
+### Bug Fixes
+
+* **html:** empty script ([#6057](https://github.com/vitejs/vite/issues/6057)) ([1487223](https://github.com/vitejs/vite/commit/1487223f39b7555b1050b660d847eabf4d20249f))
+* **lexGlobPattern:** edge case of glob import ([#6022](https://github.com/vitejs/vite/issues/6022)) ([d4c5cff](https://github.com/vitejs/vite/commit/d4c5cff551ad9fb721243f8abdbf0c78f5b5a7ec))
+* ws types ([#6083](https://github.com/vitejs/vite/issues/6083)) ([1ded1a8](https://github.com/vitejs/vite/commit/1ded1a835bfb64f2c70c8c153e979b7911c9a8c1))
+
+
+
 ## [2.7.1](https://github.com/vitejs/vite/compare/v2.7.0...v2.7.1) (2021-12-07)
 
 
