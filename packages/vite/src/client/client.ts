@@ -8,6 +8,7 @@ import type {
 } from 'types/hmrPayload'
 import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
+import { getStackLineInformation, isStackLineInfo, transformError } from './error'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 import type { RawSourceMap } from 'source-map'
@@ -488,8 +489,6 @@ export function injectQuery(url: string, queryToInject: string): string {
   }`
 }
 
-type ErrorOverlayCallback = (err: ErrorPayload['err']) => void
-
 const extractSourceMapData = (fileContent: string) => {
   const re = /[#@]\ssourceMappingURL=\s*(\S+)/gm
   let match: RegExpExecArray | null = null
@@ -568,51 +567,18 @@ const generateFrame = (
   return result.join('\n')
 }
 
-const RE_CHROME_STACKTRACE =
-  /^ {4}at (?:(.+?)\s+)?\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
-const RE_FIREFOX_STACKTRACE =
-  /^(?:(?:(^|.+?)@))\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
-const getStackInformation = (line: string) => {
-  let match = RE_CHROME_STACKTRACE.exec(line)
-  if (match) {
-    return {
-      input: match[0],
-      varName: match[1],
-      url: match[2],
-      lineNo: match[3],
-      columnNo: match[4],
-      vendor: 'chrome' as const
-    }
-  }
-  match = RE_FIREFOX_STACKTRACE.exec(line)
-  if (match) {
-    // TODO Handle cl
-    return {
-      input: match[0],
-      varName: match[1],
-      url: match[2],
-      lineNo: match[3],
-      columnNo: match[4],
-      vendor: 'firefox' as const
-    }
-  }
-
-  return {
-    input: line
-  }
-}
-
-const transformStackTrace = async (stack: string) => {
+const transformStackTrace = async (stack: string): Promise<string> => {
   return (
     await Promise.all(
-      stack.split('\n').map(async (line) => {
-        const { input, varName, url, lineNo, columnNo, vendor } =
-          getStackInformation(line)
+      stack.split('\n').map(async (l) => {
+        const result =
+          getStackLineInformation(l)
 
-        if (!url) return input
+        if (!isStackLineInfo(result)) return result.input
 
+        const { input, varName, url, line, column, vendor } = result;
         const { sourceMapConsumer } = await getSourceMapForFile(url)
 
         if (!(sourceMapConsumer instanceof SourceMapConsumer)) {
@@ -620,8 +586,8 @@ const transformStackTrace = async (stack: string) => {
         }
 
         const pos = sourceMapConsumer.originalPositionFor({
-          line: Number(lineNo),
-          column: Number(columnNo)
+          line: line,
+          column: column
         })
 
         if (!pos.source) {
@@ -691,86 +657,64 @@ const generateErrorPayload = async (
   }
 }
 
-const transformError = (error: any): Error => {
-  if (error instanceof Error) {
-    return error
-  }
+const exceptionHandler = async (e: ErrorEvent): Promise<void> => {
+  try {
+    const error = transformError(e.error)
 
-  const e = Error(error ?? 'unknown')
-  e.stack = `a non-error was thrown please check your browser's devtools for more information`
-  return e
+    const payload = await generateErrorPayload(
+      error.message,
+      e.filename,
+      e.lineno,
+      e.colno,
+      error.stack!
+    )
+
+    createErrorOverlay(payload)
+  } catch (err: Error) {
+    // TODO handle errors that we throw
+    console.log(err)
+    // frame = err.message;
+  }
 }
 
-const exceptionHandler =
-  (callback: ErrorOverlayCallback) =>
-  async (e: ErrorEvent): Promise<void> => {
-    try {
-      const error = transformError(e.error)
-
-      const payload = await generateErrorPayload(
-        error.message,
-        e.filename,
-        e.lineno,
-        e.colno,
-        error.stack!
-      )
-
-      callback(payload)
-    } catch (err: Error) {
-      // TODO handle errors that we throw
-      console.log(err)
-      // frame = err.message;
-    }
-  }
-
-const rejectionHandler =
-  (callback: ErrorOverlayCallback) =>
-  async (e: PromiseRejectionEvent): Promise<void> => {
-    const error = transformError(e.reason)
-    // Since promise rejection doesn't return the file we have to get it from the stack trace
-    const stackLines = error.stack!.split('\n')
-    let stackInfo = getStackInformation(stackLines[0])
-    // Chromes will include the error message as the first line of the stack trace so we have to check for a match or check the next line
-    if (!stackInfo.url) {
-      stackInfo = getStackInformation(stackLines[1])
-      if (!stackInfo.url) {
-        // no stack trace create a basic overlay
-        const payload: ErrorPayload['err'] = {
-          message: error.message,
-          stack: error.stack!
-        }
-        callback(payload)
-        return
+const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
+  const error = transformError(e.reason)
+  // Since promise rejection doesn't return the file we have to get it from the stack trace
+  const stackLines = error.stack!.split('\n')
+  let stackInfo = getStackLineInformation(stackLines[0])
+  // Chromes will include the error message as the first line of the stack trace so we have to check for a match or check the next line
+  if (!isStackLineInfo(stackInfo)) {
+    stackInfo = getStackLineInformation(stackLines[1])
+    if (!isStackLineInfo(stackInfo)) {
+      // no stack trace create a basic overlay
+      const payload: ErrorPayload['err'] = {
+        message: error.message,
+        stack: error.stack!
       }
-    }
-
-    try {
-      const payload = await generateErrorPayload(
-        e.reason.message,
-        stackInfo.url,
-        Number(stackInfo.lineNo),
-        Number(stackInfo.columnNo),
-        e.reason.stack
-      )
-
-      callback(payload)
-    } catch (err: Error) {
-      // TODO handle errors that we throw
-      console.log(err)
-      // frame = err.message;
+      createErrorOverlay(payload)
+      return
     }
   }
 
-const showErrorOverlay = (err: ErrorPayload['err']) => {
-  const overlay = new ErrorOverlay(err)
-  document.body.appendChild(overlay)
+  try {
+    const payload = await generateErrorPayload(
+      e.reason.message,
+      stackInfo.url,
+      stackInfo.line,
+      stackInfo.column,
+      e.reason.stack
+    )
+
+    createErrorOverlay(payload)
+  } catch (err: Error) {
+    // TODO handle errors that we throw
+    console.log(err)
+    // frame = err.message;
+  }
 }
 
 // TODO: respect __HMR_ENABLE_OVERLAY__
-window.addEventListener('error', exceptionHandler(showErrorOverlay))
-window.addEventListener(
-  'unhandledrejection',
-  rejectionHandler(showErrorOverlay)
-)
+window.addEventListener('error', exceptionHandler)
+window.addEventListener('unhandledrejection', rejectionHandler)
 
 export { ErrorOverlay }
