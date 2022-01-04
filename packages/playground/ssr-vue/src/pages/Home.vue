@@ -5,7 +5,6 @@
   </p>
   <button @click="state.count++">count is: {{ state.count }}</button>
   <Foo />
-  <Button>externalBtn</Button>
   <p class="virtual">msg from virtual module: {{ foo.msg }}</p>
   <p class="inter">this will be styled with a font-face</p>
   <p class="import-meta-url">{{ state.url }}</p>
@@ -16,8 +15,6 @@
 <script setup>
 import foo from '@foo'
 import { reactive, defineAsyncComponent } from 'vue'
-import { Button } from 'vant'
-import 'vant/es/button/style/index.js'
 
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>

@@ -22,9 +22,12 @@ module.exports = {
       }
     }
   ],
+  optimizeDeps: {
+    include: ['example-style-external-component']
+  },
   ssr: {
-    external: ['vant'],
-    noExternal: [/vant.*?style/]
+    external: ['example-style-external-component'],
+    noExternal: [/example-style-external-component.*?style/]
   },
   build: {
     minify: false

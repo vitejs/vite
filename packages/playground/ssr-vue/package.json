@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "example-external-component": "file:example-external-component",
-    "vant": "^3.3.6",
+    "example-style-external-component": "file:example-style-external-component",
     "vue": "^3.2.25",
     "vue-router": "^4.0.0",
     "vuex": "^4.0.2"

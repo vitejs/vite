@@ -83,7 +83,7 @@ importers:
       create-vite: latest
       kolorist: ^1.5.0
     dependencies:
-      create-vite: link:../create-vite
+      create-vite: 2.7.2
       kolorist: 1.5.0
 
   packages/create-vite:
@@ -539,15 +539,15 @@ importers:
       cross-env: ^7.0.3
       dep-import-type: link:./dep-import-type
       example-external-component: file:example-external-component
+      example-style-external-component: file:example-style-external-component
       express: ^4.17.1
       serve-static: ^1.14.1
-      vant: ^3.3.6
       vue: ^3.2.25
       vue-router: ^4.0.0
       vuex: ^4.0.2
     dependencies:
       example-external-component: link:example-external-component
-      vant: 3.3.6_vue@3.2.23
+      example-style-external-component: link:example-style-external-component
       vue: 3.2.25
       vue-router: 4.0.12_vue@3.2.25
       vuex: 4.0.2_vue@3.2.25
@@ -564,6 +564,9 @@ importers:
     specifiers: {}
 
   packages/playground/ssr-vue/example-external-component:
+    specifiers: {}
+
+  packages/playground/ssr-vue/example-style-external-component:
     specifiers: {}
 
   packages/playground/ssr-webworker:
@@ -705,12 +708,6 @@ importers:
       '@rollup/pluginutils': 4.1.1
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.0
       hash-sum: 2.0.0
-
-  packages/temp:
-    specifiers:
-      css-color-names: ^1.0.1
-    devDependencies:
-      css-color-names: 1.0.1
 
   packages/vite:
     specifiers:
@@ -1940,10 +1937,6 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@popperjs/core/2.11.0:
-    resolution: {integrity: sha512-zrsUxjLOKAzdewIDRWy9nsV1GQsKBCWaGwsZQlCgr6/q+vjyZhFgqedLfFBuI9anTPEUT4APq9Mu0SZBTzIcGQ==}
-    dev: false
-
   /@rollup/plugin-alias/3.1.8_rollup@2.59.0:
     resolution: {integrity: sha512-tf7HeSs/06wO2LPqKNY3Ckbvy0JRe7Jyn98bXnt/gfrxbe+AJucoNJlsEVi9sdgbQtXemjbakCpO/76JVgnHpA==}
     engines: {node: '>=8.0.0'}
@@ -2420,20 +2413,6 @@ packages:
       '@typescript-eslint/types': 5.4.0
       eslint-visitor-keys: 3.1.0
     dev: true
-
-  /@vant/icons/1.7.1:
-    resolution: {integrity: sha512-66LPEq89w4kl258nALZcRNd14eUJC8VajvTJwvZKOaZawz6CUeVZ6ybhedTUhQhRjeA8SyWD7dFt4ALf33Sabw==}
-    dev: false
-
-  /@vant/popperjs/1.1.0:
-    resolution: {integrity: sha512-8MD1gz146awV/uPxYjz4pet22f7a9YVKqk7T+gFkWFwT9mEcrIUEg/xPrdOnWKLP9puXyYtm7oVfSDSefZ/p/w==}
-    dependencies:
-      '@popperjs/core': 2.11.0
-    dev: false
-
-  /@vant/use/1.3.4:
-    resolution: {integrity: sha512-XvZkPCjcmEBhD+T3vB68thOG6P9jazld6aBTMenhbAQd4FT/x9AiKIWPJx4MvhYoSIWt7fju6K01XTJldWs1hw==}
-    dev: false
 
   /@vue/babel-helper-vue-transform-on/1.0.2:
     resolution: {integrity: sha512-hz4R8tS5jMn8lDq6iD+yWL6XNB699pGIVLk7WSJnn1dbpjaazsjZQkieJoRX6gW5zpYSCFqQ7jUquPNY65tQYA==}
@@ -3710,6 +3689,16 @@ packages:
   /create-require/1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
+
+  /create-vite/2.7.2:
+    resolution: {integrity: sha512-4Eint1oL6GcZWGkgLbSmbzY1UNTkqQyjD9T4aM1YQsltKQ5ZNWDy+rvgYRPV9dR0XD6eLPs8TUUoge1xQCd4BA==}
+    engines: {node: '>=12.0.0'}
+    hasBin: true
+    dependencies:
+      kolorist: 1.5.0
+      minimist: 1.2.5
+      prompts: 2.4.2
+    dev: false
 
   /cross-env/7.0.3:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
@@ -8984,17 +8973,6 @@ packages:
 
   /value-equal/1.0.1:
     resolution: {integrity: sha512-NOJ6JZCAWr0zlxZt+xqCHNTEKOsrks2HQd4MqhP1qy4z1SkbEP467eNx6TgDKXMvUOb+OENfJCZwM+16n7fRfw==}
-    dev: false
-
-  /vant/3.3.6_vue@3.2.23:
-    resolution: {integrity: sha512-z8Sts1ZDepI42Z4rKmklwazaT65FPJBJ7dnNrAB6VGPBrN5yOabSffvt3XnhTFCPK+Xa7NagjN1LdRR7n0udAg==}
-    peerDependencies:
-      vue: ^3.0.0
-    dependencies:
-      '@vant/icons': 1.7.1
-      '@vant/popperjs': 1.1.0
-      '@vant/use': 1.3.4
-      vue: 3.2.23
     dev: false
 
   /vary/1.1.2:
