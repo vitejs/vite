@@ -538,8 +538,10 @@ const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
   }
 }
 
-// TODO: respect __HMR_ENABLE_OVERLAY__
-window.addEventListener('error', exceptionHandler)
-window.addEventListener('unhandledrejection', rejectionHandler)
+if(enableOverlay) {
+  window.addEventListener('error', exceptionHandler)
+  window.addEventListener('unhandledrejection', rejectionHandler)
+}
+
 
 export { ErrorOverlay }
