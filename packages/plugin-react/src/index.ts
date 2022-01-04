@@ -36,7 +36,7 @@ export interface Options {
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: TransformOptions
+  babel?: Pick<TransformOptions, SupportedBabelOptions>
   /**
    * @deprecated Use `babel.parserOpts.plugins` instead
    */
