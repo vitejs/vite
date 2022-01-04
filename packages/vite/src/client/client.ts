@@ -8,7 +8,12 @@ import type {
 } from 'types/hmrPayload'
 import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-import { getStackLineInformation, isStackLineInfo, transformError, generateErrorPayload } from './error'
+import {
+  getStackLineInformation,
+  isStackLineInfo,
+  transformError,
+  generateErrorPayload
+} from './error'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
@@ -538,10 +543,9 @@ const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
   }
 }
 
-if(enableOverlay) {
+if (enableOverlay) {
   window.addEventListener('error', exceptionHandler)
   window.addEventListener('unhandledrejection', rejectionHandler)
 }
-
 
 export { ErrorOverlay }

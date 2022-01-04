@@ -1,4 +1,4 @@
-import type { RawSourceMap} from 'source-map';
+import type { RawSourceMap } from 'source-map'
 import { SourceMapConsumer } from 'source-map'
 import type { ErrorPayload } from 'types/hmrPayload'
 
@@ -18,20 +18,19 @@ const RE_CHROME_STACKTRACE =
 const RE_FIREFOX_STACKTRACE =
   /^(?:(?:(^|.+?)@))\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 
-
 export interface StackLineInfo {
-    input: string
-    varName: string
-    url: string
-    line: number
-    column: number
-    vendor: 'chrome' | 'firefox'
+  input: string
+  varName: string
+  url: string
+  line: number
+  column: number
+  vendor: 'chrome' | 'firefox'
 }
 
 export type StackLineResult = Partial<StackLineInfo> & { input: string }
 
 export const isStackLineInfo = (res: StackLineResult): res is StackLineInfo => {
-    return res.url !== undefined;
+  return res.url !== undefined
 }
 
 export const getStackLineInformation = (line: string): StackLineResult => {
@@ -39,10 +38,10 @@ export const getStackLineInformation = (line: string): StackLineResult => {
   if (match) {
     let [input, varName, body, line, column] = match
     // strip eval
-    if(body.indexOf('eval at') !== -1) {
+    if (body.indexOf('eval at') !== -1) {
       body = body.replace(/(eval at.*\()|(\),.*)/g, '')
-      const lcMatch = /(.*):(\d+)?:(\d+)?$/.exec(body);
-      if(lcMatch) {
+      const lcMatch = /(.*):(\d+)?:(\d+)?$/.exec(body)
+      if (lcMatch) {
         body = lcMatch[1]
         line = lcMatch[2]
         column = lcMatch[3]
@@ -69,11 +68,13 @@ export const getStackLineInformation = (line: string): StackLineResult => {
     let [input, varName, body, line, column] = match
     // strip eval & function
 
-
-    if((/> eval|Function/).test(body)) {
-      body = body.replace(/ line (\d+)(?: > eval line \d+|(?: > eval|Function))*/,':$1')
-      const lcMatch = /(.*):(\d+)/.exec(body);
-      if(lcMatch) {
+    if (/> eval|Function/.test(body)) {
+      body = body.replace(
+        / line (\d+)(?: > eval line \d+|(?: > eval|Function))*/,
+        ':$1'
+      )
+      const lcMatch = /(.*):(\d+)/.exec(body)
+      if (lcMatch) {
         body = lcMatch[1]
         line = lcMatch[2]
         column = ''
@@ -180,18 +181,15 @@ const generateFrame = (
   return result.join('\n')
 }
 
-
-
 const transformStackTrace = async (stack: string): Promise<string> => {
   return (
     await Promise.all(
       stack.split('\n').map(async (l) => {
-        const result =
-          getStackLineInformation(l)
+        const result = getStackLineInformation(l)
 
         if (!isStackLineInfo(result)) return result.input
 
-        const { input, varName, url, line, column, vendor } = result;
+        const { input, varName, url, line, column, vendor } = result
         const { sourceMapConsumer } = await getSourceMapForFile(url)
 
         if (!(sourceMapConsumer instanceof SourceMapConsumer)) {
