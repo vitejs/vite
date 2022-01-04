@@ -536,7 +536,9 @@ const getSourceMapForFile = async (
   }
 
   // TODO: add support for url source maps
-  throw new Error('Only base64 source maps are supported')
+  return {
+    baseSource: source
+  }
 }
 
 const generateFrame = (
@@ -687,11 +689,10 @@ const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
     stackInfo = getStackLineInformation(stackLines[1])
     if (!isStackLineInfo(stackInfo)) {
       // no stack trace create a basic overlay
-      const payload: ErrorPayload['err'] = {
+      createErrorOverlay({
         message: error.message,
         stack: error.stack!
-      }
-      createErrorOverlay(payload)
+      })
       return
     }
   }
