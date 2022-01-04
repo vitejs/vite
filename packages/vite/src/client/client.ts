@@ -8,11 +8,9 @@ import type {
 } from 'types/hmrPayload'
 import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
-import { getStackLineInformation, isStackLineInfo, transformError } from './error'
+import { getStackLineInformation, isStackLineInfo, transformError, generateErrorPayload } from './error'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
-import type { RawSourceMap } from 'source-map'
-import { SourceMapConsumer } from 'source-map'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
@@ -489,176 +487,6 @@ export function injectQuery(url: string, queryToInject: string): string {
   }`
 }
 
-const extractSourceMapData = (fileContent: string) => {
-  const re = /[#@]\ssourceMappingURL=\s*(\S+)/gm
-  let match: RegExpExecArray | null = null
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const next = re.exec(fileContent)
-    if (next == null) {
-      break
-    }
-    match = next
-  }
-
-  if (!(match && match[0])) {
-    return null
-  }
-
-  return match[1]
-}
-
-const getSourceMapForFile = async (
-  fileName: string
-): Promise<{
-  sourceMapConsumer?: SourceMapConsumer
-  baseSource: string
-}> => {
-  const source = await (await fetch(fileName)).text()
-  const sourceMapData = extractSourceMapData(source)
-
-  if (!sourceMapData) {
-    return { baseSource: source }
-  }
-
-  // TODO: extract this string to a const
-  if (sourceMapData.indexOf('data:application/json;base64,') === 0) {
-    let sm = sourceMapData.substring('data:application/json;base64,'.length)
-    sm = window.atob(sm)
-    const sourceMapConsumer = new SourceMapConsumer(
-      JSON.parse(sm) as RawSourceMap
-    )
-
-    return {
-      baseSource: source,
-      sourceMapConsumer
-    }
-  }
-
-  // TODO: add support for url source maps
-  return {
-    baseSource: source
-  }
-}
-
-const generateFrame = (
-  line: number,
-  column: number,
-  source: string,
-  count = 2
-): string => {
-  const lines = source.split('\n')
-  const result: string[] = []
-
-  for (
-    let index = Math.max(0, line - 1 - count);
-    index <= Math.min(lines.length - 1, line - 1 + count);
-    ++index
-  ) {
-    const lineNumber = index + 1
-    result.push(`${lineNumber.toString().padEnd(3)}|  ${lines[index]}`)
-    if (index === line - 1) {
-      result.push(
-        ' '.padStart(Math.max(index.toString().length, 3)) +
-          '|  ' +
-          '^'.padStart(column + 1)
-      )
-    }
-  }
-
-  return result.join('\n')
-}
-
-
-
-const transformStackTrace = async (stack: string): Promise<string> => {
-  return (
-    await Promise.all(
-      stack.split('\n').map(async (l) => {
-        const result =
-          getStackLineInformation(l)
-
-        if (!isStackLineInfo(result)) return result.input
-
-        const { input, varName, url, line, column, vendor } = result;
-        const { sourceMapConsumer } = await getSourceMapForFile(url)
-
-        if (!(sourceMapConsumer instanceof SourceMapConsumer)) {
-          return input
-        }
-
-        const pos = sourceMapConsumer.originalPositionFor({
-          line: line,
-          column: column
-        })
-
-        if (!pos.source) {
-          return input
-        }
-
-        if (vendor === 'chrome') {
-          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
-          if (!varName || varName === 'eval') {
-            return `    at ${source}`
-          } else {
-            return `    at ${varName} (${source})`
-          }
-        } else {
-          // TODO: strip eval and function
-          return `${varName}@${pos.source}:${pos.line || 0}:${pos.column || 0}`
-        }
-      })
-    )
-  ).join('\n')
-}
-
-//TODO: better support for files without source maps
-const generateErrorPayload = async (
-  message: string,
-  filename: string,
-  lineno: number,
-  colno: number,
-  stack: string
-): Promise<ErrorPayload['err']> => {
-  const { sourceMapConsumer, baseSource } = await getSourceMapForFile(filename)
-
-  let source = baseSource
-  let loc = {
-    line: lineno,
-    column: colno,
-    file: filename
-  }
-  if (sourceMapConsumer instanceof SourceMapConsumer) {
-    const {
-      line,
-      column,
-      source: sourceFileName
-    } = sourceMapConsumer.originalPositionFor({
-      line: lineno,
-      column: colno
-    })
-
-    source = sourceMapConsumer.sourceContentFor(sourceFileName)
-    loc = {
-      file:
-        sourceFileName && !filename.includes('@vite')
-          ? sourceFileName
-          : loc.file,
-      line,
-      column
-    }
-  }
-
-  const frame = generateFrame(loc.line, loc.column, source)
-
-  return {
-    message,
-    stack: await transformStackTrace(stack),
-    loc,
-    frame
-  }
-}
-
 const exceptionHandler = async (e: ErrorEvent): Promise<void> => {
   try {
     const error = transformError(e.error)
@@ -672,10 +500,8 @@ const exceptionHandler = async (e: ErrorEvent): Promise<void> => {
     )
 
     createErrorOverlay(payload)
-  } catch (err: Error) {
-    // TODO handle errors that we throw
-    console.log(err)
-    // frame = err.message;
+  } catch (err: unknown) {
+    console.error('Failed to generate error overlay', err)
   }
 }
 
@@ -707,10 +533,8 @@ const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
     )
 
     createErrorOverlay(payload)
-  } catch (err: Error) {
-    // TODO handle errors that we throw
-    console.log(err)
-    // frame = err.message;
+  } catch (err: unknown) {
+    console.error('Failed to generate error overlay', err)
   }
 }
 
