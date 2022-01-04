@@ -73,7 +73,7 @@ importers:
       rollup: 2.62.0
       semver: 7.3.5
       sirv: 2.0.0
-      ts-jest: 27.1.2_1b5a1be2010a86e622f02a11eaeb730f
+      ts-jest: 27.1.2_a27e8f44bb9e5af14f9674b0b72891af
       ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
       typescript: 4.5.4
       vite: link:packages/vite
@@ -730,12 +730,6 @@ importers:
       '@rollup/pluginutils': 4.1.2
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.5
       hash-sum: 2.0.0
-
-  packages/temp:
-    specifiers:
-      css-color-names: ^1.0.1
-    devDependencies:
-      css-color-names: 1.0.1
 
   packages/vite:
     specifiers:
@@ -3577,16 +3571,6 @@ packages:
   /create-require/1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
-
-  /create-vite/2.7.2:
-    resolution: {integrity: sha512-4Eint1oL6GcZWGkgLbSmbzY1UNTkqQyjD9T4aM1YQsltKQ5ZNWDy+rvgYRPV9dR0XD6eLPs8TUUoge1xQCd4BA==}
-    engines: {node: '>=12.0.0'}
-    hasBin: true
-    dependencies:
-      kolorist: 1.5.0
-      minimist: 1.2.5
-      prompts: 2.4.2
-    dev: false
 
   /cross-env/7.0.3:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
