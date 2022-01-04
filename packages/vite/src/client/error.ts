@@ -12,7 +12,6 @@ export const transformError = (error: any): Error => {
   return e
 }
 
-// TODO Clean up these regex
 const RE_CHROME_STACKTRACE =
   /^ {4}at (?:(.+?)\s+)?\(?(.+?)(?::(\d+))?(?::(\d+))?\)?$/
 const RE_FIREFOX_STACKTRACE =
@@ -46,7 +45,7 @@ export const getStackLineInformation = (line: string): StackLineResult => {
         line = lcMatch[2]
         column = lcMatch[3]
       } else {
-        // can't extract line column
+        // can't extract column
         return {
           input
         }
@@ -79,8 +78,8 @@ export const getStackLineInformation = (line: string): StackLineResult => {
         line = lcMatch[2]
         column = ''
       } else {
+        // can't extract column
         return {
-          // can't extract column
           input
         }
       }
@@ -133,7 +132,6 @@ const getSourceMapForFile = async (
     return { baseSource: source }
   }
 
-  // TODO: extract this string to a const
   if (sourceMapData.indexOf('data:application/json;base64,') === 0) {
     let sm = sourceMapData.substring('data:application/json;base64,'.length)
     sm = window.atob(sm)
@@ -213,7 +211,6 @@ const transformStackTrace = async (stack: string): Promise<string> => {
             return `    at ${varName} (${source})`
           }
         } else {
-          // TODO: strip eval and function
           return `${varName}@${pos.source}:${pos.line || 0}:${pos.column || 0}`
         }
       })

@@ -515,7 +515,7 @@ const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
   // Since promise rejection doesn't return the file we have to get it from the stack trace
   const stackLines = error.stack!.split('\n')
   let stackInfo = getStackLineInformation(stackLines[0])
-  // Chromes will include the error message as the first line of the stack trace so we have to check for a match or check the next line
+  // Chrome will include the error message as the first line of the stack trace so we have to check for a match or check the next line
   if (!isStackLineInfo(stackInfo)) {
     stackInfo = getStackLineInformation(stackLines[1])
     if (!isStackLineInfo(stackInfo)) {
