@@ -36,15 +36,15 @@ export interface Options {
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: Pick<TransformOptions, SupportedBabelOptions>
+  babel?: BabelOptions
   /**
    * @deprecated Use `babel.parserOpts.plugins` instead
    */
   parserPlugins?: ParserOptions['plugins']
 }
 
-type SupportedBabelOptions = Exclude<
-  keyof TransformOptions,
+export type BabelOptions = Omit<
+  TransformOptions,
   | 'ast'
   | 'filename'
   | 'root'
@@ -53,11 +53,16 @@ type SupportedBabelOptions = Exclude<
   | 'inputSourceMap'
 >
 
-type ReactBabelOptions = {
-  [P in SupportedBabelOptions]: Exclude<TransformOptions[P], null | undefined> &
-    (P extends 'parserOpts'
-      ? { plugins: Exclude<ParserOptions['plugins'], undefined> }
-      : unknown)
+/**
+ * The object type used by the `options` passed to plugins with
+ * an `api.reactBabel` method.
+ */
+export interface ReactBabelOptions extends BabelOptions {
+  plugins: Extract<BabelOptions['plugins'], any[]>
+  presets: Extract<BabelOptions['presets'], any[]>
+  parserOpts: ParserOptions & {
+    plugins: Extract<ParserOptions['plugins'], any[]>
+  }
 }
 
 declare module 'vite' {
