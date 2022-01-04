@@ -109,11 +109,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
       if (/\.(mjs|[tj]sx?)$/.test(extension)) {
         const isJSX = extension.endsWith('x')
-        // as worker, querystring could be
-        // import MyWorker from './worker?worker' => worker
-        // import MyWorker from './worker?worker&inline' => worker&inline
-        // transformed by webWorkerPlugin :'/worker?worker_file' => worker_file
-        const isWorker = querystring.includes('worker')
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
@@ -123,7 +118,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
-          const isReactModule = isJSX || (code.includes('react') && !isWorker)
+          const isReactModule = isJSX || code.includes('react')
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
