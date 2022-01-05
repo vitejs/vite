@@ -1,9 +1,10 @@
-// Invoked on the commit-msg git hook by yorkie.
+// Invoked on the commit-msg git hook by simple-git-hooks.
 
 import colors from 'picocolors'
 import { readFileSync } from 'fs'
 
-const msgPath = process.env.GIT_PARAMS!
+// get $1 from commit-msg script
+const msgPath = process.argv[2]
 const msg = readFileSync(msgPath, 'utf-8').trim()
 
 const releaseRE = /^v\d/
