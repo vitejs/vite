@@ -133,6 +133,10 @@ test('virtual module', async () => {
   expect(await page.textContent('.virtual')).toMatch('hi')
 })
 
+test('nested virtual module', async () => {
+  expect(await page.textContent('.nested-virtual')).toMatch('[success]')
+})
+
 test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
