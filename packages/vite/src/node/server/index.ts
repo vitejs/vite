@@ -328,12 +328,16 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
-    container.resolveId(url, undefined, { ssr })
+  const moduleGraph: ModuleGraph = new ModuleGraph(
+    (url, ssr) => container.resolveId(url, undefined, { ssr }),
+    (url) => container.load(url),
+    config,
+    watcher
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
+  await moduleGraph.loadCache()
 
   // eslint-disable-next-line prefer-const
   let exitProcess: () => void
@@ -387,6 +391,7 @@ export async function createServer(
         watcher.close(),
         ws.close(),
         container.close(),
+        moduleGraph.close(),
         closeHttpServer()
       ])
     },

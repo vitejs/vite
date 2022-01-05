@@ -1,3 +1,4 @@
+import { watch } from 'chokidar'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
@@ -5,15 +6,8 @@ import { ModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
 
-let resolveId: (id: string) => any
-let moduleGraph: ModuleGraph
-
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
-    beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => resolveId(id))
-    })
-
     it('can pass metadata between hooks', async () => {
       const entryUrl = '/x.js'
 
@@ -51,9 +45,8 @@ describe('plugin container', () => {
         }
       }
 
-      const container = await getPluginContainer({
-        plugins: [plugin]
-      })
+      const { moduleGraph, container, close } =
+        await getPluginContainerAndModuleGraph({ plugins: [plugin] })
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       expect(entryModule.meta).toEqual({ x: 1 })
@@ -62,7 +55,7 @@ describe('plugin container', () => {
       expect(loadResult?.meta).toEqual({ x: 2 })
 
       await container.transform(loadResult.code, entryUrl)
-      await container.close()
+      await close()
 
       expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
     })
@@ -90,21 +83,19 @@ describe('plugin container', () => {
         }
       }
 
-      const container = await getPluginContainer({
-        plugins: [plugin1, plugin2]
-      })
+      const { moduleGraph, container, close } =
+        await getPluginContainerAndModuleGraph({ plugins: [plugin1, plugin2] })
 
       await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       await container.load(entryUrl)
+      await close()
 
       expect.assertions(1)
     })
   })
 })
 
-async function getPluginContainer(
-  inlineConfig?: UserConfig
-): Promise<PluginContainer> {
+async function getPluginContainerAndModuleGraph(inlineConfig?: UserConfig) {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
     'serve'
@@ -113,7 +104,23 @@ async function getPluginContainer(
   // @ts-ignore: This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !/pre-alias/.test(p.name))
 
-  resolveId = (id) => container.resolveId(id)
+  const watcher = watch(__dirname, { ignoreInitial: true })
+
+  const moduleGraph = new ModuleGraph(
+    (url) => container.resolveId(url),
+    (url) => container.load(url),
+    config,
+    watcher
+  )
   const container = await createPluginContainer(config, moduleGraph)
-  return container
+  return {
+    moduleGraph,
+    container,
+    close: () =>
+      Promise.all([
+        container.close(),
+        moduleGraph.close(false),
+        watcher.close()
+      ])
+  }
 }

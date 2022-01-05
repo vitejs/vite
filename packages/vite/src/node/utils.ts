@@ -4,6 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { pathToFileURL, URL } from 'url'
+import { createHash } from 'crypto'
 import {
   FS_PREFIX,
   DEFAULT_EXTENSIONS,
@@ -307,6 +308,26 @@ export function lookupFile(
   if (parentDir !== dir) {
     return lookupFile(parentDir, formats, pathOnly)
   }
+}
+
+const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
+
+export function getLockAndConfigHash(
+  root: string,
+  configKeys: { [key: string]: unknown }
+): string {
+  let content = lookupFile(root, lockfileFormats) || ''
+  content += JSON.stringify(configKeys, (_, value) => {
+    if (typeof value === 'function' || value instanceof RegExp) {
+      return value.toString()
+    }
+    return value
+  })
+  return getShortHash(content)
+}
+
+export function getShortHash(content: Buffer | string): string {
+  return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 
 const splitRE = /\r?\n/

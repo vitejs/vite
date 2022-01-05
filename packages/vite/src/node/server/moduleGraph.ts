@@ -1,14 +1,23 @@
-import { extname } from 'path'
-import type { ModuleInfo, PartialResolvedId } from 'rollup'
+import fs from 'fs'
+import path, { extname } from 'path'
+import type { LoadResult, ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
+import getEtag from 'etag'
+import type { FSWatcher } from 'chokidar'
+import { performance } from 'perf_hooks'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
+  createDebugger,
+  ensureWatchedFile,
+  getLockAndConfigHash,
   normalizePath,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  timeFrom
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../constants'
+import type { ResolvedConfig } from '../config'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
@@ -32,12 +41,26 @@ export class ModuleNode {
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
   lastHMRTimestamp = 0
+  sourceEtag: string | null = null
 
   constructor(url: string) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
   }
 }
+
+type Cache = {
+  configHash: string
+  files: {
+    [path: string]: {
+      sourceEtag: string
+      transformResult: TransformResult
+    }
+  }
+}
+
+const isDebug = !!process.env.DEBUG
+const debugModuleGraph = createDebugger('vite:moduleGraph')
 
 function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   if (seen.has(mod)) {
@@ -60,12 +83,20 @@ export class ModuleGraph {
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
+  private saveCacheState: {
+    promise?: Promise<void>
+    timeout?: NodeJS.Timeout
+    canQueue: boolean
+  } = { canQueue: true }
 
   constructor(
     private resolveId: (
       url: string,
       ssr: boolean
-    ) => Promise<PartialResolvedId | null>
+    ) => Promise<PartialResolvedId | null>,
+    private load: (id: string) => Promise<LoadResult | null>,
+    private config: ResolvedConfig,
+    private watcher: FSWatcher
   ) {}
 
   async getModuleByUrl(
@@ -214,5 +245,141 @@ export class ModuleGraph {
       url = pathname + ext + (search || '') + (hash || '')
     }
     return [url, resolvedId, resolved?.meta]
+  }
+
+  async loadCache(): Promise<void> {
+    const start = isDebug ? performance.now() : 0
+    if (this.config.server.force) {
+      isDebug && debugModuleGraph('Running with force, loadCache skipped')
+      return
+    }
+    const cacheLocation = this.getCacheLocation()
+    if (!cacheLocation) {
+      isDebug && debugModuleGraph('Cache disabled, loadCache skipped')
+      return
+    }
+    if (!fs.existsSync(cacheLocation)) {
+      isDebug && debugModuleGraph('Cache not found')
+      return
+    }
+    let cache: Cache
+    try {
+      cache = JSON.parse(fs.readFileSync(cacheLocation, { encoding: 'utf-8' }))
+    } catch {
+      // This can happen when the process is killed while writing to disc.
+      isDebug && debugModuleGraph('Corrupted cache, cache not loaded')
+      return
+    }
+    if (cache.configHash !== this.getCacheHash()) {
+      isDebug && debugModuleGraph("Config hash didn't match, cache not loaded")
+      return
+    }
+    for (const [url, value] of Object.entries(cache.files)) {
+      const id = (await this.resolveId(url, false))?.id || url
+      let loadResult = await this.load(id)
+      if (!loadResult) {
+        try {
+          loadResult = await fs.promises.readFile(id, 'utf-8')
+        } catch (e) {
+          if (e.code !== 'ENOENT') throw e
+        }
+      }
+      if (!loadResult) {
+        isDebug && debugModuleGraph(`Module ${url} not found`)
+        continue
+      }
+      const code = typeof loadResult === 'object' ? loadResult.code : loadResult
+      if (getEtag(code, { weak: true }) !== value.sourceEtag) {
+        isDebug && debugModuleGraph(`Module ${url} changed`)
+        continue
+      }
+      const module = await this.ensureEntryFromUrl(url)
+      ensureWatchedFile(this.watcher, module.file, this.config.root)
+      module.sourceEtag = value.sourceEtag
+      module.transformResult = value.transformResult
+    }
+    isDebug &&
+      debugModuleGraph(
+        timeFrom(start),
+        `${this.urlToModuleMap.size}/${
+          Object.keys(cache.files).length
+        } modules restored`
+      )
+  }
+
+  queueSaveCache(): void {
+    if (!this.saveCacheState.canQueue) return
+    if (this.saveCacheState.timeout) clearTimeout(this.saveCacheState.timeout)
+    this.saveCacheState.timeout = setTimeout(() => {
+      this.saveCacheState.timeout = undefined
+      this.saveCache()
+    }, 500)
+  }
+
+  async close(save: boolean = true): Promise<void> {
+    if (this.saveCacheState.timeout) clearTimeout(this.saveCacheState.timeout)
+    this.saveCacheState.canQueue = false
+    if (save) return this.saveCache()
+  }
+
+  private async saveCache(): Promise<void> {
+    if (!this.saveCacheState.promise) {
+      this.saveCacheState.promise = this.unsafelySaveCache().finally(() => {
+        this.saveCacheState.promise = undefined
+      })
+    }
+    return this.saveCacheState.promise
+  }
+
+  private async unsafelySaveCache(): Promise<void> {
+    const start = isDebug ? performance.now() : 0
+    const cacheLocation = this.getCacheLocation()
+    if (!cacheLocation) {
+      isDebug && debugModuleGraph('No cache location, saveCache skipped')
+      return
+    }
+    const cache: Cache = { configHash: this.getCacheHash(), files: {} }
+    this.urlToModuleMap.forEach((module, url) => {
+      if (!module.transformResult) return
+      if (
+        !module.sourceEtag ||
+        url.includes('node_modules') ||
+        /[?&]html-proxy\b/.test(url) || // Caching html proxy would require re-populate the htmlProxyMap
+        url.startsWith(FS_PREFIX) ||
+        url.startsWith(CLIENT_PUBLIC_PATH)
+      ) {
+        return
+      }
+      cache.files[url] = {
+        sourceEtag: module.sourceEtag,
+        transformResult: module.transformResult
+      }
+    })
+    await fs.promises.writeFile(cacheLocation, JSON.stringify(cache))
+    isDebug &&
+      debugModuleGraph(
+        timeFrom(start),
+        `${Object.keys(cache.files).length}/${
+          this.urlToModuleMap.size
+        } modules saved`
+      )
+  }
+
+  private getCacheHash(): string {
+    return getLockAndConfigHash(this.config.root, {
+      mode: this.config.mode,
+      root: this.config.root,
+      resolve: this.config.resolve,
+      esbuild: this.config.esbuild,
+      css: this.config.css,
+      define: this.config.define,
+      env: this.config.env,
+      configFileHash: this.config.configFileHash
+    })
+  }
+
+  private getCacheLocation(): string | undefined {
+    if (!this.config.cacheDir) return
+    return path.resolve(this.config.cacheDir, 'cache.json')
   }
 }

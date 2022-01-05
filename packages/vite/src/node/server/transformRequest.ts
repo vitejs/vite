@@ -150,6 +150,7 @@ async function doTransform(
   // ensure module in graph after successful load
   const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
+  mod.sourceEtag = getEtag(code, { weak: true })
 
   // transform
   const transformStart = isDebug ? performance.now() : 0
@@ -186,10 +187,12 @@ async function doTransform(
       url
     ))
   } else {
-    return (mod.transformResult = {
+    const transformResult = (mod.transformResult = {
       code,
-      map,
+      map: map as SourceMap,
       etag: getEtag(code, { weak: true })
-    } as TransformResult)
+    })
+    server.moduleGraph.queueSaveCache()
+    return transformResult
   }
 }

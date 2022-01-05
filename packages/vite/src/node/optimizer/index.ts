@@ -1,18 +1,18 @@
 import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
-import { createHash } from 'crypto'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
-  lookupFile,
   normalizePath,
   writeFile,
   flattenId,
-  normalizeId
+  normalizeId,
+  getLockAndConfigHash,
+  getShortHash
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
@@ -115,7 +115,7 @@ export async function optimizeDeps(
     command: 'build'
   }
 
-  const { root, logger, cacheDir } = config
+  const { logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
   if (!cacheDir) {
@@ -124,7 +124,7 @@ export async function optimizeDeps(
   }
 
   const dataPath = path.join(cacheDir, '_metadata.json')
-  const mainHash = getDepHash(root, config)
+  const mainHash = getDepHash(config)
   const data: DepOptimizationMetadata = {
     hash: mainHash,
     browserHash: mainHash,
@@ -164,10 +164,7 @@ export async function optimizeDeps(
   }
 
   // update browser hash
-  data.browserHash = createHash('sha256')
-    .update(data.hash + JSON.stringify(deps))
-    .digest('hex')
-    .substring(0, 8)
+  data.browserHash = getShortHash(data.hash + JSON.stringify(deps))
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
@@ -382,30 +379,18 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
-
-function getDepHash(root: string, config: ResolvedConfig): string {
-  let content = lookupFile(root, lockfileFormats) || ''
+function getDepHash(config: ResolvedConfig): string {
   // also take config into account
   // only a subset of config options that can affect dep optimization
-  content += JSON.stringify(
-    {
-      mode: config.mode,
-      root: config.root,
-      resolve: config.resolve,
-      assetsInclude: config.assetsInclude,
-      plugins: config.plugins.map((p) => p.name),
-      optimizeDeps: {
-        include: config.optimizeDeps?.include,
-        exclude: config.optimizeDeps?.exclude
-      }
-    },
-    (_, value) => {
-      if (typeof value === 'function' || value instanceof RegExp) {
-        return value.toString()
-      }
-      return value
+  return getLockAndConfigHash(config.root, {
+    mode: config.mode,
+    root: config.root,
+    resolve: config.resolve,
+    assetsInclude: config.assetsInclude,
+    plugins: config.plugins.map((p) => p.name),
+    optimizeDeps: {
+      include: config.optimizeDeps?.include,
+      exclude: config.optimizeDeps?.exclude
     }
-  )
-  return createHash('sha256').update(content).digest('hex').substring(0, 8)
+  })
 }

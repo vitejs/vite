@@ -4,11 +4,10 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl } from '../utils'
+import { cleanUrl, getShortHash } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
-import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -343,7 +342,7 @@ async function fileToBuiltUrl(
 }
 
 export function getAssetHash(content: Buffer): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 8)
+  return getShortHash(content)
 }
 
 export async function urlToBuiltUrl(

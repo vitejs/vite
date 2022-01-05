@@ -15,7 +15,8 @@ import {
   isObject,
   lookupFile,
   normalizePath,
-  dynamicImport
+  dynamicImport,
+  getShortHash
 } from './utils'
 import { resolvePlugins } from './plugins'
 import colors from 'picocolors'
@@ -239,6 +240,7 @@ export type ResolvedConfig = Readonly<
     'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
   > & {
     configFile: string | undefined
+    configFileHash: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
     root: string
@@ -278,6 +280,7 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  let configFileHash: string | undefined
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 
@@ -304,6 +307,7 @@ export async function resolveConfig(
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
+      configFileHash = loadResult.hash
       configFileDependencies = loadResult.dependencies
     }
   }
@@ -467,6 +471,7 @@ export async function resolveConfig(
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
+    configFileHash,
     configFileDependencies,
     inlineConfig,
     root: resolvedRoot,
@@ -823,6 +828,7 @@ export async function loadConfigFromFile(
   path: string
   config: UserConfig
   dependencies: string[]
+  hash: string
 } | null> {
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
@@ -830,7 +836,6 @@ export async function loadConfigFromFile(
   let resolvedPath: string | undefined
   let isTS = false
   let isESM = false
-  let dependencies: string[] = []
 
   // check package.json for type: "module" and set `isMjs` to true
   try {
@@ -887,18 +892,18 @@ export async function loadConfigFromFile(
   }
 
   try {
-    let userConfig: UserConfigExport | undefined
+    let bundledConfig: { code: string; dependencies: string[] }
+    let userConfig: UserConfigExport
 
     if (isESM) {
       const fileUrl = require('url').pathToFileURL(resolvedPath)
-      const bundled = await bundleConfigFile(resolvedPath, true)
-      dependencies = bundled.dependencies
+      bundledConfig = await bundleConfigFile(resolvedPath, true)
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
+        fs.writeFileSync(resolvedPath + '.js', bundledConfig.code)
         userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
         fs.unlinkSync(resolvedPath + '.js')
@@ -910,13 +915,13 @@ export async function loadConfigFromFile(
         userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
         debug(`native esm config loaded in ${getTime()}`, fileUrl)
       }
-    }
-
-    if (!userConfig) {
+    } else {
       // Bundle config file and transpile it to cjs using esbuild.
-      const bundled = await bundleConfigFile(resolvedPath)
-      dependencies = bundled.dependencies
-      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
+      bundledConfig = await bundleConfigFile(resolvedPath)
+      userConfig = await loadConfigFromBundledFile(
+        resolvedPath,
+        bundledConfig.code
+      )
       debug(`bundled config file loaded in ${getTime()}`)
     }
 
@@ -929,7 +934,8 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies
+      hash: getShortHash(bundledConfig.code),
+      dependencies: bundledConfig.dependencies
     }
   } catch (e) {
     createLogger(logLevel).error(
