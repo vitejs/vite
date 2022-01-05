@@ -1,0 +1,9 @@
+{
+  "name": "resolve-config",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite --force",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
