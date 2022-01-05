@@ -11,7 +11,8 @@ import {
   isObject,
   normalizePath,
   processSrcSet,
-  parseRequest
+  parseRequest,
+  slash
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -1101,13 +1102,7 @@ const scss: SassStylePreprocessor = async (
       const globPaths = glob.sync(url, { cwd: includePath })
 
       globPaths.forEach((relativePath) => {
-        filePaths.add(
-          path
-            .resolve(includePath, relativePath)
-            // This fixes a problem with importing absolute paths on Windows.
-            .split(`\\`)
-            .join(`/`)
-        )
+        filePaths.add(slash(path.resolve(includePath, relativePath)))
       })
     })
 
