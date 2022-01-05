@@ -9,12 +9,14 @@
   <p class="inter">this will be styled with a font-face</p>
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
+  <p class="nested-virtual">msg from nested virtual module: {{ virtualMsg }}</p>
 
   <ImportType />
 </template>
 
 <script setup>
 import foo from '@foo'
+import { msg as virtualMsg } from '@virtual-file'
 import { reactive, defineAsyncComponent } from 'vue'
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
