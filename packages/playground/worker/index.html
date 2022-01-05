@@ -3,6 +3,7 @@
 <div>
   Response from worker: <span class="pong"></span><span class="mode"></span>
 </div>
+<div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
 
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
@@ -32,6 +33,7 @@
   worker.addEventListener('message', (e) => {
     text('.pong', e.data.msg)
     text('.mode', e.data.mode)
+    text('.bundle-with-plugin', e.data.bundleWithPlugin)
   })
 
   document.querySelector('.ping').addEventListener('click', () => {

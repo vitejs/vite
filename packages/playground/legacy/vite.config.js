@@ -10,6 +10,7 @@ module.exports = {
   ],
 
   build: {
+    manifest: true,
     rollupOptions: {
       output: {
         chunkFileNames(chunkInfo) {

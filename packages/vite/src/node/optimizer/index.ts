@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { createHash } from 'crypto'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
@@ -175,8 +175,8 @@ export async function optimizeDeps(
       `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
         .map(
           (id) =>
-            `${chalk.cyan(id)} ${chalk.white.dim(
-              `(imported by ${missing[id]})`
+            `${colors.cyan(id)} ${colors.white(
+              colors.dim(`(imported by ${missing[id]})`)
             )}`
         )
         .join(`\n  `)}\n\nAre they installed?`
@@ -196,7 +196,7 @@ export async function optimizeDeps(
           deps[normalizedId] = entry
         } else {
           throw new Error(
-            `Failed to resolve force included dependency: ${chalk.cyan(id)}`
+            `Failed to resolve force included dependency: ${colors.cyan(id)}`
           )
         }
       }
@@ -215,7 +215,7 @@ export async function optimizeDeps(
   const maxListed = 5
   const listed = Math.min(total, maxListed)
   const extra = Math.max(0, total - maxListed)
-  const depsString = chalk.yellow(
+  const depsString = colors.yellow(
     qualifiedIds.slice(0, listed).join(`\n  `) +
       (extra > 0 ? `\n  (...and ${extra} more)` : ``)
   )
@@ -223,15 +223,13 @@ export async function optimizeDeps(
     if (!newDeps) {
       // This is auto run on server start - let the user know that we are
       // pre-optimizing deps
-      logger.info(
-        chalk.greenBright(`Pre-bundling dependencies:\n  ${depsString}`)
-      )
+      logger.info(colors.green(`Pre-bundling dependencies:\n  ${depsString}`))
       logger.info(
         `(this will be run only when your dependencies or config have changed)`
       )
     }
   } else {
-    logger.info(chalk.greenBright(`Optimizing dependencies:\n  ${depsString}`))
+    logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
   }
 
   // esbuild generates nested directory output with lowest common ancestor base

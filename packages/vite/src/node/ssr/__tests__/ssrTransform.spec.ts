@@ -406,3 +406,187 @@ function c({ _ = bar() + foo() }) {}
     "
   `)
 })
+
+test('object destructure alias', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { n } from 'foo'
+const a = () => {
+  const { type: n = 'bar' } = {}
+  console.log(n)
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const a = () => {
+      const { type: n = 'bar' } = {}
+      console.log(n)
+    }
+    "
+  `)
+})
+
+test('nested object destructure alias', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { remove, add, get, set, rest, objRest } from 'vue'
+
+function a() {
+  const {
+    o: { remove },
+    a: { b: { c: [ add ] }},
+    d: [{ get }, set, ...rest],
+    ...objRest
+  } = foo
+
+  remove()
+  add()
+  get()
+  set()
+  rest()
+  objRest()
+}
+
+remove()
+add()
+get()
+set()
+rest()
+objRest()
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    function a() {
+      const {
+        o: { remove },
+        a: { b: { c: [ add ] }},
+        d: [{ get }, set, ...rest],
+        ...objRest
+      } = foo
+
+      remove()
+      add()
+      get()
+      set()
+      rest()
+      objRest()
+    }
+
+    __vite_ssr_import_0__.remove()
+    __vite_ssr_import_0__.add()
+    __vite_ssr_import_0__.get()
+    __vite_ssr_import_0__.set()
+    __vite_ssr_import_0__.rest()
+    __vite_ssr_import_0__.objRest()
+    "
+  `)
+})
+
+test('class props', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { remove, add } from 'vue'
+
+class A {
+  remove = 1
+  add = null
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    const add = __vite_ssr_import_0__.add;
+    const remove = __vite_ssr_import_0__.remove;
+    class A {
+      remove = 1
+      add = null
+    }
+    "
+  `)
+})
+
+test('declare scope', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import { aaa, bbb, ccc, ddd } from 'vue'
+
+function foobar() {
+  ddd()
+
+  const aaa = () => {
+    bbb(ccc)
+    ddd()
+  }
+  const bbb = () => {
+    console.log('hi')
+  }
+  const ccc = 1
+  function ddd() {}
+
+  aaa()
+  bbb()
+  ccc()
+}
+
+aaa()
+bbb()
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+
+
+    function foobar() {
+      ddd()
+
+      const aaa = () => {
+        bbb(ccc)
+        ddd()
+      }
+      const bbb = () => {
+        console.log('hi')
+      }
+      const ccc = 1
+      function ddd() {}
+
+      aaa()
+      bbb()
+      ccc()
+    }
+
+    __vite_ssr_import_0__.aaa()
+    __vite_ssr_import_0__.bbb()
+    "
+  `)
+})
