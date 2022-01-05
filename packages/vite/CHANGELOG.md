@@ -1,3 +1,40 @@
+# [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
+
+
+### Bug Fixes
+
+* **build:** fix chokidar.ignore override ([#6317](https://github.com/vitejs/vite/issues/6317)) ([aa47549](https://github.com/vitejs/vite/commit/aa475494c61898638a592387ac907a939f1dd938))
+* **build:** fix watch crash with inline module ([#6373](https://github.com/vitejs/vite/issues/6373)) ([49d2f6d](https://github.com/vitejs/vite/commit/49d2f6dbd9445518b022f6c75ca397460a02d9d8))
+* check if e.stack exists in the first place ([#6362](https://github.com/vitejs/vite/issues/6362)) ([f144aa9](https://github.com/vitejs/vite/commit/f144aa9f1df2134dc6695db6e8eff25cac2b5263))
+* correct ssr flag in resolve calls (fix [#6213](https://github.com/vitejs/vite/issues/6213)) ([#6216](https://github.com/vitejs/vite/issues/6216)) ([6dd7d1a](https://github.com/vitejs/vite/commit/6dd7d1a7cb99737dd48e070607d0fe9ece35adab))
+* **css:** no emit assets in html style tag (fix [#5968](https://github.com/vitejs/vite/issues/5968)) ([#6321](https://github.com/vitejs/vite/issues/6321)) ([dc9fce1](https://github.com/vitejs/vite/commit/dc9fce144a957a5e7b3612b27bc657121a882edc))
+* don't force terser on non-legacy (fix [#6266](https://github.com/vitejs/vite/issues/6266)) ([#6272](https://github.com/vitejs/vite/issues/6272)) ([1da104e](https://github.com/vitejs/vite/commit/1da104e8597e2965313e8cd582d032bca551e4ee))
+* prevent dev server crashing on malformed URI (fix [#6300](https://github.com/vitejs/vite/issues/6300)) ([#6308](https://github.com/vitejs/vite/issues/6308)) ([a49d723](https://github.com/vitejs/vite/commit/a49d72358f2d028f62b0e9fcdb096a0e5ddf24c3))
+* replace chalk with picocolors ([#6277](https://github.com/vitejs/vite/issues/6277)) ([5a111ce](https://github.com/vitejs/vite/commit/5a111cedf31f579e3b8c8af5c4442d2e0cd5aa12))
+* replace execa with cross-spawn ([#6299](https://github.com/vitejs/vite/issues/6299)) ([f68ed8b](https://github.com/vitejs/vite/commit/f68ed8b4ebbec01491d069164b28a5948537f0d7))
+* **ssr:** move `vite:ssr-require-hook` after user plugins ([#6306](https://github.com/vitejs/vite/issues/6306)) ([d856c4b](https://github.com/vitejs/vite/commit/d856c4bd6798707e0cbdfc127a2e8b6c00c65dae))
+* strip NULL_BYTE_PLACEHOLDER before transform ([#6390](https://github.com/vitejs/vite/issues/6390)) ([5964949](https://github.com/vitejs/vite/commit/596494948a6e2f697232371b200c2d7a51d386bc))
+* strip query when resolving entry ([#6233](https://github.com/vitejs/vite/issues/6233)) ([000ba2e](https://github.com/vitejs/vite/commit/000ba2e00b14e6c595febfa6dcae862e2d341823))
+* this._implicitHeader is not a function ([#6313](https://github.com/vitejs/vite/issues/6313)) ([c5ba2f2](https://github.com/vitejs/vite/commit/c5ba2f24bd48b88907a1505bdf0a83d6b09f1d2b))
+* upgrade postcss-modules ([#6248](https://github.com/vitejs/vite/issues/6248)) ([ac3f434](https://github.com/vitejs/vite/commit/ac3f434b8b7bc827fd76a28989f8c3ebaa999ee9))
+* use `hires: true` for SSR require hook source map ([#6310](https://github.com/vitejs/vite/issues/6310)) ([0ebeb98](https://github.com/vitejs/vite/commit/0ebeb981789e6c29889db03fc11fd9b80c63883f))
+
+
+### Features
+
+* catch postcss error messages ([#6293](https://github.com/vitejs/vite/issues/6293)) ([4d75b2e](https://github.com/vitejs/vite/commit/4d75b2e39d4decd1294f62333bdae4ba577bf1cb))
+* **define:** prevent assignment ([#5515](https://github.com/vitejs/vite/issues/5515)) ([6d4ee18](https://github.com/vitejs/vite/commit/6d4ee18e0c45e7c1fedd36c24b631a8f97f40c0f))
+* import.meta.glob support ?raw ([#5545](https://github.com/vitejs/vite/issues/5545)) ([5279de6](https://github.com/vitejs/vite/commit/5279de6859df61b6191a4c3bfc76da582309a5ec))
+* option to disable pre-transform ([#6309](https://github.com/vitejs/vite/issues/6309)) ([2c14525](https://github.com/vitejs/vite/commit/2c145252b7870e8173886339b69f189878533839))
+* **server:** support headers configurable ([#5580](https://github.com/vitejs/vite/issues/5580)) ([db36e81](https://github.com/vitejs/vite/commit/db36e8158e06ff6a383d03b9680aafc7f62d5033))
+* **server:** trace `error.loc` back to original source ([#5467](https://github.com/vitejs/vite/issues/5467)) ([65cd44d](https://github.com/vitejs/vite/commit/65cd44dcabbf213b24d68cf02d787e7b9e138c21))
+* **ssr:** support preload dynamic css file in html head ([#5705](https://github.com/vitejs/vite/issues/5705)) ([07fca95](https://github.com/vitejs/vite/commit/07fca955519a98e19d4e138a17e19a000eef3f46))
+* support .cjs config file ([#5602](https://github.com/vitejs/vite/issues/5602)) ([cddd986](https://github.com/vitejs/vite/commit/cddd986b2a3c61afd53d6fde88f9f28d3c3a6b00))
+* **vite:** pass mode to preview command ([#6392](https://github.com/vitejs/vite/issues/6392)) ([1ff1103](https://github.com/vitejs/vite/commit/1ff1103ade691b0a3f564609fdc4e76d5122227b))
+* **worker:** support worker format, plugins and rollupOptions (fix [#6191](https://github.com/vitejs/vite/issues/6191)) ([#6351](https://github.com/vitejs/vite/issues/6351)) ([133fcea](https://github.com/vitejs/vite/commit/133fcea5223263b0ae08ac9a0422b55183ebd266))
+
+
+
 ## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
 
 
