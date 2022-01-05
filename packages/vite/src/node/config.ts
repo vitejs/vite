@@ -822,6 +822,7 @@ export async function loadConfigFromFile(
       const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
       if (fs.existsSync(cjsConfigFile)) {
         resolvedPath = cjsConfigFile
+        isESM = false
       }
     }
   }
