@@ -1,6 +1,7 @@
 import { editFile, getColor, isBuild, untilUpdated } from '../../testUtils'
 import { port } from './serve'
 import fetch from 'node-fetch'
+import { resolve } from 'path'
 
 const url = `http://localhost:${port}`
 
@@ -161,4 +162,21 @@ test('client navigation', async () => {
 test('import.meta.url', async () => {
   await page.goto(url)
   expect(await page.textContent('.protocol')).toEqual('file:')
+})
+
+test('dynamic css file should be preloaded', async () => {
+  if (isBuild) {
+    await page.goto(url)
+    const homeHtml = await (await fetch(url)).text()
+    const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
+    const filename = re.exec(homeHtml)[1]
+    const manifest = require(resolve(
+      process.cwd(),
+      './packages/temp/ssr-vue/dist/client/ssr-manifest.json'
+    ))
+    const depFile = manifest[filename]
+    for (const file of depFile) {
+      expect(homeHtml).toMatch(file)
+    }
+  }
 })

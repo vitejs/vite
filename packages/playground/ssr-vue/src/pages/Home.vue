@@ -10,6 +10,11 @@
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
   <p class="nested-virtual">msg from nested virtual module: {{ virtualMsg }}</p>
+  <Button>CommonButton</Button>
+  <div>
+    encrypted message:
+    <p class="encrypted-msg">{{ encryptedMsg }}</p>
+  </div>
 
   <ImportType />
 </template>
@@ -18,6 +23,7 @@
 import foo from '@foo'
 import { msg as virtualMsg } from '@virtual-file'
 import { reactive, defineAsyncComponent } from 'vue'
+import Button from '../components/button'
 const ImportType = load('ImportType')
 const Foo = defineAsyncComponent(() =>
   import('../components/Foo').then((mod) => mod.Foo)
