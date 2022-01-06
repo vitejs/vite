@@ -787,6 +787,8 @@ export default defineConfig({
 
   Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
+  Note the `build.minify` option is not available when using the `'es'` format in lib mode.
+
 ### build.terserOptions
 
 - **Type:** `TerserOptions`
@@ -974,3 +976,24 @@ SSR options may be adjusted in minor releases.
 - **Default:** `node`
 
   Build target for the SSR server.
+
+## Worker Options
+
+### worker.format
+
+- **Type:** `'es' | 'iife'`
+- **Default:** `iife`
+
+  Output format for worker bundle.
+
+### worker.plugins
+
+- **Type:** [`(Plugin | Plugin[])[]`](#plugins)
+
+  Vite plugins that apply to worker bundle
+
+### worker.rollupOptions
+
+- **Type:** [`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)
+
+  Rollup options to build worker bundle.
