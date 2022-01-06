@@ -190,7 +190,7 @@ export function shouldExternalizeForSSR(
     if (typeof e === 'string' && e === id) {
       return false
     }
-    if (new RegExp(e).test(id)) {
+    if ((e as RegExp).test(id)) {
       return false
     }
   }
