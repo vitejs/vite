@@ -673,7 +673,7 @@ importers:
       '@babel/plugin-transform-react-jsx-self': ^7.16.5
       '@babel/plugin-transform-react-jsx-source': ^7.16.5
       '@rollup/pluginutils': ^4.1.2
-      esbuild: npm:esbuild@0.14.3
+      esbuild: 0.14.3
       react-refresh: ^0.11.0
       resolve: ^1.20.0
     dependencies:
@@ -692,7 +692,7 @@ importers:
       '@rollup/pluginutils': ^4.1.2
       '@types/hash-sum': ^1.0.0
       debug: ^4.3.3
-      esbuild: npm:esbuild@0.14.3
+      esbuild: 0.14.3
       hash-sum: ^2.0.0
       rollup: ^2.59.0
       slash: ^4.0.0
