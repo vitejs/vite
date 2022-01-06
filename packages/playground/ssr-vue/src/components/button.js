@@ -9,7 +9,7 @@ export default defineComponent({
         {
           class: 'btn'
         },
-        'dynamicBtn'
+        'commonBtn'
       )
     }
   }

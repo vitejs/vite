@@ -1,7 +1,7 @@
 <template>
   <h1>{{ msg }}</h1>
   <p class="import-meta-url">{{ url }}</p>
-  <Button>CommonButton</Button>
+   <Button />
 </template>
 
 <script>

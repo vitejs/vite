@@ -10,7 +10,7 @@
   <p class="import-meta-url">{{ state.url }}</p>
   <p class="protocol">{{ state.protocol }}</p>
   <p class="nested-virtual">msg from nested virtual module: {{ virtualMsg }}</p>
-  <Button>CommonButton</Button>
+  <Button />
   <div>
     encrypted message:
     <p class="encrypted-msg">{{ encryptedMsg }}</p>
