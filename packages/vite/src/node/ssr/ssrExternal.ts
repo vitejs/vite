@@ -180,21 +180,17 @@ function collectExternals(
 export function shouldExternalizeForSSR(
   id: string,
   externals: string[],
-  noExternals: string | RegExp | (string | RegExp)[] | true
+  noExternal: string | RegExp | (string | RegExp)[] | true
 ): boolean {
-  const noExternalsArr: RegExp[] =
-    noExternals !== true
-      ? (Array.isArray(noExternals) ? noExternals : [noExternals]).map(
-          (item) => {
-            if (typeof item === 'string') {
-              item = new RegExp(item)
-            }
-            return item
-          }
-        )
-      : []
+  if (noExternal === true) {
+    return false
+  }
+  const noExternalsArr = Array.isArray(noExternal) ? noExternal : [noExternal]
   for (const e of noExternalsArr) {
-    if (e.test(id)) {
+    if (typeof e === 'string' && e === id) {
+      return false
+    }
+    if (new RegExp(e).test(id)) {
       return false
     }
   }
