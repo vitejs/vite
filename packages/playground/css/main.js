@@ -72,3 +72,7 @@ text('.inlined-code', inlined)
 // async css modules
 import('./async-modules/blue')
 import('./async-modules/red')
+
+// async css module with normal css
+import('./async-modules-and-css/black')
+import('./async-modules-and-css/blue')

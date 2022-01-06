@@ -292,6 +292,14 @@ test('async css modules', async () => {
   expect(await getColor(red)).toBe('red')
 })
 
+test('async css modules with normal css', async () => {
+  const black = await page.$('.async-modules-and-css-black')
+  const blue = await page.$('.async-modules-and-css-blue')
+
+  expect(await getColor(black)).toBe('black')
+  expect(await getColor(blue)).toBe('blue')
+})
+
 test('PostCSS dir-dependency', async () => {
   const el1 = await page.$('.dir-dep')
   const el2 = await page.$('.dir-dep-2')
