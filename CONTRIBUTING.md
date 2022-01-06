@@ -183,3 +183,29 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
+
+## Docs translation contribution
+
+If you would like to start a translation in your language, just do it please!
+
+but before you start we'd like to provide some tips for you since the docs are embed in this repo for now.
+
+### How to start a translation repo
+
+1. In order to get all doc files, you MUST clone this repo.
+2. Just keep all files in `docs/` and remove anything else
+
+    - You should setup your translation site based on all the files in `docs/` folder as a Vitepress project.
+      (that said, `package.json` is need).
+
+    - Refresh git history by removing `.git` and then `git init`
+
+4. Translate docs.
+
+    - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that,
+    it's very common in translation contribution.
+  
+5. Push your commits to your Github repo. you can setup a netlify preview as well.
+6. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
+
+
