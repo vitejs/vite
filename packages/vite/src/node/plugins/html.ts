@@ -51,6 +51,10 @@ export const htmlProxyMap = new WeakMap<
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
+  // Should do this when `constructor` rather than when `buildStart`,
+  // `buildStart` will be triggered multiple times then the cached result will be emptied.
+  // https://github.com/vitejs/vite/issues/6372
+  htmlProxyMap.set(config, new Map())
   return {
     name: 'vite:html-inline-proxy',
 
@@ -58,10 +62,6 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
       if (htmlProxyRE.test(id)) {
         return id
       }
-    },
-
-    buildStart() {
-      htmlProxyMap.set(config, new Map())
     },
 
     load(id) {
@@ -211,13 +211,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     isExternalUrl(url) ||
     isDataUrl(url) ||
     checkPublicFile(url, config)
+  // Same reason with `htmlInlineProxyPlugin`
+  isAsyncScriptMap.set(config, new Map())
 
   return {
     name: 'vite:build-html',
-
-    buildStart() {
-      isAsyncScriptMap.set(config, new Map())
-    },
 
     async transform(html, id) {
       if (id.endsWith('.html')) {

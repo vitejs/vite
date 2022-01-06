@@ -52,17 +52,17 @@
     "rimraf": "^3.0.2",
     "rollup": "^2.59.0",
     "semver": "^7.3.5",
+    "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.0",
     "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
     "typescript": "~4.5.4",
     "vite": "workspace:*",
-    "vitepress": "^0.20.10",
-    "yorkie": "^2.0.0"
+    "vitepress": "^0.20.10"
   },
-  "gitHooks": {
-    "pre-commit": "lint-staged --concurrent false",
-    "commit-msg": "ts-node scripts/verifyCommit.ts"
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged --concurrent false",
+    "commit-msg": "pnpm exec ts-node scripts/verifyCommit.ts $1"
   },
   "lint-staged": {
     "*": [
