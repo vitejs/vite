@@ -260,6 +260,7 @@ export default defineConfig(async ({ command, mode }) => {
       | 'dashes'
       | 'dashesOnly'
       | null
+    isCssModule?: string | RegExp | ((id: string) => boolean)
   }
   ```
 

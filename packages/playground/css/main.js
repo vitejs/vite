@@ -16,6 +16,10 @@ import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
 
+import customMod from './custom-module.css'
+document.querySelector('.custom-modules').classList.add(customMod['apply-color'])
+text('.custom-modules-code', JSON.stringify(customMod, null, 2))
+
 import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
@@ -48,6 +52,13 @@ if (import.meta.hot) {
     list.remove(mod.applyColor)
     list.add(newMod.applyColor)
     text('.modules-code', JSON.stringify(newMod.default, null, 2))
+  })
+
+  import.meta.hot.accept('./custom-module.css', (newMod) => {
+    const list = document.querySelector('.custom-modules').classList
+    list.remove(mod.applyColor)
+    list.add(newMod.applyColor)
+    text('.custom-modules-code', JSON.stringify(newMod.default, null, 2))
   })
 
   import.meta.hot.accept('./mod.module.scss', (newMod) => {

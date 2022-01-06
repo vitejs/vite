@@ -82,6 +82,7 @@ export interface CSSModulesOptions {
     | 'dashes'
     | 'dashesOnly'
     | null
+  isCssModule?: string | RegExp | ((id: string) => boolean)
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
@@ -590,6 +591,23 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+function isCssModule(modulesOptions: CSSOptions['modules'], id: string): boolean {
+  if (modulesOptions && modulesOptions.isCssModule) {
+    const { isCssModule } = modulesOptions
+    if (typeof isCssModule === 'function') {
+      return isCssModule(id);
+    } else {
+      let regexp;
+      if (typeof isCssModule === 'string') regexp = new RegExp(isCssModule)
+      else regexp = isCssModule
+      return regexp.test(id)
+    }
+  } else {
+    return modulesOptions !== false && cssModuleRE.test(id)
+  }
+}
+
+
 async function compileCSS(
   id: string,
   code: string,
@@ -605,7 +623,7 @@ async function compileCSS(
   deps?: Set<string>
 }> {
   const { modules: modulesOptions, preprocessorOptions } = config.css || {}
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  const isModule = isCssModule(modulesOptions, id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')

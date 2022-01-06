@@ -159,7 +159,7 @@ If the project contains valid PostCSS config (any format supported by [postcss-l
 
 ### CSS Modules
 
-Any CSS file ending with `.module.css` is considered a [CSS modules file](https://github.com/css-modules/css-modules). Importing such a file will return the corresponding module object:
+Any CSS file ending with `.module.css` is considered a [CSS modules file](https://github.com/css-modules/css-modules). You can change this behavior using the [`css.modules.isCssModule` option](/config/#css-modules). Importing such a file will return the corresponding module object:
 
 ```css
 /* example.module.css */
