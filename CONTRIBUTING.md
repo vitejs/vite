@@ -188,7 +188,7 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 If you would like to start a translation in your language, just do it please!
 
-but before you start we'd like to provide some tips for you since the docs are embed in this repo for now.
+But before start translation we'd like to provide some tips for you, since the docs are embed in this repo for now.
 
 ### How to start a translation repo
 
