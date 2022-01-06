@@ -1,3 +1,12 @@
+# [2.8.0-beta.1](https://github.com/vitejs/vite/compare/v2.8.0-beta.0...v2.8.0-beta.1) (2022-01-06)
+
+
+### Features
+
+* new Worker can bundle URL('path', import.meta.url) script (fix [#5979](https://github.com/vitejs/vite/issues/5979)) ([#6356](https://github.com/vitejs/vite/issues/6356)) ([a345614](https://github.com/vitejs/vite/commit/a34561490b4b866d8d4f98c697435dcb68a5c3ed))
+
+
+
 # [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
 
 
