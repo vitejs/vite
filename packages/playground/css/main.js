@@ -17,7 +17,9 @@ document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
 
 import customMod from './custom-module.css'
-document.querySelector('.custom-modules').classList.add(customMod['apply-color'])
+document
+  .querySelector('.custom-modules')
+  .classList.add(customMod['apply-color'])
 text('.custom-modules-code', JSON.stringify(customMod, null, 2))
 
 import sassMod from './mod.module.scss'
