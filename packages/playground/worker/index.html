@@ -20,16 +20,22 @@
   <span class="tick-count">0</span>
 </div>
 
+<p>new Worker(new Url('path', import.meta.url))</p>
+<div class="worker-import-meta-url"></div>
+
+<p>new SharedWorker(new Url('path', import.meta.url))</p>
+<div class="shared-worker-import-meta-url"></div>
+
 <script type="module">
-  import Worker from './my-worker?worker'
+  import myWorker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
-  import SharedWorker from './my-shared-worker?sharedworker&name=shared'
+  import mySharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
 
   document.querySelector('.mode-true').textContent = mode
 
-  const worker = new Worker()
+  const worker = new myWorker()
   worker.addEventListener('message', (e) => {
     text('.pong', e.data.msg)
     text('.mode', e.data.mode)
@@ -49,7 +55,7 @@
     inlineWorker.postMessage('ping')
   })
 
-  const sharedWorker = new SharedWorker()
+  const sharedWorker = new mySharedWorker()
   document.querySelector('.tick-shared').addEventListener('click', () => {
     sharedWorker.port.postMessage('tick')
   })
@@ -72,4 +78,29 @@
   function text(el, text) {
     document.querySelector(el).textContent = text
   }
+
+  // url import worker
+  const w = new Worker(new URL('./newUrl/url-worker.js', import.meta.url), {
+    type: 'module'
+  })
+  w.addEventListener('message', (ev) =>
+    text(
+      '.worker-import-meta-url',
+      'worker import.meta.url' + JSON.stringify(ev.data)
+    )
+  )
+
+  const w2 = new SharedWorker(
+    new URL('./newUrl/url-shared-worker.js', import.meta.url),
+    {
+      type: 'module'
+    }
+  )
+  w2.port.addEventListener('message', (ev) => {
+    text(
+      '.shared-worker-import-meta-url',
+      'shared-worker import.meta.url' + JSON.stringify(ev.data)
+    )
+  })
+  w2.port.start()
 </script>

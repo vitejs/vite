@@ -15,6 +15,7 @@ import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
+import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -56,6 +57,7 @@ export async function resolvePlugins(
     ),
     wasmPlugin(config),
     webWorkerPlugin(config),
+    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
