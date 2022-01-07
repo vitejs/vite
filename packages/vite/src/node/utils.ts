@@ -676,14 +676,13 @@ export async function asyncPool<Item, Result>({
   fn: (item: Item) => Promise<Result>
 }): Promise<Result[]> {
   const promises: Promise<Result>[] = []
-  const pool = new Set<Promise<void>>()
+  const pool = new Set<Promise<Result>>()
   for (const item of items) {
     const promise = fn(item)
     promises.push(promise)
-    const poolItem = promise.then(() => {
-      pool.delete(poolItem)
-    })
-    pool.add(poolItem)
+    pool.add(promise)
+    const clean = () => pool.delete(promise)
+    promise.then(clean, clean)
     if (pool.size >= concurrency) await Promise.race(pool)
   }
   return Promise.all(promises)
