@@ -303,7 +303,10 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const httpsOptions = await resolveHttpsConfig(config.server.https)
+  const httpsOptions = await resolveHttpsConfig(
+    config.server.https,
+    config.cacheDir
+  )
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
