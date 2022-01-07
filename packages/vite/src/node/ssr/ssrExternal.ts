@@ -187,10 +187,14 @@ export function shouldExternalizeForSSR(
   }
   const noExternalsArr = Array.isArray(noExternal) ? noExternal : [noExternal]
   for (const e of noExternalsArr) {
-    if (typeof e === 'string' && e === id) {
-      return false
+    if (typeof e === 'string') {
+      if (e === 'id') {
+        return false
+      } else {
+        continue
+      }
     }
-    if ((e as RegExp).test(id)) {
+    if (e.test(id)) {
       return false
     }
   }
