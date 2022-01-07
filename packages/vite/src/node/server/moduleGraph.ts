@@ -7,6 +7,7 @@ import type { FSWatcher } from 'chokidar'
 import { performance } from 'perf_hooks'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
+  asyncPool,
   cleanUrl,
   createDebugger,
   ensureWatchedFile,
@@ -266,7 +267,7 @@ export class ModuleGraph {
     try {
       cache = JSON.parse(fs.readFileSync(cacheLocation, { encoding: 'utf-8' }))
     } catch {
-      // This can happen when the process is killed while writing to disc.
+      // This can happen when the process is killed while writing to disk.
       isDebug && debugModuleGraph('Corrupted cache, cache not loaded')
       return
     }
@@ -274,30 +275,35 @@ export class ModuleGraph {
       isDebug && debugModuleGraph("Config hash didn't match, cache not loaded")
       return
     }
-    for (const [url, value] of Object.entries(cache.files)) {
-      const id = (await this.resolveId(url, false))?.id || url
-      let loadResult = await this.load(id)
-      if (!loadResult) {
-        try {
-          loadResult = await fs.promises.readFile(id, 'utf-8')
-        } catch (e) {
-          if (e.code !== 'ENOENT') throw e
+    await asyncPool({
+      concurrency: 10,
+      items: Object.entries(cache.files),
+      fn: async ([url, value]) => {
+        const id = (await this.resolveId(url, false))?.id || url
+        let loadResult = await this.load(id)
+        if (!loadResult) {
+          try {
+            loadResult = await fs.promises.readFile(id, 'utf-8')
+          } catch (e) {
+            if (e.code !== 'ENOENT') throw e
+          }
         }
+        if (!loadResult) {
+          isDebug && debugModuleGraph(`Module ${url} not found`)
+          return
+        }
+        const code =
+          typeof loadResult === 'object' ? loadResult.code : loadResult
+        if (getEtag(code, { weak: true }) !== value.sourceEtag) {
+          isDebug && debugModuleGraph(`Module ${url} changed`)
+          return
+        }
+        const module = await this.ensureEntryFromUrl(url)
+        ensureWatchedFile(this.watcher, module.file, this.config.root)
+        module.sourceEtag = value.sourceEtag
+        module.transformResult = value.transformResult
       }
-      if (!loadResult) {
-        isDebug && debugModuleGraph(`Module ${url} not found`)
-        continue
-      }
-      const code = typeof loadResult === 'object' ? loadResult.code : loadResult
-      if (getEtag(code, { weak: true }) !== value.sourceEtag) {
-        isDebug && debugModuleGraph(`Module ${url} changed`)
-        continue
-      }
-      const module = await this.ensureEntryFromUrl(url)
-      ensureWatchedFile(this.watcher, module.file, this.config.root)
-      module.sourceEtag = value.sourceEtag
-      module.transformResult = value.transformResult
-    }
+    })
     isDebug &&
       debugModuleGraph(
         timeFrom(start),

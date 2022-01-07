@@ -187,12 +187,12 @@ async function doTransform(
       url
     ))
   } else {
-    const transformResult = (mod.transformResult = {
+    mod.transformResult = {
       code,
       map: map as SourceMap,
       etag: getEtag(code, { weak: true })
-    })
+    }
     server.moduleGraph.queueSaveCache()
-    return transformResult
+    return mod.transformResult
   }
 }

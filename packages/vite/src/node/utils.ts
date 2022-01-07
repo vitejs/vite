@@ -663,3 +663,26 @@ export function parseRequest(id: string): Record<string, string> | null {
   }
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
+
+// TS rewrite of https://github.com/rxaviers/async-pool/blob/master/lib/es7.js
+// Credits: Rafael Xavier de Souza http://rafael.xavier.blog.br
+export async function asyncPool<Item, Result>({
+  concurrency,
+  items,
+  fn
+}: {
+  concurrency: number
+  items: Item[]
+  fn: (item: Item) => Promise<Result>
+}): Promise<Result[]> {
+  const promises: Promise<Result>[] = []
+  const pool = new Set<Promise<Result>>()
+  for (const item of items) {
+    const promise = fn(item)
+    promises.push(promise)
+    pool.add(promise)
+    promise.then(() => pool.delete(promise))
+    if (pool.size >= concurrency) await Promise.race(pool)
+  }
+  return Promise.all(promises)
+}

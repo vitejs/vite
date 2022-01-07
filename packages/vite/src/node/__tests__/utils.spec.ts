@@ -1,4 +1,4 @@
-import { injectQuery, isWindows } from '../utils'
+import { asyncPool, injectQuery, isWindows } from '../utils'
 
 if (isWindows) {
   // this test will work incorrectly on unix systems
@@ -37,4 +37,20 @@ test('path with unicode, space, and %', () => {
   expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
     '/usr/vite/東京 %20 hello?direct'
   )
+})
+
+test('asyncPool', async () => {
+  const finished: number[] = []
+  await asyncPool({
+    concurrency: 3,
+    items: [1, 6, 4, 2, 5, 3],
+    fn: (nb) =>
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          finished.push(nb)
+          resolve()
+        }, nb * 10)
+      )
+  })
+  expect(finished).toEqual([1, 2, 4, 6, 3, 5])
 })
