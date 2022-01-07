@@ -15,6 +15,8 @@ module.exports = {
     modules: {
       generateScopedName: '[name]__[local]___[hash:base64:5]',
 
+      // string: '.module'
+      // function: id => id.includes('.module')
       isCssModule: /custom-module|\.module/
 
       // example of how getJSON can be used to generate

@@ -599,15 +599,15 @@ function isCssModule(
     const { isCssModule } = modulesOptions
     if (typeof isCssModule === 'function') {
       return isCssModule(id)
-    } else {
-      let regexp
-      if (typeof isCssModule === 'string') regexp = new RegExp(isCssModule)
-      else regexp = isCssModule
+    } else if (
+      typeof isCssModule === 'string' ||
+      isCssModule instanceof RegExp
+    ) {
+      const regexp = new RegExp(isCssModule)
       return regexp.test(id)
     }
-  } else {
-    return modulesOptions !== false && cssModuleRE.test(id)
   }
+  return modulesOptions !== false && cssModuleRE.test(id)
 }
 
 async function compileCSS(
