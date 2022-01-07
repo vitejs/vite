@@ -84,11 +84,6 @@ export class ModuleGraph {
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
-  private saveCacheState: {
-    promise?: Promise<void>
-    timeout?: NodeJS.Timeout
-    canQueue: boolean
-  } = { canQueue: true }
 
   constructor(
     private resolveId: (
@@ -97,7 +92,12 @@ export class ModuleGraph {
     ) => Promise<PartialResolvedId | null>,
     private load: (id: string) => Promise<LoadResult | null>,
     private config: ResolvedConfig,
-    private watcher: FSWatcher
+    private watcher: FSWatcher,
+    private saveCacheState: {
+      promise?: Promise<void>
+      timeout?: NodeJS.Timeout
+      canQueue: boolean
+    } = { canQueue: !!config.cacheDir }
   ) {}
 
   async getModuleByUrl(
@@ -386,6 +386,6 @@ export class ModuleGraph {
 
   private getCacheLocation(): string | undefined {
     if (!this.config.cacheDir) return
-    return path.resolve(this.config.cacheDir, 'cache.json')
+    return path.resolve(this.config.cacheDir, '_moduleCache.json')
   }
 }
