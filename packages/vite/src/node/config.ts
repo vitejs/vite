@@ -39,6 +39,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
+import type { RollupOptions } from 'rollup'
 
 const debug = createDebugger('vite:config')
 
@@ -185,6 +186,27 @@ export interface UserConfig {
    * @deprecated use `resolve.dedupe` instead
    */
   dedupe?: string[]
+  /**
+   * Worker bundle options
+   */
+  worker?: {
+    /**
+     * Output format for worker bundle
+     * @default 'iife'
+     */
+    format?: 'es' | 'iife'
+    /**
+     * Vite plugins that apply to worker bundle
+     */
+    plugins?: (PluginOption | PluginOption[])[]
+    /**
+     * Rollup options to build worker bundle
+     */
+    rollupOptions?: Omit<
+      RollupOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
@@ -200,6 +222,12 @@ export interface SSROptions {
   target?: SSRTarget
 }
 
+export interface ResolveWorkerOptions {
+  format: 'es' | 'iife'
+  plugins: Plugin[]
+  rollupOptions: RollupOptions
+}
+
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   envFile?: false
@@ -208,7 +236,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps'
+    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -233,6 +261,7 @@ export type ResolvedConfig = Readonly<
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
     /** @internal */
     packageCache: PackageCache
+    worker: ResolveWorkerOptions
   }
 >
 
@@ -303,6 +332,13 @@ export async function resolveConfig(
   }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
+
+  // resolve worker
+  const resolvedWorkerOptions: ResolveWorkerOptions = {
+    format: config.worker?.format || 'iife',
+    plugins: [],
+    rollupOptions: config.worker?.rollupOptions || {}
+  }
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -465,9 +501,24 @@ export async function resolveConfig(
         preserveSymlinks: config.resolve?.preserveSymlinks,
         ...config.optimizeDeps?.esbuildOptions
       }
-    }
+    },
+    worker: resolvedWorkerOptions
   }
 
+  // flat config.worker.plugin
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(config.worker?.plugins as Plugin[])
+  const workerResolved = { ...resolved }
+  resolved.worker.plugins = await resolvePlugins(
+    workerResolved,
+    workerPrePlugins,
+    workerNormalPlugins,
+    workerPostPlugins
+  )
+  // call configResolved worker plugins hooks
+  await Promise.all(
+    resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))
+  )
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -818,6 +869,14 @@ export async function loadConfigFromFile(
       if (fs.existsSync(tsconfigFile)) {
         resolvedPath = tsconfigFile
         isTS = true
+      }
+    }
+
+    if (!resolvedPath) {
+      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
+      if (fs.existsSync(cjsConfigFile)) {
+        resolvedPath = cjsConfigFile
+        isESM = false
       }
     }
   }

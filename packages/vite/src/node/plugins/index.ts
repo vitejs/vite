@@ -8,13 +8,14 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlInlineScriptProxyPlugin } from './html'
+import { htmlInlineProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
+import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -44,7 +45,7 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
-    htmlInlineScriptProxyPlugin(config),
+    htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
     jsonPlugin(
@@ -56,6 +57,7 @@ export async function resolvePlugins(
     ),
     wasmPlugin(config),
     webWorkerPlugin(config),
+    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
