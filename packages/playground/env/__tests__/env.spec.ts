@@ -53,6 +53,8 @@ test('env object', async () => {
   })
 })
 
-test('relative url import script return import.meta.url', async () => {
-  expect(await page.textContent('.url')).toMatch('/env/index.js')
-})
+if (!isBuild) {
+  test('relative url import script return import.meta.url', async () => {
+    expect(await page.textContent('.url')).toMatch('/env/index.js')
+  })
+}
