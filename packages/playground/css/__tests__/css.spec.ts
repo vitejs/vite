@@ -293,7 +293,9 @@ test('async css modules', async () => {
   expect(await getColor(blue)).toBe('blue')
   expect(await getColor(red)).toBe('red')
   expect(await getColor(green)).toBe('green')
-  expect(await getColor(blue2)).toBe('blue')
+  // because that loaded blue > red first
+  // and can't change the style order
+  expect(await getColor(blue2)).toBe('red')
   expect(await getColor(blue)).toBe('blue')
   expect(await getColor(red)).toBe('red')
 })
