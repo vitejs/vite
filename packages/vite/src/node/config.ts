@@ -669,18 +669,6 @@ function mergeConfigRecursively(
     }
 
     const existing = merged[key]
-    if (Array.isArray(existing) && Array.isArray(value)) {
-      merged[key] = [...existing, ...value]
-      continue
-    }
-    if (isObject(existing) && isObject(value)) {
-      merged[key] = mergeConfigRecursively(
-        existing,
-        value,
-        rootPath ? `${rootPath}.${key}` : key
-      )
-      continue
-    }
 
     // fields that require special handling
     if (existing != null) {
@@ -693,6 +681,19 @@ function mergeConfigRecursively(
       } else if (key === 'noExternal' && existing === true) {
         continue
       }
+    }
+
+    if (Array.isArray(existing) || Array.isArray(value)) {
+      merged[key] = [...arraify(existing), ...arraify(value)]
+      continue
+    }
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeConfigRecursively(
+        existing,
+        value,
+        rootPath ? `${rootPath}.${key}` : key
+      )
+      continue
     }
 
     merged[key] = value

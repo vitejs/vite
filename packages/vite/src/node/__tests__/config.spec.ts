@@ -46,6 +46,22 @@ describe('mergeConfig', () => {
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
+  test('handles arrays', () => {
+    const baseConfig: UserConfigExport = {
+      envPrefix: 'string1'
+    }
+
+    const newConfig: UserConfigExport = {
+      envPrefix: ['string2', 'string3']
+    }
+
+    const mergedConfig: UserConfigExport = {
+      envPrefix: ['string1', 'string2', 'string3']
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
   test('handles assetsInclude', () => {
     const baseConfig: UserConfigExport = {
       assetsInclude: 'some-string'
