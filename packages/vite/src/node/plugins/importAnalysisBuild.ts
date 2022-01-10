@@ -281,7 +281,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    chunk.imports.forEach(addDeps)
                     deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
@@ -289,6 +288,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
+                    chunk.imports.forEach(addDeps)
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
