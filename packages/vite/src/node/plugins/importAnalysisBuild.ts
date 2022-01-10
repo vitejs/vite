@@ -288,7 +288,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
-                    chunk.imports.forEach(addDeps)
+                    // TODO more accurate judgment
+                    const isModuleCSS = (id: string) =>
+                      Number(id.includes('.module.'))
+                    chunk.imports
+                      .sort((a, b) => isModuleCSS(a) - isModuleCSS(b))
+                      .forEach(addDeps)
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
