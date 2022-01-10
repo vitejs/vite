@@ -427,6 +427,9 @@ importers:
       resolve-exports-path: link:exports-path
       resolve-linked: link:../resolve-linked
 
+  packages/playground/resolve-config:
+    specifiers: {}
+
   packages/playground/resolve-linked:
     specifiers: {}
 
@@ -768,7 +771,7 @@ importers:
       magic-string: ^0.25.7
       micromatch: ^4.0.4
       mrmime: ^1.0.0
-      node-forge: ^0.10.0
+      node-forge: ^1.2.0
       okie: ^1.0.1
       open: ^8.4.0
       periscopic: ^2.0.3
@@ -844,7 +847,7 @@ importers:
       magic-string: 0.25.7
       micromatch: 4.0.4
       mrmime: 1.0.0
-      node-forge: 0.10.0
+      node-forge: 1.2.0
       okie: 1.0.1
       open: 8.4.0
       periscopic: 2.0.3
@@ -6493,6 +6496,11 @@ packages:
   /node-forge/0.10.0:
     resolution: {integrity: sha512-PPmu8eEeG9saEUvI97fm4OYxXVB6bFvyNTyiUOBichBpFG8A1Ljw3bY62+5oOjDEMHRnd0Y7HQ+x7uzxOzC6JA==}
     engines: {node: '>= 6.0.0'}
+    dev: true
+
+  /node-forge/1.2.0:
+    resolution: {integrity: sha512-M4AsdaP0bGNaSPtatd/+f76asocI0cFaURRdeQVZvrJBrYp2Qohv5hDbGHykuNqCb1BYjWHjdS6HlN50qbztwA==}
+    engines: {node: '>= 6.13.0'}
     dev: true
 
   /node-int64/0.4.0:

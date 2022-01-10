@@ -99,7 +99,7 @@
     "magic-string": "^0.25.7",
     "micromatch": "^4.0.4",
     "mrmime": "^1.0.0",
-    "node-forge": "^0.10.0",
+    "node-forge": "^1.2.0",
     "okie": "^1.0.1",
     "open": "^8.4.0",
     "periscopic": "^2.0.3",
