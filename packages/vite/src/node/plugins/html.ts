@@ -214,11 +214,32 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
+  const inputFiles = new Set<string>()
+
   return {
     name: 'vite:build-html',
 
+    buildStart({ input }) {
+      isAsyncScriptMap.set(config, new Map())
+
+      let allInputs: string[]
+      if (typeof input === 'string') {
+        allInputs = [input]
+      } else if (Array.isArray(input)) {
+        allInputs = input
+      } else {
+        allInputs = Object.values(input)
+      }
+
+      for (const filename of allInputs) {
+        if (filename.endsWith('.html')) {
+          inputFiles.add(normalizePath(filename))
+        }
+      }
+    },
+
     async transform(html, id) {
-      if (id.endsWith('.html')) {
+      if (inputFiles.has(id)) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
