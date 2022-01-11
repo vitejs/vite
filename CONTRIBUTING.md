@@ -12,24 +12,26 @@ To develop and test the core `vite` package:
 
 2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
 
-3. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
+You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
-   - Run `pnpm link --global vite` in another Vite project to use the locally built Vite;
-   - Use the `vite` binary anywhere.
+## Testing Vite against external packages
 
-   If your project has `vite` as a nested dependency, you can customize the dependency resolution instead depending on the package manager used. For pnpm, add this in your project's root `package.json`:
+You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
 
-   ```json
-   {
-     "pnpm": {
-       "overrides": {
-         "vite": "link:../path/to/vite/packages/vite"
-       }
-     }
-   }
-   ```
+```json
+{
+  "dependencies": {
+    "vite": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "link:../path/to/vite/packages/vite"
+    }
+  }
+}
+```
 
-   And re-run `pnpm install` to link the package.
+And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
@@ -100,7 +102,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "node ../../../scripts/patchFileDeps"
+  "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
 }
 ```
 
@@ -181,3 +183,28 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
+
+## Docs translation contribution
+
+If you would like to start a translation in your language, you are welcome to contribute! Please join [the #translations channel in Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
+
+The english docs are embeded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
+
+### How to start a translation repo
+
+1. In order to get all doc files, you first need to clone this repo in your personal account.
+2. Keep all the files in `docs/` and remove everything else.
+
+   - You should setup your translation site based on all the files in `docs/` folder as a Vitepress project.
+     (that said, `package.json` is need).
+
+   - Refresh git history by removing `.git` and then `git init`
+
+3. Translate the docs.
+
+   - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that, it's very common in translation contribution.
+
+4. Push your commits to your Github repo. you can setup a netlify preview as well.
+5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
+
+We recommend talking with others in Vite Land so you find more contributors for your language to share the maintainance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.

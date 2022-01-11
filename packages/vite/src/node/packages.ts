@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { createFilter } from '@rollup/pluginutils'
 import { createDebugger, resolveFrom } from './utils'
-import { ResolvedConfig } from './config'
-import { Plugin } from './plugin'
+import type { ResolvedConfig } from './config'
+import type { Plugin } from './plugin'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {

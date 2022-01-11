@@ -1,5 +1,5 @@
 import debug from 'debug'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -13,13 +13,14 @@ import {
 } from './constants'
 import resolve from 'resolve'
 import { builtinModules } from 'module'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import {
+import type {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
 import { performance } from 'perf_hooks'
+import { parse as parseUrl, URLSearchParams } from 'url'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -251,11 +252,11 @@ export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = performance.now() - start - subtract
   const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
-    return chalk.green(timeString)
+    return colors.green(timeString)
   } else if (time < 50) {
-    return chalk.yellow(timeString)
+    return colors.yellow(timeString)
   } else {
-    return chalk.red(timeString)
+    return colors.red(timeString)
   }
 }
 
@@ -275,11 +276,11 @@ export function prettifyUrl(url: string, root: string): string {
       if (file.startsWith('@')) {
         file = `${file}/${seg[npmIndex + 2]}`
       }
-      file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
+      file = `npm: ${colors.dim(file)}${isSourceMap ? ` (source map)` : ``}`
     }
-    return chalk.dim(file)
+    return colors.dim(file)
   } else {
-    return chalk.dim(url)
+    return colors.dim(url)
   }
 }
 
@@ -326,7 +327,9 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length + 1
+    if (lines[i]) {
+      start += lines[i].length + 1
+    }
   }
   return start + column
 }
@@ -631,3 +634,11 @@ export const usingDynamicImport = typeof jest === 'undefined'
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : require
+
+export function parseRequest(id: string): Record<string, string> | null {
+  const { search } = parseUrl(id)
+  if (!search) {
+    return null
+  }
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+}
