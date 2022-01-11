@@ -4,6 +4,8 @@
 
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 
+import type { AssertOptions } from '../src/node/importGlob'
+
 interface ImportMeta {
   url: string
 
@@ -50,14 +52,20 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(pattern: string): Record<
+  glob(
+    pattern: string,
+    options?: AssertOptions
+  ): Record<
     string,
     () => Promise<{
       [key: string]: any
     }>
   >
 
-  globEager(pattern: string): Record<
+  globEager(
+    pattern: string,
+    options?: AssertOptions
+  ): Record<
     string,
     {
       [key: string]: any
