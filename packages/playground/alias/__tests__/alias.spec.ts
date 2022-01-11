@@ -43,3 +43,9 @@ test('aliased module', async () => {
     '[success] aliased module'
   )
 })
+
+test('custom resolver', async () => {
+  expect(await page.textContent('.custom-resolver')).toMatch(
+    '[success] alias to custom-resolver path'
+  )
+})
