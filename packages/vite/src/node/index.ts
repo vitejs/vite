@@ -66,6 +66,7 @@ export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { WebSocketServer } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
+export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
@@ -83,7 +84,7 @@ export type {
   ErrorPayload
 } from 'types/hmrPayload'
 export type { Connect } from 'types/connect'
-export type { WebSocket } from 'types/ws'
+export type { WebSocket, WebSocketAlias } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
 export type { FSWatcher, WatchOptions } from 'types/chokidar'
 export type { Terser } from 'types/terser'

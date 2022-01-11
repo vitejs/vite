@@ -1,9 +1,10 @@
 import { cac } from 'cac'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { performance } from 'perf_hooks'
-import { BuildOptions } from './build'
-import { ServerOptions } from './server'
-import { createLogger, LogLevel } from './logger'
+import type { BuildOptions } from './build'
+import type { ServerOptions } from './server'
+import type { LogLevel } from './logger'
+import { createLogger } from './logger'
 import { resolveConfig } from '.'
 import { preview } from './preview'
 
@@ -97,8 +98,8 @@ cli
       const info = server.config.logger.info
 
       info(
-        chalk.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          chalk.green(` dev server running at:\n`),
+        colors.cyan(`\n  vite v${require('vite/package.json').version}`) +
+          colors.green(` dev server running at:\n`),
         {
           clear: !server.config.logger.hasWarned
         }
@@ -110,11 +111,13 @@ cli
       if (global.__vite_start_time) {
         // @ts-ignore
         const startupDuration = performance.now() - global.__vite_start_time
-        info(`\n  ${chalk.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`)
+        info(
+          `\n  ${colors.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`
+        )
       }
     } catch (e) {
       createLogger(options.logLevel).error(
-        chalk.red(`error when starting dev server:\n${e.stack}`),
+        colors.red(`error when starting dev server:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -170,7 +173,7 @@ cli
       })
     } catch (e) {
       createLogger(options.logLevel).error(
-        chalk.red(`error during build:\n${e.stack}`),
+        colors.red(`error during build:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -201,7 +204,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          chalk.red(`error when optimizing deps:\n${e.stack}`),
+          colors.red(`error when optimizing deps:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
@@ -233,6 +236,7 @@ cli
           base: options.base,
           configFile: options.config,
           logLevel: options.logLevel,
+          mode: options.mode,
           preview: {
             port: options.port,
             strictPort: options.strictPort,
@@ -244,7 +248,7 @@ cli
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
-          chalk.red(`error when starting preview server:\n${e.stack}`),
+          colors.red(`error when starting preview server:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
