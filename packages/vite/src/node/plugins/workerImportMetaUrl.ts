@@ -8,7 +8,7 @@ import {
   singlelineCommentsRE
 } from '../utils'
 import path from 'path'
-import { bundleWorkerEntry } from './worker'
+import { bundleWorkerEntry, emitSourcemapForWorkerEntry } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
@@ -65,7 +65,14 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            const content = await bundleWorkerEntry(config, file)
+            const bundle = await bundleWorkerEntry(config, file)
+            const { code: content } = emitSourcemapForWorkerEntry(
+              this,
+              config,
+              file,
+              query,
+              bundle
+            )
             const basename = path.parse(cleanUrl(file)).name
             const contentHash = getAssetHash(content)
             const fileName = path.posix.join(
