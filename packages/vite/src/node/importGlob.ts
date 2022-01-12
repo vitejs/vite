@@ -69,7 +69,8 @@ export async function transformImportGlob(
   }
   const files = glob.sync(pattern, {
     cwd: base,
-    ignore: ['**/node_modules/**']
+    // Ignore node_modules by default unless explicitly indicated in the pattern
+    ignore: /(^|\/)node_modules\//.test(pattern) ? [] : ['**/node_modules/**']
   })
   const imports: string[] = []
   let importsString = ``
