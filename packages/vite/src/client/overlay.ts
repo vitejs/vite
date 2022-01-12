@@ -1,6 +1,16 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
-const template = /*html*/ `
+let ErrorOverlay:
+  | InstanceType<
+      typeof HTMLElement & {
+        text(selector: string, text: string, linkFiles?: boolean): void
+        close(): void
+      }
+    >
+  | any = typeof window !== 'undefined' ? Object : undefined
+
+if (typeof window !== 'undefined') {
+  const template = /*html*/ `
 <style>
 :host {
   position: fixed;
@@ -112,78 +122,92 @@ code {
 </div>
 `
 
-const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
-const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
+  const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
+  const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
-export class ErrorOverlay extends HTMLElement {
-  root: ShadowRoot
+  class DOMErrorOverlay extends HTMLElement implements ErrorOverlay {
+    root: ShadowRoot
 
-  constructor(err: ErrorPayload['err']) {
-    super()
-    this.root = this.attachShadow({ mode: 'open' })
-    this.root.innerHTML = template
+    constructor(err: ErrorPayload['err']) {
+      super()
+      this.root = this.attachShadow({ mode: 'open' })
+      this.root.innerHTML = template
 
-    codeframeRE.lastIndex = 0
-    const hasFrame = err.frame && codeframeRE.test(err.frame)
-    const message = hasFrame
-      ? err.message.replace(codeframeRE, '')
-      : err.message
-    if (err.plugin) {
-      this.text('.plugin', `[plugin:${err.plugin}] `)
+      codeframeRE.lastIndex = 0
+      const hasFrame = err.frame && codeframeRE.test(err.frame)
+      const message = hasFrame
+        ? err.message.replace(codeframeRE, '')
+        : err.message
+      if (err.plugin) {
+        this.text('.plugin', `[plugin:${err.plugin}] `)
+      }
+      this.text('.message-body', message.trim())
+
+      const [file] = (err.loc?.file || err.id || 'unknown file').split(`?`)
+      if (err.loc) {
+        this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, true)
+      } else if (err.id) {
+        this.text('.file', file)
+      }
+
+      if (hasFrame) {
+        this.text('.frame', err.frame!.trim())
+      }
+      this.text('.stack', err.stack, true)
+
+      this.root.querySelector('.window')!.addEventListener('click', (e) => {
+        e.stopPropagation()
+      })
+      this.addEventListener('click', () => {
+        this.close()
+      })
     }
-    this.text('.message-body', message.trim())
 
-    const [file] = (err.loc?.file || err.id || 'unknown file').split(`?`)
-    if (err.loc) {
-      this.text('.file', `${file}:${err.loc.line}:${err.loc.column}`, true)
-    } else if (err.id) {
-      this.text('.file', file)
-    }
-
-    if (hasFrame) {
-      this.text('.frame', err.frame!.trim())
-    }
-    this.text('.stack', err.stack, true)
-
-    this.root.querySelector('.window')!.addEventListener('click', (e) => {
-      e.stopPropagation()
-    })
-    this.addEventListener('click', () => {
-      this.close()
-    })
-  }
-
-  text(selector: string, text: string, linkFiles = false): void {
-    const el = this.root.querySelector(selector)!
-    if (!linkFiles) {
-      el.textContent = text
-    } else {
-      let curIndex = 0
-      let match: RegExpExecArray | null
-      while ((match = fileRE.exec(text))) {
-        const { 0: file, index } = match
-        if (index != null) {
-          const frag = text.slice(curIndex, index)
-          el.appendChild(document.createTextNode(frag))
-          const link = document.createElement('a')
-          link.textContent = file
-          link.className = 'file-link'
-          link.onclick = () => {
-            fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+    text(selector: string, text: string, linkFiles = false): void {
+      const el = this.root.querySelector(selector)!
+      if (!linkFiles) {
+        el.textContent = text
+      } else {
+        let curIndex = 0
+        let match: RegExpExecArray | null
+        while ((match = fileRE.exec(text))) {
+          const { 0: file, index } = match
+          if (index != null) {
+            const frag = text.slice(curIndex, index)
+            el.appendChild(document.createTextNode(frag))
+            const link = document.createElement('a')
+            link.textContent = file
+            link.className = 'file-link'
+            link.onclick = () => {
+              fetch('/__open-in-editor?file=' + encodeURIComponent(file))
+            }
+            el.appendChild(link)
+            curIndex += frag.length + file.length
           }
-          el.appendChild(link)
-          curIndex += frag.length + file.length
         }
       }
     }
+
+    close(): void {
+      this.parentNode?.removeChild(this)
+    }
   }
 
-  close(): void {
-    this.parentNode?.removeChild(this)
+  ErrorOverlayFactory = (err: CtrType) => {
+    return new DOMErrorOverlay(err) as ErrorOverlay
   }
+
+  ErrorOverlay = DOMErrorOverlay
 }
 
+export { ErrorOverlay }
+
 export const overlayId = 'vite-error-overlay'
-if (customElements && !customElements.get(overlayId)) {
+
+if (
+  typeof window !== 'undefined' &&
+  customElements &&
+  !customElements.get(overlayId)
+) {
   customElements.define(overlayId, ErrorOverlay)
 }
