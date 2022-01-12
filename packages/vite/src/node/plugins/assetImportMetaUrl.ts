@@ -1,8 +1,8 @@
-import { Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 /**

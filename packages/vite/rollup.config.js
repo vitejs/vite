@@ -8,7 +8,7 @@ import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
@@ -118,8 +118,7 @@ const createNodeConfig = (isProduction) => {
         entries: {
           '@vue/compiler-dom': require.resolve(
             '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-          ),
-          'big.js': require.resolve('big.js/big.js')
+          )
         }
       }),
       nodeResolve({ preferBuiltins: true }),
@@ -136,7 +135,7 @@ const createNodeConfig = (isProduction) => {
           ? {}
           : {
               declaration: true,
-              declarationDir: path.resolve(__dirname, 'dist/')
+              declarationDir: path.resolve(__dirname, 'dist/node')
             })
       }),
       // Some deps have try...catch require of optional deps, but rollup will
@@ -369,7 +368,7 @@ function licensePlugin() {
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync('LICENSE.md', licenseText)
         console.warn(
-          chalk.yellow(
+          colors.yellow(
             '\nLICENSE.md updated. You should commit the updated file.\n'
           )
         )

@@ -1,7 +1,7 @@
 import path from 'path'
-import { OutputChunk } from 'rollup'
-import { ResolvedConfig } from '..'
-import { Plugin } from '../plugin'
+import type { OutputChunk } from 'rollup'
+import type { ResolvedConfig } from '..'
+import type { Plugin } from '../plugin'
 import { chunkToEmittedCssFileMap } from './css'
 import { chunkToEmittedAssetsMap } from './asset'
 import { normalizePath } from '../utils'
@@ -41,7 +41,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
             const ext = path.extname(name)
             name = name.slice(0, -ext.length) + `-legacy` + ext
           }
-          return name
+          return name.replace(/\0/g, '')
         } else {
           return `_` + path.basename(chunk.fileName)
         }

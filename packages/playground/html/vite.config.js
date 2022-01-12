@@ -11,6 +11,9 @@ module.exports = {
         nested: resolve(__dirname, 'nested/index.html'),
         scriptAsync: resolve(__dirname, 'scriptAsync.html'),
         scriptMixed: resolve(__dirname, 'scriptMixed.html'),
+        emptyAttr: resolve(__dirname, 'emptyAttr.html'),
+        link: resolve(__dirname, 'link.html'),
+        'link/target': resolve(__dirname, 'index.html'),
         zeroJS: resolve(__dirname, 'zeroJS.html'),
         noHead: resolve(__dirname, 'noHead.html'),
         noBody: resolve(__dirname, 'noBody.html'),
@@ -153,6 +156,18 @@ ${
             injectTo: 'body-prepend'
           }
         ]
+      }
+    },
+    {
+      // Emulate rollup-plugin-string
+      name: 'import-as-string-module',
+      transform(code, id) {
+        if (id.endsWith('importAsString.html')) {
+          return {
+            code: `export default ${JSON.stringify(code)}`,
+            map: { mappings: '' }
+          }
+        }
       }
     }
   ]

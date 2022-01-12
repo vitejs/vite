@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { TransformResult } from 'rollup'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -67,7 +67,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
           .join('|') +
-        ')\\b',
+        // prevent trailing assignments
+        ')\\b(?!\\s*?=[^=])',
       'g'
     )
 

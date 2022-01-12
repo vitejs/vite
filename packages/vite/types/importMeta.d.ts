@@ -1,3 +1,9 @@
+// This file is an augmentation to the built-in ImportMeta interface
+// Thus cannot contain any top-level imports
+// <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
+
+/* eslint-disable @typescript-eslint/consistent-type-imports */
+
 interface ImportMeta {
   url: string
 
@@ -44,14 +50,20 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(pattern: string): Record<
+  glob(
+    pattern: string,
+    options?: import('../src/node/importGlob').AssertOptions
+  ): Record<
     string,
     () => Promise<{
       [key: string]: any
     }>
   >
 
-  globEager(pattern: string): Record<
+  globEager(
+    pattern: string,
+    options?: import('../src/node/importGlob').AssertOptions
+  ): Record<
     string,
     {
       [key: string]: any

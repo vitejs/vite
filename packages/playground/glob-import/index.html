@@ -1,5 +1,6 @@
 <pre class="result"></pre>
 <pre class="result-node_modules"></pre>
+<pre class="globraw"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -24,9 +25,30 @@
     })
   }
 
-  const modules = import.meta.glob('/dir/**')
+  const modules = import.meta.glob(
+    '/dir/**'
+    // for test: annotation contain ")"
+    /*
+     * for test: annotation contain ")"
+     * */
+  )
   useImports(modules, '.result')
 
   const nodeModules = import.meta.glob('/dir/node_modules/**')
   useImports(nodeModules, '.result-node_modules')
+</script>
+
+<script type="module">
+  const rawModules = import.meta.globEager('/dir/*.json', {
+    assert: { type: 'raw' }
+  })
+  const globraw = {}
+  Object.keys(rawModules).forEach((key) => {
+    globraw[key] = JSON.parse(rawModules[key])
+  })
+  document.querySelector('.globraw').textContent = JSON.stringify(
+    globraw,
+    null,
+    2
+  )
 </script>
