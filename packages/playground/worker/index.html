@@ -103,4 +103,22 @@
     )
   })
   w2.port.start()
+
+  if (import.meta.hot) {
+    import.meta.hot.accept(
+      [
+        './my-worker?worker',
+        './my-worker?inline',
+        './possible-ts-output-worker?worker',
+        './workerImport'
+      ],
+      ([a, b, c, d]) => {
+        // the callback receives the updated modules in an Array
+        console.log(a)
+        console.log(b)
+        console.log(c)
+        console.log(d)
+      }
+    )
+  }
 </script>

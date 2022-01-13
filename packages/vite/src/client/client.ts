@@ -44,6 +44,10 @@ socket.addEventListener('message', async ({ data }) => {
   handleMessage(JSON.parse(data))
 })
 
+const onUi = typeof window !== 'undefined'
+const logReloadMessage =
+  '[vite] running on worker, please reload the page manually!'
+
 let isFirstUpdate = true
 
 async function handleMessage(payload: HMRPayload) {
@@ -75,17 +79,19 @@ async function handleMessage(payload: HMRPayload) {
           // this is only sent when a css file referenced with <link> is updated
           let { path, timestamp } = update
           path = path.replace(/\?.*/, '')
-          // can't use querySelector with `[href*=]` here since the link may be
-          // using relative paths so we need to use link.href to grab the full
-          // URL for the include check.
-          const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link')
-          ).find((e) => e.href.includes(path))
-          if (el) {
-            const newPath = `${base}${path.slice(1)}${
-              path.includes('?') ? '&' : '?'
-            }t=${timestamp}`
-            el.href = new URL(newPath, el.href).href
+          if (onUi) {
+            // can't use querySelector with `[href*=]` here since the link may be
+            // using relative paths so we need to use link.href to grab the full
+            // URL for the include check.
+            const el = Array.from(
+              document.querySelectorAll<HTMLLinkElement>('link')
+            ).find((e) => e.href.includes(path))
+            if (el) {
+              const newPath = `${base}${path.slice(1)}${
+                path.includes('?') ? '&' : '?'
+              }t=${timestamp}`
+              el.href = new URL(newPath, el.href).href
+            }
           }
           console.log(`[vite] css hot updated: ${path}`)
         }
@@ -106,10 +112,20 @@ async function handleMessage(payload: HMRPayload) {
           pagePath === payloadPath ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
+          if (!onUi) {
+            console.warn(logReloadMessage)
+            return
+          }
+
           location.reload()
         }
         return
       } else {
+        if (!onUi) {
+          console.warn(logReloadMessage)
+          return
+        }
+
         location.reload()
       }
       break
@@ -171,16 +187,30 @@ const enableOverlay = __HMR_ENABLE_OVERLAY__
 function createErrorOverlay(err: ErrorPayload['err']) {
   if (!enableOverlay) return
   clearErrorOverlay()
+  if (!onUi) {
+    console.log(`[vite] Internal Server Error\n${err.message}\n${err.stack}`)
+    return
+  }
+
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document
-    .querySelectorAll(overlayId)
-    .forEach((n) => (n as ErrorOverlay).close())
+  if (!onUi) {
+    // TODO: clear console?
+    // console.clear()
+    return
+  }
+
+  document.querySelectorAll(overlayId).forEach((n) =>
+    // @ts-ignore
+    (n as ErrorOverlay).close()
+  )
 }
 
 function hasErrorOverlay() {
+  if (!onUi) return false
+
   return document.querySelectorAll(overlayId).length
 }
 
@@ -221,6 +251,10 @@ socket.addEventListener('close', async ({ wasClean }) => {
   if (wasClean) return
   console.log(`[vite] server connection lost. polling for restart...`)
   await waitForSuccessfulPing()
+  if (!onUi) {
+    console.warn(logReloadMessage)
+    return
+  }
   location.reload()
 })
 
@@ -448,6 +482,8 @@ export const createHotContext = (ownerPath: string) => {
     decline() {},
 
     invalidate() {
+      if (!onUi) return
+
       // TODO should tell the server to re-perform hmr propagation
       // from this module as root
       location.reload()

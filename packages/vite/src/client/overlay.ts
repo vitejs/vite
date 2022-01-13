@@ -125,6 +125,7 @@ code {
   const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
   const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
+  // @ts-ignore
   class DOMErrorOverlay extends HTMLElement implements ErrorOverlay {
     root: ShadowRoot
 
@@ -191,10 +192,6 @@ code {
     close(): void {
       this.parentNode?.removeChild(this)
     }
-  }
-
-  ErrorOverlayFactory = (err: CtrType) => {
-    return new DOMErrorOverlay(err) as ErrorOverlay
   }
 
   ErrorOverlay = DOMErrorOverlay
