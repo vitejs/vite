@@ -1,3 +1,13 @@
+## [2.7.11](https://github.com/vitejs/vite/compare/v2.7.10...v2.7.11) (2022-01-13)
+
+
+### Bug Fixes
+
+* improve array config merging ([#6344](https://github.com/vitejs/vite/issues/6344)) ([631bf45](https://github.com/vitejs/vite/commit/631bf450065a1b5b1d1792a283a9e107b2ca08b2))
+* **ssr:** handle nameless descture in function args ([#6489](https://github.com/vitejs/vite/issues/6489)) ([dd4c111](https://github.com/vitejs/vite/commit/dd4c111458f628a1e356e5e04b9c8e46d559ce1d))
+
+
+
 ## [2.7.10](https://github.com/vitejs/vite/compare/v2.7.9...v2.7.10) (2021-12-30)
 
 
