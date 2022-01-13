@@ -592,7 +592,7 @@ bbb()
   `)
 })
 
-test.only('jsx', async () => {
+test('jsx', async () => {
   const code = `
   import React from 'react'
   import { Foo, Slot } from 'foo'
