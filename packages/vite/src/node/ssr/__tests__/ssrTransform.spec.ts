@@ -1,3 +1,4 @@
+import { transformWithEsbuild } from '../../plugins/esbuild'
 import { traverseHtml } from '../../plugins/html'
 import { ssrTransform } from '../ssrTransform'
 
@@ -587,6 +588,34 @@ bbb()
 
     __vite_ssr_import_0__.aaa()
     __vite_ssr_import_0__.bbb()
+    "
+  `)
+})
+
+test('jsx', async () => {
+  const code = `
+  import React from 'react'
+  import { Foo, Slot } from 'foo'
+  
+  function Bar({ Slot = <Foo /> }) {
+    return (
+      <>
+        <Slot />
+      </>
+    )
+  }
+  `
+  const id = '/foo.jsx'
+  const result = await transformWithEsbuild(code, id)
+  expect((await ssrTransform(result.code, null, '/foo.jsx')).code)
+    .toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"react\\");
+
+    const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"foo\\");
+
+    function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
+      return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
+    }
     "
   `)
 })
