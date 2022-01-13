@@ -1,3 +1,13 @@
+## [2.7.12](https://github.com/vitejs/vite/compare/v2.7.11...v2.7.12) (2022-01-13)
+
+
+### Bug Fixes
+
+* **config:** merge array correctly ([#6499](https://github.com/vitejs/vite/issues/6499)) ([8863fa2](https://github.com/vitejs/vite/commit/8863fa2cc455641c297ff6742b9b757959b7a811))
+* improve alias merging ([#6497](https://github.com/vitejs/vite/issues/6497)) ([23ec29d](https://github.com/vitejs/vite/commit/23ec29d7ce56e79213f42ceb9313e49002a2664a))
+
+
+
 ## [2.7.11](https://github.com/vitejs/vite/compare/v2.7.10...v2.7.11) (2022-01-13)
 
 
