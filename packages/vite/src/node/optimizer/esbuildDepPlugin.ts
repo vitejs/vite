@@ -209,9 +209,14 @@ export function esbuildDepPlugin(
       if (isRunningWithYarnPnp) {
         build.onResolve(
           { filter: /.*/ },
-          async ({ path, importer, kind, resolveDir }) => ({
+          async ({ path, importer, kind, resolveDir, namespace }) => ({
             // pass along resolveDir for entries
-            path: await resolve(path, importer, kind, resolveDir)
+            path: await resolve(
+              path,
+              importer,
+              kind,
+              namespace === 'dep' ? resolveDir : undefined
+            )
           })
         )
         build.onLoad({ filter: /.*/ }, async (args) => ({
