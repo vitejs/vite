@@ -463,6 +463,7 @@ importers:
       only-object-assigned-exports: file:./only-object-assigned-exports
       primitive-export: file:./primitive-export
       read-file-content: file:./read-file-content
+      require-absolute: file:./require-absolute
       ts-transpiled-exports: file:./ts-transpiled-exports
     dependencies:
       bcrypt: 5.0.1
@@ -473,6 +474,7 @@ importers:
       only-object-assigned-exports: link:only-object-assigned-exports
       primitive-export: link:primitive-export
       read-file-content: link:read-file-content
+      require-absolute: link:require-absolute
       ts-transpiled-exports: link:ts-transpiled-exports
     devDependencies:
       cross-env: 7.0.3
@@ -497,6 +499,9 @@ importers:
     specifiers: {}
 
   packages/playground/ssr-deps/read-file-content:
+    specifiers: {}
+
+  packages/playground/ssr-deps/require-absolute:
     specifiers: {}
 
   packages/playground/ssr-deps/ts-transpiled-exports:

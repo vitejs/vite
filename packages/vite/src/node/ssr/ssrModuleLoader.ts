@@ -234,7 +234,12 @@ async function nodeImport(
     (nodeResolve) => (id, parent, isMain, options) => {
       // Fix #5709, use require to resolve files with the '.node' file extension.
       // See detail, https://nodejs.org/api/addons.html#addons_loading_addons_using_require
-      if (id[0] === '.' || isBuiltin(id) || id.endsWith('.node')) {
+      if (
+        id[0] === '.' ||
+        path.isAbsolute(id) ||
+        isBuiltin(id) ||
+        id.endsWith('.node')
+      ) {
         return nodeResolve(id, parent, isMain, options)
       }
       if (parent) {
