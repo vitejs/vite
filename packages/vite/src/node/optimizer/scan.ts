@@ -131,6 +131,10 @@ export async function scanImports(config: ResolvedConfig): Promise<{
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
+  if (Array.isArray(pattern)) {
+    // If a pattern is `undefined` then `glob` chokes.
+    pattern = pattern.filter(Boolean)
+  }
   return glob(pattern, {
     cwd: config.root,
     ignore: [
