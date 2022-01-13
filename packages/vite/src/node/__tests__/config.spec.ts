@@ -141,6 +141,22 @@ describe('mergeConfig', () => {
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
+
+  test('merge array correctly', () => {
+    const baseConfig = {
+      foo: null
+    }
+
+    const newConfig = {
+      foo: ['bar']
+    }
+
+    const mergedConfig = {
+      foo: ['bar']
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
 })
 
 describe('resolveConfig', () => {
