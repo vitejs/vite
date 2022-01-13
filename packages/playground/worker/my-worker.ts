@@ -10,7 +10,6 @@ self.onmessage = (e) => {
 }
 
 if (import.meta.hot) {
-  import.meta.hot.accept()
   import.meta.hot.accept('./workerImport', (newImportModule) => {
     if (newImportModule && newImportModule.msg) msg = newImportModule.msg
     else console.log(`Unexpected HMR received: ${newImportModule}`)
