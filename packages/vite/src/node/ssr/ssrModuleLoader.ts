@@ -2,6 +2,7 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 import type { ViteDevServer } from '../server'
 import {
+  bareImportRE,
   dynamicImport,
   isBuiltin,
   unwrapId,
@@ -232,9 +233,9 @@ async function nodeImport(
   // When an ESM module imports an ESM dependency, this hook is *not* used.
   const unhookNodeResolve = hookNodeResolve(
     (nodeResolve) => (id, parent, isMain, options) => {
-      // Fix #5709, use require to resolve files with the '.node' file extension.
-      // See detail, https://nodejs.org/api/addons.html#addons_loading_addons_using_require
-      if (id[0] === '.' || isBuiltin(id) || id.endsWith('.node')) {
+      // Use the Vite resolver only for bare imports while skipping
+      // any built-in modules and binary modules.
+      if (!bareImportRE.test(id) || isBuiltin(id) || id.endsWith('.node')) {
         return nodeResolve(id, parent, isMain, options)
       }
       if (parent) {
