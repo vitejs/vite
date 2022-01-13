@@ -362,11 +362,13 @@ export async function resolveConfig(
   ]
 
   // resolve alias with internal client alias
-  const resolvedAlias = mergeAlias(
-    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-    // replacement, but its implementation does work with function values.
-    clientAlias,
-    config.resolve?.alias || config.alias || []
+  const resolvedAlias = normalizeAlias(
+    mergeAlias(
+      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+      // replacement, but its implementation does work with function values.
+      clientAlias,
+      config.resolve?.alias || config.alias || []
+    )
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
@@ -768,11 +770,21 @@ export function mergeConfig(
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
-function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
-  return [...normalizeAlias(a), ...normalizeAlias(b)]
+function mergeAlias(
+  a?: AliasOptions,
+  b?: AliasOptions
+): AliasOptions | undefined {
+  if (!a) return b
+  if (!b) return a
+  if (isObject(a) && isObject(b)) {
+    return { ...a, ...b }
+  }
+  // the order is flipped because the alias is resolved from top-down,
+  // where the later should have higher priority
+  return [...normalizeAlias(b), ...normalizeAlias(a)]
 }
 
-function normalizeAlias(o: AliasOptions): Alias[] {
+function normalizeAlias(o: AliasOptions = []): Alias[] {
   return Array.isArray(o)
     ? o.map(normalizeSingleAlias)
     : Object.keys(o).map((find) =>
