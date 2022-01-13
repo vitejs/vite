@@ -71,8 +71,7 @@ const sharedNodeOptions = {
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false,
-    sourcemap: true
+    freeze: false
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
@@ -105,6 +104,10 @@ const createNodeConfig = (isProduction) => {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts')
     },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction
+    },
     external: [
       'fsevents',
       ...Object.keys(require('./package.json').dependencies),
@@ -133,7 +136,8 @@ const createNodeConfig = (isProduction) => {
         // in development we need to rely on the rollup ts plugin
         ...(isProduction
           ? {
-              declaration: false
+              declaration: false,
+              sourceMap: false
             }
           : {
               declaration: true,
