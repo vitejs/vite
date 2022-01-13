@@ -731,21 +731,24 @@ function mergeConfigRecursively(
 
     const existing = merged[key]
 
+    if (existing == null) {
+      merged[key] = value
+      continue
+    }
+
     // fields that require special handling
-    if (existing != null) {
-      if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
-        merged[key] = mergeAlias(existing, value)
-        continue
-      } else if (key === 'assetsInclude' && rootPath === '') {
-        merged[key] = [].concat(existing, value)
-        continue
-      } else if (key === 'noExternal' && existing === true) {
-        continue
-      }
+    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+      merged[key] = mergeAlias(existing, value)
+      continue
+    } else if (key === 'assetsInclude' && rootPath === '') {
+      merged[key] = [].concat(existing, value)
+      continue
+    } else if (key === 'noExternal' && existing === true) {
+      continue
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [...arraify(existing), ...arraify(value)]
+      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
       continue
     }
     if (isObject(existing) && isObject(value)) {
