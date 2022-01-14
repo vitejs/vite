@@ -26,7 +26,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```js
    // add the beginning of your app entry
-   import 'vite/modulepreload-polyfill'
+   if (import.meta.env.MODE !== 'development') {
+     import('vite/modulepreload-polyfill')
+   }
    ```
 
 2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
