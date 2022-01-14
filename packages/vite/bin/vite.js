@@ -28,7 +28,7 @@ if (debugIndex > 0) {
       .map((v) => `vite:${v}`)
       .join(',')
   }
-  process.env.DEBUG = value
+  process.env.DEBUG = `${process.env.DEBUG || ''},${value}`
 
   if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
