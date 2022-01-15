@@ -637,6 +637,15 @@ importers:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
 
+  packages/playground/vue-lib:
+    specifiers:
+      '@vitejs/plugin-vue': workspace:*
+      vue: ^3.2.25
+    dependencies:
+      vue: 3.2.26
+    devDependencies:
+      '@vitejs/plugin-vue': link:../../plugin-vue
+
   packages/playground/wasm:
     specifiers: {}
 
@@ -687,7 +696,7 @@ importers:
       debug: ^4.3.3
       hash-sum: ^2.0.0
       rollup: ^2.59.0
-      slash: ^3.0.0
+      slash: ^4.0.0
       source-map: ^0.6.1
       vue: ^3.2.26
     devDependencies:
@@ -696,7 +705,7 @@ importers:
       debug: 4.3.3
       hash-sum: 2.0.0
       rollup: 2.62.0
-      slash: 3.0.0
+      slash: 4.0.0
       source-map: 0.6.1
       vue: 3.2.26
 
@@ -715,6 +724,12 @@ importers:
       '@rollup/pluginutils': 4.1.2
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.5
       hash-sum: 2.0.0
+
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
 
   packages/vite:
     specifiers:
@@ -7840,6 +7855,11 @@ packages:
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
+    dev: true
+
+  /slash/4.0.0:
+    resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
+    engines: {node: '>=12'}
     dev: true
 
   /slice-ansi/3.0.0:
