@@ -332,7 +332,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: ['react/jsx-dev-runtime']
+          include: ['react/jsx-dev-runtime', 'react/jsx-runtime']
         }
       }
     },
