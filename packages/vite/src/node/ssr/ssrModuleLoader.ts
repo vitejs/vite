@@ -239,7 +239,13 @@ async function nodeImport(
         return nodeResolve(id, parent, isMain, options)
       }
       if (parent) {
-        return viteResolve(id, parent.id)
+        let resolved = viteResolve(id, parent.id)
+        if (resolved) {
+          // hookNodeResolve must use platform-specific path.normalize
+          // to be compatible with dynamicImport (#6080)
+          resolved = path.normalize(resolved)
+        }
+        return resolved
       }
       // Importing a CJS module from an ESM module. In this case, the import
       // specifier is already an absolute path, so this is a no-op.
