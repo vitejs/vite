@@ -50,14 +50,20 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(pattern: string): Record<
+  glob(
+    pattern: string,
+    options?: import('../src/node/importGlob').AssertOptions
+  ): Record<
     string,
     () => Promise<{
       [key: string]: any
     }>
   >
 
-  globEager(pattern: string): Record<
+  globEager(
+    pattern: string,
+    options?: import('../src/node/importGlob').AssertOptions
+  ): Record<
     string,
     {
       [key: string]: any

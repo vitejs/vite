@@ -183,3 +183,28 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
+
+## Docs translation contribution
+
+If you would like to start a translation in your language, you are welcome to contribute! Please join [the #translations channel in Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
+
+The english docs are embeded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
+
+### How to start a translation repo
+
+1. In order to get all doc files, you first need to clone this repo in your personal account.
+2. Keep all the files in `docs/` and remove everything else.
+
+   - You should setup your translation site based on all the files in `docs/` folder as a Vitepress project.
+     (that said, `package.json` is need).
+
+   - Refresh git history by removing `.git` and then `git init`
+
+3. Translate the docs.
+
+   - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that, it's very common in translation contribution.
+
+4. Push your commits to your Github repo. you can setup a netlify preview as well.
+5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
+
+We recommend talking with others in Vite Land so you find more contributors for your language to share the maintainance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.

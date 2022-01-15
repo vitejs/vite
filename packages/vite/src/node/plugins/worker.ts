@@ -1,5 +1,4 @@
 import type { ResolvedConfig } from '../config'
-import { sortUserPlugins } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
@@ -7,17 +6,40 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import { resolvePlugins } from '.'
 
 const WorkerFileId = 'worker_file'
 
+export async function bundleWorkerEntry(
+  config: ResolvedConfig,
+  id: string
+): Promise<Buffer> {
+  // bundle the file as entry to support imports
+  const rollup = require('rollup') as typeof Rollup
+  const { plugins, rollupOptions, format } = config.worker
+  const bundle = await rollup.rollup({
+    ...rollupOptions,
+    input: cleanUrl(id),
+    plugins,
+    onwarn(warning, warn) {
+      onRollupWarning(warning, warn, config)
+    },
+    preserveEntrySignatures: false
+  })
+  let code: string
+  try {
+    const { output } = await bundle.generate({
+      format,
+      sourcemap: config.build.sourcemap
+    })
+    code = output[0].code
+  } finally {
+    await bundle.close()
+  }
+  return Buffer.from(code)
+}
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  const workerBundleOptions = {
-    format: config.worker?.format || 'iife',
-    plugins: sortUserPlugins(config.worker?.plugins as Plugin[]),
-    rollupOptions: config.worker?.rollupOptions || {}
-  }
 
   return {
     name: 'vite:worker',
@@ -50,39 +72,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        // bundle the file as entry to support imports
-        const rollup = require('rollup') as typeof Rollup
-        const { plugins, rollupOptions, format } = workerBundleOptions
-        const [prePlugins, normalPlugins, postPlugins] = plugins
-        const bundle = await rollup.rollup({
-          ...rollupOptions,
-          input: cleanUrl(id),
-          plugins: await resolvePlugins(
-            { ...config },
-            prePlugins,
-            normalPlugins,
-            postPlugins
-          ),
-          onwarn(warning, warn) {
-            onRollupWarning(warning, warn, config)
-          },
-          preserveEntrySignatures: false
-        })
-        let code: string
-        try {
-          const { output } = await bundle.generate({
-            format,
-            sourcemap: config.build.sourcemap
-          })
-          code = output[0].code
-        } finally {
-          await bundle.close()
-        }
-        const content = Buffer.from(code)
+        const code = await bundleWorkerEntry(config, id)
         if (query.inline != null) {
+          const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
-          return `const encodedJs = "${content.toString('base64')}";
+          return `const encodedJs = "${code.toString('base64')}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
@@ -94,7 +89,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }`
         } else {
           const basename = path.parse(cleanUrl(id)).name
-          const contentHash = getAssetHash(content)
+          const contentHash = getAssetHash(code)
           const fileName = path.posix.join(
             config.build.assetsDir,
             `${basename}.${contentHash}.js`

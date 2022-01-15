@@ -6,6 +6,7 @@
 <p class="dep"></p>
 <p class="from-script-src"></p>
 <p class="aliased-module"></p>
+<p class="custom-resolver"></p>
 
 <div class="optimized"></div>
 
@@ -15,6 +16,7 @@
   import { msg as regexMsg } from 'regex/test'
   import { msg as depMsg } from 'dep'
   import { msg as moduleMsg } from 'aliased-module/index.js'
+  import { msg as customResolverMsg } from 'custom-resolver'
 
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -25,6 +27,7 @@
   text('.regex', regexMsg + ' via regex')
   text('.dep', depMsg)
   text('.aliased-module', moduleMsg)
+  text('.custom-resolver', customResolverMsg)
 
   import { createApp } from 'vue'
   import { ref } from 'foo'

@@ -236,6 +236,7 @@ cli
           base: options.base,
           configFile: options.config,
           logLevel: options.logLevel,
+          mode: options.mode,
           preview: {
             port: options.port,
             strictPort: options.strictPort,
