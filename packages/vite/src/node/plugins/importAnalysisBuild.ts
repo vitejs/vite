@@ -237,6 +237,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const cssModulesSet = cssModulesSets.get(config)!
+      const isCss = (id: string) =>
+        cssModulesSet.has(id) || // is module css
+        isCSSRequest(id)
+
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -274,13 +279,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
-                const cssModulesSet = cssModulesSets.get(config)!
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
+                    chunk.imports
+                      .sort((a, b) => +isCss(b) - +isCss(a))
+                      .forEach((moduleName) => {
+                        addDeps(moduleName)
+                      })
                     deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
@@ -288,11 +297,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
-                    const isModuleCSS = (id: string) =>
-                      Number(cssModulesSet.has(id))
-                    chunk.imports
-                      .sort((a, b) => isModuleCSS(a) - isModuleCSS(b))
-                      .forEach(addDeps)
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
@@ -324,6 +328,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
 
               if (markPos > 0) {
+                // split module load like browser(breadth first)
+                let loadOnceCache: string[] = []
+                const splitDepsLoadingOrder: string[] = []
+                const pushSplitDepsLoadingOrder = () =>
+                  loadOnceCache.length &&
+                  splitDepsLoadingOrder.push(
+                    `[${loadOnceCache.map((d) => JSON.stringify(d)).join(',')}]`
+                  )
+                deps.forEach((dep) => {
+                  if (!isCss(dep)) {
+                    pushSplitDepsLoadingOrder()
+                    loadOnceCache = []
+                  }
+                  loadOnceCache.push(dep)
+                })
+                pushSplitDepsLoadingOrder() // push last time load module
+
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
@@ -332,7 +353,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    ? `[${splitDepsLoadingOrder.join(',')}]`
                     : `[]`
                 )
               }

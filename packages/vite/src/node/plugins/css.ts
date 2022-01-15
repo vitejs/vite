@@ -362,24 +362,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
       let isPureCssChunk = true
-      let isModuleCssChunk = false
+      let moduleCssCount = 0
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (cssModuleRE.test(id)) {
-          isModuleCssChunk = true
+        const isCssModule = cssModuleRE.test(id)
+        if (isCssModule) {
+          moduleCssCount++
         }
-        if (
-          !isCSSRequest(id) ||
-          cssModuleRE.test(id) ||
-          commonjsProxyRE.test(id)
-        ) {
+        if (!isCSSRequest(id) || isCssModule || commonjsProxyRE.test(id)) {
           isPureCssChunk = false
         }
         if (styles.has(id)) {
           chunkCSS += styles.get(id)
         }
       }
-
+      // if module css generate javescript module
+      // will only had module css file
+      if (moduleCssCount === ids.length) {
+        cssModulesSet.add(chunk.fileName)
+      }
       if (!chunkCSS) {
         return null
       }
@@ -420,7 +421,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         return css
       }
-
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
@@ -437,12 +437,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          const assetFileName = this.getFileName(fileHandle)
-          if (isModuleCssChunk) {
-            cssModulesSet.add(assetFileName)
-          }
-
-          chunkToEmittedCssFileMap.set(chunk, new Set([assetFileName]))
+          chunkToEmittedCssFileMap.set(
+            chunk,
+            new Set([this.getFileName(fileHandle)])
+          )
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
