@@ -7,6 +7,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
 import {
   chunkToEmittedCssFileMap,
+  cssModulesSets,
   isCSSRequest,
   removedPureCssFilesCache
 } from './css'
@@ -93,7 +94,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
-
   return {
     name: 'vite:build-import-analysis',
 
@@ -274,7 +274,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const ownerFilename = chunk.fileName
                 // literal import - trace direct imports and add to deps
                 const analyzed: Set<string> = new Set<string>()
-                // dfs add deps let the upper-level had a higher priority (#3924)
+                const cssModulesSet = cssModulesSets.get(config)!
                 const addDeps = (filename: string) => {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
@@ -288,9 +288,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
-                    // TODO more accurate judgment
                     const isModuleCSS = (id: string) =>
-                      Number(id.includes('.module.'))
+                      Number(cssModulesSet.has(id))
                     chunk.imports
                       .sort((a, b) => isModuleCSS(a) - isModuleCSS(b))
                       .forEach(addDeps)

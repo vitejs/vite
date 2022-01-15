@@ -120,6 +120,8 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
+export const cssModulesSets = new WeakMap<ResolvedConfig, Set<string>>()
+
 export const chunkToEmittedCssFileMap = new WeakMap<
   RenderedChunk,
   Set<string>
@@ -265,6 +267,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<string>
+  let cssModulesSet: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -278,6 +281,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // Ensure new caches for every build (i.e. rebuilding in watch mode)
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
+
+      cssModulesSet = new Set<string>()
+      cssModulesSets.set(config, cssModulesSet)
       hasEmitted = false
     },
 
@@ -356,8 +362,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
       let isPureCssChunk = true
+      let isModuleCssChunk = false
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
+        if (cssModuleRE.test(id)) {
+          isModuleCssChunk = true
+        }
         if (
           !isCSSRequest(id) ||
           cssModuleRE.test(id) ||
@@ -427,10 +437,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(
-            chunk,
-            new Set([this.getFileName(fileHandle)])
-          )
+          const assetFileName = this.getFileName(fileHandle)
+          if (isModuleCssChunk) {
+            cssModulesSet.add(assetFileName)
+          }
+
+          chunkToEmittedCssFileMap.set(chunk, new Set([assetFileName]))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
