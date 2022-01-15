@@ -1,5 +1,5 @@
 <template>
-  <div :class="$style.aStyle">CompA</div>
+  <div :class="$style.styleA">CompA</div>
 </template>
 <style module>
 .styleA {
