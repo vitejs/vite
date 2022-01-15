@@ -4,12 +4,11 @@ import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
 import type { ViteDevServer } from '../..'
-import { normalizePath } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
-  ensureLeadingSlash,
   fsPathFromId,
+  fsPathFromUrl,
   isImportRequest,
   isInternalRequest,
   isWindows,
@@ -148,8 +147,7 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
-  const cleanedUrl = cleanUrl(url)
-  const file = ensureLeadingSlash(normalizePath(cleanedUrl))
+  const file = fsPathFromUrl(url)
 
   if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
     return false

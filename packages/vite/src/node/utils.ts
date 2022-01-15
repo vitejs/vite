@@ -147,10 +147,16 @@ export function normalizePath(id: string): string {
 }
 
 export function fsPathFromId(id: string): string {
-  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  const fsPath = normalizePath(
+    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
+  )
   return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
     ? fsPath
     : `/${fsPath}`
+}
+
+export function fsPathFromUrl(url: string): string {
+  return fsPathFromId(cleanUrl(url))
 }
 
 export function ensureVolumeInPath(file: string): string {
