@@ -8,7 +8,7 @@ import json from '@rollup/plugin-json'
 import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
@@ -71,8 +71,7 @@ const sharedNodeOptions = {
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false,
-    sourcemap: true
+    freeze: false
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
@@ -105,6 +104,10 @@ const createNodeConfig = (isProduction) => {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts')
     },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction
+    },
     external: [
       'fsevents',
       ...Object.keys(require('./package.json').dependencies),
@@ -118,8 +121,7 @@ const createNodeConfig = (isProduction) => {
         entries: {
           '@vue/compiler-dom': require.resolve(
             '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-          ),
-          'big.js': require.resolve('big.js/big.js')
+          )
         }
       }),
       nodeResolve({ preferBuiltins: true }),
@@ -133,10 +135,13 @@ const createNodeConfig = (isProduction) => {
         // in production we use api-extractor for dts generation
         // in development we need to rely on the rollup ts plugin
         ...(isProduction
-          ? {}
+          ? {
+              declaration: false,
+              sourceMap: false
+            }
           : {
               declaration: true,
-              declarationDir: path.resolve(__dirname, 'dist/')
+              declarationDir: path.resolve(__dirname, 'dist/node')
             })
       }),
       // Some deps have try...catch require of optional deps, but rollup will
@@ -369,7 +374,7 @@ function licensePlugin() {
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync('LICENSE.md', licenseText)
         console.warn(
-          chalk.yellow(
+          colors.yellow(
             '\nLICENSE.md updated. You should commit the updated file.\n'
           )
         )

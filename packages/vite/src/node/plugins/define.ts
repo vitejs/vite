@@ -67,7 +67,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
           .join('|') +
-        ')\\b',
+        // prevent trailing assignments
+        ')\\b(?!\\s*?=[^=])',
       'g'
     )
 

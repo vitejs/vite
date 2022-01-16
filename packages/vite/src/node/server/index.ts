@@ -4,7 +4,7 @@ import type * as net from 'net'
 import type * as http from 'http'
 import connect from 'connect'
 import corsMiddleware from 'cors'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
@@ -95,6 +95,13 @@ export interface ServerOptions extends CommonServerOptions {
    * Origin for the generated asset URLs.
    */
   origin?: string
+  /**
+   * Pre-transform known direct imports
+   *
+   * @experimental this option is experimental and might be changed in the future
+   * @default true
+   */
+  preTransformRequests?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -296,7 +303,10 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const httpsOptions = await resolveHttpsConfig(config.server.https)
+  const httpsOptions = await resolveHttpsConfig(
+    config.server.https,
+    config.cacheDir
+  )
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
@@ -321,8 +331,8 @@ export async function createServer(
     ...watchOptions
   }) as FSWatcher
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url) =>
-    container.resolveId(url)
+  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
+    container.resolveId(url, undefined, { ssr })
   )
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
@@ -624,7 +634,9 @@ async function startServer(
         const outPath = path.resolve('./vite-profile.cpuprofile')
         fs.writeFileSync(outPath, JSON.stringify(profile))
         info(
-          chalk.yellow(`  CPU profile written to ${chalk.white.dim(outPath)}\n`)
+          colors.yellow(
+            `  CPU profile written to ${colors.white(colors.dim(outPath))}\n`
+          )
         )
       } else {
         throw err
@@ -690,7 +702,10 @@ export function resolveServerOptions(
   root: string,
   raw?: ServerOptions
 ): ResolvedServerOptions {
-  const server = raw || {}
+  const server: ResolvedServerOptions = {
+    preTransformRequests: true,
+    ...(raw as ResolvedServerOptions)
+  }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
 
@@ -711,7 +726,7 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
-  return server as ResolvedServerOptions
+  return server
 }
 
 async function restartServer(server: ViteDevServer) {

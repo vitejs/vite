@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
@@ -112,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkip(importer)) {
-        isDebug && debug(chalk.dim(`[skipped] ${prettyImporter}`))
+        isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
 
@@ -148,7 +148,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         isDebug &&
           debug(
-            `${timeFrom(start)} ${chalk.dim(`[no imports] ${prettyImporter}`)}`
+            `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
           )
         return source
       }
@@ -259,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url)
+            const depModule = await moduleGraph.ensureEntryFromUrl(url, ssr)
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
@@ -449,11 +449,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
-                chalk.cyan(importerModule.file) +
+                colors.cyan(importerModule.file) +
                 `\n` +
                 generateCodeFrame(source, start) +
                 `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${chalk.blue(
+                `See ${colors.blue(
                   `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
                 )} ` +
                 `for supported dynamic import formats. ` +
@@ -518,7 +518,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(markExplicitImport(url))
+          toAbsoluteUrl(markExplicitImport(url)),
+          ssr
         )
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized))
@@ -549,7 +550,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           importerModule,
           importedUrls,
           normalizedAcceptedUrls,
-          isSelfAccepting
+          isSelfAccepting,
+          ssr
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)
@@ -558,15 +560,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       isDebug &&
         debug(
-          `${timeFrom(start)} ${chalk.dim(
+          `${timeFrom(start)} ${colors.dim(
             `[${importedUrls.size} imports rewritten] ${prettyImporter}`
           )}`
         )
 
       // pre-transform known direct imports
-      if (staticImportedUrls.size) {
+      if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach((url) => {
-          transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
+          url = unwrapId(removeImportQuery(url)).replace(
+            NULL_BYTE_PLACEHOLDER,
+            '\0'
+          )
+          transformRequest(url, server, { ssr })
         })
       }
 
