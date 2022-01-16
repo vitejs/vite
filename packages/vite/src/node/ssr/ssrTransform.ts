@@ -284,6 +284,31 @@ function walk(
   function isInScope(name: string, parents: Node[]) {
     return parents.some((node) => node && scopeMap.get(node)?.has(name))
   }
+  function handlePattern(p: Pattern, parentFunction: FunctionNode) {
+    if (p.type === 'Identifier') {
+      setScope(parentFunction, p.name)
+    } else if (p.type === 'RestElement') {
+      handlePattern(p.argument, parentFunction)
+    } else if (p.type === 'ObjectPattern') {
+      p.properties.forEach((property) => {
+        if (property.type === 'RestElement') {
+          setScope(parentFunction, (property.argument as Identifier).name)
+        } else {
+          handlePattern(property.value, parentFunction)
+        }
+      })
+    } else if (p.type === 'ArrayPattern') {
+      p.elements.forEach((element) => {
+        if (element) {
+          handlePattern(element, parentFunction)
+        }
+      })
+    } else if (p.type === 'AssignmentPattern') {
+      handlePattern(p.left, parentFunction)
+    } else {
+      setScope(parentFunction, (p as any).name)
+    }
+  }
 
   ;(eswalk as any)(root, {
     enter(node: Node, parent: Node | null) {
@@ -318,8 +343,12 @@ function walk(
         }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
-        node.params.forEach((p) =>
-          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
+        node.params.forEach((p) => {
+          if (p.type === 'ObjectPattern' || p.type === 'ArrayPattern') {
+            handlePattern(p, node)
+            return
+          }
+          ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
@@ -338,38 +367,14 @@ function walk(
               setScope(node, child.name)
             }
           })
-        )
+        })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
         ;(node as any).inPattern = true
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
-          const handlePattern = (p: Pattern) => {
-            if (p.type === 'Identifier') {
-              setScope(parentFunction, p.name)
-            } else if (p.type === 'RestElement') {
-              handlePattern(p.argument)
-            } else if (p.type === 'ObjectPattern') {
-              p.properties.forEach((property) => {
-                if (property.type === 'RestElement') {
-                  setScope(
-                    parentFunction,
-                    (property.argument as Identifier).name
-                  )
-                } else handlePattern(property.value)
-              })
-            } else if (p.type === 'ArrayPattern') {
-              p.elements.forEach((element) => {
-                if (element) handlePattern(element)
-              })
-            } else if (p.type === 'AssignmentPattern') {
-              handlePattern(p.left)
-            } else {
-              setScope(parentFunction, (p as any).name)
-            }
-          }
-          handlePattern(node.id)
+          handlePattern(node.id, parentFunction)
         }
       }
     },
