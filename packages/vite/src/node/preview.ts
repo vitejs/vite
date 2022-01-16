@@ -96,7 +96,7 @@ export async function preview(
 
   const options = config.preview
   const hostname = resolveHostname(options.host)
-  const port = options.port ?? 5000
+  const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base

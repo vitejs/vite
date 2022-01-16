@@ -194,7 +194,7 @@ function startStaticServer(): Promise<string> {
       serve(req, res)
     }
   }))
-  let port = 5000
+  let port = 4173
   return new Promise((resolve, reject) => {
     const onError = (e: any) => {
       if (e.code === 'EADDRINUSE') {
