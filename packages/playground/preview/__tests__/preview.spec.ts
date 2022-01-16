@@ -1,5 +1,5 @@
-import { httpServerStart } from '../http'
-import { resolveConfig } from '..'
+import { httpServerStart } from 'vite/src/node/http'
+import { resolveConfig } from 'vite/src/node'
 
 describe('start preview server', () => {
   test('[strictPort=false, host=127.0.0.1] should use another port when already start a server on localhost.', async () => {
