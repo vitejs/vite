@@ -726,6 +726,12 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.5
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
       '@ampproject/remapping': ^1.0.2
@@ -783,7 +789,7 @@ importers:
       picocolors: ^1.0.0
       postcss: ^8.4.5
       postcss-import: ^14.0.2
-      postcss-load-config: ^3.1.0
+      postcss-load-config: ^3.1.1
       postcss-modules: ^4.3.0
       resolve: ^1.20.0
       resolve.exports: ^1.1.0
@@ -858,7 +864,7 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.5
-      postcss-load-config: 3.1.0_ts-node@10.4.0
+      postcss-load-config: 3.1.1_ts-node@10.4.0
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
@@ -5003,6 +5009,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       import-from: 3.0.0
+    dev: false
 
   /import-fresh/3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
@@ -5016,6 +5023,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       resolve-from: 5.0.0
+    dev: false
 
   /import-lazy/4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
@@ -6960,6 +6968,21 @@ packages:
       lilconfig: 2.0.4
       ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
       yaml: 1.10.2
+    dev: false
+
+  /postcss-load-config/3.1.1_ts-node@10.4.0:
+    resolution: {integrity: sha512-c/9XYboIbSEUZpiD1UQD0IKiUe8n9WHYV7YFe7X7J+ZwCsEKkUJSFWjS9hBU1RR9THR7jMXst8sxiqP0jjo2mg==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      ts-node:
+        optional: true
+    dependencies:
+      lilconfig: 2.0.4
+      ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
+      yaml: 1.10.2
+    dev: true
 
   /postcss-modules-extract-imports/3.0.0_postcss@8.4.5:
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
