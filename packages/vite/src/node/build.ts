@@ -431,15 +431,13 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    if (config.cacheDir) {
-      const dataPath = path.join(config.cacheDir, '_metadata.json')
-      try {
-        const data = JSON.parse(
-          fs.readFileSync(dataPath, 'utf-8')
-        ) as DepOptimizationMetadata
-        knownImports = Object.keys(data.optimized)
-      } catch (e) {}
-    }
+    const dataPath = path.join(config.cacheDir, '_metadata.json')
+    try {
+      const data = JSON.parse(
+        fs.readFileSync(dataPath, 'utf-8')
+      ) as DepOptimizationMetadata
+      knownImports = Object.keys(data.optimized)
+    } catch (e) {}
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
       knownImports = Object.keys((await scanImports(config)).deps)
