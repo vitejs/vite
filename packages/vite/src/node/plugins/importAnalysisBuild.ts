@@ -42,45 +42,53 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
-function preload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(baseModule: () => Promise<{}>, splitDeps?: string[][]) {
   // @ts-ignore
-  if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
+  if (!__VITE_IS_MODERN__ || !splitDeps || splitDeps.length === 0) {
     return baseModule()
   }
+  const LoadOneTime = (deps: string[]) => {
+    return Promise.all(
+      deps.map((dep) => {
+        const isCss = dep.endsWith('.css')
+        const cssSelector = isCss ? '[rel="stylesheet"]' : ''
+        // @ts-ignore check if the file is already preloaded by SSR markup
+        if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+          return
+        }
+        // @ts-ignore
+        const link = document.createElement('link')
+        // @ts-ignore
+        link.rel = isCss ? 'stylesheet' : scriptRel
+        if (!isCss) {
+          link.as = 'script'
+          link.crossOrigin = ''
+        }
+        link.href = dep
+        // @ts-ignore
+        document.head.appendChild(link)
+        if (isCss) {
+          return new Promise((res, rej) => {
+            link.addEventListener('load', res)
+            link.addEventListener('error', rej)
+          })
+        }
+      })
+    )
+  }
 
-  return Promise.all(
-    deps.map((dep) => {
-      // @ts-ignore
-      dep = `${base}${dep}`
-      // @ts-ignore
-      if (dep in seen) return
-      // @ts-ignore
-      seen[dep] = true
-      const isCss = dep.endsWith('.css')
-      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      // @ts-ignore check if the file is already preloaded by SSR markup
-      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
-        return
-      }
-      // @ts-ignore
-      const link = document.createElement('link')
-      // @ts-ignore
-      link.rel = isCss ? 'stylesheet' : scriptRel
-      if (!isCss) {
-        link.as = 'script'
-        link.crossOrigin = ''
-      }
-      link.href = dep
-      // @ts-ignore
-      document.head.appendChild(link)
-      if (isCss) {
-        return new Promise((res, rej) => {
-          link.addEventListener('load', res)
-          link.addEventListener('error', rej)
-        })
-      }
-    })
-  ).then(() => baseModule())
+  splitDeps
+    .reduce((queue, deps) => {
+      const needLoadDep = deps
+        // @ts-ignore
+        .map((dep) => `${base}${dep}`)
+        // @ts-ignore
+        .filter((dep) => (dep in seen ? false : (seen[dep] = true)))
+      return needLoadDep.length
+        ? queue.then(() => LoadOneTime(needLoadDep))
+        : queue
+    }, Promise.resolve([]) as Promise<unknown[]>)
+    .then(() => baseModule())
 }
 
 /**
@@ -239,8 +247,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const cssModulesSet = cssModulesSets.get(config)!
       const isCss = (id: string) =>
-        cssModulesSet.has(id) || // is module css
-        isCSSRequest(id)
+        isCSSRequest(id) ? 2 : cssModulesSet.has(id) ? 1 : 0
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -285,11 +292,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    chunk.imports
-                      .sort((a, b) => +isCss(b) - +isCss(a))
-                      .forEach((moduleName) => {
-                        addDeps(moduleName)
-                      })
                     deps.add(chunk.fileName)
                     const cssFiles = chunkToEmittedCssFileMap.get(chunk)
                     if (cssFiles) {
@@ -297,6 +299,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
+                    chunk.imports
+                      .sort((a, b) => isCss(b) - isCss(a))
+                      .forEach((moduleName) => {
+                        addDeps(moduleName)
+                      })
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
@@ -338,10 +345,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   )
                 deps.forEach((dep) => {
                   if (!isCss(dep)) {
+                    loadOnceCache.push(dep)
                     pushSplitDepsLoadingOrder()
                     loadOnceCache = []
+                  } else {
+                    loadOnceCache.push(dep)
                   }
-                  loadOnceCache.push(dep)
                 })
                 pushSplitDepsLoadingOrder() // push last time load module
 
