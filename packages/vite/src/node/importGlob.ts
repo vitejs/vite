@@ -7,12 +7,7 @@ import {
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
-import {
-  cleanUrl,
-  normalizePath,
-  multilineCommentsRE,
-  singlelineCommentsRE
-} from './utils'
+import { cleanUrl, normalizePath } from './utils'
 import type { RollupError } from 'rollup'
 
 interface GlobParams {
@@ -223,6 +218,10 @@ function lexGlobPattern(
   }
   return [pattern, assert, endIndex + 1]
 }
+
+// reg without the 'g' option, only matches the first match
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
+const singlelineCommentsRE = /\/\/.*/
 
 function getEndIndex(code: string, i: number): number {
   const findStart = i
