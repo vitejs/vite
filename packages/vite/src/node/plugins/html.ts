@@ -29,14 +29,21 @@ import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
   NodeTransform,
-  TextNode,
   ElementNode,
-  CompilerError
+  CompilerError,
+  TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 
+interface ScriptAssetsUrl {
+  start: number
+  end: number
+  url: string
+}
+
 const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
+const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -250,6 +257,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         let js = ''
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
+        const scriptUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -308,6 +316,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               config.logger.warn(
                 `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
               )
+            } else if (node.children.length) {
+              const scriptNode = node.children.pop()! as TextNode
+              const code = scriptNode.content
+              let match: RegExpExecArray | null
+              while ((match = inlineImportRE.exec(code))) {
+                const { 0: full, 1: url, index } = match
+                const startUrl = full.indexOf(url)
+                const start = scriptNode.loc.start.offset + index + startUrl + 1
+                const end = start + url.length - 2
+                scriptUrls.push({ start, end, url: url.slice(1, -1) })
+              }
             }
           }
 
@@ -432,6 +451,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 throw e
               }
             }
+          }
+        }
+        // emit <script>import("./aaa")</script> asset
+        for (const { start, end, url } of scriptUrls) {
+          if (!isExcludedUrl(url)) {
+            s.overwrite(start, end, await urlToBuiltUrl(url, id, config, this))
+          } else if (checkPublicFile(url, config)) {
+            s.overwrite(start, end, config.base + url.slice(1))
           }
         }
 
