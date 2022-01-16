@@ -4,6 +4,15 @@
 
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 
+// Duplicate import('../src/node/importGlob').AssertOptions
+// Avoid breaking the production client type because this file is referenced
+// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist
+interface AssertOptions {
+  assert?: {
+    type: string
+  }
+}
+
 interface ImportMeta {
   url: string
 
@@ -50,14 +59,20 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(pattern: string): Record<
+  glob(
+    pattern: string,
+    options?: AssertOptions
+  ): Record<
     string,
     () => Promise<{
       [key: string]: any
     }>
   >
 
-  globEager(pattern: string): Record<
+  globEager(
+    pattern: string,
+    options?: AssertOptions
+  ): Record<
     string,
     {
       [key: string]: any

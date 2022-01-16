@@ -303,7 +303,10 @@ export async function createServer(
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
   const serverConfig = config.server
-  const httpsOptions = await resolveHttpsConfig(config.server.https)
+  const httpsOptions = await resolveHttpsConfig(
+    config.server.https,
+    config.cacheDir
+  )
   let { middlewareMode } = serverConfig
   if (middlewareMode === true) {
     middlewareMode = 'ssr'
@@ -558,18 +561,16 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const runOptimize = async () => {
-    if (config.cacheDir) {
-      server._isRunningOptimizer = true
-      try {
-        server._optimizeDepsMetadata = await optimizeDeps(
-          config,
-          config.server.force || server._forceOptimizeOnRestart
-        )
-      } finally {
-        server._isRunningOptimizer = false
-      }
-      server._registerMissingImport = createMissingImporterRegisterFn(server)
+    server._isRunningOptimizer = true
+    try {
+      server._optimizeDepsMetadata = await optimizeDeps(
+        config,
+        config.server.force || server._forceOptimizeOnRestart
+      )
+    } finally {
+      server._isRunningOptimizer = false
     }
+    server._registerMissingImport = createMissingImporterRegisterFn(server)
   }
 
   if (!middlewareMode && httpServer) {

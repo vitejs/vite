@@ -17,6 +17,7 @@
     "only-object-assigned-exports": "file:./only-object-assigned-exports",
     "primitive-export": "file:./primitive-export",
     "read-file-content": "file:./read-file-content",
+    "require-absolute": "file:./require-absolute",
     "ts-transpiled-exports": "file:./ts-transpiled-exports"
   },
   "devDependencies": {

@@ -20,6 +20,7 @@
   </Suspense>
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
+  <ExternalStyleCss />
 </template>
 
 <script setup lang="ts">
@@ -35,6 +36,7 @@ import ScanDep from './ScanDep.vue'
 import AsyncComponent from './AsyncComponent.vue'
 import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
+import ExternalStyleCss from './ExternalStyleCss.vue'
 
 import { ref } from 'vue'
 

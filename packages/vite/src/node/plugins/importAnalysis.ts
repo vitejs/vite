@@ -568,7 +568,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // pre-transform known direct imports
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach((url) => {
-          transformRequest(unwrapId(removeImportQuery(url)), server, { ssr })
+          url = unwrapId(removeImportQuery(url)).replace(
+            NULL_BYTE_PLACEHOLDER,
+            '\0'
+          )
+          transformRequest(url, server, { ssr })
         })
       }
 

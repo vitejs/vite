@@ -1,9 +1,10 @@
-// Invoked on the commit-msg git hook by yorkie.
+// Invoked on the commit-msg git hook by simple-git-hooks.
 
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { readFileSync } from 'fs'
 
-const msgPath = process.env.GIT_PARAMS!
+// get $1 from commit-msg script
+const msgPath = process.argv[2]
 const msg = readFileSync(msgPath, 'utf-8').trim()
 
 const releaseRE = /^v\d/
@@ -13,15 +14,15 @@ const commitRE =
 if (!releaseRE.test(msg) && !commitRE.test(msg)) {
   console.log()
   console.error(
-    `  ${chalk.bgRed.white(' ERROR ')} ${chalk.red(
+    `  ${colors.bgRed(colors.white(' ERROR '))} ${colors.red(
       `invalid commit message format.`
     )}\n\n` +
-      chalk.red(
+      colors.red(
         `  Proper commit message format is required for automated changelog generation. Examples:\n\n`
       ) +
-      `    ${chalk.green(`feat: add 'comments' option`)}\n` +
-      `    ${chalk.green(`fix: handle events on blur (close #28)`)}\n\n` +
-      chalk.red(`  See .github/commit-convention.md for more details.\n`)
+      `    ${colors.green(`feat: add 'comments' option`)}\n` +
+      `    ${colors.green(`fix: handle events on blur (close #28)`)}\n\n` +
+      colors.red(`  See .github/commit-convention.md for more details.\n`)
   )
   process.exit(1)
 }
