@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, splitVendorChunkPlugin } from 'vite'
 import vuePlugin from '@vitejs/plugin-vue'
 import { vueI18nPlugin } from './CustomBlockPlugin'
 
@@ -12,6 +12,7 @@ export default defineConfig({
     vuePlugin({
       reactivityTransform: true
     }),
+    splitVendorChunkPlugin(),
     vueI18nPlugin
   ],
   build: {
