@@ -113,6 +113,13 @@ async function doTransform(
         }
       }
     }
+
+    // If the optimizer has been run, further transformations are useless
+    // as the optimizer will invalidate all the modules anyway.
+    if (server._isRunningOptimizer) {
+      return null
+    }
+
     if (code) {
       try {
         map = (
