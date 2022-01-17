@@ -105,6 +105,12 @@ export default function myPlugin() {
 
 ### Importing a Virtual File
 
+See the example in the [next section](#virtual-modules-convention).
+
+## Virtual Modules Convention
+
+Virtual modules are a useful scheme that allows you to pass build time information to the source files using normal ESM import syntax.
+
 ```js
 export default function myPlugin() {
   const virtualModuleId = '@my-virtual-module'
@@ -133,8 +139,6 @@ import { msg } from '@my-virtual-module'
 
 console.log(msg)
 ```
-
-## Virtual Modules Convention
 
 Virtual modules in Vite (and Rollup) are prefixed with `virtual:` for the user-facing path by convention. If possible the plugin name should be used as a namespace to avoid collisions with other plugins in the ecosystem. For example, a `vite-plugin-posts` could ask users to import a `virtual:posts` or `virtual:posts/helpers` virtual modules to get build time information. Internally, plugins that use virtual modules should prefix the module ID with `\0` while resolving the id, a convention from the rollup ecosystem. This prevents other plugins from trying to process the id (like node resolution), and core features like sourcemaps can use this info to differentiate between virtual modules and regular files. `\0` is not a permitted char in import URLs so we have to replace them during import analysis. A `\0{id}` virtual id ends up encoded as `/@id/__x00__{id}` during dev in the browser. The id will be decoded back before entering the plugins pipeline, so this is not seen by plugins hooks code.
 
