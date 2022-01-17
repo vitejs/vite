@@ -2,18 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "module": "esnext",
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true,
-    "useDefineForClassFields": false
+    "moduleResolution": "node"
   },
   "include": ["vite.config.ts"]
 }
