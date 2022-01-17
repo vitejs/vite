@@ -1,3 +1,4 @@
+import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 import type { OutputOptions, GetManualChunk, GetModuleInfo } from 'rollup'
 import { isCSSRequest } from './css'
@@ -72,24 +73,37 @@ function staticImportedByEntry(
 }
 
 export function splitVendorChunkPlugin(): Plugin {
-  const cache = new SplitVendorChunkCache()
+  const caches: SplitVendorChunkCache[] = []
+  function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
+    const cache = new SplitVendorChunkCache()
+    caches.push(cache)
+    const build = config.build ?? {}
+    const format = output?.format
+    if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
+      return splitVendorChunk({ cache })
+    }
+  }
   return {
     name: 'vite:split-vendor-chunk',
     config(config) {
-      const build = config.build ?? {}
-      const format = (build.rollupOptions?.output as OutputOptions)?.format
-      if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
+      let outputs = config?.build?.rollupOptions?.output
+      if (outputs) {
+        outputs = Array.isArray(outputs) ? outputs : [outputs]
+        for (const output of outputs) {
+          output.manualChunks = createSplitVendorChunk(output, config)
+        }
+      } else {
         return {
           build: {
             rollupOptions: {
-              manualChunks: splitVendorChunk({ cache })
+              manualChunks: createSplitVendorChunk({}, config)
             }
           }
         }
       }
     },
     buildStart() {
-      cache.reset()
+      caches.forEach((cache) => cache.reset())
     }
   }
 }
