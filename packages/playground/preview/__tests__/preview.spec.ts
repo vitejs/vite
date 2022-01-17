@@ -1,13 +1,14 @@
 import { httpServerStart } from 'vite/src/node/http'
 import { resolveConfig } from 'vite/src/node'
+import { createServer } from 'http'
 
 describe('start preview server', () => {
   test('[strictPort=false, host=127.0.0.1] should use another port when already start a server on localhost.', async () => {
     const originalPort = 5000
-    const server = require('http').createServer()
+    const server = createServer()
     server.listen(originalPort, 'localhost')
 
-    const testServer = require('http').createServer()
+    const testServer = createServer()
     const config = await resolveConfig({}, 'serve', 'production')
     const port = await httpServerStart(testServer, {
       port: originalPort,
@@ -24,12 +25,12 @@ describe('start preview server', () => {
 
   test('[strictPort=true, host=127.0.0.1] should use another port when already start a server on localhost.', async () => {
     const originalPort = 5000
-    const server = require('http').createServer()
+    const server = createServer()
     server.listen(originalPort, 'localhost')
 
     const config = await resolveConfig({}, 'serve', 'production')
-    const testServer = require('http').createServer()
-    expect(
+    const testServer = createServer()
+    await expect(
       httpServerStart(testServer, {
         port: originalPort,
         strictPort: true,
