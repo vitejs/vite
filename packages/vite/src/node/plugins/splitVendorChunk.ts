@@ -3,7 +3,7 @@ import type { OutputOptions, GetManualChunk, GetModuleInfo } from 'rollup'
 import { isCSSRequest } from './css'
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
-// We don't recomment using this strategy as a general solution moving forward
+// We don't recommend using this strategy as a general solution moving forward
 
 // splitVendorChunk is a simple index/vendor strategy that was used in Vite
 // until v2.8. It is exposed to let people continue to use it in case it was
