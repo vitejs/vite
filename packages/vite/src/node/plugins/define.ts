@@ -80,6 +80,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
+    transformIndexHtml(html) {
+      const [replacements, pattern] = defaultPattern
+      return html.replace(pattern, (_, match) => {
+        return '' + replacements[match]
+      })
+    },
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
