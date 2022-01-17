@@ -71,15 +71,15 @@ To achieve, you can create an `env.d.ts` in `src` directory, then augment `Impor
 ```typescript
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_APP_TITLE: string
-  // more env variables...
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
+declare module 'vite/types/importMeta' {
+  interface ImportMetaEnv {
+    readonly VITE_APP_TITLE: string
+    // more env variables...
+  }
 }
 ```
+
+_([typescript documentation](https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation))_
 
 ## Modes
 
