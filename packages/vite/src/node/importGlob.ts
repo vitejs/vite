@@ -1,7 +1,7 @@
 import path from 'path'
 import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
-import * as JSON5 from 'json5'
+import JSON5 from 'json5'
 import {
   isModernFlag,
   preloadMethod,

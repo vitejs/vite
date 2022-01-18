@@ -45,7 +45,6 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "0.14.3",
-    "json5": "^2.2.0",
     "postcss": "^8.4.5",
     "resolve": "^1.20.0",
     "rollup": "^2.59.0"
@@ -95,6 +94,7 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.2.7",
     "http-proxy": "^1.18.1",
+    "json5": "^2.2.0",
     "launch-editor-middleware": "^2.3.0",
     "magic-string": "^0.25.7",
     "micromatch": "^4.0.4",
