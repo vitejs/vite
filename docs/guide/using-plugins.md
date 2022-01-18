@@ -7,7 +7,7 @@ Vite can be extended using plugins, which are based on Rollup's well-designed pl
 To use a plugin, it needs to be added to the `devDependencies` of the project and included in the `plugins` array in the `vite.config.js` config file. For example, to provide support for legacy browsers, the official [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) can be used:
 
 ```
-$ npm i -D @vitejs/plugin-legacy
+$ npm add -D @vitejs/plugin-legacy
 ```
 
 ```js

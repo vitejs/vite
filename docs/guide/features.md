@@ -191,13 +191,13 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 
 ```bash
 # .scss and .sass
-npm install -D sass
+npm add -D sass
 
 # .less
-npm install -D less
+npm add -D less
 
 # .styl and .stylus
-npm install -D stylus
+npm add -D stylus
 ```
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
