@@ -30,9 +30,8 @@ vite --config my-config.js
 Note Vite will replace `__filename`, `__dirname`, and `import.meta.url`. Using these as variable names will result in an error:
 
 ```js
-// example
 const __filename = "value"
-// will compile with
+// will be transformed to
 const "path/vite.config.js" = "value"
 ```
 
