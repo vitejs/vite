@@ -27,9 +27,7 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
-Note Vite will replace `__filename`/`__dirname`/`import.meta.url` with the correct values.
-
-Using `__filename`/`__dirname` as variable names will be an error:
+Note Vite will replace `__filename`, `__dirname`, and `import.meta.url`. Using these as variable names will result in an error:
 
 ```js
 // example
