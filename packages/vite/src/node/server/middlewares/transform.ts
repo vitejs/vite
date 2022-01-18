@@ -48,19 +48,14 @@ export function transformMiddleware(
   } = server
 
   // determine the url prefix of files inside cache directory
-  let cacheDirPrefix: string | undefined
-  if (cacheDir) {
-    const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
-    if (cacheDirRelative.startsWith('../')) {
-      // if the cache directory is outside root, the url prefix would be something
+  const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
+  const cacheDirPrefix = cacheDirRelative.startsWith('../')
+    ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
-      cacheDirPrefix = `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
-    } else {
-      // if the cache directory is inside root, the url prefix would be something
+      `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+    : // if the cache directory is inside root, the url prefix would be something
       // like '/node_modules/.vite'
-      cacheDirPrefix = `/${cacheDirRelative}`
-    }
-  }
+      `/${cacheDirRelative}`
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteTransformMiddleware(req, res, next) {

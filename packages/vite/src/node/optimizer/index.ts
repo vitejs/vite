@@ -118,11 +118,6 @@ export async function optimizeDeps(
   const { logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
-  if (!cacheDir) {
-    log(`No cache directory. Skipping.`)
-    return null
-  }
-
   const dataPath = path.join(cacheDir, '_metadata.json')
   const mainHash = getDepHash(config)
   const data: DepOptimizationMetadata = {

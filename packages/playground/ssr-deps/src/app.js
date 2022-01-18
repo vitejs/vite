@@ -8,6 +8,7 @@ import bcrypt from 'bcrypt'
 import definePropertiesExports from 'define-properties-exports'
 import definePropertyExports from 'define-property-exports'
 import onlyObjectAssignedExports from 'only-object-assigned-exports'
+import requireAbsolute from 'require-absolute'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -40,6 +41,9 @@ export async function render(url, rootDir) {
 
   const onlyObjectAssignedExportsMessage = onlyObjectAssignedExports.hello()
   html += `\n<p class="only-object-assigned-exports-msg">message from only-object-assigned-exports: ${onlyObjectAssignedExportsMessage}</p>`
+
+  const requireAbsoluteMessage = requireAbsolute.hello()
+  html += `\n<p class="require-absolute-msg">message from require-absolute: ${requireAbsoluteMessage}</p>`
 
   return html + '\n'
 }

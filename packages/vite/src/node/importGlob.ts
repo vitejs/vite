@@ -1,7 +1,7 @@
 import path from 'path'
 import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
-import * as JSON5 from 'json5'
+import JSON5 from 'json5'
 import {
   isModernFlag,
   preloadMethod,
@@ -69,7 +69,8 @@ export async function transformImportGlob(
   }
   const files = glob.sync(pattern, {
     cwd: base,
-    ignore: ['**/node_modules/**']
+    // Ignore node_modules by default unless explicitly indicated in the pattern
+    ignore: /(^|\/)node_modules\//.test(pattern) ? [] : ['**/node_modules/**']
   })
   const imports: string[] = []
   let importsString = ``
