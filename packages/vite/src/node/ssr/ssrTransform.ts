@@ -350,14 +350,19 @@ function walk(
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              // skip params default value of destructure
+              if (
+                parent?.type === 'AssignmentPattern' &&
+                parent?.right === child
+              ) {
+                return this.skip()
+              }
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
               if (isStaticPropertyKey(child, parent)) return
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
-                (parent?.type === 'AssignmentPattern' &&
-                  parent?.right === child) ||
                 (parent?.type === 'TemplateLiteral' &&
                   parent?.expressions.includes(child)) ||
                 (parent?.type === 'CallExpression' && parent?.callee === child)

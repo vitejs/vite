@@ -231,6 +231,20 @@ test('rewrite variable in string interpolation in function nested arguments', as
   expect(result.deps).toEqual(['vue'])
 })
 
+// #6520
+test('rewrite variables in default value of destructuring params', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A({foo = fn}){ return {}; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A({foo = __vite_ssr_import_0__.fn}){ return {}; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransform(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
