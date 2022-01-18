@@ -232,7 +232,7 @@ test('rewrite variable in string interpolation in function nested arguments', as
 })
 
 // #6520
-test('do not rewrite params of default value in destructure', async () => {
+test('rewrite variables in default value of destructuring params', async () => {
   const result = await ssrTransform(
     `import { fn } from 'vue';function A({foo = fn}){ return {}; }`,
     null,
