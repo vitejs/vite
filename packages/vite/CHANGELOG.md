@@ -1,3 +1,13 @@
+## [2.7.13](https://github.com/vitejs/vite/compare/v2.7.12...v2.7.13) (2022-01-18)
+
+
+### Bug Fixes
+
+* **ssr:** fix resolution for nested ssr externals ([#6080](https://github.com/vitejs/vite/issues/6080)) ([#6470](https://github.com/vitejs/vite/issues/6470)) ([ed33f2a](https://github.com/vitejs/vite/commit/ed33f2ac16c5e1b13a43764c80da3e308007c095))
+* **ssr:** should correctly transfrom identifier in ssr ([#6548](https://github.com/vitejs/vite/issues/6548)) ([589a456](https://github.com/vitejs/vite/commit/589a45699f93e34318600eac4f502a7955dcacaa))
+
+
+
 ## [2.7.12](https://github.com/vitejs/vite/compare/v2.7.11...v2.7.12) (2022-01-13)
 
 
