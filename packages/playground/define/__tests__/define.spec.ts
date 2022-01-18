@@ -20,4 +20,5 @@ test('string', async () => {
   expect(await page.textContent('.spread-array')).toBe(
     JSON.stringify([...defines.__STRING__])
   )
+  expect(await page.textContent('.exp-define')).toBe(String(defines.__EXP__))
 })
