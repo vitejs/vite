@@ -70,7 +70,7 @@ import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
-import { SourceMapConsumer } from 'source-map'
+import { SourceMapConsumer } from 'source-map-js/lib/source-map-consumer'
 import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
