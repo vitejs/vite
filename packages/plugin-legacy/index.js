@@ -37,8 +37,9 @@ function viteLegacyPlugin(options = {}) {
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
-  const debugFlag = process.env.DEBUG
-  const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
+  const debugFlags = (process.env.DEBUG || '').split(',')
+  const isDebug =
+    debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
