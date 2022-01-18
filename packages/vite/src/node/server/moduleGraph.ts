@@ -84,6 +84,11 @@ export class ModuleGraph {
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
   safeModulesPath = new Set<string>()
+  private saveCacheState: {
+    promise?: Promise<void>
+    timeout?: NodeJS.Timeout
+    canQueue: boolean
+  } = { canQueue: true }
 
   constructor(
     private resolveId: (
@@ -92,12 +97,7 @@ export class ModuleGraph {
     ) => Promise<PartialResolvedId | null>,
     private load: (id: string) => Promise<LoadResult | null>,
     private config: ResolvedConfig,
-    private watcher: FSWatcher,
-    private saveCacheState: {
-      promise?: Promise<void>
-      timeout?: NodeJS.Timeout
-      canQueue: boolean
-    } = { canQueue: !!config.cacheDir }
+    private watcher: FSWatcher
   ) {}
 
   async getModuleByUrl(
@@ -255,10 +255,6 @@ export class ModuleGraph {
       return
     }
     const cacheLocation = this.getCacheLocation()
-    if (!cacheLocation) {
-      isDebug && debugModuleGraph('Cache disabled, loadCache skipped')
-      return
-    }
     if (!fs.existsSync(cacheLocation)) {
       isDebug && debugModuleGraph('Cache not found')
       return
@@ -340,10 +336,6 @@ export class ModuleGraph {
   private async unsafelySaveCache(): Promise<void> {
     const start = isDebug ? performance.now() : 0
     const cacheLocation = this.getCacheLocation()
-    if (!cacheLocation) {
-      isDebug && debugModuleGraph('No cache location, saveCache skipped')
-      return
-    }
     const cache: Cache = { configHash: this.getCacheHash(), files: {} }
     this.urlToModuleMap.forEach((module, url) => {
       if (!module.transformResult) return
@@ -384,8 +376,7 @@ export class ModuleGraph {
     })
   }
 
-  private getCacheLocation(): string | undefined {
-    if (!this.config.cacheDir) return
+  private getCacheLocation(): string {
     return path.resolve(this.config.cacheDir, '_moduleCache.json')
   }
 }
