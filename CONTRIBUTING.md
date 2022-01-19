@@ -207,4 +207,4 @@ The english docs are embeded in the main Vite repo, to allow contributors to wor
 4. Push your commits to your Github repo. you can setup a netlify preview as well.
 5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
 
-We recommend talking with others in Vite Land so you find more contributors for your language to share the maintainance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.
+We recommend talking with others in Vite Land so you find more contributors for your language to share the maintenance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.
