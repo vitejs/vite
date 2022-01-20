@@ -97,7 +97,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     reactivityTransform,
     root: process.cwd(),
     sourceMap: true,
-    compiler: null as any // to be set in configResolved
+    compiler: null as any // to be set in buildStart
   }
 
   // Temporal handling for 2.7 breaking change
@@ -135,13 +135,16 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction,
-        compiler: options.compiler || resolveCompiler(config.root)
+        isProduction: config.isProduction
       }
     },
 
     configureServer(server) {
       options.devServer = server
+    },
+
+    buildStart() {
+      options.compiler = options.compiler || resolveCompiler(options.root)
     },
 
     async resolveId(id) {
