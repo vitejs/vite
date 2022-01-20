@@ -188,7 +188,7 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 If you would like to start a translation in your language, you are welcome to contribute! Please join [the #translations channel in Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
 
-The english docs are embeded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
+The english docs are embedded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
 
 ### How to start a translation repo
 
