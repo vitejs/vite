@@ -40,9 +40,14 @@ export async function handleHotUpdate(
 
   if (hasScriptChanged(prevDescriptor, descriptor)) {
     let scriptModule: ModuleNode | undefined
-    if (descriptor.script?.lang && !descriptor.script.src) {
+    if (
+      (descriptor.scriptSetup?.lang && !descriptor.scriptSetup.src) ||
+      (descriptor.script?.lang && !descriptor.script.src)
+    ) {
       const scriptModuleRE = new RegExp(
-        `type=script.*&lang\.${descriptor.script.lang}$`
+        `type=script.*&lang\.${
+          descriptor.scriptSetup?.lang || descriptor.script?.lang
+        }$`
       )
       scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
     }

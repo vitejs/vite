@@ -7,7 +7,6 @@ const props = defineProps({
 onMounted(() => console.log('mounted in vue with jsx2'))
 let count = ref(100)
 const increment = () => {
-  console.log('increase')
   count.value++
 }
 const Render = () => (
@@ -19,5 +18,12 @@ const Render = () => (
 </script>
 
 <template>
+  <p>{{ count }}</p>
   <Render />
 </template>
+
+<style scoped>
+p {
+  color: red;
+}
+</style>
