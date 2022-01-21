@@ -88,12 +88,12 @@ async function handleMessage(payload: HMRPayload) {
             document.querySelectorAll<HTMLLinkElement>('link')
           ).find((e) => cleanUrl(e.href).includes(searchUrl))
           if (el) {
-            const newPath = `${base}${path.slice(1)}${
-              path.includes('?') ? '&' : '?'
+            const newPath = `${base}${searchUrl.slice(1)}${
+              searchUrl.includes('?') ? '&' : '?'
             }t=${timestamp}`
             el.href = new URL(newPath, el.href).href
           }
-          console.log(`[vite] css hot updated: ${path}`)
+          console.log(`[vite] css hot updated: ${searchUrl}`)
           notifyListeners<'vite:afterUpdate:css'>('vite:afterUpdate:css', el)
         }
       })
