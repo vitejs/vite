@@ -6,10 +6,11 @@
   },
   "homepage": "https://vitejs.dev/",
   "keywords": [
-    "HMR",
-    "Home Module Replacement",
-    "Typescript",
-    "Javascript"
+    "frontend", 
+    "hmr",
+    "dev-server",
+    "build-tool",
+    "vite"
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
