@@ -139,4 +139,12 @@ if (!isBuild) {
       'title2'
     )
   })
+
+  test('CSS update preserves query params', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.css')
+    editFile('global.css', (code) => code.replace('white', 'tomato'))
+
+    await untilUpdated(() => el.textContent(), '/global.css?param=required')
+  })
 }

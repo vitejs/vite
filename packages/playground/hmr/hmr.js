@@ -44,6 +44,13 @@ if (import.meta.hot) {
   import.meta.hot.on('foo', ({ msg }) => {
     text('.custom', msg)
   })
+
+  import.meta.hot.on('vite:afterUpdate:css', (el) => {
+    let url = new URL(el.href, location)
+    url.searchParams.delete('t')
+    url.searchParams.delete('direct')
+    text('.css', url.pathname + url.search)
+  })
 }
 
 function text(el, text) {
