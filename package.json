@@ -4,6 +4,13 @@
   "engines": {
     "node": ">=12.2.0"
   },
+  "homepage": "https://vitejs.dev/",
+  "keywords": [
+    "HMR",
+    "Home Module Replacement",
+    "Typescript",
+    "Javascript"
+  ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
