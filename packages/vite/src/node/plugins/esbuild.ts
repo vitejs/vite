@@ -220,6 +220,16 @@ const rollupToEsbuildFormatMap: Record<
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    outputOptions(opts) {
+      // @ts-ignore inject by resolveLibFormat call
+      if (opts.__vite_lib_minify__) {
+        // @ts-ignore
+        delete opts.__vite_lib_minify__
+        // @ts-ignore
+        this.meta.__vite_lib_minify__ = true
+      }
+      return null
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-ignore injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
@@ -232,7 +242,9 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         // Do not minify ES lib output since that would remove pure annotations
         // and break tree-shaking
         // https://github.com/vuejs/vue-next/issues/2860#issuecomment-926882793
-        !(config.build.lib && opts.format === 'es')
+        (!(config.build.lib && opts.format === 'es') ||
+          // @ts-ignore
+          this.meta.__vite_lib_minify__)
 
       if ((!target || target === 'esnext') && !minify) {
         return null

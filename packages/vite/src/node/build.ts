@@ -223,10 +223,10 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string | ((format: ModuleFormat) => string)
+  fileName?: string | ((format: ModuleFormat | 'es.min') => string)
 }
 
-export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
+export type LibraryFormats = 'es' | 'es.min' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<
   Omit<
@@ -497,7 +497,13 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
+          ? resolveLibFilename(
+              libOptions,
+              output,
+              config.root,
+              // @ts-ignore
+              output.__vite_lib_minify__
+            )
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -693,9 +699,13 @@ function staticImportedByEntry(
 
 export function resolveLibFilename(
   libOptions: LibraryOptions,
-  format: ModuleFormat,
-  root: string
+  output: OutputOptions,
+  root: string,
+  esMinify?: boolean
 ): string {
+  // @ts-ignore
+  const format = output.format || 'es'
+
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format)
   }
@@ -707,7 +717,19 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  return `${name}.${format}.js`
+  return `${name}.${esMinify ? 'es.min' : format}.js`
+}
+
+function resolveLibFormat(
+  format: LibraryFormats,
+  output?: OutputOptions
+): OutputOptions {
+  return {
+    ...output,
+    ...(format === 'es.min'
+      ? { format: 'es', __vite_lib_minify__: true }
+      : { format })
+  }
 }
 
 function resolveBuildOutputs(
@@ -727,9 +749,9 @@ function resolveBuildOutputs(
       )
     }
     if (!outputs) {
-      return formats.map((format) => ({ format }))
+      return formats.map((format) => resolveLibFormat(format))
     } else if (!Array.isArray(outputs)) {
-      return formats.map((format) => ({ ...outputs, format }))
+      return formats.map((format) => resolveLibFormat(format, outputs))
     } else if (libOptions.formats) {
       // user explicitly specifying own output array
       logger.warn(

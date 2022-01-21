@@ -37,7 +37,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
       // Do not minify ES lib output since that would remove pure annotations
       // and break tree-shaking.
-      if (config.build.lib && outputOptions.format === 'es') {
+      if (
+        config.build.lib &&
+        outputOptions.format === 'es' &&
+        // @ts-ignore inject by buildEsbuildPlugin
+        !this.meta.__vite_lib_minify__
+      ) {
         return null
       }
 
