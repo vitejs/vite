@@ -537,7 +537,7 @@ export function tryNodeResolve(
 
   let resolved: string | undefined
   try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+    resolved = resolveId(unresolvedId, pkg, targetWeb, options, ssr)
   } catch (err) {
     if (!options.tryEsmOnly) {
       throw err
@@ -660,7 +660,8 @@ export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
   targetWeb: boolean,
-  options: InternalResolveOptions
+  options: InternalResolveOptions,
+  ssr?: boolean
 ): string | undefined {
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
@@ -672,7 +673,7 @@ export function resolvePackageEntry(
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
-      entryPoint = resolveExports(data, '.', options, targetWeb)
+      entryPoint = resolveExports(data, '.', options, targetWeb, ssr)
     }
 
     // if exports resolved to .mjs, still resolve other fields.
@@ -770,12 +771,32 @@ function packageEntryFailure(id: string, details?: string) {
   )
 }
 
+const ssrConditions: string[] = []
+process.execArgv.forEach((arg, i, argv) => {
+  const [key, value] = arg.includes('=')
+    ? arg.split('=')
+    : argv.slice(i - 1, i + 1)
+
+  if (key === '-C' || key === '--conditions') {
+    ssrConditions.push(value)
+  }
+})
+
 function resolveExports(
   pkg: PackageData['data'],
   key: string,
   options: InternalResolveOptions,
-  targetWeb: boolean
+  targetWeb: boolean,
+  ssr?: boolean
 ) {
+  if (ssr && !options.isBuild) {
+    // To ensure SSR imports are resolved identically regardless of whether
+    // the importer is externalized or not, the conditions need to match what
+    // the Node.js runtime is using.
+    return _resolveExports(pkg, key, {
+      conditions: ssrConditions
+    })
+  }
   const conditions = [options.isProduction ? 'production' : 'development']
   if (!options.isRequire) {
     conditions.push('module')
