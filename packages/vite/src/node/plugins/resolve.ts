@@ -454,6 +454,33 @@ function tryResolveFile(
   }
 }
 
+export function getPossiblePackageIds(id: string) {
+  const possiblePkgIds: string[] = []
+  for (let prevSlashIndex = -1; ; ) {
+    let slashIndex = id.indexOf('/', prevSlashIndex + 1)
+    if (slashIndex < 0) {
+      slashIndex = id.length
+    }
+
+    const part = id.slice(prevSlashIndex + 1, (prevSlashIndex = slashIndex))
+    if (!part) {
+      break
+    }
+
+    // Assume path parts with an extension are not package roots, except for the
+    // first path part (since periods are sadly allowed in package names).
+    // At the same time, skip the first path part if it begins with "@"
+    // (since "@foo/bar" should be treated as the top-level path).
+    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
+      continue
+    }
+
+    const possiblePkgId = id.slice(0, slashIndex)
+    possiblePkgIds.push(possiblePkgId)
+  }
+  return possiblePkgIds
+}
+
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
@@ -473,32 +500,7 @@ export function tryNodeResolve(
   const nestedRoot = id.substring(0, lastArrowIndex).trim()
   const nestedPath = id.substring(lastArrowIndex + 1).trim()
 
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    let slashIndex = nestedPath.indexOf('/', prevSlashIndex + 1)
-    if (slashIndex < 0) {
-      slashIndex = nestedPath.length
-    }
-
-    const part = nestedPath.slice(
-      prevSlashIndex + 1,
-      (prevSlashIndex = slashIndex)
-    )
-    if (!part) {
-      break
-    }
-
-    // Assume path parts with an extension are not package roots, except for the
-    // first path part (since periods are sadly allowed in package names).
-    // At the same time, skip the first path part if it begins with "@"
-    // (since "@foo/bar" should be treated as the top-level path).
-    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
-      continue
-    }
-
-    const possiblePkgId = nestedPath.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
-  }
+  const possiblePkgIds = getPossiblePackageIds(nestedPath)
 
   let basedir: string
   if (dedupe?.some((id) => possiblePkgIds.includes(id))) {
