@@ -36,6 +36,25 @@ async function createServer(
     try {
       const url = req.originalUrl
 
+      if (url === '/json') {
+        const json = JSON.stringify(require('./communes.json'))
+        res.status(200).end(String(json.length))
+        return
+      }
+
+      if (url === '/json-module') {
+        const json = JSON.stringify(await vite.ssrLoadModule('/communes.json'))
+        res.status(200).end(String(json.length))
+        return
+      }
+
+      if (url === '/json-fs') {
+        const source = fs.readFileSync('./communes.json', { encoding: 'utf-8' })
+        const json = await vite.ssrTransform(source, null, url)
+        res.status(200).end(String(json.code.length))
+        return
+      }
+
       let template
       template = fs.readFileSync(resolve('index.html'), 'utf-8')
       template = await vite.transformIndexHtml(url, template)
