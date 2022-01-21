@@ -6,7 +6,7 @@
   },
   "homepage": "https://vitejs.dev/",
   "keywords": [
-    "frontend", 
+    "frontend",
     "hmr",
     "dev-server",
     "build-tool",
