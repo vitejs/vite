@@ -647,6 +647,15 @@ importers:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
 
+  packages/playground/vue-lib:
+    specifiers:
+      '@vitejs/plugin-vue': workspace:*
+      vue: ^3.2.25
+    dependencies:
+      vue: 3.2.26
+    devDependencies:
+      '@vitejs/plugin-vue': link:../../plugin-vue
+
   packages/playground/wasm:
     specifiers: {}
 
