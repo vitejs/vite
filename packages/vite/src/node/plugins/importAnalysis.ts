@@ -176,6 +176,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = url.replace(base, '/')
         }
 
+        if (config.build?.rollupOptions?.external?.includes(url)) {
+          return [url, url];
+        }
+
         const resolved = await this.resolve(url, importer)
 
         if (!resolved) {
