@@ -3,44 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SSR Dependencies</title>
+    <title>Vite App</title>
   </head>
   <body>
-    <h1>SSR Dependencies</h1>
-    <div><!--app-html--></div>
-
-    <button class="simple">simple json</button>
-    <p class="simple-output"></p>
-
-    <button class="module">module json</button>
-    <p class="module-output"></p>
-
-    <button class="fs">fs json</button>
-    <p class="fs-output"></p>
+    <!--app-html-->
   </body>
-  <script>
-    async function printResult(el, url) {
-      let start = performance.now()
-      const res = await fetch(url)
-      const response = await res.text()
-      let end = performance.now()
-      text(el, `${response} - ${end - start}`)
-    }
-
-    document.querySelector('.simple').addEventListener('click', () => {
-      printResult('.simple-output', '/json')
-    })
-
-    document.querySelector('.module').addEventListener('click', () => {
-      printResult('.module-output', '/json-module')
-    })
-
-    document.querySelector('.fs').addEventListener('click', () => {
-      printResult('.fs-output', '/json-fs')
-    })
-
-    function text(el, text) {
-      document.querySelector(el).textContent = text
-    }
-  </script>
 </html>
