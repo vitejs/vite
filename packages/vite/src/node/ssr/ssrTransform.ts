@@ -28,12 +28,12 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
-  url: string
+  url?: string
 ): Promise<TransformResult | null> {
-  if (url.endsWith('.json')) {
+  if (url && url.endsWith('.json')) {
     return ssrTransformJSON(code, inMap)
   }
-  return ssrTransformScript(code, inMap, url)
+  return ssrTransformScript(code, inMap, url!)
 }
 
 // json don't need to parse code it must be `ExportDefaultDeclaration`
