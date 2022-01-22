@@ -30,6 +30,31 @@ export async function ssrTransform(
   inMap: SourceMap | null,
   url: string
 ): Promise<TransformResult | null> {
+  if (url.endsWith('.json')) {
+    return ssrTransformJSON(code, inMap)
+  }
+  return ssrTransformScript(code, inMap, url)
+}
+
+// json don't need to parse code it must be `ExportDefaultDeclaration`
+// so replace the "export default" to ssr "export default"
+async function ssrTransformJSON(
+  code: string,
+  inMap: SourceMap | null
+): Promise<TransformResult> {
+  return {
+    code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
+    map: inMap,
+    deps: [],
+    dynamicDeps: []
+  }
+}
+
+async function ssrTransformScript(
+  code: string,
+  inMap: SourceMap | null,
+  url: string
+): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
   let ast: any
