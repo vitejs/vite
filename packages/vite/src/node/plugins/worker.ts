@@ -6,10 +6,12 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+import { registerAssetToChunk } from './asset'
 
 const WorkerFileId = 'worker_file'
 
 export async function bundleWorkerEntry(
+  ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
   id: string
 ): Promise<Buffer> {
@@ -27,11 +29,20 @@ export async function bundleWorkerEntry(
   })
   let code: string
   try {
-    const { output } = await bundle.generate({
+    const {
+      output: [outputCode, ...outputChunks]
+    } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = output[0].code
+    code = outputCode.code
+    outputChunks.forEach((outputChunk) => {
+      if (outputChunk.type === 'chunk') {
+        registerAssetToChunk(outputChunk, outputChunk.name)
+      } else if (outputChunk.type === 'asset') {
+        ctx.emitFile(outputChunk)
+      }
+    })
   } finally {
     await bundle.close()
   }
@@ -72,7 +83,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const code = await bundleWorkerEntry(config, id)
+        const code = await bundleWorkerEntry(this, config, id)
         if (query.inline != null) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
