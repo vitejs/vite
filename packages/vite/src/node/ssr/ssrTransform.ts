@@ -20,6 +20,12 @@ type Node = _Node & {
   end: number
 }
 
+interface TransformOptions {
+  json?: {
+    stringify?: boolean
+  }
+}
+
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
 export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
@@ -29,9 +35,10 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
-  url?: string
+  url: string,
+  options?: TransformOptions
 ): Promise<TransformResult | null> {
-  if (url && isJSONRequest(url)) {
+  if (options?.json?.stringify && url && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
   }
   return ssrTransformScript(code, inMap, url!)

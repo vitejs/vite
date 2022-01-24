@@ -10,7 +10,6 @@ async function createServer(
   isProd = process.env.NODE_ENV === 'production'
 ) {
   const resolve = (p) => path.resolve(__dirname, p)
-
   const app = express()
 
   /**
@@ -31,6 +30,9 @@ async function createServer(
     },
     define: {
       SSR: true
+    },
+    json: {
+      stringify: true
     }
   })
   // use vite's connect instance as middleware
@@ -42,18 +44,26 @@ async function createServer(
       if (url.endsWith('/')) url += 'index.ssr.html'
 
       if (url === '/json-module') {
-        const json = JSON.stringify(await vite.ssrLoadModule('/test.json'))
-        console.log(await vite.ssrLoadModule('/test.json'))
-        res.status(200).end(json)
+        console.time('load module')
+        const json = JSON.stringify(await vite.ssrLoadModule('/output.json'))
+        console.timeEnd('load module')
+        res.status(200).end('' + json.length)
         return
       }
 
-      // if (url === '/json-fs') {
-      //   const source = fs.readFileSync('./test.json', { encoding: 'utf-8' })
-      //   const json = await vite.ssrTransform(source, null, url)
-      //   res.status(200).end(String(json.code.length))
-      //   return
-      // }
+      if (url === '/json-fs') {
+        console.time('transform module')
+        const source = fs.readFileSync('./output.json', { encoding: 'utf-8' })
+        const json = await vite.ssrTransform(
+          `export default ${source}`,
+          null,
+          './output.json',
+          { json: { stringify: true } }
+        )
+        console.timeEnd('transform module')
+        res.status(200).end(String(json.code.length))
+        return
+      }
 
       const htmlLoc = resolve(`.${url}`)
       let html = fs.readFileSync(htmlLoc, 'utf8')

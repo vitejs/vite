@@ -219,7 +219,12 @@ export interface ViteDevServer {
   ssrTransform(
     code: string,
     inMap: SourceMap | null,
-    url: string
+    url: string,
+    config?: {
+      json?: {
+        stringify?: boolean
+      }
+    }
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -368,7 +373,7 @@ export async function createServer(
           ? Object.keys(server._optimizeDepsMetadata.optimized)
           : []
       )
-      return ssrLoadModule(url, server)
+      return ssrLoadModule(url, server, undefined, undefined, config)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {

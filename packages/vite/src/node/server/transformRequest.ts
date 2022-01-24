@@ -36,6 +36,9 @@ export interface TransformResult {
 export interface TransformOptions {
   ssr?: boolean
   html?: boolean
+  json?: {
+    stringify?: boolean
+  }
 }
 
 export function transformRequest(
@@ -183,7 +186,8 @@ async function doTransform(
     return (mod.ssrTransformResult = await ssrTransform(
       code,
       map as SourceMap,
-      url
+      url,
+      { json: { stringify: !!options?.json?.stringify } }
     ))
   } else {
     return (mod.transformResult = {

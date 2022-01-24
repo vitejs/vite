@@ -1,15 +1,21 @@
-<div>
+<div class="fetch-json-module">
   json-module:
-  <pre class="fetch-json-module"></pre>
+  <pre></pre>
+  <code></code>
 </div>
-<div>
+<div class="fetch-json-fs">
   json-fs:
-  <pre class="fetch-json-fs"></pre>
+  <pre></pre>
+  <code></code>
 </div>
 
 <script type="module">
-  text('.fetch-json-module', await (await fetch('/json-module')).text())
-  // text(".fetch-json-fs", await (await fetch("/json-fs")).text())
+  const start = Date.now()
+  text('.fetch-json-module pre', await (await fetch('/json-module')).text())
+  text('.fetch-json-module code', Date.now() - start)
+
+  text('.fetch-json-fs pre', await (await fetch('/json-fs')).text())
+  text('.fetch-json-fs code', Date.now() - start)
   function text(sel, text) {
     document.querySelector(sel).textContent = text
   }
