@@ -45,7 +45,7 @@ async function createServer(
 
       if (url === '/json-module') {
         console.time('load module')
-        const json = JSON.stringify(await vite.ssrLoadModule('/output.json'))
+        const json = JSON.stringify(await vite.ssrLoadModule('/test.json'))
         console.timeEnd('load module')
         res.status(200).end('' + json.length)
         return
@@ -53,7 +53,7 @@ async function createServer(
 
       if (url === '/json-fs') {
         console.time('transform module')
-        const source = fs.readFileSync('./output.json', { encoding: 'utf-8' })
+        const source = fs.readFileSync('./test.json', { encoding: 'utf-8' })
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
