@@ -1,0 +1,16 @@
+<div>
+  json-module:
+  <pre class="fetch-json-module"></pre>
+</div>
+<div>
+  json-fs:
+  <pre class="fetch-json-fs"></pre>
+</div>
+
+<script type="module">
+  text('.fetch-json-module', await (await fetch('/json-module')).text())
+  // text(".fetch-json-fs", await (await fetch("/json-fs")).text())
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

@@ -13,6 +13,7 @@ import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
   start: number
@@ -30,14 +31,12 @@ export async function ssrTransform(
   inMap: SourceMap | null,
   url?: string
 ): Promise<TransformResult | null> {
-  if (url && url.endsWith('.json')) {
+  if (url && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
   }
   return ssrTransformScript(code, inMap, url!)
 }
 
-// json don't need to parse code it must be `ExportDefaultDeclaration`
-// so replace the "export default" to ssr "export default"
 async function ssrTransformJSON(
   code: string,
   inMap: SourceMap | null

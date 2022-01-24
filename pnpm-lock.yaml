@@ -203,8 +203,12 @@ importers:
 
   packages/playground/json:
     specifiers:
+      cross-env: ^7.0.3
+      express: ^4.17.1
       vue: ^3.2.25
     devDependencies:
+      cross-env: 7.0.3
+      express: 4.17.2
       vue: 3.2.26
 
   packages/playground/legacy:
@@ -725,12 +729,6 @@ importers:
       '@rollup/pluginutils': 4.1.2
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.5
       hash-sum: 2.0.0
-
-  packages/temp:
-    specifiers:
-      css-color-names: ^1.0.1
-    devDependencies:
-      css-color-names: 1.0.1
 
   packages/vite:
     specifiers:
@@ -4556,19 +4554,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-
-  /follow-redirects/1.14.6_debug@4.3.3:
-    resolution: {integrity: sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.3
-    dev: true
 
   /form-data/3.0.1:
     resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
@@ -4955,7 +4940,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.6_debug@4.3.3
+      follow-redirects: 1.14.6
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
