@@ -367,7 +367,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               prop.name === 'style' &&
               prop.type === NodeTypes.ATTRIBUTE &&
               prop.value &&
-              prop.value.content.includes('url') // only url(...) in css need to emit file
+              /url\s*\(/.test(prop.value.content) // only url(...) in css need to emit file
           ) as AttributeNode
           if (inlineStyle) {
             inlineModuleIndex++
