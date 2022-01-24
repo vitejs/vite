@@ -14,7 +14,6 @@ import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
-import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 
 export async function resolvePlugins(
@@ -62,7 +61,6 @@ export async function resolvePlugins(
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
-    config.build.ssr ? ssrRequireHookPlugin(config) : null,
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,
