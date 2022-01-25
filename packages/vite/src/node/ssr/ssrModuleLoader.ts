@@ -21,7 +21,6 @@ import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 import { NULL_BYTE_PLACEHOLDER } from '../constants'
-import type { ResolvedConfig } from '..'
 
 interface SSRContext {
   global: typeof globalThis
@@ -36,8 +35,7 @@ export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
-  config?: ResolvedConfig
+  urlStack: string[] = []
 ): Promise<SSRModule> {
   url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
 
@@ -50,13 +48,7 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(
-    url,
-    server,
-    context,
-    urlStack,
-    config
-  )
+  const modulePromise = instantiateModule(url, server, context, urlStack)
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
@@ -72,8 +64,7 @@ async function instantiateModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
-  config?: ResolvedConfig
+  urlStack: string[] = []
 ): Promise<SSRModule> {
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
@@ -81,13 +72,9 @@ async function instantiateModule(
   if (mod.ssrModule) {
     return mod.ssrModule
   }
-
   const result =
     mod.ssrTransformResult ||
-    (await transformRequest(url, server, {
-      ssr: true,
-      json: { stringify: !!config?.json?.stringify }
-    }))
+    (await transformRequest(url, server, { ssr: true }))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)

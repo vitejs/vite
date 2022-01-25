@@ -54,8 +54,7 @@ async function createServer(
         const json = await vite.ssrTransform(
           `export default ${source}`,
           null,
-          './output.json',
-          { json: { stringify: true } }
+          './output.json'
         )
         console.timeEnd('transform module')
         res.status(200).end(String(json.code.length))
