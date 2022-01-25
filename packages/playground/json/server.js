@@ -28,9 +28,6 @@ async function createServer(
         interval: 100
       }
     },
-    define: {
-      SSR: true
-    },
     json: {
       stringify: true
     }
