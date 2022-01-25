@@ -77,6 +77,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
+      chunk.importedAssets = new Set()
+
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
