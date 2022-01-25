@@ -1294,9 +1294,3 @@ const preProcessors = Object.freeze({
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
 }
-
-declare module 'rollup' {
-  export interface RenderedChunk {
-    importedCss: Set<string>
-  }
-}

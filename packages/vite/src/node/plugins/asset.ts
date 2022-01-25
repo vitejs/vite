@@ -357,9 +357,3 @@ export async function urlToBuiltUrl(
     true
   )
 }
-
-declare module 'rollup' {
-  export interface RenderedChunk {
-    importedAssets: Set<string>
-  }
-}
