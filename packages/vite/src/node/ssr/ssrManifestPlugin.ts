@@ -64,12 +64,9 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                     analyzed.add(filename)
                     const chunk = bundle[filename] as OutputChunk | undefined
                     if (chunk) {
-                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-                      if (cssFiles) {
-                        cssFiles.forEach((file) => {
-                          deps.push(`/${file}`)
-                        })
-                      }
+                      chunk.importedCss.forEach((file) => {
+                        deps.push(`/${file}`)
+                      })
                       chunk.imports.forEach(addDeps)
                     }
                   }
