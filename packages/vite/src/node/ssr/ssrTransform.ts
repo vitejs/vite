@@ -38,10 +38,10 @@ export async function ssrTransform(
   url: string,
   options?: TransformOptions
 ): Promise<TransformResult | null> {
-  if (options?.json?.stringify && url && isJSONRequest(url)) {
+  if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
   }
-  return ssrTransformScript(code, inMap, url!)
+  return ssrTransformScript(code, inMap, url)
 }
 
 async function ssrTransformJSON(
