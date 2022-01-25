@@ -26,11 +26,15 @@
 <p>new SharedWorker(new Url('path', import.meta.url))</p>
 <div class="shared-worker-import-meta-url"></div>
 
+<p>nested worker</p>
+<div class="nested-worker"></div>
+
 <script type="module">
   import myWorker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
   import mySharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
+  import NestedWorker from './worker-nested-worker?worker'
   import { mode } from './workerImport'
 
   document.querySelector('.mode-true').textContent = mode
@@ -103,4 +107,10 @@
     )
   })
   w2.port.start()
+
+  const nestedWorker = new NestedWorker()
+  nestedWorker.addEventListener('message', (ev) => {
+    text('.nested-worker', ev.data)
+  })
+  nestedWorker.postMessage('ping')
 </script>
