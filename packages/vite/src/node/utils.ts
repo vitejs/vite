@@ -39,8 +39,8 @@ export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
 // https://github.com/rollup/rollup/blob/master/src/utils/escapeId.ts
-const needsEscapeRegEx = /[\\'\r\n\u2028\u2029]/
-const quoteNewlineRegEx = /(['\r\n\u2028\u2029])/g
+const needsEscapeRegEx = /[\\"\r\n\u2028\u2029]/
+const quoteNewlineRegEx = /(["\r\n\u2028\u2029])/g
 const backSlashRegEx = /\\/g
 export function escapeId(id: string): string {
   if (!id.match(needsEscapeRegEx)) return id

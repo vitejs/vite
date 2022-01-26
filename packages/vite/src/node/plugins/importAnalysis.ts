@@ -642,7 +642,7 @@ export function transformCjsImport(
     node.type === 'ExportNamedDeclaration'
   ) {
     if (!node.specifiers.length) {
-      return `import '${url}'`
+      return `import "${url}"`
     }
 
     const importNames: ImportNameSpecifier[] = []
@@ -688,7 +688,7 @@ export function transformCjsImport(
     const cjsModuleName = makeLegalIdentifier(
       `__vite__cjsImport${importIndex}_${rawUrl}`
     )
-    const lines: string[] = [`import ${cjsModuleName} from '${url}'`]
+    const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
         lines.push(`const ${localName} = ${cjsModuleName}`)
