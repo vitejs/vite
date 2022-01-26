@@ -1107,7 +1107,10 @@ export function loadEnv(
           env[key] === undefined
         ) {
           env[key] = value
-        } else if (key === 'NODE_ENV') {
+        } else if (
+          key === 'NODE_ENV' &&
+          process.env.VITE_USER_NODE_ENV === undefined
+        ) {
           // NODE_ENV override in .env file
           process.env.VITE_USER_NODE_ENV = value
         }
