@@ -35,6 +35,19 @@ if (import.meta.hot) {
 
   import.meta.hot.on('vite:beforeUpdate', (event) => {
     console.log(`>>> vite:beforeUpdate -- ${event.type}`)
+
+    const cssUpdate = event.updates.find(
+      (update) =>
+        update.type === 'css-update' && update.path.match('global.css')
+    )
+    if (cssUpdate) {
+      const el = document.querySelector('#global-css')
+      text('.css-prev', el.href)
+      // We don't have a vite:afterUpdate event, but updates are currently sync
+      setTimeout(() => {
+        text('.css-post', el.href)
+      }, 0)
+    }
   })
 
   import.meta.hot.on('vite:error', (event) => {

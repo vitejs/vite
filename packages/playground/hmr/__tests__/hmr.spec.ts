@@ -139,4 +139,20 @@ if (!isBuild) {
       'title2'
     )
   })
+
+  test('CSS update preserves query params', async () => {
+    await page.goto(viteTestUrl)
+
+    editFile('global.css', (code) => code.replace('white', 'tomato'))
+
+    const elprev = await page.$('.css-prev')
+    const elpost = await page.$('.css-post')
+    await untilUpdated(() => elprev.textContent(), 'param=required')
+    await untilUpdated(() => elpost.textContent(), 'param=required')
+    const textprev = await elprev.textContent()
+    const textpost = await elpost.textContent()
+    expect(textprev).not.toBe(textpost)
+    expect(textprev).not.toMatch('direct')
+    expect(textpost).not.toMatch('direct')
+  })
 }
