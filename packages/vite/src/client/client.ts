@@ -39,6 +39,12 @@ function warnFailedFetch(err: Error, path: string | string[]) {
   )
 }
 
+function cleanUrl(pathname: string): string {
+  const url = new URL(pathname, location.toString())
+  url.searchParams.delete('direct')
+  return url.pathname + url.search
+}
+
 // Listen for messages
 socket.addEventListener('message', async ({ data }) => {
   handleMessage(JSON.parse(data))
@@ -73,21 +79,21 @@ async function handleMessage(payload: HMRPayload) {
         } else {
           // css-update
           // this is only sent when a css file referenced with <link> is updated
-          let { path, timestamp } = update
-          path = path.replace(/\?.*/, '')
+          const { path, timestamp } = update
+          const searchUrl = cleanUrl(path)
           // can't use querySelector with `[href*=]` here since the link may be
           // using relative paths so we need to use link.href to grab the full
           // URL for the include check.
           const el = Array.from(
             document.querySelectorAll<HTMLLinkElement>('link')
-          ).find((e) => e.href.includes(path))
+          ).find((e) => cleanUrl(e.href).includes(searchUrl))
           if (el) {
-            const newPath = `${base}${path.slice(1)}${
-              path.includes('?') ? '&' : '?'
+            const newPath = `${base}${searchUrl.slice(1)}${
+              searchUrl.includes('?') ? '&' : '?'
             }t=${timestamp}`
             el.href = new URL(newPath, el.href).href
           }
-          console.log(`[vite] css hot updated: ${path}`)
+          console.log(`[vite] css hot updated: ${searchUrl}`)
         }
       })
       break
