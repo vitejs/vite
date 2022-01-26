@@ -94,7 +94,6 @@ async function handleMessage(payload: HMRPayload) {
             el.href = new URL(newPath, el.href).href
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
-          notifyListeners<'vite:afterUpdate:css'>('vite:afterUpdate:css', el)
         }
       })
       break
