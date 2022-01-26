@@ -592,6 +592,7 @@ createServer()
 
   - contains `workspaces` field in `package.json`
   - contains one of the following file
+    - `lerna.json`
     - `pnpm-workspace.yaml`
 
   Accepts a path to specify the custom workspace root. Could be a absolute path or a path relative to [project root](/guide/#index-html-and-project-root). For example:
