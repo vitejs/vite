@@ -42,7 +42,7 @@
     "@typescript-eslint/parser": "^5.8.1",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
-    "esbuild": "0.14.3",
+    "esbuild": "^0.14.14",
     "eslint": "^8.5.0",
     "eslint-define-config": "^1.2.1",
     "eslint-plugin-node": "^11.1.0",

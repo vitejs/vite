@@ -244,5 +244,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 }
 
 // overwrite for cjs require('...')() usage
-module.exports = vuePlugin
-vuePlugin['default'] = vuePlugin
+// The following lines are inserted by scripts/patchEsbuildDist.ts,
+// this doesn't bundle correctly after esbuild 0.14.4
+//
+// module.exports = vuePlugin
+// vuePlugin['default'] = vuePlugin
