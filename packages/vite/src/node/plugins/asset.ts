@@ -1,12 +1,12 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
-import mime from 'mime/lite'
-import { Plugin } from '../plugin'
-import { ResolvedConfig } from '../config'
+import * as mrmime from 'mrmime'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
+import type { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
@@ -223,7 +223,7 @@ export function assetFileNamesToFileName(
   // placeholders for `assetFileNames`
   // `hash` is slightly different from the rollup's one
   const extname = path.extname(basename)
-  const ext = extname.substr(1)
+  const ext = extname.substring(1)
   const name = basename.slice(0, -extname.length)
   const hash = contentHash
 
@@ -295,7 +295,7 @@ async function fileToBuiltUrl(
       content.length < Number(config.build.assetsInlineLimit))
   ) {
     // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    url = `data:${mrmime.lookup(file)};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code

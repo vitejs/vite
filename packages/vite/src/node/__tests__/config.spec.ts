@@ -1,11 +1,6 @@
-import { InlineConfig } from '..'
-import {
-  mergeConfig,
-  resolveConfig,
-  UserConfigExport,
-  resolveEnvPrefix,
-  UserConfig
-} from '../config'
+import type { InlineConfig } from '..'
+import type { UserConfigExport, UserConfig } from '../config'
+import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -33,19 +28,67 @@ describe('mergeConfig', () => {
       resolve: {
         alias: [
           {
-            find: 'foo',
-            replacement: 'foo-value'
-          },
-          {
             find: 'bar',
             replacement: 'bar-value'
           },
           {
             find: 'baz',
             replacement: 'baz-value'
+          },
+          {
+            find: 'foo',
+            replacement: 'foo-value'
           }
         ]
       }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('keep object alias schema', () => {
+    const baseConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value',
+          baz: 'baz-value'
+        }
+      }
+    }
+
+    const newConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    const mergedConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          baz: 'baz-value',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('handles arrays', () => {
+    const baseConfig: UserConfigExport = {
+      envPrefix: 'string1'
+    }
+
+    const newConfig: UserConfigExport = {
+      envPrefix: ['string2', 'string3']
+    }
+
+    const mergedConfig: UserConfigExport = {
+      envPrefix: ['string1', 'string2', 'string3']
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -94,6 +137,22 @@ describe('mergeConfig', () => {
           foo: 'foo-value'
         }
       }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('merge array correctly', () => {
+    const baseConfig = {
+      foo: null
+    }
+
+    const newConfig = {
+      foo: ['bar']
+    }
+
+    const mergedConfig = {
+      foo: ['bar']
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -172,6 +231,9 @@ describe('preview config', () => {
     host: true,
     open: true,
     https: true,
+    headers: {
+      'Cache-Control': 'no-store'
+    },
     proxy: { '/foo': 'http://localhost:4567' },
     cors: false
   })

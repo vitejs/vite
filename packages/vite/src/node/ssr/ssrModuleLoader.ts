@@ -1,7 +1,8 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { ViteDevServer } from '../server'
+import type { ViteDevServer } from '../server'
 import {
+  bareImportRE,
   dynamicImport,
   isBuiltin,
   unwrapId,
@@ -16,8 +17,10 @@ import {
   ssrDynamicImportKey
 } from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
-import { InternalResolveOptions, tryNodeResolve } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
+import { NULL_BYTE_PLACEHOLDER } from '../constants'
 
 interface SSRContext {
   global: typeof globalThis
@@ -34,7 +37,7 @@ export async function ssrLoadModule(
   context: SSRContext = { global },
   urlStack: string[] = []
 ): Promise<SSRModule> {
-  url = unwrapId(url)
+  url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
 
   // when we instantiate multiple dependency modules in parallel, they may
   // point to shared modules. We need to avoid duplicate instantiation attempts
@@ -64,7 +67,7 @@ async function instantiateModule(
   urlStack: string[] = []
 ): Promise<SSRModule> {
   const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
 
   if (mod.ssrModule) {
     return mod.ssrModule
@@ -185,16 +188,18 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-    rebindErrorStacktrace(e, stacktrace)
-    server.config.logger.error(
-      `Error when evaluating SSR module ${url}:\n${stacktrace}`,
-      {
-        timestamp: true,
-        clear: server.config.clearScreen,
-        error: e
-      }
-    )
+    if (e.stack) {
+      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
+      rebindErrorStacktrace(e, stacktrace)
+      server.config.logger.error(
+        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
+        {
+          timestamp: true,
+          clear: server.config.clearScreen,
+          error: e
+        }
+      )
+    }
     throw e
   }
 
@@ -228,13 +233,19 @@ async function nodeImport(
   // When an ESM module imports an ESM dependency, this hook is *not* used.
   const unhookNodeResolve = hookNodeResolve(
     (nodeResolve) => (id, parent, isMain, options) => {
-      // Fix #5709, use require to resolve files with the '.node' file extension.
-      // See detail, https://nodejs.org/api/addons.html#addons_loading_addons_using_require
-      if (id[0] === '.' || isBuiltin(id) || id.endsWith('.node')) {
+      // Use the Vite resolver only for bare imports while skipping
+      // any built-in modules and binary modules.
+      if (!bareImportRE.test(id) || isBuiltin(id) || id.endsWith('.node')) {
         return nodeResolve(id, parent, isMain, options)
       }
       if (parent) {
-        return viteResolve(id, parent.id)
+        let resolved = viteResolve(id, parent.id)
+        if (resolved) {
+          // hookNodeResolve must use platform-specific path.normalize
+          // to be compatible with dynamicImport (#6080)
+          resolved = path.normalize(resolved)
+        }
+        return resolved
       }
       // Importing a CJS module from an ESM module. In this case, the import
       // specifier is already an absolute path, so this is a no-op.
@@ -263,23 +274,34 @@ async function nodeImport(
 
   try {
     const mod = await dynamicImport(url)
-    return proxyESM(id, mod)
+    return proxyESM(mod)
   } finally {
     unhookNodeResolve()
   }
 }
 
 // rollup-style default import interop for cjs
-function proxyESM(id: string, mod: any) {
-  const defaultExport = mod.__esModule
-    ? mod.default
-    : mod.default
-    ? mod.default
-    : mod
+function proxyESM(mod: any) {
+  // This is the only sensible option when the exports object is a primitve
+  if (isPrimitive(mod)) return { default: mod }
+
+  let defaultExport = 'default' in mod ? mod.default : mod
+
+  if (!isPrimitive(defaultExport) && '__esModule' in defaultExport) {
+    mod = defaultExport
+    if ('default' in defaultExport) {
+      defaultExport = defaultExport.default
+    }
+  }
+
   return new Proxy(mod, {
     get(mod, prop) {
       if (prop === 'default') return defaultExport
       return mod[prop] ?? defaultExport?.[prop]
     }
   })
+}
+
+function isPrimitive(value: any) {
+  return !value || (typeof value !== 'object' && typeof value !== 'function')
 }

@@ -77,6 +77,14 @@
   <img src="./nested/テスト-測試-white space.png" />
 </div>
 
+<h2>encodeURI for the address</h2>
+<div>
+  <img
+    class="encodeURI"
+    src="./nested/%E3%83%86%E3%82%B9%E3%83%88-%E6%B8%AC%E8%A9%A6-white%20space.png"
+  />
+</div>
+
 <h2>Image Src Set</h2>
 <div>
   <img
@@ -138,6 +146,41 @@
   <img class="dynamic-import-meta-url-img-2" />
   <code class="dynamic-import-meta-url-2"></code>
 </p>
+
+<h2>simple script tag import-expression</h2>
+<code class="import-expression"></code>
+<script>
+  import('./static/import-expression.js')
+  import('/import-expression.js')
+</script>
+<h2>url in style tag</h2>
+<h3>url</h3>
+<style class="style-url">
+  .style-url-assets {
+    background: url('./nested/asset.png');
+    background-size: 10px 10px;
+  }
+</style>
+<div style="background: url('./nested/asset.png'); background-size: 10px 10px">
+  inline style
+</div>
+<div class="style-url-assets">use style class</div>
+
+<h3>base64</h3>
+<style class="style-base64">
+  .style-base64-assets {
+    background: url('./static/icon.png');
+  }
+</style>
+<p class="inline-style-base64" style="background: url(./static/icon.png)">
+  inline style
+</p>
+<p class="style-base64-assets">use style class</p>
+
+<h3 class="import-css">@import</h3>
+<style class="style-import">
+  @import url('./css/import.css');
+</style>
 
 <script type="module">
   import './css/fonts.css'

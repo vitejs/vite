@@ -1,15 +1,16 @@
 import fs from 'fs'
-import { Plugin, ViteDevServer } from 'vite'
+import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
-import {
+import type {
   SFCBlock,
   SFCScriptCompileOptions,
   SFCStyleCompileOptions,
   SFCTemplateCompileOptions
-} from '@vue/compiler-sfc'
-import { compiler } from './compiler'
+} from 'vue/compiler-sfc'
+import type * as _compiler from 'vue/compiler-sfc'
+import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
-import { getDescriptor } from './utils/descriptorCache'
+import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
 import { getResolvedScript } from './script'
 import { transformMain } from './main'
 import { handleHotUpdate } from './handleHotUpdate'
@@ -25,14 +26,13 @@ export interface Options {
 
   isProduction?: boolean
 
-  // options to pass on to @vue/compiler-sfc
+  // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
 
   /**
    * Transform Vue SFCs into custom elements.
-   * **requires Vue \>= 3.2.0 & Vite \>= 2.4.4**
    * - `true`: all `*.vue` imports are converted into custom elements
    * - `string | RegExp`: matched files are converted into custom elements
    *
@@ -41,11 +41,8 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * Enable Vue ref transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
-   *
-   * **requires Vue \>= 3.2.5**
-   *
+   * Enable Vue reactivity transform (experimental).
+   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
@@ -54,15 +51,16 @@ export interface Options {
    *
    * @default false
    */
-  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * @deprecated the plugin now auto-detects whether it's being invoked for ssr.
+   * Use custom compiler-sfc instance. Can be used to force a specific version.
    */
-  ssr?: boolean
+  compiler?: typeof _compiler
 }
 
 export interface ResolvedOptions extends Options {
+  compiler: typeof _compiler
   root: string
   sourceMap: boolean
   devServer?: ViteDevServer
@@ -73,7 +71,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     include = /\.vue$/,
     exclude,
     customElement = /\.ce\.vue$/,
-    refTransform = false
+    reactivityTransform = false
   } = rawOptions
 
   const filter = createFilter(include, exclude)
@@ -84,22 +82,20 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       : createFilter(customElement)
 
   const refTransformFilter =
-    refTransform === false
+    reactivityTransform === false
       ? () => false
-      : refTransform === true
+      : reactivityTransform === true
       ? createFilter(/\.(j|t)sx?$/, /node_modules/)
-      : createFilter(refTransform)
-
-  // compat for older versions
-  const canUseRefTransform = typeof compiler.shouldTransformRef === 'function'
+      : createFilter(reactivityTransform)
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
+    compiler: null as any, // to be set in buildStart
     ...rawOptions,
     include,
     exclude,
     customElement,
-    refTransform,
+    reactivityTransform,
     root: process.cwd(),
     sourceMap: true
   }
@@ -107,7 +103,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
   // Temporal handling for 2.7 breaking change
   const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
     opt === undefined
-      ? !!options.ssr
+      ? false
       : typeof opt === 'boolean'
       ? opt
       : opt?.ssr === true
@@ -125,8 +121,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     config(config) {
       return {
         define: {
-          __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false
+          __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
+          __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         },
         ssr: {
           external: ['vue', '@vue/server-renderer']
@@ -145,6 +141,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
     configureServer(server) {
       options.devServer = server
+    },
+
+    buildStart() {
+      options.compiler = options.compiler || resolveCompiler(options.root)
     },
 
     async resolveId(id) {
@@ -198,15 +198,15 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         return
       }
       if (!filter(filename) && !query.vue) {
-        if (!query.vue && refTransformFilter(filename)) {
-          if (!canUseRefTransform) {
-            this.warn('refTransform requires @vue/compiler-sfc@^3.2.5.')
-          } else if (compiler.shouldTransformRef(code)) {
-            return compiler.transformRef(code, {
-              filename,
-              sourceMap: true
-            })
-          }
+        if (
+          !query.vue &&
+          refTransformFilter(filename) &&
+          options.compiler.shouldTransformRef(code)
+        ) {
+          return options.compiler.transformRef(code, {
+            filename,
+            sourceMap: true
+          })
         }
         return
       }
@@ -223,7 +223,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         )
       } else {
         // sub block request
-        const descriptor = getDescriptor(filename, options)!
+        const descriptor = query.src
+          ? getSrcDescriptor(filename, query)!
+          : getDescriptor(filename, options)!
+
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
         } else if (query.type === 'style') {

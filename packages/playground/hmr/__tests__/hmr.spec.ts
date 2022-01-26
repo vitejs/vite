@@ -122,4 +122,37 @@ if (!isBuild) {
     editFile('customFile.js', (code) => code.replace('custom', 'edited'))
     await untilUpdated(() => el.textContent(), 'edited')
   })
+
+  test('full-reload encodeURI path', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+    )
+    let el = await page.$('#app')
+    expect(await el.textContent()).toBe('title')
+    await editFile(
+      'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+      (code) => code.replace('title', 'title2')
+    )
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('#app')).textContent(),
+      'title2'
+    )
+  })
+
+  test('CSS update preserves query params', async () => {
+    await page.goto(viteTestUrl)
+
+    editFile('global.css', (code) => code.replace('white', 'tomato'))
+
+    const elprev = await page.$('.css-prev')
+    const elpost = await page.$('.css-post')
+    await untilUpdated(() => elprev.textContent(), 'param=required')
+    await untilUpdated(() => elpost.textContent(), 'param=required')
+    const textprev = await elprev.textContent()
+    const textpost = await elpost.textContent()
+    expect(textprev).not.toBe(textpost)
+    expect(textprev).not.toMatch('direct')
+    expect(textpost).not.toMatch('direct')
+  })
 }

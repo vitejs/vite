@@ -1,4 +1,4 @@
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 
 const template = /*html*/ `
 <style>

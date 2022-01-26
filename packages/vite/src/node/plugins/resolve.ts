@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from '../plugin'
-import chalk from 'chalk'
+import type { Plugin } from '../plugin'
+import colors from 'picocolors'
 import {
   FS_PREFIX,
   SPECIAL_QUERY_RE,
@@ -29,15 +29,11 @@ import {
   isPossibleTsOutput,
   getTsSrcPath
 } from '../utils'
-import { ViteDevServer, SSROptions } from '..'
-import { PartialResolvedId } from 'rollup'
+import type { ViteDevServer, SSROptions } from '..'
+import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
-import {
-  loadPackageData,
-  PackageCache,
-  PackageData,
-  resolvePackageData
-} from '../packages'
+import type { PackageCache, PackageData } from '../packages'
+import { loadPackageData, resolvePackageData } from '../packages'
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
@@ -131,7 +127,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
         res = tryFsResolve(fsPath, options)
-        isDebug && debug(`[@fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+        isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
         return res || fsPath
@@ -142,7 +138,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       if (asSrc && id.startsWith('/')) {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[url] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return res
         }
       }
@@ -182,7 +178,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          isDebug && debug(`[relative] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          isDebug &&
+            debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           const pkg = importer != null && idToPkgMap.get(importer)
           if (pkg) {
             idToPkgMap.set(res, pkg)
@@ -197,7 +194,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       // absolute fs paths
       if (path.isAbsolute(id) && (res = tryFsResolve(id, options))) {
-        isDebug && debug(`[fs] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+        isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return res
       }
 
@@ -263,7 +260,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
             if (!asSrc) {
               debug(
                 `externalized node built-in "${id}" to empty module. ` +
-                  `(imported by: ${chalk.white.dim(importer)})`
+                  `(imported by: ${colors.white(colors.dim(importer))})`
               )
             }
             return isProduction
@@ -273,7 +270,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
       }
 
-      isDebug && debug(`[fallthrough] ${chalk.dim(id)}`)
+      isDebug && debug(`[fallthrough] ${colors.dim(id)}`)
     },
 
     load(id) {
@@ -610,10 +607,9 @@ export function tryOptimizedResolve(
   server: ViteDevServer,
   importer?: string
 ): string | undefined {
-  const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
 
-  if (!cacheDir || !depData) return
+  if (!depData) return
 
   const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
     return (
@@ -752,7 +748,7 @@ export function resolvePackageEntry(
     if (resolvedEntryPoint) {
       isDebug &&
         debug(
-          `[package entry] ${chalk.cyan(id)} -> ${chalk.dim(
+          `[package entry] ${colors.cyan(id)} -> ${colors.dim(
             resolvedEntryPoint
           )}`
         )
@@ -806,6 +802,11 @@ function resolveDeepImport(
   targetWeb: boolean,
   options: InternalResolveOptions
 ): string | undefined {
+  // id might contain ?query
+  // e.g. when using `<style src="some-pkg/dist/style.css"></style>` in .vue file
+  // the id will be ./dist/style.css?vue&type=style&index=0&src=xxx&lang.css
+  id = id.split('?')[0]
+
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
@@ -846,7 +847,9 @@ function resolveDeepImport(
     )
     if (resolved) {
       isDebug &&
-        debug(`[node/deep-import] ${chalk.cyan(id)} -> ${chalk.dim(resolved)}`)
+        debug(
+          `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`
+        )
       setResolvedCache(id, resolved, targetWeb)
       return resolved
     }
@@ -868,7 +871,7 @@ function tryResolveBrowserMapping(
       const fsPath = path.join(pkg.dir, browserMappedPath)
       if ((res = tryFsResolve(fsPath, options))) {
         isDebug &&
-          debug(`[browser mapped] ${chalk.cyan(id)} -> ${chalk.dim(res)}`)
+          debug(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         idToPkgMap.set(res, pkg)
         return {
           id: res,
