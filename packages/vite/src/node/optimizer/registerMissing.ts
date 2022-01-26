@@ -54,7 +54,7 @@ export function createMissingImporterRegisterFn(
       knownOptimized = newData!.optimized
 
       // update ssr externals
-      if (server.config.ssr) {
+      if (ssr) {
         server._ssrExternals = resolveSSRExternal(
           server.config,
           Object.keys(knownOptimized)
