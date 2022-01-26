@@ -90,14 +90,14 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
+    compiler: null as any, // to be set in buildStart
     ...rawOptions,
     include,
     exclude,
     customElement,
     reactivityTransform,
     root: process.cwd(),
-    sourceMap: true,
-    compiler: null as any // to be set in buildStart
+    sourceMap: true
   }
 
   // Temporal handling for 2.7 breaking change
