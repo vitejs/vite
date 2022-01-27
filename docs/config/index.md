@@ -482,6 +482,11 @@ export default defineConfig(async ({ command, mode }) => {
           configure: (proxy, options) => {
             // proxy will be an instance of 'http-proxy'
           }
+        },
+        // Proxying websockets or socket.io
+        '/socket.io': {
+          target: 'ws://localhost:3000',
+          ws: true
         }
       }
     }
