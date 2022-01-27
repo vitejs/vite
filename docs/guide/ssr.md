@@ -100,7 +100,7 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
 ```js
-app.use('*', async (req, res) => {
+app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   try {
@@ -134,8 +134,7 @@ app.use('*', async (req, res) => {
     // If an error is caught, let Vite fix the stracktrace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
-    console.error(e)
-    res.status(500).end(e.message)
+    next(e)
   }
 })
 ```
