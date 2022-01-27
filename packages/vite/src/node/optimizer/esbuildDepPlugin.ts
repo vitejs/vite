@@ -34,6 +34,21 @@ const externalTypes = [
   ...KNOWN_ASSET_TYPES
 ]
 
+const browserExternalContents = (id: string) => `\
+module.exports = new Proxy({}, {
+  get() {
+    return new Proxy({}, {
+      get() {
+        throw new Error(
+          'Module "${id}" has been externalized for ' +
+          'browser compatibility and cannot be accessed in client code.'
+        )
+      }
+    })
+  }
+})
+`
+
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
@@ -197,15 +212,7 @@ export function esbuildDepPlugin(
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path: id }) => {
-          return {
-            contents:
-              `export default new Proxy({}, {
-  get() {
-    throw new Error('Module "${id}" has been externalized for ` +
-              `browser compatibility and cannot be accessed in client code.')
-  }
-})`
-          }
+          return { contents: browserExternalContents(id) }
         }
       )
 
