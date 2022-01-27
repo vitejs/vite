@@ -87,7 +87,7 @@
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.3",
-    "dotenv": "^10.0.0",
+    "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.9.3",
     "estree-walker": "^2.0.2",
