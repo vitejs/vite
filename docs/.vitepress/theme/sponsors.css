@@ -5,7 +5,7 @@
 
 .sponsors a {
   color: #999;
-  margin: 1em;
+  margin: 1em 2em;
   display: block;
 }
 
@@ -45,7 +45,7 @@
 .gold-sponsors {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: center;
   align-items: center;
 }
 
