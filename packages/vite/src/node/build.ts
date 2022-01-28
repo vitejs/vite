@@ -251,7 +251,7 @@ export function resolveBuildOptions(
     cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
-    minify: raw?.ssr ? false : 'esbuild',
+    minify: raw?.ssr || raw?.lib ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
