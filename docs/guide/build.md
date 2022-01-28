@@ -55,7 +55,7 @@ module.exports = defineConfig({
 })
 ```
 
-This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache )` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
+This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
 
 ## Rebuild on files changes
 
