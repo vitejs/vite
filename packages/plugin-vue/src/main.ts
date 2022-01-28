@@ -299,7 +299,7 @@ async function genStyleCode(
   attachedProps: [string, string][]
 ) {
   let stylesCode = ``
-  let hasCSSModules = false
+  let cssModulesMap: Record<string, string> | undefined
   if (descriptor.styles.length) {
     for (let i = 0; i < descriptor.styles.length; i++) {
       const style = descriptor.styles[i]
@@ -320,12 +320,13 @@ async function genStyleCode(
             `<style module> is not supported in custom elements mode.`
           )
         }
-        if (!hasCSSModules) {
-          stylesCode += `\nconst cssModules = {}`
-          attachedProps.push([`__cssModules`, `cssModules`])
-          hasCSSModules = true
-        }
-        stylesCode += genCSSModulesCode(i, styleRequest, style.module)
+        const [importCode, nameMap] = genCSSModulesCode(
+          i,
+          styleRequest,
+          style.module
+        )
+        stylesCode += importCode
+        Object.assign((cssModulesMap ||= {}), nameMap)
       } else {
         if (asCustomElement) {
           stylesCode += `\nimport _style_${i} from ${JSON.stringify(
@@ -344,6 +345,15 @@ async function genStyleCode(
       ])
     }
   }
+  if (cssModulesMap) {
+    const mappingCode =
+      Object.entries(cssModulesMap).reduce(
+        (code, [key, value]) => code + `"${key}":${value},\n`,
+        '{\n'
+      ) + '}'
+    stylesCode += `\nconst cssModules = ${mappingCode}`
+    attachedProps.push([`__cssModules`, `cssModules`])
+  }
   return stylesCode
 }
 
@@ -351,15 +361,15 @@ function genCSSModulesCode(
   index: number,
   request: string,
   moduleName: string | boolean
-): string {
+): [importCode: string, nameMap: Record<string, string>] {
   const styleVar = `style${index}`
   const exposedName = typeof moduleName === 'string' ? moduleName : '$style'
   // inject `.module` before extension so vite handles it as css module
   const moduleRequest = request.replace(/\.(\w+)$/, '.module.$1')
-  return (
-    `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}` +
-    `\ncssModules["${exposedName}"] = ${styleVar}`
-  )
+  return [
+    `\nimport ${styleVar} from ${JSON.stringify(moduleRequest)}`,
+    { [exposedName]: styleVar }
+  ]
 }
 
 async function genCustomBlockCode(

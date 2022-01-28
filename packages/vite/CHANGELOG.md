@@ -1,3 +1,33 @@
+# [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
+
+
+### Bug Fixes
+
+* avoid referencing importGlob from importMeta.d.ts ([#6531](https://github.com/vitejs/vite/issues/6531)) ([962d285](https://github.com/vitejs/vite/commit/962d28508dce63b395e79b79f3b0e2cf0e381a71))
+* **config:** merge array correctly ([#6499](https://github.com/vitejs/vite/issues/6499)) ([b2d972e](https://github.com/vitejs/vite/commit/b2d972e53b59329695f74e01893b21ec5c136ffd))
+* improve alias merging ([#6497](https://github.com/vitejs/vite/issues/6497)) ([e57d8c6](https://github.com/vitejs/vite/commit/e57d8c63042c2701e797c797b25af65d9dab9eea))
+* improve array config merging ([#6344](https://github.com/vitejs/vite/issues/6344)) ([028cbeb](https://github.com/vitejs/vite/commit/028cbeb34adef217f274be7c4a7dd5c9f9b12b29))
+* merge debug params instead of overwrite ([#6504](https://github.com/vitejs/vite/issues/6504)) ([#6505](https://github.com/vitejs/vite/issues/6505)) ([1ac7fb1](https://github.com/vitejs/vite/commit/1ac7fb19befe4c18a08786038dc1b63325e96835))
+* only run build-html plugin on bundler inputs (fix [#4067](https://github.com/vitejs/vite/issues/4067)) ([#5342](https://github.com/vitejs/vite/issues/5342)) ([7541a8d](https://github.com/vitejs/vite/commit/7541a8d570d9bbf0ab0cd4264cae985dddaf3189))
+* **ssr:** avoid using `tryNodeResolve` on absolute paths ([#6488](https://github.com/vitejs/vite/issues/6488)) ([f346d89](https://github.com/vitejs/vite/commit/f346d89741b3c3a5287ce8b03637e520777d3674))
+* **ssr:** fix resolution for nested ssr externals ([#6080](https://github.com/vitejs/vite/issues/6080)) ([#6470](https://github.com/vitejs/vite/issues/6470)) ([4a764f5](https://github.com/vitejs/vite/commit/4a764f52e4964b02c02f1ce6863ae3454daad55c))
+* **ssr:** handle nameless descture in function args ([#6489](https://github.com/vitejs/vite/issues/6489)) ([debc08d](https://github.com/vitejs/vite/commit/debc08de75434bb63f50e0e5669995de0878ce37))
+* **ssr:** should correctly transfrom identifier in ssr ([#6548](https://github.com/vitejs/vite/issues/6548)) ([15cd975](https://github.com/vitejs/vite/commit/15cd975933f6213d25d004634b3d49eb1630e360))
+* **types:** add missing options parameter to importMeta ([#6433](https://github.com/vitejs/vite/issues/6433)) ([ccf7d79](https://github.com/vitejs/vite/commit/ccf7d791497139951fde58168999d44e18f706ee))
+* **types:** dynamic import in import.meta ([#6456](https://github.com/vitejs/vite/issues/6456)) ([5d7b4c3](https://github.com/vitejs/vite/commit/5d7b4c31b8e44add7c192ae8af4b90b9378ae1fe)), closes [#6433](https://github.com/vitejs/vite/issues/6433)
+* update preview port to 4173 ([#6330](https://github.com/vitejs/vite/issues/6330)) ([870e1c0](https://github.com/vitejs/vite/commit/870e1c076272960a5f390b2cfdd3ae275b3891a5))
+* use cacheDir for resolveHttpsConfig ([#6416](https://github.com/vitejs/vite/issues/6416)) ([647168b](https://github.com/vitejs/vite/commit/647168b2b44b82b1a1cbd8e639f74ddf52a5d5cd))
+
+
+### Features
+
+* add .txt file format to assets ([#6265](https://github.com/vitejs/vite/issues/6265)) ([e87ae41](https://github.com/vitejs/vite/commit/e87ae41ae57857f387a67b5140bf7d5689a3e14b))
+* add customResolver option to resolve.alias ([#5876](https://github.com/vitejs/vite/issues/5876)) ([6408a3a](https://github.com/vitejs/vite/commit/6408a3ab9bd97f1542982755b5044871a78b59d4))
+* allow globs in node_modules when pattern is explicit ([#6056](https://github.com/vitejs/vite/issues/6056)) ([669d7e0](https://github.com/vitejs/vite/commit/669d7e0f4b6ea4a73d3598ab1473b58c72bf093b))
+* **html:** html simple script tag support import-expression ([#6525](https://github.com/vitejs/vite/issues/6525)) ([3546d4f](https://github.com/vitejs/vite/commit/3546d4ffcfbc011d78f9ba26e0dc689853575a1e))
+
+
+
 # [2.8.0-beta.2](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.2) (2022-01-13)
 
 

@@ -7,6 +7,12 @@
     "tier": "platinum"
   },
   {
+    "id": "cypress",
+    "name": "Cypress.io",
+    "href": "https://cypress.io",
+    "src": "/cypress.svg"
+  },
+  {
     "id": "tailwind",
     "name": "Tailwind Labs",
     "href": "https://tailwindcss.com",

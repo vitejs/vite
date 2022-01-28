@@ -561,18 +561,16 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const runOptimize = async () => {
-    if (config.cacheDir) {
-      server._isRunningOptimizer = true
-      try {
-        server._optimizeDepsMetadata = await optimizeDeps(
-          config,
-          config.server.force || server._forceOptimizeOnRestart
-        )
-      } finally {
-        server._isRunningOptimizer = false
-      }
-      server._registerMissingImport = createMissingImporterRegisterFn(server)
+    server._isRunningOptimizer = true
+    try {
+      server._optimizeDepsMetadata = await optimizeDeps(
+        config,
+        config.server.force || server._forceOptimizeOnRestart
+      )
+    } finally {
+      server._isRunningOptimizer = false
     }
+    server._registerMissingImport = createMissingImporterRegisterFn(server)
   }
 
   if (!middlewareMode && httpServer) {

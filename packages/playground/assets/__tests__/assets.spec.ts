@@ -57,6 +57,12 @@ describe('raw references from /public', () => {
   })
 })
 
+test('import-expression from simple script', async () => {
+  expect(await page.textContent('.import-expression')).toMatch(
+    '[success][success]'
+  )
+})
+
 describe('asset imports from js', () => {
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(assetMatch)

@@ -647,6 +647,15 @@ importers:
       '@vitejs/plugin-vue': link:../../plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../plugin-vue-jsx
 
+  packages/playground/vue-lib:
+    specifiers:
+      '@vitejs/plugin-vue': workspace:*
+      vue: ^3.2.25
+    dependencies:
+      vue: 3.2.26
+    devDependencies:
+      '@vitejs/plugin-vue': link:../../plugin-vue
+
   packages/playground/wasm:
     specifiers: {}
 
@@ -762,7 +771,7 @@ importers:
       cors: ^2.8.5
       cross-spawn: ^7.0.3
       debug: ^4.3.3
-      dotenv: ^10.0.0
+      dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
       es-module-lexer: ^0.9.3
       esbuild: 0.14.3
@@ -783,14 +792,14 @@ importers:
       picocolors: ^1.0.0
       postcss: ^8.4.5
       postcss-import: ^14.0.2
-      postcss-load-config: ^3.1.0
+      postcss-load-config: ^3.1.1
       postcss-modules: ^4.3.0
       resolve: ^1.20.0
       resolve.exports: ^1.1.0
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.0
       sirv: ^2.0.0
-      source-map: ^0.6.1
+      source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       terser: ^5.10.0
@@ -800,7 +809,6 @@ importers:
       ws: ^8.4.0
     dependencies:
       esbuild: 0.14.3
-      json5: 2.2.0
       postcss: 8.4.5
       resolve: 1.20.0
       rollup: 2.62.0
@@ -841,13 +849,14 @@ importers:
       cors: 2.8.5
       cross-spawn: 7.0.3
       debug: 4.3.3
-      dotenv: 10.0.0
+      dotenv: 14.3.2
       dotenv-expand: 5.1.0
       es-module-lexer: 0.9.3
       estree-walker: 2.0.2
       etag: 1.8.1
       fast-glob: 3.2.7
       http-proxy: 1.18.1_debug@4.3.3
+      json5: 2.2.0
       launch-editor-middleware: 2.3.0
       magic-string: 0.25.7
       micromatch: 4.0.4
@@ -858,12 +867,12 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.5
-      postcss-load-config: 3.1.0_ts-node@10.4.0
+      postcss-load-config: 3.1.1_ts-node@10.4.0
       postcss-modules: 4.3.0_postcss@8.4.5
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.0_rollup@2.62.0
       sirv: 2.0.0
-      source-map: 0.6.1
+      source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.10.0_acorn@8.7.0
@@ -3862,9 +3871,9 @@ packages:
     resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
     dev: true
 
-  /dotenv/10.0.0:
-    resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
-    engines: {node: '>=10'}
+  /dotenv/14.3.2:
+    resolution: {integrity: sha512-vwEppIphpFdvaMCaHfCEv9IgwcxMljMw2TnAQBB4VWPvzXQLTb82jwmdOKzlEVUL3gNFT4l4TPKO+Bn+sqcrVQ==}
+    engines: {node: '>=12'}
     dev: true
 
   /dotenv/8.6.0:
@@ -5003,6 +5012,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       import-from: 3.0.0
+    dev: false
 
   /import-fresh/3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
@@ -5016,6 +5026,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       resolve-from: 5.0.0
+    dev: false
 
   /import-lazy/4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
@@ -6960,6 +6971,21 @@ packages:
       lilconfig: 2.0.4
       ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
       yaml: 1.10.2
+    dev: false
+
+  /postcss-load-config/3.1.1_ts-node@10.4.0:
+    resolution: {integrity: sha512-c/9XYboIbSEUZpiD1UQD0IKiUe8n9WHYV7YFe7X7J+ZwCsEKkUJSFWjS9hBU1RR9THR7jMXst8sxiqP0jjo2mg==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      ts-node:
+        optional: true
+    dependencies:
+      lilconfig: 2.0.4
+      ts-node: 10.4.0_00264fd83560919cd06c986889baae0a
+      yaml: 1.10.2
+    dev: true
 
   /postcss-modules-extract-imports/3.0.0_postcss@8.4.5:
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
@@ -7046,7 +7072,7 @@ packages:
     dependencies:
       nanoid: 3.1.30
       picocolors: 1.0.0
-      source-map-js: 1.0.1
+      source-map-js: 1.0.2
 
   /preact/10.6.4:
     resolution: {integrity: sha512-WyosM7pxGcndU8hY0OQlLd54tOU+qmG45QXj2dAYrL11HoyU/EzOSTlpJsirbBr1QW7lICxSsVJJmcmUglovHQ==}
@@ -7855,6 +7881,11 @@ packages:
 
   /source-map-js/1.0.1:
     resolution: {integrity: sha512-4+TN2b3tqOCd/kaGRJ/sTYA0tR0mdXx26ipdolxcwtJVqEnqNYvlCAt1q3ypy4QMlYus+Zh34RNtYLoq2oQ4IA==}
+    engines: {node: '>=0.10.0'}
+    dev: true
+
+  /source-map-js/1.0.2:
+    resolution: {integrity: sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==}
     engines: {node: '>=0.10.0'}
 
   /source-map-resolve/0.6.0:
