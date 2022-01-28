@@ -22,9 +22,10 @@ export class SplitVendorChunkCache {
   }
 }
 
-export function splitVendorChunk({
-  cache = new SplitVendorChunkCache()
-} = {}): GetManualChunk {
+export function splitVendorChunk(
+  options: { cache?: SplitVendorChunkCache } = {}
+): GetManualChunk {
+  const cache = options.cache ?? new SplitVendorChunkCache()
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
