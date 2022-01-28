@@ -32,7 +32,7 @@ export function proxyMiddleware(
   httpServer: http.Server | null,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const options = config.server.proxy!
+  const options = (config.server.proxy || config.preview.proxy)!
 
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
