@@ -42,7 +42,7 @@ export interface Options {
 
   /**
    * Enable Vue reactivity transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
+   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
