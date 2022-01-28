@@ -35,12 +35,6 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // Do not minify ES lib output since that would remove pure annotations
-      // and break tree-shaking.
-      if (config.build.lib && outputOptions.format === 'es') {
-        return null
-      }
-
       // Lazy load worker.
       worker ||= makeWorker()
 
