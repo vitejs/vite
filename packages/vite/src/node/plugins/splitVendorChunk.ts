@@ -24,7 +24,7 @@ export class SplitVendorChunkCache {
 
 export function splitVendorChunk({
   cache = new SplitVendorChunkCache()
-}): GetManualChunk {
+} = {}): GetManualChunk {
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
