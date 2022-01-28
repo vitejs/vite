@@ -558,7 +558,7 @@
 * Allow custom asset URL origin in development ([#5104](https://github.com/vitejs/vite/issues/5104)) ([e4ef6dd](https://github.com/vitejs/vite/commit/e4ef6ddbbf6cef689537fe35d8f8378150e87f6e))
 * avoid module preload polyfill for zero js html ([#4999](https://github.com/vitejs/vite/issues/4999)) ([ac55755](https://github.com/vitejs/vite/commit/ac55755f12e1f497e00a6ba1781cc80a065d770b))
 * injected tags indentation ([#5000](https://github.com/vitejs/vite/issues/5000)) ([4b84c0d](https://github.com/vitejs/vite/commit/4b84c0d66beff9fa6fd6f304df95a70fa2f23144))
-* **lib-mode:** do not minify lib mode es output ([06d86e4](https://github.com/vitejs/vite/commit/06d86e4a2e90ca916a43d450bca1e6c28bc4bfe2)), closes [/github.com/vuejs/vue-next/issues/2860#issuecomment-926882793](https://github.com//github.com/vuejs/vue-next/issues/2860/issues/issuecomment-926882793)
+* **lib-mode:** do not minify lib mode es output ([06d86e4](https://github.com/vitejs/vite/commit/06d86e4a2e90ca916a43d450bca1e6c28bc4bfe2)), closes [/github.com/vuejs/core/issues/2860#issuecomment-926882793](https://github.com//github.com/vuejs/core/issues/2860/issues/issuecomment-926882793)
 * normalize away `base` in imported URLs ([#5065](https://github.com/vitejs/vite/issues/5065)) ([9164da0](https://github.com/vitejs/vite/commit/9164da0fe62cb85e77752849ea6d7a68287fb576))
 * server.address before listen, chdir in test, basic cli test ([#5059](https://github.com/vitejs/vite/issues/5059)) ([fb37a63](https://github.com/vitejs/vite/commit/fb37a6315711eb6bae3030e98acdad1b819f0893))
 * should load `--config foo.mjs` as an ES module ([#5091](https://github.com/vitejs/vite/issues/5091)) ([5d2c50a](https://github.com/vitejs/vite/commit/5d2c50ad229fc8a9e20171ab17053ea525018e71))

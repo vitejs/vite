@@ -59,7 +59,7 @@
 
 ### Bug Fixes
 
-* **plugin-vue:** fix hmr issue in vuejs/vue-next[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
+* **plugin-vue:** fix hmr issue in vuejs/core[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
 
 
 
