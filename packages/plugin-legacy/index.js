@@ -286,6 +286,14 @@ function viteLegacyPlugin(options = {}) {
       // entirely.
       opts.__vite_force_terser__ = true
 
+      // @ts-ignore
+      // In the `generateBundle` hook,
+      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
+      // But that's still a waste of computing resource.
+      // So we add this flag to avoid emitting the asset in the first place whenever possible.
+      opts.__vite_skip_asset_emit__ = true
+
+      // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 

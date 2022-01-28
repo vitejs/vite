@@ -1,8 +1,10 @@
 import {
+  listAssets,
   findAssetFile,
   isBuild,
   readManifest,
-  untilUpdated
+  untilUpdated,
+  getColor
 } from '../../testUtils'
 
 test('should work', async () => {
@@ -50,6 +52,10 @@ test('generates assets', async () => {
   )
 })
 
+test('correctly emits styles', async () => {
+  expect(await getColor('#app')).toBe('red')
+})
+
 if (isBuild) {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
@@ -72,5 +78,9 @@ if (isBuild) {
     expect(findAssetFile(/index-legacy/)).toMatch(terserPatt)
     expect(findAssetFile(/index\./)).not.toMatch(terserPatt)
     expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPatt)
+  })
+
+  test('should emit css file', async () => {
+    expect(listAssets().some((filename) => filename.endsWith('.css')))
   })
 }
