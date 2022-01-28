@@ -3,7 +3,7 @@
 // and plugin-react. For the moment, we can remove the extra exports code added in 0.14.4 to
 // continue using it.
 
-import { bold } from 'picocolors'
+import { bold, red } from 'picocolors'
 import { readFileSync, writeFileSync } from 'fs'
 
 const indexPath = process.argv[2]
@@ -11,17 +11,21 @@ const varName = process.argv[3]
 
 let code = readFileSync(indexPath, 'utf-8')
 
-// overwrite for cjs require('...')() usage
-code = code.replace(
-  `module.exports = __toCommonJS(src_exports);`,
-  `module.exports = ${varName};
+const moduleExportsLine = `module.exports = __toCommonJS(src_exports);`
+
+if (code.includes(moduleExportsLine)) {
+  // overwrite for cjs require('...')() usage
+  code = code.replace(
+    moduleExportsLine,
+    `module.exports = ${varName};
 ${varName}['default'] = ${varName};`
-)
-
-writeFileSync(indexPath, code)
-
-console.log(
-  bold(
-    `${indexPath} patched with overwrite for cjs require('...')() usage for ${varName}`
   )
-)
+
+  writeFileSync(indexPath, code)
+
+  console.log(
+    bold(`${indexPath} patched with overwrite for cjs require('...')()`)
+  )
+} else {
+  console.error(red(`${indexPath} post-esbuild bundling patch failed`))
+}
