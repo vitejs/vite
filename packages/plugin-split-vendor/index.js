@@ -32,7 +32,7 @@ class SplitVendorCache {
  * @returns {import('rollup').GetManualChunk}
  */
 function splitVendor(options = {}) {
-  const cache = options.cache ?? new SplitVendorCache()
+  const cache = options.cache || new SplitVendorCache()
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
@@ -99,8 +99,8 @@ function splitVendorPlugin() {
   function createSplitVendor(output, config) {
     const cache = new SplitVendorCache()
     caches.push(cache)
-    const build = config.build ?? {}
-    const format = output?.format
+    const build = config.build || {}
+    const format = output.format
     if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
       return splitVendor({ cache })
     }
@@ -108,7 +108,10 @@ function splitVendorPlugin() {
   return {
     name: 'vite:split-vendor-chunk',
     config(config) {
-      let outputs = config?.build?.rollupOptions?.output
+      let outputs =
+        config.build &&
+        config.build.rollupOptions &&
+        config.build.rollupOptions.output
       if (outputs) {
         outputs = Array.isArray(outputs) ? outputs : [outputs]
         for (const output of outputs) {
