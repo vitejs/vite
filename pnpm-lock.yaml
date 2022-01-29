@@ -615,6 +615,7 @@ importers:
 
   packages/playground/vue:
     specifiers:
+      '@vitejs/plugin-split-vendor': workspace:*
       '@vitejs/plugin-vue': workspace:*
       css-with-exports-field: ^1.0.0
       js-yaml: ^4.1.0
@@ -628,6 +629,7 @@ importers:
       lodash-es: 4.17.21
       vue: 3.2.26
     devDependencies:
+      '@vitejs/plugin-split-vendor': link:../../plugin-split-vendor
       '@vitejs/plugin-vue': link:../../plugin-vue
       css-with-exports-field: 1.0.0
       js-yaml: 4.1.0
@@ -689,6 +691,12 @@ importers:
       '@rollup/pluginutils': 4.1.2
       react-refresh: 0.11.0
       resolve: 1.20.0
+
+  packages/plugin-split-vendor:
+    specifiers:
+      rollup: ^2.59.0
+    dependencies:
+      rollup: 2.62.0
 
   packages/plugin-vue:
     specifiers:

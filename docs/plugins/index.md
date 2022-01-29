@@ -22,6 +22,10 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 - Provides legacy browsers support for the production build.
 
+### [@vitejs/plugin-split-vendor](https://github.com/vitejs/vite/tree/main/packages/plugin-split-vendor)
+
+- Provides `manualChunks` strategy from Vite <=2.7
+
 ## Community Plugins
 
 Check out [awesome-vite](https://github.com/vitejs/awesome-vite#plugins) - you can also submit a PR to list your plugins there.

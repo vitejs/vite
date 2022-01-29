@@ -1,7 +1,11 @@
-import type { UserConfig } from '../../node'
-import type { Plugin } from '../plugin'
-import type { OutputOptions, GetManualChunk, GetModuleInfo } from 'rollup'
-import { isCSSRequest } from './css'
+// @ts-check
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangRE = new RegExp(cssLangs)
+/**
+ * Internal CSS Check from vite/src/node/plugins/css.ts
+ * @param {string} request
+ */
+const isCSSRequest = (request) => cssLangRE.test(request)
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
 // We don't recommend using this strategy as a general solution moving forward
@@ -12,20 +16,23 @@ import { isCSSRequest } from './css'
 // The cache needs to be reset on buildStart for watch mode to work correctly
 // Don't use this manualChunks strategy for ssr, lib mode, and 'umd' or 'iife'
 
-export class SplitVendorChunkCache {
-  cache: Map<string, boolean>
+class SplitVendorCache {
+  cache
   constructor() {
-    this.cache = new Map<string, boolean>()
+    this.cache = new Map()
   }
   reset() {
-    this.cache = new Map<string, boolean>()
+    this.cache = new Map()
   }
 }
 
-export function splitVendorChunk(
-  options: { cache?: SplitVendorChunkCache } = {}
-): GetManualChunk {
-  const cache = options.cache ?? new SplitVendorChunkCache()
+/**
+ * manualChunk strategy splitting in index and vendor chunks
+ * @param {{ cache?: SplitVendorCache }} options
+ * @returns {import('rollup').GetManualChunk}
+ */
+function splitVendor(options = {}) {
+  const cache = options.cache ?? new SplitVendorCache()
   return (id, { getModuleInfo }) => {
     if (
       id.includes('node_modules') &&
@@ -37,14 +44,17 @@ export function splitVendorChunk(
   }
 }
 
-function staticImportedByEntry(
-  id: string,
-  getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
-  importStack: string[] = []
-): boolean {
+/**
+ * Find if a module has been statically imported by an entry
+ * @param {string} id
+ * @param {import('rollup').GetModuleInfo} getModuleInfo
+ * @param {Map<string, boolean>} cache
+ * @param {string[]} importStack
+ * @returns {boolean}
+ */
+function staticImportedByEntry(id, getModuleInfo, cache, importStack = []) {
   if (cache.has(id)) {
-    return cache.get(id) as boolean
+    return cache.get(id)
   }
   if (importStack.includes(id)) {
     // circular deps!
@@ -73,15 +83,26 @@ function staticImportedByEntry(
   return someImporterIs
 }
 
-export function splitVendorChunkPlugin(): Plugin {
-  const caches: SplitVendorChunkCache[] = []
-  function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
-    const cache = new SplitVendorChunkCache()
+/**
+ * Implements Vite 2.7 chunking strategy
+ * @returns {import('vite').Plugin}
+ */
+function splitVendorPlugin() {
+  /**
+   * @type {SplitVendorCache[]}
+   */
+  const caches = []
+  /**
+   * @param {import('rollup').OutputOptions} output
+   * @param {import('vite').UserConfig} config
+   */
+  function createSplitVendor(output, config) {
+    const cache = new SplitVendorCache()
     caches.push(cache)
     const build = config.build ?? {}
     const format = output?.format
     if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
-      return splitVendorChunk({ cache })
+      return splitVendor({ cache })
     }
   }
   return {
@@ -91,13 +112,13 @@ export function splitVendorChunkPlugin(): Plugin {
       if (outputs) {
         outputs = Array.isArray(outputs) ? outputs : [outputs]
         for (const output of outputs) {
-          output.manualChunks = createSplitVendorChunk(output, config)
+          output.manualChunks = createSplitVendor(output, config)
         }
       } else {
         return {
           build: {
             rollupOptions: {
-              manualChunks: createSplitVendorChunk({}, config)
+              manualChunks: createSplitVendor({}, config)
             }
           }
         }
@@ -108,3 +129,5 @@ export function splitVendorChunkPlugin(): Plugin {
     }
   }
 }
+
+module.exports = { splitVendorPlugin, splitVendor, SplitVendorCache }

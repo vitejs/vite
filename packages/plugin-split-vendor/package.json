@@ -1,0 +1,31 @@
+{
+  "name": "@vitejs/plugin-split-vendor",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Evan You",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-split-vendor",
+    "release": "ts-node ../../scripts/release.ts --skipBuild"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-split-vendor"
+  },
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-split-vendor#readme",
+  "dependencies": {
+    "rollup": "^2.59.0"
+  }
+}

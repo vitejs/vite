@@ -39,14 +39,15 @@ Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you 
 
 ## Packages
 
-| Package                                           | Version (click for changelogs)                                                                                                       |
-| ------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| [vite](packages/vite)                             | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                       |
-| [@vitejs/plugin-vue](packages/plugin-vue)         | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)             |
-| [@vitejs/plugin-vue-jsx](packages/plugin-vue-jsx) | [![plugin-vue-jsx version](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md) |
-| [@vitejs/plugin-react](packages/plugin-react)     | [![plugin-react version](https://img.shields.io/npm/v/@vitejs/plugin-react.svg?label=%20)](packages/plugin-react/CHANGELOG.md)       |
-| [@vitejs/plugin-legacy](packages/plugin-legacy)   | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md)    |
-| [create-vite](packages/create-vite)               | [![create-vite version](https://img.shields.io/npm/v/create-vite.svg?label=%20)](packages/create-vite/CHANGELOG.md)                  |
+| Package                                                     | Version (click for changelogs)                                                                                                                 |
+| ----------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| [vite](packages/vite)                                       | [![vite version](https://img.shields.io/npm/v/vite.svg?label=%20)](packages/vite/CHANGELOG.md)                                                 |
+| [@vitejs/plugin-vue](packages/plugin-vue)                   | [![plugin-vue version](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg?label=%20)](packages/plugin-vue/CHANGELOG.md)                       |
+| [@vitejs/plugin-vue-jsx](packages/plugin-vue-jsx)           | [![plugin-vue-jsx version](https://img.shields.io/npm/v/@vitejs/plugin-vue-jsx.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md)           |
+| [@vitejs/plugin-react](packages/plugin-react)               | [![plugin-react version](https://img.shields.io/npm/v/@vitejs/plugin-react.svg?label=%20)](packages/plugin-react/CHANGELOG.md)                 |
+| [@vitejs/plugin-legacy](packages/plugin-legacy)             | [![plugin-legacy version](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg?label=%20)](packages/plugin-legacy/CHANGELOG.md)              |
+| [@vitejs/plugin-split-vendor](packages/plugin-split-vendor) | [![plugin-split-vendor version](https://img.shields.io/npm/v/@vitejs/plugin-split-vendor.svg?label=%20)](packages/plugin-vue-jsx/CHANGELOG.md) |
+| [create-vite](packages/create-vite)                         | [![create-vite version](https://img.shields.io/npm/v/create-vite.svg?label=%20)](packages/create-vite/CHANGELOG.md)                            |
 
 ## Contribution
 
