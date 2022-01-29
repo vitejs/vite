@@ -763,7 +763,7 @@ importers:
       '@vue/compiler-dom': ^3.2.26
       acorn: ^8.7.0
       cac: 6.7.9
-      chokidar: ^3.5.2
+      chokidar: ^3.5.3
       compression: ^1.7.4
       connect: ^3.7.0
       connect-history-api-fallback: ^1.6.0
@@ -841,7 +841,7 @@ importers:
       '@vue/compiler-dom': 3.2.26
       acorn: 8.7.0
       cac: 6.7.9
-      chokidar: 3.5.2
+      chokidar: 3.5.3
       compression: 1.7.4
       connect: 3.7.0
       connect-history-api-fallback: 1.6.0
@@ -3094,6 +3094,21 @@ packages:
       readdirp: 3.6.0
     optionalDependencies:
       fsevents: 2.3.2
+
+  /chokidar/3.5.3:
+    resolution: {integrity: sha512-Dr3sfKRP6oTcjf2JmUmFJfeVMvXBdegxB0iVQ5eb2V10uFJUCAS8OByZdVAyVb8xXNz3GjjTgj9kLWsZTqE6kw==}
+    engines: {node: '>= 8.10.0'}
+    dependencies:
+      anymatch: 3.1.2
+      braces: 3.0.2
+      glob-parent: 5.1.2
+      is-binary-path: 2.1.0
+      is-glob: 4.0.3
+      normalize-path: 3.0.0
+      readdirp: 3.6.0
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
 
   /chownr/2.0.0:
     resolution: {integrity: sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==}
