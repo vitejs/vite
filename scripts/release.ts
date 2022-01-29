@@ -12,6 +12,11 @@ import semver from 'semver'
 
 const args = require('minimist')(process.argv.slice(2))
 
+// For GitHub Actions use
+// Regular release   : release --type next --quiet
+// Start beta        : release --type (minor-beta|major-beta) --quiet
+// Release from beta : release --type stable --quiet
+
 const pkgDir = process.cwd()
 const pkgPath = path.resolve(pkgDir, 'package.json')
 const pkg: { name: string; version: string } = require(pkgPath)
@@ -55,27 +60,61 @@ async function main(): Promise<void> {
   let targetVersion: string | undefined = args._[0]
 
   if (!targetVersion) {
-    // no explicit version, offer suggestions
-    const { release }: { release: string } = await prompts({
-      type: 'select',
-      name: 'release',
-      message: 'Select release type',
-      choices: versionIncrements
-        .map((i) => `${i} (${inc(i)})`)
-        .concat(['custom'])
-        .map((i) => ({ value: i, title: i }))
-    })
-
-    if (release === 'custom') {
-      const res: { version: string } = await prompts({
-        type: 'text',
-        name: 'version',
-        message: 'Input custom version',
-        initial: currentVersion
-      })
-      targetVersion = res.version
+    const type: string | undefined = args.type
+    if (type) {
+      const currentBeta = !currentVersion.includes('beta')
+      if (type === 'stable') {
+        // Out of beta
+        if (!currentBeta) {
+          throw new Error(
+            `Current version: ${currentVersion} isn't a beta, stable can't be used`
+          )
+        }
+        targetVersion = inc('patch')
+      } else if (type === 'minor-beta') {
+        if (currentBeta) {
+          throw new Error(
+            `Current version: ${currentVersion} is already a beta, minor-beta can't be used`
+          )
+        }
+        targetVersion = inc('preminor')
+      } else if (type === 'major-beta') {
+        if (currentBeta) {
+          throw new Error(
+            `Current version: ${currentVersion} is already a beta, major-beta can't be used`
+          )
+        }
+        targetVersion = inc('premajor')
+      } else if (type === 'next') {
+        targetVersion = inc(currentBeta ? 'prerelease' : 'patch')
+      } else {
+        throw new Error(
+          `type: ${type} isn't a valid type. Use stable, minor-beta, major-beta, or next`
+        )
+      }
     } else {
-      targetVersion = release.match(/\((.*)\)/)![1]
+      // no explicit version or type, offer suggestions
+      const { release }: { release: string } = await prompts({
+        type: 'select',
+        name: 'release',
+        message: 'Select release type',
+        choices: versionIncrements
+          .map((i) => `${i} (${inc(i)})`)
+          .concat(['custom'])
+          .map((i) => ({ value: i, title: i }))
+      })
+
+      if (release === 'custom') {
+        const res: { version: string } = await prompts({
+          type: 'text',
+          name: 'version',
+          message: 'Input custom version',
+          initial: currentVersion
+        })
+        targetVersion = res.version
+      } else {
+        targetVersion = release.match(/\((.*)\)/)![1]
+      }
     }
   }
 
@@ -86,24 +125,30 @@ async function main(): Promise<void> {
   const tag =
     pkgName === 'vite' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
 
-  if (targetVersion.includes('beta') && !args.tag) {
-    const { tagBeta }: { tagBeta: boolean } = await prompts({
+  if (!args.quiet) {
+    if (targetVersion.includes('beta') && !args.tag) {
+      const { tagBeta }: { tagBeta: boolean } = await prompts({
+        type: 'confirm',
+        name: 'tagBeta',
+        message: `Publish under dist-tag "beta"?`
+      })
+
+      if (tagBeta) args.tag = 'beta'
+    }
+
+    const { yes }: { yes: boolean } = await prompts({
       type: 'confirm',
-      name: 'tagBeta',
-      message: `Publish under dist-tag "beta"?`
+      name: 'yes',
+      message: `Releasing ${tag}. Confirm?`
     })
 
-    if (tagBeta) args.tag = 'beta'
-  }
-
-  const { yes }: { yes: boolean } = await prompts({
-    type: 'confirm',
-    name: 'yes',
-    message: `Releasing ${tag}. Confirm?`
-  })
-
-  if (!yes) {
-    return
+    if (!yes) {
+      return
+    }
+  } else {
+    if (targetVersion.includes('beta') && !args.tag) {
+      args.tag = 'beta'
+    }
   }
 
   step('\nUpdating package version...')
