@@ -403,7 +403,7 @@ Repository: rollup/plugins
 ## @vue/compiler-core
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/core.git
+Repository: git+https://github.com/vuejs/vue-next.git
 
 > The MIT License (MIT)
 > 
@@ -432,7 +432,7 @@ Repository: git+https://github.com/vuejs/core.git
 ## @vue/compiler-dom
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/core.git
+Repository: git+https://github.com/vuejs/vue-next.git
 
 > The MIT License (MIT)
 > 
@@ -461,7 +461,7 @@ Repository: git+https://github.com/vuejs/core.git
 ## @vue/shared
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/core.git
+Repository: git+https://github.com/vuejs/vue-next.git
 
 > The MIT License (MIT)
 > 
