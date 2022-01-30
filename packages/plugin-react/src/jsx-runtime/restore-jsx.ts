@@ -57,7 +57,8 @@ export async function restoreJSX(
     parserOpts: {
       plugins: ['jsx']
     },
-    plugins: [await babelRestoreJSX]
+    // @ts-ignore
+    plugins: [(await babelRestoreJSX).default]
   })
 
   return [result?.ast, isCommonJS]

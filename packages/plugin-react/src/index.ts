@@ -366,5 +366,8 @@ function loadPlugin(path: string): Promise<any> {
 }
 
 // overwrite for cjs require('...')() usage
-module.exports = viteReact
-viteReact['default'] = viteReact
+// The following lines are inserted by scripts/patchEsbuildDist.ts,
+// this doesn't bundle correctly after esbuild 0.14.4
+//
+// module.exports = viteReact
+// viteReact['default'] = viteReact
