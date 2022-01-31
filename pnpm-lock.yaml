@@ -772,7 +772,7 @@ importers:
       cross-spawn: ^7.0.3
       debug: ^4.3.3
       dotenv: ^14.3.2
-      dotenv-expand: ^5.1.0
+      dotenv-expand: ^6.0.1
       es-module-lexer: ^0.9.3
       esbuild: ^0.14.14
       estree-walker: ^2.0.2
@@ -850,7 +850,7 @@ importers:
       cross-spawn: 7.0.3
       debug: 4.3.3
       dotenv: 14.3.2
-      dotenv-expand: 5.1.0
+      dotenv-expand: 6.0.1
       es-module-lexer: 0.9.3
       estree-walker: 2.0.2
       etag: 1.8.1
@@ -4073,8 +4073,9 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand/5.1.0:
-    resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
+  /dotenv-expand/6.0.1:
+    resolution: {integrity: sha512-GNHcCOyRKLCXWnH3L/+sJ04PQxxgTOZDCPuQQnqkqPMGIilyoxHZ2JUNmh2VWKCfzVKH/AZsqcbuSYlDDVb/xw==}
+    engines: {node: '>=12'}
     dev: true
 
   /dotenv/14.3.2:
