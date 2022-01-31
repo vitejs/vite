@@ -1086,7 +1086,7 @@ export function loadEnv(
     const path = lookupFile(envDir, [file], true)
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
-        debug: !!process.env.DEBUG || undefined
+        debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
       })
 
       // let environment variables use each other
