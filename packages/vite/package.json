@@ -79,7 +79,7 @@
     "@vue/compiler-dom": "^3.2.26",
     "acorn": "^8.7.0",
     "cac": "6.7.9",
-    "chokidar": "^3.5.2",
+    "chokidar": "^3.5.3",
     "compression": "^1.7.4",
     "connect": "^3.7.0",
     "connect-history-api-fallback": "^1.6.0",

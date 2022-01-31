@@ -86,7 +86,11 @@ export type {
 export type { Connect } from 'types/connect'
 export type { WebSocket, WebSocketAlias } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
-export type { FSWatcher, WatchOptions } from 'types/chokidar'
+export type {
+  FSWatcher,
+  WatchOptions,
+  AwaitWriteFinishOptions
+} from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
