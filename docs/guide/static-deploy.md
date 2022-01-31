@@ -285,8 +285,8 @@ Vercel CLI
 
 1. Push your code to your git repository (GitHub, GitLab, BitBucket).
 2. [Import your Vite project](https://vercel.com/new) into Vercel.
-4. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
-5. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
+3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
 After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
 
