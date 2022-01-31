@@ -1,3 +1,22 @@
+# [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
+
+
+### Bug Fixes
+
+* **build:** NODE_ENV override by .env ([#6303](https://github.com/vitejs/vite/issues/6303)) ([7329b24](https://github.com/vitejs/vite/commit/7329b24e03952b8fb25b025b61955e40ef777e2a))
+* debug `dotenv` when specifically scoped ([#6682](https://github.com/vitejs/vite/issues/6682)) ([c2f0021](https://github.com/vitejs/vite/commit/c2f00214e41b62196fab9108da76609aa8edbaa4))
+* **dev:** prevent stripping query params from CSS in HMR ([#6589](https://github.com/vitejs/vite/issues/6589)) ([3ab96c6](https://github.com/vitejs/vite/commit/3ab96c6171dbd3a6155e3496f901d2718edae558))
+* **legacy:** fix conflict with the modern build on css emitting ([#6584](https://github.com/vitejs/vite/issues/6584)) ([f48255e](https://github.com/vitejs/vite/commit/f48255e6e0058e973b949fb4a2372974f0480e11)), closes [#3296](https://github.com/vitejs/vite/issues/3296) [#3317](https://github.com/vitejs/vite/issues/3317) [/github.com/vitejs/vite/commit/6bce1081991501f3779bff1a81e5dd1e63e5d38e#diff-2cfbd4f4d8c32727cd8e1a561cffbde0b384a3ce0789340440e144f9d64c10f6R262-R263](https://github.com//github.com/vitejs/vite/commit/6bce1081991501f3779bff1a81e5dd1e63e5d38e/issues/diff-2cfbd4f4d8c32727cd8e1a561cffbde0b384a3ce0789340440e144f9d64c10f6R262-R263)
+* revert [#5601](https://github.com/vitejs/vite/issues/5601) [#6025](https://github.com/vitejs/vite/issues/6025), don't resolve rollupOptions.input ([#6680](https://github.com/vitejs/vite/issues/6680)) ([2a9da2e](https://github.com/vitejs/vite/commit/2a9da2e3b10e3637f7ed7daa3b45cb173f40d7a3))
+* update SSR externals only when SSR is enabled (fix [#6478](https://github.com/vitejs/vite/issues/6478)) ([#6492](https://github.com/vitejs/vite/issues/6492)) ([28d1e7e](https://github.com/vitejs/vite/commit/28d1e7eed2213f0b22936ff6900354b29e320bc9))
+
+
+### Features
+
+* add lerna workspace support to `searchForWorkspaceRoot` ([#6270](https://github.com/vitejs/vite/issues/6270)) ([0e164f8](https://github.com/vitejs/vite/commit/0e164f80ee36f99ef5277320b3b69448459ef7ba))
+
+
+
 # [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
 
 
