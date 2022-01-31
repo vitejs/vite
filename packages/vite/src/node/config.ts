@@ -398,11 +398,7 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(
-    resolvedRoot,
-    config.build,
-    command === 'build'
-  )
+  const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
   const pkgPath = lookupFile(
@@ -1090,7 +1086,7 @@ export function loadEnv(
     const path = lookupFile(envDir, [file], true)
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
-        debug: !!process.env.DEBUG || undefined
+        debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
       })
 
       // let environment variables use each other
