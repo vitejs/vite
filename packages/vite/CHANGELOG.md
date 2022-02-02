@@ -1,3 +1,12 @@
+# [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
+
+
+### Bug Fixes
+
+* revert [#5342](https://github.com/vitejs/vite/issues/5342), only run build-html plugin on bundler inputs ([#6715](https://github.com/vitejs/vite/issues/6715)) ([59f8a63](https://github.com/vitejs/vite/commit/59f8a639bc6abd9e6c99bc77e155990c43e07ad9))
+
+
+
 # [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
 
 
