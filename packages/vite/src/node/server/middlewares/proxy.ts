@@ -5,7 +5,7 @@ import { HMR_HEADER } from '../ws'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '../..'
+import type { Logger } from '../../logger'
 
 const debug = createDebugger('vite:proxy')
 
@@ -30,22 +30,21 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
-  config: ResolvedConfig
+  proxyOptions: Record<string, string | ProxyOptions>,
+  logger: Logger
 ): Connect.NextHandleFunction {
-  const options = (config.server.proxy || config.preview.proxy)!
-
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
-  Object.keys(options).forEach((context) => {
-    let opts = options[context]
+  Object.keys(proxyOptions).forEach((context) => {
+    let opts = proxyOptions[context]
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
     proxy.on('error', (err) => {
-      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
+      logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err
       })
