@@ -237,6 +237,33 @@ Repository: git+https://github.com/ampproject/remapping.git
 
 ---------------------------------------
 
+## @jridgewell/resolve-uri
+License: MIT
+By: Justin Ridgewell
+Repository: https://github.com/jridgewell/resolve-uri
+
+> Copyright 2019 Justin Ridgewell <jridgewell@google.com>
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in
+> all copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+---------------------------------------
+
 ## @nodelib/fs.scandir
 License: MIT
 Repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.scandir
@@ -403,7 +430,7 @@ Repository: rollup/plugins
 ## @vue/compiler-core
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/vue-next.git
+Repository: git+https://github.com/vuejs/core.git
 
 > The MIT License (MIT)
 > 
@@ -432,7 +459,7 @@ Repository: git+https://github.com/vuejs/vue-next.git
 ## @vue/compiler-dom
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/vue-next.git
+Repository: git+https://github.com/vuejs/core.git
 
 > The MIT License (MIT)
 > 
@@ -461,7 +488,7 @@ Repository: git+https://github.com/vuejs/vue-next.git
 ## @vue/shared
 License: MIT
 By: Evan You
-Repository: git+https://github.com/vuejs/vue-next.git
+Repository: git+https://github.com/vuejs/core.git
 
 > The MIT License (MIT)
 > 
@@ -1158,6 +1185,7 @@ Repository: git://github.com/motdotla/dotenv.git
 ## dotenv-expand
 License: BSD-2-Clause
 By: motdotla
+Repository: https://github.com/motdotla/dotenv-expand
 
 > Copyright (c) 2016, Scott Motte
 > All rights reserved.
