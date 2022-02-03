@@ -11,7 +11,8 @@ const WorkerFileId = 'worker_file'
 
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
-  id: string
+  id: string,
+  ctx: Rollup.TransformPluginContext
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
@@ -25,13 +26,25 @@ export async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false
   })
-  let code: string
+  let code = ''
   try {
     const { output } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = output[0].code
+
+    output.forEach((item) => {
+      if (item.type === 'chunk' && item.isEntry) {
+        code = item.code
+        return
+      }
+
+      ctx.emitFile({
+        type: 'asset',
+        fileName: path.posix.join(config.build.assetsDir, item.fileName),
+        source: item.type === 'chunk' ? item.code : item.source
+      })
+    })
   } finally {
     await bundle.close()
   }
@@ -72,7 +85,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const code = await bundleWorkerEntry(config, id)
+        const code = await bundleWorkerEntry(config, id, this)
         if (query.inline != null) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
