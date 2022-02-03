@@ -60,6 +60,7 @@ export type BabelOptions = Omit<
 export interface ReactBabelOptions extends BabelOptions {
   plugins: Extract<BabelOptions['plugins'], any[]>
   presets: Extract<BabelOptions['presets'], any[]>
+  overrides: Extract<BabelOptions['overrides'], any[]>
   parserOpts: ParserOptions & {
     plugins: Extract<ParserOptions['plugins'], any[]>
   }
@@ -95,6 +96,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   babelOptions.plugins ||= []
   babelOptions.presets ||= []
+  babelOptions.overrides ||= []
   babelOptions.parserOpts ||= {} as any
   babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
 
