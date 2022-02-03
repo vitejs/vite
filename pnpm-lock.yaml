@@ -735,11 +735,18 @@ importers:
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.16.12
       hash-sum: 2.0.0
 
+  packages/temp:
+    specifiers:
+      css-color-names: ^1.0.1
+    devDependencies:
+      css-color-names: 1.0.1
+
   packages/vite:
     specifiers:
-      '@ampproject/remapping': ^1.1.1
+      '@ampproject/remapping': ^2.0.2
       '@babel/parser': ^7.16.12
       '@babel/types': ^7.16.8
+      '@jridgewell/trace-mapping': ^0.2.5
       '@rollup/plugin-alias': ^3.1.9
       '@rollup/plugin-commonjs': ^21.0.1
       '@rollup/plugin-dynamic-import-vars': ^1.4.2
@@ -799,7 +806,6 @@ importers:
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.1
       sirv: ^2.0.2
-      source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       terser: ^5.10.0
@@ -815,9 +821,10 @@ importers:
     optionalDependencies:
       fsevents: 2.3.2
     devDependencies:
-      '@ampproject/remapping': 1.1.1
+      '@ampproject/remapping': 2.0.2
       '@babel/parser': 7.16.12
       '@babel/types': 7.16.8
+      '@jridgewell/trace-mapping': 0.2.5
       '@rollup/plugin-alias': 3.1.9_rollup@2.62.0
       '@rollup/plugin-commonjs': 21.0.1_rollup@2.62.0
       '@rollup/plugin-dynamic-import-vars': 1.4.2_rollup@2.62.0
@@ -872,7 +879,6 @@ importers:
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.1_rollup@2.62.0
       sirv: 2.0.2
-      source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.10.0_acorn@8.7.0
@@ -993,11 +999,11 @@ packages:
       '@algolia/requester-common': 4.11.0
     dev: true
 
-  /@ampproject/remapping/1.1.1:
-    resolution: {integrity: sha512-YVAcA4DKLOj296CF5SrQ8cYiMRiUGc2sqFpLxsDGWE34suHqhGP/5yMsDHKsrh8hs8I5TiRVXNwKPWQpX3iGjw==}
+  /@ampproject/remapping/2.0.2:
+    resolution: {integrity: sha512-sE8Gx+qSDMLoJvb3QarJJlDQK7SSY4rK3hxp4XsiANeFOmjU46ZI7Y9adAQRJrmbz8zbtZkp3mJTT+rGxtF0XA==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      '@jridgewell/resolve-uri': 3.0.3
+      '@jridgewell/trace-mapping': 0.2.5
       sourcemap-codec: 1.4.8
     dev: true
 
@@ -1930,6 +1936,13 @@ packages:
   /@jridgewell/resolve-uri/3.0.3:
     resolution: {integrity: sha512-fuIOnc81C5iRNevb/XPiM8Khp9bVjreydRQ37rt0C/dY0PAW1DRvEM3WrKX/5rStS5lbgwS0FCgqSndh9tvK5w==}
     engines: {node: '>=10.0.0'}
+    dev: true
+
+  /@jridgewell/trace-mapping/0.2.5:
+    resolution: {integrity: sha512-K+Eths78fXDFOvQ2hgJhCiI5s+g81r2yXmACBpbn+f2+Qt94PNoTgUcAXPT8DZkhXCsZRsHVWVtY5KIBMcpDqQ==}
+    dependencies:
+      '@jridgewell/resolve-uri': 3.0.3
+      sourcemap-codec: 1.4.8
     dev: true
 
   /@mapbox/node-pre-gyp/1.0.8:
@@ -5018,7 +5031,7 @@ packages:
       source-map: 0.6.1
       wordwrap: 1.0.0
     optionalDependencies:
-      uglify-js: 3.14.5
+      uglify-js: 3.15.0
     dev: true
 
   /hard-rejection/2.1.0:
@@ -8851,8 +8864,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /uglify-js/3.14.5:
-    resolution: {integrity: sha512-qZukoSxOG0urUTvjc2ERMTcAy+BiFh3weWAkeurLwjrCba73poHmG3E36XEjd/JGukMzwTL7uCxZiAexj8ppvQ==}
+  /uglify-js/3.15.0:
+    resolution: {integrity: sha512-x+xdeDWq7FiORDvyIJ0q/waWd4PhjBNOm5dQUOq2AKC0IEjxOS66Ha9tctiVDGcRQuh69K7fgU5oRuTK4cysSg==}
     engines: {node: '>=0.8.0'}
     hasBin: true
     requiresBuild: true
