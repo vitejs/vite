@@ -1,0 +1,110 @@
+import { promises as fs } from 'fs'
+import type { Plugin } from '../plugin'
+import colors from 'picocolors'
+import { cleanUrl, createDebugger } from '../utils'
+import { isOptimizedDepFile } from '../optimizer'
+import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
+import type { ViteDevServer } from '..'
+
+export const ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT = 'ERR_OPTIMIZE_DEPS_TIMEOUT'
+export const ERROR_CODE_OPTIMIZE_DEPS_OUTDATED = 'ERR_OPTIMIZE_DEPS_OUTDATED'
+
+const isDebug = process.env.DEBUG
+const debug = createDebugger('vite:optimize-deps')
+
+export function optimizedDepsPlugin(): Plugin {
+  let server: ViteDevServer | undefined
+
+  return {
+    name: 'vite:optimized-deps',
+
+    configureServer(_server) {
+      server = _server
+    },
+
+    apply: 'serve',
+
+    async load(id) {
+      if (server && isOptimizedDepFile(id, server.config)) {
+        const metadata = server?._optimizeDepsMetadata
+        if (metadata) {
+          const file = cleanUrl(id)
+          const info = optimizeDepInfoFromFile(metadata, file)
+          if (info) {
+            try {
+              // This is an entry point, it may still not be bundled
+              await info.processing
+            } catch {
+              // If the refresh has not happened after timeout, Vite considers
+              // something unexpected has happened. In this case, Vite
+              // returns an empty response that will error.
+              optimizeDepsTimeout(id)
+              return
+            }
+            const newMetadata = server._optimizeDepsMetadata
+            if (metadata !== newMetadata) {
+              const currentInfo = optimizeDepInfoFromFile(newMetadata!, file)
+              if (info.browserHash !== currentInfo?.browserHash) {
+                outdatedTimeout(id)
+              }
+            }
+          }
+          isDebug && debug(`load ${colors.cyan(file)}`)
+          // Load the file from the cache instead of waiting for other plugin
+          // load hooks to avoid race conditions, once processing is resolved,
+          // we are sure that the file has been properly save to disk
+          try {
+            return await fs.readFile(file, 'utf-8')
+          } catch (e) {
+            // Outdated non-entry points (CHUNK), loaded after a rerun
+            outdatedTimeout(id)
+          }
+        }
+      }
+    }
+  }
+}
+
+function optimizeDepsTimeout(id: string) {
+  const err: any = new Error(
+    `Something unexpected happened while optimizing "${id}". ` +
+      `The current page should have reloaded by now`
+  )
+  err.code = ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT
+  // This error will be catched by the transform middleware that will
+  // send a 408 (request timeout) response to the browser
+  throw new Error(err)
+}
+
+function outdatedTimeout(id: string) {
+  const err: any = new Error(
+    `There is a new version of the pre-bundle for "${id}", ` +
+      `a page reload is going to ask for it.`
+  )
+  err.code = ERROR_CODE_OPTIMIZE_DEPS_OUTDATED
+  // This error will be catched by the transform middleware that will
+  // send a 408 (request timeout) response to the browser
+  throw new Error(err)
+}
+
+function optimizeDepInfoFromFile(
+  metadata: DepOptimizationMetadata,
+  file: string
+): OptimizedDepInfo | undefined {
+  return (
+    findFileInfo(metadata.optimized, file) ||
+    findFileInfo(metadata.discovered, file)
+  )
+}
+
+function findFileInfo(
+  dependenciesInfo: Record<string, OptimizedDepInfo>,
+  file: string
+): OptimizedDepInfo | undefined {
+  for (const o of Object.keys(dependenciesInfo)) {
+    const info = dependenciesInfo[o]
+    if (info.file === file) {
+      return info
+    }
+  }
+}

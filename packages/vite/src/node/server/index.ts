@@ -44,7 +44,7 @@ import { transformRequest } from './transformRequest'
 import type { ESBuildTransformResult } from '../plugins/esbuild'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import type { DepOptimizationMetadata } from '../optimizer'
+import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
 import { optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
@@ -280,17 +280,13 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _isRunningOptimizer: boolean
-  /**
-   * @internal
-   */
   _registerMissingImport:
-    | ((id: string, resolved: string, ssr: boolean | undefined) => void)
+    | ((
+        id: string,
+        resolved: string,
+        ssr: boolean | undefined
+      ) => OptimizedDepInfo)
     | null
-  /**
-   * @internal
-   */
-  _pendingReload: Promise<void> | null
   /**
    * @internal
    */
@@ -361,12 +357,17 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null!, // to be immediately set
-    ssrLoadModule(url) {
+    async ssrLoadModule(url) {
+      let configFileDependencies: string[] = []
+      const optimizeDepsMetadata = server._optimizeDepsMetadata
+      if (optimizeDepsMetadata) {
+        await optimizeDepsMetadata.processing
+        configFileDependencies = Object.keys(optimizeDepsMetadata.optimized)
+      }
+
       server._ssrExternals ||= resolveSSRExternal(
         config,
-        server._optimizeDepsMetadata
-          ? Object.keys(server._optimizeDepsMetadata.optimized)
-          : []
+        configFileDependencies
       )
       return ssrLoadModule(url, server)
     },
@@ -416,9 +417,7 @@ export async function createServer(
     _globImporters: Object.create(null),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _isRunningOptimizer: false,
     _registerMissingImport: null,
-    _pendingReload: null,
     _pendingRequests: new Map()
   }
 
@@ -561,15 +560,18 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const runOptimize = async () => {
-    server._isRunningOptimizer = true
-    try {
-      server._optimizeDepsMetadata = await optimizeDeps(
-        config,
-        config.server.force || server._forceOptimizeOnRestart
-      )
-    } finally {
-      server._isRunningOptimizer = false
+    server._optimizeDepsMetadata = await optimizeDeps(
+      config,
+      config.server.force || server._forceOptimizeOnRestart
+    )
+
+    if (server.config?.optimizeDeps?.holdBackServerStart) {
+      await server._optimizeDepsMetadata?.processing
     }
+
+    // While running the first optimizeDeps, _registerMissingImport is null
+    // so the resolve plugin resolves straight to node_modules during the
+    // deps discovery scan phase
     server._registerMissingImport = createMissingImporterRegisterFn(server)
   }
 

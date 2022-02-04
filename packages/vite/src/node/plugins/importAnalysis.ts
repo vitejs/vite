@@ -45,6 +45,7 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
+import { isOptimizedDepFile, createIsOptimizedDepUrl } from '../optimizer'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -53,6 +54,8 @@ const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
+
+const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
 
 function isExplicitImportRequired(url: string) {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
@@ -99,12 +102,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
 
   let server: ViteDevServer
+  let isOptimizedDepUrl: (url: string) => boolean
 
   return {
     name: 'vite:import-analysis',
 
     configureServer(_server) {
       server = _server
+      isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
     },
 
     async transform(source, importer, options) {
@@ -244,11 +249,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // mark non-js/css imports with `?import`
           url = markExplicitImport(url)
 
+          // If the url isn't a request for a pre-bundled common chunk,
           // for relative js/css imports, or self-module virtual imports
           // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
+          if (
+            (isRelative || isSelfImport) &&
+            !(isOptimizedDepUrl(url) && optimizedDepChunkRE.test(url)) &&
+            !/[\?&]import=?\b/.test(url)
+          ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -396,7 +406,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             specifier,
             start
           )
-          let url = normalizedUrl
+          const url = normalizedUrl
 
           // record as safe modules
           server?.moduleGraph.safeModulesPath.add(
@@ -405,28 +415,46 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // rewrite
           if (url !== specifier) {
-            // for optimized cjs deps, support named imports by rewriting named
-            // imports to const assignments.
-            if (resolvedId.endsWith(`&es-interop`)) {
-              url = url.slice(0, -11)
-              if (isDynamicImport) {
-                // rewrite `import('package')` to expose the default directly
-                str().overwrite(
-                  dynamicIndex,
-                  end + 1,
-                  `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
-                )
-              } else {
-                const exp = source.slice(expStart, expEnd)
-                const rewritten = transformCjsImport(exp, url, rawUrl, index)
-                if (rewritten) {
-                  str().overwrite(expStart, expEnd, rewritten)
+            let rewriteDone = false
+            if (isOptimizedDepFile(resolvedId, config)) {
+              // for optimized cjs deps, support named imports by rewriting named
+              // imports to const assignments.
+              const optimizeDepsMetadata = server._optimizeDepsMetadata!
+              const { optimized } = optimizeDepsMetadata
+
+              // The browserHash in resolvedId could be stale in which case there will be a full
+              // page reload. We could return a 404 in that case but it is safe to return the request
+              const file = cleanUrl(resolvedId) // Remove ?v={hash}
+              const dep = Object.keys(optimized).find(
+                (k) => optimized[k].file === file
+              )
+
+              // Wait until the dependency has been pre-bundled
+              dep && (await optimized[dep].processing)
+
+              if (dep && optimized[dep].needsInterop) {
+                debug(`${dep} needs interop`)
+                if (isDynamicImport) {
+                  // rewrite `import('package')` to expose the default directly
+                  str().overwrite(
+                    dynamicIndex,
+                    end + 1,
+                    `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
+                  )
                 } else {
-                  // #1439 export * from '...'
-                  str().overwrite(start, end, url)
+                  const exp = source.slice(expStart, expEnd)
+                  const rewritten = transformCjsImport(exp, url, rawUrl, index)
+                  if (rewritten) {
+                    str().overwrite(expStart, expEnd, rewritten)
+                  } else {
+                    // #1439 export * from '...'
+                    str().overwrite(start, end, url)
+                  }
                 }
+                rewriteDone = true
               }
-            } else {
+            }
+            if (!rewriteDone) {
               str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
             }
           }

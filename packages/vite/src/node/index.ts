@@ -32,7 +32,9 @@ export type {
 } from './preview'
 export type {
   DepOptimizationMetadata,
-  DepOptimizationOptions
+  DepOptimizationOptions,
+  OptimizedDepInfo,
+  OptimizeDepsResult
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'

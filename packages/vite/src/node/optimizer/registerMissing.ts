@@ -1,5 +1,16 @@
 import colors from 'picocolors'
-import { optimizeDeps } from '.'
+import {
+  optimizeDeps,
+  optimizedFilePath,
+  optimizedBrowserHash,
+  depsFromOptimizedInfo,
+  newProcessingPromise
+} from '.'
+import type {
+  DepOptimizationMetadata,
+  OptimizedDepInfo,
+  OptimizeDepsResult
+} from '.'
 import type { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
@@ -11,21 +22,29 @@ const debounceMs = 100
 
 export function createMissingImporterRegisterFn(
   server: ViteDevServer
-): (id: string, resolved: string, ssr?: boolean) => void {
+): (id: string, resolved: string, ssr?: boolean) => OptimizedDepInfo {
   const { logger } = server.config
-  let knownOptimized = server._optimizeDepsMetadata!.optimized
-  let currentMissing: Record<string, string> = {}
-  let handle: NodeJS.Timeout | undefined
+  let metadata = server._optimizeDepsMetadata!
 
-  let pendingResolve: (() => void) | null = null
+  let handle: NodeJS.Timeout | undefined
+  let needFullReload: boolean = false
+
+  let processingMissingDeps = newProcessingPromise()
 
   async function rerun(ssr: boolean | undefined) {
-    const newDeps = currentMissing
-    currentMissing = {}
+    // debounce time to wait for new missing deps finished, issue a new
+    // optimization of deps (both old and newly found) once the previous
+    // optimizeDeps processing is finished
+    await metadata.processing
+
+    // New deps could have been found here, clear the timeout to already
+    // consider them in this run
+    if (handle) clearTimeout(handle)
+    handle = undefined
 
     logger.info(
       colors.yellow(
-        `new dependencies found: ${Object.keys(newDeps).join(
+        `new dependencies found: ${Object.keys(metadata.discovered).join(
           ', '
         )}, updating...`
       ),
@@ -34,50 +53,79 @@ export function createMissingImporterRegisterFn(
       }
     )
 
-    for (const id in knownOptimized) {
-      newDeps[id] = knownOptimized[id].src
-    }
+    // All deps, previous known and newly discovered are rebundled,
+    // respect insertion order to keep the metadata file stable
+    const newDeps = { ...metadata.optimized, ...metadata.discovered }
+    const newDepsProcessing = processingMissingDeps
+    let processingResult: OptimizeDepsResult | undefined
+
+    processingMissingDeps = newProcessingPromise()
+
+    let newData: DepOptimizationMetadata | null = null
 
     try {
-      // Nullify previous metadata so that the resolver won't
-      // resolve to optimized files during the optimizer re-run
-      server._isRunningOptimizer = true
-      server._optimizeDepsMetadata = null
+      // During optimizer re-run, the resolver may continue to discover
+      // optimized files. If we directly resolve to node modules there
+      // is no way to avoid a full-page reload
 
-      const newData = (server._optimizeDepsMetadata = await optimizeDeps(
+      newData = server._optimizeDepsMetadata = await optimizeDeps(
         server.config,
         true,
         false,
+        metadata,
         newDeps,
-        ssr
-      ))
-      knownOptimized = newData!.optimized
+        ssr,
+        newDepsProcessing
+      )
+
+      // While optimizeDeps is running, new missing deps may be discovered,
+      // in which case they will keep being added to metadata.discovered
+      for (const o of Object.keys(metadata.discovered)) {
+        if (!newData.optimized[o] && !newData.discovered[o]) {
+          newData.discovered[o] = metadata.discovered[o]
+          delete metadata.discovered[o]
+        }
+      }
+      metadata = newData
 
       // update ssr externals
       if (ssr) {
         server._ssrExternals = resolveSSRExternal(
           server.config,
-          Object.keys(knownOptimized)
+          Object.keys(metadata.optimized)
         )
       }
 
-      logger.info(colors.green(`✨ dependencies updated, reloading page...`), {
-        timestamp: true
-      })
+      processingResult = await newData!.processing
     } catch (e) {
       logger.error(
         colors.red(`error while updating dependencies:\n${e.stack}`),
         { timestamp: true, error: e }
       )
-    } finally {
-      server._isRunningOptimizer = false
-      if (!handle) {
-        // No other rerun() pending so resolve and let pending requests proceed
-        pendingResolve && pendingResolve()
-        server._pendingReload = pendingResolve = null
-      }
+      fullReload()
+      return
     }
 
+    if (!needFullReload && processingResult?.stableFiles !== false) {
+      logger.info(colors.green(`✨ new dependencies pre-bundled...`), {
+        timestamp: true
+      })
+    } else {
+      logger.info(colors.green(`✨ dependencies updated, reloading page...`), {
+        timestamp: true
+      })
+
+      if (handle) {
+        // There are newly discovered deps, and another rerun is about to be
+        // excecuted. Avoid the current full reload, but queue it for the next one
+        needFullReload = true
+      } else {
+        fullReload()
+      }
+    }
+  }
+
+  function fullReload() {
     // Cached transform results have stale imports (resolved to
     // old locations) so they need to be invalidated before the page is
     // reloaded.
@@ -87,25 +135,50 @@ export function createMissingImporterRegisterFn(
       type: 'full-reload',
       path: '*'
     })
+
+    needFullReload = false
   }
 
   return function registerMissingImport(
     id: string,
     resolved: string,
     ssr?: boolean
-  ) {
-    if (!knownOptimized[id]) {
-      currentMissing[id] = resolved
-      if (handle) clearTimeout(handle)
-      handle = setTimeout(() => {
-        handle = undefined
-        rerun(ssr)
-      }, debounceMs)
-      if (!server._pendingReload) {
-        server._pendingReload = new Promise((r) => {
-          pendingResolve = r
-        })
-      }
+  ): OptimizedDepInfo {
+    const optimized = metadata.optimized[id]
+    if (optimized) {
+      return optimized
     }
+    let missing = metadata.discovered[id]
+    if (missing) {
+      // We are already discover this dependency, and it will be processed in
+      // the next rerun call
+      return missing
+    }
+    missing = metadata.discovered[id] = {
+      file: optimizedFilePath(id, server.config.cacheDir),
+      src: resolved,
+      // Assing a browserHash to this missing dependency that is unique to
+      // the current state of known + missing deps. If the optimizeDeps stage
+      // ends up with stable paths for the new dep, then we don't need a
+      // full page reload and this browserHash will be kept
+      browserHash: optimizedBrowserHash(
+        server._optimizeDepsMetadata!.hash,
+        depsFromOptimizedInfo(metadata.optimized),
+        depsFromOptimizedInfo(metadata.discovered)
+      ),
+      // loading of this pre-bundle dep needs to await for its processing
+      // promise to be resolved
+      processing: processingMissingDeps.promise
+    }
+
+    if (handle) clearTimeout(handle)
+    handle = setTimeout(() => {
+      handle = undefined
+      rerun(ssr)
+    }, debounceMs)
+
+    // Return the path for the optimized bundle, this path is known before
+    // esbuild is run to generate the pre-bundle
+    return missing
   }
 }

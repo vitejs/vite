@@ -51,6 +51,12 @@ export interface DepOptimizationOptions {
    */
   exclude?: string[]
   /**
+   * Hold back server start when doing the initial pre-bundling.
+   * Default is false. Set to true for testing purposes, or in situations
+   * where the pre Vite 2.9 strategy is required
+   */
+  holdBackServerStart?: boolean
+  /**
    * Options to pass to esbuild during the dep scanning and optimization
    *
    * Certain options are omitted since changing them would not be compatible
@@ -81,6 +87,29 @@ export interface DepOptimizationOptions {
   keepNames?: boolean
 }
 
+export interface OptimizeDepsResult {
+  /**
+   * After a re-optimization, the internal bundled chunks may change
+   * and a full page reload is required if that is the case
+   * If the files are stable, we can avoid the reload that is expensive
+   * for large applications
+   */
+  stableFiles: boolean
+}
+
+export interface OptimizedDepInfo {
+  file: string
+  src: string
+  needsInterop?: boolean
+  browserHash?: string
+  fileHash?: string
+  /**
+   * During optimization, ids can still be resolved to their final location
+   * but the bundles may not yet be saved to disk
+   */
+  processing: Promise<OptimizeDepsResult | undefined>
+}
+
 export interface DepOptimizationMetadata {
   /**
    * The main hash is determined by user config and dependency lockfiles.
@@ -93,23 +122,33 @@ export interface DepOptimizationMetadata {
    * optimized deps.
    */
   browserHash: string
-  optimized: Record<
-    string,
-    {
-      file: string
-      src: string
-      needsInterop: boolean
-    }
-  >
+  /**
+   * Metadata for each already optimized dependency
+   */
+  optimized: Record<string, OptimizedDepInfo>
+  /**
+   * Metadata for each newly discovered dependency after processing
+   */
+  discovered: Record<string, OptimizedDepInfo>
+  /**
+   * During optimization, ids can still be resolved to their final location
+   * but the bundles may not yet be saved to disk
+   */
+  processing: Promise<OptimizeDepsResult | undefined>
 }
 
 export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
   asCommand = false,
-  newDeps?: Record<string, string>, // missing imports encountered after server has started
-  ssr?: boolean
-): Promise<DepOptimizationMetadata | null> {
+  currentData: DepOptimizationMetadata | null = null,
+  newDeps?: Record<string, OptimizedDepInfo>, // missing imports encountered after server has started
+  ssr?: boolean,
+  processing: {
+    promise: Promise<OptimizeDepsResult | undefined>
+    resolve: (result?: OptimizeDepsResult) => void
+  } = newProcessingPromise()
+): Promise<DepOptimizationMetadata> {
   config = {
     ...config,
     command: 'build'
@@ -120,10 +159,13 @@ export async function optimizeDeps(
 
   const dataPath = path.join(cacheDir, '_metadata.json')
   const mainHash = getDepHash(root, config)
+
   const data: DepOptimizationMetadata = {
     hash: mainHash,
     browserHash: mainHash,
-    optimized: {}
+    optimized: {},
+    discovered: {},
+    processing: processing.promise
   }
 
   if (!force) {
@@ -134,7 +176,11 @@ export async function optimizeDeps(
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
-      return prevData
+      for (const o of Object.keys(prevData.optimized)) {
+        prevData.optimized[o].processing = processing.promise
+      }
+      setTimeout(() => processing.resolve(), 0)
+      return { ...prevData, discovered: {}, processing: processing.promise }
     }
   }
 
@@ -150,183 +196,316 @@ export async function optimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  let deps: Record<string, string>, missing: Record<string, string>
+  let deps: Record<string, string>
   if (!newDeps) {
+    // Initial optimizeDeps at server start. Perform a fast scan using esbuild to
+    // find deps to pre-bundle and include user harcoded dependencies
+
+    let missing: Record<string, string>
     ;({ deps, missing } = await scanImports(config))
-  } else {
-    deps = newDeps
-    missing = {}
-  }
 
-  // update browser hash
-  data.browserHash = createHash('sha256')
-    .update(data.hash + JSON.stringify(deps))
-    .digest('hex')
-    .substring(0, 8)
-
-  const missingIds = Object.keys(missing)
-  if (missingIds.length) {
-    throw new Error(
-      `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
-        .map(
-          (id) =>
-            `${colors.cyan(id)} ${colors.white(
-              colors.dim(`(imported by ${missing[id]})`)
-            )}`
-        )
-        .join(`\n  `)}\n\nAre they installed?`
-    )
-  }
-
-  const include = config.optimizeDeps?.include
-  if (include) {
-    const resolve = config.createResolver({ asSrc: false })
-    for (const id of include) {
-      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
-      // and for pretty printing
-      const normalizedId = normalizeId(id)
-      if (!deps[normalizedId]) {
-        const entry = await resolve(id)
-        if (entry) {
-          deps[normalizedId] = entry
-        } else {
-          throw new Error(
-            `Failed to resolve force included dependency: ${colors.cyan(id)}`
+    const missingIds = Object.keys(missing)
+    if (missingIds.length) {
+      processing.resolve()
+      throw new Error(
+        `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
+          .map(
+            (id) =>
+              `${colors.cyan(id)} ${colors.white(
+                colors.dim(`(imported by ${missing[id]})`)
+              )}`
           )
+          .join(`\n  `)}\n\nAre they installed?`
+      )
+    }
+
+    const include = config.optimizeDeps?.include
+    if (include) {
+      const resolve = config.createResolver({ asSrc: false })
+      for (const id of include) {
+        // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
+        // and for pretty printing
+        const normalizedId = normalizeId(id)
+        if (!deps[normalizedId]) {
+          const entry = await resolve(id)
+          if (entry) {
+            deps[normalizedId] = entry
+          } else {
+            processing.resolve()
+            throw new Error(
+              `Failed to resolve force included dependency: ${colors.cyan(id)}`
+            )
+          }
         }
       }
     }
-  }
 
-  const qualifiedIds = Object.keys(deps)
+    // update browser hash
+    data.browserHash = optimizedBrowserHash(data.hash, deps)
 
-  if (!qualifiedIds.length) {
-    writeFile(dataPath, JSON.stringify(data, null, 2))
-    log(`No dependencies to bundle. Skipping.\n\n\n`)
-    return data
-  }
-
-  const total = qualifiedIds.length
-  const maxListed = 5
-  const listed = Math.min(total, maxListed)
-  const extra = Math.max(0, total - maxListed)
-  const depsString = colors.yellow(
-    qualifiedIds.slice(0, listed).join(`\n  `) +
-      (extra > 0 ? `\n  (...and ${extra} more)` : ``)
-  )
-  if (!asCommand) {
-    if (!newDeps) {
-      // This is auto run on server start - let the user know that we are
-      // pre-optimizing deps
-      logger.info(colors.green(`Pre-bundling dependencies:\n  ${depsString}`))
-      logger.info(
-        `(this will be run only when your dependencies or config have changed)`
-      )
+    // We generate the mapping of dependency ids to their cache file location
+    // before processing the dependencies with esbuild. This allow us to continue
+    // processing files in the importAnalysis and resolve plugins
+    for (const id in deps) {
+      const entry = deps[id]
+      data.optimized[id] = {
+        file: optimizedFilePath(id, cacheDir),
+        src: entry,
+        browserHash: data.browserHash,
+        processing: processing.promise
+      }
     }
   } else {
-    logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
-  }
+    // Missing dependencies were found at run-time, optimizeDeps called while the
+    // server is running
+    deps = depsFromOptimizedInfo(newDeps)
 
-  // esbuild generates nested directory output with lowest common ancestor base
-  // this is unpredictable and makes it difficult to analyze entry / output
-  // mapping. So what we do here is:
-  // 1. flatten all ids to eliminate slash
-  // 2. in the plugin, read the entry ourselves as virtual files to retain the
-  //    path.
-  const flatIdDeps: Record<string, string> = {}
-  const idToExports: Record<string, ExportsData> = {}
-  const flatIdToExports: Record<string, ExportsData> = {}
-
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
-
-  await init
-  for (const id in deps) {
-    const flatId = flattenId(id)
-    const filePath = (flatIdDeps[flatId] = deps[id])
-    const entryContent = fs.readFileSync(filePath, 'utf-8')
-    let exportsData: ExportsData
-    try {
-      exportsData = parse(entryContent) as ExportsData
-    } catch {
-      debug(
-        `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
-      )
-      const transformed = await transformWithEsbuild(entryContent, filePath, {
-        loader: 'jsx'
-      })
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader
-      }
-      exportsData = parse(transformed.code) as ExportsData
+    // Clone optimized info objects, fileHash, browserHash may be changed for them
+    for (const o of Object.keys(newDeps)) {
+      data.optimized[o] = { ...newDeps[o] }
     }
-    for (const { ss, se } of exportsData[0]) {
-      const exp = entryContent.slice(ss, se)
-      if (/export\s+\*\s+from/.test(exp)) {
-        exportsData.hasReExports = true
-      }
+
+    // update global browser hash, but keep newDeps individual hashs until we know
+    // if files are stable so we can avoid a full page reload
+    data.browserHash = optimizedBrowserHash(data.hash, deps)
+  }
+
+  // We prebundle dependencies with esbuild and cache them, but there is no need
+  // to wait here. Code that needs to access the cached deps needs to await
+  // the optimizeDepsMetadata.processing promise
+  prebundleDeps()
+
+  return data
+
+  async function prebundleDeps() {
+    const qualifiedIds = Object.keys(deps)
+
+    if (!qualifiedIds.length) {
+      writeFile(dataPath, JSON.stringify(data, null, 2))
+      log(`No dependencies to bundle. Skipping.\n\n\n`)
+      processing.resolve()
+      return data
     }
-    idToExports[id] = exportsData
-    flatIdToExports[flatId] = exportsData
-  }
 
-  const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(config.mode)
-  }
-  for (const key in config.define) {
-    const value = config.define[key]
-    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
-  }
+    const total = qualifiedIds.length
+    const maxListed = 5
+    const listed = Math.min(total, maxListed)
+    const extra = Math.max(0, total - maxListed)
+    const depsString = colors.yellow(
+      qualifiedIds.slice(0, listed).join(`\n  `) +
+        (extra > 0 ? `\n  (...and ${extra} more)` : ``)
+    )
+    if (!asCommand) {
+      if (!newDeps) {
+        // This is auto run on server start - let the user know that we are
+        // pre-optimizing deps
+        logger.info(colors.green(`Pre-bundling dependencies:\n  ${depsString}`))
+        logger.info(
+          `(this will be run only when your dependencies or config have changed)`
+        )
+      }
+    } else {
+      logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+    }
 
-  const start = performance.now()
+    // esbuild generates nested directory output with lowest common ancestor base
+    // this is unpredictable and makes it difficult to analyze entry / output
+    // mapping. So what we do here is:
+    // 1. flatten all ids to eliminate slash
+    // 2. in the plugin, read the entry ourselves as virtual files to retain the
+    //    path.
+    const flatIdDeps: Record<string, string> = {}
+    const idToExports: Record<string, ExportsData> = {}
+    const flatIdToExports: Record<string, ExportsData> = {}
 
-  const result = await build({
-    absWorkingDir: process.cwd(),
-    entryPoints: Object.keys(flatIdDeps),
-    bundle: true,
-    format: 'esm',
-    target: config.build.target || undefined,
-    external: config.optimizeDeps?.exclude,
-    logLevel: 'error',
-    splitting: true,
-    sourcemap: true,
-    outdir: cacheDir,
-    ignoreAnnotations: true,
-    metafile: true,
-    define,
-    plugins: [
-      ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
-    ],
-    ...esbuildOptions
-  })
+    const { plugins = [], ...esbuildOptions } =
+      config.optimizeDeps?.esbuildOptions ?? {}
 
-  const meta = result.metafile!
+    await init
+    for (const id in deps) {
+      const flatId = flattenId(id)
+      const filePath = (flatIdDeps[flatId] = deps[id])
+      const entryContent = fs.readFileSync(filePath, 'utf-8')
+      let exportsData: ExportsData
+      try {
+        exportsData = parse(entryContent) as ExportsData
+      } catch {
+        debug(
+          `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
+        )
+        const transformed = await transformWithEsbuild(entryContent, filePath, {
+          loader: 'jsx'
+        })
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+        // This is useful for packages such as Gatsby.
+        esbuildOptions.loader = {
+          '.js': 'jsx',
+          ...esbuildOptions.loader
+        }
+        exportsData = parse(transformed.code) as ExportsData
+      }
+      for (const { ss, se } of exportsData[0]) {
+        const exp = entryContent.slice(ss, se)
+        if (/export\s+\*\s+from/.test(exp)) {
+          exportsData.hasReExports = true
+        }
+      }
+      idToExports[id] = exportsData
+      flatIdToExports[flatId] = exportsData
+    }
 
-  // the paths in `meta.outputs` are relative to `process.cwd()`
-  const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
+    const define: Record<string, string> = {
+      'process.env.NODE_ENV': JSON.stringify(config.mode)
+    }
+    for (const key in config.define) {
+      const value = config.define[key]
+      define[key] = typeof value === 'string' ? value : JSON.stringify(value)
+    }
 
-  for (const id in deps) {
-    const entry = deps[id]
-    data.optimized[id] = {
-      file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
-      src: entry,
-      needsInterop: needsInterop(
+    const start = performance.now()
+
+    const result = await build({
+      absWorkingDir: process.cwd(),
+      entryPoints: Object.keys(flatIdDeps),
+      bundle: true,
+      format: 'esm',
+      target: config.build.target || undefined,
+      external: config.optimizeDeps?.exclude,
+      logLevel: 'error',
+      splitting: true,
+      sourcemap: true,
+      outdir: cacheDir,
+      ignoreAnnotations: true,
+      metafile: true,
+      define,
+      plugins: [
+        ...plugins,
+        esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
+      ],
+      ...esbuildOptions
+    })
+
+    const meta = result.metafile!
+
+    // the paths in `meta.outputs` are relative to `process.cwd()`
+    const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
+
+    for (const id in deps) {
+      const optimizedInfo = data.optimized[id]
+      optimizedInfo.needsInterop = needsInterop(
         id,
         idToExports[id],
         meta.outputs,
         cacheDirOutputPath
       )
+      const output =
+        meta.outputs[path.relative(process.cwd(), optimizedInfo.file)]
+      if (output) {
+        // We only need to hash the output.imports in to check for stability, but adding the hash
+        // and file path gives us a unique hash that may be useful for other things in the future
+        optimizedInfo.fileHash = getHash(
+          data.hash + optimizedInfo.file + JSON.stringify(output.imports)
+        )
+      }
     }
+
+    // This only runs when missing deps are processed. Previous optimized deps are stable if
+    // the newly discovered deps don't have common chunks with them. Comparing their fileHash we
+    // can find out if it is safe to keep the current browser state. If one of the file hashes
+    // changed, a full page reload is needed
+    let stableFiles = true
+    if (currentData) {
+      for (const dep of Object.keys(currentData.optimized)) {
+        const currentInfo = currentData.optimized[dep]
+        const info = data.optimized[dep]
+        stableFiles &&=
+          !!info?.fileHash &&
+          !!currentInfo?.fileHash &&
+          info?.fileHash === currentInfo?.fileHash
+      }
+      debug(`optimized deps have stable files: ${stableFiles}`)
+    }
+
+    if (!stableFiles) {
+      // Overrite individual hashs with the new global browserHash, a full page reload is required
+      // New deps that ended up with a different hash replaced while doing analysis import are going to
+      // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
+      for (const id in deps) {
+        data.optimized[id].browserHash = data.browserHash
+      }
+    }
+
+    writeFile(dataPath, JSON.stringify(data, metadataStringifyReplacer, 2))
+
+    debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
+    processing.resolve({ stableFiles })
   }
+}
 
-  writeFile(dataPath, JSON.stringify(data, null, 2))
+export function newProcessingPromise() {
+  let resolve: (result?: OptimizeDepsResult) => void
+  const promise = new Promise((_resolve) => {
+    resolve = _resolve
+  }) as Promise<OptimizeDepsResult | undefined>
+  return { promise, resolve: resolve! as (result?: OptimizeDepsResult) => void }
+}
 
-  debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
-  return data
+// Convert to { id: src }
+export function depsFromOptimizedInfo(
+  depsInfo: Record<string, OptimizedDepInfo>
+) {
+  return Object.fromEntries(
+    Object.entries(depsInfo).map((d) => [d[0], d[1].src])
+  )
+}
+
+export function optimizedFilePath(id: string, cacheDir: string) {
+  return normalizePath(path.resolve(cacheDir, flattenId(id) + '.js'))
+}
+
+function getHash(text: string) {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}
+
+export function optimizedBrowserHash(
+  hash: string,
+  deps: Record<string, string>,
+  missing?: Record<string, string>
+) {
+  // update browser hash
+  return getHash(
+    hash + JSON.stringify(deps) + (missing ? JSON.stringify(missing) : '')
+  )
+}
+
+export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
+  return id.startsWith(config.cacheDir)
+}
+
+export function createIsOptimizedDepUrl(config: ResolvedConfig) {
+  const { root, cacheDir } = config
+
+  // determine the url prefix of files inside cache directory
+  const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
+  const cacheDirPrefix = cacheDirRelative.startsWith('../')
+    ? // if the cache directory is outside root, the url prefix would be something
+      // like '/@fs/absolute/path/to/node_modules/.vite'
+      `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+    : // if the cache directory is inside root, the url prefix would be something
+      // like '/node_modules/.vite'
+      `/${cacheDirRelative}`
+
+  return cacheDirPrefix
+    ? function isOptimizedDepUrl(url: string): boolean {
+        return url.startsWith(cacheDirPrefix)
+      }
+    : function isOptimizedDepUrl(url: string): boolean {
+        return false
+      }
+}
+
+function metadataStringifyReplacer(key: string, value: any) {
+  return key !== 'processing' && key !== 'discovered' ? value : undefined
 }
 
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
