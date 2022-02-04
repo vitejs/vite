@@ -41,11 +41,5 @@
     "name": "divriots",
     "href": "https://divriots.com/",
     "src": "/divriots.png"
-  },
-  {
-    "id": "finclip",
-    "name": "FinClip",
-    "href": "https://finclip.com/?from=vite",
-    "src": "/finclip.png"
   }
 ]
