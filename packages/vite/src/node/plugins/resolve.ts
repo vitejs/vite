@@ -133,7 +133,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       if (asSrc && isOptimizedDepUrl?.(id)) {
         return id.startsWith(FS_PREFIX)
           ? fsPathFromId(id)
-          : path.resolve(root, id.slice(1))
+          : normalizePath(ensureVolumeInPath(path.resolve(root, id.slice(1))))
       }
 
       // explicit fs paths that starts with /@fs/*
