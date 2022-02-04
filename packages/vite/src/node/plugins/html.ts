@@ -327,7 +327,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     isCSSRequest(url) &&
                     // should not be converted if media attribute is present
                     // see #6748
-                    !node.props.some((p) => p.name === 'media')
+                    !node.props.some((p) => p.name === 'media' || p.name === 'disabled')
                   ) {
                     // CSS references, convert to import
                     js += `\nimport ${JSON.stringify(url)}`
