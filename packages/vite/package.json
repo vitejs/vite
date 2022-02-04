@@ -31,7 +31,7 @@
   "scripts": {
     "dev": "rimraf dist && rollup -c -w",
     "build": "rimraf dist && npm run lint && run-s build-bundle build-types",
-    "build-bundle": "rollup -c",
+    "build-bundle": "node scripts/build.js",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "ci-build": "rimraf dist && run-s build-bundle build-types",
