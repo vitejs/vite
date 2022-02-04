@@ -305,3 +305,12 @@ Install the extension in VS Code and navigate to your app root. Open the Static 
 Follow the wizard started by the extension to give your app a name, choose a framework preset, and designate the app root (usually `/`) and built file location `/dist`. The wizard will run and will create a GitHub action in your repo in a `.github` folder.
 
 The action will work to deploy your app (watch its progress in your repo's Actions tab) and, when successfully completed, you can view your app in the address provided in the extension's progress window by clicking the 'Browse Website' button that appears when the GitHub action has run.
+
+## Render
+
+1. On [Render](https://render.com/) setup a new Static Site using your GitHub/GitLab repo with the following settings:
+
+   - **Build Command:** `vite build` or `npm run build`
+   - **Publish directory:** `./dist`
+
+3. Hit the Create Static Site button.
