@@ -234,8 +234,13 @@ async function nodeImport(
   const unhookNodeResolve = hookNodeResolve(
     (nodeResolve) => (id, parent, isMain, options) => {
       // Use the Vite resolver only for bare imports while skipping
-      // any built-in modules and binary modules.
-      if (!bareImportRE.test(id) || isBuiltin(id) || id.endsWith('.node')) {
+      // any absolute paths, built-in modules and binary modules.
+      if (
+        !bareImportRE.test(id) ||
+        path.isAbsolute(id) ||
+        isBuiltin(id) ||
+        id.endsWith('.node')
+      ) {
         return nodeResolve(id, parent, isMain, options)
       }
       if (parent) {
