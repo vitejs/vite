@@ -479,7 +479,7 @@ export function optimizedBrowserHash(
 }
 
 export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
-  return id.startsWith(config.cacheDir)
+  return id.startsWith(normalizePath(config.cacheDir))
 }
 
 export function createIsOptimizedDepUrl(config: ResolvedConfig) {
