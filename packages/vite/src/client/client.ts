@@ -232,10 +232,12 @@ socket.addEventListener('close', async ({ wasClean }) => {
 
 // https://wicg.github.io/construct-stylesheets
 const supportsConstructedSheet = (() => {
-  try {
-    // new CSSStyleSheet()
-    // return true
-  } catch (e) {}
+  // TODO: re-enable this try block once Chrome fixes the performance of
+  // rule insertion in really big stylesheets
+  // try {
+  //   new CSSStyleSheet()
+  //   return true
+  // } catch (e) {}
   return false
 })()
 
