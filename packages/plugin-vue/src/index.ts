@@ -98,7 +98,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     customElement,
     reactivityTransform,
     root: process.cwd(),
-    sourceMap: true
+    sourceMap: true,
+    resolveAbsoluteUrls: true
   }
 
   // Temporal handling for 2.7 breaking change
