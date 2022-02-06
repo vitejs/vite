@@ -64,6 +64,7 @@ export interface ResolvedOptions extends Options {
   root: string
   sourceMap: boolean
   devServer?: ViteDevServer
+  resolveAbsoluteUrls: boolean
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
@@ -135,7 +136,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction
+        isProduction: config.isProduction,
+        resolveAbsoluteUrls: config.resolve?.absoluteUrls ?? true
       }
     },
 
