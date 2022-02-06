@@ -10,12 +10,13 @@
 </div>
 
 <script type="module">
-  const start = Date.now()
+  const startModule = Date.now()
   text('.fetch-json-module pre', await (await fetch('/json-module')).text())
-  text('.fetch-json-module code', Date.now() - start)
+  text('.fetch-json-module code', Date.now() - startModule)
 
+  const startFs = Date.now()
   text('.fetch-json-fs pre', await (await fetch('/json-fs')).text())
-  text('.fetch-json-fs code', Date.now() - start)
+  text('.fetch-json-fs code', Date.now() - startFs)
   function text(sel, text) {
     document.querySelector(sel).textContent = text
   }
