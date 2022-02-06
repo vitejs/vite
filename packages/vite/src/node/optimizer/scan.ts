@@ -181,6 +181,10 @@ function esbuildScanPlugin(
     '@vite/env'
   ]
 
+  const canOptimize = (id: string) =>
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    !!config.optimizeDeps.supportedExtensions?.some((ext) => id.endsWith(ext))
+
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
     external: !entries.includes(path)
@@ -218,8 +222,14 @@ function esbuildScanPlugin(
 
       // html types: extract script contents -----------------------------------
       build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
+        const resolved = await resolve(path, importer)
+        if (!resolved) return
+        // It is possible for the scanner to scan html types in node_modules.
+        // If we can optimize this html type, skip it so it's handled by the
+        // bare import resolve, and recorded as optimization dep.
+        if (resolved.includes('node_modules') && canOptimize(resolved)) return
         return {
-          path: await resolve(path, importer),
+          path: resolved,
           namespace: 'html'
         }
       })
@@ -340,7 +350,7 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+              if (canOptimize(resolved)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })

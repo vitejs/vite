@@ -1,5 +1,5 @@
 import path from 'path'
-import type { Loader, Plugin, ImportKind } from 'esbuild'
+import type { Plugin, ImportKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'
 import {
@@ -40,6 +40,12 @@ export function esbuildDepPlugin(
   config: ResolvedConfig,
   ssr?: boolean
 ): Plugin {
+  const allExternalTypes = config.optimizeDeps.supportedExtensions
+    ? externalTypes.filter(
+        (type) => !config.optimizeDeps.supportedExtensions?.includes('.' + type)
+      )
+    : externalTypes
+
   // default resolver which prefers ESM
   const _resolve = config.createResolver({ asSrc: false })
 
@@ -74,7 +80,7 @@ export function esbuildDepPlugin(
       // externalize assets and commonly known non-js file types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer, kind }) => {
           const resolved = await resolve(id, importer, kind)
@@ -181,10 +187,8 @@ export function esbuildDepPlugin(
           }
         }
 
-        let ext = path.extname(entryFile).slice(1)
-        if (ext === 'mjs') ext = 'js'
         return {
-          loader: ext as Loader,
+          loader: 'js',
           contents,
           resolveDir: root
         }
