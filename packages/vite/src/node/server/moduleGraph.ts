@@ -155,8 +155,7 @@ export class ModuleGraph {
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
+  ensureEntryFromResolved([url, resolvedId, meta]: ResolvedUrl): ModuleNode {
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
@@ -173,6 +172,11 @@ export class ModuleGraph {
       fileMappedModules.add(mod)
     }
     return mod
+  }
+
+  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+    const resolvedUrl = await this.resolveUrl(rawUrl, ssr)
+    return this.ensureEntryFromResolved(resolvedUrl)
   }
 
   // some deps, like a css file referenced via @import, don't have its own
