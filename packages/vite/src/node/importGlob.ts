@@ -9,6 +9,7 @@ import {
 } from './plugins/importAnalysisBuild'
 import { cleanUrl } from './utils'
 import type { RollupError } from 'rollup'
+import type { ResolvedUrl } from './server/moduleGraph'
 
 export interface AssertOptions {
   assert?: {
@@ -22,7 +23,7 @@ export async function transformImportGlob(
   importer: string,
   importIndex: number,
   root: string,
-  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  normalizeUrl?: (url: string, pos: number) => Promise<ResolvedUrl>,
   preload = true
 ): Promise<{
   importsString: string
