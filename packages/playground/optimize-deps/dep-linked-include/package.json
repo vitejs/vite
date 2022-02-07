@@ -1,5 +1,6 @@
 {
   "name": "dep-linked-include",
+  "private": true,
   "version": "0.0.0",
   "main": "index.mjs",
   "dependencies": {
