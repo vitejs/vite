@@ -222,7 +222,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
+    hash ?? ''
   }`
 }
 
@@ -518,7 +518,7 @@ export async function processSrcSet(
   )
 
   return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor = descriptor || ''
+    descriptor ??= ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
