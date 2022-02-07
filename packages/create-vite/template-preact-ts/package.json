@@ -1,5 +1,6 @@
 {
   "name": "vite-preact-ts-starter",
+  "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",

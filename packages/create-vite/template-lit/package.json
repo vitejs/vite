@@ -1,5 +1,6 @@
 {
   "name": "vite-lit-starter",
+  "private": true,
   "version": "0.0.0",
   "main": "dist/my-element.es.js",
   "exports": {
