@@ -1,3 +1,12 @@
+# [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
+
+
+### Bug Fixes
+
+* **ssr:** skip vite resolve for windows absolute path ([#6764](https://github.com/vitejs/vite/issues/6764)) ([489a7f1](https://github.com/vitejs/vite/commit/489a7f11e9d89932310025299c1eeb75c5cb4ce6))
+
+
+
 # [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
 
 
