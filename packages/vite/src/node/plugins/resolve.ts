@@ -802,11 +802,6 @@ function resolveDeepImport(
   targetWeb: boolean,
   options: InternalResolveOptions
 ): string | undefined {
-  // id might contain ?query
-  // e.g. when using `<style src="some-pkg/dist/style.css"></style>` in .vue file
-  // the id will be ./dist/style.css?vue&type=style&index=0&src=xxx&lang.css
-  id = id.split('?')[0]
-
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache

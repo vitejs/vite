@@ -616,7 +616,6 @@ importers:
   packages/playground/vue:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
-      css-with-exports-field: ^1.0.0
       js-yaml: ^4.1.0
       less: ^4.1.2
       lodash-es: ^4.17.21
@@ -629,7 +628,6 @@ importers:
       vue: 3.2.26
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      css-with-exports-field: 1.0.0
       js-yaml: 4.1.0
       less: 4.1.2
       pug: 3.0.2
@@ -3810,10 +3808,6 @@ packages:
   /css-unit-converter/1.1.2:
     resolution: {integrity: sha512-IiJwMC8rdZE0+xiEZHeru6YoONC4rfPMqGm2W85jMIbkFvv5nFTwJVFHam2eFrN6txmoUYFAFXiv8ICVeTO0MA==}
     dev: false
-
-  /css-with-exports-field/1.0.0:
-    resolution: {integrity: sha512-YCPKv36/w3+SrxwZ8E1FJXhDGTeGTKQmNA00VSePNTaO4VqSUdgB5XkhLL9qbF07m7Y+3nlTQJL5YLgRoewKFQ==}
-    dev: true
 
   /css/3.0.0:
     resolution: {integrity: sha512-DG9pFfwOrzc+hawpmqX/dHYHJG+Bsdb0klhyi1sDneOgGOXy9wQIC8hzyVp1e4NRYDBdxcylvywPkkXCHAzTyQ==}
