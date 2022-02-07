@@ -68,7 +68,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Release
-        run: pnpm release-${{ github.event.inputs.package }} -- --quiet --type ${{ github.event.inputs.type }}
+        run: pnpm --dir packages/${{ github.event.inputs.package }} release -- --quiet --type ${{ github.event.inputs.type }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

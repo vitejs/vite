@@ -29,13 +29,7 @@
     "build-plugin-vue": "cd packages/plugin-vue && npm run build",
     "build-plugin-react": "cd packages/plugin-react && npm run build",
     "ci-build-vite": "cd packages/vite && npm run ci-build",
-    "ci-docs": "run-s build-vite build-plugin-vue build-docs",
-    "release-vite": "pnpm --dir packages/vite release",
-    "release-plugin-legacy": "pnpm --dir packages/plugin-legacy release",
-    "release-plugin-vue": "pnpm --dir packages/plugin-vue release",
-    "release-plugin-vue-jsx": "pnpm --dir packages/plugin-vue-jsx release",
-    "release-plugin-react": "pnpm --dir packages/plugin-react release",
-    "release-create-vite": "pnpm --dir packages/create-vite release"
+    "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.19.3",
