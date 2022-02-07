@@ -62,7 +62,7 @@ async function main(): Promise<void> {
   if (!targetVersion) {
     const type: string | undefined = args.type
     if (type) {
-      const currentBeta = !currentVersion.includes('beta')
+      const currentBeta = currentVersion.includes('beta')
       if (type === 'stable') {
         // Out of beta
         if (!currentBeta) {
