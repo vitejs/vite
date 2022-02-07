@@ -1,5 +1,6 @@
 {
   "name": "resolve-exports-env",
+  "private": true,
   "version": "1.0.0",
   "exports": {
     "import": {
