@@ -52,6 +52,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm i -g pnpm@6
+      - run: npm i -g yarn # even if the repo is using pnpm, Vite still uses yarn v1 for publishing
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
@@ -59,7 +60,6 @@ jobs:
           cache-dependency-path: "**/pnpm-lock.yaml"
       - name: install
         run: pnpm install --frozen-lockfile --prefer-offline
-
       - name: Creating .npmrc
         run: |
           cat << EOF > "$HOME/.npmrc"
