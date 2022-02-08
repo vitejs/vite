@@ -9,7 +9,8 @@ import {
   DEFAULT_EXTENSIONS,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
+  ENV_PUBLIC_PATH,
+  CLIENT_ENTRY
 } from './constants'
 import resolve from 'resolve'
 import { builtinModules } from 'module'
@@ -139,11 +140,36 @@ export function createDebugger(
   }
 }
 
+function testCaseInsensitiveFS() {
+  if (!CLIENT_ENTRY.endsWith('client.mjs')) {
+    throw new Error(
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`
+    )
+  }
+  if (!fs.existsSync(CLIENT_ENTRY)) {
+    throw new Error(
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+        CLIENT_ENTRY
+    )
+  }
+  return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
+}
+
+export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+
 export const isWindows = os.platform() === 'win32'
+
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  let normalized = path.normalize(id)
+  if (isCaseInsensitiveFS) {
+    normalized = normalized.toLowerCase()
+  }
+  if (isWindows) {
+    normalized = slash(normalized)
+  }
+  return normalized
 }
 
 export function fsPathFromId(id: string): string {
