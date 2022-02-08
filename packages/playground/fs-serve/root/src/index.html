@@ -8,6 +8,10 @@
 <pre class="safe-fetch-status"></pre>
 <pre class="safe-fetch"></pre>
 
+<h2>Safe Fetch Subdirectory</h2>
+<pre class="safe-fetch-subdir-status"></pre>
+<pre class="safe-fetch-subdir"></pre>
+
 <h2>Unsafe Fetch</h2>
 <pre class="unsafe-fetch-status"></pre>
 <pre class="unsafe-fetch"></pre>
@@ -41,6 +45,15 @@
     })
     .then((data) => {
       text('.safe-fetch', JSON.stringify(data))
+    })
+  // inside allowed dir, safe fetch
+  fetch('/src/subdir/safe.txt')
+    .then((r) => {
+      text('.safe-fetch-subdir-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch-subdir', JSON.stringify(data))
     })
 
   // outside of allowed dir, treated as unsafe

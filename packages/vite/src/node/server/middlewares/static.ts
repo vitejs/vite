@@ -13,7 +13,8 @@ import {
   isInternalRequest,
   isWindows,
   slash,
-  isFileReadable
+  isFileReadable,
+  isParentDirectory
 } from '../../utils'
 import { isMatch } from 'micromatch'
 
@@ -154,7 +155,7 @@ export function isFileServingAllowed(
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
+  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
     return true
 
   return false

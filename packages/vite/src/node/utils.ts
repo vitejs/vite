@@ -162,14 +162,7 @@ export const isWindows = os.platform() === 'win32'
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  let normalized = path.normalize(id)
-  if (isCaseInsensitiveFS) {
-    normalized = normalized.toLowerCase()
-  }
-  if (isWindows) {
-    normalized = slash(normalized)
-  }
-  return normalized
+  return path.posix.normalize(isWindows ? slash(id) : id)
 }
 
 export function fsPathFromId(id: string): string {
@@ -183,6 +176,26 @@ export function fsPathFromId(id: string): string {
 
 export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
+}
+
+/**
+ * Check if dir is a parent of file
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param dir - normalized absolute path
+ * @param file - normalized absolute path
+ * @returns true if dir is a parent of file
+ */
+export function isParentDirectory(dir: string, file: string): boolean {
+  if (!dir.endsWith('/')) {
+    dir = `${dir}/`
+  }
+  if (isCaseInsensitiveFS) {
+    dir = dir.toLowerCase()
+    file = file.toLowerCase()
+  }
+  return file.startsWith(dir)
 }
 
 export function ensureVolumeInPath(file: string): string {
@@ -496,10 +509,6 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
-}
-
-export function ensureLeadingSlash(path: string): string {
-  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(

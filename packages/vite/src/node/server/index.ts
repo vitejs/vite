@@ -33,7 +33,7 @@ import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
-import { normalizePath } from '../utils'
+import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
 import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
@@ -715,7 +715,7 @@ export function resolveServerOptions(
 
   // only push client dir when vite itself is outside-of-root
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
-  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+  if (!allowDirs.some((dir) => isParentDirectory(dir, resolvedClientDir))) {
     allowDirs.push(resolvedClientDir)
   }
 
