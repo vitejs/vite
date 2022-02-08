@@ -191,11 +191,10 @@ export function isParentDirectory(dir: string, file: string): boolean {
   if (!dir.endsWith('/')) {
     dir = `${dir}/`
   }
-  if (isCaseInsensitiveFS) {
-    dir = dir.toLowerCase()
-    file = file.toLowerCase()
-  }
-  return file.startsWith(dir)
+  return (
+    file.startsWith(dir) ||
+    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
 }
 
 export function ensureVolumeInPath(file: string): string {
