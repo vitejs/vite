@@ -106,7 +106,7 @@ export function createMissingImporterRegisterFn(
       return
     }
 
-    if (!needFullReload && processingResult?.alteredFiles) {
+    if (!needFullReload && !processingResult?.alteredFiles) {
       logger.info(colors.green(`✨ new dependencies pre-bundled...`), {
         timestamp: true
       })
