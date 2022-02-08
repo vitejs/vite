@@ -1,8 +1,8 @@
 import colors from 'picocolors'
 import {
   optimizeDeps,
-  optimizedFilePath,
-  optimizedBrowserHash,
+  getOptimizedFilePath,
+  getOptimizedBrowserHash,
   depsFromOptimizedInfo,
   newOptimizeDepsProcessingPromise
 } from '.'
@@ -155,13 +155,13 @@ export function createMissingImporterRegisterFn(
       return missing
     }
     missing = metadata.discovered[id] = {
-      file: optimizedFilePath(id, server.config.cacheDir),
+      file: getOptimizedFilePath(id, server.config.cacheDir),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If the optimizeDeps stage
       // ends up with stable paths for the new dep, then we don't need a
       // full page reload and this browserHash will be kept
-      browserHash: optimizedBrowserHash(
+      browserHash: getOptimizedBrowserHash(
         server._optimizeDepsMetadata!.hash,
         depsFromOptimizedInfo(metadata.optimized),
         depsFromOptimizedInfo(metadata.discovered)

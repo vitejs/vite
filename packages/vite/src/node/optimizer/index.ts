@@ -243,7 +243,7 @@ export async function optimizeDeps(
     }
 
     // update browser hash
-    data.browserHash = optimizedBrowserHash(data.hash, deps)
+    data.browserHash = getOptimizedBrowserHash(data.hash, deps)
 
     // We generate the mapping of dependency ids to their cache file location
     // before processing the dependencies with esbuild. This allow us to continue
@@ -251,7 +251,7 @@ export async function optimizeDeps(
     for (const id in deps) {
       const entry = deps[id]
       data.optimized[id] = {
-        file: optimizedFilePath(id, cacheDir),
+        file: getOptimizedFilePath(id, cacheDir),
         src: entry,
         browserHash: data.browserHash,
         processing: processing.promise
@@ -269,7 +269,7 @@ export async function optimizeDeps(
 
     // update global browser hash, but keep newDeps individual hashs until we know
     // if files are stable so we can avoid a full page reload
-    data.browserHash = optimizedBrowserHash(data.hash, deps)
+    data.browserHash = getOptimizedBrowserHash(data.hash, deps)
   }
 
   // We prebundle dependencies with esbuild and cache them, but there is no need
@@ -462,7 +462,7 @@ export function depsFromOptimizedInfo(
   )
 }
 
-export function optimizedFilePath(id: string, cacheDir: string) {
+export function getOptimizedFilePath(id: string, cacheDir: string) {
   return normalizePath(path.resolve(cacheDir, flattenId(id) + '.js'))
 }
 
@@ -470,7 +470,7 @@ function getHash(text: string) {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
-export function optimizedBrowserHash(
+export function getOptimizedBrowserHash(
   hash: string,
   deps: Record<string, string>,
   missing?: Record<string, string>
