@@ -6,8 +6,9 @@ import { isOptimizedDepFile } from '../optimizer'
 import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
 import type { ViteDevServer } from '..'
 
-export const ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT = 'ERR_OPTIMIZE_DEPS_TIMEOUT'
-export const ERROR_CODE_OPTIMIZE_DEPS_OUTDATED = 'ERR_OPTIMIZE_DEPS_OUTDATED'
+export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
+  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
@@ -38,14 +39,14 @@ export function optimizedDepsPlugin(): Plugin {
               // If the refresh has not happened after timeout, Vite considers
               // something unexpected has happened. In this case, Vite
               // returns an empty response that will error.
-              optimizeDepsTimeout(id)
+              throwProcessingError(id)
               return
             }
             const newMetadata = server._optimizeDepsMetadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizeDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
-                outdatedTimeout(id)
+                throwOutdatedRequest(id)
               }
             }
           }
@@ -57,7 +58,7 @@ export function optimizedDepsPlugin(): Plugin {
             return await fs.readFile(file, 'utf-8')
           } catch (e) {
             // Outdated non-entry points (CHUNK), loaded after a rerun
-            outdatedTimeout(id)
+            throwOutdatedRequest(id)
           }
         }
       }
@@ -65,23 +66,23 @@ export function optimizedDepsPlugin(): Plugin {
   }
 }
 
-function optimizeDepsTimeout(id: string) {
+function throwProcessingError(id: string) {
   const err: any = new Error(
     `Something unexpected happened while optimizing "${id}". ` +
       `The current page should have reloaded by now`
   )
-  err.code = ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT
+  err.code = ERR_OPTIMIZE_DEPS_PROCESSING_ERROR
   // This error will be catched by the transform middleware that will
   // send a 408 (request timeout) response to the browser
   throw new Error(err)
 }
 
-function outdatedTimeout(id: string) {
+function throwOutdatedRequest(id: string) {
   const err: any = new Error(
     `There is a new version of the pre-bundle for "${id}", ` +
       `a page reload is going to ask for it.`
   )
-  err.code = ERROR_CODE_OPTIMIZE_DEPS_OUTDATED
+  err.code = ERR_OUTDATED_OPTIMIZED_DEP
   // This error will be catched by the transform middleware that will
   // send a 408 (request timeout) response to the browser
   throw new Error(err)

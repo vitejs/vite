@@ -23,8 +23,8 @@ import {
   isDirectRequest
 } from '../../plugins/css'
 import {
-  ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT,
-  ERROR_CODE_OPTIMIZE_DEPS_OUTDATED
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP
 } from '../../plugins/optimizedDeps'
 import { createIsOptimizedDepUrl } from '../../optimizer'
 
@@ -146,22 +146,28 @@ export function transformMiddleware(
         }
       }
     } catch (e) {
-      if (e?.code === ERROR_CODE_OPTIMIZE_DEPS_TIMEOUT) {
+      if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
         if (!res.writableEnded) {
           // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
+        // This timeout is unexpected
         logger.error(e.message)
         return
       }
-      if (e?.code === ERROR_CODE_OPTIMIZE_DEPS_OUTDATED) {
+      if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
         if (!res.writableEnded) {
           // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
-        logger.error(e.message)
+        // We don't need to log an error in this case, the request
+        // is outdated because new dependencies were discovered and
+        // the new pre-bundle dependendencies have changed.
+        // A full-page reload has been issued, and these old requests
+        // can't be properly fullfilled. This isn't an unexpected
+        // error but a normal part of the missing deps discovery flow
         return
       }
       return next(e)
