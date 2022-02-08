@@ -73,8 +73,8 @@ function throwProcessingError(id: string) {
   )
   err.code = ERR_OPTIMIZE_DEPS_PROCESSING_ERROR
   // This error will be catched by the transform middleware that will
-  // send a 408 (request timeout) response to the browser
-  throw new Error(err)
+  // send a 504 status code request timeout
+  throw err
 }
 
 function throwOutdatedRequest(id: string) {
@@ -84,8 +84,8 @@ function throwOutdatedRequest(id: string) {
   )
   err.code = ERR_OUTDATED_OPTIMIZED_DEP
   // This error will be catched by the transform middleware that will
-  // send a 408 (request timeout) response to the browser
-  throw new Error(err)
+  // send a 504 status code request timeout
+  throw err
 }
 
 function optimizeDepInfoFromFile(
