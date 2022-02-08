@@ -919,15 +919,17 @@ async function doUrlReplace(
   matched: string,
   replacer: CssUrlReplacer
 ) {
+  let wrap = ''
   const first = rawUrl[0]
-  const [wrap, url] =
-    first === `"` || first === `'` ? [first, rawUrl.slice(1, -1)] : ['', rawUrl]
-
-  if (isExternalUrl(url) || isDataUrl(url) || url.startsWith('#')) {
+  if (first === `"` || first === `'`) {
+    wrap = first
+    rawUrl = rawUrl.slice(1, -1)
+  }
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
     return matched
   }
 
-  return `url(${wrap}${await replacer(url)}${wrap})`
+  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
