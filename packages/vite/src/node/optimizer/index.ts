@@ -94,7 +94,7 @@ export interface OptimizeDepsResult {
    * If the files are stable, we can avoid the reload that is expensive
    * for large applications
    */
-  stableFiles: boolean
+  alteredFiles: boolean
 }
 
 export interface OptimizeDepsProcessing {
@@ -415,21 +415,21 @@ export async function optimizeDeps(
     // the newly discovered deps don't have common chunks with them. Comparing their fileHash we
     // can find out if it is safe to keep the current browser state. If one of the file hashes
     // changed, a full page reload is needed
-    let stableFiles = true
+    let alteredFiles = false
     if (currentData) {
-      stableFiles = Object.keys(currentData.optimized).every((dep) => {
+      alteredFiles = Object.keys(currentData.optimized).some((dep) => {
         const currentInfo = currentData.optimized[dep]
         const info = data.optimized[dep]
         return (
-          !!info?.fileHash &&
-          !!currentInfo?.fileHash &&
-          info?.fileHash === currentInfo?.fileHash
+          !info?.fileHash ||
+          !currentInfo?.fileHash ||
+          info?.fileHash !== currentInfo?.fileHash
         )
       })
-      debug(`optimized deps have stable files: ${stableFiles}`)
+      debug(`optimized deps have altered files: ${alteredFiles}`)
     }
 
-    if (!stableFiles) {
+    if (alteredFiles) {
       // Overrite individual hashs with the new global browserHash, a full page reload is required
       // New deps that ended up with a different hash replaced while doing analysis import are going to
       // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
@@ -441,7 +441,7 @@ export async function optimizeDeps(
     writeFile(dataPath, JSON.stringify(data, metadataStringifyReplacer, 2))
 
     debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
-    processing.resolve({ stableFiles })
+    processing.resolve({ alteredFiles })
   }
 }
 
