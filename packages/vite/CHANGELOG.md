@@ -1,3 +1,12 @@
+# [2.8.0-beta.7](https://github.com/vitejs/vite/compare/v2.8.0-beta.6...v2.8.0-beta.7) (2022-02-08)
+
+
+### Bug Fixes
+
+* revert [#6233](https://github.com/vitejs/vite/issues/6233), strip query when resolving entry (fix [#6797](https://github.com/vitejs/vite/issues/6797)) ([a012644](https://github.com/vitejs/vite/commit/a0126441a556b4991ac14cf037820194ab9e17b9))
+
+
+
 # [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
 
 
