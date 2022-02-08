@@ -417,14 +417,15 @@ export async function optimizeDeps(
     // changed, a full page reload is needed
     let stableFiles = true
     if (currentData) {
-      for (const dep of Object.keys(currentData.optimized)) {
+      stableFiles = Object.keys(currentData.optimized).every((dep) => {
         const currentInfo = currentData.optimized[dep]
         const info = data.optimized[dep]
-        stableFiles &&=
+        return (
           !!info?.fileHash &&
           !!currentInfo?.fileHash &&
           info?.fileHash === currentInfo?.fileHash
-      }
+        )
+      })
       debug(`optimized deps have stable files: ${stableFiles}`)
     }
 
