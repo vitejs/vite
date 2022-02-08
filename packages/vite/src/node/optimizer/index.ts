@@ -97,6 +97,11 @@ export interface OptimizeDepsResult {
   stableFiles: boolean
 }
 
+export interface OptimizeDepsProcessing {
+  promise: Promise<OptimizeDepsResult | undefined>
+  resolve: (result?: OptimizeDepsResult) => void
+}
+
 export interface OptimizedDepInfo {
   file: string
   src: string
@@ -144,10 +149,7 @@ export async function optimizeDeps(
   currentData: DepOptimizationMetadata | null = null,
   newDeps?: Record<string, OptimizedDepInfo>, // missing imports encountered after server has started
   ssr?: boolean,
-  processing: {
-    promise: Promise<OptimizeDepsResult | undefined>
-    resolve: (result?: OptimizeDepsResult) => void
-  } = newProcessingPromise()
+  processing: OptimizeDepsProcessing = newOptimizeDepsProcessingPromise()
 ): Promise<DepOptimizationMetadata> {
   config = {
     ...config,
@@ -442,12 +444,12 @@ export async function optimizeDeps(
   }
 }
 
-export function newProcessingPromise() {
+export function newOptimizeDepsProcessingPromise(): OptimizeDepsProcessing {
   let resolve: (result?: OptimizeDepsResult) => void
   const promise = new Promise((_resolve) => {
     resolve = _resolve
   }) as Promise<OptimizeDepsResult | undefined>
-  return { promise, resolve: resolve! as (result?: OptimizeDepsResult) => void }
+  return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }

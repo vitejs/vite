@@ -4,7 +4,7 @@ import {
   optimizedFilePath,
   optimizedBrowserHash,
   depsFromOptimizedInfo,
-  newProcessingPromise
+  newOptimizeDepsProcessingPromise
 } from '.'
 import type {
   DepOptimizationMetadata,
@@ -29,7 +29,7 @@ export function createMissingImporterRegisterFn(
   let handle: NodeJS.Timeout | undefined
   let needFullReload: boolean = false
 
-  let processingMissingDeps = newProcessingPromise()
+  let processingMissingDeps = newOptimizeDepsProcessingPromise()
 
   async function rerun(ssr: boolean | undefined) {
     // debounce time to wait for new missing deps finished, issue a new
@@ -59,7 +59,7 @@ export function createMissingImporterRegisterFn(
     const newDepsProcessing = processingMissingDeps
     let processingResult: OptimizeDepsResult | undefined
 
-    processingMissingDeps = newProcessingPromise()
+    processingMissingDeps = newOptimizeDepsProcessingPromise()
 
     let newData: DepOptimizationMetadata | null = null
 
