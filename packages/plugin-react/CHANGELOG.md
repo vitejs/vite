@@ -1,3 +1,12 @@
+# [1.2.0](https://github.com/vitejs/vite/compare/plugin-react@1.1.4...plugin-react@1.2.0) (2022-02-09)
+
+
+### Features
+
+* **plugin-react:** ensure `overrides` array exists before `api.reactBabel` hooks are called ([#6750](https://github.com/vitejs/vite/issues/6750)) ([104bdb5](https://github.com/vitejs/vite/commit/104bdb5b5e44e79bf3456cabe15f3753f7c1ef28))
+
+
+
 ## [1.1.4](https://github.com/vitejs/vite/compare/plugin-react@1.1.3...plugin-react@1.1.4) (2022-01-04)
 
 
