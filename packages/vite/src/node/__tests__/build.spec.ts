@@ -13,7 +13,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('custom-filename-function.es.mjs')
+    expect(filename).toBe('custom-filename-function.es.js')
   })
 
   test('custom filename string', () => {

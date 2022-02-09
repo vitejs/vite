@@ -10,7 +10,7 @@ module.exports = {
       entry: path.resolve(__dirname, 'src/main.js'),
       name: 'MyLib',
       formats: ['es', 'umd', 'iife'],
-      fileName: (format) => `my-lib-custom-filename.${format}.js`
+      fileName: 'my-lib-custom-filename'
     }
   },
   plugins: [
