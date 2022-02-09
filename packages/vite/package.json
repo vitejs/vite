@@ -45,7 +45,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.14.14",
-    "postcss": "^8.4.5",
+    "postcss": "^8.4.6",
     "resolve": "^1.22.0",
     "rollup": "^2.59.0"
   },
@@ -54,8 +54,8 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^1.1.1",
-    "@babel/parser": "^7.16.12",
-    "@babel/types": "^7.16.8",
+    "@babel/parser": "^7.17.0",
+    "@babel/types": "^7.17.0",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^21.0.1",
     "@rollup/plugin-dynamic-import-vars": "^1.4.2",
@@ -66,17 +66,17 @@
     "@types/convert-source-map": "^1.5.2",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
-    "@types/estree": "^0.0.50",
+    "@types/estree": "^0.0.51",
     "@types/etag": "^1.8.1",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/mime": "^2.0.3",
-    "@types/node": "^16.11.21",
+    "@types/node": "^16.11.22",
     "@types/resolve": "^1.20.1",
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.36",
     "@types/ws": "^8.2.2",
-    "@vue/compiler-dom": "^3.2.29",
+    "@vue/compiler-dom": "^3.2.30",
     "acorn": "^8.7.0",
     "cac": "6.7.9",
     "chokidar": "^3.5.3",
@@ -117,7 +117,7 @@
     "tsconfck": "1.1.2",
     "tslib": "^2.3.1",
     "types": "link:./types",
-    "ws": "^8.4.2"
+    "ws": "^8.5.0"
   },
   "peerDependencies": {
     "less": "*",
