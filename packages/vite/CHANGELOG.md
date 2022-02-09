@@ -117,7 +117,6 @@ export default {
 * **ssr:** move `vite:ssr-require-hook` after user plugins ([#6306](https://github.com/vitejs/vite/issues/6306)) ([d856c4b](https://github.com/vitejs/vite/commit/d856c4bd6798707e0cbdfc127a2e8b6c00c65dae))
 * strip NULL_BYTE_PLACEHOLDER before transform ([#6390](https://github.com/vitejs/vite/issues/6390)) ([5964949](https://github.com/vitejs/vite/commit/596494948a6e2f697232371b200c2d7a51d386bc))
 * strip query when resolving entry ([#6233](https://github.com/vitejs/vite/issues/6233)) ([000ba2e](https://github.com/vitejs/vite/commit/000ba2e00b14e6c595febfa6dcae862e2d341823))
-* this._implicitHeader is not a function ([#6313](https://github.com/vitejs/vite/issues/6313)) ([c5ba2f2](https://github.com/vitejs/vite/commit/c5ba2f24bd48b88907a1505bdf0a83d6b09f1d2b))
 * upgrade postcss-modules ([#6248](https://github.com/vitejs/vite/issues/6248)) ([ac3f434](https://github.com/vitejs/vite/commit/ac3f434b8b7bc827fd76a28989f8c3ebaa999ee9))
 * use `hires: true` for SSR require hook source map ([#6310](https://github.com/vitejs/vite/issues/6310)) ([0ebeb98](https://github.com/vitejs/vite/commit/0ebeb981789e6c29889db03fc11fd9b80c63883f))
 
