@@ -1,3 +1,17 @@
+# [2.8.0](https://github.com/vitejs/vite/compare/create-vite@2.7.2...create-vite@2.8.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* **create-vite:** use `reset` for prompts for white bg color shell ([#6131](https://github.com/vitejs/vite/issues/6131)) ([dd3bbb8](https://github.com/vitejs/vite/commit/dd3bbb8e21aff812ec482f760e1abceb6bd67aef))
+
+
+### Features
+
+* **create-vite:** tsconfig support vite.config.ts ([#6324](https://github.com/vitejs/vite/issues/6324)) ([bfbdb22](https://github.com/vitejs/vite/commit/bfbdb2242e57cfba0309a88475a1f9cf2a50413f))
+
+
+
 ## [2.7.2](https://github.com/vitejs/vite/compare/create-vite@2.7.1...create-vite@2.7.2) (2021-12-13)
 
 
