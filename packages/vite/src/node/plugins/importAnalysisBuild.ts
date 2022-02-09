@@ -110,10 +110,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      const asyncImportRe = new RegExp('import\\(.+\\)', 'm');
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob') &&
-        !source.match(/import\(.+\)/m))
+        source.includes('import.meta.glob') &&
+        source.match(asyncImportRe)
       ) {
         return
       }
