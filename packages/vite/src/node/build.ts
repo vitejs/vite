@@ -42,8 +42,8 @@ import type { DepOptimizationMetadata } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
-import type { PackageData } from '.'
 
 export interface BuildOptions {
   /**
