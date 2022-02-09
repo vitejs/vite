@@ -53,7 +53,7 @@
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^1.1.1",
+    "@ampproject/remapping": "^2.1.0",
     "@babel/parser": "^7.17.0",
     "@babel/types": "^7.17.0",
     "@rollup/plugin-alias": "^3.1.9",

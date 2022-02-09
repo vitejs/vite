@@ -735,7 +735,7 @@ importers:
 
   packages/vite:
     specifiers:
-      '@ampproject/remapping': ^1.1.1
+      '@ampproject/remapping': ^2.1.0
       '@babel/parser': ^7.17.0
       '@babel/types': ^7.17.0
       '@rollup/plugin-alias': ^3.1.9
@@ -813,7 +813,7 @@ importers:
     optionalDependencies:
       fsevents: 2.3.2
     devDependencies:
-      '@ampproject/remapping': 1.1.1
+      '@ampproject/remapping': 2.1.0
       '@babel/parser': 7.17.0
       '@babel/types': 7.17.0
       '@rollup/plugin-alias': 3.1.9_rollup@2.62.0
@@ -989,14 +989,6 @@ packages:
       '@algolia/cache-common': 4.11.0
       '@algolia/logger-common': 4.11.0
       '@algolia/requester-common': 4.11.0
-    dev: true
-
-  /@ampproject/remapping/1.1.1:
-    resolution: {integrity: sha512-YVAcA4DKLOj296CF5SrQ8cYiMRiUGc2sqFpLxsDGWE34suHqhGP/5yMsDHKsrh8hs8I5TiRVXNwKPWQpX3iGjw==}
-    engines: {node: '>=6.0.0'}
-    dependencies:
-      '@jridgewell/resolve-uri': 3.0.3
-      sourcemap-codec: 1.4.8
     dev: true
 
   /@ampproject/remapping/2.1.0:
@@ -5157,7 +5149,6 @@ packages:
 
   /graceful-fs/4.2.9:
     resolution: {integrity: sha512-NtNxqUcXgpW2iMrfqSfR73Glt39K+BLwWsPs94yR63v45T0Wbej7eRmL5cWfwEgqXnmjQp3zaJTshdRW/qC2ZQ==}
-    dev: true
 
   /handlebars/4.7.7:
     resolution: {integrity: sha512-aAcXm5OAfE/8IXkcZvCepKU3VzW1/39Fb5ZuqMtgI/hT8X2YgoMvBY5dLhq/cpOvw7Lk1nK/UF71aLG/ZnVYRA==}
@@ -6333,7 +6324,7 @@ packages:
     dependencies:
       universalify: 2.0.0
     optionalDependencies:
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
 
   /jsonparse/1.3.1:
     resolution: {integrity: sha1-P02uSpH6wxX3EGL4UhzCOfE2YoA=}
@@ -6388,7 +6379,7 @@ packages:
       tslib: 2.3.1
     optionalDependencies:
       errno: 0.1.8
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
       image-size: 0.5.5
       make-dir: 2.1.0
       mime: 1.6.0
