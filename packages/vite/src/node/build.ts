@@ -681,7 +681,8 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  return `${name}.${format}.js`
+  const extension = format === 'es' ? 'mjs' : 'js'
+  return `${name}.${format}.${extension}`
 }
 
 function resolveBuildOutputs(
