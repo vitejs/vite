@@ -1,58 +1,90 @@
 # [2.8.0](https://github.com/vitejs/vite/compare/v2.8.0-beta.7...v2.8.0) (2022-02-09)
 
+### Reduced Footprint
 
+[Vite 2.8.0](https://packagephobia.com/result?p=vite%402.8.0) is almost 1/4 of the [2.7.0](https://packagephobia.com/result?p=vite%402.7.0) publish size, and the install size has been reduced by half. See [this thread](https://twitter.com/IAmTrySound/status/1475600522572877829) about each change that reduced Vite's footprint.
 
-# [2.8.0-beta.7](https://github.com/vitejs/vite/compare/v2.8.0-beta.6...v2.8.0-beta.7) (2022-02-08)
+| Version                                                  | Publish Size | Install Size |
+| -------------------------------------------------------- | ------------ | ------------ |
+| [2.7.0](https://packagephobia.com/result?p=vite%402.7.0) | 12.7MB       | 25.2MB       |
+| [2.8.0](https://packagephobia.com/result?p=vite%402.8.0) | 4.6MB        | 17.4MB       |
 
+### Default preview port
+
+New default port for `vite preview` is 4173 (avoid conflicts in MacOS that took over the 5000 port)
+
+### Workers using standard syntax
+
+Workers are detected and bundled when using `new URL('path', import.meta.url)`, replacing the need for the `?worker` suffix and aligning Vite with standard patterns. See [#6356](https://github.com/vitejs/vite/issues/6356). Instead of
+
+```js
+import MyWorker from './worker.js?worker'
+const worker = new MyWorker()
+```
+
+it is now recommended to use
+
+```js
+const worker = new Worker(
+  new URL('./worker.js', import.meta.url), { type: 'module' }
+)
+```
+
+### Configuring Workers Bundling
+
+New `worker` config field adding support for Worker `format`, `plugins` and, `rollupOptions`. See [#6351](https://github.com/vitejs/vite/issues/6351)
+  * `worker.format: 'es' | 'iife'`<br>
+     Output format for worker bundle (default: `iife`).
+  * `worker.plugins: (Plugin | Plugin[])[]`<br>
+     Vite plugins that apply to worker bundle.
+  * `worker.rollupOptions: `[`RollupOptions`](https://rollupjs.org/guide/en/#big-list-of-options)<br>
+     Rollup options to build worker bundle.
+
+The worker plugins pipeline isn't shared with the main Vite pipeline, there may be plugins that shouldn't be applied to Workers. If a plugin must be applied to both the main build and the worker build, you need to add a plugin in the main `plugins` array and another one in the `worker.plugins` config.
+
+```js
+import PluginX from 'vite-plugin-x'
+export default {
+  plugins: [ PluginX() ]
+  worker: [
+    format: 'es',
+    plugins: [ PluginX() ]
+  ]
+}
+```
+
+### Raw Glob Imports
+
+Glob imports now support the `raw` modifier (that works in the same way as [the `?raw` suffix]() in regular imports). Vite is going to gradually migrate to the new standard `assert` syntax instead of using custom URL suffixes where possible.
+
+```js
+const examples = import.meta.globEager('./examples/*.html', { assert: { type: 'raw' }})
+```
+
+* New `server.headers` config option allowing configuration of response headers in dev mode.
+
+```js
+export default {
+ server: {
+    port: '8080',
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  },
+}
+```
 
 ### Bug Fixes
 
 * revert [#6233](https://github.com/vitejs/vite/issues/6233), strip query when resolving entry (fix [#6797](https://github.com/vitejs/vite/issues/6797)) ([a012644](https://github.com/vitejs/vite/commit/a0126441a556b4991ac14cf037820194ab9e17b9))
-
-
-
-# [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
-
-
-### Bug Fixes
-
 * **ssr:** skip vite resolve for windows absolute path ([#6764](https://github.com/vitejs/vite/issues/6764)) ([489a7f1](https://github.com/vitejs/vite/commit/489a7f11e9d89932310025299c1eeb75c5cb4ce6))
-
-
-
-# [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
-
-
-### Bug Fixes
-
 * revert [#5342](https://github.com/vitejs/vite/issues/5342), only run build-html plugin on bundler inputs ([#6715](https://github.com/vitejs/vite/issues/6715)) ([59f8a63](https://github.com/vitejs/vite/commit/59f8a639bc6abd9e6c99bc77e155990c43e07ad9))
-
-
-
-# [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
-
-
-### Bug Fixes
-
 * **build:** NODE_ENV override by .env ([#6303](https://github.com/vitejs/vite/issues/6303)) ([7329b24](https://github.com/vitejs/vite/commit/7329b24e03952b8fb25b025b61955e40ef777e2a))
 * debug `dotenv` when specifically scoped ([#6682](https://github.com/vitejs/vite/issues/6682)) ([c2f0021](https://github.com/vitejs/vite/commit/c2f00214e41b62196fab9108da76609aa8edbaa4))
 * **dev:** prevent stripping query params from CSS in HMR ([#6589](https://github.com/vitejs/vite/issues/6589)) ([3ab96c6](https://github.com/vitejs/vite/commit/3ab96c6171dbd3a6155e3496f901d2718edae558))
 * **legacy:** fix conflict with the modern build on css emitting ([#6584](https://github.com/vitejs/vite/issues/6584)) ([f48255e](https://github.com/vitejs/vite/commit/f48255e6e0058e973b949fb4a2372974f0480e11)), closes [#3296](https://github.com/vitejs/vite/issues/3296) [#3317](https://github.com/vitejs/vite/issues/3317) [/github.com/vitejs/vite/commit/6bce1081991501f3779bff1a81e5dd1e63e5d38e#diff-2cfbd4f4d8c32727cd8e1a561cffbde0b384a3ce0789340440e144f9d64c10f6R262-R263](https://github.com//github.com/vitejs/vite/commit/6bce1081991501f3779bff1a81e5dd1e63e5d38e/issues/diff-2cfbd4f4d8c32727cd8e1a561cffbde0b384a3ce0789340440e144f9d64c10f6R262-R263)
 * revert [#5601](https://github.com/vitejs/vite/issues/5601) [#6025](https://github.com/vitejs/vite/issues/6025), don't resolve rollupOptions.input ([#6680](https://github.com/vitejs/vite/issues/6680)) ([2a9da2e](https://github.com/vitejs/vite/commit/2a9da2e3b10e3637f7ed7daa3b45cb173f40d7a3))
 * update SSR externals only when SSR is enabled (fix [#6478](https://github.com/vitejs/vite/issues/6478)) ([#6492](https://github.com/vitejs/vite/issues/6492)) ([28d1e7e](https://github.com/vitejs/vite/commit/28d1e7eed2213f0b22936ff6900354b29e320bc9))
-
-
-### Features
-
-* add lerna workspace support to `searchForWorkspaceRoot` ([#6270](https://github.com/vitejs/vite/issues/6270)) ([0e164f8](https://github.com/vitejs/vite/commit/0e164f80ee36f99ef5277320b3b69448459ef7ba))
-
-
-
-# [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
-
-
-### Bug Fixes
-
 * avoid referencing importGlob from importMeta.d.ts ([#6531](https://github.com/vitejs/vite/issues/6531)) ([962d285](https://github.com/vitejs/vite/commit/962d28508dce63b395e79b79f3b0e2cf0e381a71))
 * **config:** merge array correctly ([#6499](https://github.com/vitejs/vite/issues/6499)) ([b2d972e](https://github.com/vitejs/vite/commit/b2d972e53b59329695f74e01893b21ec5c136ffd))
 * improve alias merging ([#6497](https://github.com/vitejs/vite/issues/6497)) ([e57d8c6](https://github.com/vitejs/vite/commit/e57d8c63042c2701e797c797b25af65d9dab9eea))
@@ -67,51 +99,12 @@
 * **types:** dynamic import in import.meta ([#6456](https://github.com/vitejs/vite/issues/6456)) ([5d7b4c3](https://github.com/vitejs/vite/commit/5d7b4c31b8e44add7c192ae8af4b90b9378ae1fe)), closes [#6433](https://github.com/vitejs/vite/issues/6433)
 * update preview port to 4173 ([#6330](https://github.com/vitejs/vite/issues/6330)) ([870e1c0](https://github.com/vitejs/vite/commit/870e1c076272960a5f390b2cfdd3ae275b3891a5))
 * use cacheDir for resolveHttpsConfig ([#6416](https://github.com/vitejs/vite/issues/6416)) ([647168b](https://github.com/vitejs/vite/commit/647168b2b44b82b1a1cbd8e639f74ddf52a5d5cd))
-
-
-### Features
-
-* add .txt file format to assets ([#6265](https://github.com/vitejs/vite/issues/6265)) ([e87ae41](https://github.com/vitejs/vite/commit/e87ae41ae57857f387a67b5140bf7d5689a3e14b))
-* add customResolver option to resolve.alias ([#5876](https://github.com/vitejs/vite/issues/5876)) ([6408a3a](https://github.com/vitejs/vite/commit/6408a3ab9bd97f1542982755b5044871a78b59d4))
-* allow globs in node_modules when pattern is explicit ([#6056](https://github.com/vitejs/vite/issues/6056)) ([669d7e0](https://github.com/vitejs/vite/commit/669d7e0f4b6ea4a73d3598ab1473b58c72bf093b))
-* **html:** html simple script tag support import-expression ([#6525](https://github.com/vitejs/vite/issues/6525)) ([3546d4f](https://github.com/vitejs/vite/commit/3546d4ffcfbc011d78f9ba26e0dc689853575a1e))
-
-
-
-# [2.8.0-beta.2](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.2) (2022-01-13)
-
-
-### Bug Fixes
-
 * improve array config merging ([#6344](https://github.com/vitejs/vite/issues/6344)) ([028cbeb](https://github.com/vitejs/vite/commit/028cbeb34adef217f274be7c4a7dd5c9f9b12b29))
 * only run build-html plugin on bundler inputs (fix [#4067](https://github.com/vitejs/vite/issues/4067)) ([#5342](https://github.com/vitejs/vite/issues/5342)) ([7541a8d](https://github.com/vitejs/vite/commit/7541a8d570d9bbf0ab0cd4264cae985dddaf3189))
 * **ssr:** handle nameless descture in function args ([#6489](https://github.com/vitejs/vite/issues/6489)) ([debc08d](https://github.com/vitejs/vite/commit/debc08de75434bb63f50e0e5669995de0878ce37))
 * **types:** add missing options parameter to importMeta ([#6433](https://github.com/vitejs/vite/issues/6433)) ([ccf7d79](https://github.com/vitejs/vite/commit/ccf7d791497139951fde58168999d44e18f706ee))
 * **types:** dynamic import in import.meta ([#6456](https://github.com/vitejs/vite/issues/6456)) ([5d7b4c3](https://github.com/vitejs/vite/commit/5d7b4c31b8e44add7c192ae8af4b90b9378ae1fe)), closes [#6433](https://github.com/vitejs/vite/issues/6433)
 * use cacheDir for resolveHttpsConfig ([#6416](https://github.com/vitejs/vite/issues/6416)) ([647168b](https://github.com/vitejs/vite/commit/647168b2b44b82b1a1cbd8e639f74ddf52a5d5cd))
-
-
-### Features
-
-* add customResolver option to resolve.alias ([#5876](https://github.com/vitejs/vite/issues/5876)) ([6408a3a](https://github.com/vitejs/vite/commit/6408a3ab9bd97f1542982755b5044871a78b59d4))
-* allow globs in node_modules when pattern is explicit ([#6056](https://github.com/vitejs/vite/issues/6056)) ([669d7e0](https://github.com/vitejs/vite/commit/669d7e0f4b6ea4a73d3598ab1473b58c72bf093b))
-
-
-
-# [2.8.0-beta.1](https://github.com/vitejs/vite/compare/v2.8.0-beta.0...v2.8.0-beta.1) (2022-01-06)
-
-
-### Features
-
-* new Worker can bundle URL('path', import.meta.url) script (fix [#5979](https://github.com/vitejs/vite/issues/5979)) ([#6356](https://github.com/vitejs/vite/issues/6356)) ([a345614](https://github.com/vitejs/vite/commit/a34561490b4b866d8d4f98c697435dcb68a5c3ed))
-
-
-
-# [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
-
-
-### Bug Fixes
-
 * **build:** fix chokidar.ignore override ([#6317](https://github.com/vitejs/vite/issues/6317)) ([aa47549](https://github.com/vitejs/vite/commit/aa475494c61898638a592387ac907a939f1dd938))
 * **build:** fix watch crash with inline module ([#6373](https://github.com/vitejs/vite/issues/6373)) ([49d2f6d](https://github.com/vitejs/vite/commit/49d2f6dbd9445518b022f6c75ca397460a02d9d8))
 * check if e.stack exists in the first place ([#6362](https://github.com/vitejs/vite/issues/6362)) ([f144aa9](https://github.com/vitejs/vite/commit/f144aa9f1df2134dc6695db6e8eff25cac2b5263))
@@ -124,13 +117,17 @@
 * **ssr:** move `vite:ssr-require-hook` after user plugins ([#6306](https://github.com/vitejs/vite/issues/6306)) ([d856c4b](https://github.com/vitejs/vite/commit/d856c4bd6798707e0cbdfc127a2e8b6c00c65dae))
 * strip NULL_BYTE_PLACEHOLDER before transform ([#6390](https://github.com/vitejs/vite/issues/6390)) ([5964949](https://github.com/vitejs/vite/commit/596494948a6e2f697232371b200c2d7a51d386bc))
 * strip query when resolving entry ([#6233](https://github.com/vitejs/vite/issues/6233)) ([000ba2e](https://github.com/vitejs/vite/commit/000ba2e00b14e6c595febfa6dcae862e2d341823))
-* this._implicitHeader is not a function ([#6313](https://github.com/vitejs/vite/issues/6313)) ([c5ba2f2](https://github.com/vitejs/vite/commit/c5ba2f24bd48b88907a1505bdf0a83d6b09f1d2b))
 * upgrade postcss-modules ([#6248](https://github.com/vitejs/vite/issues/6248)) ([ac3f434](https://github.com/vitejs/vite/commit/ac3f434b8b7bc827fd76a28989f8c3ebaa999ee9))
 * use `hires: true` for SSR require hook source map ([#6310](https://github.com/vitejs/vite/issues/6310)) ([0ebeb98](https://github.com/vitejs/vite/commit/0ebeb981789e6c29889db03fc11fd9b80c63883f))
 
-
 ### Features
 
+* add lerna workspace support to `searchForWorkspaceRoot` ([#6270](https://github.com/vitejs/vite/issues/6270)) ([0e164f8](https://github.com/vitejs/vite/commit/0e164f80ee36f99ef5277320b3b69448459ef7ba))
+* add .txt file format to assets ([#6265](https://github.com/vitejs/vite/issues/6265)) ([e87ae41](https://github.com/vitejs/vite/commit/e87ae41ae57857f387a67b5140bf7d5689a3e14b))
+* allow globs in node_modules when pattern is explicit ([#6056](https://github.com/vitejs/vite/issues/6056)) ([669d7e0](https://github.com/vitejs/vite/commit/669d7e0f4b6ea4a73d3598ab1473b58c72bf093b))
+* **html:** html simple script tag support import-expression ([#6525](https://github.com/vitejs/vite/issues/6525)) ([3546d4f](https://github.com/vitejs/vite/commit/3546d4ffcfbc011d78f9ba26e0dc689853575a1e))
+* add customResolver option to resolve.alias ([#5876](https://github.com/vitejs/vite/issues/5876)) ([6408a3a](https://github.com/vitejs/vite/commit/6408a3ab9bd97f1542982755b5044871a78b59d4))
+* new Worker can bundle URL('path', import.meta.url) script (fix [#5979](https://github.com/vitejs/vite/issues/5979)) ([#6356](https://github.com/vitejs/vite/issues/6356)) ([a345614](https://github.com/vitejs/vite/commit/a34561490b4b866d8d4f98c697435dcb68a5c3ed))
 * catch postcss error messages ([#6293](https://github.com/vitejs/vite/issues/6293)) ([4d75b2e](https://github.com/vitejs/vite/commit/4d75b2e39d4decd1294f62333bdae4ba577bf1cb))
 * **define:** prevent assignment ([#5515](https://github.com/vitejs/vite/issues/5515)) ([6d4ee18](https://github.com/vitejs/vite/commit/6d4ee18e0c45e7c1fedd36c24b631a8f97f40c0f))
 * import.meta.glob support ?raw ([#5545](https://github.com/vitejs/vite/issues/5545)) ([5279de6](https://github.com/vitejs/vite/commit/5279de6859df61b6191a4c3bfc76da582309a5ec))
@@ -142,6 +139,45 @@
 * **vite:** pass mode to preview command ([#6392](https://github.com/vitejs/vite/issues/6392)) ([1ff1103](https://github.com/vitejs/vite/commit/1ff1103ade691b0a3f564609fdc4e76d5122227b))
 * **worker:** support worker format, plugins and rollupOptions (fix [#6191](https://github.com/vitejs/vite/issues/6191)) ([#6351](https://github.com/vitejs/vite/issues/6351)) ([133fcea](https://github.com/vitejs/vite/commit/133fcea5223263b0ae08ac9a0422b55183ebd266))
 
+
+# [2.8.0-beta.7](https://github.com/vitejs/vite/compare/v2.8.0-beta.6...v2.8.0-beta.7) (2022-02-08)
+
+See [2.8.0-beta.7 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.7/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
+
+See [2.8.0-beta.6 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.6/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
+
+See [2.8.0-beta.5 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.5/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
+
+See [2.8.0-beta.4 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.4/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
+
+See [2.8.0-beta.3 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.3/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.2](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.2) (2022-01-13)
+
+See [2.8.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.2/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.1](https://github.com/vitejs/vite/compare/v2.8.0-beta.0...v2.8.0-beta.1) (2022-01-06)
+
+See [2.8.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.1/packages/vite/CHANGELOG.md)
+
+
+# [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
+
+See [2.8.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.0/packages/vite/CHANGELOG.md)
 
 
 ## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
