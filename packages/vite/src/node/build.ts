@@ -43,6 +43,7 @@ import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
+import type { PackageData } from '.'
 
 export interface BuildOptions {
   /**
@@ -610,9 +611,11 @@ function prepareOutDir(
   }
 }
 
-function getPkgName(root: string) {
-  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+function getPkgJson(root: string): PackageData['data'] {
+  return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+}
 
+function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
@@ -674,14 +677,23 @@ export function resolveLibFilename(
     return libOptions.fileName(format)
   }
 
-  const name = libOptions.fileName || getPkgName(root)
+  const packageJson = getPkgJson(root)
+  const name = libOptions.fileName || getPkgName(packageJson.name)
 
   if (!name)
     throw new Error(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  const extension = format === 'es' ? 'mjs' : 'js'
+  let extension: string
+  const isEsFormat = format === 'es'
+
+  if (packageJson?.type === 'module') {
+    extension = isEsFormat ? 'js' : 'cjs'
+  } else {
+    extension = isEsFormat ? 'mjs' : 'js'
+  }
+
   return `${name}.${format}.${extension}`
 }
 
