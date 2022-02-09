@@ -112,7 +112,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob')
+        !source.includes('import.meta.glob') &&
+        !source.match(/import\(.+\)/m))
       ) {
         return
       }
