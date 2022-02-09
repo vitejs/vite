@@ -111,10 +111,8 @@ module.exports = defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
-      fileName: (format) => {
-        const extension = format === 'es' ? 'mjs' : 'js'
-        return `my-lib.${format}.${extension}`
-      }
+      // the proper extensions will be added
+      fileName: 'my-lib'
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
