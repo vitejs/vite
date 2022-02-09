@@ -2,7 +2,7 @@
 
 ### Reduced Footprint
 
-[Vite 2.8.0](https://packagephobia.com/result?p=vite%402.8.0) is almost 1/4 of the [2.7.0](https://packagephobia.com/result?p=vite%402.7.0) publish size, and the install size has been reduced by half. See [this thread](https://twitter.com/IAmTrySound/status/1475600522572877829) about each change that reduced Vite's footprint.
+[Vite 2.8.0](https://packagephobia.com/result?p=vite%402.8.0) is almost 1/4 of the [2.7.0](https://packagephobia.com/result?p=vite%402.7.0) publish size, and the install size has been reduced by 35%. See [this thread](https://twitter.com/IAmTrySound/status/1475600522572877829) about each change that reduced Vite's footprint.
 
 | Version                                                  | Publish Size | Install Size |
 | -------------------------------------------------------- | ------------ | ------------ |
