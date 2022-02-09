@@ -686,12 +686,11 @@ export function resolveLibFilename(
     )
 
   let extension: string
-  const isEsFormat = format === 'es'
 
   if (packageJson?.type === 'module') {
-    extension = isEsFormat ? 'js' : 'cjs'
+    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
   } else {
-    extension = isEsFormat ? 'mjs' : 'js'
+    extension = format === 'es' ? 'mjs' : 'js'
   }
 
   return `${name}.${format}.${extension}`
