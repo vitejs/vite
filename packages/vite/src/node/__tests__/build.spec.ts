@@ -13,7 +13,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('custom-filename-function.es.js')
+    expect(filename).toBe('custom-filename-function.es.mjs')
   })
 
   test('custom filename string', () => {
@@ -26,7 +26,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('custom-filename.es.js')
+    expect(filename).toBe('custom-filename.es.mjs')
   })
 
   test('package name as filename', () => {
@@ -38,7 +38,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('mylib.es.js')
+    expect(filename).toBe('mylib.es.mjs')
   })
 
   test('custom filename and no package name', () => {
@@ -51,7 +51,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/noname')
     )
 
-    expect(filename).toBe('custom-filename.es.js')
+    expect(filename).toBe('custom-filename.es.mjs')
   })
 
   test('missing filename', () => {

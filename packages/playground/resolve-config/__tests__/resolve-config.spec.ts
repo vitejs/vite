@@ -11,7 +11,7 @@ const build = (configName: string) => {
   commandSync(`${viteBin} build`, { cwd: fromTestDir(configName) })
 }
 const getDistFile = (configName: string) => {
-  return fs.readFileSync(fromTestDir(`${configName}/dist/index.es.js`), 'utf8')
+  return fs.readFileSync(fromTestDir(`${configName}/dist/index.es.mjs`), 'utf8')
 }
 
 if (isBuild) {
