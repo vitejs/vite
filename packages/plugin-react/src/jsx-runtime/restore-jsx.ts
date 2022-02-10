@@ -24,16 +24,24 @@ export async function restoreJSX(
     return jsxNotFound
   }
 
-  const reactJsxRE = new RegExp(
-    '\\b' + reactAlias + '\\.(createElement|Fragment)\\b',
+  const reactJsxFragmentRE = new RegExp(
+    '\\b' + reactAlias + '\\.(Fragment)\\b',
+    'g'
+  )
+  const reactJsxCreatElementRE = new RegExp(
+    '\\b' + reactAlias + '\\.(createElement)\\b(\\([A-Z]\\w)',
     'g'
   )
 
   let hasCompiledJsx = false
-  code = code.replace(reactJsxRE, (_, prop) => {
+  code = code.replace(reactJsxFragmentRE, (_, prop) => {
     hasCompiledJsx = true
     // Replace with "React" so JSX can be reverse compiled.
     return 'React.' + prop
+  })
+  code = code.replace(reactJsxCreatElementRE, (_, prop, prop2) => {
+    hasCompiledJsx = true
+    return 'React.' + prop + prop2
   })
 
   if (!hasCompiledJsx) {
