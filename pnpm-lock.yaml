@@ -790,7 +790,7 @@ importers:
       picocolors: ^1.0.0
       postcss: ^8.4.6
       postcss-import: ^14.0.2
-      postcss-load-config: ^3.1.1
+      postcss-load-config: ^3.1.2
       postcss-modules: ^4.3.0
       resolve: ^1.22.0
       resolve.exports: ^1.1.0
@@ -865,7 +865,7 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.6
-      postcss-load-config: 3.1.1_ts-node@10.4.0
+      postcss-load-config: 3.1.2_ts-node@10.4.0
       postcss-modules: 4.3.0_postcss@8.4.6
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.1_rollup@2.62.0
@@ -7358,8 +7358,8 @@ packages:
       yaml: 1.10.2
     dev: false
 
-  /postcss-load-config/3.1.1_ts-node@10.4.0:
-    resolution: {integrity: sha512-c/9XYboIbSEUZpiD1UQD0IKiUe8n9WHYV7YFe7X7J+ZwCsEKkUJSFWjS9hBU1RR9THR7jMXst8sxiqP0jjo2mg==}
+  /postcss-load-config/3.1.2_ts-node@10.4.0:
+    resolution: {integrity: sha512-X1NVP1itP6VE5dDA4wR6NK1g9lNlkBx9A+tgDKb/8Mnx4HrvX6k+DcTXGelZvfp6p4zCBZjh4Gwyp4aptOUI9Q==}
     engines: {node: '>= 10'}
     peerDependencies:
       ts-node: '>=9.0.0'
