@@ -110,4 +110,4 @@ NODE_ENV=production
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but displaying a different title from production.
+Now your staging app should have production-like behavior, but display a different title from production.
