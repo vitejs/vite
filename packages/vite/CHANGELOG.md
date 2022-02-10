@@ -46,10 +46,10 @@ The worker plugins pipeline isn't shared with the main Vite pipeline, there may 
 import PluginX from 'vite-plugin-x'
 export default {
   plugins: [ PluginX() ]
-  worker: [
+  worker: {
     format: 'es',
     plugins: [ PluginX() ]
-  ]
+  }
 }
 ```
 
