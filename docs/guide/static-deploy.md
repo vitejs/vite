@@ -164,12 +164,27 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 ## Netlify
 
-1. On [Netlify](https://netlify.com), setup up a new project from GitHub with the following settings:
+1. Install the [Netlify CLI](https://cli.netlify.com/).
+2. Create a new site using `ntl init`.
+3. Deploy using `ntl deploy`.
 
-   - **Build Command:** `vite build` or `npm run build`
-   - **Publish directory:** `dist`
+```bash
+# Install the Netlify CLI
+$ npm install -g netlify-cli
 
-2. Hit the deploy button.
+# Create a new site in Netlify
+$ ntl init
+
+# Deploy to a unique preview URL
+$ ntl deploy
+```
+
+The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
+
+```bash
+# Deploy the site into production
+$ ntl deploy --prod
+```
 
 ## Google Firebase
 
