@@ -189,7 +189,7 @@ test('?url import', async () => {
   )
 })
 
-describe('unicode url', () => {
+describe('Unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
