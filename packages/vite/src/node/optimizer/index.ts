@@ -498,13 +498,9 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
       // like '/node_modules/.vite'
       `/${cacheDirRelative}`
 
-  return cacheDirPrefix
-    ? function isOptimizedDepUrl(url: string): boolean {
-        return url.startsWith(cacheDirPrefix)
-      }
-    : function isOptimizedDepUrl(url: string): boolean {
-        return false
-      }
+  return function isOptimizedDepUrl(url: string): boolean {
+    return url.startsWith(cacheDirPrefix)
+  }
 }
 
 function metadataStringifyReplacer(key: string, value: any) {
