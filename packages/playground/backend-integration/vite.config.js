@@ -18,6 +18,8 @@ function BackendIntegrationExample() {
         .sync(`${normalizePath(root)}/**/*`, { onlyFiles: true })
         .map((filename) => [path.relative(root, filename), filename])
 
+      entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
+
       return {
         build: {
           manifest: true,

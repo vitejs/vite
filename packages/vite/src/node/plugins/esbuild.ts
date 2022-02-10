@@ -231,7 +231,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         config.build.minify === 'esbuild' &&
         // Do not minify ES lib output since that would remove pure annotations
         // and break tree-shaking
-        // https://github.com/vuejs/vue-next/issues/2860#issuecomment-926882793
+        // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
         !(config.build.lib && opts.format === 'es')
 
       if ((!target || target === 'esnext') && !minify) {

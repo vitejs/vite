@@ -1,5 +1,5 @@
 /**
- * modified from https://github.com/vuejs/vue-next/blob/master/scripts/release.js
+ * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
 import colors from 'picocolors'
 import type { ExecaChildProcess, Options as ExecaOptions } from 'execa'

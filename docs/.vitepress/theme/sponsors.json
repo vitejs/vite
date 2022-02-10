@@ -7,6 +7,12 @@
     "tier": "platinum"
   },
   {
+    "id": "cypress",
+    "name": "Cypress.io",
+    "href": "https://cypress.io",
+    "src": "/cypress.svg"
+  },
+  {
     "id": "tailwind",
     "name": "Tailwind Labs",
     "href": "https://tailwindcss.com",
@@ -35,11 +41,5 @@
     "name": "divriots",
     "href": "https://divriots.com/",
     "src": "/divriots.png"
-  },
-  {
-    "id": "finclip",
-    "name": "FinClip",
-    "href": "https://finclip.com/?from=vite",
-    "src": "/finclip.png"
   }
 ]

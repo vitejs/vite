@@ -13,7 +13,7 @@
   <Button>CommonButton</Button>
   <div>
     encrypted message:
-    <p class="encrypted-msg">{{ encryptedMsg }}</p>
+    <p class="encrypted-msg"></p>
   </div>
 
   <ImportType />
