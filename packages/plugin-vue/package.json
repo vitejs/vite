@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -43,6 +43,6 @@
     "rollup": "^2.59.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.29"
+    "vue": "^3.2.30"
   }
 }
