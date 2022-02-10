@@ -181,7 +181,7 @@ function esbuildScanPlugin(
     '@vite/env'
   ]
 
-  const canOptimize = (id: string) =>
+  const isOptimizable = (id: string) =>
     OPTIMIZABLE_ENTRY_RE.test(id) ||
     !!config.optimizeDeps.supportedExtensions?.some((ext) => id.endsWith(ext))
 
@@ -227,7 +227,7 @@ function esbuildScanPlugin(
         // It is possible for the scanner to scan html types in node_modules.
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
-        if (resolved.includes('node_modules') && canOptimize(resolved)) return
+        if (resolved.includes('node_modules') && isOptimizable(resolved)) return
         return {
           path: resolved,
           namespace: 'html'
@@ -350,17 +350,19 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (canOptimize(resolved)) {
+              if (isOptimizable(resolved)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else {
+            } else if (isScannable(resolved)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
                 path: path.resolve(resolved),
                 namespace
               }
+            } else {
+              return externalUnlessEntry({ path: id })
             }
           } else {
             missing[id] = normalizePath(importer)
@@ -406,7 +408,7 @@ function esbuildScanPlugin(
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved) {
-            if (shouldExternalizeDep(resolved, id)) {
+            if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
               return externalUnlessEntry({ path: id })
             }
 
@@ -509,10 +511,7 @@ function extractImportPaths(code: string) {
   return js
 }
 
-export function shouldExternalizeDep(
-  resolvedId: string,
-  rawId: string
-): boolean {
+function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true
@@ -521,9 +520,9 @@ export function shouldExternalizeDep(
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resolved is not a scannable type
-  if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
-    return true
-  }
   return false
+}
+
+function isScannable(id: string): boolean {
+  return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
 }
