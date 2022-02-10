@@ -1,5 +1,4 @@
 <notjs>
 import { foo } from './foo'
-const notjsValue = foo
-export notjsValue
+export const notjsValue = foo
 </notjs>
