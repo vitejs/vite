@@ -139,45 +139,46 @@ export default {
 * **vite:** pass mode to preview command ([#6392](https://github.com/vitejs/vite/issues/6392)) ([1ff1103](https://github.com/vitejs/vite/commit/1ff1103ade691b0a3f564609fdc4e76d5122227b))
 * **worker:** support worker format, plugins and rollupOptions (fix [#6191](https://github.com/vitejs/vite/issues/6191)) ([#6351](https://github.com/vitejs/vite/issues/6351)) ([133fcea](https://github.com/vitejs/vite/commit/133fcea5223263b0ae08ac9a0422b55183ebd266))
 
+### Beta Changelogs
 
-# [2.8.0-beta.7](https://github.com/vitejs/vite/compare/v2.8.0-beta.6...v2.8.0-beta.7) (2022-02-08)
+#### [2.8.0-beta.7](https://github.com/vitejs/vite/compare/v2.8.0-beta.6...v2.8.0-beta.7) (2022-02-08)
 
 See [2.8.0-beta.7 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.7/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
+#### [2.8.0-beta.6](https://github.com/vitejs/vite/compare/v2.8.0-beta.5...v2.8.0-beta.6) (2022-02-07)
 
 See [2.8.0-beta.6 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.6/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
+#### [2.8.0-beta.5](https://github.com/vitejs/vite/compare/v2.8.0-beta.4...v2.8.0-beta.5) (2022-02-02)
 
 See [2.8.0-beta.5 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.5/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
+#### [2.8.0-beta.4](https://github.com/vitejs/vite/compare/v2.8.0-beta.3...v2.8.0-beta.4) (2022-01-31)
 
 See [2.8.0-beta.4 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.4/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
+#### [2.8.0-beta.3](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.3) (2022-01-18)
 
 See [2.8.0-beta.3 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.3/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.2](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.2) (2022-01-13)
+#### [2.8.0-beta.2](https://github.com/vitejs/vite/compare/v2.8.0-beta.1...v2.8.0-beta.2) (2022-01-13)
 
-See [2.8.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.2/packages/vite/CHANGELOG.md)
-
-
-# [2.8.0-beta.1](https://github.com/vitejs/vite/compare/v2.8.0-beta.0...v2.8.0-beta.1) (2022-01-06)
-
-See [2.8.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.1/packages/vite/CHANGELOG.md)
+[2.8.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.2/packages/vite/CHANGELOG.md)
 
 
-# [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
+#### [2.8.0-beta.1](https://github.com/vitejs/vite/compare/v2.8.0-beta.0...v2.8.0-beta.1) (2022-01-06)
 
-See [2.8.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.0/packages/vite/CHANGELOG.md)
+See [2.8.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.1/packages/vite/CHANGELOG.md)
+
+
+#### [2.8.0-beta.0](https://github.com/vitejs/vite/compare/v2.7.9...v2.8.0-beta.0) (2022-01-05)
+
+See [2.8.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.0/packages/vite/CHANGELOG.md)
 
 
 ## [2.7.9](https://github.com/vitejs/vite/compare/v2.7.8...v2.7.9) (2021-12-28)
