@@ -20,6 +20,7 @@ export async function restoreJSX(
   }
 
   const [reactAlias, isCommonJS] = parseReactAlias(code)
+
   if (!reactAlias) {
     return jsxNotFound
   }
@@ -29,7 +30,7 @@ export async function restoreJSX(
     'g'
   )
   const reactJsxCreatElementRE = new RegExp(
-    '\\b' + reactAlias + '\\.(createElement)\\b(\\([A-Z]\\w)',
+    '\\b' + reactAlias + '\\.(createElement)\\b(\\([A-Z"]\\w)',
     'g'
   )
 
