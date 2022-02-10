@@ -54,6 +54,7 @@ export interface DepOptimizationOptions {
    * Hold back server start when doing the initial pre-bundling.
    * Default is false. Set to true for testing purposes, or in situations
    * where the pre Vite 2.9 strategy is required
+   * @experimental
    */
   holdBackServerStart?: boolean
   /**
