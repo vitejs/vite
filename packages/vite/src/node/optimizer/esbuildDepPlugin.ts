@@ -34,21 +34,6 @@ const externalTypes = [
   ...KNOWN_ASSET_TYPES
 ]
 
-const browserExternalContents = (id: string) => `\
-module.exports = new Proxy({}, {
-  get() {
-    return new Proxy({}, {
-      get() {
-        throw new Error(
-          'Module "${id}" has been externalized for ' +
-          'browser compatibility and cannot be accessed in client code.'
-        )
-      }
-    })
-  }
-})
-`
-
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
@@ -209,13 +194,6 @@ export function esbuildDepPlugin(
         }
       })
 
-      build.onLoad(
-        { filter: /.*/, namespace: 'browser-external' },
-        ({ path: id }) => {
-          return { contents: browserExternalContents(id) }
-        }
-      )
-
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
         build.onResolve(
@@ -233,6 +211,14 @@ export function esbuildDepPlugin(
             }
           }
         )
+
+        // Without pnp esbuild is transforming modules disabled for the browser
+        // to empty CommonJS modules. In pnp mode we achieve the same by passing
+        // empty contents causing esbuild to produce an empty CommonJS module.
+        build.onLoad({ filter: /.*/, namespace: 'browser-external' }, () => {
+          return { contents: '' }
+        })
+
         build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
           loader: 'default'
