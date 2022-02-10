@@ -476,8 +476,9 @@ function esbuildScanPlugin(
             contents
           }))
         }
+        const { loader } = config.optimizeDeps?.esbuildOptions ?? {}
         return {
-          loader: ext as Loader,
+          loader: ((loader && loader[`.${ext}`]) || ext) as Loader,
           contents
         }
       })
