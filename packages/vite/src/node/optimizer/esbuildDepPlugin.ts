@@ -194,6 +194,14 @@ export function esbuildDepPlugin(
         }
       })
 
+      // Returning empty contents that will be turned by ESBuild
+      // into a CommonJS module exporting an empty object.
+      // This is what ESBuild does when bundling a dependency
+      // starting from a non-browser-external entrypoint.
+      build.onLoad({ filter: /.*/, namespace: 'browser-external' }, () => {
+        return { contents: '' }
+      })
+
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
         build.onResolve(
@@ -211,13 +219,6 @@ export function esbuildDepPlugin(
             }
           }
         )
-
-        // Without pnp esbuild is transforming modules disabled for the browser
-        // to empty CommonJS modules. In pnp mode we achieve the same by passing
-        // empty contents causing esbuild to produce an empty CommonJS module.
-        build.onLoad({ filter: /.*/, namespace: 'browser-external' }, () => {
-          return { contents: '' }
-        })
 
         build.onLoad({ filter: /.*/ }, async (args) => ({
           contents: await require('fs').promises.readFile(args.path),
