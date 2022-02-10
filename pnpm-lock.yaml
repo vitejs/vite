@@ -278,6 +278,7 @@ importers:
       dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
+      dep-not-js: file:./dep-not-js
       lodash-es: ^4.17.21
       nested-exclude: file:./nested-exclude
       phoenix: ^1.6.2
@@ -294,6 +295,7 @@ importers:
       dep-esbuild-plugin-transform: link:dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
+      dep-not-js: link:dep-not-js
       lodash-es: 4.17.21
       nested-exclude: link:nested-exclude
       phoenix: 1.6.5
@@ -325,6 +327,9 @@ importers:
       react: 17.0.2
     dependencies:
       react: 17.0.2
+
+  packages/playground/optimize-deps/dep-not-js:
+    specifiers: {}
 
   packages/playground/optimize-deps/nested-exclude:
     specifiers:
@@ -5157,7 +5162,6 @@ packages:
 
   /graceful-fs/4.2.9:
     resolution: {integrity: sha512-NtNxqUcXgpW2iMrfqSfR73Glt39K+BLwWsPs94yR63v45T0Wbej7eRmL5cWfwEgqXnmjQp3zaJTshdRW/qC2ZQ==}
-    dev: true
 
   /handlebars/4.7.7:
     resolution: {integrity: sha512-aAcXm5OAfE/8IXkcZvCepKU3VzW1/39Fb5ZuqMtgI/hT8X2YgoMvBY5dLhq/cpOvw7Lk1nK/UF71aLG/ZnVYRA==}
@@ -6148,7 +6152,7 @@ packages:
       '@types/node': 16.11.22
       chalk: 4.1.2
       ci-info: 3.3.0
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
       picomatch: 2.3.0
     dev: true
 
@@ -6333,7 +6337,7 @@ packages:
     dependencies:
       universalify: 2.0.0
     optionalDependencies:
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
 
   /jsonparse/1.3.1:
     resolution: {integrity: sha1-P02uSpH6wxX3EGL4UhzCOfE2YoA=}
@@ -6388,7 +6392,7 @@ packages:
       tslib: 2.3.1
     optionalDependencies:
       errno: 0.1.8
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
       image-size: 0.5.5
       make-dir: 2.1.0
       mime: 1.6.0
