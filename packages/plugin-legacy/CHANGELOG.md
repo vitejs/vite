@@ -1,3 +1,11 @@
+## [1.7.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.7.0...plugin-legacy@1.7.1) (2022-02-11)
+
+### Bug Fixes
+
+* require Vite 2.8.0 ([#6272](https://github.com/vitejs/vite/issues/6272)) ([#6869](https://github.com/vitejs/vite/issues/6869)) ([997b8f1](https://github.com/vitejs/vite/commit/997b8f11cb156cc374ae991875a09534b5489a93))
+
+
+
 # [1.7.0](https://github.com/vitejs/vite/compare/plugin-legacy@1.6.4...plugin-legacy@1.7.0) (2022-02-09)
 
 
