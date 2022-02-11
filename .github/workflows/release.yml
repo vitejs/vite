@@ -57,6 +57,7 @@ jobs:
       - run: git config user.email vitejs.bot@gmail.com
       - run: npm i -g pnpm@6
       - run: npm i -g yarn # even if the repo is using pnpm, Vite still uses yarn v1 for publishing
+      - run: yarn config set registry https://registry.npmjs.org # Yarn's default registry proxy doesn't work in CI
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
