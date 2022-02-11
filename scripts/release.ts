@@ -63,7 +63,9 @@ async function main(): Promise<void> {
     const type: string | undefined = args.type
     if (type) {
       const currentBeta = currentVersion.includes('beta')
-      if (type === 'stable') {
+      if (type === 'next') {
+        targetVersion = inc(currentBeta ? 'prerelease' : 'patch')
+      } else if (type === 'stable') {
         // Out of beta
         if (!currentBeta) {
           throw new Error(
@@ -85,8 +87,20 @@ async function main(): Promise<void> {
           )
         }
         targetVersion = inc('premajor')
-      } else if (type === 'next') {
-        targetVersion = inc(currentBeta ? 'prerelease' : 'patch')
+      } else if (type === 'minor') {
+        if (currentBeta) {
+          throw new Error(
+            `Current version: ${currentVersion} is a beta, use stable to release it first`
+          )
+        }
+        targetVersion = inc('minor')
+      } else if (type === 'major') {
+        if (currentBeta) {
+          throw new Error(
+            `Current version: ${currentVersion} is a beta, use stable to release it first`
+          )
+        }
+        targetVersion = inc('major')
       } else {
         throw new Error(
           `type: ${type} isn't a valid type. Use stable, minor-beta, major-beta, or next`

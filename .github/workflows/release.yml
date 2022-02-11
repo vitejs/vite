@@ -25,9 +25,11 @@ on:
         type: choice
         options:
           - next
+          - stable
           - minor-beta
           - major-beta
-          - stable
+          - minor
+          - major
 
 jobs:
   release:
