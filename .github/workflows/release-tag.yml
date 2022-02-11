@@ -1,4 +1,4 @@
-name: release
+name: Add GitHub Release Tag
 
 on:
   push:
