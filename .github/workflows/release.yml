@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "branch"
+        required: true
+        type: string
+        default: "main"
+      package:
+        description: "package"
+        required: true
+        type: choice
+        options:
+          - vite
+          - plugin-legacy
+          - plugin-vue
+          - plugin-vue-jsx
+          - plugin-react
+          - create-vite
+      type:
+        description: "type"
+        required: true
+        type: choice
+        options:
+          - next
+          - stable
+          - minor-beta
+          - major-beta
+          - minor
+          - major
+
+jobs:
+  release:
+    # prevents this action from running on forks
+    if: github.repository == 'vitejs/vite'
+    name: Release
+    runs-on: ${{ matrix.os }}
+    environment: Release
+    strategy:
+      matrix:
+        # pseudo-matrix for convenience, NEVER use more than a single combination
+        node: [16]
+        os: [ubuntu-latest]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+      - run: git config user.name vitebot
+      - run: git config user.email vitejs.bot@gmail.com
+      - run: npm i -g pnpm@6
+      - run: npm i -g yarn # even if the repo is using pnpm, Vite still uses yarn v1 for publishing
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
+      - name: install
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Creating .npmrc
+        run: |
+          cat << EOF > "$HOME/.npmrc"
+            //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Release
+        run: pnpm --dir packages/${{ github.event.inputs.package }} release -- --quiet --type ${{ github.event.inputs.type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
