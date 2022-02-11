@@ -52,6 +52,7 @@ Alternatively, you can use the `[{ find: RegExp, replacement: string }]` option 
 Vite 2.0 core is now framework agnostic. Vue support is now provided via [`@vitejs/plugin-vue`](https://github.com/vitejs/vite/tree/main/packages/plugin-vue). Simply install it and add it in the Vite config:
 
 ```js
+// vite.config.js
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
