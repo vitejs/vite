@@ -769,7 +769,7 @@ function resolveExternal(
   ssrExternals: string[],
   user: ExternalOption | undefined
 ): ExternalOption {
-  return ((id, parentId, isResolved) => {
+  return (id, parentId, isResolved) => {
     if (shouldExternalizeForSSR(id, ssrExternals)) {
       return true
     }
@@ -782,7 +782,7 @@ function resolveExternal(
         return isExternal(id, user)
       }
     }
-  }) as ExternalOption
+  }
 }
 
 function isExternal(id: string, test: string | RegExp) {
@@ -793,39 +793,48 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(p: Plugin): Plugin {
-  const { resolveId, load, transform } = p
+function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+  const { resolveId, load, transform } = plugin
   return {
-    ...p,
+    ...plugin,
     resolveId: wrapSsrResolveId(resolveId),
     load: wrapSsrLoad(load),
     transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrResolveId(fn: Function | undefined) {
+function wrapSsrResolveId(
+  fn?: Rollup.ResolveIdHook
+): Rollup.ResolveIdHook | undefined {
   if (!fn) return
-  return function (this: any, id: any, importer: any, options: any) {
+
+  return function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
 }
 
-function wrapSsrLoad(fn: Function | undefined) {
+function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, id: any, ...args: any[]) {
+
+  return function (id, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
 }
 
-function wrapSsrTransform(fn: Function | undefined) {
+function wrapSsrTransform(
+  fn?: Rollup.TransformHook
+): Rollup.TransformHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, code: any, importer: any, ...args: any[]) {
+
+  return function (code, importer, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
   }
 }
 
-function injectSsrFlag(options: any = {}) {
-  return { ...options, ssr: true }
+function injectSsrFlag<T extends Record<string, any>>(
+  options?: T
+): T & { ssr: boolean } {
+  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
