@@ -834,7 +834,7 @@ function wrapSsrTransform(
 }
 
 function injectSsrFlag<T extends Record<string, any>>(
-  options: T
+  options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
