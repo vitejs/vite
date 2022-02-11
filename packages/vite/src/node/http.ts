@@ -144,7 +144,7 @@ export async function resolveHttpsConfig(
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }
