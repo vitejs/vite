@@ -33,6 +33,6 @@
     "systemjs": "^6.12.1"
   },
   "peerDependencies": {
-    "vite": "^2.7.8"
+    "vite": "^2.8.0"
   }
 }
