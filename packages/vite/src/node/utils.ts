@@ -441,7 +441,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
     const abs = path.resolve(dir, file)
     // baseline is Node 12 so can't use rmSync :(
     if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
+      emptyDir(abs, skip)
       fs.rmdirSync(abs)
     } else {
       fs.unlinkSync(abs)
