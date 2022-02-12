@@ -72,7 +72,10 @@ export async function dryRun(
   args: string[],
   opts?: ExecaOptions<string>
 ) {
-  return console.log(colors.blue(`[dryrun] ${bin} ${args.join(' ')}`))
+  return console.log(
+    colors.blue(`[dryrun] ${bin} ${args.join(' ')}`),
+    opts || ''
+  )
 }
 
 export const runIfNotDry = isDryRun ? dryRun : run

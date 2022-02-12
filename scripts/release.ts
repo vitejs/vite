@@ -79,7 +79,18 @@ async function main(): Promise<void> {
   }
 
   step('\nGenerating changelog...')
-  await runIfNotDry('pnpm', ['run', 'changelog'])
+  const changelogArgs = [
+    'conventional-changelog',
+    '-p',
+    'angular',
+    '-i',
+    'CHANGELOG.md',
+    '-s',
+    '--commit-path',
+    '.'
+  ]
+  if (pkgName !== 'vite') changelogArgs.push('--lerna-package', 'plugin-vue')
+  await runIfNotDry('npx', changelogArgs, { cwd: pkgPath })
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
