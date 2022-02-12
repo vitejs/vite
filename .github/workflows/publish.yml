@@ -34,4 +34,4 @@ jobs:
       - name: Publish package
         run: pnpm run ci-publish -- ${{ github.ref_name }} --dry
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
