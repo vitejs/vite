@@ -59,25 +59,15 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(
+  glob<Module = { [key: string]: any }>(
     pattern: string,
     options?: AssertOptions
-  ): Record<
-    string,
-    () => Promise<{
-      [key: string]: any
-    }>
-  >
+  ): Record<string, () => Promise<Module>>
 
-  globEager(
+  globEager<Module = { [key: string]: any }>(
     pattern: string,
     options?: AssertOptions
-  ): Record<
-    string,
-    {
-      [key: string]: any
-    }
-  >
+  ): Record<string, Module>
 }
 
 interface ImportMetaEnv {
