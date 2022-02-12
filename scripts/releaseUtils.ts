@@ -4,7 +4,7 @@
 import colors from 'picocolors'
 import type { Options as ExecaOptions } from 'execa'
 import execa from 'execa'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs'
 import path from 'path'
 import type { ReleaseType } from 'semver'
 import semver from 'semver'
@@ -132,4 +132,24 @@ export async function publishPackage(
     stdio: 'pipe',
     cwd: pkgPath
   })
+}
+
+export async function updateTemplateVersions(version: string) {
+  if (/beta|alpha|rc/.test(version)) return
+
+  const dir = path.resolve(__dirname, '../packages/create-vite')
+
+  const templates = readdirSync(dir).filter((dir) =>
+    dir.startsWith('template-')
+  )
+  for (const template of templates) {
+    const pkgPath = path.join(dir, template, `package.json`)
+    const pkg = require(pkgPath)
+    pkg.devDependencies.vite = `^` + version
+    if (template.startsWith('template-vue')) {
+      pkg.devDependencies['@vitejs/plugin-vue'] =
+        `^` + require('../packages/plugin-vue/package.json').version
+    }
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  }
 }

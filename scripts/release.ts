@@ -10,6 +10,7 @@ import {
   run,
   runIfNotDry,
   step,
+  updateTemplateVersions,
   updateVersion
 } from './releaseUtils'
 
@@ -72,7 +73,10 @@ async function main(): Promise<void> {
   }
 
   step('\nUpdating package version...')
-  if (!isDryRun) updateVersion(pkgPath, targetVersion)
+  if (!isDryRun) {
+    updateVersion(pkgPath, targetVersion)
+    if (pkgName === 'create-vite') updateTemplateVersions(targetVersion)
+  }
 
   step('\nGenerating changelog...')
   await runIfNotDry('pnpm', ['run', 'changelog'])

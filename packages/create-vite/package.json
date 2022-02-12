@@ -13,8 +13,7 @@
   ],
   "main": "index.js",
   "scripts": {
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package create-vite",
-    "release": "ts-node updateVersions && ts-node ../../scripts/release.ts --skipBuild"
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package create-vite"
   },
   "engines": {
     "node": ">=12.0.0"
