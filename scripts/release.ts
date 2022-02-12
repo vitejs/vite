@@ -75,7 +75,7 @@ async function main(): Promise<void> {
 
   step('\nUpdating package version...')
   updateVersion(pkgPath, targetVersion)
-  if (pkgName === 'create-vite') updateTemplateVersions(targetVersion)
+  if (pkgName === 'create-vite') updateTemplateVersions()
 
   step('\nGenerating changelog...')
   const changelogArgs = [

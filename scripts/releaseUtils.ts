@@ -194,8 +194,9 @@ export async function logRecentCommits(pkgName: string) {
   console.log()
 }
 
-export async function updateTemplateVersions(version: string) {
-  if (/beta|alpha|rc/.test(version)) return
+export async function updateTemplateVersions() {
+  const viteVersion = require('../packages/vite/package.json').version
+  if (/beta|alpha|rc/.test(viteVersion)) return
 
   const dir = path.resolve(__dirname, '../packages/create-vite')
 
@@ -205,7 +206,7 @@ export async function updateTemplateVersions(version: string) {
   for (const template of templates) {
     const pkgPath = path.join(dir, template, `package.json`)
     const pkg = require(pkgPath)
-    pkg.devDependencies.vite = `^` + version
+    pkg.devDependencies.vite = `^` + viteVersion
     if (template.startsWith('template-vue')) {
       pkg.devDependencies['@vitejs/plugin-vue'] =
         `^` + require('../packages/plugin-vue/package.json').version
