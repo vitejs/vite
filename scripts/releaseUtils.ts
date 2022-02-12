@@ -95,15 +95,23 @@ export function getVersionChoices(currentVersion: string) {
       title: 'next',
       value: inc(currentBeta ? 'prerelease' : 'patch')
     },
-    currentBeta
-      ? {
-          title: 'stable',
-          value: inc('patch')
-        }
-      : {
-          title: 'beta',
-          value: inc('prerelease')
-        },
+    ...(currentBeta
+      ? [
+          {
+            title: 'stable',
+            value: inc('patch')
+          }
+        ]
+      : [
+          {
+            title: 'beta-minor',
+            value: inc('preminor')
+          },
+          {
+            title: 'beta-major',
+            value: inc('premajor')
+          }
+        ]),
     ...versionIncrements.map((i) => ({
       value: inc(i),
       title: i
