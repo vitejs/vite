@@ -116,12 +116,16 @@ export function getVersionChoices(currentVersion: string) {
           {
             title: 'beta-major',
             value: inc('premajor')
+          },
+          {
+            title: 'minor',
+            value: inc('minor')
+          },
+          {
+            title: 'major',
+            value: inc('major')
           }
         ]),
-    ...versionIncrements.map((i) => ({
-      value: inc(i),
-      title: i
-    })),
     { value: 'custom', title: 'custom' }
   ].map((i) => {
     i.title = `${i.title} (${i.value})`
