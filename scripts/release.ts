@@ -6,6 +6,7 @@ import {
   getPackageInfo,
   getVersionChoices,
   isDryRun,
+  logRecentCommits,
   packages,
   run,
   runIfNotDry,
@@ -15,8 +16,6 @@ import {
 } from './releaseUtils'
 
 async function main(): Promise<void> {
-  if (isDryRun) console.log('DRY RUN')
-
   let targetVersion: string | undefined
 
   const { pkg }: { pkg: string } = await prompts({
@@ -27,6 +26,8 @@ async function main(): Promise<void> {
   })
 
   if (!pkg) return
+
+  await logRecentCommits(pkg)
 
   const { currentVersion, pkgName, pkgPath } = getPackageInfo(pkg)
 

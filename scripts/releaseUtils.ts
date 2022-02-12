@@ -13,6 +13,11 @@ export const args = require('minimist')(process.argv.slice(2))
 
 export const isDryRun = !!args.dry
 
+if (isDryRun) {
+  console.log(colors.inverse(colors.yellow(' DRY RUN ')))
+  console.log()
+}
+
 export const packages = [
   'vite',
   'create-vite',
@@ -143,6 +148,45 @@ export async function publishPackage(
     stdio: 'pipe',
     cwd: pkgPath
   })
+}
+
+export async function getLatestTag(pkgName: string) {
+  const tags = (await run('git', ['tag'], { stdio: 'pipe' })).stdout
+    .split(/\n/)
+    .filter(Boolean)
+  const prefix = pkgName === 'vite' ? 'v' : `${pkgName}@`
+  return tags
+    .filter((tag) => tag.startsWith(prefix))
+    .sort()
+    .reverse()[0]
+}
+
+export async function logRecentCommits(pkgName: string) {
+  const tag = await getLatestTag(pkgName)
+  if (!tag) return
+  const sha = await run('git', ['rev-list', '-n', '1', tag], {
+    stdio: 'pipe'
+  }).then((res) => res.stdout.trim())
+  console.log(
+    colors.bold(
+      `\n${colors.blue(`i`)} Commits of ${colors.green(
+        pkgName
+      )} since ${colors.green(tag)} ${colors.gray(`(${sha.slice(0, 5)})`)}`
+    )
+  )
+  await run(
+    'git',
+    [
+      '--no-pager',
+      'log',
+      `${sha}..HEAD`,
+      '--oneline',
+      '--',
+      `packages/${pkgName}`
+    ],
+    { stdio: 'inherit' }
+  )
+  console.log()
 }
 
 export async function updateTemplateVersions(version: string) {

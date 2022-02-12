@@ -13,9 +13,7 @@ async function main() {
   if (tag.includes('@')) [pkgName, version] = tag.split('@')
   else version = tag
 
-  if (!version.startsWith('v')) throw new Error('Invalid tag ' + tag)
-
-  version = version.slice(1)
+  if (version.startsWith('v')) version = version.slice(1)
 
   const { currentVersion, pkgPath } = getPackageInfo(pkgName)
   if (currentVersion !== version)
