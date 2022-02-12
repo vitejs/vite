@@ -303,14 +303,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const code = scriptNode.content
                 .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
                 .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+                .replace(
+                  /"[^"]*"|'[^']*'|`[^`]*`/g,
+                  (m) => `'${' '.repeat(m.length - 2)}'`
+                )
 
               let match: RegExpExecArray | null
               while ((match = inlineImportRE.exec(code))) {
                 const { 0: full, 1: url, index } = match
                 const startUrl = full.indexOf(url)
-                const start = scriptNode.loc.start.offset + index + startUrl + 1
+                const start = index + startUrl + 1
                 const end = start + url.length - 2
-                scriptUrls.push({ start, end, url: url.slice(1, -1) })
+                scriptUrls.push({
+                  start: start + scriptNode.loc.start.offset,
+                  end: end + scriptNode.loc.start.offset,
+                  url: scriptNode.content.slice(index + startUrl + 1, end)
+                })
               }
             }
           }
