@@ -3,6 +3,7 @@ const path = require('path')
 const { createHash } = require('crypto')
 const { build } = require('vite')
 const MagicString = require('magic-string').default
+const fs = require('fs')
 
 // lazy load babel since it's not used during dev
 let babel
@@ -25,6 +26,11 @@ const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('d
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 /**
+ * @type {import('@babel/preset-env').TargetsOptions}
+ */
+const defaultTargets = 'defaults'
+
+/**
  * @param {import('.').Options} options
  * @returns {import('vite').Plugin[]}
  */
@@ -33,7 +39,8 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').ResolvedConfig}
    */
   let config
-  const targets = options.targets || 'defaults'
+  const targets =
+    options.targets || getDefaultTargets(options.ignoreBrowserslistConfig)
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
@@ -685,6 +692,35 @@ function wrapIIFEBabelPlugin() {
         }
       }
     }
+  }
+}
+
+/**
+ * @param {boolean} ignoreBrowserslistConfig
+ * @returns {import('@babel/preset-env').TargetsOptions}
+ */
+function getDefaultTargets(ignoreBrowserslistConfig) {
+  if (ignoreBrowserslistConfig) return defaultTargets
+
+  try {
+    // If browserslist config sources exist, defaultTargets is not needed
+    // because @babel/preset-env automatically detects targets from browserslist config sources
+
+    const getRealPath = (filePath) => path.posix.join(process.cwd(), filePath)
+
+    const pkgJsonStr = fs.readFileSync(getRealPath('package.json'), 'utf8')
+    const pkgJson = JSON.parse(pkgJsonStr)
+    if ('browserslist' in pkgJson) return null
+
+    const rcFileContent = fs.readFileSync(
+      getRealPath('.browserslistrc'),
+      'utf8'
+    )
+    if (rcFileContent) return null
+
+    return defaultTargets
+  } catch (error) {
+    return defaultTargets
   }
 }
 
