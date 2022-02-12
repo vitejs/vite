@@ -57,8 +57,9 @@ export function getPackageInfo(pkgName: string) {
   }
 
   return {
-    pkgName,
     pkg,
+    pkgName,
+    pkgDir,
     pkgPath,
     currentVersion
   }
@@ -137,7 +138,7 @@ export function updateVersion(pkgPath: string, version: string): void {
 }
 
 export async function publishPackage(
-  pkgPath: string,
+  pkdDir: string,
   tag?: string
 ): Promise<void> {
   const publicArgs = ['publish', '--access', 'public']
@@ -146,7 +147,7 @@ export async function publishPackage(
   }
   await runIfNotDry('npm', publicArgs, {
     stdio: 'pipe',
-    cwd: pkgPath
+    cwd: pkdDir
   })
 }
 

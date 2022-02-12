@@ -29,7 +29,7 @@ async function main(): Promise<void> {
 
   await logRecentCommits(pkg)
 
-  const { currentVersion, pkgName, pkgPath } = getPackageInfo(pkg)
+  const { currentVersion, pkgName, pkgPath, pkgDir } = getPackageInfo(pkg)
 
   if (!targetVersion) {
     const { release }: { release: string } = await prompts({
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
     '.'
   ]
   if (pkgName !== 'vite') changelogArgs.push('--lerna-package', 'plugin-vue')
-  await run('npx', changelogArgs, { cwd: pkgPath })
+  await run('npx', changelogArgs, { cwd: pkgDir })
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {

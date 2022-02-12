@@ -15,14 +15,14 @@ async function main() {
 
   if (version.startsWith('v')) version = version.slice(1)
 
-  const { currentVersion, pkgPath } = getPackageInfo(pkgName)
+  const { currentVersion, pkgDir } = getPackageInfo(pkgName)
   if (currentVersion !== version)
     throw new Error(
       `Package version from tag "${version}" mismatches with current version "${currentVersion}"`
     )
 
   step('Publishing package...')
-  await publishPackage(pkgPath, version.includes('beta') ? 'beta' : undefined)
+  await publishPackage(pkgDir, version.includes('beta') ? 'beta' : undefined)
 }
 
 main().catch((err) => {
