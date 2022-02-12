@@ -12,8 +12,10 @@ import {
   generateCodeFrame,
   isDataUrl,
   isExternalUrl,
+  multilineCommentsRE,
   normalizePath,
   processSrcSet,
+  singlelineCommentsRE,
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -43,7 +45,8 @@ interface ScriptAssetsUrl {
 
 const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
-const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
+// Do not allow preceding '.', but do allow preceding '...' for spread operations
+const inlineImportRE = /(?<!(?<!\.\.)\.)\bimport\s*\(("[^"]*"|'[^']*')\)/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -298,6 +301,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
               const code = scriptNode.content
+                .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
+                .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+
               let match: RegExpExecArray | null
               while ((match = inlineImportRE.exec(code))) {
                 const { 0: full, 1: url, index } = match
