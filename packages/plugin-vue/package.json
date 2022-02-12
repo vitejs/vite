@@ -17,7 +17,7 @@
     "patch-dist": "ts-node ../../scripts/patchEsbuildDist.ts dist/index.js vuePlugin",
     "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-vue",
-    "release": "ts-node ../../scripts/release.ts"
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=12.0.0"
