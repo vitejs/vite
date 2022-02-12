@@ -74,10 +74,8 @@ async function main(): Promise<void> {
   }
 
   step('\nUpdating package version...')
-  if (!isDryRun) {
-    updateVersion(pkgPath, targetVersion)
-    if (pkgName === 'create-vite') updateTemplateVersions(targetVersion)
-  }
+  updateVersion(pkgPath, targetVersion)
+  if (pkgName === 'create-vite') updateTemplateVersions(targetVersion)
 
   step('\nGenerating changelog...')
   const changelogArgs = [
@@ -91,7 +89,7 @@ async function main(): Promise<void> {
     '.'
   ]
   if (pkgName !== 'vite') changelogArgs.push('--lerna-package', 'plugin-vue')
-  await runIfNotDry('npx', changelogArgs, { cwd: pkgPath })
+  await run('npx', changelogArgs, { cwd: pkgPath })
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
@@ -101,6 +99,7 @@ async function main(): Promise<void> {
     await runIfNotDry('git', ['tag', tag])
   } else {
     console.log('No changes to commit.')
+    return
   }
 
   step('\nPushing to GitHub...')
@@ -109,11 +108,13 @@ async function main(): Promise<void> {
 
   if (isDryRun) {
     console.log(`\nDry run finished - run git diff to see package changes.`)
+  } else {
+    console.log(
+      colors.green(
+        '\nPushed, publishing should starts shortly on CI.\nhttps://github.com/vitejs/vite/actions/workflows/publish.yml'
+      )
+    )
   }
-
-  step(
-    '\nTag pushed, publishing should starts shortly on CI.\nhttps://github.com/vitejs/vite/actions/workflows/publish.yml'
-  )
 
   console.log()
 }
