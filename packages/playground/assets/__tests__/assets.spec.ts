@@ -57,6 +57,12 @@ describe('raw references from /public', () => {
   })
 })
 
+test('import-expression from simple script', async () => {
+  expect(await page.textContent('.import-expression')).toMatch(
+    '[success][success]'
+  )
+})
+
 describe('asset imports from js', () => {
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(assetMatch)
@@ -194,6 +200,19 @@ describe('unicode url', () => {
         : `/foo/テスト-測試-white space.js`
     )
   })
+})
+
+describe('encodeURI', () => {
+  if (isBuild) {
+    test('img src with encodeURI', async () => {
+      const img = await page.$('.encodeURI')
+      expect(
+        await (
+          await img.getAttribute('src')
+        ).startsWith('data:image/png;base64')
+      ).toBe(true)
+    })
+  }
 })
 
 test('new URL(..., import.meta.url)', async () => {

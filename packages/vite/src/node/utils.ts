@@ -1,5 +1,5 @@
 import debug from 'debug'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -12,14 +12,15 @@ import {
   ENV_PUBLIC_PATH
 } from './constants'
 import resolve from 'resolve'
-import builtins from 'builtin-modules'
-import { FSWatcher } from 'chokidar'
+import { builtinModules } from 'module'
+import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import {
+import type {
   DecodedSourceMap,
   RawSourceMap
 } from '@ampproject/remapping/dist/types/types'
 import { performance } from 'perf_hooks'
+import { parse as parseUrl, URLSearchParams } from 'url'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -37,10 +38,26 @@ export const flattenId = (id: string): string =>
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
+//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
+const builtins = new Set([
+  ...builtinModules,
+  'assert/strict',
+  'diagnostics_channel',
+  'dns/promises',
+  'fs/promises',
+  'path/posix',
+  'path/win32',
+  'readline/promises',
+  'stream/consumers',
+  'stream/promises',
+  'stream/web',
+  'timers/promises',
+  'util/types',
+  'wasi'
+])
+
 export function isBuiltin(id: string): boolean {
-  const deepMatch = id.match(deepImportRE)
-  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
-  return builtins.includes(id)
+  return builtins.has(id.replace(/^node:/, ''))
 }
 
 export function moduleListContains(
@@ -235,11 +252,11 @@ export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = performance.now() - start - subtract
   const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
-    return chalk.green(timeString)
+    return colors.green(timeString)
   } else if (time < 50) {
-    return chalk.yellow(timeString)
+    return colors.yellow(timeString)
   } else {
-    return chalk.red(timeString)
+    return colors.red(timeString)
   }
 }
 
@@ -259,11 +276,11 @@ export function prettifyUrl(url: string, root: string): string {
       if (file.startsWith('@')) {
         file = `${file}/${seg[npmIndex + 2]}`
       }
-      file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
+      file = `npm: ${colors.dim(file)}${isSourceMap ? ` (source map)` : ``}`
     }
-    return chalk.dim(file)
+    return colors.dim(file)
   } else {
-    return chalk.dim(url)
+    return colors.dim(url)
   }
 }
 
@@ -310,7 +327,9 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length + 1
+    if (lines[i]) {
+      start += lines[i].length + 1
+    }
   }
   return start + column
 }
@@ -498,13 +517,11 @@ export async function processSrcSet(
     })
   )
 
-  const url = ret.reduce((prev, { url, descriptor }, index) => {
+  return ret.reduce((prev, { url, descriptor }, index) => {
     descriptor = descriptor || ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
-
-  return url
 }
 
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
@@ -617,3 +634,11 @@ export const usingDynamicImport = typeof jest === 'undefined'
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
   : require
+
+export function parseRequest(id: string): Record<string, string> | null {
+  const { search } = parseUrl(id)
+  if (!search) {
+    return null
+  }
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+}

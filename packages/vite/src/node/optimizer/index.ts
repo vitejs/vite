@@ -1,9 +1,10 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { createHash } from 'crypto'
-import { build, BuildOptions as EsbuildBuildOptions } from 'esbuild'
-import { ResolvedConfig } from '../config'
+import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import { build } from 'esbuild'
+import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
@@ -117,11 +118,6 @@ export async function optimizeDeps(
   const { root, logger, cacheDir } = config
   const log = asCommand ? logger.info : debug
 
-  if (!cacheDir) {
-    log(`No cache directory. Skipping.`)
-    return null
-  }
-
   const dataPath = path.join(cacheDir, '_metadata.json')
   const mainHash = getDepHash(root, config)
   const data: DepOptimizationMetadata = {
@@ -166,7 +162,7 @@ export async function optimizeDeps(
   data.browserHash = createHash('sha256')
     .update(data.hash + JSON.stringify(deps))
     .digest('hex')
-    .substr(0, 8)
+    .substring(0, 8)
 
   const missingIds = Object.keys(missing)
   if (missingIds.length) {
@@ -174,8 +170,8 @@ export async function optimizeDeps(
       `The following dependencies are imported but could not be resolved:\n\n  ${missingIds
         .map(
           (id) =>
-            `${chalk.cyan(id)} ${chalk.white.dim(
-              `(imported by ${missing[id]})`
+            `${colors.cyan(id)} ${colors.white(
+              colors.dim(`(imported by ${missing[id]})`)
             )}`
         )
         .join(`\n  `)}\n\nAre they installed?`
@@ -195,7 +191,7 @@ export async function optimizeDeps(
           deps[normalizedId] = entry
         } else {
           throw new Error(
-            `Failed to resolve force included dependency: ${chalk.cyan(id)}`
+            `Failed to resolve force included dependency: ${colors.cyan(id)}`
           )
         }
       }
@@ -214,7 +210,7 @@ export async function optimizeDeps(
   const maxListed = 5
   const listed = Math.min(total, maxListed)
   const extra = Math.max(0, total - maxListed)
-  const depsString = chalk.yellow(
+  const depsString = colors.yellow(
     qualifiedIds.slice(0, listed).join(`\n  `) +
       (extra > 0 ? `\n  (...and ${extra} more)` : ``)
   )
@@ -222,15 +218,13 @@ export async function optimizeDeps(
     if (!newDeps) {
       // This is auto run on server start - let the user know that we are
       // pre-optimizing deps
-      logger.info(
-        chalk.greenBright(`Pre-bundling dependencies:\n  ${depsString}`)
-      )
+      logger.info(colors.green(`Pre-bundling dependencies:\n  ${depsString}`))
       logger.info(
         `(this will be run only when your dependencies or config have changed)`
       )
     }
   } else {
-    logger.info(chalk.greenBright(`Optimizing dependencies:\n  ${depsString}`))
+    logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
   }
 
   // esbuild generates nested directory output with lowest common ancestor base
@@ -408,5 +402,5 @@ function getDepHash(root: string, config: ResolvedConfig): string {
       return value
     }
   )
-  return createHash('sha256').update(content).digest('hex').substr(0, 8)
+  return createHash('sha256').update(content).digest('hex').substring(0, 8)
 }

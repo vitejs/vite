@@ -1,6 +1,6 @@
-import chalk from 'chalk'
+import colors from 'picocolors'
 import { optimizeDeps } from '.'
-import { ViteDevServer } from '..'
+import type { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**
@@ -24,7 +24,7 @@ export function createMissingImporterRegisterFn(
     currentMissing = {}
 
     logger.info(
-      chalk.yellow(
+      colors.yellow(
         `new dependencies found: ${Object.keys(newDeps).join(
           ', '
         )}, updating...`
@@ -54,18 +54,19 @@ export function createMissingImporterRegisterFn(
       knownOptimized = newData!.optimized
 
       // update ssr externals
-      server._ssrExternals = resolveSSRExternal(
-        server.config,
-        Object.keys(knownOptimized)
-      )
+      if (ssr) {
+        server._ssrExternals = resolveSSRExternal(
+          server.config,
+          Object.keys(knownOptimized)
+        )
+      }
 
-      logger.info(
-        chalk.greenBright(`✨ dependencies updated, reloading page...`),
-        { timestamp: true }
-      )
+      logger.info(colors.green(`✨ dependencies updated, reloading page...`), {
+        timestamp: true
+      })
     } catch (e) {
       logger.error(
-        chalk.red(`error while updating dependencies:\n${e.stack}`),
+        colors.red(`error while updating dependencies:\n${e.stack}`),
         { timestamp: true, error: e }
       )
     } finally {
