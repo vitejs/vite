@@ -421,15 +421,12 @@ export function writeFile(
  * unnecessary in the first place)
  */
 export function isFileReadable(filename: string): boolean {
-  let stat = null
   try {
-    stat = fs.statSync(filename, { throwIfNoEntry: false })
-  } catch (e) {
-    if (e && (e.code === 'ENOENT' || e.code === 'ENOTDIR')) return false
-
-    throw e
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
+  } catch {
+    return false
   }
-  return !!stat
 }
 
 /**
