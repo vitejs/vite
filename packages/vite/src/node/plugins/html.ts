@@ -698,11 +698,6 @@ export async function applyHtmlTransforms(
   hooks: IndexHtmlTransformHook[],
   ctx: IndexHtmlTransformContext
 ): Promise<string> {
-  const headTags: HtmlTagDescriptor[] = []
-  const headPrependTags: HtmlTagDescriptor[] = []
-  const bodyTags: HtmlTagDescriptor[] = []
-  const bodyPrependTags: HtmlTagDescriptor[] = []
-
   for (const hook of hooks) {
     const res = await hook(html, ctx)
     if (!res) {
@@ -718,6 +713,12 @@ export async function applyHtmlTransforms(
         html = res.html || html
         tags = res.tags
       }
+
+      const headTags: HtmlTagDescriptor[] = []
+      const headPrependTags: HtmlTagDescriptor[] = []
+      const bodyTags: HtmlTagDescriptor[] = []
+      const bodyPrependTags: HtmlTagDescriptor[] = []
+
       for (const tag of tags) {
         if (tag.injectTo === 'body') {
           bodyTags.push(tag)
@@ -729,21 +730,12 @@ export async function applyHtmlTransforms(
           headPrependTags.push(tag)
         }
       }
-    }
-  }
 
-  // inject tags
-  if (headPrependTags.length) {
-    html = injectToHead(html, headPrependTags, true)
-  }
-  if (headTags.length) {
-    html = injectToHead(html, headTags)
-  }
-  if (bodyPrependTags.length) {
-    html = injectToBody(html, bodyPrependTags, true)
-  }
-  if (bodyTags.length) {
-    html = injectToBody(html, bodyTags)
+      html = injectToHead(html, headPrependTags, true)
+      html = injectToHead(html, headTags)
+      html = injectToBody(html, bodyPrependTags, true)
+      html = injectToBody(html, bodyTags)
+    }
   }
 
   return html
@@ -777,6 +769,8 @@ function injectToHead(
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
+  if (tags.length === 0) return html
+
   if (prepend) {
     // inject as the first element of head
     if (headPrependInjectRE.test(html)) {
@@ -811,6 +805,8 @@ function injectToBody(
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
+  if (tags.length === 0) return html
+
   if (prepend) {
     // inject after body open
     if (bodyPrependInjectRE.test(html)) {
