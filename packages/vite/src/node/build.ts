@@ -99,6 +99,11 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
+   * Exclude paths that are less than the limit but do not want to be included
+   * @default []
+   */
+  assetsInlineExclude?: string | RegExp | (string | RegExp)[]
+  /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
    * style tags when the chunk is loaded.
@@ -243,6 +248,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
+    assetsInlineExclude: [],
     cssCodeSplit: !raw?.lib,
     cssTarget: false,
     sourcemap: false,

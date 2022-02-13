@@ -10,6 +10,7 @@ import type { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
+import { createFilter } from '@rollup/pluginutils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -284,14 +285,16 @@ async function fileToBuiltUrl(
   if (cached) {
     return cached
   }
-
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
-
+  const assetsFilter = config.build.assetsInlineExclude
+    ? createFilter(config.build.assetsInlineExclude)
+    : () => false
   let url: string
   if (
     config.build.lib ||
     (!file.endsWith('.svg') &&
+      !assetsFilter(file) &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {
     // base64 inlined as a string
