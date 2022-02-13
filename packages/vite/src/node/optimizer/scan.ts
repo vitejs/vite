@@ -294,7 +294,7 @@ function esbuildScanPlugin(
                   loader,
                   contents: localContent
                 }
-                js += `import '${virtualModulePrefix}${path}';\n`
+                js += `import ${JSON.stringify(virtualModulePrefix + path)}\n`
               } else {
                 js += content + '\n'
               }

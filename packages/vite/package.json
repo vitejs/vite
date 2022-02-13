@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -39,8 +39,7 @@
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
-    "release": "ts-node ../../scripts/release.ts"
+    "prepublishOnly": "npm run build"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
@@ -53,7 +52,7 @@
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^1.1.1",
+    "@ampproject/remapping": "^2.1.0",
     "@babel/parser": "^7.17.0",
     "@babel/types": "^7.17.0",
     "@rollup/plugin-alias": "^3.1.9",
