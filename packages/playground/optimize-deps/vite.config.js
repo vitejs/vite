@@ -58,7 +58,7 @@ function notjs() {
     config() {
       return {
         optimizeDeps: {
-          supportedExtensions: ['.notjs'],
+          extensions: ['.notjs'],
           esbuildOptions: {
             plugins: [
               {

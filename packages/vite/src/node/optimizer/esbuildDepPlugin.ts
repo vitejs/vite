@@ -40,9 +40,10 @@ export function esbuildDepPlugin(
   config: ResolvedConfig,
   ssr?: boolean
 ): Plugin {
-  const allExternalTypes = config.optimizeDeps.supportedExtensions
+  // remove optimizable extensions from `externalTypes` list
+  const allExternalTypes = config.optimizeDeps.extensions
     ? externalTypes.filter(
-        (type) => !config.optimizeDeps.supportedExtensions?.includes('.' + type)
+        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
       )
     : externalTypes
 

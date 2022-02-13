@@ -183,7 +183,7 @@ function esbuildScanPlugin(
 
   const isOptimizable = (id: string) =>
     OPTIMIZABLE_ENTRY_RE.test(id) ||
-    !!config.optimizeDeps.supportedExtensions?.some((ext) => id.endsWith(ext))
+    !!config.optimizeDeps.extensions?.some((ext) => id.endsWith(ext))
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,

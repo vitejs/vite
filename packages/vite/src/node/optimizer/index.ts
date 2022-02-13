@@ -82,9 +82,13 @@ export interface DepOptimizationOptions {
   /**
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
+   *
+   * By default, Vite can optimize `.mjs`, `.js`, and `.ts` files. This option
+   * allows specifying additional extensions.
+   *
    * @experimental
    */
-  supportedExtensions?: string[]
+  extensions?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -251,11 +255,7 @@ export async function optimizeDeps(
     const flatId = flattenId(id)
     const filePath = (flatIdDeps[flatId] = deps[id])
     let exportsData: ExportsData
-    if (
-      config.optimizeDeps.supportedExtensions?.some((ext) =>
-        filePath.endsWith(ext)
-      )
-    ) {
+    if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
       // For custom supported extensions, build the entry file to transform it into JS,
       // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
       // so only the entry file is being transformed.
