@@ -222,7 +222,7 @@ async function init() {
   // user choice associated with prompts
   const { framework, overwrite, packageName, variant } = result
 
-  const root = path.join(cwd, targetDir)
+  const root = path.resolve(cwd, targetDir)
 
   if (overwrite) {
     emptyDir(root)
