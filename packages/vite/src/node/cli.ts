@@ -6,7 +6,6 @@ import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from '.'
-import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -230,6 +229,7 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      const { preview } = await import('./preview')
       try {
         const server = await preview({
           root,
