@@ -202,12 +202,12 @@ describe('Unicode path', () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    expect(await page.textContent('h1')).toBe('Unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 
   test('spa fallback', async () => {
     await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
-    expect(await page.textContent('h1')).toBe('Unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 })
 
