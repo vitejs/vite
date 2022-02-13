@@ -177,6 +177,8 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
+      '__filename',
+      '__dirname',
       result.code + `\n//# sourceURL=${mod.url}`
     )
     await initModule(
@@ -185,7 +187,9 @@ async function instantiateModule(
       ssrImportMeta,
       ssrImport,
       ssrDynamicImport,
-      ssrExportAll
+      ssrExportAll,
+      mod.file,
+      mod.file && path.dirname(mod.file)
     )
   } catch (e) {
     if (e.stack) {
