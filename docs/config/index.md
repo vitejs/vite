@@ -711,7 +711,7 @@ export default defineConfig({
   Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
   ::: tip Note
-  If you specify `build.lib`, `build.assetsInlineLimit`, `build.assetsInlineExclude` will be ignored and assets will always be inlined, regardless of file size.
+  If you specify `build.lib` or `build.assetsInlineExclude` , `build.assetsInlineLimit`will be ignored and assets will always be inlined, regardless of file size.
   :::
 
 ### build.assetsInlineExclude
