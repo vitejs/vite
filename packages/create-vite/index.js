@@ -145,7 +145,7 @@ async function init() {
           message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim() || defaultProjectName)
+            (targetDir = state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
         },
         {
           type: () =>
