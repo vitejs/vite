@@ -422,8 +422,8 @@ export function writeFile(
  */
 export function isFileReadable(filename: string): boolean {
   try {
-    fs.accessSync(filename, fs.constants.R_OK)
-    return true
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
   } catch {
     return false
   }
