@@ -285,11 +285,13 @@ async function fileToBuiltUrl(
   if (cached) {
     return cached
   }
+
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
   const assetsFilter = config.build.assetsInlineExclude
     ? createFilter(config.build.assetsInlineExclude)
     : () => false
+
   let url: string
   if (
     config.build.lib ||
