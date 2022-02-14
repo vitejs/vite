@@ -138,11 +138,13 @@ export function transformMiddleware(
           )
         }
       }
-
+      let fixIndex = url.indexOf('?')
+      let fixUrl = url
+      if (fixIndex > 0) fixUrl = url.substring(0, fixIndex)
       if (
         isJSRequest(url) ||
         isImportRequest(url) ||
-        isCSSRequest(url) ||
+        isCSSRequest(fixUrl) ||
         isHTMLProxy(url)
       ) {
         // strip ?import
