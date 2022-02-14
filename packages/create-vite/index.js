@@ -129,10 +129,12 @@ const renameFiles = {
 }
 
 async function init() {
-  let targetDir = argv._[0].replace(/\/+$/g, '')
+  let targetDir = argv._[0]
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+  const defaultProjectName = !targetDir
+    ? 'vite-project'
+    : targetDir.trim().replace(/\/+$/g, '')
 
   let result = {}
 
