@@ -772,19 +772,19 @@ export default defineConfig({
 
 ### build.manifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
+  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssrManifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssr
 

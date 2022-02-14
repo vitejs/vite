@@ -149,8 +149,8 @@ cli
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
       `or specify minifier to use (default: esbuild)`
   )
-  .option('--manifest', `[boolean] emit build manifest json`)
-  .option('--ssrManifest', `[boolean] emit ssr manifest json`)
+  .option('--manifest [name]', `[boolean | string] emit build manifest json`)
+  .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`

@@ -179,7 +179,7 @@ export interface BuildOptions {
    * ```
    * @default false
    */
-  manifest?: boolean
+  manifest?: boolean | string
   /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
@@ -195,7 +195,7 @@ export interface BuildOptions {
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
    */
-  ssrManifest?: boolean
+  ssrManifest?: boolean | string
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.

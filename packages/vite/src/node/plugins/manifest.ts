@@ -113,7 +113,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const outputLength = Array.isArray(output) ? output.length : 1
       if (outputCount >= outputLength) {
         this.emitFile({
-          fileName: `manifest.json`,
+          fileName:
+            typeof config.build.manifest === 'string'
+              ? config.build.manifest
+              : 'manifest.json',
           type: 'asset',
           source: JSON.stringify(manifest, null, 2)
         })
