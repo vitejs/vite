@@ -92,7 +92,6 @@ function optimizeDepInfoFromFile(
   metadata: DepOptimizationMetadata,
   file: string
 ): OptimizedDepInfo | undefined {
-  file = file.replace(/\.map$/, '')
   return (
     findFileInfo(metadata.optimized, file) ||
     findFileInfo(metadata.discovered, file)

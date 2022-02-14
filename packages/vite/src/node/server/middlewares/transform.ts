@@ -1,3 +1,5 @@
+import { promises as fs } from 'fs'
+import path from 'path'
 import type { ViteDevServer } from '..'
 import type { Connect } from 'types/connect'
 import {
@@ -10,13 +12,19 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId
+  unwrapId,
+  fsPathFromId,
+  ensureVolumeInPath
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import colors from 'picocolors'
-import { DEP_VERSION_RE, NULL_BYTE_PLACEHOLDER } from '../../constants'
+import {
+  DEP_VERSION_RE,
+  NULL_BYTE_PLACEHOLDER,
+  FS_PREFIX
+} from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
@@ -65,15 +73,35 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const originalUrl = url.replace(/\.map($|\?)/, '$1')
-        const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
-          ?.transformResult?.map
-        if (map) {
-          return send(req, res, JSON.stringify(map), 'json', {
-            headers: server.config.server.headers
-          })
+        if (isOptimizedDepUrl(url)) {
+          // If the browser is requesting a source map for an optimized dep, it
+          // means that the dependency has already been pre-bundled and loaded
+          try {
+            const mapFile = url.startsWith(FS_PREFIX)
+              ? fsPathFromId(url)
+              : normalizePath(
+                  ensureVolumeInPath(path.resolve(root, url.slice(1)))
+                )
+            const map = await fs.readFile(mapFile, 'utf-8')
+            return send(req, res, map, 'json', {
+              headers: server.config.server.headers
+            })
+          } catch (e) {
+            res.statusCode = 504 // status code request timeout
+            res.end()
+            return
+          }
         } else {
-          return next()
+          const originalUrl = url.replace(/\.map($|\?)/, '$1')
+          const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
+            ?.transformResult?.map
+          if (map) {
+            return send(req, res, JSON.stringify(map), 'json', {
+              headers: server.config.server.headers
+            })
+          } else {
+            return next()
+          }
         }
       }
 
