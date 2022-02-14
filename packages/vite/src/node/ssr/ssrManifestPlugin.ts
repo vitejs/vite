@@ -96,7 +96,10 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       this.emitFile({
-        fileName: 'ssr-manifest.json',
+        fileName:
+          typeof config.build.ssrManifest === 'string'
+            ? config.build.ssrManifest
+            : 'ssr-manifest.json',
         type: 'asset',
         source: JSON.stringify(ssrManifest, null, 2)
       })
