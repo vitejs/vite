@@ -1,3 +1,19 @@
+## [2.8.2](https://github.com/vitejs/vite/compare/v2.8.1...v2.8.2) (2022-02-14)
+
+
+### Features
+
+* custom manifest file name ([#6667](https://github.com/vitejs/vite/issues/6667)) ([e385346](https://github.com/vitejs/vite/commit/e385346c53b3bb54f2e1abcb7348e33d7e075fd4))
+* make `import.meta.glob` and `import.meta.globEager` generic ([#5073](https://github.com/vitejs/vite/issues/5073)) ([78e84c8](https://github.com/vitejs/vite/commit/78e84c80c0f49d6f7c8a0e10c4257a477a221280))
+
+
+### Performance Improvements
+
+* improve isFileReadable performance ([#6868](https://github.com/vitejs/vite/issues/6868)) ([62cbe68](https://github.com/vitejs/vite/commit/62cbe68ab713d5aba626a1e3a4da46e8c2320bf3))
+* lazy import preview function ([#6898](https://github.com/vitejs/vite/issues/6898)) ([2eabcb9](https://github.com/vitejs/vite/commit/2eabcb9a30a413ff540cbdd60a919a0d1f72fb35))
+
+
+
 ## [2.8.1](https://github.com/vitejs/vite/compare/v2.8.0...v2.8.1) (2022-02-11)
 
 
