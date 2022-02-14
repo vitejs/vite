@@ -129,7 +129,7 @@ const renameFiles = {
 }
 
 async function init() {
-  let targetDir = argv._[0]
+  let targetDir = argv._[0].replace(/\/+$/g, '')
   let template = argv.template || argv.t
 
   const defaultProjectName = !targetDir ? 'vite-project' : targetDir
@@ -145,7 +145,8 @@ async function init() {
           message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
+            (targetDir =
+              state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
         },
         {
           type: () =>
@@ -222,7 +223,7 @@ async function init() {
   // user choice associated with prompts
   const { framework, overwrite, packageName, variant } = result
 
-  const root = path.resolve(cwd, targetDir)
+  const root = path.join(cwd, targetDir)
 
   if (overwrite) {
     emptyDir(root)
