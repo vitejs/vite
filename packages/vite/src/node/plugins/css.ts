@@ -55,10 +55,10 @@ export interface CSSOptions {
   modules?: CSSModulesOptions | false
   preprocessorOptions?: Record<string, any>
   postcss?:
-  | string
-  | (Postcss.ProcessOptions & {
-    plugins?: Postcss.Plugin[]
-  })
+    | string
+    | (Postcss.ProcessOptions & {
+        plugins?: Postcss.Plugin[]
+      })
 }
 
 export interface CSSModulesOptions {
@@ -70,18 +70,18 @@ export interface CSSModulesOptions {
   scopeBehaviour?: 'global' | 'local'
   globalModulePaths?: RegExp[]
   generateScopedName?:
-  | string
-  | ((name: string, filename: string, css: string) => string)
+    | string
+    | ((name: string, filename: string, css: string) => string)
   hashPrefix?: string
   /**
    * default: null
    */
   localsConvention?:
-  | 'camelCase'
-  | 'camelCaseOnly'
-  | 'dashes'
-  | 'dashesOnly'
-  | null
+    | 'camelCase'
+    | 'camelCaseOnly'
+    | 'dashes'
+    | 'dashesOnly'
+    | null
 }
 
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
@@ -165,7 +165,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id, options) {
-      if (!isCSSRequest(id) || commonjsProxyRE.test(id) || SPECIAL_QUERY_RE.test(id)) {
+      if (
+        !isCSSRequest(id) ||
+        commonjsProxyRE.test(id) ||
+        SPECIAL_QUERY_RE.test(id)
+      ) {
         return
       }
       const ssr = options?.ssr === true
@@ -221,14 +225,14 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                 isCSSRequest(file)
                   ? moduleGraph.createFileOnlyEntry(file)
                   : await moduleGraph.ensureEntryFromUrl(
-                    (
-                      await fileToUrl(file, config, this)
-                    ).replace(
-                      (config.server?.origin ?? '') + config.base,
-                      '/'
-                    ),
-                    ssr
-                  )
+                      (
+                        await fileToUrl(file, config, this)
+                      ).replace(
+                        (config.server?.origin ?? '') + config.base,
+                        '/'
+                      ),
+                      ssr
+                    )
               )
             }
             moduleGraph.updateModuleInfo(
@@ -314,8 +318,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `const __vite__css = ${JSON.stringify(css)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
-            `${modulesCode ||
-            `import.meta.hot.accept()\nexport default __vite__css`
+            `${
+              modulesCode ||
+              `import.meta.hot.accept()\nexport default __vite__css`
             }`,
             `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
@@ -346,8 +351,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           modulesCode ||
           (usedRE.test(id)
             ? `export default ${JSON.stringify(
-              inlined ? await minifyCSS(css, config) : css
-            )}`
+                inlined ? await minifyCSS(css, config) : css
+              )}`
             : `export default ''`),
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
