@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs'
 import type { Plugin } from '../plugin'
 import colors from 'picocolors'
+import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import { isOptimizedDepFile } from '../optimizer'
 import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
@@ -30,8 +31,15 @@ export function optimizedDepsPlugin(): Plugin {
         const metadata = server?._optimizeDepsMetadata
         if (metadata) {
           const file = cleanUrl(id)
+          const versionMatch = id.match(DEP_VERSION_RE)
+          const browserHash = versionMatch
+            ? versionMatch[1].split('=')[1]
+            : undefined
           const info = optimizeDepInfoFromFile(metadata, file)
           if (info) {
+            if (browserHash && info.browserHash !== browserHash) {
+              throwOutdatedRequest(id)
+            }
             try {
               // This is an entry point, it may still not be bundled
               await info.processing
