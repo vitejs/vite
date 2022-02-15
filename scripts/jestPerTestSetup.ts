@@ -10,8 +10,7 @@ import type {
   Logger
 } from 'vite'
 import { createServer, build } from 'vite'
-import type { Page } from 'playwright-chromium'
-// eslint-disable-next-line node/no-extraneous-import
+import type { Page, ConsoleMessage } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
@@ -45,13 +44,15 @@ let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
 
-const setBeforeAllError = (err) => ((global as any).beforeAllError = err)
-const getBeforeAllError = () => (global as any).beforeAllError
+const setBeforeAllError = (err: Error | null) => {
+  global.beforeAllError = err
+}
+const getBeforeAllError = () => global.beforeAllError
 //init with null so old errors don't carry over
 setBeforeAllError(null)
 
-const logs = ((global as any).browserLogs = [])
-const onConsole = (msg) => {
+const logs: string[] = (global.browserLogs = [])
+const onConsole = (msg: ConsoleMessage) => {
   logs.push(msg.text())
 }
 
@@ -145,7 +146,7 @@ beforeAll(async () => {
         await page.goto(url)
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     // jest doesn't exit if our setup has error here
     // https://github.com/facebook/jest/issues/2713
     setBeforeAllError(e)
@@ -172,11 +173,12 @@ afterAll(async () => {
 function startStaticServer(): Promise<string> {
   // check if the test project has base config
   const configFile = resolve(rootDir, 'vite.config.js')
-  let config: UserConfig
+  let config: UserConfig | undefined
   try {
     config = require(configFile)
   } catch (e) {}
-  const base = (config?.base || '/') === '/' ? '' : config.base
+  // fallback internal base to ''
+  const base = (config?.base ?? '/') === '/' ? '' : config?.base ?? ''
 
   // @ts-ignore
   if (config && config.__test__) {
@@ -219,10 +221,10 @@ export async function notifyRebuildComplete(
   watcher: RollupWatcher
 ): Promise<RollupWatcher> {
   let callback: (event: RollupWatcherEvent) => void
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     callback = (event) => {
       if (event.code === 'END') {
-        resolve(true)
+        resolve()
       }
     }
     watcher.on('event', callback)
