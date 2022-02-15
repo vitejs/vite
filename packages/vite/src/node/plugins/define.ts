@@ -8,13 +8,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
   const processNodeEnv: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    )
+    'process.env.NODE_ENV': JSON.stringify(config.mode),
+    'global.process.env.NODE_ENV': JSON.stringify(config.mode),
+    'globalThis.process.env.NODE_ENV': JSON.stringify(config.mode)
   }
 
   const userDefine: Record<string, string> = {}
