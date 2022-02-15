@@ -49,12 +49,6 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_PORT__`, JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
-      } else if (code.includes('process.env.NODE_ENV')) {
-        // replace process.env.NODE_ENV
-        return code.replace(
-          /\bprocess\.env\.NODE_ENV\b/g,
-          JSON.stringify(config.mode)
-        )
       }
     }
   }
