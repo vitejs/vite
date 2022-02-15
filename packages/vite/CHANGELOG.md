@@ -1,3 +1,12 @@
+## [2.8.3](https://github.com/vitejs/vite/compare/v2.8.2...v2.8.3) (2022-02-15)
+
+
+### Bug Fixes
+
+* revert update dotenv-expand [#6703](https://github.com/vitejs/vite/issues/6703), fix [#6858](https://github.com/vitejs/vite/issues/6858) ([#6934](https://github.com/vitejs/vite/issues/6934)) ([a9a1ae2](https://github.com/vitejs/vite/commit/a9a1ae2db6a81a2fd31db370b58686e442047d9e))
+
+
+
 ## [2.8.2](https://github.com/vitejs/vite/compare/v2.8.1...v2.8.2) (2022-02-14)
 
 
