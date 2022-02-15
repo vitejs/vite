@@ -29,7 +29,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
             const mappedChunks =
-              ssrManifest[normalizedId] || (ssrManifest[normalizedId] = [])
+              ssrManifest[normalizedId] ?? (ssrManifest[normalizedId] = [])
             if (!chunk.isEntry) {
               mappedChunks.push(base + chunk.fileName)
             }
