@@ -30,8 +30,8 @@ export type ExportsData = ReturnType<typeof parse> & {
 
 export interface DepOptimizationOptions {
   /**
-   * By default, Vite will crawl your index.html to detect dependencies that
-   * need to be pre-bundled. If build.rollupOptions.input is specified, Vite
+   * By default, Vite will crawl your `index.html` to detect dependencies that
+   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using

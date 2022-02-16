@@ -923,7 +923,7 @@ export default defineConfig({
 
 - **Type:** `string | string[]`
 
-  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+  By default, Vite will crawl your `index.html` to detect dependencies that need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
   If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
 
