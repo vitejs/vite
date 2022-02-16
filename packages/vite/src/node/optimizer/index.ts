@@ -202,7 +202,7 @@ export async function optimizeDeps(
   let deps: Record<string, string>
   if (!newDeps) {
     // Initial optimizeDeps at server start. Perform a fast scan using esbuild to
-    // find deps to pre-bundle and include user harcoded dependencies
+    // find deps to pre-bundle and include user hard-coded dependencies
 
     let missing: Record<string, string>
     ;({ deps, missing } = await scanImports(config))
@@ -431,7 +431,7 @@ export async function optimizeDeps(
     }
 
     if (alteredFiles) {
-      // Overrite individual hashs with the new global browserHash, a full page reload is required
+      // Overrite individual hashes with the new global browserHash, a full page reload is required
       // New deps that ended up with a different hash replaced while doing analysis import are going to
       // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
       for (const id in deps) {

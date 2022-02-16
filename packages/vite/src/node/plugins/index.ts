@@ -46,7 +46,7 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
-    optimizedDepsPlugin(),
+    isBuild ? null : optimizedDepsPlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
