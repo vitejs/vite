@@ -170,6 +170,9 @@ export class ModuleGraph {
         this.fileToModulesMap.set(file, fileMappedModules)
       }
       fileMappedModules.add(mod)
+    } else if (mod.id !== resolvedId) {
+      this.idToModuleMap.set(resolvedId, mod)
+      if (meta) mod.meta = { ...mod.meta, ...meta }
     }
     return mod
   }
