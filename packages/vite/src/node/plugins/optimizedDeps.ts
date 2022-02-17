@@ -24,8 +24,6 @@ export function optimizedDepsPlugin(): Plugin {
       server = _server
     },
 
-    apply: 'serve',
-
     async load(id) {
       if (server && isOptimizedDepFile(id, server.config)) {
         const metadata = server?._optimizeDepsMetadata
@@ -80,7 +78,7 @@ function throwProcessingError(id: string) {
       `The current page should have reloaded by now`
   )
   err.code = ERR_OPTIMIZE_DEPS_PROCESSING_ERROR
-  // This error will be catched by the transform middleware that will
+  // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
   throw err
 }
@@ -91,7 +89,7 @@ function throwOutdatedRequest(id: string) {
       `a page reload is going to ask for it.`
   )
   err.code = ERR_OUTDATED_OPTIMIZED_DEP
-  // This error will be catched by the transform middleware that will
+  // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
   throw err
 }

@@ -608,7 +608,7 @@ export function tryNodeResolve(
       }
     } else {
       // this is a missing import, queue optimize-deps re-run and
-      // get a resolved its optmized info
+      // get a resolved its optimized info
       const optimizedInfo = server._registerMissingImport!(id, resolved, ssr)
       resolved = getOptimizedUrl(optimizedInfo)
     }
