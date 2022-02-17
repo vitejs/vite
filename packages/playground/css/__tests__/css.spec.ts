@@ -356,3 +356,8 @@ test('minify css', async () => {
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
 })
+
+test('imported css', async () => {
+  const code = await page.textContent('.inlined-code')
+  expect(code).toBe('')
+})
