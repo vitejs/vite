@@ -759,7 +759,7 @@ async function compileCSS(
   // record CSS dependencies from @imports
   for (const message of postcssResult.messages) {
     if (message.type === 'dependency') {
-      deps.add(message.file as string)
+      deps.add(normalizePath(message.file as string))
     } else if (message.type === 'dir-dependency') {
       // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
       const { dir, glob: globPattern = '**' } = message
