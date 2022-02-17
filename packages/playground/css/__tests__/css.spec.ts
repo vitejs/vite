@@ -361,7 +361,7 @@ test('imported css', async () => {
   const css = await page.textContent('.imported-css')
   expect(css).toContain('.imported {')
 
-  await untilUpdated(() => page.textContent('.imported-css-glob'), '[')
+  await untilUpdated(() => page.textContent('.imported-css-glob'), '.dir-dep')
   await untilUpdated(
     () => page.textContent('.imported-css-globEager'),
     '.dir-dep'
