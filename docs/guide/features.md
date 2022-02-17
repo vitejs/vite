@@ -309,8 +309,8 @@ The above will be transformed into the following:
 ```js
 // code produced by vite
 const modules = {
-  './dir/foo.js': () => import('./dir/foo.js?raw'),
-  './dir/bar.js': () => import('./dir/bar.js?raw')
+  './dir/foo.js': '{\n  "msg": "foo"\n}\n',
+  './dir/bar.js': '{\n  "msg": "bar"\n}\n'
 }
 ```
 
