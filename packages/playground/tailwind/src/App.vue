@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Tailwind app</h1>
+    <h1 class="text-black">Tailwind app</h1>
     {{ foo }}
   </div>
   <router-view />
