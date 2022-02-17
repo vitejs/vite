@@ -1,0 +1,47 @@
+body {
+  color: #e5e5e5;
+  background-color: #1e1e1e;
+  padding: 0;
+  margin: 0;
+  font-family: aktiv-grotesk, 'Segoe UI', Arial, Helvetica, sans-serif;
+  font-size: 18px;
+}
+
+a {
+  color: #e5e5e5;
+  margin: 1rem 0;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-color: #c01754;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 80px;
+}
+
+main h1 {
+  font-size: 46px;
+  margin: 1rem 0 0.5rem 0;
+}
+
+main img {
+  width: 200px;
+  height: auto;
+}
+
+main my-counter {
+  margin: 1rem 0;
+}
+
+.code-block {
+  font-family: monospace;
+  font-size: 18px;
+  background-color: #424242;
+  padding: 2px 4px;
+  border-radius: 4px;
+}

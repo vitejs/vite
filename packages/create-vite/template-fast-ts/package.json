@@ -1,0 +1,25 @@
+{
+  "name": "vite-fast-ts-starter",
+  "private": true,
+  "version": "0.0.0",
+  "main": "dist/my-counter.es.js",
+  "exports": {
+    ".": "./dist/my-counter.es.js"
+  },
+  "types": "types/my-counter.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "dependencies": {
+    "@microsoft/fast-element": "^1.7.0"
+  },
+  "devDependencies": {
+    "vite": "^2.8.0",
+    "typescript": "^4.5.4"
+  }
+}

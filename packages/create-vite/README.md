@@ -53,6 +53,8 @@ Currently supported template presets include:
 - `preact-ts`
 - `lit`
 - `lit-ts`
+- `fast`
+- `fast-ts`
 - `svelte`
 - `svelte-ts`
 
