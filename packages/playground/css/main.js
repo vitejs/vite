@@ -3,6 +3,13 @@ import './minify.css'
 import css from './imported.css'
 text('.imported-css', css)
 
+const glob = import.meta.glob('./glob-dep/*.css')
+Promise.all(Object.keys(glob).map((key) => glob[key]())).then((res) => {
+  text('.imported-css-glob', JSON.stringify(res, null, 2))
+})
+const globEager = import.meta.globEager('./glob-dep/*.css')
+text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
+
 import sass from './sass.scss'
 text('.imported-sass', sass)
 

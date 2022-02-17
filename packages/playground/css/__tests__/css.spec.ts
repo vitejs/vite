@@ -358,6 +358,12 @@ test('minify css', async () => {
 })
 
 test('imported css', async () => {
-  const code = await page.textContent('.inlined-code')
-  expect(code).toBe('')
+  const css = await page.textContent('.imported-css')
+  expect(css).toContain('.imported {')
+
+  await untilUpdated(() => page.textContent('.imported-css-glob'), '[')
+  await untilUpdated(
+    () => page.textContent('.imported-css-globEager'),
+    '.dir-dep'
+  )
 })

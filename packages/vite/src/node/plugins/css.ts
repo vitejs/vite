@@ -310,7 +310,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `const __vite__css = ${JSON.stringify(css)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
-            `${modulesCode || `import.meta.hot.accept()\nexport default ''`}`,
+            `${
+              modulesCode ||
+              `import.meta.hot.accept()\nexport default __vite__css`
+            }`,
             `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
           ].join('\n')
         }
