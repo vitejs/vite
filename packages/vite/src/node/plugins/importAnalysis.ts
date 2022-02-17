@@ -225,8 +225,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
-        } else if (fs.existsSync(cleanUrl(resolved.id))) {
-          // exists but out of root: rewrite to absolute /@fs/ paths
+        } else if (
+          resolved.id.startsWith(normalizePath(config.cacheDir)) ||
+          fs.existsSync(cleanUrl(resolved.id))
+        ) {
+          // an optimized deps may not yet exists in the filesystem, or
+          // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
           url = path.posix.join(FS_PREFIX + resolved.id)
         } else {
           url = resolved.id
