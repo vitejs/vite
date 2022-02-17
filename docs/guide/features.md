@@ -298,7 +298,7 @@ const modules = {
 }
 ```
 
-`import.meta.glob` and `import.meta.globEager` also support `?raw` syntax:
+`import.meta.glob` and `import.meta.globEager` also support importing files as strings, similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string). Here, we use the [Import Assertions](https://github.com/tc39/proposal-import-assertions#synopsis) syntax to import.
 
 ```js
 const modules = import.meta.glob('./dir/*.js', { assert: { type: 'raw' } })
