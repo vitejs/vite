@@ -99,12 +99,12 @@ export async function transformImportGlob(
       importsString += `import ${
         isEagerDefault ? `` : `* as `
       }${identifier} from ${JSON.stringify(
-        isCSSRequest(importee) ? `${importee}?used` : ''
+        isCSSRequest(importee) ? `${importee}?used` : importee
       )};`
       entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
       let imp = `import(${JSON.stringify(
-        isCSSRequest(importee) ? `${importee}?used` : ''
+        isCSSRequest(importee) ? `${importee}?used` : importee
       )})`
       if (!normalizeUrl && preload) {
         imp =
