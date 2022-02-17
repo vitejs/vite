@@ -40,10 +40,15 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port = path.posix.normalize(`${port}${hmrBase}`)
         }
 
+        const defines = {
+          'process.env.NODE_ENV': JSON.stringify(config.mode),
+          ...(config.define || {})
+        }
+
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
           .replace(`__BASE__`, JSON.stringify(config.base))
-          .replace(`__DEFINES__`, serializeDefine(config.define || {}))
+          .replace(`__DEFINES__`, serializeDefine(defines))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
