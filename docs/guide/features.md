@@ -298,6 +298,22 @@ const modules = {
 }
 ```
 
+`import.meta.glob` and `import.meta.globEager` also support importing files as strings, similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string). Here, we use the [Import Assertions](https://github.com/tc39/proposal-import-assertions#synopsis) syntax to import.
+
+```js
+const modules = import.meta.glob('./dir/*.js', { assert: { type: 'raw' } })
+```
+
+The above will be transformed into the following:
+
+```js
+// code produced by vite
+const modules = {
+  './dir/foo.js': '{\n  "msg": "foo"\n}\n',
+  './dir/bar.js': '{\n  "msg": "bar"\n}\n'
+}
+```
+
 Note that:
 
 - This is a Vite-only feature and is not a web or ES standard.
