@@ -298,6 +298,22 @@ const modules = {
 }
 ```
 
+`import.meta.glob` and `import.meta.globEager` also support `?raw` syntax:
+
+```js
+const modules = import.meta.glob('./dir/*.js', { assert: { type: 'raw' } })
+```
+
+The above will be transformed into the following:
+
+```js
+// code produced by vite
+const modules = {
+  './dir/foo.js': () => import('./dir/foo.js?raw'),
+  './dir/bar.js': () => import('./dir/bar.js?raw')
+}
+```
+
 Note that:
 
 - This is a Vite-only feature and is not a web or ES standard.
