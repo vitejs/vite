@@ -157,10 +157,18 @@ export async function optimizeDeps(
     command: 'build'
   }
 
-  const { root, logger, cacheDir } = config
+  const { root, logger } = config
   const log = asCommand ? logger.info : debug
 
-  const dataPath = path.join(cacheDir, '_metadata.json')
+  // Before Vite 2.9, dependencies were cached in the root of the cacheDir
+  // For compat, we remove the cache if we find the old structure
+  if (fs.existsSync(path.join(config.cacheDir, '_metadata.json'))) {
+    emptyDir(config.cacheDir)
+  }
+
+  const depsCacheDir = getDepsCacheDir(config)
+  const processingCacheDir = getProcessingDepsCacheDir(config)
+
   const mainHash = getDepHash(root, config)
 
   const data: DepOptimizationMetadata = {
@@ -174,28 +182,35 @@ export async function optimizeDeps(
   if (!force) {
     let prevData: DepOptimizationMetadata | undefined
     try {
-      prevData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
+      const prevDataPath = path.join(depsCacheDir, '_metadata.json')
+      prevData = parseOptimizedDepsMetadata(
+        fs.readFileSync(prevDataPath, 'utf-8'),
+        depsCacheDir,
+        processing.promise
+      )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
-      for (const o of Object.keys(prevData.optimized)) {
-        prevData.optimized[o].processing = processing.promise
-      }
+      // let prevData be assigned to the server before resolving the processing
       setTimeout(() => processing.resolve(), 0)
-      return { ...prevData, discovered: {}, processing: processing.promise }
+      return prevData
     }
   }
 
-  if (fs.existsSync(cacheDir)) {
-    emptyDir(cacheDir)
+  // Create a temporal directory so we don't need to delete optimized deps
+  // until they have been processed. This also avoids leaving the deps cache
+  // directory in a corrupted state if there is an error
+  if (fs.existsSync(processingCacheDir)) {
+    emptyDir(processingCacheDir)
   } else {
-    fs.mkdirSync(cacheDir, { recursive: true })
+    fs.mkdirSync(processingCacheDir, { recursive: true })
   }
+
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
   writeFile(
-    path.resolve(cacheDir, 'package.json'),
+    path.resolve(processingCacheDir, 'package.json'),
     JSON.stringify({ type: 'module' })
   )
 
@@ -252,7 +267,7 @@ export async function optimizeDeps(
     for (const id in deps) {
       const entry = deps[id]
       data.optimized[id] = {
-        file: getOptimizedFilePath(id, cacheDir),
+        file: getOptimizedFilePath(id, config),
         src: entry,
         browserHash: data.browserHash,
         processing: processing.promise
@@ -280,14 +295,16 @@ export async function optimizeDeps(
 
   return data
 
-  async function prebundleDeps() {
+  async function prebundleDeps(): Promise<void> {
+    const dataPath = path.join(processingCacheDir, '_metadata.json')
+
     const qualifiedIds = Object.keys(deps)
 
     if (!qualifiedIds.length) {
       writeFile(dataPath, JSON.stringify(data, null, 2))
       log(`No dependencies to bundle. Skipping.\n\n\n`)
       processing.resolve()
-      return data
+      return
     }
 
     const total = qualifiedIds.length
@@ -377,7 +394,7 @@ export async function optimizeDeps(
       logLevel: 'error',
       splitting: true,
       sourcemap: true,
-      outdir: cacheDir,
+      outdir: processingCacheDir,
       ignoreAnnotations: true,
       metafile: true,
       define,
@@ -391,7 +408,10 @@ export async function optimizeDeps(
     const meta = result.metafile!
 
     // the paths in `meta.outputs` are relative to `process.cwd()`
-    const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
+    const processingCacheDirOutputPath = path.relative(
+      process.cwd(),
+      processingCacheDir
+    )
 
     for (const id in deps) {
       const optimizedInfo = data.optimized[id]
@@ -399,7 +419,7 @@ export async function optimizeDeps(
         id,
         idToExports[id],
         meta.outputs,
-        cacheDirOutputPath
+        processingCacheDirOutputPath
       )
       const output =
         meta.outputs[path.relative(process.cwd(), optimizedInfo.file)]
@@ -439,7 +459,18 @@ export async function optimizeDeps(
       }
     }
 
-    writeFile(dataPath, JSON.stringify(data, metadataStringifyReplacer, 2))
+    // Rewire the file paths from the temporal processing dir to the final deps cache dir
+    writeFile(
+      dataPath,
+      stringifyOptimizedDepsMetadata(data, processingCacheDir)
+    )
+
+    // Processing is done, we can now replace the depsCacheDir with processingCacheDir
+    if (fs.existsSync(depsCacheDir)) {
+      const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+      rmSync(depsCacheDir, { recursive: true })
+    }
+    fs.renameSync(processingCacheDir, depsCacheDir)
 
     debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
     processing.resolve({ alteredFiles })
@@ -463,10 +494,6 @@ export function depsFromOptimizedInfo(
   )
 }
 
-export function getOptimizedFilePath(id: string, cacheDir: string) {
-  return normalizePath(path.resolve(cacheDir, flattenId(id) + '.js'))
-}
-
 function getHash(text: string) {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
@@ -482,30 +509,70 @@ export function getOptimizedBrowserHash(
   )
 }
 
+function getCachedDepFilePath(id: string, depsCacheDir: string) {
+  return normalizePath(path.resolve(depsCacheDir, flattenId(id) + '.js'))
+}
+
+export function getOptimizedFilePath(id: string, config: ResolvedConfig) {
+  return getCachedDepFilePath(id, getDepsCacheDir(config))
+}
+
+export function getDepsCacheDir(config: ResolvedConfig) {
+  return normalizePath(path.resolve(config.cacheDir, 'deps'))
+}
+
+export function getProcessingDepsCacheDir(config: ResolvedConfig) {
+  return normalizePath(path.resolve(config.cacheDir, 'processing'))
+}
+
 export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
-  return id.startsWith(normalizePath(config.cacheDir))
+  return id.startsWith(getDepsCacheDir(config))
 }
 
 export function createIsOptimizedDepUrl(config: ResolvedConfig) {
-  const { root, cacheDir } = config
+  const { root } = config
+  const depsCacheDir = getDepsCacheDir(config)
 
   // determine the url prefix of files inside cache directory
-  const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
-  const cacheDirPrefix = cacheDirRelative.startsWith('../')
+  const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
+  const depsCacheDirPrefix = depsCacheDirRelative.startsWith('../')
     ? // if the cache directory is outside root, the url prefix would be something
       // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
+      `/@fs/${normalizePath(depsCacheDir).replace(/^\//, '')}`
     : // if the cache directory is inside root, the url prefix would be something
       // like '/node_modules/.vite'
-      `/${cacheDirRelative}`
+      `/${depsCacheDirRelative}`
 
   return function isOptimizedDepUrl(url: string): boolean {
-    return url.startsWith(cacheDirPrefix)
+    return url.startsWith(depsCacheDirPrefix)
   }
 }
 
-function metadataStringifyReplacer(key: string, value: any) {
-  return key !== 'processing' && key !== 'discovered' ? value : undefined
+function parseOptimizedDepsMetadata(
+  jsonMetadata: string,
+  depsCacheDir: string,
+  processing: Promise<OptimizeDepsResult | undefined>
+) {
+  const metadata = JSON.parse(jsonMetadata)
+  for (const o of Object.keys(metadata.optimized)) {
+    metadata.optimized[o].processing = processing
+  }
+  return { ...metadata, discovered: {}, processing }
+}
+
+function stringifyOptimizedDepsMetadata(
+  metadata: DepOptimizationMetadata,
+  depsCacheDir: string
+) {
+  return JSON.stringify(
+    metadata,
+    (key: string, value: any) => {
+      if (key === 'processing' || key === 'discovered') return
+
+      return value
+    },
+    2
+  )
 }
 
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642

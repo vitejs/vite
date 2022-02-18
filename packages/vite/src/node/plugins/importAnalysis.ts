@@ -45,7 +45,11 @@ import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
-import { isOptimizedDepFile, createIsOptimizedDepUrl } from '../optimizer'
+import {
+  isOptimizedDepFile,
+  createIsOptimizedDepUrl,
+  getDepsCacheDir
+} from '../optimizer'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -226,7 +230,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
-          resolved.id.startsWith(normalizePath(config.cacheDir)) ||
+          resolved.id.startsWith(getDepsCacheDir(config)) ||
           fs.existsSync(cleanUrl(resolved.id))
         ) {
           // an optimized deps may not yet exists in the filesystem, or

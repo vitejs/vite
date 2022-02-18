@@ -155,7 +155,7 @@ export function createMissingImporterRegisterFn(
       return missing
     }
     missing = metadata.discovered[id] = {
-      file: getOptimizedFilePath(id, server.config.cacheDir),
+      file: getOptimizedFilePath(id, server.config),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If the optimizeDeps stage
