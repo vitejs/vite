@@ -95,6 +95,16 @@ export function createMissingImporterRegisterFn(
         newDepsProcessing
       )
 
+      // update ssr externals
+      if (ssr) {
+        server._ssrExternals = resolveSSRExternal(
+          server.config,
+          Object.keys(newData.optimized)
+        )
+      }
+
+      processingResult = await newData!.processing
+
       // While optimizeDeps is running, new missing deps may be discovered,
       // in which case they will keep being added to metadata.discovered
       for (const o of Object.keys(metadata.discovered)) {
@@ -104,21 +114,14 @@ export function createMissingImporterRegisterFn(
         }
       }
       metadata = newData
-
-      // update ssr externals
-      if (ssr) {
-        server._ssrExternals = resolveSSRExternal(
-          server.config,
-          Object.keys(metadata.optimized)
-        )
-      }
-
-      processingResult = await newData!.processing
     } catch (e) {
       logger.error(
         colors.red(`error while updating dependencies:\n${e.stack}`),
         { timestamp: true, error: e }
       )
+
+      // Reset missing deps, let the server rediscover the dependencies
+      metadata.discovered = {}
       fullReload()
       return
     }
@@ -128,15 +131,27 @@ export function createMissingImporterRegisterFn(
         timestamp: true
       })
     } else {
-      logger.info(colors.green(`✨ dependencies updated, reloading page...`), {
-        timestamp: true
-      })
-
       if (handle) {
         // There are newly discovered deps, and another rerun is about to be
         // excecuted. Avoid the current full reload, but queue it for the next one
         needFullReload = true
+        // We still invalidate the module graph to wipe out cached transforms
+        server.moduleGraph.invalidateAll()
+        logger.info(
+          colors.green(
+            `✨ dependencies updated, other missing dependencies found...`
+          ),
+          {
+            timestamp: true
+          }
+        )
       } else {
+        logger.info(
+          colors.green(`✨ dependencies updated, reloading page...`),
+          {
+            timestamp: true
+          }
+        )
         fullReload()
       }
     }
