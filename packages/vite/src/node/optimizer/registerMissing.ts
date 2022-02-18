@@ -31,16 +31,31 @@ export function createMissingImporterRegisterFn(
 
   let processingMissingDeps = newOptimizeDepsProcessingPromise()
 
+  let optimizeDepsPromise = metadata.processing
+
   async function rerun(ssr: boolean | undefined) {
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
-    await metadata.processing
 
-    // New deps could have been found here, clear the timeout to already
-    // consider them in this run
-    if (handle) clearTimeout(handle)
-    handle = undefined
+    // optimizeDeps needs to be run in serie. Await until the previous
+    // rerun is finished here. It could happen that two reruns are queued
+    // in that case, we only need to run one of them
+    const awaitedOptimizeDepsPromise = optimizeDepsPromise
+
+    await optimizeDepsPromise
+
+    if (awaitedOptimizeDepsPromise !== optimizeDepsPromise) {
+      // There were two or more rerun queued and one of them already
+      // started. Only let through the first one, and discard the others
+      return
+    }
+
+    if (handle) {
+      // New deps could have been found here, skip this rerun. Once the
+      // debounce time is over, a new rerun will be issued
+      return
+    }
 
     logger.info(
       colors.yellow(
@@ -57,6 +72,8 @@ export function createMissingImporterRegisterFn(
     // respect insertion order to keep the metadata file stable
     const newDeps = { ...metadata.optimized, ...metadata.discovered }
     const newDepsProcessing = processingMissingDeps
+    optimizeDepsPromise = newDepsProcessing.promise
+
     let processingResult: OptimizeDepsResult | undefined
 
     processingMissingDeps = newOptimizeDepsProcessingPromise()
