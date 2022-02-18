@@ -230,8 +230,8 @@
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
 
-  // prettier-ignore
-  const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
+  // prettier-ignore (need trailing comma in the next line)
+  const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url-comma', metaUrlWithComma)
   document.querySelector('.import-meta-url-img-comma').src = metaUrlWithComma
 
@@ -250,8 +250,8 @@
   testDynamicImportMetaUrl('asset', 2)
 
   function testDynamicImportMetaUrlWithComma(name, i) {
-    // prettier-ignore
-    const metaUrl = new URL(`./nested/${name}.png`, import.meta.url,)
+    // prettier-ignore (need trailing comma in the next line)
+    const metaUrl = new URL(`./nested/${name}.png`, import.meta.url)
     text(`.dynamic-import-meta-url-${i}-comma`, metaUrl)
     document.querySelector(`.dynamic-import-meta-url-img-${i}-comma`).src =
       metaUrl
