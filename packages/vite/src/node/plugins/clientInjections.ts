@@ -15,7 +15,7 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
-    transform(code, id) {
+    transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         let options = config.server.hmr
         options = options && typeof options !== 'boolean' ? options : {}
@@ -40,20 +40,23 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port = path.posix.normalize(`${port}${hmrBase}`)
         }
 
-        const defines = {
-          'process.env.NODE_ENV': JSON.stringify(config.mode),
-          ...(config.define || {})
-        }
-
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
           .replace(`__BASE__`, JSON.stringify(config.base))
-          .replace(`__DEFINES__`, serializeDefine(defines))
+          .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
+      } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
+        // replace process.env.NODE_ENV instead of defining a global
+        // for it to avoid shimming a `process` object during dev,
+        // avoiding inconsistencies between dev and build
+        return code.replace(
+          /\bprocess\.env\.NODE_ENV\b/g,
+          JSON.stringify(config.mode)
+        )
       }
     }
   }
