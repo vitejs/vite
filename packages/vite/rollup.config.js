@@ -177,7 +177,8 @@ const createNodeConfig = (isProduction) => {
         extensions: ['.js'],
         // Optional peer deps of ws. Native deps that are mostly for performance.
         // Since ws is not that perf critical for us, just ignore these deps.
-        ignore: ['bufferutil', 'utf-8-validate']
+        ignore: ['bufferutil', 'utf-8-validate'],
+        ignoreDynamicRequires: true
       }),
       json(),
       isProduction && licensePlugin()

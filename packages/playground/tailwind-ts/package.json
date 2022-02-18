@@ -1,0 +1,23 @@
+{
+  "name": "test-tailwind-ts",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.2.25",
+    "vue-router": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.22",
+    "@types/tailwindcss": "^3.0.8",
+    "@vitejs/plugin-vue": "workspace:*",
+    "autoprefixer": "^10.4.0",
+    "tailwindcss": "^2.2.19",
+    "ts-node": "^10.4.0"
+  }
+}
