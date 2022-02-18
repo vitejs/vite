@@ -1,3 +1,14 @@
+## [2.8.4](https://github.com/vitejs/vite/compare/v2.8.3...v2.8.4) (2022-02-18)
+
+
+### Bug Fixes
+
+* don't replace NODE_ENV in vite:client-inject ([#6935](https://github.com/vitejs/vite/issues/6935)) ([2b70003](https://github.com/vitejs/vite/commit/2b70003f4758114c50269a260aac3516a32b16b5))
+* normalize postcss dependency messages ([#6959](https://github.com/vitejs/vite/issues/6959)) ([3f3f473](https://github.com/vitejs/vite/commit/3f3f4737d5242547fb83f8d2522ba91cc1d96fb0))
+* revert [#6935](https://github.com/vitejs/vite/issues/6935), bypass replacing process.env.NODE_ENV in ssr ([#6970](https://github.com/vitejs/vite/issues/6970)) ([b8218b0](https://github.com/vitejs/vite/commit/b8218b068caf0231502f0d0d0f8933330643f417))
+
+
+
 ## [2.8.3](https://github.com/vitejs/vite/compare/v2.8.2...v2.8.3) (2022-02-15)
 
 
