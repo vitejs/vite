@@ -179,6 +179,10 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         .on('change', reloadOnTsconfigChange)
         .on('unlink', reloadOnTsconfigChange)
     },
+    buildEnd() {
+      // recycle serve to avoid preventing Node self-exit (#6815)
+      server = null as any
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
