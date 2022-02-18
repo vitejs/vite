@@ -76,20 +76,32 @@ export function transformMiddleware(
         if (isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
+          const mapFile = url.startsWith(FS_PREFIX)
+            ? fsPathFromId(url)
+            : normalizePath(
+                ensureVolumeInPath(path.resolve(root, url.slice(1)))
+              )
           try {
-            const mapFile = url.startsWith(FS_PREFIX)
-              ? fsPathFromId(url)
-              : normalizePath(
-                  ensureVolumeInPath(path.resolve(root, url.slice(1)))
-                )
             const map = await fs.readFile(mapFile, 'utf-8')
             return send(req, res, map, 'json', {
               headers: server.config.server.headers
             })
           } catch (e) {
-            res.statusCode = 504 // status code request timeout
-            res.end()
-            return
+            // Outdated source map request for optimized deps, this isn't an error
+            // but part of the normal flow when re-optimizing after missing deps
+            // Send back an empty source map so the browser doesn't issue warnings
+            const dummySourceMap = {
+              version: 3,
+              file: mapFile.replace(/\.map$/, ''),
+              sources: [],
+              sourcesContent: [],
+              names: [],
+              mappings: ';;;;;;;;;'
+            }
+            return send(req, res, JSON.stringify(dummySourceMap), 'json', {
+              cacheControl: 'no-cache',
+              headers: server.config.server.headers
+            })
           }
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
