@@ -42,7 +42,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   function generatePattern(
     ssr: boolean
-  ): [Record<string, string | undefined>, RegExp, Boolean] {
+  ): [Record<string, string | undefined>, RegExp] {
     const processEnv: Record<string, string> = {}
     if (!ssr || config.ssr?.target === 'webworker') {
       Object.assign(processEnv, {
@@ -58,11 +58,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...importMetaKeys,
       ...processEnv
     }
-    const replacementsKeys = Object.keys(replacements)
     const pattern = new RegExp(
       // Do not allow preceding '.', but do allow preceding '...' for spread operations
       '(?<!(?<!\\.\\.)\\.)\\b(' +
-        replacementsKeys
+        Object.keys(replacements)
           .map((str) => {
             return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
           })
@@ -72,7 +71,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       'g'
     )
 
-    return [replacements, pattern, !!replacementsKeys.length]
+    return [replacements, pattern]
   }
 
   const defaultPattern = generatePattern(false)
@@ -96,13 +95,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [replacements, pattern, hadReplaceKey] = ssr
-        ? ssrPattern
-        : defaultPattern
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
-        return hadReplaceKey
+        return Object.keys(replacements).length
           ? code.replace(pattern, (_, match) => {
               return '' + replacements[match]
             })
