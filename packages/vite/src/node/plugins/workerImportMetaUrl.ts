@@ -25,7 +25,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
         return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + code
+          code: `importScripts('${ENV_PUBLIC_PATH}');\n` + code
         }
       }
       if (

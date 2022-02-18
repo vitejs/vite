@@ -60,7 +60,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const query = parseRequest(id)
       if (query && query[WorkerFileId] != null) {
         return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + _
+          code: `importScripts('${ENV_PUBLIC_PATH}');\n` + _
         }
       }
       if (
