@@ -40,7 +40,7 @@ In a monorepo setup, a dependency may be a linked package from the same repo. Vi
 
 ::: warning Note
 Linked dependencies might not work properly in the final build due to differences in dependency resolution.
-Use `npm package` instead for all local dependencies to avoid issues in the final bundle.
+Use `npm pack` instead for all local dependencies to avoid issues in the final bundle. (The `npm pack` is only ever needed when the linked source code or package only exports CJS code. If it exports ESM code, then it is not needed.)
 :::
 
 ## Customizing the Behavior
