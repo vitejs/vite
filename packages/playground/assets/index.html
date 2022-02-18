@@ -141,6 +141,10 @@
 <img class="import-meta-url-img-comma" />
 <code class="import-meta-url-comma"></code>
 
+<h2>new URL('...', import.meta.url,) (with comma + new line)</h2>
+<img class="import-meta-url-img-comma-nl" />
+<code class="import-meta-url-comma-nl"></code>
+
 <h2>new URL(`./${dynamic}`, import.meta.url)</h2>
 <p>
   <img class="dynamic-import-meta-url-img-1" />
@@ -234,6 +238,16 @@
   const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
   text('.import-meta-url-comma', metaUrlWithComma)
   document.querySelector('.import-meta-url-img-comma').src = metaUrlWithComma
+
+  // testing trailing comma and new line
+  // prettier-ignore
+  const metaUrlWithCommaNL = new URL(
+    './nested/asset.png',
+    import.meta.url,
+  )
+  text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
+  document.querySelector('.import-meta-url-img-comma-nl').src =
+    metaUrlWithCommaNL
 
   /**
    * don't process the code in the comment
