@@ -159,7 +159,7 @@ export async function transformMain(
     const generator = SourceMapGenerator.fromSourceMap(
       new SourceMapConsumer(map)
     )
-    const offset = scriptCode.match(/\r?\n/g)?.length || 1
+    const offset = (scriptCode.match(/\r?\n/g)?.length ?? 0) + 1
     const templateMapConsumer = new SourceMapConsumer(templateMap)
     templateMapConsumer.eachMapping((m) => {
       generator.addMapping({
