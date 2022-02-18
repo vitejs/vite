@@ -1,3 +1,13 @@
+## [2.2.1](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@2.2.1) (2022-02-18)
+
+
+### Bug Fixes
+
+* adjust vue template sourcemap ([#6972](https://github.com/vitejs/vite/issues/6972)) ([a774303](https://github.com/vitejs/vite/commit/a7743039f263f41e1c3971e324f893a5ef5e5508))
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
 # [2.2.0](https://github.com/vitejs/vite/compare/plugin-vue@2.1.0...plugin-vue@2.2.0) (2022-02-09)
 
 
