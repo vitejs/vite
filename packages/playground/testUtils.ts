@@ -64,6 +64,11 @@ export async function getBg(el: string | ElementHandle): Promise<string> {
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
 }
 
+export async function getBgColor(el: string | ElementHandle): Promise<string> {
+  el = await toEl(el)
+  return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
+}
+
 export function readFile(filename: string): string {
   return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
