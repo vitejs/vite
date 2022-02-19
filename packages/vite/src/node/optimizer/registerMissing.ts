@@ -132,7 +132,7 @@ export function createMissingImporterRegisterFn(
           timestamp: true
         })
       } else {
-        if (handle) {
+        if (Object.keys(metadata.discovered).length > 0) {
           // There are newly discovered deps, and another rerun is about to be
           // excecuted. Avoid the current full reload, but queue it for the next one
           needFullReload = true
