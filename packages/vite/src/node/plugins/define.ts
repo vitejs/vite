@@ -62,7 +62,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacementsKeys = Object.keys(replacements)
-    const pattern = replacementsKeys
+    const pattern = replacementsKeys.length
       ? new RegExp(
           // Do not allow preceding '.', but do allow preceding '...' for spread operations
           '(?<!(?<!\\.\\.)\\.)\\b(' +
