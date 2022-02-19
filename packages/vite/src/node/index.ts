@@ -33,9 +33,9 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
-  OptimizedDepInfo,
-  OptimizeDepsResult,
-  OptimizeDepsProcessing
+  DepOptimizationResult,
+  DepOptimizationProcessing,
+  OptimizedDepInfo
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'

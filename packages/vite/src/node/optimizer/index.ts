@@ -81,7 +81,7 @@ export interface DepOptimizationOptions {
   keepNames?: boolean
 }
 
-export interface OptimizeDepsResult {
+export interface DepOptimizationResult {
   /**
    * After a re-optimization, the internal bundled chunks may change
    * and a full page reload is required if that is the case
@@ -91,9 +91,9 @@ export interface OptimizeDepsResult {
   alteredFiles: boolean
 }
 
-export interface OptimizeDepsProcessing {
-  promise: Promise<OptimizeDepsResult | undefined>
-  resolve: (result?: OptimizeDepsResult) => void
+export interface DepOptimizationProcessing {
+  promise: Promise<DepOptimizationResult | undefined>
+  resolve: (result?: DepOptimizationResult) => void
 }
 
 export interface OptimizedDepInfo {
@@ -106,7 +106,7 @@ export interface OptimizedDepInfo {
    * During optimization, ids can still be resolved to their final location
    * but the bundles may not yet be saved to disk
    */
-  processing: Promise<OptimizeDepsResult | undefined>
+  processing: Promise<DepOptimizationResult | undefined>
 }
 
 export interface DepOptimizationMetadata {
@@ -133,7 +133,7 @@ export interface DepOptimizationMetadata {
    * During optimization, ids can still be resolved to their final location
    * but the bundles may not yet be saved to disk
    */
-  processing: Promise<OptimizeDepsResult | undefined>
+  processing: Promise<DepOptimizationResult | undefined>
 }
 
 /**
@@ -171,7 +171,7 @@ export async function createOptimizeDepsRun(
   ssr?: boolean
 ): Promise<{
   metadata: DepOptimizationMetadata
-  run: () => Promise<OptimizeDepsResult | undefined>
+  run: () => Promise<DepOptimizationResult | undefined>
 }> {
   config = {
     ...config,
@@ -192,7 +192,7 @@ export async function createOptimizeDepsRun(
 
   const mainHash = getDepHash(root, config)
 
-  const processing = newOptimizeDepsProcessingPromise()
+  const processing = newDepOptimizationProcessing()
 
   const metadata: DepOptimizationMetadata = {
     hash: mainHash,
@@ -291,7 +291,7 @@ export async function createOptimizeDepsRun(
     for (const id in deps) {
       const entry = deps[id]
       metadata.optimized[id] = {
-        file: getOptimizedFilePath(id, config),
+        file: getOptimizedDepPath(id, config),
         src: entry,
         browserHash: metadata.browserHash,
         processing: processing.promise
@@ -300,7 +300,7 @@ export async function createOptimizeDepsRun(
   } else {
     // Missing dependencies were found at run-time, optimizeDeps called while the
     // server is running
-    deps = depsFromOptimizedInfo(newDeps)
+    deps = depsFromOptimizedDepInfo(newDeps)
 
     // Clone optimized info objects, fileHash, browserHash may be changed for them
     for (const o of Object.keys(newDeps)) {
@@ -314,7 +314,7 @@ export async function createOptimizeDepsRun(
 
   return { metadata, run: prebundleDeps }
 
-  async function prebundleDeps(): Promise<OptimizeDepsResult | undefined> {
+  async function prebundleDeps(): Promise<DepOptimizationResult | undefined> {
     // We prebundle dependencies with esbuild and cache them, but there is no need
     // to wait here. Code that needs to access the cached deps needs to await
     // the optimizeDepsMetadata.processing promise
@@ -502,16 +502,16 @@ export async function createOptimizeDepsRun(
   }
 }
 
-export function newOptimizeDepsProcessingPromise(): OptimizeDepsProcessing {
-  let resolve: (result?: OptimizeDepsResult) => void
+export function newDepOptimizationProcessing(): DepOptimizationProcessing {
+  let resolve: (result?: DepOptimizationResult) => void
   const promise = new Promise((_resolve) => {
     resolve = _resolve
-  }) as Promise<OptimizeDepsResult | undefined>
+  }) as Promise<DepOptimizationResult | undefined>
   return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }
-export function depsFromOptimizedInfo(
+export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>
 ) {
   return Object.fromEntries(
@@ -538,7 +538,7 @@ function getCachedDepFilePath(id: string, depsCacheDir: string) {
   return normalizePath(path.resolve(depsCacheDir, flattenId(id) + '.js'))
 }
 
-export function getOptimizedFilePath(id: string, config: ResolvedConfig) {
+export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
   return getCachedDepFilePath(id, getDepsCacheDir(config))
 }
 
@@ -576,7 +576,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
 function parseOptimizedDepsMetadata(
   jsonMetadata: string,
   depsCacheDir: string,
-  processing: Promise<OptimizeDepsResult | undefined>
+  processing: Promise<DepOptimizationResult | undefined>
 ) {
   const metadata = JSON.parse(jsonMetadata)
   for (const o of Object.keys(metadata.optimized)) {

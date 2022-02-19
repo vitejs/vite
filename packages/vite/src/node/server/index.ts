@@ -359,10 +359,10 @@ export async function createServer(
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url) {
       let configFileDependencies: string[] = []
-      const optimizeDepsMetadata = server._optimizeDepsMetadata
-      if (optimizeDepsMetadata) {
-        await optimizeDepsMetadata.processing
-        configFileDependencies = Object.keys(optimizeDepsMetadata.optimized)
+      const metadata = server._optimizeDepsMetadata
+      if (metadata) {
+        await metadata.processing
+        configFileDependencies = Object.keys(metadata.optimized)
       }
 
       server._ssrExternals ||= resolveSSRExternal(
