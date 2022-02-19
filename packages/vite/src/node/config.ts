@@ -385,7 +385,7 @@ export async function resolveConfig(
     : resolvedRoot
   const userEnv =
     inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+    loadEnv(mode, envDir, resolveEnvPrefix(config), false)
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
@@ -401,11 +401,7 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
-  const pkgPath = lookupFile(
-    resolvedRoot,
-    [`package.json`],
-    true /* pathOnly */
-  )
+  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
     : pkgPath
@@ -1054,7 +1050,8 @@ async function loadConfigFromBundledFile(
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_'
+  prefixes: string | string[] = 'VITE_',
+  searchAboveEnvDir = true
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -1083,7 +1080,10 @@ export function loadEnv(
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(envDir, [file], true)
+    const path = lookupFile(envDir, [file], {
+      pathOnly: true,
+      rootDir: searchAboveEnvDir ? undefined : envDir
+    })
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
         debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
