@@ -53,7 +53,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacements: Record<string, string> = {
-      ...(!ssr ? processNodeEnv : {}),
+      ...(!ssr || config.ssr?.target === 'webworker' ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
