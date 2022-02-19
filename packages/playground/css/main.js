@@ -68,3 +68,7 @@ if (import.meta.env.DEV) {
 // inlined
 import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
+
+// inlined module css
+import inlinedModule from './inline.module.css?inline'
+text('.inlined-module', inlinedModule)

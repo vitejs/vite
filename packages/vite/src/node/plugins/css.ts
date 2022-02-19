@@ -300,7 +300,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
-            return `export default ${JSON.stringify(css)}`
+            return [
+              modulesCode?.replace(/\bexport default {[\s\S]*}?;/, '') || '',
+              `export default ${JSON.stringify(css)}`
+            ].join('\n')
           }
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
@@ -337,15 +340,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (!inlined) {
         styles.set(id, css)
       }
-
       return {
-        code:
-          modulesCode ||
-          (usedRE.test(id)
-            ? `export default ${JSON.stringify(
-                inlined ? await minifyCSS(css, config) : css
-              )}`
-            : `export default ''`),
+        code: modulesCode
+          ? inlined
+            ? [
+                modulesCode?.replace(/\bexport default {[\s\S]*}?;/, '') || '',
+                `export default ${JSON.stringify(css)}`
+              ].join('\n')
+            : modulesCode
+          : usedRE.test(id)
+          ? `export default ${JSON.stringify(
+              inlined ? await minifyCSS(css, config) : css
+            )}`
+          : `export default ''`,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()

@@ -346,6 +346,13 @@ test('inlined-code', async () => {
   expect(code).not.toContain('__VITE_ASSET__')
 })
 
+test('inlined-module', async () => {
+  const code = await page.textContent('.inlined-module')
+  // should resolve assets
+  expect(code).toContain('color: orangered;')
+  expect(code).not.toContain('__VITE_ASSET__')
+})
+
 test('minify css', async () => {
   if (!isBuild) {
     return
