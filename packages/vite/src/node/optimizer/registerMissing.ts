@@ -1,6 +1,6 @@
 import colors from 'picocolors'
 import {
-  optimizeDeps,
+  createOptimizeDepsRun,
   getOptimizedFilePath,
   getOptimizedBrowserHash,
   depsFromOptimizedInfo,
@@ -38,6 +38,15 @@ export function createMissingImporterRegisterFn(
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
 
+    // a succesful completion of the optimizeDeps rerun will end up
+    // creating new bundled version of all current and discovered deps
+    // in the cache dir and a new metadata info object assigned
+    // to server._optimizeDepsMetadata. A fullReload is only issued if
+    // the previous bundled dependencies have changed.
+
+    // if the rerun fails, server._optimizeDepsMetadata remains untouched,
+    // current discovered deps are cleaned, and a fullReload is issued
+
     // optimizeDeps needs to be run in serie. Await until the previous
     // rerun is finished here. It could happen that two reruns are queued
     // in that case, we only need to run one of them
@@ -72,28 +81,32 @@ export function createMissingImporterRegisterFn(
     // respect insertion order to keep the metadata file stable
     const newDeps = { ...metadata.optimized, ...metadata.discovered }
     const newDepsProcessing = processingMissingDeps
+
+    // Other rerun will await until this run is finished
     optimizeDepsPromise = newDepsProcessing.promise
 
     let processingResult: OptimizeDepsResult | undefined
 
+    // Create a new promise for the next rerun, discovered missing
+    // dependencies will be asigned this promise from this point
     processingMissingDeps = newOptimizeDepsProcessingPromise()
 
     let newData: DepOptimizationMetadata | null = null
 
     try {
-      // During optimizer re-run, the resolver may continue to discover
-      // optimized files. If we directly resolve to node modules there
-      // is no way to avoid a full-page reload
-
-      newData = server._optimizeDepsMetadata = await optimizeDeps(
+      const optimizeDeps = await createOptimizeDepsRun(
         server.config,
         true,
         false,
         metadata,
         newDeps,
-        ssr,
-        newDepsProcessing
+        ssr
       )
+
+      // We await the optimizeDeps run here, we are only going to use
+      // the newData if there wasn't an error
+      newData = optimizeDeps.metadata
+      processingResult = await optimizeDeps.run()
 
       // update ssr externals
       if (ssr) {
@@ -103,8 +116,6 @@ export function createMissingImporterRegisterFn(
         )
       }
 
-      processingResult = await newData!.processing
-
       // While optimizeDeps is running, new missing deps may be discovered,
       // in which case they will keep being added to metadata.discovered
       for (const o of Object.keys(metadata.discovered)) {
@@ -113,7 +124,36 @@ export function createMissingImporterRegisterFn(
           delete metadata.discovered[o]
         }
       }
-      metadata = newData
+      newData.processing = newDepsProcessing.promise
+      metadata = server._optimizeDepsMetadata = newData
+
+      if (!needFullReload && !processingResult?.alteredFiles) {
+        logger.info(colors.green(`✨ new dependencies pre-bundled...`), {
+          timestamp: true
+        })
+      } else {
+        if (handle) {
+          // There are newly discovered deps, and another rerun is about to be
+          // excecuted. Avoid the current full reload, but queue it for the next one
+          needFullReload = true
+          logger.info(
+            colors.green(
+              `✨ dependencies updated, delaying reload as new dependencies have been found...`
+            ),
+            {
+              timestamp: true
+            }
+          )
+        } else {
+          logger.info(
+            colors.green(`✨ dependencies updated, reloading page...`),
+            {
+              timestamp: true
+            }
+          )
+          fullReload()
+        }
+      }
     } catch (e) {
       logger.error(
         colors.red(`error while updating dependencies:\n${e.stack}`),
@@ -123,37 +163,10 @@ export function createMissingImporterRegisterFn(
       // Reset missing deps, let the server rediscover the dependencies
       metadata.discovered = {}
       fullReload()
-      return
-    }
-
-    if (!needFullReload && !processingResult?.alteredFiles) {
-      logger.info(colors.green(`✨ new dependencies pre-bundled...`), {
-        timestamp: true
-      })
-    } else {
-      if (handle) {
-        // There are newly discovered deps, and another rerun is about to be
-        // excecuted. Avoid the current full reload, but queue it for the next one
-        needFullReload = true
-        // We still invalidate the module graph to wipe out cached transforms
-        server.moduleGraph.invalidateAll()
-        logger.info(
-          colors.green(
-            `✨ dependencies updated, other missing dependencies found...`
-          ),
-          {
-            timestamp: true
-          }
-        )
-      } else {
-        logger.info(
-          colors.green(`✨ dependencies updated, reloading page...`),
-          {
-            timestamp: true
-          }
-        )
-        fullReload()
-      }
+    } finally {
+      // Rerun finished, resolve the promise to let awaiting requests or
+      // other rerun queued be processed
+      newDepsProcessing.resolve()
     }
   }
 

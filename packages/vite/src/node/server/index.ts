@@ -45,7 +45,7 @@ import type { ESBuildTransformResult } from '../plugins/esbuild'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
-import { optimizeDeps } from '../optimizer'
+import { createOptimizeDepsRun } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -560,14 +560,15 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const runOptimize = async () => {
-    server._optimizeDepsMetadata = await optimizeDeps(
+    const optimizeDeps = await createOptimizeDepsRun(
       config,
       config.server.force || server._forceOptimizeOnRestart
     )
 
-    if (server.config?.optimizeDeps?.holdBackServerStart) {
-      await server._optimizeDepsMetadata?.processing
-    }
+    // Don't await for the optimization to finish, we can start the
+    // server right away here
+    server._optimizeDepsMetadata = optimizeDeps.metadata
+    optimizeDeps.run()
 
     // While running the first optimizeDeps, _registerMissingImport is null
     // so the resolve plugin resolves straight to node_modules during the
