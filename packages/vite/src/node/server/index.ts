@@ -298,7 +298,8 @@ export interface ViteDevServer {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig = {},
+  oldServer?: ViteDevServer
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
@@ -400,7 +401,7 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
-    async restart(forceOptimize: boolean) {
+    async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
         server._restartPromise = restartServer(server).finally(() => {
@@ -414,8 +415,8 @@ export async function createServer(
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
-    _restartPromise: null,
-    _forceOptimizeOnRestart: false,
+    _restartPromise: oldServer?._restartPromise ?? null,
+    _forceOptimizeOnRestart: oldServer?._forceOptimizeOnRestart ?? false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
@@ -736,7 +737,7 @@ async function restartServer(server: ViteDevServer) {
 
   let newServer = null
   try {
-    newServer = await createServer(server.config.inlineConfig)
+    newServer = await createServer(server.config.inlineConfig, server)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true
