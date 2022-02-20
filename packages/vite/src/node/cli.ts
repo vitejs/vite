@@ -109,8 +109,8 @@ cli
         : ''
 
       info(
-        `\n    ${colors.green(
-          `  ${colors.bold('VITE')} v${version}  `
+        `\n  ${colors.green(
+          `${colors.bold('VITE')} v${version}`
         )}  ${startupDurationString}\n`,
         { clear: !server.config.logger.hasWarned }
       )
