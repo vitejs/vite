@@ -755,7 +755,8 @@ async function restartServer(server: ViteDevServer) {
 
   for (const key in newServer) {
     if (key === '_restartPromise') {
-      // @ts-ignore prevent new server `restart` function from calling
+      // prevent new server `restart` function from calling
+      // @ts-ignore
       newServer[key] = server[key]
     } else if (key !== 'app') {
       // @ts-ignore
