@@ -10,7 +10,7 @@ import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { mergeConfig, resolveConfig } from '../config'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { FSWatcher, WatchOptions } from 'types/chokidar'
@@ -298,8 +298,7 @@ export interface ViteDevServer {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig = {},
-  oldServer?: ViteDevServer
+  inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const root = config.root
@@ -415,8 +414,8 @@ export async function createServer(
     _optimizeDepsMetadata: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
-    _restartPromise: oldServer?._restartPromise ?? null,
-    _forceOptimizeOnRestart: oldServer?._forceOptimizeOnRestart ?? false,
+    _restartPromise: null,
+    _forceOptimizeOnRestart: false,
     _isRunningOptimizer: false,
     _registerMissingImport: null,
     _pendingReload: null,
@@ -566,7 +565,7 @@ export async function createServer(
     try {
       server._optimizeDepsMetadata = await optimizeDeps(
         config,
-        config.server.force || server._forceOptimizeOnRestart
+        config.server.force
       )
     } finally {
       server._isRunningOptimizer = false
@@ -735,9 +734,18 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
+  let inlineConfig = server.config.inlineConfig
+  if (server._forceOptimizeOnRestart) {
+    inlineConfig = mergeConfig(inlineConfig, {
+      server: {
+        force: true
+      }
+    })
+  }
+
   let newServer = null
   try {
-    newServer = await createServer(server.config.inlineConfig, server)
+    newServer = await createServer(inlineConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true
@@ -746,7 +754,10 @@ async function restartServer(server: ViteDevServer) {
   }
 
   for (const key in newServer) {
-    if (key !== 'app') {
+    if (key === '_restartPromise') {
+      // @ts-ignore prevent new server `restart` function from calling
+      newServer[key] = server[key]
+    } else if (key !== 'app') {
       // @ts-ignore
       server[key] = newServer[key]
     }
@@ -766,4 +777,7 @@ async function restartServer(server: ViteDevServer) {
   } else {
     logger.info('server restarted.', { timestamp: true })
   }
+
+  // new server (the current server) can restart now
+  newServer._restartPromise = null
 }
