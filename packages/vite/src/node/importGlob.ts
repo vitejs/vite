@@ -89,6 +89,7 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
+    const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
     if (assertion?.assert?.type === 'raw') {
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
@@ -98,14 +99,10 @@ export async function transformImportGlob(
       // css imports injecting a ?used query to export the css string
       importsString += `import ${
         isEagerDefault ? `` : `* as `
-      }${identifier} from ${JSON.stringify(
-        isCSSRequest(importee) ? `${importee}?used` : importee
-      )};`
+      }${identifier} from ${JSON.stringify(importeeUrl)};`
       entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
-      let imp = `import(${JSON.stringify(
-        isCSSRequest(importee) ? `${importee}?used` : importee
-      )})`
+      let imp = `import(${JSON.stringify(importeeUrl)})`
       if (!normalizeUrl && preload) {
         imp =
           `(${isModernFlag}` +
