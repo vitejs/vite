@@ -1,4 +1,3 @@
-import { isCSSRequest } from './plugins/css'
 import path from 'path'
 import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
@@ -8,6 +7,7 @@ import {
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
+import { isCSSRequest } from './plugins/css'
 import { cleanUrl } from './utils'
 import type { RollupError } from 'rollup'
 
