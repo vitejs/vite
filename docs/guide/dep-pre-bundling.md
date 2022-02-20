@@ -3,10 +3,10 @@
 When you run `vite` for the first time, you may notice this message:
 
 ```
-Optimizable dependencies detected:
-react, react-dom
-Pre-bundling them to speed up dev server page load...
-(this will be run only when your dependencies have changed)
+Pre-bundling dependencies:
+  react
+  react-dom
+(this will be run only when your dependencies or config have changed)
 ```
 
 ## The Why
@@ -28,6 +28,8 @@ This is Vite performing what we call "dependency pre-bundling". This process ser
 
    By pre-bundling `lodash-es` into a single module, we now only need one HTTP request instead!
 
+Note that this only applies in development mode.
+
 ## Automatic Dependency Discovery
 
 If an existing cache is not found, Vite will crawl your source code and automatically discover dependency imports (i.e. "bare imports" that expect to be resolved from `node_modules`) and use these found imports as entry points for the pre-bundle. The pre-bundling is performed with `esbuild` so it's typically very fast.
@@ -36,11 +38,27 @@ After the server has already started, if a new dependency import is encountered 
 
 ## Monorepos and Linked Dependencies
 
-In a monorepo setup, a dependency may be a linked package from the same repo. Vite automatically detects dependencies that are not resolved from `node_modules` and treats the linked dep as source code. It will not attempt to bundle the linked dep, and instead will analyze the linked dep's dependency list instead.
+In a monorepo setup, a dependency may be a linked package from the same repo. Vite automatically detects dependencies that are not resolved from `node_modules` and treats the linked dep as source code. It will not attempt to bundle the linked dep, and will analyze the linked dep's dependency list instead.
 
-::: warning Note
-Linked dependencies might not work properly in the final build due to differences in dependency resolution.
-Use `npm pack` instead for all local dependencies to avoid issues in the final bundle. (The `npm pack` is only ever needed when the linked source code or package only exports CJS code. If it exports ESM code, then it is not needed.)
+However, this requires the linked dep to be exported as ESM. If not, you can add the dependency to [`optimizeDeps.include`](/config/#optimizedeps-include) and [`build.commonjsOptions.include`](/config/#build-commonjsoptions) in your config.
+
+```js
+export default defineConfig({
+  optimizeDeps: {
+    include: ['linked-dep']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/linked-dep/, /node_modules/]
+    }
+  }
+})
+```
+
+When making changes to the linked dep, restart the dev server with the `--force` command line option for the changes to take effect.
+
+::: warning Deduping
+Due to differences in linked dependency resolution, transitive dependencies can deduplicated incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
 :::
 
 ## Customizing the Behavior
@@ -57,7 +75,7 @@ Both `include` and `exclude` can be used to deal with this. If the dependency is
 
 Vite caches the pre-bundled dependencies in `node_modules/.vite`. It determines whether it needs to re-run the pre-bundling step based on a few sources:
 
-- The `dependencies` list in your `package.json`
+- The `dependencies` list in your `package.json`.
 - Package manager lockfiles, e.g. `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
 - Relevant fields in your `vite.config.js`, if present.
 
