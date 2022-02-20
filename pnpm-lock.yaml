@@ -284,6 +284,7 @@ importers:
       react: ^17.0.2
       react-dom: ^17.0.2
       resolve-linked: workspace:0.0.0
+      url: ^0.11.0
       vue: ^3.2.25
       vuex: ^4.0.0
     dependencies:
@@ -300,6 +301,7 @@ importers:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       resolve-linked: link:../resolve-linked
+      url: 0.11.0
       vue: 3.2.26
       vuex: 4.0.2_vue@3.2.26
     devDependencies:
@@ -7663,6 +7665,10 @@ packages:
       once: 1.4.0
     dev: true
 
+  /punycode/1.3.2:
+    resolution: {integrity: sha1-llOgNvt8HuQjQvIyXM7v6jkmxI0=}
+    dev: false
+
   /punycode/2.1.1:
     resolution: {integrity: sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==}
     engines: {node: '>=6'}
@@ -7698,6 +7704,12 @@ packages:
     resolution: {integrity: sha512-TIRk4aqYLNoJUbd+g2lEdz5kLWIuTMRagAXxl78Q0RiVjAOugHmeKNGdd3cwo/ktpf9aL9epCfFqWDEKysUlLQ==}
     engines: {node: '>=0.6'}
     dev: true
+
+  /querystring/0.2.0:
+    resolution: {integrity: sha1-sgmEkgO7Jd+CDadW50cAWHhSFiA=}
+    engines: {node: '>=0.4.x'}
+    deprecated: The querystring API is considered Legacy. new code should use the URLSearchParams API instead.
+    dev: false
 
   /queue-microtask/1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -9061,6 +9073,13 @@ packages:
     dependencies:
       punycode: 2.1.1
     dev: true
+
+  /url/0.11.0:
+    resolution: {integrity: sha1-ODjpfPxgUh63PFJajlW/3Z4uKPE=}
+    dependencies:
+      punycode: 1.3.2
+      querystring: 0.2.0
+    dev: false
 
   /utf8-byte-length/1.0.4:
     resolution: {integrity: sha1-9F8VDExm7uloGGUFq5P8u4rWv2E=}
