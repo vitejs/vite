@@ -101,16 +101,16 @@ cli
       // @ts-ignore
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
-        ? c.gray(
-            `(ready in ${c.bold(
+        ? colors.gray(
+            `(ready in ${colors.bold(
               Math.ceil(performance.now() - viteStartTime)
             )} ms)`
           )
         : ''
 
       info(
-        `\n    ${c.bgGreen(
-          c.white(`  ${c.bold('VITE')} v${version}  `)
+        `\n    ${colors.bgGreen(
+          colors.white(`  ${colors.bold('VITE')} v${version}  `)
         )}  ${startupDurationString}\n`,
         { clear: !server.config.logger.hasWarned }
       )
@@ -118,7 +118,7 @@ cli
       server.printUrls()
     } catch (e) {
       createLogger(options.logLevel).error(
-        c.red(`error when starting dev server:\n${e.stack}`),
+        colors.red(`error when starting dev server:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -174,7 +174,7 @@ cli
       })
     } catch (e) {
       createLogger(options.logLevel).error(
-        c.red(`error during build:\n${e.stack}`),
+        colors.red(`error during build:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -205,7 +205,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          c.red(`error when optimizing deps:\n${e.stack}`),
+          colors.red(`error when optimizing deps:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
@@ -250,7 +250,7 @@ cli
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
-          c.red(`error when starting preview server:\n${e.stack}`),
+          colors.red(`error when starting preview server:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
