@@ -194,13 +194,37 @@ export function esbuildDepPlugin(
         }
       })
 
-      // Returning empty contents that will be turned by ESBuild
-      // into a CommonJS module exporting an empty object.
-      // This is what ESBuild does when bundling a dependency
-      // starting from a non-browser-external entrypoint.
-      build.onLoad({ filter: /.*/, namespace: 'browser-external' }, () => {
-        return { contents: '' }
-      })
+      // Contents of this module will be processed by ESBuild during
+      // dependency bundling. If it's an ES module with a single
+      // default export, ESBuild will fail with an error if a named import is used:
+      // [ERROR] No matching export in "browser-external:*" for import "*"
+      // This only happens in Yarn PnP mode because otherwise ESBuild
+      // handles browser mapping internally.
+      // Aside from PnP, these cases go through this proxy module:
+      // - deep package imports that are directly disabled via browser field;
+      // - direct default imports of node builtins;
+      // - node builtins re-exported via a package that does not remap for the browser.
+      build.onLoad(
+        { filter: /.*/, namespace: 'browser-external' },
+        ({ path }) => {
+          return {
+            contents: `\
+module.exports = new Proxy({}, {
+  get() {
+    return new Proxy({}, {
+      get() {
+        throw new Error(
+          'Module "${path}" has been externalized for ' +
+          'browser compatibility and cannot be accessed in client code.'
+        )
+      }
+    })
+  }
+})
+`
+          }
+        }
+      )
 
       // yarn 2 pnp compat
       if (isRunningWithYarnPnp) {
