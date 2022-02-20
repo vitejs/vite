@@ -5,7 +5,10 @@ const vue = require('@vitejs/plugin-vue')
  */
 module.exports = {
   resolve: {
-    dedupe: ['react']
+    dedupe: ['react'],
+    alias: {
+      'node:url': 'url'
+    }
   },
 
   optimizeDeps: {

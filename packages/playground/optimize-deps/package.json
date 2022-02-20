@@ -23,6 +23,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "resolve-linked": "workspace:0.0.0",
+    "url": "^0.11.0",
     "vue": "^3.2.25",
     "vuex": "^4.0.0"
   },

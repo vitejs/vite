@@ -53,6 +53,9 @@
 <h2>Nested include</h2>
 <div>Module path: <span class="nested-include"></span></div>
 
+<h2>Alias with colon</h2>
+<div>URL: <span class="url"></span></div>
+
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.globEager('./glob/*.js')
@@ -84,6 +87,9 @@
 
   import { nestedInclude } from 'nested-exclude'
   text('.nested-include', nestedInclude)
+
+  import { parse } from 'node:url'
+  text('.url', parse('https://vitejs.dev').hostname)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
