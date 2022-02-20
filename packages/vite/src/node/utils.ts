@@ -1166,11 +1166,19 @@ export function transformStableResult(
   }
 }
 
-export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+type FlatAwaited<T> = Exclude<
+  Awaited<T extends readonly (infer U)[] ? U : T>,
+  readonly any[]
+>
+
+export async function asyncFlatten<T>(
+  arr: readonly T[]
+): Promise<FlatAwaited<T>[]> {
+  let flatArr: any[]
   do {
-    arr = (await Promise.all(arr)).flat(Infinity) as any
+    flatArr = (await Promise.all(arr)).flat(Infinity)
   } while (arr.some((v: any) => v?.then))
-  return arr
+  return flatArr
 }
 
 // strip UTF-8 BOM

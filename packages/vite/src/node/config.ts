@@ -160,7 +160,7 @@ export interface UserConfig {
   /**
    * Array of vite plugins to use.
    */
-  plugins?: PluginOption[]
+  readonly plugins?: readonly PluginOption[]
   /**
    * Configure resolver
    */
@@ -414,35 +414,25 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  }
+  // resolve plugins
+  const userPlugins = await flattenVitePlugins(
+    config.plugins,
+    config,
+    configEnv
+  )
+
+  // @ts-ignore
+  config.plugins = sortVitePlugins(userPlugins)
+
+  // run config hooks
+  config = await runConfigHook(config, configEnv, userPlugins)
+
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
   // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
   // So we need to separate the worker plugin from the plugin that vite needs to run.
-  const rawWorkerUserPlugins = (
-    (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
-
-  // resolve plugins
-  const rawUserPlugins = (
-    (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
-
-  const [prePlugins, normalPlugins, postPlugins] =
-    sortUserPlugins(rawUserPlugins)
-
-  // run config hooks
-  const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  config = await runConfigHook(config, userPlugins, configEnv)
+  const workerUserPlugins = sortVitePlugins(
+    await flattenVitePlugins(config.worker?.plugins, config, configEnv)
+  )
 
   if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config = mergeConfig(config, {
@@ -603,16 +593,10 @@ export async function resolveConfig(
 
   // resolve worker
   let workerConfig = mergeConfig({}, config)
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(rawWorkerUserPlugins)
 
   // run config hooks
-  const workerUserPlugins = [
-    ...workerPrePlugins,
-    ...workerNormalPlugins,
-    ...workerPostPlugins
-  ]
-  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
+  workerConfig = await runConfigHook(workerConfig, configEnv, workerUserPlugins)
+
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -681,9 +665,7 @@ export async function resolveConfig(
 
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
-    prePlugins,
-    normalPlugins,
-    postPlugins
+    ...splitVitePlugins(userPlugins)
   )
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
@@ -695,9 +677,7 @@ export async function resolveConfig(
   }
   resolvedConfig.worker.plugins = await resolvePlugins(
     workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins
+    ...splitVitePlugins(workerUserPlugins)
   )
   Object.assign(
     resolvedConfig.worker,
@@ -835,22 +815,65 @@ export function resolveBaseUrl(
   return base
 }
 
+/** @deprecated Use `flattenVitePlugins` and `splitVitePlugins` */
 export function sortUserPlugins(
   plugins: (Plugin | Plugin[])[] | undefined
 ): [Plugin[], Plugin[], Plugin[]] {
-  const prePlugins: Plugin[] = []
-  const postPlugins: Plugin[] = []
-  const normalPlugins: Plugin[] = []
+  return plugins ? splitVitePlugins(plugins.flat()) : [[], [], []]
+}
 
-  if (plugins) {
-    plugins.flat().forEach((p) => {
-      if (p.enforce === 'pre') prePlugins.push(p)
-      else if (p.enforce === 'post') postPlugins.push(p)
-      else normalPlugins.push(p)
-    })
+export async function flattenVitePlugins(
+  plugins: readonly (PluginOption | readonly PluginOption[])[] | undefined,
+  config: InlineConfig,
+  configEnv: ConfigEnv
+): Promise<Plugin[]> {
+  if (!plugins) {
+    return []
   }
+  config = { ...config, mode: configEnv.mode }
+  const resolvedPlugins = await asyncFlatten(plugins)
+  return resolvedPlugins.filter((p) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply(config, configEnv)
+    } else {
+      return p.apply === configEnv.command
+    }
+  }) as Plugin[]
+}
 
-  return [prePlugins, normalPlugins, postPlugins]
+/**
+ * Sort an array of plugins in-place according to each plugin's
+ * `enforce` property.
+ */
+export function sortVitePlugins(
+  plugins: Plugin[],
+  enforce: (p: Plugin) => 'pre' | 'post' | null | undefined = (p) => p.enforce
+): Plugin[] {
+  return plugins.sort((a, b) => {
+    const left = enforce(a)
+    const right = enforce(b)
+    return left === right || right === 'pre' ? 1 : left !== 'post' ? -1 : 1
+  })
+}
+
+/**
+ * Split an array of plugins into 3 arrays, the 1st for `pre` plugins,
+ * the 2nd for normal plugins, and the 3rd for `post` plugins.
+ */
+export function splitVitePlugins(
+  plugins: Plugin[],
+  enforce: (p: Plugin) => 'pre' | 'post' | null | undefined = (p) => p.enforce
+): [Plugin[], Plugin[], Plugin[]] {
+  const phases: Record<string, Plugin[]> = { pre: [], '': [], post: [] }
+  for (const plugin of plugins) {
+    const phase = enforce(plugin)
+    phases[phase || ''].push(plugin)
+  }
+  return Object.values(phases) as any
 }
 
 export async function loadConfigFromFile(
@@ -1081,25 +1104,69 @@ async function loadConfigFromBundledFile(
   }
 }
 
+const orders = ['pre', null, 'post'] as const
+
 async function runConfigHook(
   config: InlineConfig,
-  plugins: Plugin[],
-  configEnv: ConfigEnv
+  configEnv: ConfigEnv,
+  plugins: Plugin[]
 ): Promise<InlineConfig> {
-  let conf = config
+  const calledPlugins = new Set<Plugin>()
+  const callConfigHandler = async (plugin: Plugin) => {
+    calledPlugins.add(plugin)
+    const handler =
+      plugin.config && 'handler' in plugin.config
+        ? plugin.config.handler!
+        : plugin.config!
 
-  for (const p of getSortedPluginsByHook('config', plugins)) {
-    const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
-    if (handler) {
-      const res = await handler(conf, configEnv)
-      if (res) {
-        conf = mergeConfig(conf, res)
+    const result = await handler(config, configEnv)
+    if (result) {
+      config = mergeConfig(config, result)
+    }
+  }
+
+  const enforce = (p: Plugin) =>
+    (p.config && ('handler' in p.config ? p.config.order : p.enforce)) || null
+
+  const isEligible = (p: Plugin, order: typeof orders[number]) => {
+    if (calledPlugins.has(p)) {
+      return false
+    }
+    if (!p.config) {
+      return false
+    }
+    return orders.indexOf(enforce(p)) <= orders.indexOf(order)
+  }
+
+  let needSort = false
+  for (const order of orders) {
+    for (let i = 0; i < plugins.length; i++) {
+      const plugin = plugins[i]
+      if (isEligible(plugin, order)) {
+        const oldPlugins = config.plugins!
+        await callConfigHandler(plugin)
+        const newPlugins = await flattenVitePlugins(
+          config.plugins!.slice(oldPlugins.length),
+          config,
+          configEnv
+        )
+        if (newPlugins.length) {
+          // Sort new plugins according to either the `plugin.config.order` or
+          // `plugin.enforce` properties.
+          sortVitePlugins(newPlugins, enforce)
+          // Insert them after the plugin that produced them.
+          plugins.splice(i + 1, 0, ...newPlugins)
+          // Ensure the plugins array is sorted at the end.
+          needSort = true
+        }
       }
     }
   }
 
-  return conf
+  if (needSort) {
+    sortVitePlugins(plugins)
+  }
+  return config
 }
 
 export function getDepOptimizationConfig(
