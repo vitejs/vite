@@ -184,7 +184,7 @@ function printServerUrls(
     if (hostname.name !== '127.0.0.1') {
       urls.push({
         label: 'Network',
-        url: colors.gray(`use ${colors.bold('--host')} to expose`)
+        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
       })
     }
   } else {
@@ -214,7 +214,7 @@ function printServerUrls(
   )
   urls.forEach(({ label, url: text }) => {
     info(
-      `  ${colors.green('➜')}  ${label}: ${' '.repeat(
+      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
         length - label.length
       )}${text}`
     )

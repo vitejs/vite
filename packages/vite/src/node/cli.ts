@@ -101,16 +101,16 @@ cli
       // @ts-ignore
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
-        ? colors.gray(
-            `(ready in ${colors.bold(
-              Math.ceil(performance.now() - viteStartTime)
+        ? colors.dim(
+            `(ready in ${colors.white(
+              colors.bold(Math.ceil(performance.now() - viteStartTime))
             )} ms)`
           )
         : ''
 
       info(
-        `\n    ${colors.bgGreen(
-          colors.white(`  ${colors.bold('VITE')} v${version}  `)
+        `\n    ${colors.green(
+          `  ${colors.bold('VITE')} v${version}  `
         )}  ${startupDurationString}\n`,
         { clear: !server.config.logger.hasWarned }
       )
