@@ -96,27 +96,29 @@ cli
 
       const info = server.config.logger.info
 
+      const { version } = require('vite/package.json')
+
+      // @ts-ignore
+      const viteStartTime = global.__vite_start_time ?? false
+      const startupDurationString = viteStartTime
+        ? c.gray(
+            `(ready in ${c.bold(
+              Math.ceil(performance.now() - viteStartTime)
+            )} ms)`
+          )
+        : ''
+
       info(
-        colors.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          colors.green(` dev server running at:\n`),
-        {
-          clear: !server.config.logger.hasWarned
-        }
+        `\n    ${c.bgGreen(
+          c.white(`  ${c.bold('VITE')} v${version}  `)
+        )}  ${startupDurationString}\n`,
+        { clear: !server.config.logger.hasWarned }
       )
 
       server.printUrls()
-
-      // @ts-ignore
-      if (global.__vite_start_time) {
-        // @ts-ignore
-        const startupDuration = performance.now() - global.__vite_start_time
-        info(
-          `\n  ${colors.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`
-        )
-      }
     } catch (e) {
       createLogger(options.logLevel).error(
-        colors.red(`error when starting dev server:\n${e.stack}`),
+        c.red(`error when starting dev server:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -172,7 +174,7 @@ cli
       })
     } catch (e) {
       createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
+        c.red(`error during build:\n${e.stack}`),
         { error: e }
       )
       process.exit(1)
@@ -203,7 +205,7 @@ cli
         await optimizeDeps(config, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when optimizing deps:\n${e.stack}`),
+          c.red(`error when optimizing deps:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
@@ -248,7 +250,7 @@ cli
         server.printUrls()
       } catch (e) {
         createLogger(options.logLevel).error(
-          colors.red(`error when starting preview server:\n${e.stack}`),
+          c.red(`error when starting preview server:\n${e.stack}`),
           { error: e }
         )
         process.exit(1)
