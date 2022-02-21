@@ -89,7 +89,7 @@
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.9.3",
-    "estree-walker": "^2.0.2",
+    "estree-walker": "^3.0.1",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.11",
     "http-proxy": "^1.18.1",
