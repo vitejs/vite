@@ -33,9 +33,6 @@ let mergePolyfillWithLegacyCode = false
  * @returns {import('vite').Plugin[]}
  */
 function viteLegacyPlugin(options = {}) {
-  const debugFlag = process.env.DEBUG
-  const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
-
   /**
    * @type {import('vite').ResolvedConfig}
    */
@@ -58,7 +55,9 @@ function viteLegacyPlugin(options = {}) {
     'core-js/modules/es.promise',
     'core-js/modules/es.array.iterator'
   ]
-  const legacyPolyfills = new Set(useSystemJS ? DEFAULT_LEGACY_POLYFILL_FOR_SYSTEM_JS : [])
+  const legacyPolyfills = new Set(
+    useSystemJS ? DEFAULT_LEGACY_POLYFILL_FOR_SYSTEM_JS : []
+  )
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
@@ -124,10 +123,10 @@ function viteLegacyPlugin(options = {}) {
           return
         }
         isDebug &&
-        console.log(
-          `[@vitejs/plugin-legacy] modern polyfills:`,
-          modernPolyfills
-        )
+          console.log(
+            `[@vitejs/plugin-legacy] modern polyfills:`,
+            modernPolyfills
+          )
         await buildPolyfillChunk(
           'polyfills-modern',
           modernPolyfills,
@@ -152,10 +151,10 @@ function viteLegacyPlugin(options = {}) {
         }
 
         isDebug &&
-        console.log(
-          `[@vitejs/plugin-legacy] legacy polyfills:`,
-          legacyPolyfills
-        )
+          console.log(
+            `[@vitejs/plugin-legacy] legacy polyfills:`,
+            legacyPolyfills
+          )
 
         await buildPolyfillChunk(
           'polyfills-legacy',
@@ -425,7 +424,7 @@ function viteLegacyPlugin(options = {}) {
             // we set the entry path on the element as an attribute so that the
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
-            id: legacyEntryId,
+            id: legacyEntryId
           },
           injectTo: 'body'
         }
@@ -444,7 +443,12 @@ function viteLegacyPlugin(options = {}) {
       }
 
       // 5. inject dynamic import fallback entry
-      if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename && useSystemJS) {
+      if (
+        genDynamicFallback &&
+        legacyPolyfillFilename &&
+        legacyEntryFilename &&
+        useSystemJS
+      ) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
@@ -501,7 +505,7 @@ function viteLegacyPlugin(options = {}) {
       if (envInjectionFailed) {
         config.logger.warn(
           `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
-          `to incompatible vite version (requires vite@^2.0.0-beta.69).`
+            `to incompatible vite version (requires vite@^2.0.0-beta.69).`
         )
       }
     }
@@ -604,7 +608,9 @@ async function buildPolyfillChunk(
     }
   }
 
-  const codeChunksNames = Object.keys(bundle).filter(codeChunksName => codeChunksName.includes('.js'))
+  const codeChunksNames = Object.keys(bundle).filter((codeChunksName) =>
+    codeChunksName.includes('.js')
+  )
 
   if (codeChunksNames.length == 1 && mergePolyfillWithLegacyCode) {
     let appCode = bundle[codeChunksNames[0]].code
@@ -645,7 +651,10 @@ function polyfillsPlugin(imports, externalSystemJS) {
  * @param {import('rollup').NormalizedOutputOptions} options
  */
 function isLegacyChunk(chunk, options) {
-  return options.format === legacyCodeExecutionFormat && chunk.fileName.includes('-legacy')
+  return (
+    options.format === legacyCodeExecutionFormat &&
+    chunk.fileName.includes('-legacy')
+  )
 }
 
 /**
