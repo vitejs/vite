@@ -33,6 +33,10 @@ let mergePolyfillWithLegacyCode = false
  * @returns {import('vite').Plugin[]}
  */
 function viteLegacyPlugin(options = {}) {
+  const debugFlags = (process.env.DEBUG || '').split(',')
+  const isDebug =
+    debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
+
   /**
    * @type {import('vite').ResolvedConfig}
    */
