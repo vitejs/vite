@@ -478,6 +478,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(opts, bundle) {
+      // @ts-ignore asset emits are skipped in legacy bundle
+      if (opts.__vite_skip_asset_emit__) {
+        return
+      }
+
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         const emptyChunkFiles = [...pureCssChunks]
@@ -764,7 +769,7 @@ async function compileCSS(
   // record CSS dependencies from @imports
   for (const message of postcssResult.messages) {
     if (message.type === 'dependency') {
-      deps.add(message.file as string)
+      deps.add(normalizePath(message.file as string))
     } else if (message.type === 'dir-dependency') {
       // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
       const { dir, glob: globPattern = '**' } = message

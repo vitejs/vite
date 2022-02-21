@@ -83,7 +83,7 @@ interface ImportMeta {
 
 ## Modes
 
-By default, the dev server (`dev` command) runs in `development` mode and the `build` and `serve` commands run in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 
@@ -110,4 +110,4 @@ NODE_ENV=production
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but displaying a different title from production.
+Now your staging app should have production-like behavior, but display a different title from production.
