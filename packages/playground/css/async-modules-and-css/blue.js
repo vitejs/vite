@@ -1,4 +1,4 @@
-import './base.css'
+import './hotpink.css'
 import styles from './blue.module.css'
 
 const div = document.createElement('div')

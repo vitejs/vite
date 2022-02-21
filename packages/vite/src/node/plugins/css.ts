@@ -120,7 +120,13 @@ const cssModulesCache = new WeakMap<
   Map<string, Record<string, string>>
 >()
 
-export const cssModulesSets = new WeakMap<ResolvedConfig, Set<string>>()
+export const cssModulesSets = new WeakMap<
+  ResolvedConfig,
+  {
+    isJSChunk: Set<string> // css module is js chunk
+    inJSChunk: Set<string> // css module in js chunk
+  }
+>()
 
 export const chunkToEmittedCssFileMap = new WeakMap<
   RenderedChunk,
@@ -267,7 +273,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<string>
-  let cssModulesSet: Set<string>
+  let cssModulesIsJSChunkSet: Set<string>
+  let cssModulesInJSChunkSet: Set<string>
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -282,8 +289,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
 
-      cssModulesSet = new Set<string>()
-      cssModulesSets.set(config, cssModulesSet)
+      cssModulesIsJSChunkSet = new Set<string>()
+      cssModulesInJSChunkSet = new Set<string>()
+      cssModulesSets.set(config, {
+        isJSChunk: cssModulesIsJSChunkSet,
+        inJSChunk: cssModulesInJSChunkSet
+      })
       hasEmitted = false
     },
 
@@ -376,11 +387,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS += styles.get(id)
         }
       }
-      // if module css generate javescript module
-      // will only had module css file
-      if (moduleCssCount === ids.length) {
-        cssModulesSet.add(chunk.fileName)
+
+      if (moduleCssCount) {
+        if (moduleCssCount === ids.length) {
+          cssModulesIsJSChunkSet.add(chunk.fileName)
+        } else {
+          cssModulesInJSChunkSet.add(chunk.fileName)
+        }
       }
+
       if (!chunkCSS) {
         return null
       }

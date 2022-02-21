@@ -245,9 +245,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const cssModulesSet = cssModulesSets.get(config)!
-      const isCss = (id: string) =>
-        isCSSRequest(id) ? 2 : cssModulesSet.has(id) ? 1 : 0
+      const {
+        isJSChunk: cssModulesIsJSChunkSets,
+        inJSChunk: cssModulesInJSChunkSets
+      } = cssModulesSets.get(config)!
+
+      // css > module css is chunk > module css in chunk > other
+      const getCssPriority = (id: string) => {
+        if (isCSSRequest(id)) {
+          return 3
+        } else if (cssModulesIsJSChunkSets.has(id)) {
+          return 2
+        } else if (cssModulesInJSChunkSets.has(id)) {
+          return 1
+        } else {
+          return 0
+        }
+      }
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -299,8 +313,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         deps.add(file)
                       })
                     }
+
                     chunk.imports
-                      .sort((a, b) => isCss(b) - isCss(a))
+                      .sort((a, b) => getCssPriority(b) - getCssPriority(a))
                       .forEach((moduleName) => {
                         addDeps(moduleName)
                       })
@@ -344,7 +359,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     `[${loadOnceCache.map((d) => JSON.stringify(d)).join(',')}]`
                   )
                 deps.forEach((dep) => {
-                  if (!isCss(dep)) {
+                  // js will load depth
+                  // so if js file will load in next list
+                  if (getCssPriority(dep) <= 1) {
                     loadOnceCache.push(dep)
                     pushSplitDepsLoadingOrder()
                     loadOnceCache = []
