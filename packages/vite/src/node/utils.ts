@@ -189,8 +189,16 @@ const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
-export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
+export const getPotentialTsSrcPaths = (filename: string) => {
+  // Special handling for filenames that end in `.js`, since they may actually
+  // refer to a `.ts` or `.tsx` file in TypeScript.
+  if (filename.endsWith('.js')) {
+    const extensionLessFile = filename.slice(0, -3)
+    return [`${extensionLessFile}.ts`, `${extensionLessFile}.tsx`]
+  }
+
+  return [filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')]
+}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [

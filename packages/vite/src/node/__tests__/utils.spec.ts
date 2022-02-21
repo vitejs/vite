@@ -1,4 +1,4 @@
-import { injectQuery, isWindows } from '../utils'
+import { getPotentialTsSrcPaths, injectQuery, isWindows } from '../utils'
 
 if (isWindows) {
   // this test will work incorrectly on unix systems
@@ -37,4 +37,26 @@ test('path with unicode, space, and %', () => {
   expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
     '/usr/vite/東京 %20 hello?direct'
   )
+})
+
+test('ts import of file with .js extension', () => {
+  expect(getPotentialTsSrcPaths('test-file.js')).toEqual([
+    'test-file.ts',
+    'test-file.tsx'
+  ])
+})
+
+test('ts import of file with .jsx extension', () => {
+  expect(getPotentialTsSrcPaths('test-file.jsx')).toEqual(['test-file.tsx'])
+})
+
+test('ts import of file .mjs,.cjs extension', () => {
+  expect(getPotentialTsSrcPaths('test-file.cjs')).toEqual(['test-file.cts'])
+  expect(getPotentialTsSrcPaths('test-file.mjs')).toEqual(['test-file.mts'])
+})
+
+test('ts import should not match .js that is not extension', () => {
+  expect(getPotentialTsSrcPaths('test-file.js.mjs')).toEqual([
+    'test-file.js.mts'
+  ])
 })
