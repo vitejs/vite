@@ -46,7 +46,7 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
+          const source = `${pos.source}:${pos.line ?? 0}:${pos.column ?? 0}`
           if (!varName || varName === 'eval') {
             return `    at ${source}`
           } else {

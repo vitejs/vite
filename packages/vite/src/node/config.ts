@@ -21,7 +21,7 @@ import { resolvePlugins } from './plugins'
 import colors from 'picocolors'
 import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
-import { expand as dotenvExpand } from 'dotenv-expand'
+import dotenvExpand from 'dotenv-expand'
 import type { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -92,7 +92,7 @@ export interface UserConfig {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to <root>.
-   * Default to `.vite` when no package.json is detected.
+   * Default to `.vite` when no `package.json` is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
