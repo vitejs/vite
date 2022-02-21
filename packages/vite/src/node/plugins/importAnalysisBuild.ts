@@ -42,12 +42,14 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
+declare const base: string
+declare const seen: Record<string, boolean>
 function preload(baseModule: () => Promise<{}>, splitDeps?: string[][]) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !splitDeps || splitDeps.length === 0) {
     return baseModule()
   }
-  const LoadOneTime = (deps: string[]) => {
+  const LoadModules = (deps: string[]) => {
     return Promise.all(
       deps.map((dep) => {
         const isCss = dep.endsWith('.css')
@@ -80,12 +82,10 @@ function preload(baseModule: () => Promise<{}>, splitDeps?: string[][]) {
   splitDeps
     .reduce((queue, deps) => {
       const needLoadDep = deps
-        // @ts-ignore
         .map((dep) => `${base}${dep}`)
-        // @ts-ignore
         .filter((dep) => (dep in seen ? false : (seen[dep] = true)))
       return needLoadDep.length
-        ? queue.then(() => LoadOneTime(needLoadDep))
+        ? queue.then(() => LoadModules(needLoadDep))
         : queue
     }, Promise.resolve([]) as Promise<unknown[]>)
     .then(() => baseModule())
