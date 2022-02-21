@@ -48,7 +48,7 @@ function viteLegacyPlugin(options = {}) {
     legacyCodeExecutionFormat = options.legacyExecutionFormat
   }
   const useSystemJS = legacyCodeExecutionFormat === 'system'
-  mergePolyfillWithLegacyCode = options.mergePolyfillsWithCode !== false
+  mergePolyfillWithLegacyCode = options.mergePolyfillsWithCode === true
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
