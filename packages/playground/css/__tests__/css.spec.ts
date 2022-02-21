@@ -293,19 +293,24 @@ test('treeshaken async chunk', async () => {
 })
 
 test('async css modules', async () => {
-  const blue = await page.$('.async-modules-blue')
-  const red = await page.$('.async-modules-red')
   const green = await page.$('.async-modules-green')
   const blue2 = await page.$('.async-modules-blue2')
+  const red = await page.$('.async-modules-red')
+  const blue = await page.$('.async-modules-blue')
 
-  expect(await getColor(blue)).toBe('blue')
-  expect(await getColor(red)).toBe('red')
+  const _black = await page.$('.async-modules-and-css-black')
+  const _blue = await page.$('.async-modules-and-css-blue')
+
   expect(await getColor(green)).toBe('green')
+  expect(await getColor(blue2)).toBe('blue')
+
+  expect(await getColor(_black)).toBe('black')
+  expect(await getColor(_blue)).toBe('blue')
+
   // because that loaded blue > red first
   // and can't change the style order
-  expect(await getColor(blue2)).toBe('red')
-  expect(await getColor(blue)).toBe('blue')
-  expect(await getColor(red)).toBe('red')
+  expect(await getColor(blue)).toBe('black')
+  expect(await getColor(red)).toBe('black')
 })
 
 test('async css modules with normal css', async () => {
