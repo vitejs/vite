@@ -147,6 +147,7 @@ export const commentRE = /<!--(.|[\r\n])*?-->/
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
+const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/im
 
 function esbuildScanPlugin(
   config: ResolvedConfig,
@@ -294,7 +295,23 @@ function esbuildScanPlugin(
                 }
               }
 
-              js += `import ${JSON.stringify(virtualModulePrefix + key)}\n`
+              const virtualModulePath = JSON.stringify(
+                virtualModulePrefix + key
+              )
+
+              const contextMatch = openTag.match(contextRE)
+              const context =
+                contextMatch &&
+                (contextMatch[1] || contextMatch[2] || contextMatch[3])
+
+              // Especially for Svelte files, exports in <script context="module"> means module exports,
+              // exports in <script> means component props. To avoid having two same export name from the
+              // star exports, we need to ignore exports in <script>
+              if (path.endsWith('.svelte') && context !== 'module') {
+                js += `import ${virtualModulePath}\n`
+              } else {
+                js += `export * from ${virtualModulePath}\n`
+              }
             }
           }
 
