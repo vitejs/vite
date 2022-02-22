@@ -88,11 +88,11 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        if (chunk.importedCss.size) {
-          manifestChunk.css = [...chunk.importedCss]
+        if (chunk.viteMetadata.importedCss.size) {
+          manifestChunk.css = [...chunk.viteMetadata.importedCss]
         }
-        if (chunk.importedAssets.size) {
-          manifestChunk.assets = [...chunk.importedAssets]
+        if (chunk.viteMetadata.importedAssets.size) {
+          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
         }
 
         return manifestChunk

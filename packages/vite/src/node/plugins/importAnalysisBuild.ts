@@ -277,7 +277,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(chunk.fileName)
-                    chunk.importedCss.forEach((file) => {
+                    chunk.viteMetadata.importedCss.forEach((file) => {
                       deps.add(file)
                     })
                     chunk.imports.forEach(addDeps)
@@ -286,8 +286,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       removedPureCssFilesCache.get(config)!
                     const chunk = removedPureCssFiles.get(filename)
                     if (chunk) {
-                      if (chunk.importedCss.size) {
-                        chunk.importedCss.forEach((file) => {
+                      if (chunk.viteMetadata.importedCss.size) {
+                        chunk.viteMetadata.importedCss.forEach((file) => {
                           deps.add(file)
                         })
                         hasRemovedPureCssChunk = true

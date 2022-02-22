@@ -364,8 +364,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      chunk.importedCss = new Set()
-
       if (!chunkCSS) {
         return null
       }
@@ -386,7 +384,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const isRelativeBase = config.base === '' || config.base.startsWith('.')
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
-          chunk.importedAssets.add(cleanUrl(filename))
+          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (!isRelativeBase || inlined) {
             // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
@@ -423,7 +421,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunk.importedCss.add(this.getFileName(fileHandle))
+          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
@@ -481,8 +479,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunks.has(file)) {
-                const { importedCss } = bundle[file] as OutputChunk
-                importedCss.forEach((file) => chunk.importedCss.add(file))
+                const {
+                  viteMetadata: { importedCss }
+                } = bundle[file] as OutputChunk
+                importedCss.forEach((file) =>
+                  chunk.viteMetadata.importedCss.add(file)
+                )
                 return false
               }
               return true

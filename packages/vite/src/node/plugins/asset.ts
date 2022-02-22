@@ -77,8 +77,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      chunk.importedAssets = new Set()
-
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
@@ -96,7 +94,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        chunk.importedAssets.add(cleanUrl(file))
+        chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const outputFilepath = config.base + file + postfix
         s.overwrite(match.index, match.index + full.length, outputFilepath)
       }
