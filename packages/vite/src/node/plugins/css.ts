@@ -685,7 +685,8 @@ async function compileCSS(
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
-  if (needInlineImport) {
+  const isHTMLProxy = htmlProxyRE.test(id)
+  if (needInlineImport && !isHTMLProxy) {
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
         async resolve(id, basedir) {
