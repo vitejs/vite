@@ -126,7 +126,7 @@ export async function resolveHttpsConfig(
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
