@@ -137,6 +137,14 @@
 <img class="import-meta-url-img" />
 <code class="import-meta-url"></code>
 
+<h2>new URL('...', import.meta.url,) (with comma)</h2>
+<img class="import-meta-url-img-comma" />
+<code class="import-meta-url-comma"></code>
+
+<h2>new URL('...', import.meta.url,) (with comma + new line)</h2>
+<img class="import-meta-url-img-comma-nl" />
+<code class="import-meta-url-comma-nl"></code>
+
 <h2>new URL(`./${dynamic}`, import.meta.url)</h2>
 <p>
   <img class="dynamic-import-meta-url-img-1" />
@@ -145,6 +153,16 @@
 <p>
   <img class="dynamic-import-meta-url-img-2" />
   <code class="dynamic-import-meta-url-2"></code>
+</p>
+
+<h2>new URL(`./${dynamic}`, import.meta.url,) (with comma)</h2>
+<p>
+  <img class="dynamic-import-meta-url-img-1-comma" />
+  <code class="dynamic-import-meta-url-1-comma"></code>
+</p>
+<p>
+  <img class="dynamic-import-meta-url-img-2-comma" />
+  <code class="dynamic-import-meta-url-2-comma"></code>
 </p>
 
 <h2>simple script tag import-expression</h2>
@@ -215,6 +233,22 @@
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
+
+  // prettier-ignore
+  const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)
+  text('.import-meta-url-comma', metaUrlWithComma)
+  document.querySelector('.import-meta-url-img-comma').src = metaUrlWithComma
+
+  // testing trailing comma and new line
+  // prettier-ignore
+  const metaUrlWithCommaNL = new URL(
+    './nested/asset.png',
+    import.meta.url,
+  )
+  text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
+  document.querySelector('.import-meta-url-img-comma-nl').src =
+    metaUrlWithCommaNL
+
   /**
    * don't process the code in the comment
    * const url = new URL('non_existent_file.png', import.meta.url)
@@ -228,6 +262,17 @@
 
   testDynamicImportMetaUrl('icon', 1)
   testDynamicImportMetaUrl('asset', 2)
+
+  function testDynamicImportMetaUrlWithComma(name, i) {
+    // prettier-ignore
+    const metaUrl = new URL(`./nested/${name}.png`, import.meta.url,)
+    text(`.dynamic-import-meta-url-${i}-comma`, metaUrl)
+    document.querySelector(`.dynamic-import-meta-url-img-${i}-comma`).src =
+      metaUrl
+  }
+
+  testDynamicImportMetaUrlWithComma('icon', 1)
+  testDynamicImportMetaUrlWithComma('asset', 2)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

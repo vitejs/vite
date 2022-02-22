@@ -21,7 +21,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     async transform(code, id, options) {
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
         const importMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
