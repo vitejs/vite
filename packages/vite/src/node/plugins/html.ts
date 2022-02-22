@@ -14,7 +14,9 @@ import {
   isExternalUrl,
   normalizePath,
   processSrcSet,
-  slash
+  slash,
+  multilineCommentsRE,
+  singlelineCommentsRE
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import MagicString from 'magic-string'
@@ -44,6 +46,8 @@ interface ScriptAssetsUrl {
 const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
+const cssInlineImportRE =
+  /@import\s+(?:url)?(?:\((["'])?([^"')]+)\1\)|(["'])(.+)\3);/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
@@ -372,12 +376,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = node.children.pop() as TextNode
             const filePath = id.replace(normalizePath(config.root), '')
             inlineModuleIndex++
-            addToHTMLProxyCache(
-              config,
-              filePath,
-              inlineModuleIndex,
-              styleNode.content
-            )
+            let code = styleNode.content
+            if (code && code.includes('@import')) {
+              code = code
+                .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
+                .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+              code = code.replace(cssInlineImportRE, () => {
+                // checkPublicFile(url.slice(1, -1), config)
+              })
+            }
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
             js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
             shouldRemove = true
           }
