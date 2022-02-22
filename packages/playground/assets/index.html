@@ -182,7 +182,9 @@
   @import url('./css/import.css');
 </style>
 
-<h2 class="foo-public">@import from publicDir</h2>
+<h3 class="foo-public">
+  @import CSS from publicDir should load (this should be red)
+</h3>
 <style>
   @import '/foo.css';
 </style>
