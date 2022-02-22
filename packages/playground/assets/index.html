@@ -182,15 +182,10 @@
   @import url('./css/import.css');
 </style>
 
-<h2>@import from publicDir</h2>
+<h2 class="foo-public">@import from publicDir</h2>
 <style>
-  /*@import '/foo.css';*/
-  /*@import url('/bar.css');*/
-  @import url(/baz.css);
+  @import '/foo.css';
 </style>
-<p class="foo-public">this line should be red</p>
-<p class="bar-public">this line should be green</p>
-<p class="baz-public">this line should be blue</p>
 
 <script type="module">
   import './css/fonts.css'
