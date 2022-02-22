@@ -514,7 +514,7 @@ export default defineConfig(async ({ command, mode }) => {
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
-  Set `server.hmr.port` to `false` when connecting with specific domain.
+  Set `server.hmr.port` to `false` when connecting to a domain without a port.
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
