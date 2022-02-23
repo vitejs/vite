@@ -200,6 +200,13 @@
   @import url('./css/import.css');
 </style>
 
+<h3 class="foo-public">
+  @import CSS from publicDir should load (this should be red)
+</h3>
+<style>
+  @import '/foo.css';
+</style>
+
 <script type="module">
   import './css/fonts.css'
   import './css/css-url.css'
