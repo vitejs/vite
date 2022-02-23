@@ -38,7 +38,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+      'script[type="module"][src="/foo/index.html?html-proxy&index=3.js"]'
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
