@@ -94,11 +94,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const base = config.base || '/'
 
   const s = new MagicString(html)
-  let scriptModuleIndex = -1
+  let inlineModuleIndex = -1
   const filePath = cleanUrl(htmlPath)
 
   const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
-    scriptModuleIndex++
+    inlineModuleIndex++
 
     const url = filePath.replace(normalizePath(config.root), '')
 
@@ -107,12 +107,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       .join('')
 
     // add HTML Proxy to Map
-    addToHTMLProxyCache(config, url, scriptModuleIndex, contents)
+    addToHTMLProxyCache(config, url, inlineModuleIndex, contents)
 
     // inline js module. convert to src="proxy"
     const modulePath = `${
       config.base + htmlPath.slice(1)
-    }?html-proxy&index=${scriptModuleIndex}.${ext}`
+    }?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
     const module = server?.moduleGraph.getModuleById(modulePath)
