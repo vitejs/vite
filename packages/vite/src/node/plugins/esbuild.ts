@@ -293,7 +293,9 @@ async function initTSConfck(config: ResolvedConfig) {
   const workspaceRoot = searchForWorkspaceRoot(config.root)
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
-    ...(await findAll(workspaceRoot))
+    ...(await findAll(workspaceRoot, {
+      skip: (dir) => dir === 'node_modules' || dir === '.git'
+    }))
   ])
 }
 
