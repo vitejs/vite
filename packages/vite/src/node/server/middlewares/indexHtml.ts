@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import type { AttributeNode } from '@vue/compiler-dom'
+import type { AttributeNode, TextNode } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
@@ -138,6 +138,21 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           `<script type="module" src="${modulePath}"></script>`
         )
       }
+    }
+
+    if (node.tag === 'style' && node.children.length) {
+      const url = filePath.replace(normalizePath(config.root), '')
+      const styleNode = node.children.pop() as TextNode
+      scriptModuleIndex++
+      addToHTMLProxyCache(config, url, scriptModuleIndex, styleNode.content)
+      const modulePath = `${
+        config.base + htmlPath.slice(1)
+      }?html-proxy&index=${scriptModuleIndex}.css`
+      s.overwrite(
+        node.loc.start.offset,
+        node.loc.end.offset,
+        `<script type="module" src="${modulePath}"></script>`
+      )
     }
 
     // elements with [href/src] attrs
