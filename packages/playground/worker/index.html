@@ -20,11 +20,14 @@
   <span class="tick-count">0</span>
 </div>
 
-<p>new Worker(new Url('path', import.meta.url))</p>
+<p>new Worker(new Url('path', import.meta.url), { type: 'module' })</p>
 <div class="worker-import-meta-url"></div>
 
-<p>new SharedWorker(new Url('path', import.meta.url))</p>
+<p>new SharedWorker(new Url('path', import.meta.url), { type: 'module' })</p>
 <div class="shared-worker-import-meta-url"></div>
+
+<p>new Worker(new Url('path', import.meta.url))</p>
+<div class="classic-worker"></div>
 
 <script type="module">
   import myWorker from './my-worker?worker'
@@ -78,11 +81,12 @@
   function text(el, text) {
     document.querySelector(el).textContent = text
   }
-
+  const workerOptions = { type: 'module' }
   // url import worker
-  const w = new Worker(new URL('./newUrl/url-worker.js', import.meta.url), {
-    type: 'module'
-  })
+  const w = new Worker(
+    new URL('./newUrl/url-worker.js', import.meta.url),
+    workerOptions
+  )
   w.addEventListener('message', (ev) =>
     text(
       '.worker-import-meta-url',
@@ -103,4 +107,13 @@
     )
   })
   w2.port.start()
+
+  const classicWorker = new Worker(
+    new URL('./newUrl/classic-worker.js', import.meta.url)
+  )
+
+  classicWorker.addEventListener('message', ({ data }) => {
+    text('.classic-worker', data)
+  })
+  classicWorker.postMessage('ping')
 </script>
