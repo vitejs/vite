@@ -16,6 +16,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { publicLoaderPlugin } from './publicLoader'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -69,6 +70,10 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
+      : [
+          clientInjectionsPlugin(config),
+          importAnalysisPlugin(config),
+          publicLoaderPlugin(config)
+        ])
   ].filter(Boolean) as Plugin[]
 }

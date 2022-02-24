@@ -1,3 +1,4 @@
+import type { ResolvedConfig } from './../../config'
 import path from 'path'
 import type { ServerResponse } from 'http'
 import type { Options } from 'sirv'
@@ -14,9 +15,12 @@ import {
   isInternalRequest,
   isWindows,
   slash,
-  isFileReadable
+  isFileReadable,
+  isJSRequest
 } from '../../utils'
 import { isMatch } from 'micromatch'
+import { isCSSRequest } from '../../plugins/css'
+import { checkPublicFile } from '../../plugins/asset'
 
 const sirvOptions: Options = {
   dev: true,
@@ -34,13 +38,23 @@ const sirvOptions: Options = {
   }
 }
 
-export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions)
+export function servePublicMiddleware(
+  config: ResolvedConfig
+): Connect.NextHandleFunction {
+  const serve = sirv(config.publicDir, sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
     // skip import request and internal requests `/@fs/ /@vite-client` etc...
     if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
+      return next()
+    }
+
+    // skip public js / css, and make their had hmr.
+    if (
+      checkPublicFile(req.url!, config) &&
+      (isCSSRequest(req.url!) || isJSRequest(req.url!))
+    ) {
       return next()
     }
     serve(req, res, next)
