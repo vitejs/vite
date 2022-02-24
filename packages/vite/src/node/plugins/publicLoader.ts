@@ -7,8 +7,8 @@ import { isCSSRequest } from './css'
 import { promises as fs } from 'fs'
 import path from 'path'
 
+// just run in serve
 export function publicLoaderPlugin(config: ResolvedConfig): Plugin {
-  const isServe = config.command === 'serve'
   const needLoad = (id: string) =>
     checkPublicFile(id, config) && (isCSSRequest(id) || isJSRequest(id))
 
@@ -22,15 +22,13 @@ export function publicLoaderPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      if (isServe) {
-        if (needLoad(id)) {
-          const url = cleanUrl(id)
-          const code = await fs.readFile(
-            path.join(config.publicDir, url),
-            'utf-8'
-          )
-          return code
-        }
+      if (needLoad(id)) {
+        const url = cleanUrl(id)
+        const code = await fs.readFile(
+          path.join(config.publicDir, url),
+          'utf-8'
+        )
+        return code
       }
       return null
     }
