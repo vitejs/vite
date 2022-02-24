@@ -43,13 +43,13 @@ import 'node-forge/lib/pki'
 // this RFC in section 4.1.2.2 requires serial numbers to be positive
 // http://www.ietf.org/rfc/rfc5280.txt
 function toPositiveHex(hexString: string) {
-  let mostSiginficativeHexAsInt = parseInt(hexString[0], 16)
-  if (mostSiginficativeHexAsInt < 8) {
+  let mostSignificativeHexAsInt = parseInt(hexString[0], 16)
+  if (mostSignificativeHexAsInt < 8) {
     return hexString
   }
 
-  mostSiginficativeHexAsInt -= 8
-  return mostSiginficativeHexAsInt.toString() + hexString.substring(1)
+  mostSignificativeHexAsInt -= 8
+  return mostSignificativeHexAsInt.toString() + hexString.substring(1)
 }
 
 export function createCertificate(): string {
