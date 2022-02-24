@@ -12,6 +12,9 @@
 <h2>Deep import with exports field</h2>
 <p class="exports-deep">fail</p>
 
+<h2>Deep import with query with exports field</h2>
+<p class="exports-deep-query">fail</p>
+
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -99,6 +102,10 @@
   // deep import w/ exports
   import { msg as deepMsg } from 'resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
+
+  // deep import w/ exports w/ query
+  import deepPath from 'resolve-exports-path/deep.json?url'
+  text('.exports-deep-query', deepPath)
 
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'

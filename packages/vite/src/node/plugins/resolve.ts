@@ -813,7 +813,12 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options, targetWeb)
+      relativeId = resolveExports(
+        data,
+        cleanUrl(relativeId),
+        options,
+        targetWeb
+      )
     } else {
       // not exposed
       relativeId = undefined

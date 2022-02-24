@@ -16,6 +16,10 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
+test('deep import with query with exports field', async () => {
+  expect(await page.textContent('.exports-deep-query')).not.toMatch('fail')
+})
+
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
     '[success]'
