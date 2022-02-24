@@ -9,16 +9,21 @@ import path from 'path'
 
 export function publicLoaderPlugin(config: ResolvedConfig): Plugin {
   const isServe = config.command === 'serve'
+  const needLoad = (id: string) =>
+    checkPublicFile(id, config) && (isCSSRequest(id) || isJSRequest(id))
 
   return {
     name: 'vite:server-public-hmr-loader',
 
+    resolveId(id) {
+      if (needLoad(id)) {
+        return path.join(config.publicDir, id)
+      }
+    },
+
     async load(id) {
       if (isServe) {
-        if (
-          checkPublicFile(id, config) &&
-          (isCSSRequest(id) || isJSRequest(id))
-        ) {
+        if (needLoad(id)) {
           const url = cleanUrl(id)
           const code = await fs.readFile(
             path.join(config.publicDir, url),
