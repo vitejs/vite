@@ -102,4 +102,11 @@ if (!isBuild) {
 
     expect(await page.textContent('.script')).toMatch('5')
   })
+
+  test('hmr: setup jsx in .vue', async () => {
+    editFile('setup-syntax-jsx.vue', (code) =>
+      code.replace('let count = ref(100)', 'let count = ref(1000)')
+    )
+    await untilUpdated(() => page.textContent('.setup-jsx'), '1000')
+  })
 }

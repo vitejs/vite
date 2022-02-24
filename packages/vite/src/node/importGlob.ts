@@ -1,12 +1,21 @@
 import path from 'path'
+import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
+import JSON5 from 'json5'
 import {
   isModernFlag,
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
+import { isCSSRequest } from './plugins/css'
 import { cleanUrl } from './utils'
-import { RollupError } from 'rollup'
+import type { RollupError } from 'rollup'
+
+export interface AssertOptions {
+  assert?: {
+    type: string
+  }
+}
 
 export async function transformImportGlob(
   source: string,
@@ -38,7 +47,7 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, endIndex] = lexGlobPattern(source, pos)
+  let [pattern, assertion, endIndex] = lexGlobPattern(source, pos)
   if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
     throw err(`pattern must start with "." or "/" (relative to project root)`)
   }
@@ -61,7 +70,8 @@ export async function transformImportGlob(
   }
   const files = glob.sync(pattern, {
     cwd: base,
-    ignore: ['**/node_modules/**']
+    // Ignore node_modules by default unless explicitly indicated in the pattern
+    ignore: /(^|\/)node_modules\//.test(pattern) ? [] : ['**/node_modules/**']
   })
   const imports: string[] = []
   let importsString = ``
@@ -79,21 +89,29 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    const identifier = `__glob_${importIndex}_${i}`
-    if (isEager) {
-      importsString += `import ${
-        isEagerDefault ? `` : `* as `
-      }${identifier} from ${JSON.stringify(importee)};`
-      entries += ` ${JSON.stringify(file)}: ${identifier},`
+    if (assertion?.assert?.type === 'raw') {
+      entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
+        await fsp.readFile(path.join(base, file), 'utf-8')
+      )},`
     } else {
-      let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl && preload) {
-        imp =
-          `(${isModernFlag}` +
-          `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
-          `: ${imp})`
+      const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
+      if (isEager) {
+        const identifier = `__glob_${importIndex}_${i}`
+        // css imports injecting a ?used query to export the css string
+        importsString += `import ${
+          isEagerDefault ? `` : `* as `
+        }${identifier} from ${JSON.stringify(importeeUrl)};`
+        entries += ` ${JSON.stringify(file)}: ${identifier},`
+      } else {
+        let imp = `import(${JSON.stringify(importeeUrl)})`
+        if (!normalizeUrl && preload) {
+          imp =
+            `(${isModernFlag}` +
+            `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
+            `: ${imp})`
+        }
+        entries += ` ${JSON.stringify(file)}: () => ${imp},`
       }
-      entries += ` ${JSON.stringify(file)}: () => ${imp},`
     }
   }
 
@@ -115,7 +133,10 @@ const enum LexerState {
   inTemplateString
 }
 
-function lexGlobPattern(code: string, pos: number): [string, number] {
+function lexGlobPattern(
+  code: string,
+  pos: number
+): [string, AssertOptions, number] {
   let state = LexerState.inCall
   let pattern = ''
 
@@ -161,7 +182,45 @@ function lexGlobPattern(code: string, pos: number): [string, number] {
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  return [pattern, code.indexOf(`)`, i) + 1]
+
+  const endIndex = getEndIndex(code, i)
+  const options = code.substring(i + 1, endIndex)
+  const commaIndex = options.indexOf(`,`)
+  let assert = {}
+  if (commaIndex > -1) {
+    assert = JSON5.parse(options.substr(commaIndex + 1))
+  }
+  return [pattern, assert, endIndex + 1]
+}
+
+// reg without the 'g' option, only matches the first match
+const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
+const singlelineCommentsRE = /\/\/.*/
+
+function getEndIndex(code: string, i: number): number {
+  const findStart = i
+  const endIndex = code.indexOf(`)`, findStart)
+  const subCode = code.substring(findStart)
+
+  const matched =
+    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
+  if (!matched) {
+    return endIndex
+  }
+
+  const str = matched[0]
+  const index = matched.index
+  if (!index) {
+    return endIndex
+  }
+
+  const commentStart = findStart + index
+  const commentEnd = commentStart + str.length
+  if (endIndex > commentStart && endIndex < commentEnd) {
+    return getEndIndex(code, commentEnd)
+  } else {
+    return endIndex
+  }
 }
 
 function error(pos: number) {

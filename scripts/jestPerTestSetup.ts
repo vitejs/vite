@@ -2,17 +2,16 @@ import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve, dirname } from 'path'
 import sirv from 'sirv'
-import {
-  createServer,
-  build,
+import type {
   ViteDevServer,
   UserConfig,
   PluginOption,
-  ResolvedConfig
+  ResolvedConfig,
+  Logger
 } from 'vite'
-import { Page } from 'playwright-chromium'
-// eslint-disable-next-line node/no-extraneous-import
-import { RollupWatcher, RollupWatcherEvent } from 'rollup'
+import { createServer, build } from 'vite'
+import type { Page, ConsoleMessage } from 'playwright-chromium'
+import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
@@ -25,6 +24,7 @@ declare global {
   const page: Page | undefined
 
   const browserLogs: string[]
+  const serverLogs: string[]
   const viteTestUrl: string | undefined
   const watcher: RollupWatcher | undefined
   let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
@@ -34,6 +34,7 @@ declare const global: {
   page?: Page
 
   browserLogs: string[]
+  serverLogs: string[]
   viteTestUrl?: string
   watcher?: RollupWatcher
   beforeAllError: Error | null
@@ -43,13 +44,15 @@ let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
 
-const setBeforeAllError = (err) => ((global as any).beforeAllError = err)
-const getBeforeAllError = () => (global as any).beforeAllError
+const setBeforeAllError = (err: Error | null) => {
+  global.beforeAllError = err
+}
+const getBeforeAllError = () => global.beforeAllError
 //init with null so old errors don't carry over
 setBeforeAllError(null)
 
-const logs = ((global as any).browserLogs = [])
-const onConsole = (msg) => {
+const logs: string[] = (global.browserLogs = [])
+const onConsole = (msg: ConsoleMessage) => {
   logs.push(msg.text())
 }
 
@@ -87,6 +90,8 @@ beforeAll(async () => {
         }
       }
 
+      const serverLogs: string[] = []
+
       const options: UserConfig = {
         root: rootDir,
         logLevel: 'silent',
@@ -105,8 +110,11 @@ beforeAll(async () => {
         build: {
           // skip transpilation during tests to make it faster
           target: 'esnext'
-        }
+        },
+        customLogger: createInMemoryLogger(serverLogs)
       }
+
+      global.serverLogs = serverLogs
 
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
@@ -138,7 +146,7 @@ beforeAll(async () => {
         await page.goto(url)
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     // jest doesn't exit if our setup has error here
     // https://github.com/facebook/jest/issues/2713
     setBeforeAllError(e)
@@ -153,6 +161,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   global.page?.off('console', onConsole)
+  global.serverLogs = []
   await global.page?.close()
   await server?.close()
   const beforeAllErr = getBeforeAllError()
@@ -164,11 +173,12 @@ afterAll(async () => {
 function startStaticServer(): Promise<string> {
   // check if the test project has base config
   const configFile = resolve(rootDir, 'vite.config.js')
-  let config: UserConfig
+  let config: UserConfig | undefined
   try {
     config = require(configFile)
   } catch (e) {}
-  const base = (config?.base || '/') === '/' ? '' : config.base
+  // fallback internal base to ''
+  const base = (config?.base ?? '/') === '/' ? '' : config?.base ?? ''
 
   // @ts-ignore
   if (config && config.__test__) {
@@ -186,7 +196,7 @@ function startStaticServer(): Promise<string> {
       serve(req, res)
     }
   }))
-  let port = 5000
+  let port = 4173
   return new Promise((resolve, reject) => {
     const onError = (e: any) => {
       if (e.code === 'EADDRINUSE') {
@@ -211,13 +221,45 @@ export async function notifyRebuildComplete(
   watcher: RollupWatcher
 ): Promise<RollupWatcher> {
   let callback: (event: RollupWatcherEvent) => void
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     callback = (event) => {
       if (event.code === 'END') {
-        resolve(true)
+        resolve()
       }
     }
     watcher.on('event', callback)
   })
   return watcher.removeListener('event', callback)
+}
+
+function createInMemoryLogger(logs: string[]): Logger {
+  const loggedErrors = new WeakSet<Error | RollupError>()
+  const warnedMessages = new Set<string>()
+
+  const logger: Logger = {
+    hasWarned: false,
+    hasErrorLogged: (err) => loggedErrors.has(err),
+    clearScreen: () => {},
+    info(msg) {
+      logs.push(msg)
+    },
+    warn(msg) {
+      logs.push(msg)
+      logger.hasWarned = true
+    },
+    warnOnce(msg) {
+      if (warnedMessages.has(msg)) return
+      logs.push(msg)
+      logger.hasWarned = true
+      warnedMessages.add(msg)
+    },
+    error(msg, opts) {
+      logs.push(msg)
+      if (opts?.error) {
+        loggedErrors.add(opts.error)
+      }
+    }
+  }
+
+  return logger
 }

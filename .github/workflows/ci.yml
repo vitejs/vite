@@ -14,8 +14,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -63,6 +68,7 @@ jobs:
         run: pnpm run test-build -- --runInBand
 
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     name: "Lint: node-16, ubuntu-latest"
     steps:
@@ -91,3 +97,6 @@ jobs:
 
       - name: Lint
         run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm prettier --check .

@@ -1,21 +1,23 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import { AttributeNode, NodeTypes } from '@vue/compiler-dom'
-import { Connect } from 'types/connect'
+import type { AttributeNode } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import type { Connect } from 'types/connect'
+import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
   getScriptInfo,
-  IndexHtmlTransformHook,
   resolveHtmlTransforms,
   traverseHtml
 } from '../../plugins/html'
-import { ResolvedConfig, ViteDevServer } from '../..'
+import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId, normalizePath } from '../../utils'
+import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
+import type { ModuleGraph } from '../moduleGraph'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
@@ -34,9 +36,9 @@ export function createDevHtmlTransformFn(
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
-    return fsPathFromId(url)
+    return decodeURIComponent(fsPathFromId(url))
   } else {
-    return path.join(server.config.root, url.slice(1))
+    return decodeURIComponent(path.join(server.config.root, url.slice(1)))
   }
 }
 
@@ -46,9 +48,17 @@ const processNodeUrl = (
   s: MagicString,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string
+  originalUrl?: string,
+  moduleGraph?: ModuleGraph
 ) => {
-  const url = node.value?.content || ''
+  let url = node.value?.content || ''
+
+  if (moduleGraph) {
+    const mod = moduleGraph.urlToModuleMap.get(url)
+    if (mod && mod.lastHMRTimestamp > 0) {
+      url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+    }
+  }
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base
     s.overwrite(
@@ -80,10 +90,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, server, originalUrl }
 ) => {
-  // TODO: solve this design issue
-  // Optional chain expressions can return undefined by design
-  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-  const config = server?.config!
+  const { config, moduleGraph } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
@@ -103,7 +110,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
 
       if (src) {
-        processNodeUrl(src, s, config, htmlPath, originalUrl)
+        processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
       } else if (isModule) {
         const url = filePath.replace(normalizePath(config.root), '')
 
@@ -115,12 +122,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         addToHTMLProxyCache(config, url, scriptModuleIndex, contents)
 
         // inline js module. convert to src="proxy"
+        const modulePath = `${
+          config.base + htmlPath.slice(1)
+        }?html-proxy&index=${scriptModuleIndex}.js`
+
+        // invalidate the module so the newly cached contents will be served
+        const module = server?.moduleGraph.getModuleById(modulePath)
+        if (module) {
+          server?.moduleGraph.invalidateModule(module)
+        }
+
         s.overwrite(
           node.loc.start.offset,
           node.loc.end.offset,
-          `<script type="module" src="${
-            config.base + url.slice(1)
-          }?html-proxy&index=${scriptModuleIndex}.js"></script>`
+          `<script type="module" src="${modulePath}"></script>`
         )
       }
     }
@@ -174,7 +189,9 @@ export function indexHtmlMiddleware(
         try {
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html')
+          return send(req, res, html, 'html', {
+            headers: server.config.server.headers
+          })
         } catch (e) {
           return next(e)
         }

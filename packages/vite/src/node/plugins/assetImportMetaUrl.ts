@@ -1,8 +1,8 @@
-import { Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
-import { ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 /**
@@ -21,7 +21,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     async transform(code, id, options) {
       if (code.includes('new URL') && code.includes(`import.meta.url`)) {
         const importMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))

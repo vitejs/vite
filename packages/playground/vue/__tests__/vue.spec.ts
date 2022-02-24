@@ -22,8 +22,16 @@ test(':slotted', async () => {
   expect(await getColor('.slotted')).toBe('red')
 })
 
-test('scan deps from <script setup lang="ts">', async () => {
-  expect(await page.textContent('.scan')).toBe('ok')
+describe('dep scan', () => {
+  test('scan deps from <script setup lang="ts">', async () => {
+    expect(await page.textContent('.scan')).toBe('ok')
+  })
+
+  test('find deps on initial scan', () => {
+    serverLogs.forEach((log) => {
+      expect(log).not.toMatch('new dependencies found')
+    })
+  })
 })
 
 describe('pre-processors', () => {
@@ -155,6 +163,13 @@ describe('hmr', () => {
       code.replace('let foo: number = 0', 'let foo: number = 100')
     )
     await untilUpdated(() => page.textContent('.hmr-inc'), 'count is 100')
+  })
+
+  test('global hmr for some scenarios', async () => {
+    editFile('Hmr.vue', (code) =>
+      code.replace('</template>', '  <Node/>\n' + '</template>')
+    )
+    await untilUpdated(() => page.innerHTML('.node'), 'this is node')
   })
 
   test('should re-render when template is emptied', async () => {

@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { TransformResult } from 'rollup'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -42,9 +42,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   function generatePattern(
     ssr: boolean
-  ): [Record<string, string | undefined>, RegExp] {
+  ): [Record<string, string | undefined>, RegExp | null] {
     const processEnv: Record<string, string> = {}
-    if (!ssr || config.ssr?.target === 'webworker') {
+    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    if (isNeedProcessEnv) {
       Object.assign(processEnv, {
         'process.env.': `({}).`,
         'global.process.env.': `({}).`,
@@ -53,23 +55,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacements: Record<string, string> = {
-      ...processNodeEnv,
+      ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
     }
 
-    const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
-        Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|') +
-        ')\\b',
-      'g'
-    )
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Do not allow preceding '.', but do allow preceding '...' for spread operations
+          '(?<!(?<!\\.\\.)\\.)\\b(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // prevent trailing assignments
+            ')\\b(?!\\s*?=[^=])',
+          'g'
+        )
+      : null
 
     return [replacements, pattern]
   }
@@ -96,6 +102,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
+      }
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
