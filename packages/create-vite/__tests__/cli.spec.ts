@@ -1,6 +1,6 @@
 /* eslint-disable node/no-extraneous-import */
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
-import { commandSync } from 'execa'
+import execa, { commandSync, Options } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
 import { join } from 'path'
 
@@ -14,6 +14,10 @@ const run = (
   options: SyncOptions<string> = {}
 ): ExecaSyncReturnValue<string> => {
   return commandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+}
+
+const runAsync = (args: string[], options: Options = {}) => {
+  return execa('node', [CLI_PATH, ...args], options)
 }
 
 // Helper to create a non-empty directory
@@ -32,11 +36,17 @@ const templateFiles = readdirSync(join(CLI_PATH, 'template-vue'))
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
+const scaffoldsProjectExpect = (stdout: string) => {
+  const generatedFiles = readdirSync(genPath).sort()
+  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
+  expect(generatedFiles).toEqual(templateFiles)
+}
+
 beforeAll(() => remove(genPath))
 afterEach(() => remove(genPath))
 
 test('prompts for the project name if none supplied', () => {
-  const { stdout, exitCode } = run([])
+  const { stdout } = run([])
   expect(stdout).toContain('Project name:')
 })
 
@@ -69,24 +79,92 @@ test('asks to overwrite non-empty current directory', () => {
   expect(stdout).toContain(`Current directory is not empty.`)
 })
 
-test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--template', 'vue'], {
-    cwd: __dirname
-  })
-  const generatedFiles = readdirSync(genPath).sort()
-
-  // Assertions
-  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+test('answer n to prompt for overwrite non-empty current directory', () => {
+  createNonEmptyDir()
+  const { stdout } = run([projectName], { cwd: __dirname, input: 'n' })
+  expect(stdout).toContain('Operation cancelled')
 })
 
-test('works with the -t alias', () => {
+test('prompt for install and start it now', () => {
+  const { stdout } = run([projectName, '-t', 'react'], {
+    cwd: __dirname
+  })
+  expect(stdout).toContain(`Install and start it now?`)
+})
+
+test('answer n to prompt for install and start it now', () => {
   const { stdout } = run([projectName, '-t', 'vue'], {
+    cwd: __dirname,
+    input: 'n'
+  })
+  scaffoldsProjectExpect(stdout)
+})
+
+test('prompt for choose the agent', () => {
+  const { stdout } = run([projectName, '--template', 'preact'], {
+    cwd: __dirname,
+    input: 'y'
+  })
+  expect(stdout).toContain(`Choose the agent:`)
+})
+
+test('successfully scaffolds a project with vue template and -i', () => {
+  const { stdout } = run([projectName, '--template', 'vue', '-i'], {
     cwd: __dirname
   })
-  const generatedFiles = readdirSync(genPath).sort()
-
-  // Assertions
-  expect(stdout).toContain(`Scaffolding project in ${genPath}`)
-  expect(templateFiles).toEqual(generatedFiles)
+  scaffoldsProjectExpect(stdout)
 })
+
+test('successfully scaffolds a project with vue template and --immediate to non-empty directory', () => {
+  createNonEmptyDir()
+  const { stdout } = run([projectName, '--template', 'vue', '--immediate'], {
+    cwd: __dirname,
+    input: 'y'
+  })
+  scaffoldsProjectExpect(stdout)
+})
+
+const speicalJestTime = 60 * 1000
+const expectRunTime = 30 * 1000
+test(
+  'successfully start a project by npm agent',
+  async () => {
+    const subprocess = runAsync([projectName, '-t', 'vanilla'], {
+      cwd: __dirname
+    })
+    const [waiting, resolveWaiting] = (() => {
+      let resolve$
+      const waiting = new Promise<void>((resolve) => {
+        resolve$ = resolve
+      })
+      const race = setTimeout(() => {
+        resolve$()
+      }, expectRunTime)
+      return [
+        waiting,
+        () => {
+          clearTimeout(race)
+          resolve$()
+        }
+      ]
+    })()
+    let text = ''
+    const { stdin, stdout } = subprocess
+    stdout.on('data', (data) => {
+      text = data.toString()
+      if (text.includes('Install and start it now?')) {
+        stdin.write('y\n')
+      }
+      if (text.includes('Choose the agent:')) {
+        stdin.write('\n')
+      }
+      if (text.includes('ready in')) {
+        resolveWaiting()
+      }
+    })
+    await waiting
+    subprocess.kill('SIGHUP')
+    expect(text).toContain('ready in')
+  },
+  speicalJestTime
+)

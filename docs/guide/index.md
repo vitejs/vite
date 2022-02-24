@@ -65,16 +65,16 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm create vite@latest my-vue-app --template vue
+npm create vite@latest my-vue-app --template vue --immediate
 
 # npm 7+, extra double-dash is needed:
-npm create vite@latest my-vue-app -- --template vue
+npm create vite@latest my-vue-app -- --template vue --immediate
 
 # yarn
-yarn create vite my-vue-app --template vue
+yarn create vite my-vue-app --template vue --immediate
 
 # pnpm
-pnpm create vite my-vue-app -- --template vue
+pnpm create vite my-vue-app -- --template vue --immediate
 ```
 
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`.

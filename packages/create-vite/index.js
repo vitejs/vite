@@ -3,6 +3,7 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
+const execa = require('execa')
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
@@ -20,6 +21,8 @@ const {
 } = require('kolorist')
 
 const cwd = process.cwd()
+
+const PACKAGEMANAGERS = ['npm', 'yarn', 'pnpm']
 
 const FRAMEWORKS = [
   {
@@ -131,6 +134,7 @@ const renameFiles = {
 async function init() {
   let targetDir = argv._[0]
   let template = argv.template || argv.t
+  let immediate = !!(argv.immediate || argv.i)
 
   const defaultProjectName = !targetDir ? 'vite-project' : targetDir
 
@@ -158,7 +162,7 @@ async function init() {
             ` is not empty. Remove existing files and continue?`
         },
         {
-          type: (_, { overwrite } = {}) => {
+          type: (_, { overwrite }) => {
             if (overwrite === false) {
               throw new Error(red('✖') + ' Operation cancelled')
             }
@@ -206,6 +210,20 @@ async function init() {
                 value: variant.name
               }
             })
+        },
+        {
+          type: immediate ? null : 'confirm',
+          name: 'installAndStart',
+          message: reset('Install and start it now?')
+        },
+        {
+          type: (_, { installAndStart }) => (installAndStart ? 'select' : null),
+          name: 'agent',
+          message: reset('Choose the agent:'),
+          choices: PACKAGEMANAGERS.map((manager) => ({
+            title: manager,
+            value: manager
+          }))
         }
       ],
       {
@@ -220,7 +238,7 @@ async function init() {
   }
 
   // user choice associated with prompts
-  const { framework, overwrite, packageName, variant } = result
+  const { framework, overwrite, packageName, variant, agent } = result
 
   const root = path.join(cwd, targetDir)
 
@@ -259,24 +277,29 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  if (agent) {
+    await execa(agent, ['install'], { stdio: 'inherit', cwd: root })
+    await execa(agent, ['run', 'dev'], { stdio: 'inherit', cwd: root })
+  } else {
+    const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+    const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
-  console.log(`\nDone. Now run:\n`)
-  if (root !== cwd) {
-    console.log(`  cd ${path.relative(cwd, root)}`)
+    console.log(`\nDone. Now run:\n`)
+    if (root !== cwd) {
+      console.log(`  cd ${path.relative(cwd, root)}`)
+    }
+    switch (pkgManager) {
+      case 'yarn':
+        console.log('  yarn')
+        console.log('  yarn dev')
+        break
+      default:
+        console.log(`  ${pkgManager} install`)
+        console.log(`  ${pkgManager} run dev`)
+        break
+    }
+    console.log()
   }
-  switch (pkgManager) {
-    case 'yarn':
-      console.log('  yarn')
-      console.log('  yarn dev')
-      break
-    default:
-      console.log(`  ${pkgManager} install`)
-      console.log(`  ${pkgManager} run dev`)
-      break
-  }
-  console.log()
 }
 
 function copy(src, dest) {
