@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getColor } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')
@@ -127,7 +127,7 @@ if (!isBuild) {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    let el = await page.$('#app')
+    const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     await editFile(
       'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -154,5 +154,13 @@ if (!isBuild) {
     expect(textprev).not.toBe(textpost)
     expect(textprev).not.toMatch('direct')
     expect(textpost).not.toMatch('direct')
+  })
+
+  test('should update hmr js/css', async () => {
+    const el = await page.$('.public-hmr')
+    editFile('public/raw.css', (code) => code.replace('red', 'green'))
+    await untilUpdated(() => getColor(el), 'green')
+    editFile('public/raw.js', (code) => code.replace('raw.js', 'raw'))
+    await untilUpdated(() => el.textContent(), 'raw')
   })
 }
