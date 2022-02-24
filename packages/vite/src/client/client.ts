@@ -281,7 +281,7 @@ export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-expect-error using experiment API
+      // @ts-expect-error: using experiment API
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
       )
