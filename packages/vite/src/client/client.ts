@@ -254,7 +254,7 @@ export function updateStyle(id: string, content: string): void {
     if (!style) {
       style = new CSSStyleSheet()
       style.replaceSync(content)
-      // @ts-expect-error using experiment API
+      // @ts-expect-error: using experiment API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
       style.replaceSync(content)
