@@ -190,11 +190,16 @@ export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export const getPotentialTsSrcPaths = (filename: string) => {
-  // Special handling for filenames that end in `.js`, since they may actually
-  // refer to a `.ts` or `.tsx` file in TypeScript.
-  if (filename.endsWith('.js')) {
-    const extensionLessFile = filename.slice(0, -3)
-    return [`${extensionLessFile}.ts`, `${extensionLessFile}.tsx`]
+  // TODO: @Lee fully test this out.
+  const fileParts = filename.split(/(\.jsx?\?|\.jsx?$)/)
+  if (fileParts.length === 3) {
+    const [tsPart, tsxPart] = fileParts[2].length
+      ? ['.ts?', '.tsx?']
+      : ['.ts', '.tsx']
+    return [
+      `${fileParts[0]}${tsPart}${fileParts[2]}`,
+      `${fileParts[0]}${tsxPart}${fileParts[2]}`
+    ]
   }
 
   return [filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')]
