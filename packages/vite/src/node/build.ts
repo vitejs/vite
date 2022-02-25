@@ -223,7 +223,7 @@ export interface LibraryOptions {
   entry: string
   name?: string
   formats?: LibraryFormats[]
-  fileName?: string | ((format: ModuleFormat | 'es.min') => string)
+  fileName?: string | ((format: ModuleFormat | LibraryFormats) => string)
 }
 
 export type LibraryFormats = 'es' | 'es.min' | 'cjs' | 'umd' | 'iife'
@@ -473,7 +473,7 @@ async function doBuild(
           : libOptions
           ? resolveLibFilename(
               libOptions,
-              output,
+              output.format || 'es',
               config.root,
               // @ts-ignore
               output.__vite_lib_minify__
@@ -673,13 +673,10 @@ function staticImportedByEntry(
 
 export function resolveLibFilename(
   libOptions: LibraryOptions,
-  output: OutputOptions,
+  format: ModuleFormat,
   root: string,
   esMinify?: boolean
 ): string {
-  // @ts-ignore
-  const format = output.format || 'es'
-
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format)
   }
