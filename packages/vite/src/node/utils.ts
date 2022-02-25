@@ -33,7 +33,7 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -222,7 +222,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
+    hash ?? ''
   }`
 }
 
@@ -422,8 +422,8 @@ export function writeFile(
  */
 export function isFileReadable(filename: string): boolean {
   try {
-    fs.accessSync(filename, fs.constants.R_OK)
-    return true
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
   } catch {
     return false
   }
@@ -518,7 +518,7 @@ export async function processSrcSet(
   )
 
   return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor = descriptor || ''
+    descriptor ??= ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')

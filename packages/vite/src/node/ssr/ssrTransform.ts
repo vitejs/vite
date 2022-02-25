@@ -190,7 +190,7 @@ export async function ssrTransform(
         // { foo } -> { foo: __import_x__.foo }
         // skip for destructuring patterns
         if (
-          !(parent as any).inPattern ||
+          !isNodeInPatternWeakMap.get(parent) ||
           isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
@@ -256,6 +256,8 @@ interface Visitors {
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
 }
+
+const isNodeInPatternWeakMap = new WeakMap<_Node, boolean>()
 
 /**
  * Same logic from \@vue/compiler-core & \@vue/compiler-sfc
@@ -350,14 +352,19 @@ function walk(
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              // skip params default value of destructure
+              if (
+                parent?.type === 'AssignmentPattern' &&
+                parent?.right === child
+              ) {
+                return this.skip()
+              }
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
               if (isStaticPropertyKey(child, parent)) return
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
-                (parent?.type === 'AssignmentPattern' &&
-                  parent?.right === child) ||
                 (parent?.type === 'TemplateLiteral' &&
                   parent?.expressions.includes(child)) ||
                 (parent?.type === 'CallExpression' && parent?.callee === child)
@@ -370,7 +377,7 @@ function walk(
         })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
-        ;(node as any).inPattern = true
+        isNodeInPatternWeakMap.set(node, true)
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
@@ -420,7 +427,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 
   // property key
   // this also covers object destructuring pattern
-  if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
+  if (isStaticPropertyKey(id, parent) || isNodeInPatternWeakMap.get(parent)) {
     return false
   }
 

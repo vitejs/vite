@@ -179,7 +179,7 @@ export interface BuildOptions {
    * ```
    * @default false
    */
-  manifest?: boolean
+  manifest?: boolean | string
   /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
@@ -195,7 +195,7 @@ export interface BuildOptions {
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
    */
-  ssrManifest?: boolean
+  ssrManifest?: boolean | string
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
@@ -236,11 +236,7 @@ export type ResolvedBuildOptions = Required<
   >
 >
 
-export function resolveBuildOptions(
-  root: string,
-  raw?: BuildOptions,
-  isBuild?: boolean
-): ResolvedBuildOptions {
+export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -274,43 +270,6 @@ export function resolveBuildOptions(
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     }
-  }
-
-  const resolve = (p: string) =>
-    p.startsWith('\0') ? p : path.resolve(root, p)
-
-  resolved.outDir = resolve(resolved.outDir)
-
-  let input
-
-  if (raw?.rollupOptions?.input) {
-    input = Array.isArray(raw.rollupOptions.input)
-      ? raw.rollupOptions.input.map((input) => resolve(input))
-      : typeof raw.rollupOptions.input === 'object'
-      ? Object.fromEntries(
-          Object.entries(raw.rollupOptions.input).map(([key, value]) => [
-            key,
-            resolve(value)
-          ])
-        )
-      : resolve(raw.rollupOptions.input)
-  } else if (raw?.lib && isBuild) {
-    input = resolve(raw.lib.entry)
-  } else if (typeof raw?.ssr === 'string') {
-    input = resolve(raw.ssr)
-  } else if (isBuild) {
-    input = resolve('index.html')
-  }
-
-  if (!!raw?.ssr && typeof input === 'string' && input.endsWith('.html')) {
-    throw new Error(
-      `rollupOptions.input should not be an html file when building for SSR. ` +
-        `Please specify a dedicated SSR entry.`
-    )
-  }
-
-  if (input) {
-    resolved.rollupOptions.input = input
   }
 
   // handle special build targets
@@ -407,8 +366,6 @@ async function doBuild(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
-  const input = options.rollupOptions.input
-  const outDir = options.outDir
   const ssr = !!options.ssr
   const libOptions = options.lib
 
@@ -419,6 +376,22 @@ async function doBuild(
       )}`
     )
   )
+
+  const resolve = (p: string) => path.resolve(config.root, p)
+  const input = libOptions
+    ? resolve(libOptions.entry)
+    : typeof options.ssr === 'string'
+    ? resolve(options.ssr)
+    : options.rollupOptions?.input || resolve('index.html')
+
+  if (ssr && typeof input === 'string' && input.endsWith('.html')) {
+    throw new Error(
+      `rollupOptions.input should not be an html file when building for SSR. ` +
+        `Please specify a dedicated SSR entry.`
+    )
+  }
+
+  const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
@@ -450,6 +423,7 @@ async function doBuild(
 
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
+    input,
     context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
@@ -817,7 +791,7 @@ function resolveExternal(
   ssrExternals: string[],
   user: ExternalOption | undefined
 ): ExternalOption {
-  return ((id, parentId, isResolved) => {
+  return (id, parentId, isResolved) => {
     if (shouldExternalizeForSSR(id, ssrExternals)) {
       return true
     }
@@ -830,7 +804,7 @@ function resolveExternal(
         return isExternal(id, user)
       }
     }
-  }) as ExternalOption
+  }
 }
 
 function isExternal(id: string, test: string | RegExp) {
@@ -841,39 +815,48 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(p: Plugin): Plugin {
-  const { resolveId, load, transform } = p
+function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+  const { resolveId, load, transform } = plugin
   return {
-    ...p,
+    ...plugin,
     resolveId: wrapSsrResolveId(resolveId),
     load: wrapSsrLoad(load),
     transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrResolveId(fn: Function | undefined) {
+function wrapSsrResolveId(
+  fn?: Rollup.ResolveIdHook
+): Rollup.ResolveIdHook | undefined {
   if (!fn) return
-  return function (this: any, id: any, importer: any, options: any) {
+
+  return function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
 }
 
-function wrapSsrLoad(fn: Function | undefined) {
+function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, id: any, ...args: any[]) {
+
+  return function (id, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
 }
 
-function wrapSsrTransform(fn: Function | undefined) {
+function wrapSsrTransform(
+  fn?: Rollup.TransformHook
+): Rollup.TransformHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, code: any, importer: any, ...args: any[]) {
+
+  return function (code, importer, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
   }
 }
 
-function injectSsrFlag(options: any = {}) {
-  return { ...options, ssr: true }
+function injectSsrFlag<T extends Record<string, any>>(
+  options?: T
+): T & { ssr: boolean } {
+  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }

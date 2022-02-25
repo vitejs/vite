@@ -29,7 +29,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
             const mappedChunks =
-              ssrManifest[normalizedId] || (ssrManifest[normalizedId] = [])
+              ssrManifest[normalizedId] ?? (ssrManifest[normalizedId] = [])
             if (!chunk.isEntry) {
               mappedChunks.push(base + chunk.fileName)
             }
@@ -96,7 +96,10 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       this.emitFile({
-        fileName: 'ssr-manifest.json',
+        fileName:
+          typeof config.build.ssrManifest === 'string'
+            ? config.build.ssrManifest
+            : 'ssr-manifest.json',
         type: 'asset',
         source: JSON.stringify(ssrManifest, null, 2)
       })

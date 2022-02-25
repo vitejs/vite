@@ -1,3 +1,37 @@
+## [2.2.2](https://github.com/vitejs/vite/compare/plugin-vue@2.2.1...plugin-vue@2.2.2) (2022-02-18)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@2.2.1) (2022-02-18)
+
+
+### Bug Fixes
+
+* adjust vue template sourcemap ([#6972](https://github.com/vitejs/vite/issues/6972)) ([a774303](https://github.com/vitejs/vite/commit/a7743039f263f41e1c3971e324f893a5ef5e5508))
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+# [2.2.0](https://github.com/vitejs/vite/compare/plugin-vue@2.1.0...plugin-vue@2.2.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* plugin-vue `options.compiler` field ([#6588](https://github.com/vitejs/vite/issues/6588)) ([caec019](https://github.com/vitejs/vite/commit/caec01998a9599d255761f3efc1c49827aadac0d)), closes [#6587](https://github.com/vitejs/vite/issues/6587)
+
+
+
+# [2.1.0](https://github.com/vitejs/vite/compare/plugin-vue@2.0.1...plugin-vue@2.1.0) (2022-01-21)
+
+
+### Bug Fixes
+
+* **plugin-vue:** compiler is null on rollup ([#6566](https://github.com/vitejs/vite/issues/6566)) ([b289b2d](https://github.com/vitejs/vite/commit/b289b2d433f94949730e1f041f3c8e16c417e9d0))
+* **plugin-vue:** make cssm code tree shakeable ([#6353](https://github.com/vitejs/vite/issues/6353)) ([3fb4118](https://github.com/vitejs/vite/commit/3fb4118026e2745140894afb9755298656750f43))
+* update the vue version in the error message ([#6252](https://github.com/vitejs/vite/issues/6252)) ([6a47083](https://github.com/vitejs/vite/commit/6a47083df14cb8d2584a86abda8a5e89a731c170))
+
+
+
 ## [2.0.1](https://github.com/vitejs/vite/compare/plugin-vue@2.0.0...plugin-vue@2.0.1) (2021-12-14)
 
 
@@ -48,7 +82,7 @@
 
 ### Bug Fixes
 
-* **plugin-vue:** fix hmr issue in vuejs/vue-next[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
+* **plugin-vue:** fix hmr issue in vuejs/core[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
 
 
 
