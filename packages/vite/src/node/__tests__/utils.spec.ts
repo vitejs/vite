@@ -51,12 +51,34 @@ test('ts import of file with .jsx extension', () => {
 })
 
 test('ts import of file .mjs,.cjs extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.cjs')).toEqual(['test-file.cts'])
-  expect(getPotentialTsSrcPaths('test-file.mjs')).toEqual(['test-file.mts'])
+  expect(getPotentialTsSrcPaths('test-file.cjs')).toEqual([
+    'test-file.cts',
+    'test-file.ctsx'
+  ])
+  expect(getPotentialTsSrcPaths('test-file.mjs')).toEqual([
+    'test-file.mts',
+    'test-file.mtsx'
+  ])
 })
 
-test('ts import should not match .js that is not extension', () => {
-  expect(getPotentialTsSrcPaths('test-file.js.mjs')).toEqual([
-    'test-file.js.mts'
+test('ts import of file with .js before extension', () => {
+  expect(getPotentialTsSrcPaths('test-file.js.js')).toEqual([
+    'test-file.js.ts',
+    'test-file.js.tsx'
   ])
+})
+
+test('ts import of file with .js and query param', () => {
+  expect(getPotentialTsSrcPaths('test-file.js.js?lee=123')).toEqual([
+    'test-file.js.ts?lee=123',
+    'test-file.js.tsx?lee=123'
+  ])
+})
+
+test('ts import of non js file', () => {
+  expect(getPotentialTsSrcPaths('test-file.wasm')).toEqual(['test-file.wasm'])
+})
+
+test('ts import without any extension', () => {
+  expect(getPotentialTsSrcPaths('test-file')).toEqual(['test-file'])
 })

@@ -190,15 +190,16 @@ export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export const getPotentialTsSrcPaths = (filename: string) => {
-  // TODO: @Lee fully test this out.
-  const fileParts = filename.split(/(\.jsx?\?|\.jsx?$)/)
+  const fileParts = filename.split(/(\.[cm]?js?\?|\.[cm]?js?$)/)
+
+  // If there are three parts, the file uses a .js, .mjs or .cjs extension.
+  // We replace the 'js' part with 'ts' and 'tsx'.
   if (fileParts.length === 3) {
-    const [tsPart, tsxPart] = fileParts[2].length
-      ? ['.ts?', '.tsx?']
-      : ['.ts', '.tsx']
+    const [namePart, extension, queryPart] = fileParts
+
     return [
-      `${fileParts[0]}${tsPart}${fileParts[2]}`,
-      `${fileParts[0]}${tsxPart}${fileParts[2]}`
+      `${namePart}${extension.replace('js', 'ts')}${queryPart}`,
+      `${namePart}${extension.replace('js', 'tsx')}${queryPart}`
     ]
   }
 
