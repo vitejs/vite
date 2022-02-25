@@ -72,7 +72,11 @@ declare module 'vite' {
       /**
        * Manipulate the Babel options of `@vitejs/plugin-react`
        */
-      reactBabel?: (options: ReactBabelOptions, config: ResolvedConfig) => void
+      reactBabel?: (
+        options: ReactBabelOptions,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+        config: import('vite').ResolvedConfig
+      ) => void
     }
   }
 }
