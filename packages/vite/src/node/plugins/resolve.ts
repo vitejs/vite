@@ -82,7 +82,6 @@ export interface InternalResolveOptions extends ResolveOptions {
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
-    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
