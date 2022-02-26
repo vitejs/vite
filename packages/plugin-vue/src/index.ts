@@ -42,7 +42,7 @@ export interface Options {
 
   /**
    * Enable Vue reactivity transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
+   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
@@ -90,14 +90,14 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 
   let options: ResolvedOptions = {
     isProduction: process.env.NODE_ENV === 'production',
+    compiler: null as any, // to be set in buildStart
     ...rawOptions,
     include,
     exclude,
     customElement,
     reactivityTransform,
     root: process.cwd(),
-    sourceMap: true,
-    compiler: null as any // to be set in configResolved
+    sourceMap: true
   }
 
   // Temporal handling for 2.7 breaking change
@@ -135,13 +135,16 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction,
-        compiler: options.compiler || resolveCompiler(config.root)
+        isProduction: config.isProduction
       }
     },
 
     configureServer(server) {
       options.devServer = server
+    },
+
+    buildStart() {
+      options.compiler = options.compiler || resolveCompiler(options.root)
     },
 
     async resolveId(id) {
@@ -241,5 +244,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 }
 
 // overwrite for cjs require('...')() usage
-module.exports = vuePlugin
-vuePlugin['default'] = vuePlugin
+// The following lines are inserted by scripts/patchEsbuildDist.ts,
+// this doesn't bundle correctly after esbuild 0.14.4
+//
+// module.exports = vuePlugin
+// vuePlugin['default'] = vuePlugin

@@ -179,6 +179,10 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         .on('change', reloadOnTsconfigChange)
         .on('unlink', reloadOnTsconfigChange)
     },
+    buildEnd() {
+      // recycle serve to avoid preventing Node self-exit (#6815)
+      server = null as any
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
@@ -231,7 +235,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         config.build.minify === 'esbuild' &&
         // Do not minify ES lib output since that would remove pure annotations
         // and break tree-shaking
-        // https://github.com/vuejs/vue-next/issues/2860#issuecomment-926882793
+        // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
         !(config.build.lib && opts.format === 'es')
 
       if ((!target || target === 'esnext') && !minify) {

@@ -56,7 +56,7 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
 export async function getColor(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
-  return hexToNameMap[rgbToHex(rgb)] || rgb
+  return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
 export async function getBg(el: string | ElementHandle): Promise<string> {
@@ -119,7 +119,7 @@ export async function untilUpdated(
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) || ''
+    const actual = (await poll()) ?? ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
       expect(actual).toMatch(expected)
       break

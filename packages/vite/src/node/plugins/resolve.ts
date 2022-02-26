@@ -607,10 +607,9 @@ export function tryOptimizedResolve(
   server: ViteDevServer,
   importer?: string
 ): string | undefined {
-  const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
 
-  if (!cacheDir || !depData) return
+  if (!depData) return
 
   const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
     return (
@@ -814,7 +813,12 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options, targetWeb)
+      relativeId = resolveExports(
+        data,
+        cleanUrl(relativeId),
+        options,
+        targetWeb
+      )
     } else {
       // not exposed
       relativeId = undefined
