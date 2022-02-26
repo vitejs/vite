@@ -28,6 +28,10 @@ test('inlined', async () => {
 
 test('classic worker is run', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  await untilUpdated(
+    () => page.textContent('.classic-shared-worker'),
+    'A classic'
+  )
 })
 
 const waitSharedWorkerTick = (

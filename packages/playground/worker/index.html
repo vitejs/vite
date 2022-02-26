@@ -29,6 +29,9 @@
 <p>new Worker(new Url('path', import.meta.url))</p>
 <div class="classic-worker"></div>
 
+<p>new Worker(new Url('path', import.meta.url), { type: 'classic' })</p>
+<div class="classic-shared-worker"></div>
+
 <script type="module">
   import myWorker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
