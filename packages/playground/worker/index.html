@@ -111,10 +111,7 @@
   w2.port.start()
 
   const classicWorker = new Worker(
-    new URL('./newUrl/classic-worker.js', import.meta.url),
-    {
-      type: 'classic'
-    }
+    new URL('./newUrl/classic-worker.js', import.meta.url)
   )
 
   classicWorker.addEventListener('message', ({ data }) => {

@@ -55,6 +55,10 @@ function getWorkerType(code: string, i: number): WorkerType {
     return match[1] as WorkerType
   }
 
+  if (workerOptionsString.trim().length === 0) {
+    return 'classic'
+  }
+
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptionsString)
   if (!hasViteIgnore) {
     throw new Error(
