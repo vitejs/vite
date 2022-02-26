@@ -17,7 +17,9 @@ test('deep import with exports field', async () => {
 })
 
 test('deep import with query with exports field', async () => {
-  expect(await page.textContent('.exports-deep-query')).not.toMatch('fail')
+  expect(await page.textContent('.exports-deep-query')).toMatch(
+    isBuild ? /base64/ : '/exports-path/deep.json'
+  )
 })
 
 test('deep import with exports field + exposed dir', async () => {

@@ -772,10 +772,13 @@ function packageEntryFailure(id: string, details?: string) {
 
 function resolveExports(
   pkg: PackageData['data'],
-  key: string,
+  keyWithQuery: string,
   options: InternalResolveOptions,
   targetWeb: boolean
 ) {
+  const key = cleanUrl(keyWithQuery)
+  const query = keyWithQuery.slice(key.length)
+
   const conditions = [options.isProduction ? 'production' : 'development']
   if (!options.isRequire) {
     conditions.push('module')
@@ -783,11 +786,12 @@ function resolveExports(
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
-  return _resolveExports(pkg, key, {
+  const resolved = _resolveExports(pkg, key, {
     browser: targetWeb,
     require: options.isRequire,
     conditions
   })
+  return resolved + query
 }
 
 function resolveDeepImport(
@@ -813,12 +817,7 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(
-        data,
-        cleanUrl(relativeId),
-        options,
-        targetWeb
-      )
+      relativeId = resolveExports(data, relativeId, options, targetWeb)
     } else {
       // not exposed
       relativeId = undefined
