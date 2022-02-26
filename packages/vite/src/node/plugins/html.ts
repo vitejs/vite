@@ -41,7 +41,7 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
