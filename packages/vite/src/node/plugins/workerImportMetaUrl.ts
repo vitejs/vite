@@ -32,20 +32,19 @@ function lexWorkerOptions(code: string, pos: number) {
       } else {
         break
       }
-    } else {
-      pattern += char
     }
+    pattern += char
+  }
+
+  pattern = pattern.trim()
+  if (pattern[0] === ',') {
+    pattern = pattern.slice(1)
   }
   return pattern
 }
 
 function getWorkerType(code: string, i: number): WorkerType {
-  const commaIndex = code.indexOf(`,`, i)
-  // the worker expression had not second params
-  if (commaIndex === -1) {
-    return 'classic'
-  }
-  const findStart = commaIndex + 1
+  const findStart = i
   const workerOptionsString = lexWorkerOptions(code, findStart)
 
   const match = /type\s*\:\s*['|"|`]([classic|module]*)['|"|`]/.exec(
@@ -55,7 +54,7 @@ function getWorkerType(code: string, i: number): WorkerType {
     return match[1] as WorkerType
   }
 
-  if (workerOptionsString.trim().length === 0) {
+  if (workerOptionsString.length === 0) {
     return 'classic'
   }
 

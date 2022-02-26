@@ -35,6 +35,7 @@
   import mySharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
+  import './classic-worker'
 
   document.querySelector('.mode-true').textContent = mode
 
@@ -109,13 +110,4 @@
     )
   })
   w2.port.start()
-
-  const classicWorker = new Worker(
-    new URL('./newUrl/classic-worker.js', import.meta.url)
-  )
-
-  classicWorker.addEventListener('message', ({ data }) => {
-    text('.classic-worker', data)
-  })
-  classicWorker.postMessage('ping')
 </script>
