@@ -9,6 +9,9 @@
     },
     "./deep.js": "./deep.js",
     "./deep.json": "./deep.json",
+    "./deep.svg": "./deep.svg",
+    "./deep.html": "./deep.html",
+    "./deep-non-esm.js": "./deep-non-esm.js",
     "./dir/": "./dir/",
     "./dir-mapped/*": {
       "import": "./dir/*",

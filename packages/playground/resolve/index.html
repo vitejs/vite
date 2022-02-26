@@ -15,6 +15,15 @@
 <h2>Deep import with query with exports field</h2>
 <p class="exports-deep-query">fail</p>
 
+<h2>Deep import SVG file with query with exports field</h2>
+<p class="exports-deep-svg-query">fail</p>
+
+<h2>Deep import HTML file with query with exports field</h2>
+<p class="exports-deep-html-query">fail</p>
+
+<h2>Deep import non-ESM file with query with exports field</h2>
+<p class="exports-deep-non-esm-query">fail</p>
+
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -106,6 +115,18 @@
   // deep import w/ exports w/ query
   import deepPath from 'resolve-exports-path/deep.json?url'
   text('.exports-deep-query', deepPath)
+
+  // deep import SVG w/ exports w/ query
+  import deepSvgPath from 'resolve-exports-path/deep.svg?url'
+  text('.exports-deep-svg-query', deepSvgPath)
+
+  // deep import HTML w/ exports w/ query
+  import deepHtmlPath from 'resolve-exports-path/deep.html?url'
+  text('.exports-deep-html-query', deepHtmlPath)
+
+  // deep import non-ESM w/ exports w/ query
+  import deepNonEsmPath from 'resolve-exports-path/deep-non-esm.js?url'
+  text('.exports-deep-non-esm-query', deepNonEsmPath)
 
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'

@@ -20,6 +20,20 @@ test('deep import with query with exports field', async () => {
   expect(await page.textContent('.exports-deep-query')).not.toMatch('fail')
 })
 
+test('deep import SVG with query with exports field', async () => {
+  expect(await page.textContent('.exports-deep-svg-query')).not.toMatch('fail')
+})
+
+test('deep import HTML with query with exports field', async () => {
+  expect(await page.textContent('.exports-deep-html-query')).not.toMatch('fail')
+})
+
+test('deep import non-ESM with query with exports field', async () => {
+  expect(await page.textContent('.exports-deep-non-esm-query')).not.toMatch(
+    'fail'
+  )
+})
+
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
     '[success]'
