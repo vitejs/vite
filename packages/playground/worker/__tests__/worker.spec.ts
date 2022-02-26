@@ -64,7 +64,7 @@ if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(7)
+    expect(files.length).toBe(8)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
