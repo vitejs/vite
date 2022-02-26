@@ -85,7 +85,7 @@
   // url import worker
   const w = new Worker(
     new URL('./newUrl/url-worker.js', import.meta.url),
-    workerOptions
+    /* @vite-ignore */ workerOptions
   )
   w.addEventListener('message', (ev) =>
     text(
@@ -94,9 +94,11 @@
     )
   )
 
+  const genWorkerName = () => 'module'
   const w2 = new SharedWorker(
     new URL('./newUrl/url-shared-worker.js', import.meta.url),
     {
+      name: genWorkerName(),
       type: 'module'
     }
   )
@@ -109,7 +111,10 @@
   w2.port.start()
 
   const classicWorker = new Worker(
-    new URL('./newUrl/classic-worker.js', import.meta.url)
+    new URL('./newUrl/classic-worker.js', import.meta.url),
+    {
+      type: 'classic'
+    }
   )
 
   classicWorker.addEventListener('message', ({ data }) => {

@@ -1,3 +1,5 @@
+importScripts('/classic.js')
+
 self.addEventListener('message', () => {
-  self.postMessage('pong')
+  self.postMessage(self.constant)
 })

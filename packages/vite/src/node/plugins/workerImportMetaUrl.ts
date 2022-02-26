@@ -13,7 +13,59 @@ import { parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 
+type WorkerType = 'classic' | 'module' | 'ignore'
+
 const WORKER_FILE_ID = 'worker_url_file'
+
+// find the workerOptions end with `)`
+function lexWorkerOptions(code: string, pos: number) {
+  let pattern = ''
+  const opStack = []
+
+  for (let i = pos; i < code.length; i++) {
+    const char = code.charAt(i)
+    if (char === '(') {
+      opStack.push(char)
+    } else if (char === ')') {
+      if (opStack.length) {
+        opStack.pop()
+      } else {
+        break
+      }
+    } else {
+      pattern += char
+    }
+  }
+  return pattern
+}
+
+function getWorkerType(code: string, i: number): WorkerType {
+  const commaIndex = code.indexOf(`,`, i)
+  // the worker expression had not second params
+  if (commaIndex === -1) {
+    return 'classic'
+  }
+  const findStart = commaIndex + 1
+  const workerOptionsString = lexWorkerOptions(code, findStart)
+
+  const match = /type\s*\:\s*['|"|`]([classic|module]*)['|"|`]/.exec(
+    workerOptionsString
+  )
+  if (match) {
+    return match[1] as WorkerType
+  }
+
+  const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptionsString)
+  if (!hasViteIgnore) {
+    throw new Error(
+      'vite worker options no support dynamic options, ' +
+        'if you want to ignore this error, ' +
+        'please use /* @vite-ignore */ in the worker options, ' +
+        'but the environment variable of vite will be lost.'
+    )
+  }
+  return 'ignore'
+}
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -23,9 +75,21 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(code, id, options) {
       const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null) {
+      if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
+        const workerType = query['type'] as WorkerType
+        let injectEnv = ''
+
+        if (workerType === 'classic') {
+          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+        } else if (workerType === 'module') {
+          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+        } else if (workerType === 'ignore') {
+          // dynamic worker type we can't know how import the env
+          injectEnv = ''
+        }
+
         return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + code
+          code: injectEnv + code
         }
       }
       if (
@@ -42,7 +106,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let s: MagicString | null = null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: allExp, 2: exp, 3: rawUrl, index } = match
-
           const urlIndex = allExp.indexOf(exp) + index
 
           if (options?.ssr) {
@@ -61,7 +124,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-
+          const workerType = getWorkerType(code, index + allExp.length)
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
@@ -80,6 +143,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
+            url = injectQuery(url, `type=${workerType}`)
           }
           s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url))
         }
