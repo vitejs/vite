@@ -21,6 +21,7 @@ import type {
 } from '@ampproject/remapping/dist/types/types'
 import { performance } from 'perf_hooks'
 import { parse as parseUrl, URLSearchParams } from 'url'
+import type { SourceMap } from 'rollup'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -641,4 +642,11 @@ export function parseRequest(id: string): Record<string, string> | null {
     return null
   }
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
+}
+
+export function genSourceMapUrl(map: SourceMap | string | undefined) {
+  if (typeof map !== 'string') {
+    map = JSON.stringify(map)
+  }
+  return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
 }

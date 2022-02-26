@@ -11,17 +11,19 @@ import {
   isObject,
   normalizePath,
   processSrcSet,
-  parseRequest
+  parseRequest,
+  genSourceMapUrl
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import type {
+  ExistingRawSourceMap,
   NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
   RollupError,
-  SourceMap
+  SourceMapInput
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
@@ -45,6 +47,8 @@ import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
+import type { RawSourceMap } from 'source-map-js'
+import { injectSourcesContent } from '../server/sourcemap'
 
 // const debug = createDebugger('vite:css')
 
@@ -184,7 +188,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const {
         code: css,
         modules,
-        deps
+        deps,
+        map
       } = await compileCSS(
         id,
         raw,
@@ -251,8 +256,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: css,
-        // TODO CSS source map
-        map: { mappings: '' }
+        map
       }
     }
   }
@@ -302,12 +306,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (inlined) {
             return `export default ${JSON.stringify(css)}`
           }
+          const sourcemap = this.getCombinedSourcemap()
+          await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
+          const cssContent = `${css}\n/*# sourceMappingURL=${genSourceMapUrl(
+            sourcemap
+          )} */`
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = ${JSON.stringify(css)}`,
+            `const __vite__css = ${JSON.stringify(cssContent)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
             `${
@@ -604,7 +613,7 @@ async function compileCSS(
   server?: ViteDevServer
 ): Promise<{
   code: string
-  map?: SourceMap
+  map?: SourceMapInput
   ast?: Postcss.Result
   modules?: Record<string, string>
   deps?: Set<string>
@@ -629,7 +638,7 @@ async function compileCSS(
     return { code }
   }
 
-  let map: SourceMap | undefined
+  let map: ExistingRawSourceMap | string | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
@@ -669,7 +678,8 @@ async function compileCSS(
     }
 
     code = preprocessResult.code
-    map = preprocessResult.map as SourceMap
+    // TODO: preprocessor source maps not supported currently
+    // map = preprocessResult.map
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
@@ -757,6 +767,7 @@ async function compileCSS(
       map: {
         inline: false,
         annotation: false,
+        sourcesContent: false,
         prev: map
       }
     })
@@ -804,9 +815,31 @@ async function compileCSS(
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: postcssResult.map as any,
+    map: formatPostcssSourceMap(postcssResult.map.toJSON(), id),
     modules,
     deps
+  }
+}
+
+function formatPostcssSourceMap(
+  rawMap: RawSourceMap,
+  file: string
+): ExistingRawSourceMap {
+  const inputFileDir = path.dirname(file)
+  const sources = rawMap.sources
+    // remove <no source> from sources, to prevent source map to be combined incorrectly
+    .filter((source) => source !== '<no source>')
+    .map((source) => {
+      const cleanSource = cleanUrl(decodeURIComponent(source))
+      return normalizePath(path.resolve(inputFileDir, cleanSource))
+    })
+
+  return {
+    file,
+    mappings: rawMap.mappings,
+    names: rawMap.names,
+    sources,
+    version: +rawMap.version
   }
 }
 

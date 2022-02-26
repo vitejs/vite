@@ -2,6 +2,7 @@ import { cssUrlRE, cssPlugin } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+import { normalizePath } from '../../utils'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -112,5 +113,43 @@ describe('css path resolutions', () => {
     `)
 
     mockFs.mockReset()
+  })
+})
+
+describe('css source maps', () => {
+  const root = normalizePath(process.cwd())
+
+  test('cssmodule', async () => {
+    const config = await resolveConfig(
+      {
+        root
+      },
+      'serve'
+    )
+    const { transform, buildStart } = cssPlugin(config)
+
+    await buildStart.call({})
+
+    const { map } = await transform.call(
+      {
+        addWatchFile() {
+          return
+        }
+      },
+      `
+        .foo {
+          color: red;
+        }
+      `,
+      `${root}/foo.module.css`
+    )
+
+    expect(map).toStrictEqual({
+      file: `${root}/foo.module.css`,
+      mappings: ';QACQ;UACE,UAAU;QACZ',
+      names: [],
+      sources: [`${root}/foo.module.css`],
+      version: 3
+    })
   })
 })
