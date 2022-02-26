@@ -26,6 +26,10 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
+test('classic worker is run', async () => {
+  await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+})
+
 const waitSharedWorkerTick = (
   (resolvedSharedWorkerCount: number) => async (page: Page) => {
     await untilUpdated(async () => {
@@ -56,7 +60,7 @@ if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(6)
+    expect(files.length).toBe(7)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))

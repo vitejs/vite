@@ -36,38 +36,38 @@ function lexWorkerOptions(code: string, pos: number) {
     pattern += char
   }
 
-  pattern = pattern.trim()
-  if (pattern[0] === ',') {
-    pattern = pattern.slice(1)
-  }
   return pattern
 }
 
 function getWorkerType(code: string, i: number): WorkerType {
-  const findStart = i
-  const workerOptionsString = lexWorkerOptions(code, findStart)
+  let workerOptsString = lexWorkerOptions(code, i)
+  const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
+  if (hasViteIgnore) {
+    return 'ignore'
+  }
 
-  const match = /type\s*\:\s*['|"|`]([classic|module]*)['|"|`]/.exec(
-    workerOptionsString
+  workerOptsString = workerOptsString
+    .replace(multilineCommentsRE, '')
+    .replace(singlelineCommentsRE, '')
+
+  const match = /type\s*\:\s*(['"`]([^'|^"|^`]*)['"`]|.*)/.exec(
+    workerOptsString
   )
   if (match) {
-    return match[1] as WorkerType
+    const { 2: staticStrType } = match
+    if (['classic', 'module'].includes(staticStrType)) {
+      return match[1] as WorkerType
+    } else {
+      // had type options but is not static string.
+      throw new Error(
+        'vite worker options type only support static string, ' +
+          'if you want to ignore this error, ' +
+          'please use /* @vite-ignore */ in the worker options, ' +
+          'but the environment variable of vite will be lost.'
+      )
+    }
   }
-
-  if (workerOptionsString.length === 0) {
-    return 'classic'
-  }
-
-  const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptionsString)
-  if (!hasViteIgnore) {
-    throw new Error(
-      'vite worker options no support dynamic options, ' +
-        'if you want to ignore this error, ' +
-        'please use /* @vite-ignore */ in the worker options, ' +
-        'but the environment variable of vite will be lost.'
-    )
-  }
-  return 'ignore'
+  return 'classic'
 }
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
