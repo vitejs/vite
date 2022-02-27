@@ -26,14 +26,6 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
-test('classic worker is run', async () => {
-  await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
-  await untilUpdated(
-    () => page.textContent('.classic-shared-worker'),
-    'A classic'
-  )
-})
-
 const waitSharedWorkerTick = (
   (resolvedSharedWorkerCount: number) => async (page: Page) => {
     await untilUpdated(async () => {
@@ -96,3 +88,8 @@ if (isBuild) {
       })
   })
 }
+
+test('classic worker is run', async () => {
+  expect(await page.textContent('.classic-worker')).toMatch('A classic')
+  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
