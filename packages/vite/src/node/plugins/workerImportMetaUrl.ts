@@ -93,7 +93,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(code, id, options) {
       const query = parseRequest(id)
-      const { moduleGraph } = server
       if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
         let injectEnv = ''
@@ -105,9 +104,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         } else if (workerType === 'ignore') {
           // dynamic worker type we can't know how import the env
           // so we copy /@vite/env code of server transform result into file header
-          if (isBuild) {
+          if (isBuild || !server) {
             injectEnv = ''
           } else {
+            const { moduleGraph } = server
             const module = moduleGraph.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }
