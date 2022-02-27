@@ -75,7 +75,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       if (isCss) {
         return new Promise((res, rej) => {
           link.addEventListener('load', res)
-          link.addEventListener('error', rej)
+          link.addEventListener('error', () => rej(new Error(`Unable to load CSS for ${dep}`)))
         })
       }
     })
