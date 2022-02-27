@@ -1,4 +1,4 @@
-import path from 'path'
+import path, { resolve } from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
@@ -33,6 +33,7 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+
   return {
     name: 'vite:asset',
 
@@ -108,6 +109,59 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         return null
+      }
+    },
+
+    writeBundle(options, bundle) {
+      if (
+        !config ||
+        !config.build ||
+        !config.build.lib ||
+        options.format !== 'es'
+      ) {
+        // only for lib mode and es build
+        return
+      }
+      const assets = []
+      let entry = null
+      let css = null
+      for (const key in bundle) {
+        if (key.endsWith('.css')) {
+          css = bundle[key]
+          // @ts-ignore
+        } else if (bundle[key].isEntry) {
+          entry = bundle[key]
+        } else if (bundle[key].type === 'asset') {
+          assets.push(key)
+        }
+      }
+      if (entry) {
+        const outDir = config.build.outDir || 'dist'
+        const filePath = resolve(config.root, outDir, entry.fileName)
+        let data = fs.readFileSync(filePath, {
+          encoding: 'utf8'
+        })
+        assets.forEach((asset) => {
+          data = data.replace(
+            new RegExp(`var (.+?) = "${config.base || '/'}${asset}";`),
+            `import $1 from "./${asset}";`
+          )
+        })
+        fs.writeFileSync(filePath, data)
+      }
+      if (css) {
+        const outDir = config.build.outDir || 'dist'
+        const filePath = resolve(config.root, outDir, css.fileName)
+        let data = fs.readFileSync(filePath, {
+          encoding: 'utf8'
+        })
+        assets.forEach((asset) => {
+          data = data.replace(
+            new RegExp(`${config.base || '/'}${asset}`),
+            `./${asset}`
+          )
+        })
+        fs.writeFileSync(filePath, data)
       }
     },
 
@@ -290,7 +344,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (
-    config.build.lib ||
+    (config.build.lib && !config.build.lib.noForceInlineAssets) ||
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {

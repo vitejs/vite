@@ -222,6 +222,7 @@ export interface BuildOptions {
 export interface LibraryOptions {
   entry: string
   name?: string
+  noForceInlineAssets?: boolean
   formats?: LibraryFormats[]
   fileName?: string | ((format: ModuleFormat) => string)
 }
