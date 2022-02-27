@@ -34,7 +34,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
 
-  // add own dictionary by directly assigning mrmine
+  // add own dictionary entry by directly assigning mrmine
+  // https://github.com/lukeed/mrmime/issues/3
   mrmime.mimes['ico'] = 'image'
   return {
     name: 'vite:asset',
