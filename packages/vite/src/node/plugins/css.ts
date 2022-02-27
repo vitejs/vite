@@ -51,6 +51,8 @@ import { addToHTMLProxyTransformResult } from './html'
 import type { RawSourceMap } from 'source-map-js'
 import { injectSourcesContent } from '../server/sourcemap'
 
+const isDebug = process.env.DEBUG
+
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -307,11 +309,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (inlined) {
             return `export default ${JSON.stringify(css)}`
           }
+
+          let cssContent = css
           const sourcemap = this.getCombinedSourcemap()
           await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-          const cssContent = `${css}\n/*# sourceMappingURL=${genSourceMapUrl(
+          if (isDebug) {
+            cssContent += `\n/*${JSON.stringify(sourcemap, null, 2).replace(
+              /\*\//g,
+              '*\\/'
+            )}*/\n`
+          }
+          cssContent += `\n/*# sourceMappingURL=${genSourceMapUrl(
             sourcemap
           )} */`
+
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
