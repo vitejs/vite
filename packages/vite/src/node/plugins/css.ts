@@ -767,7 +767,7 @@ async function compileCSS(
       map: {
         inline: false,
         annotation: false,
-        sourcesContent: false,
+        sourcesContent: false
         // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
         // prev: preprocessorMap,
       }
@@ -1222,7 +1222,11 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   try {
     result = await nodeLess.render(source, {
       ...options,
-      plugins: [viteResolverPlugin, ...(options.plugins || [])]
+      plugins: [viteResolverPlugin, ...(options.plugins || [])],
+      sourceMap: {
+        outputSourceFiles: true,
+        sourceMapFileInline: false
+      }
     })
   } catch (e) {
     const error = e as Less.RenderError
@@ -1235,8 +1239,13 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     }
     return { code: '', errors: [normalizedError], deps: [] }
   }
+
+  const map: ExistingRawSourceMap = JSON.parse(result.map)
+  delete map.sourcesContent
+
   return {
     code: result.css.toString(),
+    map,
     deps: result.imports,
     errors: []
   }

@@ -167,6 +167,22 @@ describe('css source maps', () => {
       }
     },
     {
+      name: 'less',
+      code: `
+      .foo {
+        color: red;
+      }
+  `,
+      id: `${root}/foo.less`,
+      expectedMap: {
+        file: `${root}/foo.less`,
+        mappings: 'AACM;EACE',
+        names: [],
+        sources: [`${root}/foo.less`],
+        version: 3
+      }
+    },
+    {
       name: 'scss module',
       code: `
       .foo {
