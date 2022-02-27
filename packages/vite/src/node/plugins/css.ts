@@ -1340,18 +1340,45 @@ const styl: StylePreprocessor = async (source, root, options) => {
   )
   try {
     const ref = nodeStylus(source, options)
-
-    // if (map) ref.set('sourcemap', { inline: false, comment: false })
+    ref.set('sourcemap', {
+      comment: false,
+      inline: false,
+      basePath: root
+    })
 
     const result = ref.render()
 
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 
-    return { code: result, errors: [], deps }
+    // @ts-expect-error sourcemap exists
+    const map: ExistingRawSourceMap = ref.sourcemap
+
+    return {
+      code: result,
+      map: formatStylusSourceMap(map, root),
+      errors: [],
+      deps
+    }
   } catch (e) {
     return { code: '', errors: [e], deps: [] }
   }
+}
+
+function formatStylusSourceMap(
+  mapBefore: ExistingRawSourceMap,
+  root: string
+): ExistingRawSourceMap {
+  const map = { ...mapBefore }
+
+  const resolveFromRoot = (p: string) => normalizePath(path.resolve(root, p))
+
+  if (map.file) {
+    map.file = resolveFromRoot(map.file)
+  }
+  map.sources = map.sources.map(resolveFromRoot)
+
+  return map
 }
 
 function getSource(
