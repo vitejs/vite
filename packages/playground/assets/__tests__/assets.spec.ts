@@ -121,6 +121,10 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
+    const icoMatch = isBuild ? `data:image;base64` : `favicon.ico`
+    const el = await page.$(`link.ico`)
+    const herf = await el.getAttribute('href')
+    expect(herf).toMatch(icoMatch)
   })
 
   test('multiple urls on the same line', async () => {
