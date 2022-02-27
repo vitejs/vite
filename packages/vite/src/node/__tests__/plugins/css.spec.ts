@@ -118,38 +118,96 @@ describe('css path resolutions', () => {
 
 describe('css source maps', () => {
   const root = normalizePath(process.cwd())
+  const testcases = [
+    {
+      name: 'cssmodule',
+      code: `
+    .foo {
+      color: red;
+    }
+  `,
+      id: `${root}/foo.module.css`,
+      expectedMap: {
+        file: `${root}/foo.module.css`,
+        mappings: ';IACI;MACE,UAAU;IACZ',
+        names: [],
+        sources: [`${root}/foo.module.css`],
+        version: 3
+      }
+    },
+    {
+      name: 'sass',
+      code: `
+    .foo
+      color: red
+  `,
+      id: `${root}/foo.sass`,
+      expectedMap: {
+        file: `${root}/foo.sass`,
+        mappings: 'AACI;EACE',
+        names: [],
+        sources: [`${root}/foo.sass`],
+        version: 3
+      }
+    },
+    {
+      name: 'scss',
+      code: `
+      .foo {
+        color: red;
+      }
+  `,
+      id: `${root}/foo.scss`,
+      expectedMap: {
+        file: `${root}/foo.scss`,
+        mappings: 'AACM;EACE',
+        names: [],
+        sources: [`${root}/foo.scss`],
+        version: 3
+      }
+    },
+    {
+      name: 'scss module',
+      code: `
+      .foo {
+        color: red;
+      }
+  `,
+      id: `${root}/foo.module.scss`,
+      expectedMap: {
+        file: `${root}/foo.module.scss`,
+        mappings: 'AACM;EACE',
+        names: [],
+        sources: [`${root}/foo.module.scss`],
+        version: 3
+      }
+    }
+  ]
 
-  test('cssmodule', async () => {
-    const config = await resolveConfig(
-      {
-        root
-      },
-      'serve'
-    )
-    const { transform, buildStart } = cssPlugin(config)
+  test.concurrent.each(testcases)(
+    '$name',
+    async ({ code, id, expectedMap }) => {
+      const config = await resolveConfig(
+        {
+          root
+        },
+        'serve'
+      )
+      const { transform, buildStart } = cssPlugin(config)
 
-    await buildStart.call({})
+      await buildStart.call({})
 
-    const { map } = await transform.call(
-      {
-        addWatchFile() {
-          return
-        }
-      },
-      `
-        .foo {
-          color: red;
-        }
-      `,
-      `${root}/foo.module.css`
-    )
+      const { map } = await transform.call(
+        {
+          addWatchFile() {
+            return
+          }
+        },
+        code,
+        id
+      )
 
-    expect(map).toStrictEqual({
-      file: `${root}/foo.module.css`,
-      mappings: ';QACQ;UACE,UAAU;QACZ',
-      names: [],
-      sources: [`${root}/foo.module.css`],
-      version: 3
-    })
-  })
+      expect(map).toMatchObject(expectedMap)
+    }
+  )
 })

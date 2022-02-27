@@ -12,7 +12,8 @@ import {
   normalizePath,
   processSrcSet,
   parseRequest,
-  genSourceMapUrl
+  genSourceMapUrl,
+  combineSourcemaps
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -638,7 +639,7 @@ async function compileCSS(
     return { code }
   }
 
-  let map: ExistingRawSourceMap | string | undefined
+  let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
@@ -678,8 +679,7 @@ async function compileCSS(
     }
 
     code = preprocessResult.code
-    // TODO: preprocessor source maps not supported currently
-    // map = preprocessResult.map
+    preprocessorMap = preprocessResult.map
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
@@ -753,7 +753,7 @@ async function compileCSS(
   if (!postcssPlugins.length) {
     return {
       code,
-      map
+      map: preprocessorMap
     }
   }
 
@@ -768,7 +768,8 @@ async function compileCSS(
         inline: false,
         annotation: false,
         sourcesContent: false,
-        prev: map
+        // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+        // prev: preprocessorMap,
       }
     })
 
@@ -812,10 +813,18 @@ async function compileCSS(
     }
   }
 
+  const postcssMap = formatPostcssSourceMap(postcssResult.map.toJSON(), id)
+  const combinedMap = preprocessorMap
+    ? combineSourcemaps(id, [
+        { ...postcssMap, version: 3 },
+        { ...preprocessorMap, version: 3 }
+      ])
+    : postcssMap
+
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: formatPostcssSourceMap(postcssResult.map.toJSON(), id),
+    map: combinedMap as ExistingRawSourceMap,
     modules,
     deps
   }
@@ -1041,7 +1050,7 @@ type SassStylePreprocessor = (
 
 export interface StylePreprocessorResults {
   code: string
-  map?: object
+  map?: ExistingRawSourceMap | undefined
   errors: RollupError[]
   deps: string[]
 }
@@ -1111,7 +1120,10 @@ const scss: SassStylePreprocessor = async (
     data: await getSource(source, options.filename, options.additionalData),
     file: options.filename,
     outFile: options.filename,
-    importer
+    importer,
+    sourceMap: true,
+    omitSourceMapUrl: true,
+    sourceMapRoot: path.dirname(options.filename)
   }
 
   try {
@@ -1125,9 +1137,13 @@ const scss: SassStylePreprocessor = async (
       })
     })
     const deps = result.stats.includedFiles
+    const map: ExistingRawSourceMap | undefined = result.map
+      ? JSON.parse(result.map.toString())
+      : undefined
 
     return {
       code: result.css.toString(),
+      map,
       errors: [],
       deps
     }
