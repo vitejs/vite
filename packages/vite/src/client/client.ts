@@ -25,34 +25,33 @@ console.log('[vite] connecting...')
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
 const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
-const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 
-function warnFailedFetch(err: Error, path: string | string[]) {
-  if (!err.message.match('fetch')) {
-    console.error(err)
-  }
-  console.error(
-    `[hmr] Failed to reload ${path}. ` +
-      `This could be due to syntax errors or importing non-existent ` +
-      `modules. (see errors above)`
-  )
-}
+try {
+  const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 
-function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, location.toString())
-  url.searchParams.delete('direct')
-  return url.pathname + url.search
-}
+  // Listen for messages
+  socket.addEventListener('message', async ({ data }) => {
+    handleMessage(JSON.parse(data), socket)
+  })
 
-// Listen for messages
-socket.addEventListener('message', async ({ data }) => {
-  handleMessage(JSON.parse(data))
-})
+  // ping server
+  socket.addEventListener('close', async ({ wasClean }) => {
+    if (wasClean) return
+    console.log(`[vite] server connection lost. polling for restart...`)
+    await waitForSuccessfulPing()
+    location.reload()
+  })
+} catch (error) {
+  console.log(`[vite] failed to connect to websocket (${error}). `)
+
+  // await waitForSuccessfulPing()
+  // location.reload()
+}
 
 let isFirstUpdate = true
 
-async function handleMessage(payload: HMRPayload) {
+async function handleMessage(payload: HMRPayload, socket: WebSocket) {
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
@@ -151,6 +150,23 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
+function warnFailedFetch(err: Error, path: string | string[]) {
+  if (!err.message.match('fetch')) {
+    console.error(err)
+  }
+  console.error(
+    `[hmr] Failed to reload ${path}. ` +
+      `This could be due to syntax errors or importing non-existent ` +
+      `modules. (see errors above)`
+  )
+}
+
+function cleanUrl(pathname: string): string {
+  const url = new URL(pathname, location.toString())
+  url.searchParams.delete('direct')
+  return url.pathname + url.search
+}
+
 function notifyListeners(
   event: 'vite:beforeUpdate',
   payload: UpdatePayload
@@ -221,14 +237,6 @@ async function waitForSuccessfulPing(ms = 1000) {
     }
   }
 }
-
-// ping server
-socket.addEventListener('close', async ({ wasClean }) => {
-  if (wasClean) return
-  console.log(`[vite] server connection lost. polling for restart...`)
-  await waitForSuccessfulPing()
-  location.reload()
-})
 
 // https://wicg.github.io/construct-stylesheets
 const supportsConstructedSheet = (() => {
