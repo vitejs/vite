@@ -11,8 +11,9 @@ import {
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
 import { parseRequest } from '../utils'
-import { ENV_PUBLIC_PATH } from '../constants'
+import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
+import type { ViteDevServer } from '..'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 
@@ -69,8 +70,7 @@ function getWorkerType(code: string, i: number): WorkerType {
     throw new Error(
       'vite worker options type only support static string, ' +
         'if you want to ignore this error, ' +
-        'please use /* @vite-ignore */ in the worker options, ' +
-        'but the environment variable of vite will be lost.'
+        'please use /* @vite-ignore */ in the worker options.'
     )
   }
 
@@ -82,12 +82,18 @@ function getWorkerType(code: string, i: number): WorkerType {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  let server: ViteDevServer
 
   return {
     name: 'vite:worker-import-meta-url',
 
+    configureServer(_server) {
+      server = _server
+    },
+
     async transform(code, id, options) {
       const query = parseRequest(id)
+      const { moduleGraph } = server
       if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
         let injectEnv = ''
@@ -98,7 +104,13 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
         } else if (workerType === 'ignore') {
           // dynamic worker type we can't know how import the env
-          injectEnv = ''
+          // so we copy /@vite/env code of server transform result into file header
+          if (isBuild) {
+            injectEnv = ''
+          } else {
+            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            injectEnv = module?.transformResult?.code || ''
+          }
         }
 
         return {
