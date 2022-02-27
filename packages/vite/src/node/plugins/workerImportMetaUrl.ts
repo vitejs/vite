@@ -102,11 +102,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         } else if (workerType === 'module') {
           injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
         } else if (workerType === 'ignore') {
-          // dynamic worker type we can't know how import the env
-          // so we copy /@vite/env code of server transform result into file header
-          if (isBuild || !server) {
+          if (isBuild) {
             injectEnv = ''
-          } else {
+          } else if (server) {
+            // dynamic worker type we can't know how import the env
+            // so we copy /@vite/env code of server transform result into file header
             const { moduleGraph } = server
             const module = moduleGraph.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
