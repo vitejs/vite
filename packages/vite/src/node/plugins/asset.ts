@@ -33,6 +33,9 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+
+  // add own dictionary by directly assigning mrmine
+  mrmime.mimes['ico'] = 'image'
   return {
     name: 'vite:asset',
 
