@@ -74,11 +74,3 @@ test('ts import of file with .js and query param', () => {
     'test-file.js.tsx?lee=123'
   ])
 })
-
-test('ts import of non js file', () => {
-  expect(getPotentialTsSrcPaths('test-file.wasm')).toEqual(['test-file.wasm'])
-})
-
-test('ts import without any extension', () => {
-  expect(getPotentialTsSrcPaths('test-file')).toEqual(['test-file'])
-})
