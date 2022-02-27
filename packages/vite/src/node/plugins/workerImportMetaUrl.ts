@@ -1,3 +1,4 @@
+import * as JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { getAssetHash, fileToUrl } from './asset'
@@ -36,6 +37,11 @@ function lexWorkerOptions(code: string, pos: number) {
     pattern += char
   }
 
+  // had `,` split worker params
+  const commaIndex = pattern.indexOf(',')
+  if (commaIndex > -1) {
+    pattern = pattern.substring(commaIndex + 1)
+  }
   return pattern
 }
 
@@ -49,23 +55,27 @@ function getWorkerType(code: string, i: number): WorkerType {
   workerOptsString = workerOptsString
     .replace(multilineCommentsRE, '')
     .replace(singlelineCommentsRE, '')
+    .trim()
 
-  const match = /type\s*\:\s*(['"`]([^'|^"|^`]*)['"`]|.*)/.exec(
-    workerOptsString
-  )
-  if (match) {
-    const { 2: staticStrType } = match
-    if (['classic', 'module'].includes(staticStrType)) {
-      return match[1] as WorkerType
-    } else {
-      // had type options but is not static string.
-      throw new Error(
-        'vite worker options type only support static string, ' +
-          'if you want to ignore this error, ' +
-          'please use /* @vite-ignore */ in the worker options, ' +
-          'but the environment variable of vite will be lost.'
-      )
-    }
+  if (!workerOptsString.length) {
+    return 'classic'
+  }
+
+  let workerOpts: { type: WorkerType } = { type: 'classic' }
+  try {
+    workerOpts = JSON5.parse(workerOptsString)
+  } catch (e) {
+    // can't parse by JSON5, so the worker options had unexpect char.
+    throw new Error(
+      'vite worker options type only support static string, ' +
+        'if you want to ignore this error, ' +
+        'please use /* @vite-ignore */ in the worker options, ' +
+        'but the environment variable of vite will be lost.'
+    )
+  }
+
+  if (['classic', 'module'].includes(workerOpts.type)) {
+    return workerOpts.type
   }
   return 'classic'
 }
