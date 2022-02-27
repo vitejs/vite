@@ -1,4 +1,4 @@
-import * as JSON5 from 'json5'
+import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { getAssetHash, fileToUrl } from './asset'
