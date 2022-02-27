@@ -14,6 +14,20 @@ To develop and test the core `vite` package:
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
+## Debugging
+
+If you want to use break point and explore code execution you can use the ["Run and debug"](https://code.visualstudio.com/docs/editor/debugging) feature from vscode.
+
+1. Add a `debugger` statement where you want to stop the code execution.
+
+2. Click on the "Run and Debug" icon in the activity bar of the editor.
+
+3. Click on the "Javascript Debug Terminal" button.
+
+4. It will open a terminal, then go to `packages/playground/xxx` and run `pnpm run dev`.
+
+5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
+
 ## Testing Vite against external packages
 
 You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:

@@ -649,7 +649,7 @@ export async function resolveConfig(
     )
   }
 
-  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+  if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
