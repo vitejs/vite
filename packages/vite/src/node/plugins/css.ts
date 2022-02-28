@@ -12,7 +12,6 @@ import {
   normalizePath,
   processSrcSet,
   parseRequest,
-  genSourceMapUrl,
   combineSourcemaps
 } from '../utils'
 import type { Plugin } from '../plugin'
@@ -49,9 +48,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import type { RawSourceMap } from 'source-map-js'
-import { injectSourcesContent } from '../server/sourcemap'
-
-const isDebug = process.env.DEBUG
+import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 
 // const debug = createDebugger('vite:css')
 
@@ -310,18 +307,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
 
-          let cssContent = css
           const sourcemap = this.getCombinedSourcemap()
           await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-          if (isDebug) {
-            cssContent += `\n/*${JSON.stringify(sourcemap, null, 2).replace(
-              /\*\//g,
-              '*\\/'
-            )}*/\n`
-          }
-          cssContent += `\n/*# sourceMappingURL=${genSourceMapUrl(
-            sourcemap
-          )} */`
+          const cssContent = getCodeWithSourcemap('css', css, sourcemap)
 
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(

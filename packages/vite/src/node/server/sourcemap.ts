@@ -1,7 +1,8 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import type { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { createDebugger, genSourceMapUrl } from '../utils'
+import type { SourceMap } from 'rollup'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
@@ -56,4 +57,22 @@ export async function injectSourcesContent(
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
     isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
+}
+
+export function getCodeWithSourcemap(
+  type: 'js' | 'css',
+  code: string,
+  map: SourceMap | null
+) {
+  if (isDebug) {
+    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
+  }
+
+  if (type === 'js') {
+    code += `\n//# sourceMappingURL=${genSourceMapUrl(map ?? undefined)}`
+  } else if (type === 'css') {
+    code += `\n/*# sourceMappingURL=${genSourceMapUrl(map ?? undefined)} */`
+  }
+
+  return code
 }
