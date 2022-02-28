@@ -1,3 +1,7 @@
+## [2.2.4](https://github.com/vitejs/vite/compare/plugin-vue@2.2.3...plugin-vue@2.2.4) (2022-02-28)
+
+
+
 ## [2.2.3](https://github.com/vitejs/vite/compare/plugin-vue@2.2.2...plugin-vue@2.2.3) (2022-02-28)
 
 
