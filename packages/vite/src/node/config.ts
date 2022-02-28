@@ -92,6 +92,7 @@ export interface UserConfig {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to <root>.
+   * Default to `.vite` when no `package.json` is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -244,6 +245,7 @@ export type ResolvedConfig = Readonly<
     root: string
     base: string
     publicDir: string
+    cacheDir: string
     command: 'build' | 'serve'
     mode: string
     isProduction: boolean
@@ -396,11 +398,7 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(
-    resolvedRoot,
-    config.build,
-    command === 'build'
-  )
+  const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
   const pkgPath = lookupFile(
@@ -410,7 +408,9 @@ export async function resolveConfig(
   )
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
-    : pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    : pkgPath
+    ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    : path.join(resolvedRoot, `.vite`)
 
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)
@@ -649,7 +649,7 @@ export async function resolveConfig(
     )
   }
 
-  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+  if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
@@ -1086,7 +1086,7 @@ export function loadEnv(
     const path = lookupFile(envDir, [file], true)
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
-        debug: !!process.env.DEBUG || undefined
+        debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
       })
 
       // let environment variables use each other
@@ -1103,7 +1103,10 @@ export function loadEnv(
           env[key] === undefined
         ) {
           env[key] = value
-        } else if (key === 'NODE_ENV') {
+        } else if (
+          key === 'NODE_ENV' &&
+          process.env.VITE_USER_NODE_ENV === undefined
+        ) {
           // NODE_ENV override in .env file
           process.env.VITE_USER_NODE_ENV = value
         }

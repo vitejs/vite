@@ -87,3 +87,7 @@ test('import from hidden dir', async () => {
 test('import optimize-excluded package that imports optimized-included package', async () => {
   expect(await page.textContent('.nested-include')).toBe('nested-include')
 })
+
+test('import aliased package with colon', async () => {
+  expect(await page.textContent('.url')).toBe('vitejs.dev')
+})

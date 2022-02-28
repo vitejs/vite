@@ -607,10 +607,9 @@ export function tryOptimizedResolve(
   server: ViteDevServer,
   importer?: string
 ): string | undefined {
-  const cacheDir = server.config.cacheDir
   const depData = server._optimizeDepsMetadata
 
-  if (!cacheDir || !depData) return
+  if (!depData) return
 
   const getOptimizedUrl = (optimizedData: typeof depData.optimized[string]) => {
     return (
@@ -803,11 +802,6 @@ function resolveDeepImport(
   targetWeb: boolean,
   options: InternalResolveOptions
 ): string | undefined {
-  // id might contain ?query
-  // e.g. when using `<style src="some-pkg/dist/style.css"></style>` in .vue file
-  // the id will be ./dist/style.css?vue&type=style&index=0&src=xxx&lang.css
-  id = id.split('?')[0]
-
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
@@ -819,7 +813,12 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options, targetWeb)
+      relativeId = resolveExports(
+        data,
+        cleanUrl(relativeId),
+        options,
+        targetWeb
+      )
     } else {
       // not exposed
       relativeId = undefined

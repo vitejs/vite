@@ -122,11 +122,11 @@ export async function resolveHttpServer(
 
 export async function resolveHttpsConfig(
   https: boolean | HttpsServerOptions | undefined,
-  cacheDir: string | undefined
+  cacheDir: string
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
@@ -144,7 +144,7 @@ export async function resolveHttpsConfig(
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }
@@ -152,14 +152,7 @@ function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
-async function createCertificateLazily() {
-  const { createCertificate } = await import('./certificate')
-  return createCertificate()
-}
-
-async function getCertificate(cacheDir?: string) {
-  if (!cacheDir) return await createCertificateLazily()
-
+async function getCertificate(cacheDir: string) {
   const cachePath = path.join(cacheDir, '_cert.pem')
 
   try {
@@ -174,7 +167,7 @@ async function getCertificate(cacheDir?: string) {
 
     return content
   } catch {
-    const content = await createCertificateLazily()
+    const content = (await import('./certificate')).createCertificate()
     fsp
       .mkdir(cacheDir, { recursive: true })
       .then(() => fsp.writeFile(cachePath, content))
