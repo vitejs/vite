@@ -7,6 +7,7 @@ test('should render', async () => {
   expect(await page.textContent('.default-tsx')).toMatch('3')
   expect(await page.textContent('.script')).toMatch('4')
   expect(await page.textContent('.src-import')).toMatch('5')
+  expect(await page.textContent('.jsx-with-query')).toMatch('6')
   expect(await page.textContent('.other-ext')).toMatch('Other Ext')
 })
 
@@ -23,6 +24,8 @@ test('should update', async () => {
   expect(await page.textContent('.script')).toMatch('5')
   await page.click('.src-import')
   expect(await page.textContent('.src-import')).toMatch('6')
+  await page.click('.jsx-with-query')
+  expect(await page.textContent('.jsx-with-query')).toMatch('7')
 })
 
 if (!isBuild) {
