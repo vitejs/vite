@@ -138,7 +138,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
         isProduction: config.isProduction,
-        resolveAbsoluteUrls: config.resolve?.absoluteUrls ?? true
+        resolveAbsoluteUrls: !config.server.origin
       }
     },
 
