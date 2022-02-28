@@ -36,7 +36,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
   // add own dictionary entry by directly assigning mrmine
   // https://github.com/lukeed/mrmime/issues/3
-  mrmime.mimes['ico'] = 'image'
+  mrmime.mimes['ico'] = 'image/x-icon'
   return {
     name: 'vite:asset',
 
