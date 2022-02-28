@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
 import { createHash } from 'crypto'
-import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import type { BuildOptions as EsbuildBuildOptions, Metafile } from 'esbuild'
 import { build } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import {
@@ -99,10 +99,12 @@ export interface DepOptimizationMetadata {
       file: string
       src: string
       needsInterop: boolean
+      browserExternalIds?: string[]
     }
   >
 }
 
+type BrowserExternalMap = { [path: string]: Set<string> }
 export async function optimizeDeps(
   config: ResolvedConfig,
   force = config.server.force,
@@ -126,11 +128,38 @@ export async function optimizeDeps(
     optimized: {}
   }
 
+  function logBrowserExternal({
+    browserExternalIds,
+    facedId
+  }: {
+    browserExternalIds: string[]
+    facedId: string
+  }) {
+    logger.info(
+      colors.green(
+        `These browser-external dependencies have been imported by (${facedId}):\n` +
+          `  ${colors.yellow(browserExternalIds.join('\n  '))}\n`
+      )
+    )
+    logger.info(
+      'These modules will be treated as external in browser.' +
+        ' If you need these modules, you may need install them manual.'
+    )
+  }
   if (!force) {
     let prevData: DepOptimizationMetadata | undefined
     try {
       prevData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'))
     } catch (e) {}
+    Object.keys(prevData?.optimized || {}).forEach((moduleId) => {
+      let browserExternalIds =
+        prevData?.optimized[moduleId].browserExternalIds ?? null
+      if (browserExternalIds)
+        logBrowserExternal({
+          browserExternalIds,
+          facedId: moduleId
+        })
+    })
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === data.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
@@ -305,12 +334,65 @@ export async function optimizeDeps(
   })
 
   const meta = result.metafile!
-
+  const checkBrowserExternal = ({
+    meta,
+    browserExternalMap
+  }: {
+    meta: Metafile
+    browserExternalMap: { [key: string]: Set<string> }
+  }) => {
+    const checkedSet = new Set()
+    const { inputs: metaInputs } = meta || {}
+    const checkModuleHasExternal = ({
+      moduleId,
+      facedDepModuleId
+    }: {
+      moduleId: string
+      facedDepModuleId: string
+    }) => {
+      if (checkedSet.has(moduleId)) return
+      checkedSet.add(moduleId)
+      // check for browser external
+      if (moduleId.startsWith('browser-external:')) {
+        if (!browserExternalMap[facedDepModuleId]) {
+          browserExternalMap[facedDepModuleId] = new Set()
+        }
+        browserExternalMap[facedDepModuleId].add(
+          moduleId.replace(/^browser-external:/, '')
+        )
+      }
+      const imports = metaInputs[moduleId].imports
+      imports.forEach((pathInfo) => {
+        checkModuleHasExternal({
+          moduleId: pathInfo.path,
+          facedDepModuleId
+        })
+      })
+    }
+    Object.keys(metaInputs).forEach((moduleId) => {
+      if (moduleId.startsWith('dep:')) {
+        checkModuleHasExternal({
+          moduleId,
+          facedDepModuleId: moduleId
+        })
+      }
+    })
+  }
+  let browserExternalMap: BrowserExternalMap = {}
+  checkBrowserExternal({
+    meta,
+    browserExternalMap
+  })
   // the paths in `meta.outputs` are relative to `process.cwd()`
   const cacheDirOutputPath = path.relative(process.cwd(), cacheDir)
 
   for (const id in deps) {
     const entry = deps[id]
+    const browserExternalSet = browserExternalMap[`dep:${id}`]
+    let browserExternalIds: string[] = []
+    if (browserExternalSet) {
+      browserExternalIds = Array.from(browserExternalSet)
+    }
     data.optimized[id] = {
       file: normalizePath(path.resolve(cacheDir, flattenId(id) + '.js')),
       src: entry,
@@ -321,8 +403,14 @@ export async function optimizeDeps(
         cacheDirOutputPath
       )
     }
+    if (browserExternalIds.length > 0) {
+      logBrowserExternal({
+        browserExternalIds,
+        facedId: id
+      })
+      data.optimized[id].browserExternalIds = browserExternalIds
+    }
   }
-
   writeFile(dataPath, JSON.stringify(data, null, 2))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
