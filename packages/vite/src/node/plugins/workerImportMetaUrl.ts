@@ -10,7 +10,7 @@ import {
 } from '../utils'
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
-import { parseRequest } from '../utils'
+import { parseRequest, findIndex } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
@@ -19,35 +19,13 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-// find the workerOptions end with `)`
-function lexWorkerOptions(code: string, pos: number) {
-  let pattern = ''
-  const opStack = []
-
-  for (let i = pos; i < code.length; i++) {
-    const char = code.charAt(i)
-    if (char === '(') {
-      opStack.push(char)
-    } else if (char === ')') {
-      if (opStack.length) {
-        opStack.pop()
-      } else {
-        break
-      }
-    }
-    pattern += char
-  }
-
-  // had `,` split worker params
-  const commaIndex = pattern.indexOf(',')
-  if (commaIndex > -1) {
-    pattern = pattern.substring(commaIndex + 1)
-  }
-  return pattern
-}
-
 function getWorkerType(code: string, i: number): WorkerType {
-  let workerOptsString = lexWorkerOptions(code, i)
+  const endIndex = findIndex(code, i, ')')
+  const commaIndex = findIndex(code, i, ',')
+  if (commaIndex === -1) {
+    return 'classic'
+  }
+  let workerOptsString = code.slice(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
     return 'ignore'
