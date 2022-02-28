@@ -1,3 +1,32 @@
+## [2.8.5](https://github.com/vitejs/vite/compare/v2.8.4...v2.8.5) (2022-02-28)
+
+
+### Bug Fixes
+
+* ?html-proxy with trailing = added by some servers ([#7093](https://github.com/vitejs/vite/issues/7093)) ([5818ac9](https://github.com/vitejs/vite/commit/5818ac927861783ea2b05450761fed30f40e7399))
+* allow optional trailing comma in asset `import.meta.url` ([#6983](https://github.com/vitejs/vite/issues/6983)) ([2debb9f](https://github.com/vitejs/vite/commit/2debb9f4cbb6003e7d24444cf049b45582d82ff1))
+* cannot reassign process.env.NODE_ENV in ssr ([#6989](https://github.com/vitejs/vite/issues/6989)) ([983feb2](https://github.com/vitejs/vite/commit/983feb2cdc5180dc46c3f5fc5b99baaa8d6b7078))
+* **config:** Warn about terserOptions in more cases ([#7101](https://github.com/vitejs/vite/issues/7101)) ([79428ad](https://github.com/vitejs/vite/commit/79428ad5b849455e14f95d1b439ae296ba231221))
+* don't override user config ([#7034](https://github.com/vitejs/vite/issues/7034)) ([8fd8f6e](https://github.com/vitejs/vite/commit/8fd8f6e0e501c9e46bc3e179c900d31fa5cafce1))
+* fileToBuiltUrl got undefined when file type is `.ico` ([#7106](https://github.com/vitejs/vite/issues/7106)) ([7a1a552](https://github.com/vitejs/vite/commit/7a1a552ba710bad5714ef0fbb16fdd29ac58ae0b))
+* **glob:** css imports injecting a ?used query to export the css string ([#6949](https://github.com/vitejs/vite/issues/6949)) ([0b3f4ef](https://github.com/vitejs/vite/commit/0b3f4ef231004e072bf1b037f63bc4ef169d938e))
+* **hmr:** hmr style tag no support in html ([#7052](https://github.com/vitejs/vite/issues/7052)) ([a9dfce3](https://github.com/vitejs/vite/commit/a9dfce38108e796e0de0e3b43ced34d60883cef3))
+* image -> image/x-icon ([#7120](https://github.com/vitejs/vite/issues/7120)) ([065ceca](https://github.com/vitejs/vite/commit/065ceca5c7b8f1843e220fbdbe8a0da4cbb78935))
+* import with query with exports field ([#7073](https://github.com/vitejs/vite/issues/7073)) ([88ded7f](https://github.com/vitejs/vite/commit/88ded7f16382d83603511de043785e01ee1e4a3a))
+* prebundle dep with colon ([#7006](https://github.com/vitejs/vite/issues/7006)) ([2136f2b](https://github.com/vitejs/vite/commit/2136f2bb960d1a81ac3b3ca04d9ebd89dba44661))
+* recycle serve to avoid preventing Node self-exit ([#6895](https://github.com/vitejs/vite/issues/6895)) ([d6b2c53](https://github.com/vitejs/vite/commit/d6b2c53c6f0bcc4ffa9cdf48375f9bbcc98f79f7))
+* resolve [@import](https://github.com/import) of the proxied <style> ([#7031](https://github.com/vitejs/vite/issues/7031)) ([c7aad02](https://github.com/vitejs/vite/commit/c7aad0287ce24f299f538828c090819ce0ca1468))
+* **ssrTransform:** use appendLeft instead of appendRight ([#6407](https://github.com/vitejs/vite/issues/6407)) ([3012541](https://github.com/vitejs/vite/commit/30125418b4c7ebda56555090b177ac34b29ffdc7))
+* typo ([#7064](https://github.com/vitejs/vite/issues/7064)) ([f38654f](https://github.com/vitejs/vite/commit/f38654fd331316f496008f3a118d2628c65b071b))
+
+
+### Features
+
+* add fixStacktrace option to ssrLoadModule ([#7048](https://github.com/vitejs/vite/issues/7048)) ([c703a33](https://github.com/vitejs/vite/commit/c703a3348adeaad9dc92d805a381866917f2a03b))
+* **cli:** add command descriptions ([#6991](https://github.com/vitejs/vite/issues/6991)) ([ffda8f0](https://github.com/vitejs/vite/commit/ffda8f046026980b363ff164677f52bb076fde26))
+
+
+
 ## [2.8.4](https://github.com/vitejs/vite/compare/v2.8.3...v2.8.4) (2022-02-18)
 
 
