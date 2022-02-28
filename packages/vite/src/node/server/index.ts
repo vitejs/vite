@@ -224,7 +224,10 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(url: string): Promise<Record<string, any>>
+  ssrLoadModule(
+    url: string,
+    opts?: { fixStacktrace?: boolean }
+  ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
    */
@@ -357,7 +360,7 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null!, // to be immediately set
-    async ssrLoadModule(url) {
+    async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       let configFileDependencies: string[] = []
       const metadata = server._optimizeDepsMetadata
       if (metadata) {
@@ -369,7 +372,13 @@ export async function createServer(
         config,
         configFileDependencies
       )
-      return ssrLoadModule(url, server)
+      return ssrLoadModule(
+        url,
+        server,
+        undefined,
+        undefined,
+        opts?.fixStacktrace
+      )
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
