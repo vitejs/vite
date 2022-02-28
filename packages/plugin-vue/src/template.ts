@@ -139,7 +139,7 @@ export function resolveTemplateCompilerOptions(
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions
