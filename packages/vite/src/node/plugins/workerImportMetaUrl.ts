@@ -46,9 +46,8 @@ function getWorkerType(code: string, i: number): WorkerType {
   } catch (e) {
     // can't parse by JSON5, so the worker options had unexpect char.
     throw new Error(
-      'vite worker options type only support static string, ' +
-        'if you want to ignore this error, ' +
-        'please use /* @vite-ignore */ in the worker options.'
+      'Vite is unable to parse the worker options as the value is not static.' +
+        'To ignore this error, please use /* @vite-ignore */ in the worker options.'
     )
   }
 
