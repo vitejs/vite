@@ -8,7 +8,12 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { isCSSRequest } from './plugins/css'
-import { cleanUrl, findIndex } from './utils'
+import {
+  cleanUrl,
+  singlelineCommentsRE,
+  multilineCommentsRE,
+  blankReplacer
+} from './utils'
 import type { RollupError } from 'rollup'
 
 export interface AssertOptions {
@@ -182,13 +187,15 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-
-  const endIndex = findIndex(code, i, ')')
-  const options = code.substring(i + 1, endIndex)
-  const commaIndex = options.indexOf(`,`)
+  const clearCode = code
+    .slice(i)
+    .replace(singlelineCommentsRE, blankReplacer)
+    .replace(multilineCommentsRE, blankReplacer)
+  const endIndex = clearCode.indexOf(')')
+  const commaIndex = clearCode.indexOf(',')
   let assert = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substr(commaIndex + 1))
+    assert = JSON5.parse(clearCode.substring(commaIndex + 1))
   }
   return [pattern, assert, endIndex + 1]
 }

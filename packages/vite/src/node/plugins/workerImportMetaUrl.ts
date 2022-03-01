@@ -10,7 +10,7 @@ import {
 } from '../utils'
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
-import { parseRequest, findIndex } from '../utils'
+import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
@@ -20,23 +20,23 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 const WORKER_FILE_ID = 'worker_url_file'
 
 function getWorkerType(code: string, i: number): WorkerType {
-  const commaIndex = findIndex(code, i, ',')
+  const clearCode = code
+    .slice(i)
+    .replace(singlelineCommentsRE, '')
+    .replace(multilineCommentsRE, '')
+
+  const commaIndex = clearCode.indexOf(',')
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = findIndex(code, i, ')')
-  let workerOptsString = code.slice(commaIndex + 1, endIndex)
+  const endIndex = clearCode.indexOf(')')
+  const workerOptsString = code.substring(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
     return 'ignore'
   }
 
-  workerOptsString = workerOptsString
-    .replace(multilineCommentsRE, '')
-    .replace(singlelineCommentsRE, '')
-    .trim()
-
-  if (!workerOptsString.length) {
+  if (!workerOptsString.trim().length) {
     return 'classic'
   }
 

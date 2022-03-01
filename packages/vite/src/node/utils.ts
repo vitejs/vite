@@ -643,45 +643,4 @@ export function parseRequest(id: string): Record<string, string> | null {
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
 
-// reg without the 'g' option, only matches the first match
-const multilineCommentsOnceRE = /\/\*(.|[\r\n])*?\*\//m
-const singlelineCommentsOnceRE = /\/\/.*/
-
-// find index ignore comment
-export function findIndex(code: string, i: number, endChar: string): number {
-  const findStart = i
-  const endIndex = code.indexOf(endChar, findStart)
-  const subCode = code.substring(findStart)
-
-  const matchedSingleline = subCode.match(singlelineCommentsOnceRE)
-  const matchedMultiline = subCode.match(multilineCommentsOnceRE)
-
-  if (!matchedSingleline && !matchedMultiline) {
-    return endIndex
-  }
-
-  let matched: RegExpMatchArray
-  if (!matchedSingleline || !matchedMultiline) {
-    matched = matchedSingleline ?? matchedMultiline!
-  } else {
-    if (matchedSingleline.index! > matchedMultiline.index!) {
-      matched = matchedMultiline
-    } else {
-      matched = matchedSingleline
-    }
-  }
-
-  const str = matched[0]
-  const index = matched.index
-  if (!index) {
-    return endIndex
-  }
-
-  const commentStart = findStart + index
-  const commentEnd = commentStart + str.length
-  if (endIndex > commentStart && endIndex < commentEnd) {
-    return findIndex(code, commentEnd, endChar)
-  } else {
-    return endIndex
-  }
-}
+export const blankReplacer = (match: string) => ' '.repeat(match.length)
