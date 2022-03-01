@@ -1,8 +1,9 @@
 /* eslint-disable node/no-extraneous-import */
+import { platform } from 'os'
+import { join } from 'path'
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
 import execa, { commandSync, Options } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
-import { join } from 'path'
 
 const CLI_PATH = join(__dirname, '..')
 
@@ -130,7 +131,8 @@ test(
   'successfully start a project by npm agent',
   async () => {
     const subprocess = runAsync([projectName, '-t', 'vanilla'], {
-      cwd: __dirname
+      cwd: __dirname,
+      detached: true
     })
     const [waiting, resolveWaiting] = (() => {
       let resolve$
@@ -163,8 +165,16 @@ test(
       }
     })
     await waiting
-    subprocess.kill('SIGHUP')
+    killProcess(subprocess.pid)
     expect(text).toContain('ready in')
   },
   speicalJestTime
 )
+
+function killProcess(pid: number) {
+  if (platform() === 'win32') {
+    commandSync(`taskkill /PID ${pid} /T /F`)
+  } else {
+    process.kill(-pid)
+  }
+}
