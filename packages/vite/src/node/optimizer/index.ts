@@ -394,6 +394,7 @@ function getDepHash(root: string, config: ResolvedConfig): string {
         include: config.optimizeDeps?.include,
         exclude: config.optimizeDeps?.exclude,
         esbuildOptions: {
+          ...config.optimizeDeps?.esbuildOptions,
           plugins: config.optimizeDeps?.esbuildOptions?.plugins?.map(
             (p) => p.name
           )
