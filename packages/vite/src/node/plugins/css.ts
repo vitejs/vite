@@ -658,6 +658,12 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
+
+    // use behavior same as less-loader and more intuitive
+    if (lang === 'less') {
+      opts.relativeUrls = opts.relativeUrls ?? true
+    }
+
     const preprocessResult = await preProcessor(
       code,
       config.root,
