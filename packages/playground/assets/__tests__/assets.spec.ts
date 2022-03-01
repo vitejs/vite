@@ -8,8 +8,7 @@ import {
   readManifest,
   readFile,
   editFile,
-  notifyRebuildComplete,
-  untilUpdated
+  notifyRebuildComplete
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -38,7 +37,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src^="/foo/index.html?html-proxy"]'
+      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -259,15 +258,3 @@ describe('css and assets in css in build watch', () => {
     })
   }
 })
-
-if (!isBuild) {
-  test('@import in html style tag hmr', async () => {
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
-    editFile(
-      './css/import.css',
-      (code) => code.replace('#0088ff', '#00ff88'),
-      true
-    )
-    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
-  })
-}

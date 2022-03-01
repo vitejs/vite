@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import type { AttributeNode, ElementNode } from '@vue/compiler-dom'
+import type { AttributeNode } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
@@ -94,38 +94,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const base = config.base || '/'
 
   const s = new MagicString(html)
-  let inlineModuleIndex = -1
+  let scriptModuleIndex = -1
   const filePath = cleanUrl(htmlPath)
-
-  const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
-    inlineModuleIndex++
-
-    const url = filePath.replace(normalizePath(config.root), '')
-
-    const contents = node.children
-      .map((child: any) => child.content || '')
-      .join('')
-
-    // add HTML Proxy to Map
-    addToHTMLProxyCache(config, url, inlineModuleIndex, contents)
-
-    // inline js module. convert to src="proxy"
-    const modulePath = `${
-      config.base + htmlPath.slice(1)
-    }?html-proxy&index=${inlineModuleIndex}.${ext}`
-
-    // invalidate the module so the newly cached contents will be served
-    const module = server?.moduleGraph.getModuleById(modulePath)
-    if (module) {
-      server?.moduleGraph.invalidateModule(module)
-    }
-
-    s.overwrite(
-      node.loc.start.offset,
-      node.loc.end.offset,
-      `<script type="module" src="${modulePath}"></script>`
-    )
-  }
 
   await traverseHtml(html, htmlPath, (node) => {
     if (node.type !== NodeTypes.ELEMENT) {
@@ -135,16 +105,39 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // script tags
     if (node.tag === 'script') {
       const { src, isModule } = getScriptInfo(node)
+      if (isModule) {
+        scriptModuleIndex++
+      }
 
       if (src) {
         processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
       } else if (isModule) {
-        addInlineModule(node, 'js')
-      }
-    }
+        const url = filePath.replace(normalizePath(config.root), '')
 
-    if (node.tag === 'style' && node.children.length) {
-      addInlineModule(node, 'css')
+        const contents = node.children
+          .map((child: any) => child.content || '')
+          .join('')
+
+        // add HTML Proxy to Map
+        addToHTMLProxyCache(config, url, scriptModuleIndex, contents)
+
+        // inline js module. convert to src="proxy"
+        const modulePath = `${
+          config.base + htmlPath.slice(1)
+        }?html-proxy&index=${scriptModuleIndex}.js`
+
+        // invalidate the module so the newly cached contents will be served
+        const module = server?.moduleGraph.getModuleById(modulePath)
+        if (module) {
+          server?.moduleGraph.invalidateModule(module)
+        }
+
+        s.overwrite(
+          node.loc.start.offset,
+          node.loc.end.offset,
+          `<script type="module" src="${modulePath}"></script>`
+        )
+      }
     }
 
     // elements with [href/src] attrs
