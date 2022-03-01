@@ -643,18 +643,18 @@ export function parseRequest(id: string): Record<string, string> | null {
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
 
+// reg without the 'g' option, only matches the first match
+const multilineCommentsOnceRE = /\/\*(.|[\r\n])*?\*\//m
+const singlelineCommentsOnceRE = /\/\/.*/
+
 // find index ignore comment
 export function findIndex(code: string, i: number, endChar: string): number {
-  // reg without the 'g' option, only matches the first match
-  const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
-  const singlelineCommentsRE = /\/\/.*/
-
   const findStart = i
   const endIndex = code.indexOf(endChar, findStart)
   const subCode = code.substring(findStart)
 
-  const matchedSingleline = subCode.match(singlelineCommentsRE)
-  const matchedMultiline = subCode.match(multilineCommentsRE)
+  const matchedSingleline = subCode.match(singlelineCommentsOnceRE)
+  const matchedMultiline = subCode.match(multilineCommentsOnceRE)
 
   if (!matchedSingleline && !matchedMultiline) {
     return endIndex
