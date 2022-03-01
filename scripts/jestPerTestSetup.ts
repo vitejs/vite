@@ -142,7 +142,7 @@ beforeAll(async () => {
           global.watcher = rollupOutput as RollupWatcher
           await notifyRebuildComplete(global.watcher)
         }
-        const url = (global.viteTestUrl = await startStaticServer())
+        const url = (global.viteTestUrl = await startStaticServer(isWatch))
         await page.goto(url)
       }
     }
@@ -164,13 +164,14 @@ afterAll(async () => {
   global.serverLogs = []
   await global.page?.close()
   await server?.close()
+  watcher?.close()
   const beforeAllErr = getBeforeAllError()
   if (beforeAllErr) {
     throw beforeAllErr
   }
 })
 
-function startStaticServer(): Promise<string> {
+function startStaticServer(isWatch: boolean): Promise<string> {
   // check if the test project has base config
   const configFile = resolve(rootDir, 'vite.config.js')
   let config: UserConfig | undefined
@@ -187,7 +188,7 @@ function startStaticServer(): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'))
+  const serve = sirv(resolve(rootDir, 'dist'), { dev: isWatch })
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200

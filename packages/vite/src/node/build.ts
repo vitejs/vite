@@ -43,6 +43,7 @@ import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
+import { ensureWatchPlugin } from './plugins/ensureWatch'
 
 export interface BuildOptions {
   /**
@@ -311,6 +312,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   const options = config.build
   return {
     pre: [
+      ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
