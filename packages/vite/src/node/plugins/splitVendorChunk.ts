@@ -1,6 +1,11 @@
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
-import type { OutputOptions, GetManualChunk, GetModuleInfo } from 'rollup'
+import type {
+  OutputOptions,
+  GetManualChunk,
+  GetManualChunkApi,
+  GetModuleInfo
+} from 'rollup'
 import { isCSSRequest } from './css'
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
@@ -91,13 +96,29 @@ export function splitVendorChunkPlugin(): Plugin {
       if (outputs) {
         outputs = Array.isArray(outputs) ? outputs : [outputs]
         for (const output of outputs) {
-          output.manualChunks = createSplitVendorChunk(output, config)
+          const viteManualChunks = createSplitVendorChunk(output, config)
+          if (viteManualChunks) {
+            if (output.manualChunks) {
+              if (typeof output.manualChunks === 'function') {
+                const userManualChunks = output.manualChunks
+                output.manualChunks = (id: string, api: GetManualChunkApi) => {
+                  return userManualChunks(id, api) ?? viteManualChunks(id, api)
+                }
+              }
+              // else, leave the object form of manualChunks untouched, as
+              // we can't safely replicate rollup handling.
+            } else {
+              output.manualChunks = viteManualChunks
+            }
+          }
         }
       } else {
         return {
           build: {
             rollupOptions: {
-              manualChunks: createSplitVendorChunk({}, config)
+              output: {
+                manualChunks: createSplitVendorChunk({}, config)
+              }
             }
           }
         }

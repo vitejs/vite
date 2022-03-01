@@ -17,7 +17,17 @@ export default defineConfig({
   ],
   build: {
     // to make tests faster
-    minify: false
+    minify: false,
+    rollupOptions: {
+      output: {
+        // Test splitVendorChunkPlugin composition
+        manualChunks(id) {
+          if (id.includes('src-import')) {
+            return 'src-import'
+          }
+        }
+      }
+    }
   },
   css: {
     modules: {
