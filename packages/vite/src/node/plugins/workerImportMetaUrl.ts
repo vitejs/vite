@@ -20,11 +20,11 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 const WORKER_FILE_ID = 'worker_url_file'
 
 function getWorkerType(code: string, i: number): WorkerType {
-  const endIndex = findIndex(code, i, ')')
   const commaIndex = findIndex(code, i, ',')
   if (commaIndex === -1) {
     return 'classic'
   }
+  const endIndex = findIndex(code, i, ')')
   let workerOptsString = code.slice(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
