@@ -20,20 +20,26 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-function getWorkerType(noCommentCode: string, i: number): WorkerType {
-  const code = noCommentCode.slice(i)
-
-  const commaIndex = code.indexOf(',')
+function getWorkerType(
+  code: string,
+  noCommentCode: string,
+  i: number
+): WorkerType {
+  const commaIndex = noCommentCode.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = code.indexOf(')')
-  const workerOptsString = code.substring(commaIndex + 1, endIndex)
+  const endIndex = noCommentCode.indexOf(')', i)
+
+  // need to find in comment code
+  let workerOptsString = code.substring(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
     return 'ignore'
   }
 
+  // need to find in no comment code
+  workerOptsString = noCommentCode.substring(commaIndex + 1, endIndex)
   if (!workerOptsString.trim().length) {
     return 'classic'
   }
@@ -125,6 +131,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           s ||= new MagicString(code)
           const workerType = getWorkerType(
+            code,
             noCommentsCode,
             index + allExp.length
           )
