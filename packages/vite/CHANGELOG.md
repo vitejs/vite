@@ -1,3 +1,13 @@
+## [2.8.6](https://github.com/vitejs/vite/compare/v2.8.5...v2.8.6) (2022-03-01)
+
+
+### Bug Fixes
+
+* revert [#7052](https://github.com/vitejs/vite/issues/7052), hmr style tag no support in html ([#7136](https://github.com/vitejs/vite/issues/7136)) ([5c116ec](https://github.com/vitejs/vite/commit/5c116ecde0ad43409334853457d68481a22e19d4))
+* throw Error when can't preload CSS ([#7108](https://github.com/vitejs/vite/issues/7108)) ([d9f8edb](https://github.com/vitejs/vite/commit/d9f8edbd5b243f60212cc4bb9271c01b7e3fdd76))
+
+
+
 ## [2.8.5](https://github.com/vitejs/vite/compare/v2.8.4...v2.8.5) (2022-02-28)
 
 
