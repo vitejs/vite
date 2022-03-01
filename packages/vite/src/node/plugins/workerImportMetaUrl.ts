@@ -3,6 +3,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { getAssetHash, fileToUrl } from './asset'
 import {
+  blankReplacer,
   cleanUrl,
   injectQuery,
   multilineCommentsRE,
@@ -19,17 +20,14 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-function getWorkerType(code: string, i: number): WorkerType {
-  const clearCode = code
-    .slice(i)
-    .replace(singlelineCommentsRE, '')
-    .replace(multilineCommentsRE, '')
+function getWorkerType(noCommentCode: string, i: number): WorkerType {
+  const code = noCommentCode.slice(i)
 
-  const commaIndex = clearCode.indexOf(',')
+  const commaIndex = code.indexOf(',')
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = clearCode.indexOf(')')
+  const endIndex = code.indexOf(')')
   const workerOptsString = code.substring(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
@@ -102,8 +100,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const importMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
         const noCommentsCode = code
-          .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
-          .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+          .replace(multilineCommentsRE, blankReplacer)
+          .replace(singlelineCommentsRE, blankReplacer)
         let match: RegExpExecArray | null
         let s: MagicString | null = null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
@@ -126,7 +124,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(code, index + allExp.length)
+          const workerType = getWorkerType(
+            noCommentsCode,
+            index + allExp.length
+          )
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {

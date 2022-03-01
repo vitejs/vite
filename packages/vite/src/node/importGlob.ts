@@ -187,17 +187,20 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
-  const clearCode = code
-    .slice(i)
+  const noCommentCode = code
+    .slice(i + 1)
     .replace(singlelineCommentsRE, blankReplacer)
     .replace(multilineCommentsRE, blankReplacer)
-  const endIndex = clearCode.indexOf(')')
-  const commaIndex = clearCode.indexOf(',')
+
+  const endIndex = noCommentCode.indexOf(')')
+  const options = noCommentCode.substring(0, endIndex)
+  const commaIndex = options.indexOf(',')
+
   let assert = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(clearCode.substring(commaIndex + 1))
+    assert = JSON5.parse(options.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + 1]
+  return [pattern, assert, endIndex + i + 2]
 }
 
 function error(pos: number) {
