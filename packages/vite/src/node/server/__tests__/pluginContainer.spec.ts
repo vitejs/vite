@@ -71,43 +71,40 @@ describe('plugin container', () => {
 
     it('preserves metadata calculated from import query string', async () => {
       const entryUrl = '/main.js'
-      const xModuleId = '@x.js'
+      const testedId = 'x.js'
 
-      const metaArray: any[] = []
       const plugin: Plugin = {
         name: 'p1',
         resolveId(url) {
-          if (url === entryUrl) return url
+          if (url === entryUrl) {
+            return url
+          }
           const [id, query] = url.split('?')
-          const probe = query && query.match(/xoption=([^&]+)/)
-          const x = probe && Number(probe[1])
-          if (id === xModuleId && x) {
-            // The module hasn't been resolved yet, so its info is null.
-            const moduleInfo = this.getModuleInfo(xModuleId)
-            expect(moduleInfo).toEqual(null)
-
-            return { id, meta: { x: x } }
+          const match = query?.match(/test=([^&]+)/)
+          if (match) {
+            return { id, meta: { test: +match[1] } }
           }
         },
         load(id) {
           if (id === entryUrl) {
-            return { code: `import fn from '@x.js?xoption=42'` }
-          } else if (id === xModuleId) {
+            return `import "${testedId}?test=1"`
+          } else if (id === testedId) {
             const meta = this.getModuleInfo(id).meta
-            metaArray.push(meta)
-            const x = meta.x
-            expect(x).toEqual(42)
-            return { code: `export const theX=${x}` }
+            expect(meta.test).toBe(1)
+            return ''
           }
         }
       }
 
       const container = await getPluginContainer({ plugins: [plugin] })
-      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      const loadResult: any = await container.load(entryUrl)
-      await container.transform(loadResult.code, entryUrl)
-      await container.load(xModuleId)
-      expect(metaArray).toEqual([{ x: 42 }])
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.transform(
+        (await container.load(entryUrl)) as any,
+        entryUrl
+      )
+
+      await container.load(testedId)
+      expect.assertions(1)
     })
 
     it('can pass metadata between plugins', async () => {
