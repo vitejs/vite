@@ -1007,9 +1007,14 @@ type StylePreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
   filename: string
   alias: Alias[]
+  api: 'legacy' | 'modern'
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+type SassStylePreprocessorOptions = StylePreprocessorOptions &
+  Sass.StringOptions<'sync'>
+
+type SassStylePreprocessorLegacyOptions = StylePreprocessorOptions &
+  Sass.LegacyOptions<'sync'>
 
 type StylePreprocessor = (
   source: string,
@@ -1021,7 +1026,7 @@ type StylePreprocessor = (
 type SassStylePreprocessor = (
   source: string,
   root: string,
-  options: SassStylePreprocessorOptions,
+  options: SassStylePreprocessorOptions | SassStylePreprocessorLegacyOptions,
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -1073,55 +1078,112 @@ const scss: SassStylePreprocessor = async (
   options,
   resolvers
 ) => {
-  const render = loadPreprocessor(PreprocessLang.sass, root).render
-  const internalImporter: Sass.Importer = (url, importer, done) => {
-    resolvers.sass(url, importer).then((resolved) => {
-      if (resolved) {
-        rebaseUrls(resolved, options.filename, options.alias)
-          .then((data) => done?.(data))
-          .catch((data) => done?.(data))
-      } else {
-        done?.(null)
+  const isModern = options.api === 'modern'
+
+  if (isModern) {
+    const compileString = loadPreprocessor(
+      PreprocessLang.sass,
+      root
+    ).compileString
+
+    // TODO: we can't execute vite's internal resolver because we don't have prev in new importer API (as we have in old)
+    const internalImporter: Sass.Importer = {
+      canonicalize(url, options) {
+        return null
+      },
+      load(canonicalUrl) {
+        return null
       }
-    })
-  }
-  const importer = [internalImporter]
-  if (options.importer) {
-    Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
-  }
+    }
+    const importers = [internalImporter]
+    if (options.importers && Array.isArray(options.importers)) {
+      importers.push(...options.importers)
+    }
 
-  const finalOptions: Sass.Options = {
-    ...options,
-    data: await getSource(source, options.filename, options.additionalData),
-    file: options.filename,
-    outFile: options.filename,
-    importer
-  }
+    if (typeof options.syntax === 'undefined') {
+      const ext = path.extname(options.filename)
 
-  try {
-    const result = await new Promise<Sass.Result>((resolve, reject) => {
-      render(finalOptions, (err, res) => {
-        if (err) {
-          reject(err)
+      if (ext && ext.toLowerCase() === '.scss') {
+        options.syntax = 'scss'
+      } else if (ext && ext.toLowerCase() === '.sass') {
+        options.syntax = 'indented'
+      } else if (ext && ext.toLowerCase() === '.css') {
+        options.syntax = 'css'
+      }
+    }
+
+    const finalOptions: Sass.StringOptions<'sync'> = {
+      ...(options as Sass.StringOptions<'sync'>),
+      url: new URL(options.filename),
+      importers
+    }
+
+    try {
+      const result = compileString(
+        await getSource(source, options.filename, options.additionalData),
+        finalOptions
+      )
+      const deps = result.loadedUrls.map((url) => url.pathname)
+
+      return {
+        code: result.css,
+        errors: [],
+        deps
+      }
+    } catch (e) {
+      return { code: '', errors: [e], deps: [] }
+    }
+  } else {
+    const render = loadPreprocessor(PreprocessLang.sass, root).render
+    const internalImporter: Sass.LegacyImporter = (url, importer, done) => {
+      resolvers.sass(url, importer).then((resolved) => {
+        if (resolved) {
+          rebaseUrls(resolved, options.filename, options.alias)
+            .then((data) => done?.(data))
+            .catch((data) => done?.(data))
         } else {
-          resolve(res)
+          done?.(null)
         }
       })
-    })
-    const deps = result.stats.includedFiles
-
-    return {
-      code: result.css.toString(),
-      errors: [],
-      deps
     }
-  } catch (e) {
-    // normalize SASS error
-    e.id = e.file
-    e.frame = e.formatted
-    return { code: '', errors: [e], deps: [] }
+    const importer = [internalImporter]
+    if (options.importer) {
+      Array.isArray(options.importer)
+        ? importer.push(...options.importer)
+        : importer.push(options.importer)
+    }
+
+    const finalOptions: Sass.LegacyOptions<'async'> = {
+      ...(options as Sass.LegacyOptions<'sync'>),
+      data: await getSource(source, options.filename, options.additionalData),
+      file: options.filename,
+      outFile: options.filename,
+      importer
+    }
+
+    try {
+      const result = await new Promise<Sass.LegacyResult>((resolve, reject) => {
+        render(finalOptions, (err, res) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(res!)
+          }
+        })
+      })
+      const deps = result.stats.includedFiles
+
+      return {
+        code: result.css.toString(),
+        errors: [],
+        deps
+      }
+    } catch (e) {
+      // normalize SASS error
+      e.id = e.file
+      e.frame = e.formatted
+      return { code: '', errors: [e], deps: [] }
+    }
   }
 }
 
@@ -1144,7 +1206,7 @@ async function rebaseUrls(
   file: string,
   rootFile: string,
   alias: Alias[]
-): Promise<Sass.ImporterReturnType> {
+): Promise<Sass.LegacyImporterResult> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
