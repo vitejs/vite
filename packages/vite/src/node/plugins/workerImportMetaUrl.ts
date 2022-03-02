@@ -22,14 +22,14 @@ const WORKER_FILE_ID = 'worker_url_file'
 
 function getWorkerType(
   code: string,
-  noCommentCode: string,
+  noCommentsCode: string,
   i: number
 ): WorkerType {
-  const commaIndex = noCommentCode.indexOf(',', i)
+  const commaIndex = noCommentsCode.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = noCommentCode.indexOf(')', i)
+  const endIndex = noCommentsCode.indexOf(')', i)
 
   // need to find in comment code
   let workerOptsString = code.substring(commaIndex + 1, endIndex)
@@ -39,7 +39,7 @@ function getWorkerType(
   }
 
   // need to find in no comment code
-  workerOptsString = noCommentCode.substring(commaIndex + 1, endIndex)
+  workerOptsString = noCommentsCode.substring(commaIndex + 1, endIndex)
   if (!workerOptsString.trim().length) {
     return 'classic'
   }
