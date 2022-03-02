@@ -127,7 +127,7 @@ importers:
 
   packages/playground/css:
     specifiers:
-      '@vitejs/plugin-vue': workspace:^2.2.4
+      '@vitejs/plugin-vue': workspace:*
       css-dep: link:./css-dep
       less: ^4.1.2
       postcss-nested: ^5.0.6
