@@ -12,11 +12,6 @@ text('.imported-less', less)
 import stylus from './stylus.styl'
 text('.imported-stylus', stylus)
 
-import sfc from './index.vue'
-import { createApp } from 'vue'
-
-createApp(sfc).mount('.app')
-
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
