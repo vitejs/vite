@@ -27,7 +27,7 @@ import {
   isFileReadable,
   isTsRequest,
   isPossibleTsOutput,
-  getTsSrcPath
+  getPotentialTsSrcPaths
 } from '../utils'
 import type { ViteDevServer, SSROptions } from '..'
 import type { PartialResolvedId } from 'rollup'
@@ -436,16 +436,20 @@ function tryResolveFile(
 
   const tryTsExtension = options.isFromTsImporter && isPossibleTsOutput(file)
   if (tryTsExtension) {
-    const tsSrcPath = getTsSrcPath(file)
-    return tryResolveFile(
-      tsSrcPath,
-      postfix,
-      options,
-      tryIndex,
-      targetWeb,
-      tryPrefix,
-      skipPackageJson
-    )
+    const tsSrcPaths = getPotentialTsSrcPaths(file)
+    for (const srcPath of tsSrcPaths) {
+      const res = tryResolveFile(
+        srcPath,
+        postfix,
+        options,
+        tryIndex,
+        targetWeb,
+        tryPrefix,
+        skipPackageJson
+      )
+      if (res) return res
+    }
+    return
   }
 
   if (tryPrefix) {

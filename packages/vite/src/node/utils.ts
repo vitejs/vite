@@ -189,8 +189,14 @@ const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
-export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
+export function getPotentialTsSrcPaths(filePath: string) {
+  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const paths = [name + type.replace('js', 'ts') + query]
+  if (!type.endsWith('x')) {
+    paths.push(name + type.replace('js', 'tsx') + query)
+  }
+  return paths
+}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
