@@ -1,4 +1,5 @@
-import { extname } from 'path'
+import fs from 'fs'
+import { extname, isAbsolute } from 'path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
@@ -160,17 +161,22 @@ export class ModuleGraph {
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
+      mod.id = resolvedId
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
-      mod.id = resolvedId
       this.idToModuleMap.set(resolvedId, mod)
-      const file = (mod.file = cleanUrl(resolvedId))
-      let fileMappedModules = this.fileToModulesMap.get(file)
-      if (!fileMappedModules) {
-        fileMappedModules = new Set()
-        this.fileToModulesMap.set(file, fileMappedModules)
+      if (url !== resolvedId && !resolvedId.includes('\0')) {
+        const file = cleanUrl(resolvedId)
+        if (isAbsolute(file) && fs.existsSync(file)) {
+          let fileMappedModules = this.fileToModulesMap.get(file)
+          if (!fileMappedModules) {
+            fileMappedModules = new Set()
+            this.fileToModulesMap.set(file, fileMappedModules)
+          }
+          fileMappedModules.add(mod)
+          mod.file = file
+        }
       }
-      fileMappedModules.add(mod)
     }
     return mod
   }
