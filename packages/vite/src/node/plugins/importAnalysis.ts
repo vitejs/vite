@@ -260,7 +260,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url, ssr)
+            const depModule = moduleGraph.ensureEntryFromResolved([
+              url,
+              resolved.id,
+              resolved.meta
+            ])
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }

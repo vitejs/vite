@@ -128,7 +128,7 @@ export class ModuleGraph {
     for (const imported of importedModules) {
       const dep =
         typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported, ssr)
+          ? this.urlToModuleMap.get(imported)!
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
@@ -170,9 +170,6 @@ export class ModuleGraph {
         this.fileToModulesMap.set(file, fileMappedModules)
       }
       fileMappedModules.add(mod)
-    } else if (mod.id !== resolvedId) {
-      this.idToModuleMap.set(resolvedId, mod)
-      if (meta) mod.meta = { ...mod.meta, ...meta }
     }
     return mod
   }
