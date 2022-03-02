@@ -543,6 +543,20 @@ export function combineSourcemaps(
     return { ...nullSourceMap }
   }
 
+  // FIXME: hack for parse broken with normalized absolute paths on windows (C:/path/to/something)
+  const base = normalizePath(path.dirname(filename))
+  sourcemapList.forEach((sourcemap) => {
+    sourcemap.sources = sourcemap.sources.map((source) => {
+      if (!source) return null
+      if (sourcemap.sourceRoot) {
+        source = path.resolve(sourcemap.sourceRoot, source)
+      }
+      return normalizePath(path.relative(base, source))
+    })
+    sourcemap.sourceRoot = undefined
+  })
+  const baseFilename = path.basename(filename)
+
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
   let mapIndex = 1
@@ -554,10 +568,10 @@ export function combineSourcemaps(
     map = remapping(
       sourcemapList[0],
       function loader(sourcefile) {
-        if (sourcefile === filename && sourcemapList[mapIndex]) {
+        if (sourcefile === baseFilename && sourcemapList[mapIndex]) {
           return sourcemapList[mapIndex++]
         } else {
-          return { ...nullSourceMap }
+          return null
         }
       },
       true
@@ -566,6 +580,11 @@ export function combineSourcemaps(
   if (!map.file) {
     delete map.file
   }
+
+  map.sources = map.sources.map((source) =>
+    source ? normalizePath(path.resolve(base, source)) : null
+  )
+  map.file = filename
 
   return map as RawSourceMap
 }

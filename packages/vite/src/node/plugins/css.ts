@@ -761,8 +761,8 @@ async function compileCSS(
     .default(postcssPlugins)
     .process(code, {
       ...postcssOptions,
-      to: id,
-      from: id,
+      to: cleanUrl(id),
+      from: cleanUrl(id),
       map: {
         inline: false,
         annotation: false,
@@ -812,9 +812,12 @@ async function compileCSS(
     }
   }
 
-  const postcssMap = formatPostcssSourceMap(postcssResult.map.toJSON(), id)
+  const postcssMap = formatPostcssSourceMap(
+    postcssResult.map.toJSON(),
+    cleanUrl(id)
+  )
   const combinedMap = preprocessorMap
-    ? combineSourcemaps(id, [
+    ? combineSourcemaps(cleanUrl(id), [
         { ...postcssMap, version: 3 },
         { ...preprocessorMap, version: 3 }
       ])
@@ -829,7 +832,7 @@ async function compileCSS(
   }
 }
 
-function formatPostcssSourceMap(
+export function formatPostcssSourceMap(
   rawMap: RawSourceMap,
   file: string
 ): ExistingRawSourceMap {

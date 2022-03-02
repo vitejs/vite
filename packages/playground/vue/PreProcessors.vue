@@ -9,6 +9,12 @@ p.pug-less
 p.pug-stylus
   | This is rendered from &lt;template lang="pug"&gt;
   | and styled with &lt;style lang="stylus"&gt;. It should be orange.
+p.pug-sass-import
+  | This is rendered from &lt;template lang="pug"&gt;
+  | and styled with &lt;style lang="sass"&gt; which has import. It should be blue.
+p.pug-sass-non-import
+  | This is rendered from &lt;template lang="pug"&gt;
+  | and styled with &lt;style lang="sass"&gt; which has import. It should be yellow.
 SlotComponent
   template(v-slot:test-slot)
     div.pug-slot slot content
@@ -41,4 +47,11 @@ color = orange
 
 .pug-stylus
   color: color
+</style>
+
+<style lang="sass">
+@import './import.sass'
+
+.pug-sass-non-import
+  color: yellow
 </style>
