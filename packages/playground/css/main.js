@@ -67,7 +67,6 @@ if (import.meta.env.DEV) {
 
 // inlined
 import inlined from './inlined.css?inline'
-import { vueI18nPlugin } from '../vue/CustomBlockPlugin'
 text('.inlined-code', inlined)
 
 // glob
