@@ -678,7 +678,12 @@ async function compileCSS(
     }
 
     code = preprocessResult.code
-    preprocessorMap = preprocessResult.map
+    preprocessorMap = combineSourcemapsIfExists(
+      opts.filename,
+      preprocessResult.map,
+      preprocessResult.additionalMap
+    )
+
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
@@ -816,17 +821,11 @@ async function compileCSS(
     postcssResult.map.toJSON(),
     cleanUrl(id)
   )
-  const combinedMap = preprocessorMap
-    ? combineSourcemaps(cleanUrl(id), [
-        { ...postcssMap, version: 3 },
-        { ...preprocessorMap, version: 3 }
-      ])
-    : postcssMap
 
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: combinedMap as ExistingRawSourceMap,
+    map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
     modules,
     deps
   }
@@ -852,6 +851,19 @@ export function formatPostcssSourceMap(
     sources,
     version: +rawMap.version
   }
+}
+
+function combineSourcemapsIfExists(
+  filename: string,
+  map1: ExistingRawSourceMap | undefined,
+  map2: ExistingRawSourceMap | undefined
+): ExistingRawSourceMap | undefined {
+  return map1 && map2
+    ? (combineSourcemaps(filename, [
+        { ...map1, version: 3 },
+        { ...map2, version: 3 }
+      ]) as ExistingRawSourceMap)
+    : map1
 }
 
 interface PostCSSConfigResult {
@@ -1053,6 +1065,7 @@ type SassStylePreprocessor = (
 export interface StylePreprocessorResults {
   code: string
   map?: ExistingRawSourceMap | undefined
+  additionalMap?: ExistingRawSourceMap | undefined
   errors: RollupError[]
   deps: string[]
 }
@@ -1117,9 +1130,14 @@ const scss: SassStylePreprocessor = async (
       : importer.push(options.importer)
   }
 
+  const { content: data, map: additionalMap } = await getSource(
+    source,
+    options.filename,
+    options.additionalData
+  )
   const finalOptions: Sass.Options = {
     ...options,
-    data: await getSource(source, options.filename, options.additionalData),
+    data,
     file: options.filename,
     outFile: options.filename,
     importer,
@@ -1146,6 +1164,7 @@ const scss: SassStylePreprocessor = async (
     return {
       code: result.css.toString(),
       map,
+      additionalMap,
       errors: [],
       deps
     }
@@ -1218,11 +1237,15 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     options.alias,
     resolvers
   )
-  source = await getSource(source, options.filename, options.additionalData)
+  const { content, map: additionalMap } = await getSource(
+    source,
+    options.filename,
+    options.additionalData
+  )
 
   let result: Less.RenderOutput | undefined
   try {
-    result = await nodeLess.render(source, {
+    result = await nodeLess.render(content, {
       ...options,
       plugins: [viteResolverPlugin, ...(options.plugins || [])],
       sourceMap: {
@@ -1248,6 +1271,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   return {
     code: result.css.toString(),
     map,
+    additionalMap,
     deps: result.imports,
     errors: []
   }
@@ -1329,7 +1353,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
-  source = await getSource(
+  const { content, map: additionalMap } = await getSource(
     source,
     options.filename,
     options.additionalData,
@@ -1341,7 +1365,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
     path.resolve(dep)
   )
   try {
-    const ref = nodeStylus(source, options)
+    const ref = nodeStylus(content, options)
     ref.set('sourcemap', {
       comment: false,
       inline: false,
@@ -1359,6 +1383,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
     return {
       code: result,
       map: formatStylusSourceMap(map, root),
+      additionalMap,
       errors: [],
       deps
     }
@@ -1383,17 +1408,39 @@ function formatStylusSourceMap(
   return map
 }
 
-function getSource(
+async function getSource(
   source: string,
   filename: string,
   additionalData?: PreprocessorAdditionalData,
   sep: string = ''
-): string | Promise<string> {
-  if (!additionalData) return source
+): Promise<{ content: string; map?: ExistingRawSourceMap }> {
+  if (!additionalData) return { content: source }
   if (typeof additionalData === 'function') {
-    return additionalData(source, filename)
+    const newContent = await additionalData(source, filename)
+    const ms = new MagicString(source)
+    ms.overwrite(0, source.length, newContent)
+
+    return {
+      content: ms.toString(),
+      map: generateWithAbsoluteFilenameMap(ms, filename)
+    }
   }
-  return additionalData + sep + source
+
+  const ms = new MagicString(source)
+  ms.appendLeft(0, sep)
+  ms.appendLeft(0, additionalData)
+
+  return {
+    content: ms.toString(),
+    map: generateWithAbsoluteFilenameMap(ms, filename)
+  }
+}
+
+function generateWithAbsoluteFilenameMap(ms: MagicString, filename: string) {
+  const map = ms.generateMap({ hires: true })
+  map.file = filename
+  map.sources = [filename]
+  return map
 }
 
 const preProcessors = Object.freeze({
