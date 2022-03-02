@@ -46,7 +46,7 @@ test('dedupe', async () => {
   expect(await page.textContent('.dedupe button')).toBe('count is 1')
 })
 
-test('cjs borwser field (axios)', async () => {
+test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
