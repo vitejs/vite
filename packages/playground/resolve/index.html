@@ -41,6 +41,17 @@
 </h2>
 <p class="ts-extension">fail</p>
 
+<h2>
+  A ts module can import another tsx module using its corresponding jsx file
+  name
+</h2>
+<p class="jsx-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding js file name
+</h2>
+<p class="tsx-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -136,6 +147,12 @@
 
   import { msg as tsExtensionMsg } from './ts-extension'
   text('.ts-extension', tsExtensionMsg)
+
+  import { msgJsx as tsJsxExtensionMsg } from './ts-extension'
+  text('.jsx-extension', tsJsxExtensionMsg)
+
+  import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
+  text('.tsx-extension', tsTsxExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
