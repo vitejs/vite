@@ -11,8 +11,7 @@ import {
   isObject,
   normalizePath,
   processSrcSet,
-  parseRequest,
-  createDebugger
+  parseRequest
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -47,7 +46,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 
-const debug = createDebugger('vite:css')
+// const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
   /**
@@ -660,24 +659,13 @@ async function compileCSS(
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
 
-    if (lang === 'less') {
-      debug('pre-processing %o', opts)
-    }
-
-    // use behavior same as less-loader and more intuitive
-    if (lang === 'less') {
-      // opts.relativeUrls = opts.relativeUrls ?? true
-    }
-
     const preprocessResult = await preProcessor(
       code,
       config.root,
       opts,
       atImportResolvers
     )
-    if (lang === 'less') {
-      debug(preprocessResult.code)
-    }
+
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
     }
@@ -699,7 +687,6 @@ async function compileCSS(
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
-  debug(`needInlineImport -> ${needInlineImport}`)
   if (needInlineImport) {
     const isHTMLProxy = htmlProxyRE.test(id)
     postcssPlugins.unshift(
@@ -709,12 +696,12 @@ async function compileCSS(
           if (isHTMLProxy && publicFile) {
             return publicFile
           }
-          debug('resolving %o', id, basedir)
+
           const resolved = await atImportResolvers.css(
             id,
             path.join(basedir, '*')
           )
-          debug('resolv %s', resolved)
+
           if (resolved) {
             return path.resolve(resolved)
           }
@@ -729,7 +716,6 @@ async function compileCSS(
     }) as Postcss.Plugin
   )
 
-  debug(`isModule -> ${isModule}`)
   if (isModule) {
     postcssPlugins.unshift(
       (await import('postcss-modules')).default({
@@ -1180,18 +1166,19 @@ async function rebaseUrls(
   if (fileDir === rootDir) {
     return { file }
   }
-  // no url()
+
   const content = fs.readFileSync(file, 'utf-8')
+  // no url()
   const hasUrls = cssUrlRE.test(content)
+  // no @import xxx.css
   const hasImportCss = importCssRE.test(content)
+
   if (!hasUrls && !hasImportCss) {
-    debug('not url()')
     return { file }
   }
 
   let rebased
   const rebaseFn = (url: string) => {
-    debug('rebase url', url)
     if (url.startsWith('/')) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
@@ -1203,36 +1190,18 @@ async function rebaseUrls(
     }
     const absolute = path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
-
-    debug(
-      `[rebase]: fileDir: ${colors.blue(fileDir)}, url: ${colors.blue(
-        url
-      )}, absolute: ${colors.blue(absolute)}, rootDir: ${colors.blue(
-        rootDir
-      )}, relative: ${colors.blue(relative)}`
-    )
-
-    debug(`[rebase]: normalizePath: ${colors.blue(normalizePath(relative))}`)
     return normalizePath(relative)
   }
-  // fix import css in less
-  // hwo to know is import css in less?
-  // less file has @import "foo.css"
+
+  // fix import css in les shas @import "foo.css"
   if (hasImportCss) {
-    debug('find: import css in less', content)
     rebased = await rewriteImportCss(content, rebaseFn)
   }
 
-  debug('rebased to 1', rebased)
-
   if (hasUrls) {
     rebased = await rewriteCssUrls(rebased || content, rebaseFn)
-    if (rebased.includes('css-in-less.css')) {
-      debug(`rebase content: ${rebased}`)
-    }
   }
 
-  debug('rebased to 2', rebased)
   return {
     file,
     contents: rebased
@@ -1256,7 +1225,6 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
       ...options,
       plugins: [viteResolverPlugin, ...(options.plugins || [])]
     })
-    debug(`result: ${result.css.toString()}, imports: ${result.imports}`)
   } catch (e) {
     const error = e as Less.RenderError
     // normalize error info
@@ -1319,11 +1287,6 @@ function createViteLessPlugin(
         )
         if (resolved) {
           const result = await rebaseUrls(resolved, this.rootFile, this.alias)
-          debug(
-            `resolved: ${resolved}, filename: ${filename}, dir: ${dir}, opts: ${Object.keys(
-              opts
-            )}`
-          )
           let contents: string
           if (result && 'contents' in result) {
             contents = result.contents
