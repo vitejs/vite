@@ -164,7 +164,7 @@ afterAll(async () => {
   global.serverLogs = []
   await global.page?.close()
   await server?.close()
-  watcher?.close()
+  global.watcher?.close()
   const beforeAllErr = getBeforeAllError()
   if (beforeAllErr) {
     throw beforeAllErr
