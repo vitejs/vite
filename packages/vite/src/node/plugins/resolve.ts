@@ -142,6 +142,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return res
         }
       }
+      debug(
+        `[all] ${colors.cyan(id)} -> ${colors.dim(importer)}, ${colors.blue(
+          preferRelative.toString()
+        )}`
+      )
 
       // relative
       if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
