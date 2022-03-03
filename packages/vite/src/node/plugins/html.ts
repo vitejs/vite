@@ -24,7 +24,7 @@ import {
   urlToBuiltUrl,
   getAssetFilename
 } from './asset'
-import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
@@ -511,21 +511,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           })
         }
 
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          cssFiles.forEach((file) => {
-            if (!seen.has(file)) {
-              seen.add(file)
-              tags.push({
-                tag: 'link',
-                attrs: {
-                  rel: 'stylesheet',
-                  href: toPublicPath(file, config)
-                }
-              })
-            }
-          })
-        }
+        chunk.viteMetadata.importedCss.forEach((file) => {
+          if (!seen.has(file)) {
+            seen.add(file)
+            tags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: toPublicPath(file, config)
+              }
+            })
+          }
+        })
+
         return tags
       }
 

@@ -20,11 +20,17 @@
   <span class="tick-count">0</span>
 </div>
 
-<p>new Worker(new Url('path', import.meta.url))</p>
+<p>new Worker(new Url('path', import.meta.url), { type: 'module' })</p>
 <div class="worker-import-meta-url"></div>
 
-<p>new SharedWorker(new Url('path', import.meta.url))</p>
+<p>new SharedWorker(new Url('path', import.meta.url), { type: 'module' })</p>
 <div class="shared-worker-import-meta-url"></div>
+
+<p>new Worker(new Url('path', import.meta.url))</p>
+<div class="classic-worker"></div>
+
+<p>new Worker(new Url('path', import.meta.url), { type: 'classic' })</p>
+<div class="classic-shared-worker"></div>
 
 <script type="module">
   import myWorker from './my-worker?worker'
@@ -32,6 +38,7 @@
   import mySharedWorker from './my-shared-worker?sharedworker&name=shared'
   import TSOutputWorker from './possible-ts-output-worker?worker'
   import { mode } from './workerImport'
+  import './classic-worker'
 
   document.querySelector('.mode-true').textContent = mode
 
@@ -78,11 +85,12 @@
   function text(el, text) {
     document.querySelector(el).textContent = text
   }
-
+  const workerOptions = { type: 'module' }
   // url import worker
-  const w = new Worker(new URL('./newUrl/url-worker.js', import.meta.url), {
-    type: 'module'
-  })
+  const w = new Worker(
+    new URL('./newUrl/url-worker.js', import.meta.url),
+    /* @vite-ignore */ workerOptions
+  )
   w.addEventListener('message', (ev) =>
     text(
       '.worker-import-meta-url',
@@ -90,9 +98,12 @@
     )
   )
 
+  const genWorkerName = () => 'module'
   const w2 = new SharedWorker(
     new URL('./newUrl/url-shared-worker.js', import.meta.url),
     {
+      /* @vite-ignore */
+      name: genWorkerName(),
       type: 'module'
     }
   )
