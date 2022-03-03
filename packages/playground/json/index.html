@@ -19,6 +19,9 @@
 <h2>Raw Import</h2>
 <pre class="raw"></pre>
 
+<h2>JSON Module</h2>
+<pre class="module"></pre>
+
 <script type="module">
   import json, { hello } from './test.json'
   import deepJson, { name } from 'vue/package.json'
@@ -45,6 +48,9 @@
 
   import raw from './test.json?raw'
   text('.raw', raw)
+
+  import moduleJSON from 'json-module'
+  text('.module', JSON.stringify(moduleJSON))
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

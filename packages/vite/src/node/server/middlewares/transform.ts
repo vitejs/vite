@@ -1,3 +1,4 @@
+import { promises as fs } from 'fs'
 import path from 'path'
 import type { ViteDevServer } from '..'
 import type { Connect } from 'types/connect'
@@ -11,28 +12,29 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId
+  unwrapId,
+  fsPathFromId,
+  ensureVolumeInPath
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
 import colors from 'picocolors'
 import {
-  CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  FS_PREFIX
 } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
   isDirectRequest
 } from '../../plugins/css'
-
-/**
- * Time (ms) Vite has to full-reload the page before returning
- * an empty response.
- */
-const NEW_DEPENDENCY_BUILD_TIMEOUT = 1000
+import {
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP
+} from '../../plugins/optimizedDeps'
+import { createIsOptimizedDepUrl } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -43,19 +45,11 @@ export function transformMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
   const {
-    config: { root, logger, cacheDir },
+    config: { root, logger },
     moduleGraph
   } = server
 
-  // determine the url prefix of files inside cache directory
-  const cacheDirRelative = normalizePath(path.relative(root, cacheDir))
-  const cacheDirPrefix = cacheDirRelative.startsWith('../')
-    ? // if the cache directory is outside root, the url prefix would be something
-      // like '/@fs/absolute/path/to/node_modules/.vite'
-      `/@fs/${normalizePath(cacheDir).replace(/^\//, '')}`
-    : // if the cache directory is inside root, the url prefix would be something
-      // like '/node_modules/.vite'
-      `/${cacheDirRelative}`
+  const isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteTransformMiddleware(req, res, next) {
@@ -63,36 +57,6 @@ export function transformMiddleware(
       return next()
     }
 
-    if (
-      server._pendingReload &&
-      // always allow vite client requests so that it can trigger page reload
-      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
-      !req.url?.includes('vite/dist/client')
-    ) {
-      try {
-        // missing dep pending reload, hold request until reload happens
-        await Promise.race([
-          server._pendingReload,
-          // If the refresh has not happened after timeout, Vite considers
-          // something unexpected has happened. In this case, Vite
-          // returns an empty response that will error.
-          new Promise((_, reject) =>
-            setTimeout(reject, NEW_DEPENDENCY_BUILD_TIMEOUT)
-          )
-        ])
-      } catch {
-        // Don't do anything if response has already been sent
-        if (!res.writableEnded) {
-          // status code request timeout
-          res.statusCode = 408
-          res.end(
-            `<h1>[vite] Something unexpected happened while optimizing "${req.url}"<h1>` +
-              `<p>The current page should have reloaded by now</p>`
-          )
-        }
-        return
-      }
-    }
     let url: string
     try {
       url = decodeURI(removeTimestampQuery(req.url!)).replace(
@@ -109,15 +73,47 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const originalUrl = url.replace(/\.map($|\?)/, '$1')
-        const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
-          ?.transformResult?.map
-        if (map) {
-          return send(req, res, JSON.stringify(map), 'json', {
-            headers: server.config.server.headers
-          })
+        if (isOptimizedDepUrl(url)) {
+          // If the browser is requesting a source map for an optimized dep, it
+          // means that the dependency has already been pre-bundled and loaded
+          const mapFile = url.startsWith(FS_PREFIX)
+            ? fsPathFromId(url)
+            : normalizePath(
+                ensureVolumeInPath(path.resolve(root, url.slice(1)))
+              )
+          try {
+            const map = await fs.readFile(mapFile, 'utf-8')
+            return send(req, res, map, 'json', {
+              headers: server.config.server.headers
+            })
+          } catch (e) {
+            // Outdated source map request for optimized deps, this isn't an error
+            // but part of the normal flow when re-optimizing after missing deps
+            // Send back an empty source map so the browser doesn't issue warnings
+            const dummySourceMap = {
+              version: 3,
+              file: mapFile.replace(/\.map$/, ''),
+              sources: [],
+              sourcesContent: [],
+              names: [],
+              mappings: ';;;;;;;;;'
+            }
+            return send(req, res, JSON.stringify(dummySourceMap), 'json', {
+              cacheControl: 'no-cache',
+              headers: server.config.server.headers
+            })
+          }
         } else {
-          return next()
+          const originalUrl = url.replace(/\.map($|\?)/, '$1')
+          const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
+            ?.transformResult?.map
+          if (map) {
+            return send(req, res, JSON.stringify(map), 'json', {
+              headers: server.config.server.headers
+            })
+          } else {
+            return next()
+          }
         }
       }
 
@@ -179,9 +175,7 @@ export function transformMiddleware(
         })
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
-          const isDep =
-            DEP_VERSION_RE.test(url) ||
-            (cacheDirPrefix && url.startsWith(cacheDirPrefix))
+          const isDep = DEP_VERSION_RE.test(url) || isOptimizedDepUrl(url)
           return send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
@@ -192,6 +186,30 @@ export function transformMiddleware(
         }
       }
     } catch (e) {
+      if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
+        if (!res.writableEnded) {
+          // Don't do anything if response has already been sent
+          res.statusCode = 504 // status code request timeout
+          res.end()
+        }
+        // This timeout is unexpected
+        logger.error(e.message)
+        return
+      }
+      if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+        if (!res.writableEnded) {
+          // Don't do anything if response has already been sent
+          res.statusCode = 504 // status code request timeout
+          res.end()
+        }
+        // We don't need to log an error in this case, the request
+        // is outdated because new dependencies were discovered and
+        // the new pre-bundle dependendencies have changed.
+        // A full-page reload has been issued, and these old requests
+        // can't be properly fullfilled. This isn't an unexpected
+        // error but a normal part of the missing deps discovery flow
+        return
+      }
       return next(e)
     }
 

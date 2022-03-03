@@ -7,7 +7,13 @@ import {
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
-import { cleanUrl } from './utils'
+import { isCSSRequest } from './plugins/css'
+import {
+  cleanUrl,
+  singlelineCommentsRE,
+  multilineCommentsRE,
+  blankReplacer
+} from './utils'
 import type { RollupError } from 'rollup'
 
 export interface AssertOptions {
@@ -92,21 +98,25 @@ export async function transformImportGlob(
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
-    } else if (isEager) {
-      const identifier = `__glob_${importIndex}_${i}`
-      importsString += `import ${
-        isEagerDefault ? `` : `* as `
-      }${identifier} from ${JSON.stringify(importee)};`
-      entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
-      let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl && preload) {
-        imp =
-          `(${isModernFlag}` +
-          `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
-          `: ${imp})`
+      const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
+      if (isEager) {
+        const identifier = `__glob_${importIndex}_${i}`
+        // css imports injecting a ?used query to export the css string
+        importsString += `import ${
+          isEagerDefault ? `` : `* as `
+        }${identifier} from ${JSON.stringify(importeeUrl)};`
+        entries += ` ${JSON.stringify(file)}: ${identifier},`
+      } else {
+        let imp = `import(${JSON.stringify(importeeUrl)})`
+        if (!normalizeUrl && preload) {
+          imp =
+            `(${isModernFlag}` +
+            `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
+            `: ${imp})`
+        }
+        entries += ` ${JSON.stringify(file)}: () => ${imp},`
       }
-      entries += ` ${JSON.stringify(file)}: () => ${imp},`
     }
   }
 
@@ -177,45 +187,20 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
+  const noCommentCode = code
+    .slice(i + 1)
+    .replace(singlelineCommentsRE, blankReplacer)
+    .replace(multilineCommentsRE, blankReplacer)
 
-  const endIndex = getEndIndex(code, i)
-  const options = code.substring(i + 1, endIndex)
-  const commaIndex = options.indexOf(`,`)
+  const endIndex = noCommentCode.indexOf(')')
+  const options = noCommentCode.substring(0, endIndex)
+  const commaIndex = options.indexOf(',')
+
   let assert = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substr(commaIndex + 1))
+    assert = JSON5.parse(options.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + 1]
-}
-
-// reg without the 'g' option, only matches the first match
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
-const singlelineCommentsRE = /\/\/.*/
-
-function getEndIndex(code: string, i: number): number {
-  const findStart = i
-  const endIndex = code.indexOf(`)`, findStart)
-  const subCode = code.substring(findStart)
-
-  const matched =
-    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
-  if (!matched) {
-    return endIndex
-  }
-
-  const str = matched[0]
-  const index = matched.index
-  if (!index) {
-    return endIndex
-  }
-
-  const commentStart = findStart + index
-  const commentEnd = commentStart + str.length
-  if (endIndex > commentStart && endIndex < commentEnd) {
-    return getEndIndex(code, commentEnd)
-  } else {
-    return endIndex
-  }
+  return [pattern, assert, endIndex + i + 2]
 }
 
 function error(pos: number) {
