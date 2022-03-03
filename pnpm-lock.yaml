@@ -295,6 +295,7 @@ importers:
       dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
+      dep-not-js: file:./dep-not-js
       lodash-es: ^4.17.21
       nested-exclude: file:./nested-exclude
       phoenix: ^1.6.2
@@ -312,6 +313,7 @@ importers:
       dep-esbuild-plugin-transform: link:dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
+      dep-not-js: link:dep-not-js
       lodash-es: 4.17.21
       nested-exclude: link:nested-exclude
       phoenix: 1.6.5
@@ -344,6 +346,9 @@ importers:
       react: 17.0.2
     dependencies:
       react: 17.0.2
+
+  packages/playground/optimize-deps/dep-not-js:
+    specifiers: {}
 
   packages/playground/optimize-deps/nested-exclude:
     specifiers:

@@ -1,3 +1,4 @@
+const fs = require('fs')
 const vue = require('@vitejs/plugin-vue')
 
 /**
@@ -39,6 +40,7 @@ module.exports = {
 
   plugins: [
     vue(),
+    notjs(),
     // for axios request test
     {
       name: 'mock',
@@ -50,4 +52,40 @@ module.exports = {
       }
     }
   ]
+}
+
+// Handles .notjs file, basically remove wrapping <notjs> and </notjs> tags
+function notjs() {
+  return {
+    name: 'notjs',
+    config() {
+      return {
+        optimizeDeps: {
+          extensions: ['.notjs'],
+          esbuildOptions: {
+            plugins: [
+              {
+                name: 'esbuild-notjs',
+                setup(build) {
+                  build.onLoad({ filter: /\.notjs$/ }, ({ path }) => {
+                    let contents = fs.readFileSync(path, 'utf-8')
+                    contents = contents
+                      .replace('<notjs>', '')
+                      .replace('</notjs>', '')
+                    return { contents, loader: 'js' }
+                  })
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    transform(code, id) {
+      if (id.endsWith('.notjs')) {
+        code = code.replace('<notjs>', '').replace('</notjs>', '')
+        return { code }
+      }
+    }
+  }
 }

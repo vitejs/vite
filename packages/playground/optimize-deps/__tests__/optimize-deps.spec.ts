@@ -62,6 +62,10 @@ test('import * from optimized dep', async () => {
   expect(await page.textContent('.import-star')).toMatch(`[success]`)
 })
 
+test('import from dep with .notjs files', async () => {
+  expect(await page.textContent('.not-js')).toMatch(`[success]`)
+})
+
 test('dep with css import', async () => {
   expect(await getColor('h1')).toBe('red')
 })
