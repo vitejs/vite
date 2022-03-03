@@ -7,5 +7,9 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.2.11",
+    "sass": "^1.43.4"
   }
 }

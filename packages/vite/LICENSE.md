@@ -3088,7 +3088,7 @@ Repository: https://github.com/postcss/postcss-import.git
 
 ## postcss-load-config
 License: MIT
-By: Michael Ciniawky, Ryan Dunckel, Mateusz Derks, Dalton Santos, Patrick Gilday
+By: Michael Ciniawky, Ryan Dunckel, Mateusz Derks, Dalton Santos, Patrick Gilday, François Wouts
 Repository: postcss/postcss-load-config
 
 > The MIT License (MIT)

@@ -115,9 +115,12 @@ importers:
 
   packages/playground/backend-integration:
     specifiers:
+      fast-glob: ^3.2.11
       tailwindcss: ^2.2.19
     dependencies:
       tailwindcss: 2.2.19_ts-node@10.4.0
+    devDependencies:
+      fast-glob: 3.2.11
 
   packages/playground/cli:
     specifiers: {}
@@ -128,12 +131,14 @@ importers:
   packages/playground/css:
     specifiers:
       css-dep: link:./css-dep
+      fast-glob: ^3.2.11
       less: ^4.1.2
       postcss-nested: ^5.0.6
       sass: ^1.43.4
       stylus: ^0.55.0
     devDependencies:
       css-dep: link:css-dep
+      fast-glob: 3.2.11
       less: 4.1.2
       postcss-nested: 5.0.6
       sass: 1.45.1
@@ -215,14 +220,21 @@ importers:
   packages/playground/legacy:
     specifiers:
       '@vitejs/plugin-legacy': workspace:*
+      express: ^4.17.1
     devDependencies:
       '@vitejs/plugin-legacy': link:../../plugin-legacy
+      express: 4.17.2
 
   packages/playground/lib:
     specifiers: {}
 
   packages/playground/multiple-entrypoints:
-    specifiers: {}
+    specifiers:
+      fast-glob: ^3.2.11
+      sass: ^1.43.4
+    devDependencies:
+      fast-glob: 3.2.11
+      sass: 1.45.1
 
   packages/playground/nested-deps:
     specifiers:
@@ -797,7 +809,7 @@ importers:
       picocolors: ^1.0.0
       postcss: ^8.4.6
       postcss-import: ^14.0.2
-      postcss-load-config: ^3.1.1
+      postcss-load-config: ^3.1.3
       postcss-modules: ^4.3.0
       resolve: ^1.22.0
       resolve.exports: ^1.1.0
@@ -872,7 +884,7 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.0.2_postcss@8.4.6
-      postcss-load-config: 3.1.1_ts-node@10.4.0
+      postcss-load-config: 3.1.3_ts-node@10.4.0
       postcss-modules: 4.3.0_postcss@8.4.6
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.1_rollup@2.62.0
@@ -4816,7 +4828,6 @@ packages:
       glob-parent: 5.1.2
       merge2: 1.4.1
       micromatch: 4.0.4
-    dev: true
 
   /fast-glob/3.2.7:
     resolution: {integrity: sha512-rYGMRwip6lUMvYD3BTScMwT1HtAs2d71SMv66Vrxs0IekGZEjhM0pcMfjQPnknBt2zeCwQMEupiN02ZP4DiT1Q==}
@@ -4827,6 +4838,7 @@ packages:
       glob-parent: 5.1.2
       merge2: 1.4.1
       micromatch: 4.0.4
+    dev: true
 
   /fast-json-stable-stringify/2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
@@ -6145,7 +6157,7 @@ packages:
       '@types/node': 16.11.22
       chalk: 4.1.2
       ci-info: 3.3.0
-      graceful-fs: 4.2.8
+      graceful-fs: 4.2.9
       picomatch: 2.3.0
     dev: true
 
@@ -7355,8 +7367,8 @@ packages:
       yaml: 1.10.2
     dev: false
 
-  /postcss-load-config/3.1.1_ts-node@10.4.0:
-    resolution: {integrity: sha512-c/9XYboIbSEUZpiD1UQD0IKiUe8n9WHYV7YFe7X7J+ZwCsEKkUJSFWjS9hBU1RR9THR7jMXst8sxiqP0jjo2mg==}
+  /postcss-load-config/3.1.3_ts-node@10.4.0:
+    resolution: {integrity: sha512-5EYgaM9auHGtO//ljHH+v/aC/TQ5LHXtL7bQajNAUBKUVKiYE8rYpFms7+V26D9FncaGe2zwCoPQsFKb5zF/Hw==}
     engines: {node: '>= 10'}
     peerDependencies:
       ts-node: '>=9.0.0'
@@ -8616,7 +8628,7 @@ packages:
       detective: 5.2.0
       didyoumean: 1.2.2
       dlv: 1.1.3
-      fast-glob: 3.2.7
+      fast-glob: 3.2.11
       fs-extra: 10.0.0
       glob-parent: 6.0.2
       html-tags: 3.1.0
@@ -8660,7 +8672,7 @@ packages:
       detective: 5.2.0
       didyoumean: 1.2.2
       dlv: 1.1.3
-      fast-glob: 3.2.7
+      fast-glob: 3.2.11
       fs-extra: 10.0.0
       glob-parent: 6.0.2
       html-tags: 3.1.0

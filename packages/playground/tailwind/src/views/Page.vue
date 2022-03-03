@@ -2,7 +2,9 @@
   <div>
     <h1 id="pagetitle" class="text-[rgb(11,22,33)] text-2xl">|Page title|</h1>
     <div @click="val = val + 1">{{ val }}</div>
-    <div class="bg-red-100 inline-block h-24 px-8 mb-8 text-[#888888]">
+    <div
+      class="tailwind-style bg-red-100 inline-block h-24 px-8 mb-8 text-[#888888]"
+    >
       Tailwind style
     </div>
     <HelloWorld />
