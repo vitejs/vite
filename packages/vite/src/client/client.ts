@@ -214,9 +214,14 @@ async function waitForSuccessfulPing(ms = 1000) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      await fetch(`${base}__vite_ping`)
-      break
+      const pingResponse = await fetch(`${base}__vite_ping`)
+
+      // success - 2xx status code
+      if (pingResponse.ok) break
+      // failure - non-2xx status code
+      else throw new Error()
     } catch (e) {
+      // wait ms before attempting to ping again
       await new Promise((resolve) => setTimeout(resolve, ms))
     }
   }
