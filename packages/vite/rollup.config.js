@@ -168,10 +168,6 @@ const createNodeConfig = (isProduction) => {
             src: 'require("sugarss")',
             replacement: `eval('require')('sugarss')`
           },
-          'import-from/index.js': {
-            pattern: /require\(resolveFrom/g,
-            replacement: `eval('require')(resolveFrom`
-          },
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: eval('require'),`

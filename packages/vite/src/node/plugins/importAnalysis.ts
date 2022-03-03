@@ -21,7 +21,8 @@ import {
   normalizePath,
   removeImportQuery,
   unwrapId,
-  moduleListContains
+  moduleListContains,
+  fsPathFromUrl
 } from '../utils'
 import {
   debugHmr,
@@ -399,9 +400,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           let url = normalizedUrl
 
           // record as safe modules
-          server?.moduleGraph.safeModulesPath.add(
-            cleanUrl(url).slice(4 /* '/@fs'.length */)
-          )
+          server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
 
           // rewrite
           if (url !== specifier) {

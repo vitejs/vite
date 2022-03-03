@@ -24,7 +24,7 @@ import {
   urlToBuiltUrl,
   getAssetFilename
 } from './asset'
-import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
@@ -41,7 +41,7 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -221,32 +221,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
 
-  const inputFiles = new Set<string>()
-
   return {
     name: 'vite:build-html',
 
-    buildStart({ input }) {
-      isAsyncScriptMap.set(config, new Map())
-
-      let allInputs: string[]
-      if (typeof input === 'string') {
-        allInputs = [input]
-      } else if (Array.isArray(input)) {
-        allInputs = input
-      } else {
-        allInputs = Object.values(input)
-      }
-
-      for (const filename of allInputs) {
-        if (filename.endsWith('.html')) {
-          inputFiles.add(normalizePath(filename))
-        }
-      }
-    },
-
     async transform(html, id) {
-      if (inputFiles.has(id)) {
+      if (id.endsWith('.html')) {
         const publicPath = `/${slash(path.relative(config.root, id))}`
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
@@ -532,21 +511,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           })
         }
 
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          cssFiles.forEach((file) => {
-            if (!seen.has(file)) {
-              seen.add(file)
-              tags.push({
-                tag: 'link',
-                attrs: {
-                  rel: 'stylesheet',
-                  href: toPublicPath(file, config)
-                }
-              })
-            }
-          })
-        }
+        chunk.viteMetadata.importedCss.forEach((file) => {
+          if (!seen.has(file)) {
+            seen.add(file)
+            tags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: toPublicPath(file, config)
+              }
+            })
+          }
+        })
+
         return tags
       }
 

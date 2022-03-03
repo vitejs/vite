@@ -10,7 +10,7 @@ import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { mergeConfig, resolveConfig } from '../config'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { FSWatcher, WatchOptions } from 'types/chokidar'
@@ -33,7 +33,7 @@ import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
-import { ensureLeadingSlash, normalizePath } from '../utils'
+import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
 import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
@@ -224,7 +224,10 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(url: string): Promise<Record<string, any>>
+  ssrLoadModule(
+    url: string,
+    opts?: { fixStacktrace?: boolean }
+  ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace
    */
@@ -361,14 +364,20 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null!, // to be immediately set
-    ssrLoadModule(url) {
+    ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       server._ssrExternals ||= resolveSSRExternal(
         config,
         server._optimizeDepsMetadata
           ? Object.keys(server._optimizeDepsMetadata.optimized)
           : []
       )
-      return ssrLoadModule(url, server)
+      return ssrLoadModule(
+        url,
+        server,
+        undefined,
+        undefined,
+        opts?.fixStacktrace
+      )
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
@@ -400,7 +409,7 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
-    async restart(forceOptimize: boolean) {
+    async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
         server._restartPromise = restartServer(server).finally(() => {
@@ -565,7 +574,7 @@ export async function createServer(
     try {
       server._optimizeDepsMetadata = await optimizeDeps(
         config,
-        config.server.force || server._forceOptimizeOnRestart
+        config.server.force
       )
     } finally {
       server._isRunningOptimizer = false
@@ -693,7 +702,7 @@ function createServerCloseFn(server: http.Server | null) {
 }
 
 function resolvedAllowDir(root: string, dir: string): string {
-  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+  return normalizePath(path.resolve(root, dir))
 }
 
 export function resolveServerOptions(
@@ -715,7 +724,7 @@ export function resolveServerOptions(
 
   // only push client dir when vite itself is outside-of-root
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
-  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+  if (!allowDirs.some((dir) => isParentDirectory(dir, resolvedClientDir))) {
     allowDirs.push(resolvedClientDir)
   }
 
@@ -734,9 +743,18 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
+  let inlineConfig = server.config.inlineConfig
+  if (server._forceOptimizeOnRestart) {
+    inlineConfig = mergeConfig(inlineConfig, {
+      server: {
+        force: true
+      }
+    })
+  }
+
   let newServer = null
   try {
-    newServer = await createServer(server.config.inlineConfig)
+    newServer = await createServer(inlineConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true
@@ -745,7 +763,11 @@ async function restartServer(server: ViteDevServer) {
   }
 
   for (const key in newServer) {
-    if (key !== 'app') {
+    if (key === '_restartPromise') {
+      // prevent new server `restart` function from calling
+      // @ts-ignore
+      newServer[key] = server[key]
+    } else if (key !== 'app') {
       // @ts-ignore
       server[key] = newServer[key]
     }
@@ -765,4 +787,7 @@ async function restartServer(server: ViteDevServer) {
   } else {
     logger.info('server restarted.', { timestamp: true })
   }
+
+  // new server (the current server) can restart now
+  newServer._restartPromise = null
 }

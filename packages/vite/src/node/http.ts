@@ -126,7 +126,7 @@ export async function resolveHttpsConfig(
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
@@ -144,7 +144,7 @@ export async function resolveHttpsConfig(
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }

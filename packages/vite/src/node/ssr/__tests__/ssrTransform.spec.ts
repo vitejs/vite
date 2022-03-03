@@ -231,6 +231,20 @@ test('rewrite variable in string interpolation in function nested arguments', as
   expect(result.deps).toEqual(['vue'])
 })
 
+// #6520
+test('rewrite variables in default value of destructuring params', async () => {
+  const result = await ssrTransform(
+    `import { fn } from 'vue';function A({foo = fn}){ return {}; }`,
+    null,
+    null
+  )
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    function A({foo = __vite_ssr_import_0__.fn}){ return {}; }"
+  `)
+  expect(result.deps).toEqual(['vue'])
+})
+
 test('do not rewrite when function declaration is in scope', async () => {
   const result = await ssrTransform(
     `import { fn } from 'vue';function A(){ function fn() {}; return { fn }; }`,
@@ -290,8 +304,8 @@ test('should declare variable for imported super class', async () => {
     const Foo = __vite_ssr_import_0__.Foo;
     class A extends Foo {}
     class B extends Foo {}
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });
-    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});"
+    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
   `)
 })
 
@@ -337,8 +351,8 @@ test('should handle default export variants', async () => {
   ).toMatchInlineSnapshot(`
     "class A {}
     class B extends A {}
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });
-    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});"
+    Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
   `)
 })
 
@@ -596,7 +610,7 @@ test('jsx', async () => {
   const code = `
   import React from 'react'
   import { Foo, Slot } from 'foo'
-  
+
   function Bar({ Slot = <Foo /> }) {
     return (
       <>
@@ -617,5 +631,29 @@ test('jsx', async () => {
       return /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_0__.default.Fragment, null, /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(Slot2, null));
     }
     "
+  `)
+})
+
+test('continuous exports', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+export function fn1() {
+}export function fn2() {
+}
+        `,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    function fn1() {
+    }
+    Object.defineProperty(__vite_ssr_exports__, \\"fn1\\", { enumerable: true, configurable: true, get(){ return fn1 }});function fn2() {
+    }
+    Object.defineProperty(__vite_ssr_exports__, \\"fn2\\", { enumerable: true, configurable: true, get(){ return fn2 }});
+            "
   `)
 })

@@ -62,6 +62,7 @@ export type {
   HtmlTagDescriptor
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
+export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
@@ -90,9 +91,21 @@ export type {
 export type { Connect } from 'types/connect'
 export type { WebSocket, WebSocketAlias } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
-export type { FSWatcher, WatchOptions } from 'types/chokidar'
+export type {
+  FSWatcher,
+  WatchOptions,
+  AwaitWriteFinishOptions
+} from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
+
+import type { ChunkMetadata } from './plugins/metadata'
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    viteMetadata: ChunkMetadata
+  }
+}
