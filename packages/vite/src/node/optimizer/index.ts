@@ -392,7 +392,13 @@ function getDepHash(root: string, config: ResolvedConfig): string {
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
         include: config.optimizeDeps?.include,
-        exclude: config.optimizeDeps?.exclude
+        exclude: config.optimizeDeps?.exclude,
+        esbuildOptions: {
+          ...config.optimizeDeps?.esbuildOptions,
+          plugins: config.optimizeDeps?.esbuildOptions?.plugins?.map(
+            (p) => p.name
+          )
+        }
       }
     },
     (_, value) => {
