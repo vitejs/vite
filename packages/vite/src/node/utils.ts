@@ -9,7 +9,8 @@ import {
   DEFAULT_EXTENSIONS,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
+  ENV_PUBLIC_PATH,
+  CLIENT_ENTRY
 } from './constants'
 import resolve from 'resolve'
 import { builtinModules } from 'module'
@@ -139,7 +140,25 @@ export function createDebugger(
   }
 }
 
+function testCaseInsensitiveFS() {
+  if (!CLIENT_ENTRY.endsWith('client.mjs')) {
+    throw new Error(
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`
+    )
+  }
+  if (!fs.existsSync(CLIENT_ENTRY)) {
+    throw new Error(
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+        CLIENT_ENTRY
+    )
+  }
+  return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
+}
+
+export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+
 export const isWindows = os.platform() === 'win32'
+
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -147,10 +166,35 @@ export function normalizePath(id: string): string {
 }
 
 export function fsPathFromId(id: string): string {
-  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  const fsPath = normalizePath(
+    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
+  )
   return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
     ? fsPath
     : `/${fsPath}`
+}
+
+export function fsPathFromUrl(url: string): string {
+  return fsPathFromId(cleanUrl(url))
+}
+
+/**
+ * Check if dir is a parent of file
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param dir - normalized absolute path
+ * @param file - normalized absolute path
+ * @returns true if dir is a parent of file
+ */
+export function isParentDirectory(dir: string, file: string): boolean {
+  if (!dir.endsWith('/')) {
+    dir = `${dir}/`
+  }
+  return (
+    file.startsWith(dir) ||
+    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
 }
 
 export function ensureVolumeInPath(file: string): string {
@@ -478,10 +522,6 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
-}
-
-export function ensureLeadingSlash(path: string): string {
-  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(
