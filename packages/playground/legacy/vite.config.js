@@ -10,6 +10,7 @@ module.exports = {
   ],
 
   build: {
+    cssCodeSplit: false,
     manifest: true,
     rollupOptions: {
       output: {

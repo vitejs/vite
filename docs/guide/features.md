@@ -191,13 +191,13 @@ That said, Vite does provide built-in support for `.scss`, `.sass`, `.less`, `.s
 
 ```bash
 # .scss and .sass
-npm install -D sass
+npm add -D sass
 
 # .less
-npm install -D less
+npm add -D less
 
 # .styl and .stylus
-npm install -D stylus
+npm add -D stylus
 ```
 
 If using Vue single file components, this also automatically enables `<style lang="sass">` et al.
@@ -295,6 +295,22 @@ import * as __glob__0_1 from './dir/bar.js'
 const modules = {
   './dir/foo.js': __glob__0_0,
   './dir/bar.js': __glob__0_1
+}
+```
+
+`import.meta.glob` and `import.meta.globEager` also support importing files as strings, similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string). Here, we use the [Import Assertions](https://github.com/tc39/proposal-import-assertions#synopsis) syntax to import.
+
+```js
+const modules = import.meta.glob('./dir/*.js', { assert: { type: 'raw' } })
+```
+
+The above will be transformed into the following:
+
+```js
+// code produced by vite
+const modules = {
+  './dir/foo.js': '{\n  "msg": "foo"\n}\n',
+  './dir/bar.js': '{\n  "msg": "bar"\n}\n'
 }
 ```
 

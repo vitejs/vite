@@ -88,3 +88,8 @@ if (isBuild) {
       })
   })
 }
+
+test('classic worker is run', async () => {
+  expect(await page.textContent('.classic-worker')).toMatch('A classic')
+  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})

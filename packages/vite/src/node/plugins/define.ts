@@ -42,33 +42,47 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   function generatePattern(
     ssr: boolean
-  ): [Record<string, string | undefined>, RegExp] {
+  ): [Record<string, string | undefined>, RegExp | null] {
     const processEnv: Record<string, string> = {}
-    if (!ssr || config.ssr?.target === 'webworker') {
+    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    if (isNeedProcessEnv) {
       Object.assign(processEnv, {
         'process.env.': `({}).`,
         'global.process.env.': `({}).`,
         'globalThis.process.env.': `({}).`
       })
     }
-
     const replacements: Record<string, string> = {
-      ...processNodeEnv,
+      ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
     }
 
+    const replacementsKeys = Object.keys(replacements)
+
+    if (!replacementsKeys.length) {
+      return [replacements, null]
+    }
+
+    const replacementsStr = replacementsKeys
+      .map((str) => {
+        return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+      })
+      .join('|')
+
+    // The following characters are not allowed because they are String boundaries
+    const characters = '[\'"`\\/-_]'
+
     const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
-        Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|') +
+      `(?<!${characters})` +
+        // Do not allow preceding '.', but do allow preceding '...' for spread operations
+        '(?<!(?<!\\.\\.)\\.)' +
+        `\\b(${replacementsStr})\\b` +
+        `(?!${characters})` +
         // prevent trailing assignments
-        ')\\b(?!\\s*?=[^=])',
+        '(?!\\s*?=[^=])',
       'g'
     )
 
@@ -97,6 +111,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
+      }
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
