@@ -6,7 +6,6 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import { registerAssetToChunk } from './asset'
 
 const WorkerFileId = 'worker_file'
 
@@ -37,9 +36,7 @@ export async function bundleWorkerEntry(
     })
     code = outputCode.code
     outputChunks.forEach((outputChunk) => {
-      if (outputChunk.type === 'chunk') {
-        registerAssetToChunk(outputChunk, outputChunk.name)
-      } else if (outputChunk.type === 'asset') {
+      if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
       }
     })
