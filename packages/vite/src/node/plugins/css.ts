@@ -30,7 +30,6 @@ import type { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
   assetUrlRE,
-  registerAssetToChunk,
   fileToUrl,
   checkPublicFile
 } from './asset'
@@ -118,11 +117,6 @@ export const isDirectRequest = (request: string): boolean =>
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
   Map<string, Record<string, string>>
->()
-
-export const chunkToEmittedCssFileMap = new WeakMap<
-  RenderedChunk,
-  Set<string>
 >()
 
 export const removedPureCssFilesCache = new WeakMap<
@@ -390,7 +384,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const isRelativeBase = config.base === '' || config.base.startsWith('.')
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
-          registerAssetToChunk(chunk, filename)
+          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (!isRelativeBase || inlined) {
             // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
@@ -427,10 +421,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(
-            chunk,
-            new Set([this.getFileName(fileHandle)])
-          )
+          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
@@ -493,17 +484,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunks.has(file)) {
-                const css = chunkToEmittedCssFileMap.get(
-                  bundle[file] as OutputChunk
+                const {
+                  viteMetadata: { importedCss }
+                } = bundle[file] as OutputChunk
+                importedCss.forEach((file) =>
+                  chunk.viteMetadata.importedCss.add(file)
                 )
-                if (css) {
-                  let existing = chunkToEmittedCssFileMap.get(chunk)
-                  if (!existing) {
-                    existing = new Set()
-                  }
-                  css.forEach((file) => existing!.add(file))
-                  chunkToEmittedCssFileMap.set(chunk, existing)
-                }
                 return false
               }
               return true

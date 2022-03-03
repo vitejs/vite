@@ -58,6 +58,7 @@ export type {
   HtmlTagDescriptor
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
+export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
@@ -95,3 +96,11 @@ export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
+
+import type { ChunkMetadata } from './plugins/metadata'
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    viteMetadata: ChunkMetadata
+  }
+}
