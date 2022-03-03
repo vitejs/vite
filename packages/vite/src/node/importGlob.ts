@@ -8,7 +8,12 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { isCSSRequest } from './plugins/css'
-import { cleanUrl } from './utils'
+import {
+  cleanUrl,
+  singlelineCommentsRE,
+  multilineCommentsRE,
+  blankReplacer
+} from './utils'
 import type { RollupError } from 'rollup'
 
 export interface AssertOptions {
@@ -182,45 +187,20 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
+  const noCommentCode = code
+    .slice(i + 1)
+    .replace(singlelineCommentsRE, blankReplacer)
+    .replace(multilineCommentsRE, blankReplacer)
 
-  const endIndex = getEndIndex(code, i)
-  const options = code.substring(i + 1, endIndex)
-  const commaIndex = options.indexOf(`,`)
+  const endIndex = noCommentCode.indexOf(')')
+  const options = noCommentCode.substring(0, endIndex)
+  const commaIndex = options.indexOf(',')
+
   let assert = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substr(commaIndex + 1))
+    assert = JSON5.parse(options.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + 1]
-}
-
-// reg without the 'g' option, only matches the first match
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
-const singlelineCommentsRE = /\/\/.*/
-
-function getEndIndex(code: string, i: number): number {
-  const findStart = i
-  const endIndex = code.indexOf(`)`, findStart)
-  const subCode = code.substring(findStart)
-
-  const matched =
-    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
-  if (!matched) {
-    return endIndex
-  }
-
-  const str = matched[0]
-  const index = matched.index
-  if (!index) {
-    return endIndex
-  }
-
-  const commentStart = findStart + index
-  const commentEnd = commentStart + str.length
-  if (endIndex > commentStart && endIndex < commentEnd) {
-    return getEndIndex(code, commentEnd)
-  } else {
-    return endIndex
-  }
+  return [pattern, assert, endIndex + i + 2]
 }
 
 function error(pos: number) {

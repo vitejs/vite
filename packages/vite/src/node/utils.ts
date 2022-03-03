@@ -696,3 +696,5 @@ export function parseRequest(id: string): Record<string, string> | null {
   }
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
+
+export const blankReplacer = (match: string) => ' '.repeat(match.length)
