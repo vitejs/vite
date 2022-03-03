@@ -10,7 +10,7 @@ import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { mergeConfig, resolveConfig } from '../config'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { FSWatcher, WatchOptions } from 'types/chokidar'
@@ -33,7 +33,7 @@ import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
-import { ensureLeadingSlash, normalizePath } from '../utils'
+import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
 import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
@@ -410,7 +410,7 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
-    async restart(forceOptimize: boolean) {
+    async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
         server._restartPromise = restartServer(server).finally(() => {
@@ -571,7 +571,7 @@ export async function createServer(
   const runOptimize = async () => {
     const optimizeDeps = await createOptimizeDepsRun(
       config,
-      config.server.force || server._forceOptimizeOnRestart
+      config.server.force
     )
 
     // Don't await for the optimization to finish, we can start the
@@ -705,7 +705,7 @@ function createServerCloseFn(server: http.Server | null) {
 }
 
 function resolvedAllowDir(root: string, dir: string): string {
-  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+  return normalizePath(path.resolve(root, dir))
 }
 
 export function resolveServerOptions(
@@ -727,7 +727,7 @@ export function resolveServerOptions(
 
   // only push client dir when vite itself is outside-of-root
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
-  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+  if (!allowDirs.some((dir) => isParentDirectory(dir, resolvedClientDir))) {
     allowDirs.push(resolvedClientDir)
   }
 
@@ -746,9 +746,18 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
+  let inlineConfig = server.config.inlineConfig
+  if (server._forceOptimizeOnRestart) {
+    inlineConfig = mergeConfig(inlineConfig, {
+      server: {
+        force: true
+      }
+    })
+  }
+
   let newServer = null
   try {
-    newServer = await createServer(server.config.inlineConfig)
+    newServer = await createServer(inlineConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true
@@ -757,7 +766,11 @@ async function restartServer(server: ViteDevServer) {
   }
 
   for (const key in newServer) {
-    if (key !== 'app') {
+    if (key === '_restartPromise') {
+      // prevent new server `restart` function from calling
+      // @ts-ignore
+      newServer[key] = server[key]
+    } else if (key !== 'app') {
       // @ts-ignore
       server[key] = newServer[key]
     }
@@ -777,4 +790,7 @@ async function restartServer(server: ViteDevServer) {
   } else {
     logger.info('server restarted.', { timestamp: true })
   }
+
+  // new server (the current server) can restart now
+  newServer._restartPromise = null
 }

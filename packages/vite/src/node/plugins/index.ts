@@ -17,6 +17,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { metadataPlugin } from './metadata'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -31,6 +32,7 @@ export async function resolvePlugins(
     : { pre: [], post: [] }
 
   return [
+    isBuild ? metadataPlugin() : null,
     isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,

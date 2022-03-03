@@ -28,6 +28,22 @@ If you want to use break point and explore code execution you can use the ["Run 
 
 5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
 
+### Debugging errors in Jest tests using Playwright (Chromium)
+
+Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Jest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
+
+1. Add a `debugger` statement to the `scripts/jestPerTestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+
+1. Wait for inspector devtools to open in your browser and the debugger to attach.
+
+1. In the sources panel in the right column, click the play button to resume execution and allow the tests to run which will open a Chromium instance.
+
+1. Focusing the Chomium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+
+1. To close everything, just stop the test process back in your terminal.
+
 ## Testing Vite against external packages
 
 You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
