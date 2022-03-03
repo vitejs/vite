@@ -808,7 +808,7 @@ importers:
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       terser: ^5.10.0
-      tsconfck: 1.1.2
+      tsconfck: ^1.2.0
       tslib: ^2.3.1
       types: link:./types
       ws: ^8.5.0
@@ -881,7 +881,7 @@ importers:
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.10.0_acorn@8.7.0
-      tsconfck: 1.1.2_typescript@4.5.4
+      tsconfck: 1.2.0_typescript@4.5.4
       tslib: 2.3.1
       types: link:types
       ws: 8.5.0
@@ -3108,7 +3108,7 @@ packages:
     resolution: {integrity: sha512-oagLNqpfNv7CvmyMoexMDNyVDSiq1rya0AEUgcLlNHdHgNl6U/hi8xY370n5y+ZIFEXOx0J4B1qF2NDjMRxklA==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      pvutils: 1.0.17
+      pvutils: 1.1.2
     dev: true
 
   /assert-never/1.2.1:
@@ -7695,8 +7695,8 @@ packages:
       tslib: 2.3.1
     dev: true
 
-  /pvutils/1.0.17:
-    resolution: {integrity: sha512-wLHYUQxWaXVQvKnwIDWFVKDJku9XDCvyhhxoq8dc5MFdIlRenyPI9eSfEtcvgHgD7FlvCyGAlWgOzRnZD99GZQ==}
+  /pvutils/1.1.2:
+    resolution: {integrity: sha512-wlo0BUInyP+ZgBJHV8PnJW8S2HubdQfMMip8B9yXr9aFlauJFuF1jZ/RWFmzGYitC7GxkxqXdwbY9/R97v+Cqg==}
     engines: {node: '>=6.0.0'}
     dev: true
 
@@ -8921,8 +8921,8 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.1.2_typescript@4.5.4:
-    resolution: {integrity: sha512-n6SkiUQ784Uu2pviyd0j2kspm/fipdjO5jZuR8zUHVVoQeRnR6BSV5zlbheDmpyP0lj7GvHWvFcaxxhUFrzQWQ==}
+  /tsconfck/1.2.0_typescript@4.5.4:
+    resolution: {integrity: sha512-uKBM6x6i5e7Tfof5Zhll2ypgYKwWZhsxsHOoCH/7enlcHjjlcZ8FnxFrqgVFtpN6ymzZX3zoDaVGIlkh/g4x6w==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
     hasBin: true
     peerDependencies:
