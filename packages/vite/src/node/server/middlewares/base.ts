@@ -28,9 +28,9 @@ export function baseMiddleware({
     }
 
     if (path === '/' || path === '/index.html') {
-      // redirect root visit to based url
+      // redirect root visit to based url with search and hash
       res.writeHead(302, {
-        Location: base
+        Location: base + (parsed.search || '') + (parsed.hash || '')
       })
       res.end()
       return
