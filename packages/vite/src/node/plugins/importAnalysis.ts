@@ -213,6 +213,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const resolved = await this.resolve(url, importerFile)
 
         if (!resolved) {
+          // in ssr, we should let node handle the missing modules
+          if (ssr) {
+            return [url, url]
+          }
           this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
