@@ -79,6 +79,16 @@ export interface DepOptimizationOptions {
    * @deprecated use `esbuildOptions.keepNames`
    */
   keepNames?: boolean
+  /**
+   * List of file extensions that can be optimized. A corresponding esbuild
+   * plugin must exist to handle the specific extension.
+   *
+   * By default, Vite can optimize `.mjs`, `.js`, and `.ts` files. This option
+   * allows specifying additional extensions.
+   *
+   * @experimental
+   */
+  extensions?: string[]
 }
 
 export interface DepOptimizationMetadata {
@@ -244,29 +254,43 @@ export async function optimizeDeps(
   for (const id in deps) {
     const flatId = flattenId(id)
     const filePath = (flatIdDeps[flatId] = deps[id])
-    const entryContent = fs.readFileSync(filePath, 'utf-8')
     let exportsData: ExportsData
-    try {
-      exportsData = parse(entryContent) as ExportsData
-    } catch {
-      debug(
-        `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
-      )
-      const transformed = await transformWithEsbuild(entryContent, filePath, {
-        loader: 'jsx'
+    if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
+      // For custom supported extensions, build the entry file to transform it into JS,
+      // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
+      // so only the entry file is being transformed.
+      const result = await build({
+        ...esbuildOptions,
+        plugins,
+        entryPoints: [filePath],
+        write: false,
+        format: 'esm'
       })
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader
+      exportsData = parse(result.outputFiles[0].text) as ExportsData
+    } else {
+      const entryContent = fs.readFileSync(filePath, 'utf-8')
+      try {
+        exportsData = parse(entryContent) as ExportsData
+      } catch {
+        debug(
+          `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
+        )
+        const transformed = await transformWithEsbuild(entryContent, filePath, {
+          loader: 'jsx'
+        })
+        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+        // This is useful for packages such as Gatsby.
+        esbuildOptions.loader = {
+          '.js': 'jsx',
+          ...esbuildOptions.loader
+        }
+        exportsData = parse(transformed.code) as ExportsData
       }
-      exportsData = parse(transformed.code) as ExportsData
-    }
-    for (const { ss, se } of exportsData[0]) {
-      const exp = entryContent.slice(ss, se)
-      if (/export\s+\*\s+from/.test(exp)) {
-        exportsData.hasReExports = true
+      for (const { ss, se } of exportsData[0]) {
+        const exp = entryContent.slice(ss, se)
+        if (/export\s+\*\s+from/.test(exp)) {
+          exportsData.hasReExports = true
+        }
       }
     }
     idToExports[id] = exportsData

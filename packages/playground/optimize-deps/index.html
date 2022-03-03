@@ -38,6 +38,9 @@
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
+<h2>Import from dependency with .notjs files</h2>
+<div class="not-js"></div>
+
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
@@ -72,6 +75,9 @@
   if (keys.length) {
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
+
+  import { notjsValue } from 'dep-not-js'
+  text('.not-js', notjsValue)
 
   import { createApp } from 'vue'
   import { createStore } from 'vuex'

@@ -181,6 +181,10 @@ function esbuildScanPlugin(
     '@vite/env'
   ]
 
+  const isOptimizable = (id: string) =>
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    !!config.optimizeDeps.extensions?.some((ext) => id.endsWith(ext))
+
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
     external: !entries.includes(path)
@@ -218,8 +222,14 @@ function esbuildScanPlugin(
 
       // html types: extract script contents -----------------------------------
       build.onResolve({ filter: htmlTypesRE }, async ({ path, importer }) => {
+        const resolved = await resolve(path, importer)
+        if (!resolved) return
+        // It is possible for the scanner to scan html types in node_modules.
+        // If we can optimize this html type, skip it so it's handled by the
+        // bare import resolve, and recorded as optimization dep.
+        if (resolved.includes('node_modules') && isOptimizable(resolved)) return
         return {
-          path: await resolve(path, importer),
+          path: resolved,
           namespace: 'html'
         }
       })
@@ -340,17 +350,19 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+              if (isOptimizable(resolved)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else {
+            } else if (isScannable(resolved)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
                 path: path.resolve(resolved),
                 namespace
               }
+            } else {
+              return externalUnlessEntry({ path: id })
             }
           } else {
             missing[id] = normalizePath(importer)
@@ -396,7 +408,7 @@ function esbuildScanPlugin(
           // use vite resolver to support urls and omitted extensions
           const resolved = await resolve(id, importer)
           if (resolved) {
-            if (shouldExternalizeDep(resolved, id)) {
+            if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
               return externalUnlessEntry({ path: id })
             }
 
@@ -499,10 +511,7 @@ function extractImportPaths(code: string) {
   return js
 }
 
-export function shouldExternalizeDep(
-  resolvedId: string,
-  rawId: string
-): boolean {
+function shouldExternalizeDep(resolvedId: string, rawId: string): boolean {
   // not a valid file path
   if (!path.isAbsolute(resolvedId)) {
     return true
@@ -511,9 +520,9 @@ export function shouldExternalizeDep(
   if (resolvedId === rawId || resolvedId.includes('\0')) {
     return true
   }
-  // resolved is not a scannable type
-  if (!JS_TYPES_RE.test(resolvedId) && !htmlTypesRE.test(resolvedId)) {
-    return true
-  }
   return false
+}
+
+function isScannable(id: string): boolean {
+  return JS_TYPES_RE.test(id) || htmlTypesRE.test(id)
 }
