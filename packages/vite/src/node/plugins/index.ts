@@ -3,6 +3,7 @@ import type { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
+import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
@@ -47,6 +48,7 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
+    isBuild ? null : optimizedDepsPlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
