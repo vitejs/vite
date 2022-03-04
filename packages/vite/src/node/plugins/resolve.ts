@@ -289,23 +289,28 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+function splitFileAndPostfix(path: string) {
+  let file = path
+  let postfix = ''
+
+  let postfixIndex = path.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = path.indexOf('#')
+  }
+  if (postfixIndex > 0) {
+    file = path.slice(0, postfixIndex)
+    postfix = path.slice(postfixIndex)
+  }
+  return { file, postfix }
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
-  let file = fsPath
-  let postfix = ''
-
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-  }
-  if (postfixIndex > 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
+  const { file, postfix } = splitFileAndPostfix(fsPath)
 
   let res: string | undefined
 
@@ -776,9 +781,6 @@ function resolveExports(
   options: InternalResolveOptions,
   targetWeb: boolean
 ) {
-  const key = cleanUrl(keyWithQuery)
-  const query = keyWithQuery.slice(key.length)
-
   const conditions = [options.isProduction ? 'production' : 'development']
   if (!options.isRequire) {
     conditions.push('module')
@@ -786,12 +788,30 @@ function resolveExports(
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
-  const resolved = _resolveExports(pkg, key, {
-    browser: targetWeb,
-    require: options.isRequire,
-    conditions
-  })
-  return resolved + query
+
+  try {
+    const resolved = _resolveExports(pkg, keyWithQuery, {
+      browser: targetWeb,
+      require: options.isRequire,
+      conditions
+    })
+    return resolved
+  } catch (err) {
+    // not found
+
+    // try without postfix for `import 'something/path.js?query'` (see #7098)
+    const { file, postfix } = splitFileAndPostfix(keyWithQuery)
+    if (!postfix) {
+      throw err
+    }
+
+    const resolvedWithoutPostfix = _resolveExports(pkg, file, {
+      browser: targetWeb,
+      require: options.isRequire,
+      conditions
+    })
+    return resolvedWithoutPostfix + postfix
+  }
 }
 
 function resolveDeepImport(
