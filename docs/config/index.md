@@ -139,9 +139,11 @@ export default defineConfig(async ({ command, mode }) => {
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
+  ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+  :::
 
   ::: tip NOTE
   For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -508,11 +510,13 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number | false, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+  Set `server.hmr.port` to `false` when connecting to a domain without a port.
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 

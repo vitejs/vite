@@ -4,8 +4,6 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { chunkToEmittedCssFileMap } from '../plugins/css'
-import { chunkToEmittedAssetsMap } from '../plugins/asset'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import { normalizePath } from '../utils'
 
@@ -20,29 +18,21 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
-          // links for certain entry chunks are already generated in static HTML
-          // in those cases we only need to record info for non-entry chunks
-          const cssFiles = chunk.isEntry
-            ? null
-            : chunkToEmittedCssFileMap.get(chunk)
-          const assetFiles = chunkToEmittedAssetsMap.get(chunk)
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
             const mappedChunks =
               ssrManifest[normalizedId] ?? (ssrManifest[normalizedId] = [])
             if (!chunk.isEntry) {
               mappedChunks.push(base + chunk.fileName)
-            }
-            if (cssFiles) {
-              cssFiles.forEach((file) => {
+              // <link> tags for entry chunks are already generated in static HTML,
+              // so we only need to record info for non-entry chunks.
+              chunk.viteMetadata.importedCss.forEach((file) => {
                 mappedChunks.push(base + file)
               })
             }
-            if (assetFiles) {
-              assetFiles.forEach((file) => {
-                mappedChunks.push(base + file)
-              })
-            }
+            chunk.viteMetadata.importedAssets.forEach((file) => {
+              mappedChunks.push(base + file)
+            })
           }
           if (chunk.code.includes(preloadMethod)) {
             // generate css deps map
@@ -74,12 +64,9 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                     analyzed.add(filename)
                     const chunk = bundle[filename] as OutputChunk | undefined
                     if (chunk) {
-                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-                      if (cssFiles) {
-                        cssFiles.forEach((file) => {
-                          deps.push(`/${file}`)
-                        })
-                      }
+                      chunk.viteMetadata.importedCss.forEach((file) => {
+                        deps.push(`/${file}`)
+                      })
                       chunk.imports.forEach(addDeps)
                     }
                   }

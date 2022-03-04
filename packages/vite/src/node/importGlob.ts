@@ -8,13 +8,40 @@ import {
   preloadMarker
 } from './plugins/importAnalysisBuild'
 import { isCSSRequest } from './plugins/css'
-import { cleanUrl } from './utils'
+import {
+  cleanUrl,
+  singlelineCommentsRE,
+  multilineCommentsRE,
+  blankReplacer,
+  normalizePath
+} from './utils'
 import type { RollupError } from 'rollup'
+
+interface GlobParams {
+  base: string
+  pattern: string
+  parentDepth: number
+  isAbsolute: boolean
+}
 
 export interface AssertOptions {
   assert?: {
     type: string
   }
+}
+
+function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
+  let parentDepth = 0
+  while (pattern.startsWith('../')) {
+    pattern = pattern.slice(3)
+    base = path.resolve(base, '../')
+    parentDepth++
+  }
+  if (pattern.startsWith('./')) {
+    pattern = pattern.slice(2)
+  }
+
+  return { base, pattern, parentDepth, isAbsolute: false }
 }
 
 export async function transformImportGlob(
@@ -24,6 +51,7 @@ export async function transformImportGlob(
   importIndex: number,
   root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
 ): Promise<{
   importsString: string
@@ -47,27 +75,36 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, assertion, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
-    throw err(`pattern must start with "." or "/" (relative to project root)`)
-  }
-  let base: string
-  let parentDepth = 0
-  const isAbsolute = pattern.startsWith('/')
-  if (isAbsolute) {
-    base = path.resolve(root)
-    pattern = pattern.slice(1)
-  } else {
-    base = path.dirname(importer)
-    while (pattern.startsWith('../')) {
-      pattern = pattern.slice(3)
-      base = path.resolve(base, '../')
-      parentDepth++
+  const [userPattern, assertion, endIndex] = lexGlobPattern(source, pos)
+
+  let globParams: GlobParams | null = null
+  if (userPattern.startsWith('/')) {
+    globParams = {
+      isAbsolute: true,
+      base: path.resolve(root),
+      pattern: userPattern.slice(1),
+      parentDepth: 0
     }
-    if (pattern.startsWith('./')) {
-      pattern = pattern.slice(2)
+  } else if (userPattern.startsWith('.')) {
+    globParams = formatGlobRelativePattern(path.dirname(importer), userPattern)
+  } else if (resolve) {
+    const resolvedId = await resolve(userPattern, importer)
+    if (resolvedId) {
+      const importerDirname = path.dirname(importer)
+      globParams = formatGlobRelativePattern(
+        importerDirname,
+        normalizePath(path.relative(importerDirname, resolvedId))
+      )
     }
   }
+
+  if (!globParams) {
+    throw err(
+      `pattern must start with "." or "/" (relative to project root) or alias path`
+    )
+  }
+  const { base, parentDepth, isAbsolute, pattern } = globParams
+
   const files = glob.sync(pattern, {
     cwd: base,
     // Ignore node_modules by default unless explicitly indicated in the pattern
@@ -182,45 +219,20 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
+  const noCommentCode = code
+    .slice(i + 1)
+    .replace(singlelineCommentsRE, blankReplacer)
+    .replace(multilineCommentsRE, blankReplacer)
 
-  const endIndex = getEndIndex(code, i)
-  const options = code.substring(i + 1, endIndex)
-  const commaIndex = options.indexOf(`,`)
+  const endIndex = noCommentCode.indexOf(')')
+  const options = noCommentCode.substring(0, endIndex)
+  const commaIndex = options.indexOf(',')
+
   let assert = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substr(commaIndex + 1))
+    assert = JSON5.parse(options.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + 1]
-}
-
-// reg without the 'g' option, only matches the first match
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
-const singlelineCommentsRE = /\/\/.*/
-
-function getEndIndex(code: string, i: number): number {
-  const findStart = i
-  const endIndex = code.indexOf(`)`, findStart)
-  const subCode = code.substring(findStart)
-
-  const matched =
-    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
-  if (!matched) {
-    return endIndex
-  }
-
-  const str = matched[0]
-  const index = matched.index
-  if (!index) {
-    return endIndex
-  }
-
-  const commentStart = findStart + index
-  const commentEnd = commentStart + str.length
-  if (endIndex > commentStart && endIndex < commentEnd) {
-    return getEndIndex(code, commentEnd)
-  } else {
-    return endIndex
-  }
+  return [pattern, assert, endIndex + i + 2]
 }
 
 function error(pos: number) {

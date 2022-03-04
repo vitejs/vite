@@ -3,6 +3,7 @@ import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -85,6 +86,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
@@ -94,7 +96,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
         config.assetsInclude(id)
       ) {
