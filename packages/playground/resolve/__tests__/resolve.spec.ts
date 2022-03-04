@@ -17,6 +17,7 @@ test('deep import with exports field', async () => {
 })
 
 test('deep import with query with exports field', async () => {
+  // since it is imported with `?url` it should return a url
   expect(await page.textContent('.exports-deep-query')).toMatch(
     isBuild ? /base64/ : '/exports-path/deep.json'
   )
