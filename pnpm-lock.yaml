@@ -1976,9 +1976,9 @@ packages:
       chalk: 4.1.2
     dev: true
 
-  /@jridgewell/resolve-uri/3.0.3:
-    resolution: {integrity: sha512-fuIOnc81C5iRNevb/XPiM8Khp9bVjreydRQ37rt0C/dY0PAW1DRvEM3WrKX/5rStS5lbgwS0FCgqSndh9tvK5w==}
-    engines: {node: '>=10.0.0'}
+  /@jridgewell/resolve-uri/3.0.5:
+    resolution: {integrity: sha512-VPeQ7+wH0itvQxnG+lIzWgkysKIr3L9sslimFW55rHMdGu/qCQ5z5h9zq4gI8uBtqkpHhsF4Z/OwExufUCThew==}
+    engines: {node: '>=6.0.0'}
 
   /@jridgewell/sourcemap-codec/1.4.10:
     resolution: {integrity: sha512-Ht8wIW5v165atIX1p+JvKR5ONzUyF4Ac8DZIQ5kZs9zrb6M8SJNXpx1zn04rn65VjBMygRoMXcyYwNK0fT7bEg==}
@@ -1986,7 +1986,7 @@ packages:
   /@jridgewell/trace-mapping/0.3.2:
     resolution: {integrity: sha512-9KzzH4kMjA2XmBRHfqG2/Vtl7s92l6uNDd0wW7frDE+EUvQFGqNXhWp0UGJjSkt3v2AYjzOZn1QO9XaTNJIt1Q==}
     dependencies:
-      '@jridgewell/resolve-uri': 3.0.3
+      '@jridgewell/resolve-uri': 3.0.5
       '@jridgewell/sourcemap-codec': 1.4.10
 
   /@mapbox/node-pre-gyp/1.0.8:
@@ -3103,7 +3103,7 @@ packages:
     resolution: {integrity: sha512-oagLNqpfNv7CvmyMoexMDNyVDSiq1rya0AEUgcLlNHdHgNl6U/hi8xY370n5y+ZIFEXOx0J4B1qF2NDjMRxklA==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      pvutils: 1.0.17
+      pvutils: 1.1.3
     dev: true
 
   /assert-never/1.2.1:
@@ -7690,8 +7690,8 @@ packages:
       tslib: 2.3.1
     dev: true
 
-  /pvutils/1.0.17:
-    resolution: {integrity: sha512-wLHYUQxWaXVQvKnwIDWFVKDJku9XDCvyhhxoq8dc5MFdIlRenyPI9eSfEtcvgHgD7FlvCyGAlWgOzRnZD99GZQ==}
+  /pvutils/1.1.3:
+    resolution: {integrity: sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==}
     engines: {node: '>=6.0.0'}
     dev: true
 
