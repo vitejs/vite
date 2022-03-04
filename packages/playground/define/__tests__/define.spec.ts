@@ -20,13 +20,4 @@ test('string', async () => {
   expect(await page.textContent('.spread-array')).toBe(
     JSON.stringify([...defines.__STRING__])
   )
-  expect(await page.textContent('.import-file')).not.toBe(
-    `import * from "${defines.__IMPORT_FILE_NAME__}"`
-  )
-  expect(await page.textContent('.export-file')).not.toBe(
-    `export * from "${defines.__EXPORT_FILE_NAME__}"`
-  )
-  expect(await page.textContent('.path')).not.toBe(
-    `import * from "xxxx/${defines.PATH}"`
-  )
 })
