@@ -1,0 +1,1 @@
+self.constant = 'A classic'

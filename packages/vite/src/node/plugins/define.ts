@@ -53,7 +53,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         'globalThis.process.env.': `({}).`
       })
     }
-
     const replacements: Record<string, string> = {
       ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
@@ -62,20 +61,30 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacementsKeys = Object.keys(replacements)
-    const pattern = replacementsKeys.length
-      ? new RegExp(
-          // Do not allow preceding '.', but do allow preceding '...' for spread operations
-          '(?<!(?<!\\.\\.)\\.)\\b(' +
-            replacementsKeys
-              .map((str) => {
-                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-              })
-              .join('|') +
-            // prevent trailing assignments
-            ')\\b(?!\\s*?=[^=])',
-          'g'
-        )
-      : null
+
+    if (!replacementsKeys.length) {
+      return [replacements, null]
+    }
+
+    const replacementsStr = replacementsKeys
+      .map((str) => {
+        return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+      })
+      .join('|')
+
+    // The following characters are not allowed because they are String boundaries
+    const characters = '[\'"`\\/-_]'
+
+    const pattern = new RegExp(
+      `(?<!${characters})` +
+        // Do not allow preceding '.', but do allow preceding '...' for spread operations
+        '(?<!(?<!\\.\\.)\\.)' +
+        `\\b(${replacementsStr})\\b` +
+        `(?!${characters})` +
+        // prevent trailing assignments
+        '(?!\\s*?=[^=])',
+      'g'
+    )
 
     return [replacements, pattern]
   }
