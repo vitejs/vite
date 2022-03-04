@@ -1,7 +1,7 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import type { Logger } from '../logger'
-import { createDebugger, genSourceMapUrl } from '../utils'
+import { createDebugger } from '../utils'
 import type { SourceMap } from 'rollup'
 
 const isDebug = !!process.env.DEBUG
@@ -57,6 +57,13 @@ export async function injectSourcesContent(
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
     isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
+}
+
+function genSourceMapUrl(map: SourceMap | string | undefined) {
+  if (typeof map !== 'string') {
+    map = JSON.stringify(map)
+  }
+  return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
 }
 
 export function getCodeWithSourcemap(
