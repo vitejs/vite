@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import _debug from 'debug'
 import colors from 'picocolors'
 import { createHash } from 'crypto'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
@@ -21,6 +22,7 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { performance } from 'perf_hooks'
 
 const debug = createDebugger('vite:deps')
+const isDebugEnabled = _debug('vite:deps').enabled
 
 export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
@@ -339,14 +341,20 @@ export async function createOptimizeDepsRun(
       return
     }
 
-    const total = qualifiedIds.length
-    const maxListed = 5
-    const listed = Math.min(total, maxListed)
-    const extra = Math.max(0, total - maxListed)
-    const depsString = colors.yellow(
-      qualifiedIds.slice(0, listed).join(`\n  `) +
-        (extra > 0 ? `\n  (...and ${extra} more)` : ``)
-    )
+    let depsString: string
+    if (isDebugEnabled) {
+      depsString = colors.yellow(qualifiedIds.join(`\n  `))
+    } else {
+      const total = qualifiedIds.length
+      const maxListed = 5
+      const listed = Math.min(total, maxListed)
+      const extra = Math.max(0, total - maxListed)
+      depsString = colors.yellow(
+        qualifiedIds.slice(0, listed).join(`\n  `) +
+          (extra > 0 ? `\n  (...and ${extra} more)` : ``)
+      )
+    }
+
     if (!asCommand) {
       if (!newDeps) {
         // This is auto run on server start - let the user know that we are
