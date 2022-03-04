@@ -95,3 +95,7 @@ test('import optimize-excluded package that imports optimized-included package',
 test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
 })
+
+test('variable names are reused in different scripts', async () => {
+  expect(await page.textContent('.reused-variable-names')).toBe('reused')
+})
