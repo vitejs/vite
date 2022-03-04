@@ -43,8 +43,13 @@ interface ScriptAssetsUrl {
 
 const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
+const htmlLangRE = /\.(html|htm)$/
 const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
+
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
+
+export const isHTMLRequest = (request: string): boolean =>
+  htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
 export const htmlProxyMap = new WeakMap<
