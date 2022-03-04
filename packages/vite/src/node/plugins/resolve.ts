@@ -917,12 +917,37 @@ function mapWithBrowserField(
 ): string | false | undefined {
   const normalizedPath = path.posix.normalize(relativePathInPkgDir)
 
+  const result = _mapWithBrowserField(normalizedPath, map)
+  if (result !== undefined) {
+    return result
+  }
+
+  // try without postfix for `import 'something/path.js?query'` (see #7098)
+  const { file: normalizedPathWithoutPostfix, postfix } =
+    splitFileAndPostfix(normalizedPath)
+  if (!postfix) {
+    return undefined
+  }
+  const resultWithoutPostfix = _mapWithBrowserField(
+    normalizedPathWithoutPostfix,
+    map
+  )
+  if (typeof resultWithoutPostfix === 'string') {
+    return resultWithoutPostfix + postfix
+  }
+  return resultWithoutPostfix
+}
+
+function _mapWithBrowserField(
+  normalizedRelativePath: string,
+  map: Record<string, string | false>
+): string | false | undefined {
   for (const key in map) {
     const normalizedKey = path.posix.normalize(key)
     if (
-      normalizedPath === normalizedKey ||
-      equalWithoutSuffix(normalizedPath, normalizedKey, '.js') ||
-      equalWithoutSuffix(normalizedPath, normalizedKey, '/index.js')
+      normalizedRelativePath === normalizedKey ||
+      equalWithoutSuffix(normalizedRelativePath, normalizedKey, '.js') ||
+      equalWithoutSuffix(normalizedRelativePath, normalizedKey, '/index.js')
     ) {
       return map[key]
     }
