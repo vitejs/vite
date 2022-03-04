@@ -105,7 +105,11 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-
+  const resolve = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
   let server: ViteDevServer
   let isOptimizedDepUrl: (url: string) => boolean
 
@@ -351,7 +355,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer,
               index,
               root,
-              normalizeUrl
+              normalizeUrl,
+              resolve
             )
             str().prepend(importsString)
             str().overwrite(expStart, endIndex, exp)

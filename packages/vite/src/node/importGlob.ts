@@ -12,14 +12,36 @@ import {
   cleanUrl,
   singlelineCommentsRE,
   multilineCommentsRE,
-  blankReplacer
+  blankReplacer,
+  normalizePath
 } from './utils'
 import type { RollupError } from 'rollup'
+
+interface GlobParams {
+  base: string
+  pattern: string
+  parentDepth: number
+  isAbsolute: boolean
+}
 
 export interface AssertOptions {
   assert?: {
     type: string
   }
+}
+
+function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
+  let parentDepth = 0
+  while (pattern.startsWith('../')) {
+    pattern = pattern.slice(3)
+    base = path.resolve(base, '../')
+    parentDepth++
+  }
+  if (pattern.startsWith('./')) {
+    pattern = pattern.slice(2)
+  }
+
+  return { base, pattern, parentDepth, isAbsolute: false }
 }
 
 export async function transformImportGlob(
@@ -29,6 +51,7 @@ export async function transformImportGlob(
   importIndex: number,
   root: string,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
 ): Promise<{
   importsString: string
@@ -52,27 +75,36 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, assertion, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
-    throw err(`pattern must start with "." or "/" (relative to project root)`)
-  }
-  let base: string
-  let parentDepth = 0
-  const isAbsolute = pattern.startsWith('/')
-  if (isAbsolute) {
-    base = path.resolve(root)
-    pattern = pattern.slice(1)
-  } else {
-    base = path.dirname(importer)
-    while (pattern.startsWith('../')) {
-      pattern = pattern.slice(3)
-      base = path.resolve(base, '../')
-      parentDepth++
+  const [userPattern, assertion, endIndex] = lexGlobPattern(source, pos)
+
+  let globParams: GlobParams | null = null
+  if (userPattern.startsWith('/')) {
+    globParams = {
+      isAbsolute: true,
+      base: path.resolve(root),
+      pattern: userPattern.slice(1),
+      parentDepth: 0
     }
-    if (pattern.startsWith('./')) {
-      pattern = pattern.slice(2)
+  } else if (userPattern.startsWith('.')) {
+    globParams = formatGlobRelativePattern(path.dirname(importer), userPattern)
+  } else if (resolve) {
+    const resolvedId = await resolve(userPattern, importer)
+    if (resolvedId) {
+      const importerDirname = path.dirname(importer)
+      globParams = formatGlobRelativePattern(
+        importerDirname,
+        normalizePath(path.relative(importerDirname, resolvedId))
+      )
     }
   }
+
+  if (!globParams) {
+    throw err(
+      `pattern must start with "." or "/" (relative to project root) or alias path`
+    )
+  }
+  const { base, parentDepth, isAbsolute, pattern } = globParams
+
   const files = glob.sync(pattern, {
     cwd: base,
     // Ignore node_modules by default unless explicitly indicated in the pattern

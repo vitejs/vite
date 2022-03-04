@@ -91,6 +91,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
+  const resolve = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
 
   return {
     name: 'vite:build-import-analysis',
@@ -154,6 +159,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               index,
               config.root,
               undefined,
+              resolve,
               insertPreload
             )
           str().prepend(importsString)
