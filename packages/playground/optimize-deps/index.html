@@ -59,6 +59,15 @@
 <h2>Alias with colon</h2>
 <div>URL: <span class="url"></span></div>
 
+<h2>Reused variable names</h2>
+<div>This should show reused: <span class="reused-variable-names"></span></div>
+
+<script>
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
+
 <script type="module">
   // test dep detection in globbed files
   const globbed = import.meta.globEager('./glob/*.js')
@@ -96,8 +105,12 @@
 
   import { parse } from 'node:url'
   text('.url', parse('https://vitejs.dev').hostname)
+</script>
 
-  function text(el, text) {
-    document.querySelector(el).textContent = text
-  }
+<script type="module">
+  const reusedName = 1
+</script>
+<script type="module">
+  const reusedName = 'reused'
+  text('.reused-variable-names', reusedName)
 </script>
