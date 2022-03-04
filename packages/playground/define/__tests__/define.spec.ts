@@ -20,4 +20,6 @@ test('string', async () => {
   expect(await page.textContent('.spread-array')).toBe(
     JSON.stringify([...defines.__STRING__])
   )
+  // html would't need to define replacement
+  expect(await page.textContent('.exp-define')).toBe('__EXP__')
 })
