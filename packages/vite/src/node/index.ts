@@ -7,6 +7,7 @@ export { send } from './server/send'
 export { createLogger, printHttpServerUrls } from './logger'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
+export { fileToUrl } from './plugins/asset'
 export { resolvePackageData } from './packages'
 export { normalizePath } from './utils'
 
