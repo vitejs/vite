@@ -16,6 +16,7 @@ importers:
       '@types/semver': ^7.3.9
       '@typescript-eslint/eslint-plugin': ^5.11.0
       '@typescript-eslint/parser': ^5.11.0
+      compress: ^0.99.0
       conventional-changelog-cli: ^2.2.2
       cross-env: ^7.0.3
       esbuild: ^0.14.14
@@ -43,6 +44,8 @@ importers:
       typescript: ~4.5.4
       vite: workspace:*
       vitepress: ^0.21.6
+    dependencies:
+      compress: 0.99.0
     devDependencies:
       '@microsoft/api-extractor': 7.19.4
       '@types/fs-extra': 9.0.13
@@ -176,6 +179,9 @@ importers:
       cross-env: ^7.0.3
     devDependencies:
       cross-env: 7.0.3
+
+  packages/playground/env-nested:
+    specifiers: {}
 
   packages/playground/extensions:
     specifiers:
@@ -786,7 +792,6 @@ importers:
       acorn: ^8.7.0
       cac: 6.7.9
       chokidar: ^3.5.3
-      compression: ^1.7.4
       connect: ^3.7.0
       connect-history-api-fallback: ^1.6.0
       convert-source-map: ^1.8.0
@@ -864,7 +869,6 @@ importers:
       acorn: 8.7.0
       cac: 6.7.9
       chokidar: 3.5.3
-      compression: 1.7.4
       connect: 3.7.0
       connect-history-api-fallback: 1.6.0
       convert-source-map: 1.8.0
@@ -3643,6 +3647,10 @@ packages:
       helpertypes: 0.0.2
       typescript: 4.5.4
     dev: true
+
+  /compress/0.99.0:
+    resolution: {integrity: sha1-l+MBwlxNAfCX2FED9l7Msud5ZQI=}
+    dev: false
 
   /compressible/2.0.18:
     resolution: {integrity: sha512-AF3r7P5dWxL8MxyITRMlORQNaOA2IkAFaTr4k7BUumjPtRpGDTZpl0Pb1XCO6JeDCBdp126Cgs9sMxqSjgYyRg==}
