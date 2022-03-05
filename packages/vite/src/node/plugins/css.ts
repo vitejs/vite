@@ -671,6 +671,12 @@ async function compileCSS(
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
+  postcssPlugins.unshift(
+    UrlRewritePostcssPlugin({
+      replacer: urlReplacer
+    }) as Postcss.Plugin
+  )
+
   if (needInlineImport) {
     const isHTMLProxy = htmlProxyRE.test(id)
     postcssPlugins.unshift(
@@ -692,11 +698,6 @@ async function compileCSS(
       })
     )
   }
-  postcssPlugins.push(
-    UrlRewritePostcssPlugin({
-      replacer: urlReplacer
-    }) as Postcss.Plugin
-  )
 
   if (isModule) {
     postcssPlugins.unshift(
