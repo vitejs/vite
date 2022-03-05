@@ -202,6 +202,7 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
+    mod.ssrModule = null
     if (e.stack && fixStacktrace !== false) {
       const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
       rebindErrorStacktrace(e, stacktrace)
