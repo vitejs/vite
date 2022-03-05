@@ -83,8 +83,9 @@ test('classic worker is run', async () => {
 })
 
 test('worker emitted', async () => {
-  expect(await page.textContent('nested-worker')).toMatch('nested worker')
-  expect(await page.textContent('nested-worker-dynamic-import')).toMatch(
+  await untilUpdated(() => page.textContent('.nested-worker'), 'nested')
+  await untilUpdated(
+    () => page.textContent('.nested-worker-dynamic-import'),
     '"msg":"pong"'
   )
 })
