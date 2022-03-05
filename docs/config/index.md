@@ -28,14 +28,15 @@ vite --config my-config.js
 ```
 
 ::: tip NOTE
-Vite will only replace `__filename`, `__dirname`, and `import.meta.url` in **CommonJS context** and **TS config file** (whether there is `type: "module"` or not). Using these as variable names will result in an error:
-:::
+Vite will only replace `__filename`, `__dirname`, and `import.meta.url` in **CommonJS** and **TypeScript** config files. Using these as variable names will result in an error:
 
 ```js
 const __filename = "value"
 // will be transformed to
 const "path/vite.config.js" = "value"
 ```
+
+:::
 
 ### Config Intellisense
 
