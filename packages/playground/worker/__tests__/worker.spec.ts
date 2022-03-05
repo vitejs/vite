@@ -51,6 +51,14 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
+test('worker emitted', async () => {
+  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.nested-worker-dynamic-import'),
+    '"msg":"pong"'
+  )
+})
+
 if (isBuild) {
   const assetsDir = path.resolve(testDir, 'dist/assets')
   // assert correct files
@@ -80,12 +88,4 @@ if (isBuild) {
 test('classic worker is run', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
-})
-
-test('worker emitted', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), 'nested')
-  await untilUpdated(
-    () => page.textContent('.nested-worker-dynamic-import'),
-    '"msg":"pong"'
-  )
 })

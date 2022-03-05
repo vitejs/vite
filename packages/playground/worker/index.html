@@ -121,7 +121,8 @@
 
   const nestedWorker = new NestedWorker()
   nestedWorker.addEventListener('message', (ev) => {
-    if (typeof ev === 'string') {
+    console.log(ev)
+    if (typeof ev.data === 'string') {
       text('.nested-worker', ev.data)
     } else {
       text('.nested-worker-dynamic-import', JSON.stringify(ev.data))
