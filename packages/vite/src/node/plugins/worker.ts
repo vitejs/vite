@@ -39,6 +39,13 @@ export async function bundleWorkerEntry(
       if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
       }
+      if (outputChunk.type === 'chunk') {
+        // id used to calc file hash
+        ctx.emitFile({
+          id,
+          ...outputChunk
+        })
+      }
     })
   } finally {
     await bundle.close()
