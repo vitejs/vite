@@ -96,6 +96,22 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
+### Environment Variables
+
+Vite doesn't load `.env` files by default. However, you can use the exported `loadEnv` helper to load the specific `.env` file needed.
+
+```js
+import { defineConfig, loadEnv } from 'vite'
+
+export default defineConfig(({ command, mode }) => {
+  // Load env file based on `mode` in the current working directory
+  const env = loadEnv(mode, process.cwd())
+  return {
+    // build specific config
+  }
+})
+```
+
 ## Shared Options
 
 ### root
