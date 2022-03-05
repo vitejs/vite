@@ -1,4 +1,9 @@
-import { getPotentialTsSrcPaths, injectQuery, isWindows, resolveHostname } from '../utils'
+import {
+  getPotentialTsSrcPaths,
+  injectQuery,
+  isWindows,
+  resolveHostname
+} from '../utils'
 
 describe('injectQuery', () => {
   if (isWindows) {
