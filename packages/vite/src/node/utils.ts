@@ -638,11 +638,7 @@ export function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Hostname {
   let host: string | undefined
-  if (
-    optionsHost === undefined ||
-    optionsHost === false ||
-    optionsHost === 'localhost'
-  ) {
+  if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
     host = '127.0.0.1'
   } else if (optionsHost === true) {
