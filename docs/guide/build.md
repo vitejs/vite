@@ -72,6 +72,8 @@ module.exports = defineConfig({
 })
 ```
 
+With the `--watch` flag enabled, changes to the `vite.config.js`, as well as any files to be bundled, will trigger a rebuild.
+
 ## Multi-Page App
 
 Suppose you have the following source code structure:
