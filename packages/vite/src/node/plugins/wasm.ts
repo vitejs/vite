@@ -4,7 +4,7 @@ import { fileToUrl } from './asset'
 
 const wasmHelperId = '/__vite-wasm-helper'
 
-const wasmHelper = async (opts = {}, url: string) => {
+const wasmHelper = async (opts = {}, url: string, getInstance = false) => {
   let result
   if (url.startsWith('data:')) {
     // @ts-ignore
@@ -37,7 +37,7 @@ const wasmHelper = async (opts = {}, url: string) => {
       result = await WebAssembly.instantiate(buffer, opts)
     }
   }
-  return result.instance.exports
+  return getInstance ? result.instance : result.instance.exports
 }
 
 const wasmHelperCode = wasmHelper.toString()
@@ -65,7 +65,9 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
 
       return `
 import initWasm from "${wasmHelperId}"
-export default opts => initWasm(opts, ${JSON.stringify(url)})
+export default (opts, getInstance) => initWasm(opts, ${JSON.stringify(
+        url
+      )}, getInstance)
 `
     }
   }
