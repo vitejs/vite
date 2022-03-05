@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    target: process.env.NODE_ENV === 'production' ? 'chrome60' : 'esnext'
+    // target: process.env.NODE_ENV === 'production' ? 'chrome60' : 'esnext'
   },
   worker: {
     format: 'es',

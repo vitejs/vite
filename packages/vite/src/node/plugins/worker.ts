@@ -40,10 +40,10 @@ export async function bundleWorkerEntry(
         ctx.emitFile(outputChunk)
       }
       if (outputChunk.type === 'chunk') {
-        // id used to calc file hash
         ctx.emitFile({
-          id,
-          ...outputChunk
+          fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
+          source: outputChunk.code,
+          type: 'asset'
         })
       }
     })
