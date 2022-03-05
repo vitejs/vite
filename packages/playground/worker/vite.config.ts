@@ -6,6 +6,7 @@ export default defineConfig({
     target: process.env.NODE_ENV === 'production' ? 'chrome60' : 'esnext'
   },
   worker: {
+    format: 'es',
     plugins: [vueJsx()]
   }
 })

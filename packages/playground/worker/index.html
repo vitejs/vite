@@ -28,6 +28,7 @@
 
 <p>nested worker</p>
 <div class="nested-worker"></div>
+<div class="nested-worker-dynamic-import"></div>
 <p>new Worker(new Url('path', import.meta.url))</p>
 <div class="classic-worker"></div>
 
@@ -120,7 +121,11 @@
 
   const nestedWorker = new NestedWorker()
   nestedWorker.addEventListener('message', (ev) => {
-    text('.nested-worker', ev.data)
+    if (typeof ev === 'string') {
+      text('.nested-worker', ev.data)
+    } else {
+      text('.nested-worker-dynamic-import', JSON.stringify(ev.data))
+    }
   })
   nestedWorker.postMessage('ping')
 </script>
