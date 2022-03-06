@@ -583,7 +583,7 @@ function escapeToLinuxLikePath(path: string) {
     return path.replace(/^([A-Z]):\//, '/windows/$1/')
   }
   if (/^\/[^/]/.test(path)) {
-    return `/linux/${path}`
+    return `/linux${path}`
   }
   return path
 }
