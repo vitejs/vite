@@ -28,6 +28,28 @@ Array [
 ]
 `;
 
+exports[`imported sass module: mappings 1`] = `"AACE;EACE"`;
+
+exports[`imported sass module: sourcesContent 1`] = `
+Array [
+  ".imported
+  &-sass-module
+    color: red
+",
+]
+`;
+
+exports[`imported sass: mappings 1`] = `"AACE;EACE"`;
+
+exports[`imported sass: sourcesContent 1`] = `
+Array [
+  ".imported
+  &-sass
+    color: red
+",
+]
+`;
+
 exports[`linked css with import: mappings 1`] = `"AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ"`;
 
 exports[`linked css with import: sourcesContent 1`] = `

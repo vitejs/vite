@@ -71,4 +71,20 @@ if (!isBuild) {
       sources: [`${root}/be-imported.css`, `${root}/imported-with-import.css`]
     })
   })
+
+  test('imported sass', async () => {
+    const css = await getStyleTagContentIncluding('.imported-sass ')
+    const map = extractSourcemap(css)
+    assertSourcemap(map, {
+      sources: [`${root}/imported.sass`]
+    })
+  })
+
+  test('imported sass module', async () => {
+    const css = await getStyleTagContentIncluding('._imported-sass-module_')
+    const map = extractSourcemap(css)
+    assertSourcemap(map, {
+      sources: [`${root}/imported.module.sass`]
+    })
+  })
 }
