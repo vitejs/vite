@@ -6,5 +6,12 @@ module.exports = {
     alias: {
       '@': __dirname
     }
+  },
+  css: {
+    preprocessorOptions: {
+      less: {
+        additionalData: '@color: red;'
+      }
+    }
   }
 }

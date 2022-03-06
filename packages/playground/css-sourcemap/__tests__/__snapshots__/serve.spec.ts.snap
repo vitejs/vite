@@ -34,7 +34,7 @@ exports[`imported less: sourcesContent 1`] = `
 Array [
   ".imported {
   &-less {
-    color: red;
+    color: @color;
   }
 }
 ",
