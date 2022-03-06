@@ -118,6 +118,7 @@ test('less', async () => {
 test('stylus', async () => {
   const imported = await page.$('.stylus')
   const additionalData = await page.$('.stylus-additional-data')
+  const extensionAdditionalData = await page.$('.stylus-ext-additional-data')
   const relativeImport = await page.$('.stylus-import')
   const relativeImportAlias = await page.$('.stylus-import-alias')
   const optionsRelativeImport = await page.$('.stylus-options-relative-import')
@@ -125,6 +126,7 @@ test('stylus', async () => {
 
   expect(await getColor(imported)).toBe('blue')
   expect(await getColor(additionalData)).toBe('orange')
+  expect(await getColor(extensionAdditionalData)).toBe('orange')
   expect(await getColor(relativeImport)).toBe('darkslateblue')
   expect(await getColor(relativeImportAlias)).toBe('darkslateblue')
   expect(await getBg(relativeImportAlias)).toMatch(

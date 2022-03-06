@@ -1,0 +1,3 @@
+.stylus-ext-additional-data
+  /* injected via vite.config.js */
+  color $injectedColor

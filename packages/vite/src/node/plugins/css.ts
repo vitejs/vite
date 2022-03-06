@@ -622,7 +622,7 @@ async function compileCSS(
   // 2. pre-processors: sass etc.
   if (isPreProcessor(lang)) {
     const preProcessor = preProcessors[lang]
-    let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+    let opts: any
     // support @import from node dependencies by default
     switch (lang) {
       case PreprocessLang.scss:
@@ -630,17 +630,27 @@ async function compileCSS(
         opts = {
           includePaths: ['node_modules'],
           alias: config.resolve.alias,
-          ...opts
+          ...(preprocessorOptions?.scss || preprocessorOptions?.sass || {})
         }
         break
       case PreprocessLang.less:
+        opts = {
+          paths: ['node_modules'],
+          alias: config.resolve.alias,
+          ...(preprocessorOptions?.less || {})
+        }
+        break
       case PreprocessLang.styl:
       case PreprocessLang.stylus:
         opts = {
           paths: ['node_modules'],
           alias: config.resolve.alias,
-          ...opts
+          ...(preprocessorOptions?.stylus || preprocessorOptions?.styl || {})
         }
+        break
+      default:
+        opts = preprocessorOptions?.[lang] || {}
+        break
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)

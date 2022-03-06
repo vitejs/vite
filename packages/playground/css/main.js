@@ -10,6 +10,7 @@ import less from './less.less'
 text('.imported-less', less)
 
 import stylus from './stylus.styl'
+import './stylus.stylus'
 text('.imported-stylus', stylus)
 
 import mod from './mod.module.css'
