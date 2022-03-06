@@ -11,5 +11,8 @@ module.exports = {
       }
     }
   },
-  plugins: [vuePlugin()]
+  plugins: [vuePlugin()],
+  build: {
+    sourcemap: true
+  }
 }

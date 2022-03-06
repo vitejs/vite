@@ -13,5 +13,8 @@ module.exports = {
         additionalData: '@color: red;'
       }
     }
+  },
+  build: {
+    sourcemap: true
   }
 }

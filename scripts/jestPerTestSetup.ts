@@ -114,6 +114,8 @@ beforeAll(async () => {
         customLogger: createInMemoryLogger(serverLogs)
       }
 
+      setupConsoleWarnCollector(serverLogs)
+
       global.serverLogs = serverLogs
 
       if (!isBuildTest) {
@@ -262,4 +264,12 @@ function createInMemoryLogger(logs: string[]): Logger {
   }
 
   return logger
+}
+
+function setupConsoleWarnCollector(logs: string[]) {
+  const warn = console.warn
+  console.warn = (...args) => {
+    serverLogs.push(args.join(' '))
+    return warn.call(console, ...args)
+  }
 }
