@@ -63,6 +63,17 @@ Array [
 ]
 `;
 
+exports[`imported stylus: mappings 1`] = `"AACE;EACE,WAAM"`;
+
+exports[`imported stylus: sourcesContent 1`] = `
+Array [
+  ".imported
+  &-stylus
+    color red
+",
+]
+`;
+
 exports[`linked css with import: mappings 1`] = `"AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ"`;
 
 exports[`linked css with import: sourcesContent 1`] = `

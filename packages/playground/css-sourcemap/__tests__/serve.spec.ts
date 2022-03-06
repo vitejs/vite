@@ -95,4 +95,12 @@ if (!isBuild) {
       sources: [`${root}/imported.less`]
     })
   })
+
+  test('imported stylus', async () => {
+    const css = await getStyleTagContentIncluding('.imported-stylus ')
+    const map = extractSourcemap(css)
+    assertSourcemap(map, {
+      sources: [`${root}/imported.styl`]
+    })
+  })
 }

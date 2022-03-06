@@ -14,6 +14,8 @@
   <p class="imported-sass-module">&lt;imported sass&gt; with module</p>
 
   <p class="imported-less">&lt;imported less&gt;</p>
+
+  <p class="imported-stylus">&lt;imported stylus&gt;</p>
 </div>
 
 <script type="module">
@@ -22,9 +24,12 @@
 
   import './imported.sass'
   import sassModule from './imported.module.sass'
+
   document
   .querySelector('.imported-sass-module')
   .classList.add(sassModule['imported-sass-module'])
 
   import './imported.less'
+
+  import './imported.styl'
 </script>
