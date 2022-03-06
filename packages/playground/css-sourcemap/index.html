@@ -1,0 +1,17 @@
+<link rel="stylesheet" href="./linked.css" />
+<link rel="stylesheet" href="./linked-with-import.css" />
+
+<div class="wrapper">
+  <h1>CSS Sourcemap</h1>
+
+  <p class="linked">&lt;linked&gt;: no import</p>
+  <p class="linked-with-import">&lt;linked&gt;: with import</p>
+
+  <p class="imported">&lt;imported&gt;: no import</p>
+  <p class="imported-with-import">&lt;imported&gt;: with import</p>
+</div>
+
+<script type="module">
+  import './imported.css'
+  import './imported-with-import.css'
+</script>

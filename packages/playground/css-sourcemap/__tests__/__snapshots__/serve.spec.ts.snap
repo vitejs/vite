@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`imported css with import: mappings 1`] = `"AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ"`;
+
+exports[`imported css with import: sourcesContent 1`] = `
+Array [
+  ".be-imported {
+  color: red;
+}
+",
+  "@import '@/be-imported.css';
+
+.imported-with-import {
+  color: red;
+}
+",
+]
+`;
+
+exports[`imported css: mappings 1`] = `"AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;"`;
+
+exports[`imported css: sourcesContent 1`] = `
+Array [
+  ".imported {
+  color: red;
+}
+",
+]
+`;
+
+exports[`linked css with import: mappings 1`] = `"AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ"`;
+
+exports[`linked css with import: sourcesContent 1`] = `
+Array [
+  ".be-imported {
+  color: red;
+}
+",
+  "@import '@/be-imported.css';
+
+.linked-with-import {
+  color: red;
+}
+",
+]
+`;

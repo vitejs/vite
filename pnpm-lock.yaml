@@ -145,6 +145,18 @@ importers:
   packages/playground/css-codesplit-cjs:
     specifiers: {}
 
+  packages/playground/css-sourcemap:
+    specifiers:
+      convert-source-map: ^1.8.0
+      less: ^4.1.2
+      sass: ^1.43.4
+      stylus: ^0.55.0
+    devDependencies:
+      convert-source-map: 1.8.0
+      less: 4.1.2
+      sass: 1.45.1
+      stylus: 0.55.0
+
   packages/playground/css/css-dep:
     specifiers: {}
 
@@ -8078,9 +8090,9 @@ packages:
     engines: {node: '>=8.9.0'}
     hasBin: true
     dependencies:
-      chokidar: 3.5.2
+      chokidar: 3.5.3
       immutable: 4.0.0
-      source-map-js: 1.0.1
+      source-map-js: 1.0.2
     dev: true
 
   /sax/1.2.4:
@@ -8290,11 +8302,6 @@ packages:
     dependencies:
       ip: 1.1.5
       smart-buffer: 4.2.0
-    dev: true
-
-  /source-map-js/1.0.1:
-    resolution: {integrity: sha512-4+TN2b3tqOCd/kaGRJ/sTYA0tR0mdXx26ipdolxcwtJVqEnqNYvlCAt1q3ypy4QMlYus+Zh34RNtYLoq2oQ4IA==}
-    engines: {node: '>=0.10.0'}
     dev: true
 
   /source-map-js/1.0.2:
