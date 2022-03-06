@@ -22,10 +22,12 @@ if (!isBuild) {
     return fromComment(lines[lines.length - 1]).toObject()
   }
 
-  const assertSourcemap = (map: any, { sources }: { sources: string[] }) => {
-    expect(map.sources).toStrictEqual(sources)
-    expect(map.mappings).toMatchSnapshot('mappings')
-    expect(map.sourcesContent).toMatchSnapshot('sourcesContent')
+  const formatSourcemapForSnapshot = (map: any) => {
+    const m = { ...map }
+    delete m.file
+    delete m.names
+    m.sources = m.sources.map((source) => source.replace(root, '/root'))
+    return m
   }
 
   test('linked css', async () => {
@@ -53,57 +55,157 @@ if (!isBuild) {
     )
     const css = await res.text()
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/be-imported.css`, `${root}/linked-with-import.css`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
+        "sources": Array [
+          "/root/be-imported.css",
+          "/root/linked-with-import.css",
+        ],
+        "sourcesContent": Array [
+          ".be-imported {
+        color: red;
+      }
+      ",
+          "@import '@/be-imported.css';
+
+      .linked-with-import {
+        color: red;
+      }
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/imported.css`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
+        "sources": Array [
+          "/root/imported.css",
+        ],
+        "sourcesContent": Array [
+          ".imported {
+        color: red;
+      }
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported css with import', async () => {
     const css = await getStyleTagContentIncluding('.imported-with-import ')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/be-imported.css`, `${root}/imported-with-import.css`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
+        "sources": Array [
+          "/root/be-imported.css",
+          "/root/imported-with-import.css",
+        ],
+        "sourcesContent": Array [
+          ".be-imported {
+        color: red;
+      }
+      ",
+          "@import '@/be-imported.css';
+
+      .imported-with-import {
+        color: red;
+      }
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported sass', async () => {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/imported.sass`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AACE;EACE",
+        "sources": Array [
+          "/root/imported.sass",
+        ],
+        "sourcesContent": Array [
+          ".imported
+        &-sass
+          color: red
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported sass module', async () => {
     const css = await getStyleTagContentIncluding('._imported-sass-module_')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/imported.module.sass`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AACE;EACE",
+        "sources": Array [
+          "/root/imported.module.sass",
+        ],
+        "sourcesContent": Array [
+          ".imported
+        &-sass-module
+          color: red
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported less', async () => {
     const css = await getStyleTagContentIncluding('.imported-less ')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/imported.less`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AACE;EACE",
+        "sources": Array [
+          "/root/imported.less",
+        ],
+        "sourcesContent": Array [
+          ".imported {
+        &-less {
+          color: @color;
+        }
+      }
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported stylus', async () => {
     const css = await getStyleTagContentIncluding('.imported-stylus ')
     const map = extractSourcemap(css)
-    assertSourcemap(map, {
-      sources: [`${root}/imported.styl`]
-    })
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AACE;EACE,WAAM",
+        "sources": Array [
+          "/root/imported.styl",
+        ],
+        "sourcesContent": Array [
+          ".imported
+        &-stylus
+          color red
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 } else {
   test('this file only includes test for serve', () => {
