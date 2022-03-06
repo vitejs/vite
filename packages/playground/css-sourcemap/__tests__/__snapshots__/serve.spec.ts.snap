@@ -28,6 +28,19 @@ Array [
 ]
 `;
 
+exports[`imported less: mappings 1`] = `"AACE;EACE"`;
+
+exports[`imported less: sourcesContent 1`] = `
+Array [
+  ".imported {
+  &-less {
+    color: red;
+  }
+}
+",
+]
+`;
+
 exports[`imported sass module: mappings 1`] = `"AACE;EACE"`;
 
 exports[`imported sass module: sourcesContent 1`] = `

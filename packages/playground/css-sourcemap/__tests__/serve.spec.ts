@@ -87,4 +87,12 @@ if (!isBuild) {
       sources: [`${root}/imported.module.sass`]
     })
   })
+
+  test('imported less', async () => {
+    const css = await getStyleTagContentIncluding('.imported-less ')
+    const map = extractSourcemap(css)
+    assertSourcemap(map, {
+      sources: [`${root}/imported.less`]
+    })
+  })
 }
