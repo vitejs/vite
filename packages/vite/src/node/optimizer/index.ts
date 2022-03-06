@@ -694,7 +694,9 @@ function getDepHash(root: string, config: ResolvedConfig): string {
     {
       mode: config.mode,
       root: config.root,
+      define: config.define,
       resolve: config.resolve,
+      buildTarget: config.build.target,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
