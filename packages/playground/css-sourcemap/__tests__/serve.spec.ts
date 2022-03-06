@@ -17,8 +17,10 @@ if (!isBuild) {
     throw new Error('Not found')
   }
 
-  const extractSourcemap = (content: string) =>
-    fromComment(content.trim().split('\n').at(-1)).toObject()
+  const extractSourcemap = (content: string) => {
+    const lines = content.trim().split('\n')
+    return fromComment(lines[lines.length - 1]).toObject()
+  }
 
   const assertSourcemap = (map: any, { sources }: { sources: string[] }) => {
     expect(map.sources).toStrictEqual(sources)
@@ -36,8 +38,8 @@ if (!isBuild) {
       }
     )
     const css = await res.text()
-    const lastLine = css.split('\n').at(-1)
-    expect(lastLine.includes('/*')).toBe(false) // expect no sourcemap
+    const lines = css.split('\n')
+    expect(lines[lines.length - 1].includes('/*')).toBe(false) // expect no sourcemap
   })
 
   test('linked css with import', async () => {

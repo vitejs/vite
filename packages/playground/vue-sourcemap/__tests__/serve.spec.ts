@@ -16,8 +16,10 @@ if (!isBuild) {
     throw new Error('Not found')
   }
 
-  const extractSourcemap = (content: string) =>
-    fromComment(content.trim().split('\n').at(-1)).toObject()
+  const extractSourcemap = (content: string) => {
+    const lines = content.trim().split('\n')
+    return fromComment(lines[lines.length - 1]).toObject()
+  }
 
   const assertSourcemap = (map: any, { sources }: { sources: string[] }) => {
     expect(map.sources).toStrictEqual(sources)
