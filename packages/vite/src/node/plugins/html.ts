@@ -621,7 +621,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         this.emitFile({
           type: 'asset',
-          fileName: shortEmitName,
+          fileName: path.basename(shortEmitName),
           source: result
         })
       }
