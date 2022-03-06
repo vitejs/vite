@@ -96,4 +96,8 @@ if (!isBuild) {
       ]
     })
   })
+} else {
+  test('this file only includes test for serve', () => {
+    expect(true).toBe(true)
+  })
 }

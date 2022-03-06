@@ -105,4 +105,8 @@ if (!isBuild) {
       sources: [`${root}/imported.styl`]
     })
   })
+} else {
+  test('this file only includes test for serve', () => {
+    expect(true).toBe(true)
+  })
 }
