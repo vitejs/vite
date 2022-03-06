@@ -17,6 +17,7 @@
     "dep-esbuild-plugin-transform": "file:./dep-esbuild-plugin-transform",
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",
+    "dep-not-js": "file:./dep-not-js",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.6.2",

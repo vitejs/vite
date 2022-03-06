@@ -8,6 +8,10 @@ export { createLogger, printHttpServerUrls } from './logger'
 export { formatPostcssSourceMap } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
+export {
+  splitVendorChunkPlugin,
+  splitVendorChunk
+} from './plugins/splitVendorChunk'
 export { resolvePackageData } from './packages'
 export { normalizePath } from './utils'
 
@@ -33,7 +37,10 @@ export type {
 } from './preview'
 export type {
   DepOptimizationMetadata,
-  DepOptimizationOptions
+  DepOptimizationOptions,
+  DepOptimizationResult,
+  DepOptimizationProcessing,
+  OptimizedDepInfo
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'
@@ -59,6 +66,7 @@ export type {
   HtmlTagDescriptor
 } from './plugins/html'
 export type { CSSOptions, CSSModulesOptions } from './plugins/css'
+export type { ChunkMetadata } from './plugins/metadata'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
@@ -96,3 +104,12 @@ export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
+export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
+
+import type { ChunkMetadata } from './plugins/metadata'
+
+declare module 'rollup' {
+  export interface RenderedChunk {
+    viteMetadata: ChunkMetadata
+  }
+}

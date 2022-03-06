@@ -5,6 +5,9 @@ import OtherExt from './OtherExt.tesx'
 import JsxScript from './Script.vue'
 import JsxSrcImport from './SrcImport.vue'
 import JsxSetupSyntax from './setup-syntax-jsx.vue'
+// eslint-disable-next-line
+import JsxWithQuery from './Query.jsx?query=true'
+
 function App() {
   return (
     <>
@@ -16,6 +19,7 @@ function App() {
       <JsxScript />
       <JsxSrcImport />
       <JsxSetupSyntax />
+      <JsxWithQuery />
     </>
   )
 }
