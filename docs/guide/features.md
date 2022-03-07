@@ -368,6 +368,36 @@ By default, the worker script will be emitted as a separate chunk in the product
 import MyWorker from './worker?worker&inline'
 ```
 
+A web worker script can be imported by `new Worker()`. The difference between this syntax and imported by appending `?worker` or `?sharedworker` is that this one can use worker options. So we can create a `classic worker` by this syntax.
+
+Detect the case where `{ type: 'classic' }` is not provided or `{ type: 'classic' }` is passed with a static string and use classic workers.
+
+```ts
+const worker = new Worker(new URL('./worker.js', import.meta.url), {
+  type: 'classic'
+})
+const worker = new SharedWorker(new URL('./worker.js', import.meta.url), {
+  type: 'classic'
+})
+```
+
+::: tip Note
+
+If a dynamic expression appears, vite will issue an error. And give `/* @vite-ignore */` out of Vite processing. Because use dynamic expression, vite will copy the code of `/@vite/env` to the worker code head.
+
+```ts
+const generateWorkerOption = () => ({ type: 'classic' })
+// use dy dynamic expression will got a vite process error.
+const worker = new Worker(
+  new Url('./worker.js', import.meta.url),
+  generateWorkerOption()
+)
+```
+
+No matter which type of worker is used, the same [worker configuration](/config/#worker-options) will be used for bundle.
+
+:::
+
 ## Build Optimizations
 
 > Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
