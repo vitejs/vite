@@ -91,8 +91,5 @@
       "vite": "workspace:*",
       "@vitejs/plugin-vue": "workspace:*"
     }
-  },
-  "dependencies": {
-    "compress": "^0.99.0"
   }
 }
