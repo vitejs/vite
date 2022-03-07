@@ -141,7 +141,7 @@ export async function transformImportGlob(
         logger.warn(
           colors.yellow(
             colors.bold(
-              "(!) Use `import.meta.globEager('/dir/*.js', { as: 'raw' })` instead of `import.meta.globEager('/dir/*.js', { assert: { type: 'raw' } })` (it will be deprecated in Vite 3.0)."
+              "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
             )
           )
         )
