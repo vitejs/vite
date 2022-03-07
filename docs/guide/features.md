@@ -383,13 +383,13 @@ const worker = new SharedWorker(new URL('./worker.js', import.meta.url), {
 
 ::: tip Note
 
-If a dynamic expression appears, vite will issue an error. And give `/* @vite-ignore */` out of Vite processing. Because use dynamic expression, vite will copy the code of `/@vite/env` to the worker code head.
+the worker options must be static for Vite to analyze it. if it contains dynamic expressions, `/* @vite-ignore */` can be used to opt-out of Vite processing
 
 ```ts
 const generateWorkerOption = () => ({ type: 'classic' })
 // use dy dynamic expression will got a vite process error.
 const worker = new Worker(
-  new Url('./worker.js', import.meta.url),
+  new URL('./worker.js', import.meta.url),
   generateWorkerOption()
 )
 ```
