@@ -412,7 +412,7 @@ async function doBuild(
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
       const deps = (await scanImports(config)).deps
-      addManuallyIncludedOptimizeDeps(deps, config)
+      await addManuallyIncludedOptimizeDeps(deps, config)
       knownImports = Object.keys(deps)
     }
     external = resolveExternal(
