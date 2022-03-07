@@ -8,6 +8,10 @@
 // avoid breaking the production client type. Because this file is referenced
 // in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
 interface GlobOptions {
+  as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }

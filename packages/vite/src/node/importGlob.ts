@@ -28,6 +28,9 @@ interface GlobParams {
 
 interface GlobOptions {
   as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }
