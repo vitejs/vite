@@ -133,18 +133,19 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    if (
-      options?.as === 'raw' ||
-      // TODO remove assert syntax for the Vite 3.0 release.
-      options?.assert?.type === 'raw'
-    ) {
-      logger.warn(
-        colors.yellow(
-          colors.bold(
-            "(!) Use `import.meta.globEager('/dir/*.js', { as: 'raw' })` instead of `import.meta.globEager('/dir/*.js', { assert: { type: 'raw' } })` (it will be deprecated in Vite 3.0)."
+    // TODO remove assert syntax for the Vite 3.0 release.
+    const isRawAssert = options?.assert?.type === 'raw'
+    const isRawType = options?.as === 'raw'
+    if (isRawType || isRawAssert) {
+      if (isRawAssert) {
+        logger.warn(
+          colors.yellow(
+            colors.bold(
+              "(!) Use `import.meta.globEager('/dir/*.js', { as: 'raw' })` instead of `import.meta.globEager('/dir/*.js', { assert: { type: 'raw' } })` (it will be deprecated in Vite 3.0)."
+            )
           )
         )
-      )
+      }
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
