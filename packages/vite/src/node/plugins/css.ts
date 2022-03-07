@@ -644,12 +644,14 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
+
     const preprocessResult = await preProcessor(
       code,
       config.root,
       opts,
       atImportResolvers
     )
+
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
     }
@@ -680,10 +682,12 @@ async function compileCSS(
           if (isHTMLProxy && publicFile) {
             return publicFile
           }
+
           const resolved = await atImportResolvers.css(
             id,
             path.join(basedir, '*')
           )
+
           if (resolved) {
             return path.resolve(resolved)
           }
@@ -844,6 +848,7 @@ type CssUrlReplacer = (
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -893,6 +898,16 @@ function rewriteCssUrls(
   })
 }
 
+function rewriteImportCss(
+  css: string,
+  replacer: CssUrlReplacer
+): Promise<string> {
+  return asyncReplace(css, importCssRE, async (match) => {
+    const [matched, rawUrl] = match
+    return await doImportCSSReplace(rawUrl, matched, replacer)
+  })
+}
+
 function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer
@@ -921,6 +936,24 @@ async function doUrlReplace(
   }
 
   return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+}
+
+async function doImportCSSReplace(
+  rawUrl: string,
+  matched: string,
+  replacer: CssUrlReplacer
+) {
+  let wrap = ''
+  const first = rawUrl[0]
+  if (first === `"` || first === `'`) {
+    wrap = first
+    rawUrl = rawUrl.slice(1, -1)
+  }
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+    return matched
+  }
+
+  return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
@@ -1119,12 +1152,19 @@ async function rebaseUrls(
   if (fileDir === rootDir) {
     return { file }
   }
-  // no url()
+
   const content = fs.readFileSync(file, 'utf-8')
-  if (!cssUrlRE.test(content)) {
+  // no url()
+  const hasUrls = cssUrlRE.test(content)
+  // no @import xxx.css
+  const hasImportCss = importCssRE.test(content)
+
+  if (!hasUrls && !hasImportCss) {
     return { file }
   }
-  const rebased = await rewriteCssUrls(content, (url) => {
+
+  let rebased
+  const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
@@ -1137,7 +1177,17 @@ async function rebaseUrls(
     const absolute = path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
-  })
+  }
+
+  // fix css imports in less such as `@import "foo.css"`
+  if (hasImportCss) {
+    rebased = await rewriteImportCss(content, rebaseFn)
+  }
+
+  if (hasUrls) {
+    rebased = await rewriteCssUrls(rebased || content, rebaseFn)
+  }
+
   return {
     file,
     contents: rebased

@@ -364,3 +364,8 @@ test('minify css', async () => {
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
 })
+
+test('import css in less', async () => {
+  expect(await getColor('.css-in-less')).toBe('yellow')
+  expect(await getColor('.css-in-less-2')).toBe('blue')
+})
