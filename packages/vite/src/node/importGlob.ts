@@ -150,7 +150,10 @@ export async function transformImportGlob(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
     } else {
-      const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
+      let importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
+      if (options?.as) {
+        importeeUrl = `${importee}?${options.as}`
+      }
       if (isEager) {
         const identifier = `__glob_${importIndex}_${i}`
         // css imports injecting a ?used query to export the css string

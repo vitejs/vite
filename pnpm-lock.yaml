@@ -201,7 +201,10 @@ importers:
     specifiers: {}
 
   packages/playground/glob-import:
-    specifiers: {}
+    specifiers:
+      es-module-lexer: ^0.9.3
+    dependencies:
+      es-module-lexer: 0.9.3
 
   packages/playground/hmr:
     specifiers: {}
@@ -4328,7 +4331,6 @@ packages:
 
   /es-module-lexer/0.9.3:
     resolution: {integrity: sha512-1HQ2M2sPtxwnvOvT1ZClHyQDiggdNjURWpY2we6aMKCQiUVxTmVs2UYPLIrD84sS+kMdUwfBSylbJPwNnBrnHQ==}
-    dev: true
 
   /es-to-primitive/1.2.1:
     resolution: {integrity: sha512-QCOllgZJtaUo9miYBcLChTUaHNjJF3PYs1VidD7AwiEj1kYxKeQTctLAezAOH5ZKRH0g2IgPn6KwB4IT8iRpvA==}

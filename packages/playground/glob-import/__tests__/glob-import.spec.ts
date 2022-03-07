@@ -66,6 +66,18 @@ const rawResult = {
   }
 }
 
+const customModifierResult = {
+  '/dir/alias.js': {
+    exportNames: ['default']
+  },
+  '/dir/foo.js': {
+    exportNames: ['msg']
+  },
+  '/dir/index.js': {
+    exportNames: ['modules', 'globWithAlias']
+  }
+}
+
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
@@ -78,6 +90,12 @@ test('should work', async () => {
 test('import glob raw', async () => {
   expect(await page.textContent('.globraw')).toBe(
     JSON.stringify(rawResult, null, 2)
+  )
+})
+
+test('custom modifer', async () => {
+  expect(await page.textContent('.custom-modifier')).toBe(
+    JSON.stringify(customModifierResult, null, 2)
   )
 })
 

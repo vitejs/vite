@@ -1,6 +1,7 @@
 <pre class="result"></pre>
 <pre class="result-node_modules"></pre>
 <pre class="globraw"></pre>
+<pre class="custom-modifier"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -48,6 +49,17 @@
   })
   document.querySelector('.globraw').textContent = JSON.stringify(
     globraw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  const modulesMeta = import.meta.globEager('/dir/*.js', {
+    as: 'meta'
+  })
+  document.querySelector('.custom-modifier').textContent = JSON.stringify(
+    modulesMeta,
     null,
     2
   )
