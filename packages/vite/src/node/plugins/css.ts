@@ -1193,7 +1193,7 @@ async function rebaseUrls(
     return normalizePath(relative)
   }
 
-  // fix import css in les shas @import "foo.css"
+  // fix css imports in less such as `@import "foo.css"`
   if (hasImportCss) {
     rebased = await rewriteImportCss(content, rebaseFn)
   }
