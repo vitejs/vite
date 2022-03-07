@@ -17,9 +17,7 @@ test('always throw error when evaluating an wrong SSR module', async () => {
   }
   await viteServer.close()
   expect(expectedErrors).toHaveLength(2)
-  expectedErrors.forEach((error) => {
-    expect(error?.message).toContain(THROW_MESSAGE)
-  })
+  expect(expectedErrors[0]).toBe(expectedErrors[1])
   expect(spy).toBeCalledTimes(2)
   spy.mock.calls.forEach(([info]) => {
     expect(info).toContain('Error when evaluating SSR module')
