@@ -273,26 +273,7 @@ export async function createOptimizeDepsRun(
       )
     }
 
-    const include = config.optimizeDeps?.include
-    if (include) {
-      const resolve = config.createResolver({ asSrc: false })
-      for (const id of include) {
-        // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
-        // and for pretty printing
-        const normalizedId = normalizeId(id)
-        if (!deps[normalizedId]) {
-          const entry = await resolve(id)
-          if (entry) {
-            deps[normalizedId] = entry
-          } else {
-            processing.resolve()
-            throw new Error(
-              `Failed to resolve force included dependency: ${colors.cyan(id)}`
-            )
-          }
-        }
-      }
-    }
+    addManuallyIncludedOptimizeDeps(deps, config)
 
     // update browser hash
     metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
@@ -538,6 +519,31 @@ export async function createOptimizeDepsRun(
       rmSync(depsCacheDir, { recursive: true })
     }
     fs.renameSync(processingCacheDir, depsCacheDir)
+  }
+}
+
+export async function addManuallyIncludedOptimizeDeps(
+  deps: Record<string, string>,
+  config: ResolvedConfig
+): Promise<void> {
+  const include = config.optimizeDeps?.include
+  if (include) {
+    const resolve = config.createResolver({ asSrc: false })
+    for (const id of include) {
+      // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
+      // and for pretty printing
+      const normalizedId = normalizeId(id)
+      if (!deps[normalizedId]) {
+        const entry = await resolve(id)
+        if (entry) {
+          deps[normalizedId] = entry
+        } else {
+          throw new Error(
+            `Failed to resolve force included dependency: ${colors.cyan(id)}`
+          )
+        }
+      }
+    }
   }
 }
 
