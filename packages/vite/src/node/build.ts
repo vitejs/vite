@@ -36,6 +36,7 @@ import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
+import { getDepsCacheDir } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -401,7 +402,7 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    const dataPath = path.join(config.cacheDir, '_metadata.json')
+    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
     try {
       const data = JSON.parse(
         fs.readFileSync(dataPath, 'utf-8')
