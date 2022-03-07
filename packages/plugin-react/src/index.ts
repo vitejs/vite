@@ -35,7 +35,7 @@ export interface Options {
   /**
    * Set this to `true` to annotate the JSX factory with `\/* @__PURE__ *\/`.
    * This option is ignored when `jsxRuntime` is not `"automatic"`.
-   * @default false
+   * @default true
    */
   jsxPure?: boolean
 
@@ -202,7 +202,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 {
                   runtime: 'automatic',
                   importSource: opts.jsxImportSource,
-                  pure: opts.jsxPure === true
+                  pure: opts.jsxPure !== false
                 }
               ])
 
