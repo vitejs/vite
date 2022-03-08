@@ -527,7 +527,15 @@ export async function createOptimizeDepsRun(
   }
 }
 
-export async function addManuallyIncludedOptimizeDeps(
+export async function findKnownImports(
+  config: ResolvedConfig
+): Promise<string[]> {
+  const deps = (await scanImports(config)).deps
+  await addManuallyIncludedOptimizeDeps(deps, config)
+  return Object.keys(deps)
+}
+
+async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig
 ): Promise<void> {
