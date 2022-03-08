@@ -4,10 +4,14 @@
 
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 
-// Duplicate import('../src/node/importGlob').AssertOptions
-// Avoid breaking the production client type because this file is referenced
-// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist
-interface AssertOptions {
+// Duplicate of import('../src/node/importGlob').GlobOptions in order to
+// avoid breaking the production client type. Because this file is referenced
+// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
+interface GlobOptions {
+  as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }
@@ -59,25 +63,15 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob(
+  glob<Module = { [key: string]: any }>(
     pattern: string,
-    options?: AssertOptions
-  ): Record<
-    string,
-    () => Promise<{
-      [key: string]: any
-    }>
-  >
+    options?: GlobOptions
+  ): Record<string, () => Promise<Module>>
 
-  globEager(
+  globEager<Module = { [key: string]: any }>(
     pattern: string,
-    options?: AssertOptions
-  ): Record<
-    string,
-    {
-      [key: string]: any
-    }
-  >
+    options?: GlobOptions
+  ): Record<string, Module>
 }
 
 interface ImportMetaEnv {

@@ -96,6 +96,22 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
+### Environment Variables
+
+Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+
+```js
+import { defineConfig, loadEnv } from 'vite'
+
+export default defineConfig(({ command, mode }) => {
+  // Load env file based on `mode` in the current working directory
+  const env = loadEnv(mode, process.cwd())
+  return {
+    // build specific config
+  }
+})
+```
+
 ## Shared Options
 
 ### root
@@ -139,9 +155,11 @@ export default defineConfig(async ({ command, mode }) => {
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
+  ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+  :::
 
   ::: tip NOTE
   For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -508,11 +526,13 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number | false, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
+
+  Set `server.hmr.port` to `false` when connecting to a domain without a port.
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
@@ -772,19 +792,19 @@ export default defineConfig({
 
 ### build.manifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
+  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssrManifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssr
 
@@ -923,7 +943,7 @@ export default defineConfig({
 
 - **Type:** `string | string[]`
 
-  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+  By default, Vite will crawl your `index.html` to detect dependencies that need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
   If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
 

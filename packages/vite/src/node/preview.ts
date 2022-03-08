@@ -1,7 +1,7 @@
 import path from 'path'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
+import compression from './server/middlewares/compression'
 import type { Server } from 'http'
 import type { InlineConfig, ResolvedConfig } from '.'
 import { resolveConfig } from '.'

@@ -12,8 +12,6 @@ import type {
   OutputOptions,
   RollupOutput,
   ExternalOption,
-  GetManualChunk,
-  GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
   RollupError,
@@ -37,8 +35,8 @@ import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { isCSSRequest } from './plugins/css'
 import type { DepOptimizationMetadata } from './optimizer'
+import { getDepsCacheDir } from './optimizer'
 import { scanImports } from './optimizer/scan'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -179,7 +177,7 @@ export interface BuildOptions {
    * ```
    * @default false
    */
-  manifest?: boolean
+  manifest?: boolean | string
   /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
@@ -195,7 +193,7 @@ export interface BuildOptions {
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
    */
-  ssrManifest?: boolean
+  ssrManifest?: boolean | string
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
@@ -404,7 +402,7 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    const dataPath = path.join(config.cacheDir, '_metadata.json')
+    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
     try {
       const data = JSON.parse(
         fs.readFileSync(dataPath, 'utf-8')
@@ -483,13 +481,6 @@ async function doBuild(
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         inlineDynamicImports: ssr && typeof input === 'string',
-        manualChunks:
-          !ssr &&
-          !libOptions &&
-          output?.format !== 'umd' &&
-          output?.format !== 'iife'
-            ? createMoveToVendorChunkFn(config)
-            : undefined,
         ...output
       }
     }
@@ -616,55 +607,6 @@ function getPkgName(root: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
-function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
-  const cache = new Map<string, boolean>()
-  return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
-    }
-  }
-}
-
-function staticImportedByEntry(
-  id: string,
-  getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
-  importStack: string[] = []
-): boolean {
-  if (cache.has(id)) {
-    return cache.get(id) as boolean
-  }
-  if (importStack.includes(id)) {
-    // circular deps!
-    cache.set(id, false)
-    return false
-  }
-  const mod = getModuleInfo(id)
-  if (!mod) {
-    cache.set(id, false)
-    return false
-  }
-
-  if (mod.isEntry) {
-    cache.set(id, true)
-    return true
-  }
-  const someImporterIs = mod.importers.some((importer) =>
-    staticImportedByEntry(
-      importer,
-      getModuleInfo,
-      cache,
-      importStack.concat(id)
-    )
-  )
-  cache.set(id, someImporterIs)
-  return someImporterIs
-}
-
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
@@ -769,7 +711,7 @@ function resolveExternal(
   ssrExternals: string[],
   user: ExternalOption | undefined
 ): ExternalOption {
-  return ((id, parentId, isResolved) => {
+  return (id, parentId, isResolved) => {
     if (shouldExternalizeForSSR(id, ssrExternals)) {
       return true
     }
@@ -782,7 +724,7 @@ function resolveExternal(
         return isExternal(id, user)
       }
     }
-  }) as ExternalOption
+  }
 }
 
 function isExternal(id: string, test: string | RegExp) {
@@ -793,39 +735,48 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(p: Plugin): Plugin {
-  const { resolveId, load, transform } = p
+function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+  const { resolveId, load, transform } = plugin
   return {
-    ...p,
+    ...plugin,
     resolveId: wrapSsrResolveId(resolveId),
     load: wrapSsrLoad(load),
     transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrResolveId(fn: Function | undefined) {
+function wrapSsrResolveId(
+  fn?: Rollup.ResolveIdHook
+): Rollup.ResolveIdHook | undefined {
   if (!fn) return
-  return function (this: any, id: any, importer: any, options: any) {
+
+  return function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
 }
 
-function wrapSsrLoad(fn: Function | undefined) {
+function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, id: any, ...args: any[]) {
+
+  return function (id, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
 }
 
-function wrapSsrTransform(fn: Function | undefined) {
+function wrapSsrTransform(
+  fn?: Rollup.TransformHook
+): Rollup.TransformHook | undefined {
   if (!fn) return
-  // Receiving options param to be future-proof if Rollup adds it
-  return function (this: any, code: any, importer: any, ...args: any[]) {
+
+  return function (code, importer, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
   }
 }
 
-function injectSsrFlag(options: any = {}) {
-  return { ...options, ssr: true }
+function injectSsrFlag<T extends Record<string, any>>(
+  options?: T
+): T & { ssr: boolean } {
+  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }

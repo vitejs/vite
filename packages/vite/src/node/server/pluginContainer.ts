@@ -50,7 +50,7 @@ import type {
 } from 'rollup'
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { TraceMap } from '@jridgewell/trace-mapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
@@ -377,7 +377,7 @@ export async function createPluginContainer(
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
-          const { source, line, column } = traced.originalPositionFor({
+          const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
             column: Number(err.loc.column)
           })

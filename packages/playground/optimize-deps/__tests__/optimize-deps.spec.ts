@@ -46,7 +46,7 @@ test('dedupe', async () => {
   expect(await page.textContent('.dedupe button')).toBe('count is 1')
 })
 
-test('cjs borwser field (axios)', async () => {
+test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
@@ -60,6 +60,10 @@ test('forced include', async () => {
 
 test('import * from optimized dep', async () => {
   expect(await page.textContent('.import-star')).toMatch(`[success]`)
+})
+
+test('import from dep with .notjs files', async () => {
+  expect(await page.textContent('.not-js')).toMatch(`[success]`)
 })
 
 test('dep with css import', async () => {
@@ -86,4 +90,12 @@ test('import from hidden dir', async () => {
 
 test('import optimize-excluded package that imports optimized-included package', async () => {
   expect(await page.textContent('.nested-include')).toBe('nested-include')
+})
+
+test('import aliased package with colon', async () => {
+  expect(await page.textContent('.url')).toBe('vitejs.dev')
+})
+
+test('variable names are reused in different scripts', async () => {
+  expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })

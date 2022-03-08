@@ -38,6 +38,9 @@
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
+<h2>Import from dependency with .notjs files</h2>
+<div class="not-js"></div>
+
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
@@ -52,6 +55,18 @@
 
 <h2>Nested include</h2>
 <div>Module path: <span class="nested-include"></span></div>
+
+<h2>Alias with colon</h2>
+<div>URL: <span class="url"></span></div>
+
+<h2>Reused variable names</h2>
+<div>This should show reused: <span class="reused-variable-names"></span></div>
+
+<script>
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
 
 <script type="module">
   // test dep detection in globbed files
@@ -70,6 +85,9 @@
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
 
+  import { notjsValue } from 'dep-not-js'
+  text('.not-js', notjsValue)
+
   import { createApp } from 'vue'
   import { createStore } from 'vuex'
   if (typeof createApp === 'function' && typeof createStore === 'function') {
@@ -85,7 +103,14 @@
   import { nestedInclude } from 'nested-exclude'
   text('.nested-include', nestedInclude)
 
-  function text(el, text) {
-    document.querySelector(el).textContent = text
-  }
+  import { parse } from 'node:url'
+  text('.url', parse('https://vitejs.dev').hostname)
+</script>
+
+<script type="module">
+  const reusedName = 1
+</script>
+<script type="module">
+  const reusedName = 'reused'
+  text('.reused-variable-names', reusedName)
 </script>

@@ -1,4 +1,4 @@
-import { TraceMap } from '@jridgewell/trace-mapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import type { ModuleGraph } from '../server/moduleGraph'
 
 let offset: number
@@ -33,7 +33,7 @@ export function ssrRewriteStacktrace(
 
           const traced = new TraceMap(rawSourceMap as any)
 
-          const pos = traced.originalPositionFor({
+          const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
             column: Number(column)
           })
