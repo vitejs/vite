@@ -7,13 +7,19 @@ import type { Connect } from 'types/connect'
 export function baseMiddleware({
   config
 }: ViteDevServer): Connect.NextHandleFunction {
-  const base = config.base
+  const { base, root } = config
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
     const parsed = parseUrl(url)
     const path = parsed.pathname || '/'
+
+    if (path.startsWith(root)) {
+      // If set the base URL to root on Linux, need to replace root to emtry string (#7220)
+      req.url = url.replace(root, '')
+      return next()
+    }
 
     if (path.startsWith(base)) {
       // rewrite url to remove base.. this ensures that other middleware does
