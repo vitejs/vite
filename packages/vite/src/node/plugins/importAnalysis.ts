@@ -178,6 +178,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number
       ): Promise<[string, string]> => {
+        const rawUrl = url
         if (base !== '/' && url.startsWith(base)) {
           url = url.replace(base, '/')
         }
@@ -200,16 +201,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        let resolved = await this.resolve(url, importerFile)
 
         if (!resolved) {
-          this.error(
-            `Failed to resolve import "${url}" from "${path.relative(
-              process.cwd(),
-              importerFile
-            )}". Does the file exist?`,
-            pos
-          )
+          // #7220
+          // fallback to rawUrl
+          // to aviod rawUrl conflicting with base config
+          resolved = await this.resolve(rawUrl, importerFile)
+          if (!resolved) {
+            this.error(
+              `Failed to resolve import "${url}" from "${path.relative(
+                process.cwd(),
+                importerFile
+              )}". Does the file exist?`,
+              pos
+            )
+          }
         }
 
         const isRelative = url.startsWith('.')
