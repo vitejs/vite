@@ -16,10 +16,7 @@ import resolve from 'resolve'
 import { builtinModules } from 'module'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import type {
-  DecodedSourceMap,
-  RawSourceMap
-} from '@ampproject/remapping/dist/types/types'
+import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import { performance } from 'perf_hooks'
 import { parse as parseUrl, URLSearchParams } from 'url'
 

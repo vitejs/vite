@@ -15,7 +15,7 @@ import {
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping'
 import type { SourceMap } from 'rollup'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import { createFilter } from '@rollup/pluginutils'
