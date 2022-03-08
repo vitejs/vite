@@ -40,7 +40,7 @@
 
 <script type="module">
   const rawModules = import.meta.globEager('/dir/*.json', {
-    assert: { type: 'raw' }
+    as: 'raw'
   })
   const globraw = {}
   Object.keys(rawModules).forEach((key) => {

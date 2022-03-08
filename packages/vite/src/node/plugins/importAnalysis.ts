@@ -355,6 +355,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer,
               index,
               root,
+              config.logger,
               normalizeUrl,
               resolve
             )
