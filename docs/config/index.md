@@ -343,7 +343,7 @@ export default defineConfig(({ command, mode }) => {
   export default defineConfig({
     esbuild: {
       jsxFactory: 'h',
-      jsxFragment: 'Fragment'
+      jsxFragmentFactory: 'Fragment'
     }
   })
   ```
