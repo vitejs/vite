@@ -36,8 +36,7 @@ import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
-import { getDepsCacheDir } from './optimizer'
-import { scanImports } from './optimizer/scan'
+import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
@@ -411,7 +410,7 @@ async function doBuild(
     } catch (e) {}
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
-      knownImports = Object.keys((await scanImports(config)).deps)
+      knownImports = await findKnownImports(config)
     }
     external = resolveExternal(
       resolveSSRExternal(config, knownImports),
