@@ -12,9 +12,20 @@
   <span class="result"></span>
 </div>
 
+<div class="worker-wasm">
+  <h3>worker wasm</h3>
+  <span class="result"></span>
+</div>
+
 <script type="module">
   import light from './light.wasm'
   import heavy from './heavy.wasm'
+  import myWorker from './worker?worker'
+
+  const w = new myWorker()
+  w.addEventListener('message', (ev) => {
+    text('.worker-wasm .result', ev.data.result)
+  })
 
   async function testWasm(init, resultElement) {
     const { exported_func } = await init({
@@ -23,6 +34,10 @@
       }
     })
     exported_func()
+  }
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
   }
 
   document

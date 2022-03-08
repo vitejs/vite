@@ -30,7 +30,6 @@ import type { ResolveFn, ViteDevServer } from '../'
 import {
   getAssetFilename,
   assetUrlRE,
-  registerAssetToChunk,
   fileToUrl,
   checkPublicFile
 } from './asset'
@@ -118,11 +117,6 @@ export const isDirectRequest = (request: string): boolean =>
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
   Map<string, Record<string, string>>
->()
-
-export const chunkToEmittedCssFileMap = new WeakMap<
-  RenderedChunk,
-  Set<string>
 >()
 
 export const removedPureCssFilesCache = new WeakMap<
@@ -390,7 +384,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const isRelativeBase = config.base === '' || config.base.startsWith('.')
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
-          registerAssetToChunk(chunk, filename)
+          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (!isRelativeBase || inlined) {
             // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
@@ -427,10 +421,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: chunkCSS
           })
-          chunkToEmittedCssFileMap.set(
-            chunk,
-            new Set([this.getFileName(fileHandle)])
-          )
+          chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           // legacy build, inline css
           chunkCSS = await processChunkCSS(chunkCSS, {
@@ -493,17 +484,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // chunks instead.
             chunk.imports = chunk.imports.filter((file) => {
               if (pureCssChunks.has(file)) {
-                const css = chunkToEmittedCssFileMap.get(
-                  bundle[file] as OutputChunk
+                const {
+                  viteMetadata: { importedCss }
+                } = bundle[file] as OutputChunk
+                importedCss.forEach((file) =>
+                  chunk.viteMetadata.importedCss.add(file)
                 )
-                if (css) {
-                  let existing = chunkToEmittedCssFileMap.get(chunk)
-                  if (!existing) {
-                    existing = new Set()
-                  }
-                  css.forEach((file) => existing!.add(file))
-                  chunkToEmittedCssFileMap.set(chunk, existing)
-                }
                 return false
               }
               return true
@@ -658,12 +644,14 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
+
     const preprocessResult = await preProcessor(
       code,
       config.root,
       opts,
       atImportResolvers
     )
+
     if (preprocessResult.errors.length) {
       throw preprocessResult.errors[0]
     }
@@ -694,10 +682,12 @@ async function compileCSS(
           if (isHTMLProxy && publicFile) {
             return publicFile
           }
+
           const resolved = await atImportResolvers.css(
             id,
             path.join(basedir, '*')
           )
+
           if (resolved) {
             return path.resolve(resolved)
           }
@@ -858,6 +848,7 @@ type CssUrlReplacer = (
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
 const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
@@ -907,6 +898,16 @@ function rewriteCssUrls(
   })
 }
 
+function rewriteImportCss(
+  css: string,
+  replacer: CssUrlReplacer
+): Promise<string> {
+  return asyncReplace(css, importCssRE, async (match) => {
+    const [matched, rawUrl] = match
+    return await doImportCSSReplace(rawUrl, matched, replacer)
+  })
+}
+
 function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer
@@ -935,6 +936,24 @@ async function doUrlReplace(
   }
 
   return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+}
+
+async function doImportCSSReplace(
+  rawUrl: string,
+  matched: string,
+  replacer: CssUrlReplacer
+) {
+  let wrap = ''
+  const first = rawUrl[0]
+  if (first === `"` || first === `'`) {
+    wrap = first
+    rawUrl = rawUrl.slice(1, -1)
+  }
+  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+    return matched
+  }
+
+  return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
@@ -1133,12 +1152,19 @@ async function rebaseUrls(
   if (fileDir === rootDir) {
     return { file }
   }
-  // no url()
+
   const content = fs.readFileSync(file, 'utf-8')
-  if (!cssUrlRE.test(content)) {
+  // no url()
+  const hasUrls = cssUrlRE.test(content)
+  // no @import xxx.css
+  const hasImportCss = importCssRE.test(content)
+
+  if (!hasUrls && !hasImportCss) {
     return { file }
   }
-  const rebased = await rewriteCssUrls(content, (url) => {
+
+  let rebased
+  const rebaseFn = (url: string) => {
     if (url.startsWith('/')) return url
     // match alias, no need to rewrite
     for (const { find } of alias) {
@@ -1151,7 +1177,17 @@ async function rebaseUrls(
     const absolute = path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
-  })
+  }
+
+  // fix css imports in less such as `@import "foo.css"`
+  if (hasImportCss) {
+    rebased = await rewriteImportCss(content, rebaseFn)
+  }
+
+  if (hasUrls) {
+    rebased = await rewriteCssUrls(rebased || content, rebaseFn)
+  }
+
   return {
     file,
     contents: rebased
