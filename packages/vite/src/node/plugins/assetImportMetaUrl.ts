@@ -19,7 +19,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
-      if (code.includes('new URL') && code.includes(`import.meta.url`)) {
+      if (
+        !options?.ssr &&
+        code.includes('new URL') &&
+        code.includes(`import.meta.url`)
+      ) {
         const importMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const noCommentsCode = code
@@ -29,13 +33,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: exp, 1: rawUrl, index } = match
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              index
-            )
-          }
 
           if (!s) s = new MagicString(code)
 
