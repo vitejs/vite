@@ -273,7 +273,12 @@ export async function createOptimizeDepsRun(
       )
     }
 
-    await addManuallyIncludedOptimizeDeps(deps, config)
+    try {
+      await addManuallyIncludedOptimizeDeps(deps, config)
+    } catch (e) {
+      processing.resolve()
+      throw e
+    }
 
     // update browser hash
     metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
