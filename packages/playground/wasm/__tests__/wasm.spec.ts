@@ -9,3 +9,7 @@ test('should work when output', async () => {
   await page.click('.output-wasm .run')
   await untilUpdated(() => page.textContent('.output-wasm .result'), '24')
 })
+
+test('should work when wasm in worker', async () => {
+  await untilUpdated(() => page.textContent('.worker-wasm .result'), '3')
+})

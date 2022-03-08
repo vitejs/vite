@@ -138,7 +138,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            const content = await bundleWorkerEntry(config, file)
+            const content = await bundleWorkerEntry(this, config, file)
             const basename = path.parse(cleanUrl(file)).name
             const contentHash = getAssetHash(content)
             const fileName = path.posix.join(
