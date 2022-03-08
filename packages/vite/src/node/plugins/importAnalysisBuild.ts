@@ -158,6 +158,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer,
               index,
               config.root,
+              config.logger,
               undefined,
               resolve,
               insertPreload

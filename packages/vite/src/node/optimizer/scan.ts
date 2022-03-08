@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import type { ResolvedConfig } from '..'
+import type { ResolvedConfig, Logger } from '..'
 import type { Loader, Plugin, OnLoadResult } from 'esbuild'
 import { build, transform } from 'esbuild'
 import {
@@ -296,7 +296,8 @@ function esbuildScanPlugin(
                     path,
                     config.root,
                     loader,
-                    resolve
+                    resolve,
+                    config.logger
                   )
                 }
               } else {
@@ -454,7 +455,8 @@ function esbuildScanPlugin(
             id,
             config.root,
             ext as Loader,
-            resolve
+            resolve,
+            config.logger
           ).then((contents) => ({
             loader: ext as Loader,
             contents
@@ -474,7 +476,8 @@ async function transformGlob(
   importer: string,
   root: string,
   loader: Loader,
-  resolve: (url: string, importer?: string) => Promise<string | undefined>
+  resolve: (url: string, importer?: string) => Promise<string | undefined>,
+  logger: Logger
 ) {
   // transform the content first since es-module-lexer can't handle non-js
   if (loader !== 'js') {
@@ -495,6 +498,7 @@ async function transformGlob(
       normalizePath(importer),
       index,
       root,
+      logger,
       undefined,
       resolve
     )
