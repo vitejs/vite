@@ -36,9 +36,7 @@ import {
 import MagicString from 'magic-string'
 import type * as Postcss from 'postcss'
 import type Sass from 'sass'
-// We need to disable check of extraneous import which is buggy for stylus,
-// and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
-import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
+import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
@@ -1011,6 +1009,10 @@ type StylePreprocessorOptions = {
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
 
+type StylusPreprocessorOptions = StylePreprocessorOptions & {
+  define: Record<string, any>
+}
+
 type StylePreprocessor = (
   source: string,
   root: string,
@@ -1022,6 +1024,13 @@ type SassStylePreprocessor = (
   source: string,
   root: string,
   options: SassStylePreprocessorOptions,
+  resolvers: CSSAtImportResolvers
+) => StylePreprocessorResults | Promise<StylePreprocessorResults>
+
+type StylusStylePreprocessor = (
+  source: string,
+  root: string,
+  options: StylusPreprocessorOptions,
   resolvers: CSSAtImportResolvers
 ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
 
@@ -1301,7 +1310,7 @@ function createViteLessPlugin(
 }
 
 // .styl
-const styl: StylePreprocessor = async (source, root, options) => {
+const styl: StylusStylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
@@ -1317,8 +1326,15 @@ const styl: StylePreprocessor = async (source, root, options) => {
     path.resolve(dep)
   )
   try {
-    const ref = nodeStylus(source, options)
+    let ref = nodeStylus(source, options)
 
+    if (options.define) {
+      // Stack `define` by piping to the stylus instance ref
+      ref = Object.entries(options.define).reduce(
+        (refStack, [key, value]) => refStack.define(key, value),
+        ref
+      )
+    }
     // if (map) ref.set('sourcemap', { inline: false, comment: false })
 
     const result = ref.render()

@@ -1,4 +1,5 @@
 const path = require('path')
+const stylus = require('stylus')
 
 /**
  * @type {import('vite').UserConfig}
@@ -46,7 +47,11 @@ module.exports = {
         imports: [
           './options/relative-import.styl',
           path.join(__dirname, 'options/absolute-import.styl')
-        ]
+        ],
+        define: {
+          $definedColor: new stylus.Parser('teal').peek().val,
+          definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1)
+        }
       }
     }
   }
