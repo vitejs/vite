@@ -134,7 +134,7 @@ test('stylus', async () => {
   )
   expect(await getColor(optionsRelativeImport)).toBe('green')
   expect(await getColor(optionsAbsoluteImport)).toBe('red')
-  expect(await getColor(optionsDefineVar)).toBe('teal')
+  expect(await getColor(optionsDefineVar)).toBe('rgb(51, 197, 255)')
   expect(await getColor(optionsDefineFunc)).toBe('rgb(255, 0, 98)')
 
   editFile('stylus.styl', (code) =>

@@ -49,7 +49,7 @@ module.exports = {
           path.join(__dirname, 'options/absolute-import.styl')
         ],
         define: {
-          $definedColor: new stylus.Parser('teal').peek().val,
+          $definedColor: new stylus.Parser('#33C5FF').peek().val,
           definedFunction: () => new stylus.nodes.RGBA(255, 0, 98, 1)
         }
       }
