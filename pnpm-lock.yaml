@@ -177,6 +177,9 @@ importers:
     devDependencies:
       cross-env: 7.0.3
 
+  packages/playground/env-nested:
+    specifiers: {}
+
   packages/playground/extensions:
     specifiers:
       vue: ^3.2.25
@@ -786,7 +789,6 @@ importers:
       acorn: ^8.7.0
       cac: 6.7.9
       chokidar: ^3.5.3
-      compression: ^1.7.4
       connect: ^3.7.0
       connect-history-api-fallback: ^1.6.0
       convert-source-map: ^1.8.0
@@ -864,7 +866,6 @@ importers:
       acorn: 8.7.0
       cac: 6.7.9
       chokidar: 3.5.3
-      compression: 1.7.4
       connect: 3.7.0
       connect-history-api-fallback: 1.6.0
       convert-source-map: 1.8.0
