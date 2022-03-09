@@ -145,6 +145,15 @@ module.exports = defineConfig({
 })
 ```
 
+The entry file would contain exports that can be imported by users of your package:
+
+```js
+// lib/main.js
+import Foo from './Foo.vue'
+import Bar from './Bar.vue'
+export { Foo, Bar }
+```
+
 Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
 
 ```
