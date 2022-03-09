@@ -51,7 +51,7 @@ export interface Options {
 }
 ```
 
-## Example for passing options to `@vue/compiler-sfc`:
+## Example for passing options to `vue/compiler-sfc`:
 
 ```ts
 import vue from '@vitejs/plugin-vue'
