@@ -12,7 +12,6 @@
     "./no-ext-index": "./out/esm.browser.js",
     "./not-browser.js": false,
     "./multiple.dot.path.js": false,
-    "jsdom": false,
-    "./question.js?query": "./out/esm.browser.js"
+    "jsdom": false
   }
 }
