@@ -3,7 +3,10 @@ function text(el, text) {
 }
 
 const logWorker = new Worker(
-  new URL('./workers/log-worker.js', import.meta.url)
+  new URL('./workers/log-worker.js', import.meta.url),
+  {
+    type: 'module'
+  }
 )
 
 logWorker.postMessage('ping')

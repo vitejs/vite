@@ -1,5 +1,3 @@
-self.onmessage = (e) => {
-  if (e.data === 'ping') {
-    self.postMessage('pong')
-  }
-}
+import('./module').then(({ msg }) => {
+  self.postMessage(msg)
+})
