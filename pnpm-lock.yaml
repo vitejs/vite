@@ -771,7 +771,6 @@ importers:
       '@babel/plugin-transform-react-jsx-source': ^7.16.7
       '@rollup/pluginutils': ^4.2.1
       react-refresh: ^0.12.0
-      resolve: ^1.22.0
     dependencies:
       '@babel/core': 7.17.9
       '@babel/plugin-transform-react-jsx': 7.17.3_@babel+core@7.17.9
@@ -780,7 +779,6 @@ importers:
       '@babel/plugin-transform-react-jsx-source': 7.16.7_@babel+core@7.17.9
       '@rollup/pluginutils': 4.2.1
       react-refresh: 0.12.0
-      resolve: 1.22.0
 
   packages/plugin-vue:
     specifiers:
