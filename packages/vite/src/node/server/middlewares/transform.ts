@@ -186,6 +186,11 @@ export function transformMiddleware(
         }
       }
     } catch (e) {
+      if (e?.code === 'ENOENT') {
+        // ignore no such file or directory error for /foo?raw
+        // as that may be an api route, so pass it along
+        return next()
+      }
       if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
         if (!res.writableEnded) {
           // Don't do anything if response has already been sent
