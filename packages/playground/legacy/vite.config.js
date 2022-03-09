@@ -8,6 +8,7 @@ module.exports = {
       targets: 'IE 11'
     })
   ],
+
   build: {
     cssCodeSplit: false,
     manifest: true,
