@@ -31,7 +31,7 @@ function getWorkerType(
   }
   const endIndex = noCommentsCode.indexOf(')', i)
 
-  // case: ') ... ,' mean no worker options parmas
+  // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {
     return 'classic'
   }

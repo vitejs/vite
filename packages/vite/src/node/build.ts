@@ -324,9 +324,9 @@ export function resolveBuildPlugins(
     post: [
       !isWorker && buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
-      ...(options.minify ? [terserPlugin(config)] : []),
-      ...(options.manifest ? [manifestPlugin(config)] : []),
-      ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
+      options.minify && terserPlugin(config),
+      options.manifest && manifestPlugin(config),
+      options.ssrManifest && ssrManifestPlugin(config),
       buildReporterPlugin(config),
       loadFallbackPlugin()
     ].filter(Boolean) as Plugin[]
