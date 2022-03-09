@@ -31,6 +31,11 @@ function getWorkerType(
   }
   const endIndex = noCommentsCode.indexOf(')', i)
 
+  // case: ') ... ,' mean no worker options parmas
+  if (commaIndex > endIndex) {
+    return 'classic'
+  }
+
   // need to find in comment code
   let workerOptsString = code.substring(commaIndex + 1, endIndex)
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
