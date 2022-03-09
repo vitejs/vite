@@ -1,20 +1,22 @@
 import path from 'path'
-import { ServerResponse } from 'http'
-import sirv, { Options } from 'sirv'
-import { Connect } from 'types/connect'
-import { normalizePath, ViteDevServer } from '../..'
+import type { ServerResponse } from 'http'
+import type { Options } from 'sirv'
+import sirv from 'sirv'
+import type { Connect } from 'types/connect'
+import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
-  ensureLeadingSlash,
   fsPathFromId,
+  fsPathFromUrl,
   isImportRequest,
   isInternalRequest,
   isWindows,
   slash,
-  isFileReadable
+  isFileReadable,
+  isParentDirectory
 } from '../../utils'
-import match from 'minimatch'
+import { isMatch } from 'micromatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -116,7 +118,14 @@ export function serveRawFsMiddleware(
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
       // restrict files outside of `fs.allow`
-      if (!ensureServingAccess(slash(path.resolve(fsPathFromId(url))), server, res, next)) {
+      if (
+        !ensureServingAccess(
+          slash(path.resolve(fsPathFromId(url))),
+          server,
+          res,
+          next
+        )
+      ) {
         return
       }
 
@@ -139,15 +148,14 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
-  const cleanedUrl = cleanUrl(url)
-  const file = ensureLeadingSlash(normalizePath(cleanedUrl))
+  const file = fsPathFromUrl(url)
 
-  if (server.config.server.fs.deny.some((i) => match(file, i, _matchOptions)))
+  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
     return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
+  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
     return true
 
   return false
@@ -157,7 +165,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction,
+  next: Connect.NextFunction
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true
@@ -174,8 +182,7 @@ Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and 
     res.statusCode = 403
     res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
     res.end()
-  }
-  else {
+  } else {
     // if the file doesn't exist, we shouldn't restrict this path as it can
     // be an API call. Middlewares would issue a 404 if the file isn't handled
     next()

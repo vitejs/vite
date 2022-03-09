@@ -25,6 +25,8 @@ const { createServer } = require('vite')
     }
   })
   await server.listen()
+
+  server.printUrls()
 })()
 ```
 
@@ -92,7 +94,7 @@ interface ViteDevServer {
    */
   ssrLoadModule(
     url: string,
-    options?: { isolated?: boolean }
+    options?: { fixStacktrace?: boolean }
   ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace.
@@ -102,6 +104,12 @@ interface ViteDevServer {
    * Start the server.
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
+  /**
+   * Restart the server.
+   *
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   */
+  restart(forceOptimize?: boolean): Promise<void>
   /**
    * Stop the server.
    */
@@ -138,6 +146,34 @@ const { build } = require('vite')
 })()
 ```
 
+## `preview`
+
+**Experimental**
+
+**Type Signature:**
+
+```ts
+async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
+```
+
+**Example Usage:**
+
+```js
+const { preview } = require('vite')
+
+;(async () => {
+  const previewServer = await preview({
+    // any valid user config options, plus `mode` and `configFile`
+    preview: {
+      port: 8080,
+      open: true
+    }
+  })
+
+  previewServer.printUrls()
+})()
+```
+
 ## `resolveConfig`
 
 **Type Signature:**
@@ -149,6 +185,8 @@ async function resolveConfig(
   defaultMode?: string
 ): Promise<ResolvedConfig>
 ```
+
+The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
 
 ## `transformWithEsbuild`
 

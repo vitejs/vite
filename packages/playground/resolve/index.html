@@ -12,6 +12,9 @@
 <h2>Deep import with exports field</h2>
 <p class="exports-deep">fail</p>
 
+<h2>Deep import with query with exports field</h2>
+<p class="exports-deep-query">fail</p>
+
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -33,6 +36,22 @@
 <h2>Don't add extensions to directory names</h2>
 <p class="dir-with-ext">fail</p>
 
+<h2>
+  A ts module can import another ts module using its corresponding js file name
+</h2>
+<p class="ts-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding jsx file
+  name
+</h2>
+<p class="jsx-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding js file name
+</h2>
+<p class="tsx-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -47,6 +66,9 @@
 
 <h2>Plugin resolved virtual file</h2>
 <p class="virtual"></p>
+
+<h2>Plugin resolved custom virtual file</h2>
+<p class="custom-virtual"></p>
 
 <h2>Inline package</h2>
 <p class="inline-pkg"></p>
@@ -92,6 +114,10 @@
   import { msg as deepMsg } from 'resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
 
+  // deep import w/ exports w/ query
+  import deepPath from 'resolve-exports-path/deep.json?url'
+  text('.exports-deep-query', deepPath)
+
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
   text('.exports-deep-exposed-dir', exposedDirMsg)
@@ -118,6 +144,15 @@
   // don't add extensions to dir name (./dir-with-ext.js/index.js)
   import { file as dirWithExtMsg } from './dir-with-ext'
   text('.dir-with-ext', dirWithExtMsg)
+
+  import { msg as tsExtensionMsg } from './ts-extension'
+  text('.ts-extension', tsExtensionMsg)
+
+  import { msgJsx as tsJsxExtensionMsg } from './ts-extension'
+  text('.jsx-extension', tsJsxExtensionMsg)
+
+  import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
+  text('.tsx-extension', tsTsxExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
@@ -171,6 +206,9 @@
 
   import { msg as virtualMsg } from '@virtual-file'
   text('.virtual', virtualMsg)
+
+  import { msg as customVirtualMsg } from '@custom-virtual-file'
+  text('.custom-virtual', customVirtualMsg)
 
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)

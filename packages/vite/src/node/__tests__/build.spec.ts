@@ -1,5 +1,6 @@
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
+import { resolveConfig } from '..'
 
 describe('resolveLibFilename', () => {
   test('custom filename function', () => {

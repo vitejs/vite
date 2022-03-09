@@ -1,5 +1,5 @@
 import debug from 'debug'
-import chalk from 'chalk'
+import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -9,17 +9,16 @@ import {
   DEFAULT_EXTENSIONS,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
+  ENV_PUBLIC_PATH,
+  CLIENT_ENTRY
 } from './constants'
 import resolve from 'resolve'
-import builtins from 'builtin-modules'
-import { FSWatcher } from 'chokidar'
+import { builtinModules } from 'module'
+import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import {
-  DecodedSourceMap,
-  RawSourceMap
-} from '@ampproject/remapping/dist/types/types'
+import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import { performance } from 'perf_hooks'
+import { parse as parseUrl, URLSearchParams } from 'url'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -32,15 +31,31 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
 
+//TODO: revisit later to see if the edge case that "compiling using node v12 code to be run in node v16 in the server" is what we intend to support.
+const builtins = new Set([
+  ...builtinModules,
+  'assert/strict',
+  'diagnostics_channel',
+  'dns/promises',
+  'fs/promises',
+  'path/posix',
+  'path/win32',
+  'readline/promises',
+  'stream/consumers',
+  'stream/promises',
+  'stream/web',
+  'timers/promises',
+  'util/types',
+  'wasi'
+])
+
 export function isBuiltin(id: string): boolean {
-  const deepMatch = id.match(deepImportRE)
-  id = deepMatch ? deepMatch[1] || deepMatch[2] : id
-  return builtins.includes(id)
+  return builtins.has(id.replace(/^node:/, ''))
 }
 
 export function moduleListContains(
@@ -122,7 +137,25 @@ export function createDebugger(
   }
 }
 
+function testCaseInsensitiveFS() {
+  if (!CLIENT_ENTRY.endsWith('client.mjs')) {
+    throw new Error(
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`
+    )
+  }
+  if (!fs.existsSync(CLIENT_ENTRY)) {
+    throw new Error(
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+        CLIENT_ENTRY
+    )
+  }
+  return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
+}
+
+export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+
 export const isWindows = os.platform() === 'win32'
+
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -130,10 +163,35 @@ export function normalizePath(id: string): string {
 }
 
 export function fsPathFromId(id: string): string {
-  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  const fsPath = normalizePath(
+    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
+  )
   return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
     ? fsPath
     : `/${fsPath}`
+}
+
+export function fsPathFromUrl(url: string): string {
+  return fsPathFromId(cleanUrl(url))
+}
+
+/**
+ * Check if dir is a parent of file
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param dir - normalized absolute path
+ * @param file - normalized absolute path
+ * @returns true if dir is a parent of file
+ */
+export function isParentDirectory(dir: string, file: string): boolean {
+  if (!dir.endsWith('/')) {
+    dir = `${dir}/`
+  }
+  return (
+    file.startsWith(dir) ||
+    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
 }
 
 export function ensureVolumeInPath(file: string): string {
@@ -152,6 +210,9 @@ export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 export const dataUrlRE = /^\s*data:/i
 export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 
+export const virtualModuleRE = /^virtual-module:.*/
+export const virtualModulePrefix = 'virtual-module:'
+
 const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
@@ -162,6 +223,20 @@ export const isJSRequest = (url: string): boolean => {
     return true
   }
   return false
+}
+
+const knownTsRE = /\.(ts|mts|cts|tsx)$/
+const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
+export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isPossibleTsOutput = (url: string) =>
+  knownTsOutputRE.test(cleanUrl(url))
+export function getPotentialTsSrcPaths(filePath: string) {
+  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const paths = [name + type.replace('js', 'ts') + query]
+  if (!type.endsWith('x')) {
+    paths.push(name + type.replace('js', 'tsx') + query)
+  }
+  return paths
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
@@ -194,7 +269,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
+    hash ?? ''
   }`
 }
 
@@ -224,11 +299,11 @@ export function timeFrom(start: number, subtract = 0): string {
   const time: number | string = performance.now() - start - subtract
   const timeString = (time.toFixed(2) + `ms`).padEnd(5, ' ')
   if (time < 10) {
-    return chalk.green(timeString)
+    return colors.green(timeString)
   } else if (time < 50) {
-    return chalk.yellow(timeString)
+    return colors.yellow(timeString)
   } else {
-    return chalk.red(timeString)
+    return colors.red(timeString)
   }
 }
 
@@ -248,11 +323,11 @@ export function prettifyUrl(url: string, root: string): string {
       if (file.startsWith('@')) {
         file = `${file}/${seg[npmIndex + 2]}`
       }
-      file = `npm: ${chalk.dim(file)}${isSourceMap ? ` (source map)` : ``}`
+      file = `npm: ${colors.dim(file)}${isSourceMap ? ` (source map)` : ``}`
     }
-    return chalk.dim(file)
+    return colors.dim(file)
   } else {
-    return chalk.dim(url)
+    return colors.dim(url)
   }
 }
 
@@ -264,20 +339,28 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+interface LookupFileOptions {
+  pathOnly?: boolean
+  rootDir?: string
+}
+
 export function lookupFile(
   dir: string,
   formats: string[],
-  pathOnly = false
+  options?: LookupFileOptions
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
-  if (parentDir !== dir) {
-    return lookupFile(parentDir, formats, pathOnly)
+  if (
+    parentDir !== dir &&
+    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
+  ) {
+    return lookupFile(parentDir, formats, options)
   }
 }
 
@@ -299,7 +382,9 @@ export function posToNumber(
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1; i++) {
-    start += lines[i].length + 1
+    if (lines[i]) {
+      start += lines[i].length + 1
+    }
   }
   return start + column
 }
@@ -392,8 +477,8 @@ export function writeFile(
  */
 export function isFileReadable(filename: string): boolean {
   try {
-    fs.accessSync(filename, fs.constants.R_OK)
-    return true
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
   } catch {
     return false
   }
@@ -434,10 +519,6 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
-}
-
-export function ensureLeadingSlash(path: string): string {
-  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(
@@ -487,13 +568,11 @@ export async function processSrcSet(
     })
   )
 
-  const url = ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor = descriptor || ''
+  return ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor ??= ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
-
-  return url
 }
 
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
@@ -556,11 +635,7 @@ export function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Hostname {
   let host: string | undefined
-  if (
-    optionsHost === undefined ||
-    optionsHost === false ||
-    optionsHost === 'localhost'
-  ) {
+  if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
     host = '127.0.0.1'
   } else if (optionsHost === true) {
@@ -593,7 +668,7 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 
-export const usingDynamicImport = typeof jest === 'undefined';
+export const usingDynamicImport = typeof jest === 'undefined'
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
@@ -603,4 +678,16 @@ export const usingDynamicImport = typeof jest === 'undefined';
  *
  * @param file File path to import.
  */
-export const dynamicImport = usingDynamicImport ? new Function('file', 'return import(file)') : require;
+export const dynamicImport = usingDynamicImport
+  ? new Function('file', 'return import(file)')
+  : require
+
+export function parseRequest(id: string): Record<string, string> | null {
+  const { search } = parseUrl(id)
+  if (!search) {
+    return null
+  }
+  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+}
+
+export const blankReplacer = (match: string) => ' '.repeat(match.length)

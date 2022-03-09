@@ -57,6 +57,12 @@ describe('raw references from /public', () => {
   })
 })
 
+test('import-expression from simple script', async () => {
+  expect(await page.textContent('.import-expression')).toMatch(
+    '[success][success]'
+  )
+})
+
 describe('asset imports from js', () => {
   test('relative', async () => {
     expect(await page.textContent('.asset-import-relative')).toMatch(assetMatch)
@@ -114,6 +120,10 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
+    const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
+    const el = await page.$(`link.ico`)
+    const herf = await el.getAttribute('href')
+    expect(herf).toMatch(icoMatch)
   })
 
   test('multiple urls on the same line', async () => {
@@ -194,6 +204,19 @@ describe('unicode url', () => {
         : `/foo/テスト-測試-white space.js`
     )
   })
+})
+
+describe('encodeURI', () => {
+  if (isBuild) {
+    test('img src with encodeURI', async () => {
+      const img = await page.$('.encodeURI')
+      expect(
+        await (
+          await img.getAttribute('src')
+        ).startsWith('data:image/png;base64')
+      ).toBe(true)
+    })
+  }
 })
 
 test('new URL(..., import.meta.url)', async () => {

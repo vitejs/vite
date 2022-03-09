@@ -1,20 +1,42 @@
 import path from 'path'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
-import { Server } from 'http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '.'
-import { Connect } from 'types/connect'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart
-} from './server/http'
+import compression from './server/middlewares/compression'
+import type { Server } from 'http'
+import type { InlineConfig, ResolvedConfig } from '.'
+import { resolveConfig } from '.'
+import type { Connect } from 'types/connect'
+import type { ResolvedServerOptions } from './server'
+import type { CommonServerOptions } from './http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
-import { printHttpServerUrls } from './logger'
+import { printCommonServerUrls } from './logger'
+
+export interface PreviewOptions extends CommonServerOptions {}
+
+export interface ResolvedPreviewOptions extends PreviewOptions {}
+
+export function resolvePreviewOptions(
+  preview: PreviewOptions | undefined,
+  server: ResolvedServerOptions
+): ResolvedPreviewOptions {
+  // The preview server inherits every CommonServerOption from the `server` config
+  // except for the port to enable having both the dev and preview servers running
+  // at the same time without extra configuration
+  return {
+    port: preview?.port,
+    strictPort: preview?.strictPort ?? server.strictPort,
+    host: preview?.host ?? server.host,
+    https: preview?.https ?? server.https,
+    open: preview?.open ?? server.open,
+    proxy: preview?.proxy ?? server.proxy,
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers
+  }
+}
 
 export interface PreviewServer {
   /**
@@ -44,19 +66,19 @@ export async function preview(
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
-    config.server,
+    config.preview,
     app,
-    await resolveHttpsConfig(config)
+    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
 
   // cors
-  const { cors } = config.server
+  const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  if (config.server.proxy) {
+  if (config.preview.proxy) {
     app.use(proxyMiddleware(httpServer, config))
   }
 
@@ -72,9 +94,9 @@ export async function preview(
     })
   )
 
-  const options = config.server
+  const options = config.preview
   const hostname = resolveHostname(options.host)
-  const port = options.port ?? 5000
+  const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
@@ -101,7 +123,7 @@ export async function preview(
     config,
     httpServer,
     printUrls() {
-      printHttpServerUrls(httpServer, config)
+      printCommonServerUrls(httpServer, config.preview, config)
     }
   }
 }

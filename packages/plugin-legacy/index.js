@@ -37,8 +37,9 @@ function viteLegacyPlugin(options = {}) {
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
-  const debugFlag = process.env.DEBUG
-  const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
+  const debugFlags = (process.env.DEBUG || '').split(',')
+  const isDebug =
+    debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
@@ -104,23 +105,6 @@ function viteLegacyPlugin(options = {}) {
   const legacyGenerateBundlePlugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
-
-    config() {
-      return {
-        build: {
-          minify: 'terser'
-        }
-      }
-    },
-
-    configResolved(config) {
-      if (!config.build.ssr && genLegacy && config.build.minify === 'esbuild') {
-        throw new Error(
-          `Can't use esbuild as the minifier when targeting legacy browsers ` +
-            `because esbuild minification is not legacy safe.`
-        )
-      }
-    },
 
     async generateBundle(opts, bundle) {
       if (config.build.ssr) {
@@ -297,6 +281,19 @@ function viteLegacyPlugin(options = {}) {
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
 
+      // @ts-ignore force terser for legacy chunks. This only takes effect if
+      // minification isn't disabled, because that leaves out the terser plugin
+      // entirely.
+      opts.__vite_force_terser__ = true
+
+      // @ts-ignore
+      // In the `generateBundle` hook,
+      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
+      // But that's still a waste of computing resource.
+      // So we add this flag to avoid emitting the asset in the first place whenever possible.
+      opts.__vite_skip_asset_emit__ = true
+
+      // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
@@ -596,7 +593,7 @@ async function buildPolyfillChunk(
   bundle[polyfillChunk.name] = polyfillChunk
 }
 
-const polyfillId = 'vite/legacy-polyfills'
+const polyfillId = '\0vite/legacy-polyfills'
 
 /**
  * @param {Set<string>} imports
