@@ -765,6 +765,7 @@ importers:
       '@ampproject/remapping': ^2.1.0
       '@babel/parser': ^7.17.0
       '@babel/types': ^7.17.0
+      '@jridgewell/trace-mapping': ^0.3.2
       '@rollup/plugin-alias': ^3.1.9
       '@rollup/plugin-commonjs': ^21.0.1
       '@rollup/plugin-dynamic-import-vars': ^1.4.2
@@ -823,7 +824,6 @@ importers:
       rollup: ^2.59.0
       rollup-plugin-license: ^2.6.1
       sirv: ^2.0.2
-      source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       terser: ^5.10.0
@@ -842,6 +842,7 @@ importers:
       '@ampproject/remapping': 2.1.0
       '@babel/parser': 7.17.0
       '@babel/types': 7.17.0
+      '@jridgewell/trace-mapping': 0.3.2
       '@rollup/plugin-alias': 3.1.9_rollup@2.62.0
       '@rollup/plugin-commonjs': 21.0.1_rollup@2.62.0
       '@rollup/plugin-dynamic-import-vars': 1.4.2_rollup@2.62.0
@@ -895,7 +896,6 @@ importers:
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.1_rollup@2.62.0
       sirv: 2.0.2
-      source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.10.0_acorn@8.7.0
@@ -3126,7 +3126,7 @@ packages:
     resolution: {integrity: sha512-oagLNqpfNv7CvmyMoexMDNyVDSiq1rya0AEUgcLlNHdHgNl6U/hi8xY370n5y+ZIFEXOx0J4B1qF2NDjMRxklA==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      pvutils: 1.1.2
+      pvutils: 1.1.3
     dev: true
 
   /assert-never/1.2.1:
@@ -5184,7 +5184,7 @@ packages:
       source-map: 0.6.1
       wordwrap: 1.0.0
     optionalDependencies:
-      uglify-js: 3.14.5
+      uglify-js: 3.15.0
     dev: true
 
   /hard-rejection/2.1.0:
@@ -7713,8 +7713,8 @@ packages:
       tslib: 2.3.1
     dev: true
 
-  /pvutils/1.1.2:
-    resolution: {integrity: sha512-wlo0BUInyP+ZgBJHV8PnJW8S2HubdQfMMip8B9yXr9aFlauJFuF1jZ/RWFmzGYitC7GxkxqXdwbY9/R97v+Cqg==}
+  /pvutils/1.1.3:
+    resolution: {integrity: sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==}
     engines: {node: '>=6.0.0'}
     dev: true
 
@@ -9060,8 +9060,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /uglify-js/3.14.5:
-    resolution: {integrity: sha512-qZukoSxOG0urUTvjc2ERMTcAy+BiFh3weWAkeurLwjrCba73poHmG3E36XEjd/JGukMzwTL7uCxZiAexj8ppvQ==}
+  /uglify-js/3.15.0:
+    resolution: {integrity: sha512-x+xdeDWq7FiORDvyIJ0q/waWd4PhjBNOm5dQUOq2AKC0IEjxOS66Ha9tctiVDGcRQuh69K7fgU5oRuTK4cysSg==}
     engines: {node: '>=0.8.0'}
     hasBin: true
     requiresBuild: true
