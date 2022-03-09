@@ -9,7 +9,6 @@
     },
     "./deep.js": "./deep.js",
     "./deep.json": "./deep.json",
-    "./deep.js?url": "./deep2.js",
     "./dir/": "./dir/",
     "./dir-mapped/*": {
       "import": "./dir/*",

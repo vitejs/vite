@@ -777,7 +777,7 @@ function packageEntryFailure(id: string, details?: string) {
 
 function resolveExports(
   pkg: PackageData['data'],
-  keyWithQuery: string,
+  key: string,
   options: InternalResolveOptions,
   targetWeb: boolean
 ) {
@@ -789,29 +789,11 @@ function resolveExports(
     conditions.push(...options.conditions)
   }
 
-  try {
-    const resolved = _resolveExports(pkg, keyWithQuery, {
-      browser: targetWeb,
-      require: options.isRequire,
-      conditions
-    })
-    return resolved
-  } catch (err) {
-    // not found
-
-    // try without postfix for `import 'something/path.js?query'` (see #7098)
-    const { file, postfix } = splitFileAndPostfix(keyWithQuery)
-    if (!postfix) {
-      throw err
-    }
-
-    const resolvedWithoutPostfix = _resolveExports(pkg, file, {
-      browser: targetWeb,
-      require: options.isRequire,
-      conditions
-    })
-    return resolvedWithoutPostfix + postfix
-  }
+  return _resolveExports(pkg, key, {
+    browser: targetWeb,
+    require: options.isRequire,
+    conditions
+  })
 }
 
 function resolveDeepImport(
@@ -837,7 +819,14 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(data, relativeId, options, targetWeb)
+      // resolve without postfix (see #7098)
+      const { file, postfix } = splitFileAndPostfix(relativeId)
+      const exportsId = resolveExports(data, file, options, targetWeb)
+      if (exportsId !== undefined) {
+        relativeId = exportsId + postfix
+      } else {
+        relativeId = undefined
+      }
     } else {
       // not exposed
       relativeId = undefined

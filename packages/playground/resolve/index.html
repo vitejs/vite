@@ -15,9 +15,6 @@
 <h2>Deep import with query with exports field</h2>
 <p class="exports-deep-query">fail</p>
 
-<h2>Deep import with exports field including "?"</h2>
-<p class="exports-deep-question-mark">fail</p>
-
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -109,10 +106,6 @@
   // deep import w/ exports w/ query
   import deepPath from 'resolve-exports-path/deep.json?url'
   text('.exports-deep-query', deepPath)
-
-  // deep import w/ exports including "?"
-  import { msg as deepMsg2 } from 'resolve-exports-path/deep.js?url'
-  text('.exports-deep-question-mark', deepMsg2)
 
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'

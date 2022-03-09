@@ -23,12 +23,6 @@ test('deep import with query with exports field', async () => {
   )
 })
 
-test('deep import with exports field including "?"', async () => {
-  expect(await page.textContent('.exports-deep-question-mark')).toMatch(
-    '[success]'
-  )
-})
-
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
     '[success]'
