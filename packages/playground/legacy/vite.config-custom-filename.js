@@ -11,8 +11,5 @@ module.exports = {
         chunkFileNames: `assets/[name].js`
       }
     }
-  },
-  worker: {
-    format: 'es'
   }
 }

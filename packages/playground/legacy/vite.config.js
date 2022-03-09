@@ -8,9 +8,6 @@ module.exports = {
       targets: 'IE 11'
     })
   ],
-  worker: {
-    format: 'es'
-  },
   build: {
     cssCodeSplit: false,
     manifest: true,
