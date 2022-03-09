@@ -1,5 +1,5 @@
 import './style.css'
-
+import './worker'
 async function run() {
   const { fn } = await import('./async.js')
   fn()

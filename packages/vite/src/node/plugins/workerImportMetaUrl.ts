@@ -33,6 +33,7 @@ function getWorkerType(
 
   // need to find in comment code
   let workerOptsString = code.substring(commaIndex + 1, endIndex)
+
   const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
   if (hasViteIgnore) {
     return 'ignore'
