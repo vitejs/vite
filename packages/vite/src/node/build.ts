@@ -306,6 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
+  const isWorker = config.isWorker
   return {
     pre: [
       watchPackageDataPlugin(config),
@@ -319,14 +320,14 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
         : [])
     ],
     post: [
-      buildImportAnalysisPlugin(config),
+      !isWorker && buildImportAnalysisPlugin(config),
       buildEsbuildPlugin(config),
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
       loadFallbackPlugin()
-    ]
+    ].filter(Boolean) as Plugin[]
   }
 }
 

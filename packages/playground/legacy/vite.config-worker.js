@@ -4,9 +4,11 @@ const vite = require('vite')
 module.exports = vite.defineConfig({
   plugins: [legacy()],
   build: {
-    target: 'chrome60'
+    target: 'chrome60',
+    minify: false
   },
   worker: {
-    format: 'es'
+    format: 'es',
+    plugins: []
   }
 })

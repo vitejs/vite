@@ -248,6 +248,7 @@ export type ResolvedConfig = Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    isWorker: boolean
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -474,6 +475,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isWorker: false,
     isProduction,
     plugins: userPlugins,
     server,
@@ -506,7 +508,7 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved = { ...resolved }
+  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
