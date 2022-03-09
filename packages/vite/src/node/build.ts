@@ -301,12 +301,14 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   return resolved
 }
 
-export function resolveBuildPlugins(config: ResolvedConfig): {
+export function resolveBuildPlugins(
+  config: ResolvedConfig,
+  isWorker: boolean
+): {
   pre: Plugin[]
   post: Plugin[]
 } {
   const options = config.build
-  const isWorker = config.isWorker
   return {
     pre: [
       watchPackageDataPlugin(config),
