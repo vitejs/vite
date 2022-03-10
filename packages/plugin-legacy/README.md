@@ -173,6 +173,8 @@ These values (without the `sha256-` prefix) can also be retrieved via
 const { cspHashes } = require('@vitejs/plugin-legacy')
 ```
 
+When using the `regenerator-runtime` polyfill, it will attempt to use the `globalThis` object to register itself. If `globalThis` is not available (it is [fairly new](https://caniuse.com/?search=globalThis) and not widely supported, including IE 11), it attempts to perform dynamic `Function(...)` call which violates the CSP. To avoid dynamic `eval` in the absence of `globalThis` consider adding `core-js/proposals/global-this` to `additionalLegacyPolyfills` to define it.
+
 ## References
 
 - [Vue CLI modern mode](https://cli.vuejs.org/guide/browser-compatibility.html#modern-mode)
