@@ -55,7 +55,7 @@ test('worker emitted', async () => {
   await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
   await untilUpdated(
     () => page.textContent('.nested-worker-dynamic-import'),
-    '"msg":"pong"'
+    '{"msg":"module","msg2":"module2","msg3":"module3"}'
   )
 })
 
@@ -64,7 +64,7 @@ if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(12)
+    expect(files.length).toBe(14)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
