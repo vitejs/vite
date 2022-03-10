@@ -96,10 +96,7 @@
     /* @vite-ignore */ workerOptions
   )
   w.addEventListener('message', (ev) =>
-    text(
-      '.worker-import-meta-url',
-      'worker import.meta.url' + JSON.stringify(ev.data)
-    )
+    text('.worker-import-meta-url', ev.data)
   )
 
   const genWorkerName = () => 'module'
@@ -112,10 +109,7 @@
     }
   )
   w2.port.addEventListener('message', (ev) => {
-    text(
-      '.shared-worker-import-meta-url',
-      'shared-worker import.meta.url' + JSON.stringify(ev.data)
-    )
+    text('.shared-worker-import-meta-url', ev.data)
   })
   w2.port.start()
 

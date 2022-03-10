@@ -86,6 +86,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const insertPreload = !(ssr || !!config.build.lib)
+  const isWorker = config.isWorker
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -131,6 +132,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (!imports.length) {
         return null
+      }
+
+      if (isWorker) {
+        // preload method use `document` and can't run in the worker
+        return
       }
 
       let s: MagicString | undefined
@@ -238,7 +244,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr) {
+      if (format !== 'es' || ssr || isWorker) {
         return
       }
 

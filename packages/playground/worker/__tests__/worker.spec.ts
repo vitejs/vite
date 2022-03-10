@@ -85,7 +85,14 @@ if (isBuild) {
   })
 }
 
-test('classic worker is run', async () => {
+test('module worker', async () => {
+  expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
+    'A string'
+  )
+  expect(await page.textContent('.worker-import-meta-url')).toMatch('A string/')
+})
+
+test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
 })
