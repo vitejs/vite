@@ -49,7 +49,8 @@ import { transformRequest } from '../server/transformRequest'
 import {
   isOptimizedDepFile,
   createIsOptimizedDepUrl,
-  getDepsCacheDir
+  getDepsCacheDir,
+  optimizedDepNeedsInterop
 } from '../optimizer'
 
 const isDebug = !!process.env.DEBUG
@@ -433,24 +434,30 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // rewrite
           if (url !== specifier) {
             let rewriteDone = false
-            if (isOptimizedDepFile(resolvedId, config)) {
-              // for optimized cjs deps, support named imports by rewriting named
-              // imports to const assignments.
-              const optimizeDepsMetadata = server._optimizeDepsMetadata!
-              const { optimized } = optimizeDepsMetadata
+            if (
+              isOptimizedDepFile(resolvedId, config) &&
+              !resolvedId.match(optimizedDepChunkRE)
+            ) {
+              // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
+              // internal optimized chunks don't need es interop and are excluded
 
               // The browserHash in resolvedId could be stale in which case there will be a full
               // page reload. We could return a 404 in that case but it is safe to return the request
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
-              const dep = Object.keys(optimized).find(
-                (k) => optimized[k].file === file
+
+              const needsInterop = await optimizedDepNeedsInterop(
+                server._optimizeDepsMetadata!,
+                file
               )
 
-              // Wait until the dependency has been pre-bundled
-              dep && (await optimized[dep].processing)
-
-              if (dep && optimized[dep].needsInterop) {
-                debug(`${dep} needs interop`)
+              if (needsInterop === undefined) {
+                config.logger.error(
+                  colors.red(
+                    `Vite Error, ${url} optimized info should be defined`
+                  )
+                )
+              } else if (needsInterop) {
+                debug(`${url} needs interop`)
                 if (isDynamicImport) {
                   // rewrite `import('package')` to expose the default directly
                   str().overwrite(

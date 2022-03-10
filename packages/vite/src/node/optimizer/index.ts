@@ -300,10 +300,7 @@ export async function createOptimizeDepsRun(
     // server is running
     deps = depsFromOptimizedDepInfo(newDeps)
 
-    // Clone optimized info objects, fileHash, browserHash may be changed for them
-    for (const o of Object.keys(newDeps)) {
-      metadata.optimized[o] = { ...newDeps[o] }
-    }
+    metadata.optimized = newDeps
 
     // update global browser hash, but keep newDeps individual hashs until we know
     // if files are stable so we can avoid a full page reload
@@ -737,4 +734,40 @@ function getDepHash(root: string, config: ResolvedConfig): string {
     }
   )
   return createHash('sha256').update(content).digest('hex').substring(0, 8)
+}
+
+export function optimizeDepInfoFromFile(
+  metadata: DepOptimizationMetadata,
+  file: string
+): OptimizedDepInfo | undefined {
+  return (
+    findFileInfo(metadata.optimized, file) ||
+    findFileInfo(metadata.discovered, file)
+  )
+}
+
+function findFileInfo(
+  dependenciesInfo: Record<string, OptimizedDepInfo>,
+  file: string
+): OptimizedDepInfo | undefined {
+  for (const o of Object.keys(dependenciesInfo)) {
+    const info = dependenciesInfo[o]
+    if (info.file === file) {
+      return info
+    }
+  }
+}
+
+export async function optimizedDepNeedsInterop(
+  metadata: DepOptimizationMetadata,
+  file: string
+): Promise<boolean | undefined> {
+  const depInfo = optimizeDepInfoFromFile(metadata, file)
+
+  if (!depInfo) return undefined
+
+  // Wait until the dependency has been pre-bundled
+  await depInfo.processing
+
+  return depInfo?.needsInterop
 }
