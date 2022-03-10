@@ -134,6 +134,10 @@ export default defineConfig(({ command, mode }) => {
   - Full URL, e.g. `https://foo.com/`
   - Empty string or `./` (for embedded deployment)
 
+  Beware that using a relative `base` path for a single-page web-based app may break when calls to window.history.pushState change the path in the address bar, as your code will attempt to load assets relative to that modified path in production, but often not in serve (AKA dev) mode used for development testing. This can cause workers to silently fail to load in production when the relative path fails to find the worker that appeared to be at the correct location at compile time and when running via serve/dev.
+  
+  Beware that using an absolute `base` path will likely break electron and other apps that run on the local filesystem and are not served via the web, as these apps may be installed in different locations and should thus rely on file-system based relative paths. For example, when building such filesystem-based app, a `base` of `""` (or equivalently `"./"`) will cause `vite` to use paths that will be relative to the current directory when the code is executed.
+
   See [Public Base Path](/guide/build#public-base-path) for more details.
 
 ### mode
