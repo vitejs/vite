@@ -23,13 +23,13 @@ export async function resolvePlugins(
   config: ResolvedConfig,
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
-  postPlugins: Plugin[],
-  isWorker?: boolean
+  postPlugins: Plugin[]
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isWorker = config.isWorker
 
   const buildPlugins = isBuild
-    ? (await import('../build')).resolveBuildPlugins(config, !!isWorker)
+    ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
 
   return [
