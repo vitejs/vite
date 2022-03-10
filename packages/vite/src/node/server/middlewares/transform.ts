@@ -187,8 +187,8 @@ export function transformMiddleware(
       }
     } catch (e) {
       if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
+        // Skip if response has already been sent
         if (!res.writableEnded) {
-          // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
@@ -197,8 +197,8 @@ export function transformMiddleware(
         return
       }
       if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+        // Skip if response has already been sent
         if (!res.writableEnded) {
-          // Don't do anything if response has already been sent
           res.statusCode = 504 // status code request timeout
           res.end()
         }
