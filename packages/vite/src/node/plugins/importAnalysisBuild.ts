@@ -121,6 +121,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      if (isWorker) {
+        // preload method use `document` and can't run in the worker
+        return
+      }
+
       await init
 
       let imports: readonly ImportSpecifier[] = []
@@ -133,12 +138,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         return null
       }
-
-      if (isWorker) {
-        // preload method use `document` and can't run in the worker
-        return
-      }
-
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
