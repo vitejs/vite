@@ -26,7 +26,6 @@ export async function resolvePlugins(
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
-  const isWorker = config.isWorker
 
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
@@ -74,9 +73,6 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [
-          clientInjectionsPlugin(config),
-          !isWorker && importAnalysisPlugin(config)
-        ])
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
   ].filter(Boolean) as Plugin[]
 }
