@@ -44,6 +44,7 @@ import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
+import { pathToFileURL, fileURLToPath } from 'url'
 
 // const debug = createDebugger('vite:css')
 
@@ -1114,7 +1115,7 @@ const scss: SassStylePreprocessor = async (
 
     const finalOptions: Sass.StringOptions<'sync'> = {
       ...(options as Sass.StringOptions<'sync'>),
-      url: new URL(options.filename),
+      url: pathToFileURL(options.filename),
       importers
     }
 
@@ -1123,7 +1124,7 @@ const scss: SassStylePreprocessor = async (
         await getSource(source, options.filename, options.additionalData),
         finalOptions
       )
-      const deps = result.loadedUrls.map((url) => url.pathname)
+      const deps = result.loadedUrls.map((url) => fileURLToPath(url))
 
       return {
         code: result.css,
