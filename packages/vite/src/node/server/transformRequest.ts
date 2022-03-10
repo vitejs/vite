@@ -81,6 +81,25 @@ async function doTransform(
     return cached
   }
 
+  // This module may get invalidated while we are processing it. For example
+  // when a full page reload is needed after the re-processing of pre-bundled
+  // dependencies when a missing dep is discovered. We save the current time
+  // to compare it to the last invalidation performed to know if we should
+  // cache the result of the transformation or we should discard it as stale.
+  //
+  // A module can be invalidated due to:
+  // 1. A full reload because of pre-bundling newly discovered deps
+  // 2. A full reload after a config change
+  // 3. The file that generated the module changed
+  // 4. Invalidation for a virtual module
+  //
+  // For 1 and 2, a new request for this module will be issued after
+  // the invalidation as part of the browser reloading the page. For 3 and 4
+  // there may not be a new request right away because of HMR handling.
+  // In all cases, the next time this module is requested, it should be
+  // re-processed.
+  const timestamp = Date.now()
+
   // resolve
   const id =
     (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
@@ -179,17 +198,20 @@ async function doTransform(
     }
   }
 
-  if (ssr) {
-    return (mod.ssrTransformResult = await ssrTransform(
-      code,
-      map as SourceMap,
-      url
-    ))
-  } else {
-    return (mod.transformResult = {
-      code,
-      map,
-      etag: getEtag(code, { weak: true })
-    } as TransformResult)
+  const result = ssr
+    ? await ssrTransform(code, map as SourceMap, url)
+    : ({
+        code,
+        map,
+        etag: getEtag(code, { weak: true })
+      } as TransformResult)
+
+  // Only cache the result if the module wasn't invalidated while it was
+  // being processed, so it is re-processed next time if it is stale
+  if (timestamp > mod.lastInvalidationTimestamp) {
+    if (ssr) mod.ssrTransformResult = result
+    else mod.transformResult = result
   }
+
+  return result
 }
