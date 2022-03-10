@@ -55,7 +55,7 @@ test('worker emitted', async () => {
   await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
   await untilUpdated(
     () => page.textContent('.nested-worker-dynamic-import'),
-    '{"msg":"module","msg2":"module2","msg3":"module3"}'
+    '{"msg":"module","msg1":"module1","msg2":"module2","msg3":"module3"}'
   )
 })
 
