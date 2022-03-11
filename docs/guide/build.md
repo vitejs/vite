@@ -111,6 +111,36 @@ module.exports = defineConfig({
 
 If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
 
+::: tip NOTE
+
+If go to `/nested/foo/xxx` (the path no register) will be use `<root>/index.html`. Because multi-Page just like for a normal static file server.
+
+Of course, you can use `middleware` in vite dev server to rewrite url what you want.
+
+```ts
+const { defineConfig } = require('vite')
+
+module.exports = defineConfig({
+  plugins: [
+    {
+      name: 'rewrite-middleware',
+      configureServer(serve) {
+        serve.middlewares.use((req, res, next) => {
+          if (req.url.startsWith('/nested/')) {
+            req.url = '/nested/'
+          }
+          next()
+        })
+      }
+    }
+  ]
+})
+```
+
+so `/nested/**/*` will go to `<root>/nested/index.html`
+
+:::
+
 ## Library Mode
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
