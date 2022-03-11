@@ -303,7 +303,7 @@ export default defineConfig(({ command, mode }) => {
 
 - **Type:** `Record<string, object>`
 
-  Specify options to pass to CSS pre-processors. Example:
+  Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
 
   ```js
   export default defineConfig({
@@ -311,6 +311,9 @@ export default defineConfig(({ command, mode }) => {
       preprocessorOptions: {
         scss: {
           additionalData: `$injectedColor: orange;`
+        },
+        styl: {
+          additionalData: `$injectedColor ?= orange`
         }
       }
     }
