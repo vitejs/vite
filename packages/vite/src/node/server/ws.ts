@@ -28,7 +28,7 @@ export function createWebSocketServer(
   let httpsServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
-  const wsServer = (hmr && hmr.server) || server
+  const wsServer = (hmr && hmr.server) || (!(hmr && hmr.port) && server)
 
   if (wsServer) {
     wss = new WebSocket({ noServer: true })
