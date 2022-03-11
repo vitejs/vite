@@ -92,3 +92,6 @@ export const DEFAULT_ASSETS_RE = new RegExp(
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+
+export const DEFAULT_IPV4_ADDR = '0.0.0.0'
+export const DEFAULT_IPV6_ADDR = '::'

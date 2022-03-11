@@ -635,8 +635,10 @@ export function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Hostname {
   let host: string | undefined
-  if (optionsHost === undefined || optionsHost === false) {
-    // Use a secure default
+  if (!optionsHost) {
+    // Use a secure default when optionsHost can transfer to false
+    // to avoid node listen on default_addr. ie: optionsHost is '' or 0 or other false values
+    // see https://github.com/nodejs/node/blob/v17.7.1/lib/net.js#L906
     host = '127.0.0.1'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments

@@ -1,4 +1,7 @@
 import fs, { promises as fsp } from 'fs'
+import * as http from 'http'
+import os from 'os'
+import type { NetworkInterfaceInfoIPv6 } from 'os'
 import path from 'path'
 import type {
   OutgoingHttpHeaders as HttpServerHeaders,
@@ -168,6 +171,115 @@ async function getCertificate(cacheDir: string) {
   }
 }
 
+function getExternalHost() {
+  const hosts: string[] = []
+  Object.values(os.networkInterfaces())
+    .flatMap((nInterface) => nInterface ?? [])
+    .filter((detail) => detail && detail.address && detail.internal === false)
+    .map((detail) => {
+      let address = detail.address
+      if (address.indexOf('fe80:') === 0) {
+        // support ipv6 scope
+        address += '%' + (detail as NetworkInterfaceInfoIPv6).scopeid
+      }
+      hosts.push(address)
+    })
+  return hosts
+}
+
+function createTestServer(port: number, host: string): Promise<string> {
+  return new Promise(function (resolve, reject) {
+    const server = http.createServer()
+    server.listen(port, host, function () {
+      server.once('close', function () {
+        resolve(host)
+      })
+      server.close()
+    })
+    server.on('error', (e: Error & { code?: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        reject(host)
+      } else {
+        reject(e)
+      }
+    })
+  })
+}
+
+function getConflictHosts(host: string | undefined) {
+  const externalHost = getExternalHost()
+  const internalHost = ['127.0.0.1', '::1']
+  const defaultHost = ['0.0.0.0', '::']
+  let conflictIpList: string[] = []
+  if (host === undefined || host === '::' || host === '0.0.0.0') {
+    // User may want to listen on every IPs, we should check every IPs
+    conflictIpList = [...externalHost, ...internalHost, ...defaultHost]
+  } else if (host === '127.0.0.1' || host === 'localhost') {
+    // User may want to listen on 127.0.0.1 and use localhost as the hostname.
+    // check ::1 cause localhost may parse to ::1 first,::1 is reachable when ::1 or :: is in listening
+    conflictIpList = ['127.0.0.1', '::1', '::']
+  } else {
+    // Only listen on specific address
+    conflictIpList = [host]
+  }
+  return conflictIpList
+}
+
+// inspired by https://gist.github.com/eplawless/51afd77bc6e8631f6b5cb117208d5fe0#file-node-is-a-liar-snippet-4-js
+async function checkHostsAndPortAvailable(hosts: string[], port: number) {
+  const servers = hosts.reduce(function (
+    lastServer: Promise<string> | null,
+    host
+  ) {
+    return lastServer
+      ? lastServer.then(function () {
+          return createTestServer(port, host)
+        })
+      : createTestServer(port, host)
+  },
+  null)
+
+  return servers
+}
+
+async function resolvePort(
+  host: string | undefined,
+  startPort: number,
+  logger: Logger,
+  strictPort?: boolean
+) {
+  const conflictIpList = getConflictHosts(host)
+  return new Promise((resolve: (port: number) => void, reject) => {
+    checkHostsAndPortAvailable(conflictIpList, startPort).then(
+      () => {
+        resolve(startPort)
+      },
+      (conflictHost: string | Error) => {
+        if (typeof conflictHost !== 'string') {
+          reject(conflictHost)
+          return
+        }
+        if (strictPort) {
+          logger.info(`Port ${startPort} is in use by ${conflictHost}`)
+          reject(conflictHost)
+        } else {
+          logger.info(
+            `Port ${startPort} is in use by ${conflictHost}, trying another one...`
+          )
+          resolvePort(host, startPort + 1, logger, strictPort).then(
+            (port) => {
+              resolve(port)
+            },
+            (e: Error) => {
+              reject(e)
+            }
+          )
+        }
+      }
+    )
+  })
+}
+
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -180,26 +292,17 @@ export async function httpServerStart(
   return new Promise((resolve, reject) => {
     let { port, strictPort, host, logger } = serverOptions
 
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
-        } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
-        }
-      } else {
-        httpServer.removeListener('error', onError)
+    resolvePort(host, port, logger, strictPort).then((availablePort) => {
+      const onError = (e: Error & { code?: string }) => {
         reject(e)
       }
-    }
 
-    httpServer.on('error', onError)
+      httpServer.on('error', onError)
 
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener('error', onError)
-      resolve(port)
-    })
+      httpServer.listen(availablePort, host, () => {
+        httpServer.removeListener('error', onError)
+        resolve(port)
+      })
+    }, reject)
   })
 }

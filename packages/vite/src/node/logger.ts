@@ -9,6 +9,7 @@ import type { ResolvedConfig } from '.'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { DEFAULT_IPV4_ADDR, DEFAULT_IPV6_ADDR } from './constants'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -190,12 +191,43 @@ function printServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
+      .filter((detail) => {
+        if (!detail || !detail.address) {
+          return false
+        }
+
+        // Only show ipv6 url when host is ipv6 and host isn't ::
+        if (detail.family === 'IPv6') {
+          return (
+            hostname.host &&
+            hostname.host.includes(detail.address) &&
+            hostname.host !== '::'
+          )
+        } else {
+          const isIpv4DefaultAddress = detail.address.includes('127.0.0.1')
+          if (
+            hostname.host === undefined ||
+            hostname.host === DEFAULT_IPV4_ADDR ||
+            hostname.host === DEFAULT_IPV6_ADDR ||
+            hostname.host.includes(detail.address) ||
+            // Use '127.0.0.1' for any other host except '::1' as local url
+            // here '127.0.0.1' will be replace to hostname.name later
+            (isIpv4DefaultAddress && hostname.host !== '::1')
+          ) {
+            return true
+          }
+          return false
+        }
+      })
       .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
-        const host = detail.address.replace('127.0.0.1', hostname.name)
+        const type =
+          detail.address.includes('127.0.0.1') || detail.address.includes('::1')
+            ? 'Local:   '
+            : 'Network: '
+        let host = detail.address.replace('127.0.0.1', hostname.name)
+        if (host.includes(':')) {
+          host = `[${host}]`
+        }
         const url = `${protocol}://${host}:${colors.bold(port)}${base}`
         return `  > ${type} ${colors.cyan(url)}`
       })
