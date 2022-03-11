@@ -295,7 +295,7 @@ export default defineConfig(({ command, mode }) => {
 
 - **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
 
-  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom path to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config).
+  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom directory to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
 
   Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
