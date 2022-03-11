@@ -297,7 +297,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Map<string, Promise<TransformResult | null>>
+  _pendingRequests: Map<
+    string,
+    {
+      request: Promise<TransformResult | null>
+      timestamp: number
+      abort: () => void
+    }
+  >
 }
 
 export async function createServer(

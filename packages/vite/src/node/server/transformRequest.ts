@@ -38,48 +38,12 @@ export interface TransformOptions {
   html?: boolean
 }
 
-export function transformRequest(
+export async function transformRequest(
   url: string,
   server: ViteDevServer,
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
-  let request = server._pendingRequests.get(cacheKey)
-  if (!request) {
-    request = doTransform(url, server, options)
-    server._pendingRequests.set(cacheKey, request)
-    const done = () => server._pendingRequests.delete(cacheKey)
-    request.then(done, done)
-  }
-  return request
-}
-
-async function doTransform(
-  url: string,
-  server: ViteDevServer,
-  options: TransformOptions
-) {
-  url = removeTimestampQuery(url)
-  const { config, pluginContainer, moduleGraph, watcher } = server
-  const { root, logger } = config
-  const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
-  const ssr = !!options.ssr
-
-  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
-
-  // check if we have a fresh cache
-  const cached =
-    module && (ssr ? module.ssrTransformResult : module.transformResult)
-  if (cached) {
-    // TODO: check if the module is "partially invalidated" - i.e. an import
-    // down the chain has been fully invalidated, but this current module's
-    // content has not changed.
-    // in this case, we can reuse its previous cached result and only update
-    // its import timestamps.
-
-    isDebug && debugCache(`[memory] ${prettyUrl}`)
-    return cached
-  }
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -98,7 +62,78 @@ async function doTransform(
   // there may not be a new request right away because of HMR handling.
   // In all cases, the next time this module is requested, it should be
   // re-processed.
+  //
+  // We save the timestap when we start processing and compare it with the
+  // last time this module is invalidated
   const timestamp = Date.now()
+
+  const ssr = !!options.ssr
+
+  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+
+  // check if we have a fresh cache
+  const cached =
+    module && (ssr ? module.ssrTransformResult : module.transformResult)
+  if (cached) {
+    // TODO: check if the module is "partially invalidated" - i.e. an import
+    // down the chain has been fully invalidated, but this current module's
+    // content has not changed.
+    // in this case, we can reuse its previous cached result and only update
+    // its import timestamps.
+    isDebug && debugCache(`[memory] ${prettifyUrl(url, server.config.root)}`)
+    return cached
+  }
+
+  const pending = server._pendingRequests.get(cacheKey)
+  if (pending) {
+    if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+      // The pending request is still valid, we can safely reuse its result
+      return pending.request
+    } else {
+      // Request 1 for module A     (pending.timestamp)
+      // Invalidate module A        (module.lastInvalidationTimestamp)
+      // Request 2 for module A     (timestamp)
+
+      // First request has been invalidated, abort it to clear the cache,
+      // then perform a new doTransform.
+      pending.abort()
+    }
+  }
+
+  const request = doTransform(url, server, options, timestamp)
+
+  // Avoid clearing the cache of future requests if aborted
+  let cleared = false
+  const clearCache = () => {
+    if (!cleared) {
+      server._pendingRequests.delete(cacheKey)
+      cleared = true
+    }
+  }
+
+  // Cache the request and clear it once processing is done
+  server._pendingRequests.set(cacheKey, {
+    request,
+    timestamp,
+    abort: clearCache
+  })
+  request.then(clearCache, clearCache)
+
+  return request
+}
+
+async function doTransform(
+  url: string,
+  server: ViteDevServer,
+  options: TransformOptions,
+  timestamp: number
+) {
+  url = removeTimestampQuery(url)
+
+  const { config, pluginContainer, moduleGraph, watcher } = server
+  const { root, logger } = config
+  const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
+  const ssr = !!options.ssr
 
   // resolve
   const id =
