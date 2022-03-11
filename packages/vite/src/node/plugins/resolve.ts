@@ -606,7 +606,7 @@ export function tryNodeResolve(
       // otherwise we may introduce duplicated modules for externalized files
       // from pre-bundled deps.
 
-      const versionHash = server._optimizeDepsMetadata?.hash
+      const versionHash = server._optimizeDepsMetadata?.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
