@@ -38,7 +38,7 @@ export interface TransformOptions {
   html?: boolean
 }
 
-export async function transformRequest(
+export function transformRequest(
   url: string,
   server: ViteDevServer,
   options: TransformOptions = {}
@@ -67,37 +67,25 @@ export async function transformRequest(
   // last time this module is invalidated
   const timestamp = Date.now()
 
-  const ssr = !!options.ssr
-
-  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
-
-  // check if we have a fresh cache
-  const cached =
-    module && (ssr ? module.ssrTransformResult : module.transformResult)
-  if (cached) {
-    // TODO: check if the module is "partially invalidated" - i.e. an import
-    // down the chain has been fully invalidated, but this current module's
-    // content has not changed.
-    // in this case, we can reuse its previous cached result and only update
-    // its import timestamps.
-    isDebug && debugCache(`[memory] ${prettifyUrl(url, server.config.root)}`)
-    return cached
-  }
-
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
-    if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
-      // The pending request is still valid, we can safely reuse its result
-      return pending.request
-    } else {
-      // Request 1 for module A     (pending.timestamp)
-      // Invalidate module A        (module.lastInvalidationTimestamp)
-      // Request 2 for module A     (timestamp)
+    return server.moduleGraph
+      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
+      .then((module) => {
+        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+          // The pending request is still valid, we can safely reuse its result
+          return pending.request
+        } else {
+          // Request 1 for module A     (pending.timestamp)
+          // Invalidate module A        (module.lastInvalidationTimestamp)
+          // Request 2 for module A     (timestamp)
 
-      // First request has been invalidated, abort it to clear the cache,
-      // then perform a new doTransform.
-      pending.abort()
-    }
+          // First request has been invalidated, abort it to clear the cache,
+          // then perform a new doTransform.
+          pending.abort()
+          return transformRequest(url, server, options)
+        }
+      })
   }
 
   const request = doTransform(url, server, options, timestamp)
@@ -134,6 +122,22 @@ async function doTransform(
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
+
+  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+
+  // check if we have a fresh cache
+  const cached =
+    module && (ssr ? module.ssrTransformResult : module.transformResult)
+  if (cached) {
+    // TODO: check if the module is "partially invalidated" - i.e. an import
+    // down the chain has been fully invalidated, but this current module's
+    // content has not changed.
+    // in this case, we can reuse its previous cached result and only update
+    // its import timestamps.
+
+    isDebug && debugCache(`[memory] ${prettyUrl}`)
+    return cached
+  }
 
   // resolve
   const id =
