@@ -20,21 +20,53 @@
   <span class="tick-count">0</span>
 </div>
 
-<p>new Worker(new Url('path', import.meta.url), { type: 'module' })</p>
-<div class="worker-import-meta-url"></div>
+<p>
+  new Worker(new Url('./newUrl/url-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.worker-import-meta-url</span>
+</p>
+<code class="worker-import-meta-url"></code>
 
-<p>new SharedWorker(new Url('path', import.meta.url), { type: 'module' })</p>
-<div class="shared-worker-import-meta-url"></div>
+<p>
+  new SharedWorker(new Url('./newUrl/url-shared-worker.js', import.meta.url), {
+  type: 'module' })
+  <span class="classname">.shared-worker-import-meta-url</span>
+</p>
+<code class="shared-worker-import-meta-url"></code>
 
-<p>nested worker</p>
-<div class="nested-worker"></div>
-<div class="nested-worker-dynamic-import"></div>
-<p>new Worker(new Url('path', import.meta.url))</p>
-<div class="classic-worker"></div>
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  <span class="classname">.nested-worker</span>
+</p>
+<code class="nested-worker"></code>
 
-<p>new Worker(new Url('path', import.meta.url), { type: 'classic' })</p>
-<div class="classic-shared-worker"></div>
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  (after dynamic import msg)
+  <span class="classname">.nested-worker-dynamic-import</span>
+</p>
+<code class="nested-worker-dynamic-import"></code>
 
+<p>
+  new Worker(new Url('./newUrl/classic-worker.js', import.meta.url))
+  <span class="classname">.classic-worker</span>
+</p>
+<code class="classic-worker"></code>
+
+<p>
+  new SharedWorker(new Url('./newUrl/classic-shared-worker.js',
+  import.meta.url), { type: 'classic' })
+  <span class="classname">.classic-shared-worker</span>
+</p>
+<code class="classic-shared-worker"></code>
+<style>
+  p {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  .classname {
+    color: green;
+  }
+</style>
 <script type="module">
   import myWorker from './my-worker?worker'
   import InlineWorker from './my-worker?worker&inline'
@@ -43,6 +75,10 @@
   import NestedWorker from './worker-nested-worker?worker'
   import { mode } from './workerImport'
   import './classic-worker'
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
 
   document.querySelector('.mode-true').textContent = mode
 
@@ -86,9 +122,6 @@
     tsOutputWorker.postMessage('ping')
   })
 
-  function text(el, text) {
-    document.querySelector(el).textContent = text
-  }
   const workerOptions = { type: 'module' }
   // url import worker
   const w = new Worker(
@@ -96,7 +129,7 @@
     /* @vite-ignore */ workerOptions
   )
   w.addEventListener('message', (ev) =>
-    text('.worker-import-meta-url', ev.data)
+    text('.worker-import-meta-url', JSON.stringify(ev.data))
   )
 
   const genWorkerName = () => 'module'
@@ -109,7 +142,7 @@
     }
   )
   w2.port.addEventListener('message', (ev) => {
-    text('.shared-worker-import-meta-url', ev.data)
+    text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
   })
   w2.port.start()
 
@@ -117,7 +150,7 @@
   nestedWorker.addEventListener('message', (ev) => {
     console.log(ev)
     if (typeof ev.data === 'string') {
-      text('.nested-worker', ev.data)
+      text('.nested-worker', JSON.stringify(ev.data))
     } else {
       text('.nested-worker-dynamic-import', JSON.stringify(ev.data))
     }

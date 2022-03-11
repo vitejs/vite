@@ -13,7 +13,7 @@ let classicWorker = new Worker(
 classicWorker = new Worker(new URL('./newUrl/classic-worker.js', import.meta.url))
 
 classicWorker.addEventListener('message', ({ data }) => {
-  text('.classic-worker', data)
+  text('.classic-worker', JSON.stringify(data))
 })
 classicWorker.postMessage('ping')
 
@@ -26,7 +26,7 @@ const classicSharedWorker = new SharedWorker(
 classicSharedWorker.port.addEventListener('message', (ev) => {
   text(
     '.classic-shared-worker',
-    ev.data
+    JSON.stringify(ev.data)
   )
 })
 classicSharedWorker.port.start()
