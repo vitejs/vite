@@ -4,7 +4,7 @@ import path from 'path'
 
 // Regression test for https://github.com/vitejs/vite/issues/4000
 test('postcss plugins in different dir', async () => {
-  const port = 5005
+  const port = 5006
   const server = await createServer({
     root: path.join(__dirname, '..', '..', 'tailwind'),
     logLevel: 'silent',
