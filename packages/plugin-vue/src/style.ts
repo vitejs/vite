@@ -1,5 +1,5 @@
 import type { SFCDescriptor } from 'vue/compiler-sfc'
-import type { TransformPluginContext } from 'rollup'
+import type { ExistingRawSourceMap, TransformPluginContext } from 'rollup'
 import type { ResolvedOptions } from '.'
 import { formatPostcssSourceMap } from 'vite'
 
@@ -45,8 +45,15 @@ export async function transformStyle(
     return null
   }
 
+  // version property of result.map is declared as string
+  // but actually it is a number
+  type RawSourceMap = Omit<Exclude<typeof result.map, undefined>, 'version'>
+
   const map = result.map
-    ? formatPostcssSourceMap({ ...result.map, version: 3 }, filename)
+    ? formatPostcssSourceMap(
+        result.map as RawSourceMap as ExistingRawSourceMap,
+        filename
+      )
     : ({ mappings: '' } as any)
 
   return {

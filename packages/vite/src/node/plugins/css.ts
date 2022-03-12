@@ -47,6 +47,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
+import type { RawSourceMap } from '@ampproject/remapping'
 
 // const debug = createDebugger('vite:css')
 
@@ -806,8 +807,17 @@ async function compileCSS(
     }
   }
 
+  const postcssMapBeforeFormat = postcssResult.map.toJSON()
+
+  // version property of postcssMapBeforeFormat is declared as string
+  // but actually it is a number
+  type RawSourceMap = Omit<
+    Exclude<typeof postcssMapBeforeFormat, undefined>,
+    'version'
+  >
+
   const postcssMap = formatPostcssSourceMap(
-    { ...postcssResult.map.toJSON(), version: 3 },
+    postcssMapBeforeFormat as RawSourceMap as ExistingRawSourceMap,
     cleanUrl(id)
   )
 
@@ -838,7 +848,7 @@ export function formatPostcssSourceMap(
     mappings: rawMap.mappings,
     names: rawMap.names,
     sources,
-    version: +rawMap.version
+    version: rawMap.version
   }
 }
 
@@ -849,8 +859,10 @@ function combineSourcemapsIfExists(
 ): ExistingRawSourceMap | undefined {
   return map1 && map2
     ? (combineSourcemaps(filename, [
-        { ...map1, version: 3 },
-        { ...map2, version: 3 }
+        // type of version property of ExistingRawSourceMap is number
+        // but it is always 3
+        map1 as RawSourceMap,
+        map2 as RawSourceMap
       ]) as ExistingRawSourceMap)
     : map1
 }
