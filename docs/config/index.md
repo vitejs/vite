@@ -520,6 +520,12 @@ export default defineConfig(({ command, mode }) => {
 
   Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
 
+### server.headers
+
+- **Type:** `OutgoingHttpHeaders`
+
+  Specify server response headers.
+
 ### server.force
 
 - **Type:** `boolean`
@@ -602,6 +608,12 @@ async function createServer() {
 
 createServer()
 ```
+
+### server.base
+
+- **Type:** `string | undefined`
+
+  Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
 
 ### server.fs.strict
 
