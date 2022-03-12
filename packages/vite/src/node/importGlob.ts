@@ -16,6 +16,8 @@ import {
   normalizePath
 } from './utils'
 import type { RollupError } from 'rollup'
+import type { Logger } from '.'
+import colors from 'picocolors'
 
 interface GlobParams {
   base: string
@@ -24,7 +26,11 @@ interface GlobParams {
   isAbsolute: boolean
 }
 
-export interface AssertOptions {
+interface GlobOptions {
+  as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }
@@ -50,6 +56,7 @@ export async function transformImportGlob(
   importer: string,
   importIndex: number,
   root: string,
+  logger: Logger,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
   resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
@@ -75,7 +82,7 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  const [userPattern, assertion, endIndex] = lexGlobPattern(source, pos)
+  const [userPattern, options, endIndex] = lexGlobPattern(source, pos)
 
   let globParams: GlobParams | null = null
   if (userPattern.startsWith('/')) {
@@ -126,7 +133,19 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    if (assertion?.assert?.type === 'raw') {
+    // TODO remove assert syntax for the Vite 3.0 release.
+    const isRawAssert = options?.assert?.type === 'raw'
+    const isRawType = options?.as === 'raw'
+    if (isRawType || isRawAssert) {
+      if (isRawAssert) {
+        logger.warn(
+          colors.yellow(
+            colors.bold(
+              "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
+            )
+          )
+        )
+      }
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
@@ -173,7 +192,7 @@ const enum LexerState {
 function lexGlobPattern(
   code: string,
   pos: number
-): [string, AssertOptions, number] {
+): [string, GlobOptions, number] {
   let state = LexerState.inCall
   let pattern = ''
 
@@ -225,14 +244,14 @@ function lexGlobPattern(
     .replace(multilineCommentsRE, blankReplacer)
 
   const endIndex = noCommentCode.indexOf(')')
-  const options = noCommentCode.substring(0, endIndex)
-  const commaIndex = options.indexOf(',')
+  const optionString = noCommentCode.substring(0, endIndex)
+  const commaIndex = optionString.indexOf(',')
 
-  let assert = {}
+  let options = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substring(commaIndex + 1))
+    options = JSON5.parse(optionString.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + i + 2]
+  return [pattern, options, endIndex + i + 2]
 }
 
 function error(pos: number) {

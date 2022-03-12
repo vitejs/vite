@@ -46,7 +46,7 @@ export async function transformStyle(
   }
 
   const map = result.map
-    ? formatPostcssSourceMap(result.map, filename)
+    ? formatPostcssSourceMap({ ...result.map, version: 3 }, filename)
     : ({ mappings: '' } as any)
 
   return {

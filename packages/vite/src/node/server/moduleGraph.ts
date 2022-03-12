@@ -32,6 +32,7 @@ export class ModuleNode {
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
   lastHMRTimestamp = 0
+  lastInvalidationTimestamp = 0
 
   constructor(url: string) {
     this.url = url
@@ -94,17 +95,26 @@ export class ModuleGraph {
     }
   }
 
-  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
-    mod.info = undefined
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now()
+  ): void {
+    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+    // processing being done for this module
+    mod.lastInvalidationTimestamp = timestamp
+    // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
+    // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
   }
 
   invalidateAll(): void {
+    const timestamp = Date.now()
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {
-      this.invalidateModule(mod, seen)
+      this.invalidateModule(mod, seen, timestamp)
     })
   }
 

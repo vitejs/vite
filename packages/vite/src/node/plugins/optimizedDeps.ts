@@ -3,8 +3,7 @@ import type { Plugin } from '../plugin'
 import colors from 'picocolors'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import { isOptimizedDepFile } from '../optimizer'
-import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
+import { isOptimizedDepFile, optimizeDepInfoFromFile } from '../optimizer'
 import type { ViteDevServer } from '..'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
@@ -33,6 +32,8 @@ export function optimizedDepsPlugin(): Plugin {
           const browserHash = versionMatch
             ? versionMatch[1].split('=')[1]
             : undefined
+
+          // Search in both the currently optimized and newly discovered deps
           const info = optimizeDepInfoFromFile(metadata, file)
           if (info) {
             if (browserHash && info.browserHash !== browserHash) {
@@ -92,26 +93,4 @@ function throwOutdatedRequest(id: string) {
   // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
   throw err
-}
-
-function optimizeDepInfoFromFile(
-  metadata: DepOptimizationMetadata,
-  file: string
-): OptimizedDepInfo | undefined {
-  return (
-    findFileInfo(metadata.optimized, file) ||
-    findFileInfo(metadata.discovered, file)
-  )
-}
-
-function findFileInfo(
-  dependenciesInfo: Record<string, OptimizedDepInfo>,
-  file: string
-): OptimizedDepInfo | undefined {
-  for (const o of Object.keys(dependenciesInfo)) {
-    const info = dependenciesInfo[o]
-    if (info.file === file) {
-      return info
-    }
-  }
 }

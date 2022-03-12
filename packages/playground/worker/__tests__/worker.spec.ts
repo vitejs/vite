@@ -51,12 +51,20 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
+test('worker emitted', async () => {
+  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.nested-worker-dynamic-import'),
+    '"msg":"pong"'
+  )
+})
+
 if (isBuild) {
   const assetsDir = path.resolve(testDir, 'dist/assets')
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(8)
+    expect(files.length).toBe(11)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -74,18 +82,6 @@ if (isBuild) {
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
-  })
-
-  test('worker need bundle', () => {
-    fs.readdirSync(assetsDir)
-      .filter(
-        (file) =>
-          file.includes('url-worker') || file.includes('url-shared-worker')
-      )
-      .forEach((file) => {
-        const content = fs.readFileSync(path.resolve(assetsDir, file), 'utf-8')
-        expect(content.startsWith('(function(){')).toBe(true)
-      })
   })
 }
 
