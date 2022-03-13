@@ -521,7 +521,7 @@ export async function createOptimizeDepsRun(
   function commitProcessingDepsCacheSync() {
     // Rewire the file paths from the temporal processing dir to the final deps cache dir
     const dataPath = path.join(processingCacheDir, '_metadata.json')
-    writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata))
+    writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
     if (fs.existsSync(depsCacheDir)) {
       const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
@@ -640,19 +640,33 @@ function parseOptimizedDepsMetadata(
   depsCacheDir: string,
   processing: Promise<DepOptimizationResult | undefined>
 ) {
-  const metadata = JSON.parse(jsonMetadata)
+  const metadata = JSON.parse(jsonMetadata, (key: string, value: string) => {
+    // Paths can be absolute or relative to the deps cache dir where
+    // the _metadata.json is located
+    if (key === 'file' || key === 'src') {
+      return normalizePath(path.resolve(depsCacheDir, value))
+    }
+    return value
+  })
   for (const o of Object.keys(metadata.optimized)) {
     metadata.optimized[o].processing = processing
   }
   return { ...metadata, discovered: {}, processing }
 }
 
-function stringifyOptimizedDepsMetadata(metadata: DepOptimizationMetadata) {
+function stringifyOptimizedDepsMetadata(
+  metadata: DepOptimizationMetadata,
+  depsCacheDir: string
+) {
   return JSON.stringify(
     metadata,
     (key: string, value: any) => {
-      if (key === 'processing' || key === 'discovered') return
-
+      if (key === 'processing' || key === 'discovered') {
+        return
+      }
+      if (key === 'file' || key === 'src') {
+        return normalizePath(path.relative(depsCacheDir, value))
+      }
       return value
     },
     2
