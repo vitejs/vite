@@ -302,6 +302,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+// no resolve by other plugins, try `decodeURI` in the end
+export function decodeResolvePlugin(): Plugin {
+  return {
+    name: 'decode-resolve',
+
+    resolveId(id) {
+      return decodeURI(id)
+    }
+  }
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,

@@ -47,7 +47,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (!config.assetsInclude(cleanUrl(id))) {
         return
       }
-      id = decodeURI(id)
       // imports to absolute urls pointing to files in /public
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = checkPublicFile(id, config)

@@ -2,7 +2,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
 import { jsonPlugin } from './json'
-import { resolvePlugin } from './resolve'
+import { resolvePlugin, decodeResolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
@@ -73,6 +73,7 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+    decodeResolvePlugin()
   ].filter(Boolean) as Plugin[]
 }
