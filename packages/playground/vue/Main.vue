@@ -21,7 +21,7 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <div></div>
-  vue components: <img src="./assets/icon copy.png" />
+  <SymbolComponent />
 </template>
 
 <script setup lang="ts">
@@ -37,6 +37,7 @@ import ScanDep from './ScanDep.vue'
 import AsyncComponent from './AsyncComponent.vue'
 import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
+import SymbolComponent from './symbol component.vue'
 
 import { ref } from 'vue'
 
