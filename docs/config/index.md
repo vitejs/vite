@@ -241,9 +241,8 @@ export default defineConfig(({ command, mode }) => {
 
   Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
 
-  :::warning the property ending with "/" in "exports" is not resolved
-  Property ending with "/" is not supported. Because it is deprecated in Node.js. In [this spec](https://nodejs.org/api/packages.html#package-entry-points), `*` subpath patterns should be prefered.
-  Please modify the `exports` field by directly changing the source code, or using [patch-package](https://www.npmjs.com/package/patch-package)
+  :::warning resolve subpath export
+  Property ending with "/" is not supported. It is deprecated. Please contact to package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instread.
   :::
 
 ### resolve.mainFields
