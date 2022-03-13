@@ -2,7 +2,6 @@ import { cssUrlRE, cssPlugin } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
-import { normalizePath } from '../../utils'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
