@@ -1,39 +1,4 @@
-<style scoped>
-  .absolute-symbol {
-    display: inline-block;
-    height: 30px;
-    width: 30px;
-    background-image: url('./assets/icon copy.png');
-    background-size: 30px;
-  }
-  .relative-symbol {
-    display: inline-block;
-    height: 30px;
-    width: 30px;
-    background-image: url('/icon copy.png');
-    background-size: 30px;
-  }
-</style>
 <div id="app"></div>
-<h2>import symbol in html:</h2>
-<p>
-  symbol assets path in html asset (absolute):
-  <img src="/icon copy.png" />
-</p>
-<p>
-  symbol assets path in html asset (relative):
-  <img src="./assets/icon copy.png" />
-</p>
-<p>
-  symbol assets path in html style (absolute):
-  <span class="absolute-symbol"></span>
-</p>
-
-<p>
-  symbol assets path in html style (relative):
-  <span class="relative-symbol"></span>
-</p>
-
 <script type="module">
   import { createApp, defineCustomElement } from 'vue'
   import Main from './Main.vue'

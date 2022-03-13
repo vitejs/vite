@@ -20,8 +20,11 @@
     symbol assets path in vue style (relative):
     <span class="relative-symbol-vue"></span>
   </p>
+  {{ string }}
 </template>
-
+<script setup>
+import string from 'resolve virtual module'
+</script>
 <style scoped>
 .absolute-symbol-vue {
   display: inline-block;

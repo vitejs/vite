@@ -13,7 +13,22 @@ export default defineConfig({
       reactivityTransform: true
     }),
     splitVendorChunkPlugin(),
-    vueI18nPlugin
+    vueI18nPlugin,
+    {
+      name: 'resolve module',
+
+      resolveId(id) {
+        if (id === 'resolve virtual module') {
+          return 'virtual:module'
+        }
+      },
+
+      load(id) {
+        if (id === 'virtual:module') {
+          return `export default "resolve virtual module: ok"`
+        }
+      }
+    }
   ],
   build: {
     // to make tests faster
