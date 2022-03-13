@@ -232,6 +232,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`non-existent`, import.meta.url)', async () => {
+  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+    '/foo/non-existent'
+  )
+})
+
 if (isBuild) {
   test('manifest', async () => {
     const manifest = readManifest('foo')
