@@ -807,17 +807,12 @@ async function compileCSS(
     }
   }
 
-  const postcssMapBeforeFormat = postcssResult.map.toJSON()
-
-  // version property of postcssMapBeforeFormat is declared as string
-  // but actually it is a number
-  type RawSourceMap = Omit<
-    Exclude<typeof postcssMapBeforeFormat, undefined>,
-    'version'
-  >
+  const rawPostcssMap = postcssResult.map.toJSON()
 
   const postcssMap = formatPostcssSourceMap(
-    postcssMapBeforeFormat as RawSourceMap as ExistingRawSourceMap,
+    // version property of rawPostcssMap is declared as string
+    // but actually it is a number
+    rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
     cleanUrl(id)
   )
 

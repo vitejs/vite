@@ -1,6 +1,7 @@
 import type { SFCDescriptor } from 'vue/compiler-sfc'
 import type { ExistingRawSourceMap, TransformPluginContext } from 'rollup'
 import type { ResolvedOptions } from '.'
+import type { RawSourceMap } from 'source-map'
 import { formatPostcssSourceMap } from 'vite'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -45,13 +46,11 @@ export async function transformStyle(
     return null
   }
 
-  // version property of result.map is declared as string
-  // but actually it is a number
-  type RawSourceMap = Omit<Exclude<typeof result.map, undefined>, 'version'>
-
   const map = result.map
     ? formatPostcssSourceMap(
-        result.map as RawSourceMap as ExistingRawSourceMap,
+        // version property of result.map is declared as string
+        // but actually it is a number
+        result.map as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
         filename
       )
     : ({ mappings: '' } as any)
