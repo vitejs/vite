@@ -3,7 +3,7 @@
   <p>import symbol in vue component path: ok</p>
   <p>
     symbol assets path in vue template (absolute):
-    <img src="./assets/icon copy.png" />
+    <img src="/@/assets/asset copy.png" width="30" />
   </p>
 
   <p>
@@ -31,7 +31,7 @@ import string from 'resolve virtual module'
   height: 30px;
   width: 30px;
   border: 1px solid #0088ff;
-  background-image: url('./assets/icon copy.png');
+  background-image: url('./assets/asset copy.png');
   background-size: 30px;
 }
 .relative-symbol-vue {
