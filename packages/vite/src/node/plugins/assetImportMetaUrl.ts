@@ -61,7 +61,12 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), url)
           // Get final asset URL. Catch error if the file does not exist,
           // in which we can resort to the initial URL and let it resolve in runtime
-          const builtUrl = await fileToUrl(file, config, this).catch(() => url)
+          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            config.logger.warnOnce(
+              `${exp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            return url
+          })
           s.overwrite(
             index,
             index + exp.length,
