@@ -193,14 +193,14 @@ if (!isBuild) {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       Object {
-        "mappings": "AACE;EACE,WAAM",
+        "mappings": "AACE;EACE,cAAM",
         "sources": Array [
           "/root/imported.styl",
         ],
         "sourcesContent": Array [
           ".imported
         &-stylus
-          color red
+          color blue-red-mixed
       ",
         ],
         "version": 3,

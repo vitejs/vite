@@ -154,11 +154,13 @@ importers:
     specifiers:
       convert-source-map: ^1.8.0
       less: ^4.1.2
+      magic-string: ^0.25.7
       sass: ^1.43.4
       stylus: ^0.55.0
     devDependencies:
       convert-source-map: 1.8.0
       less: 4.1.2
+      magic-string: 0.25.7
       sass: 1.45.1
       stylus: 0.55.0
 
@@ -6825,6 +6827,7 @@ packages:
     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
     engines: {node: '>=4'}
     hasBin: true
+    requiresBuild: true
     dev: true
 
   /mime/2.6.0:

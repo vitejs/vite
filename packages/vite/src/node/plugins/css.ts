@@ -1060,9 +1060,18 @@ AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
+type PreprocessorAdditionalDataResult =
+  | string
+  | { content: string; map?: ExistingRawSourceMap }
+
 type PreprocessorAdditionalData =
   | string
-  | ((source: string, filename: string) => string | Promise<string>)
+  | ((
+      source: string,
+      filename: string
+    ) =>
+      | PreprocessorAdditionalDataResult
+      | Promise<PreprocessorAdditionalDataResult>)
 
 type StylePreprocessorOptions = {
   [key: string]: any
@@ -1457,32 +1466,27 @@ async function getSource(
   sep: string = ''
 ): Promise<{ content: string; map?: ExistingRawSourceMap }> {
   if (!additionalData) return { content: source }
+
   if (typeof additionalData === 'function') {
     const newContent = await additionalData(source, filename)
-    const ms = new MagicString(source)
-    ms.overwrite(0, source.length, newContent)
-
-    return {
-      content: ms.toString(),
-      map: generateWithAbsoluteFilenameMap(ms, filename)
+    if (typeof newContent === 'string') {
+      return { content: newContent }
     }
+    return newContent
   }
 
   const ms = new MagicString(source)
   ms.appendLeft(0, sep)
   ms.appendLeft(0, additionalData)
 
-  return {
-    content: ms.toString(),
-    map: generateWithAbsoluteFilenameMap(ms, filename)
-  }
-}
-
-function generateWithAbsoluteFilenameMap(ms: MagicString, filename: string) {
   const map = ms.generateMap({ hires: true })
   map.file = filename
   map.sources = [filename]
-  return map
+
+  return {
+    content: ms.toString(),
+    map
+  }
 }
 
 const preProcessors = Object.freeze({
