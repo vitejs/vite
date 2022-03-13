@@ -146,11 +146,11 @@ export function checkPublicFile(
   }
 }
 
-export function fileToUrl(
+export async function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext
-): string | Promise<string> {
+): Promise<string> {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
   } else {
