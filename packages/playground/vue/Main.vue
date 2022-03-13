@@ -20,6 +20,8 @@
   </Suspense>
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
+  <div></div>
+  vue components: <img src="/icon copy.png" />
 </template>
 
 <script setup lang="ts">
