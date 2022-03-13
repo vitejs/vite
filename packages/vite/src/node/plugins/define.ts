@@ -5,6 +5,9 @@ import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
+
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
@@ -99,6 +102,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         // exclude html, css and static assets for performance
         isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return

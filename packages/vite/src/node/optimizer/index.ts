@@ -250,6 +250,8 @@ export async function createOptimizeDepsRun(
     JSON.stringify({ type: 'module' })
   )
 
+  let newBrowserHash: string
+
   let deps: Record<string, string>
   if (!newDeps) {
     // Initial optimizeDeps at server start. Perform a fast scan using esbuild to
@@ -281,7 +283,10 @@ export async function createOptimizeDepsRun(
     }
 
     // update browser hash
-    metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
+    newBrowserHash = metadata.browserHash = getOptimizedBrowserHash(
+      metadata.hash,
+      deps
+    )
 
     // We generate the mapping of dependency ids to their cache file location
     // before processing the dependencies with esbuild. This allow us to continue
@@ -291,7 +296,7 @@ export async function createOptimizeDepsRun(
       metadata.optimized[id] = {
         file: getOptimizedDepPath(id, config),
         src: entry,
-        browserHash: metadata.browserHash,
+        browserHash: newBrowserHash,
         processing: processing.promise
       }
     }
@@ -302,9 +307,10 @@ export async function createOptimizeDepsRun(
 
     metadata.optimized = newDeps
 
-    // update global browser hash, but keep newDeps individual hashs until we know
+    // For reruns keep current global browser hash and newDeps individual hashes until we know
     // if files are stable so we can avoid a full page reload
-    metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
+    metadata.browserHash = currentData!.browserHash
+    newBrowserHash = getOptimizedBrowserHash(metadata.hash, deps)
   }
 
   return { metadata, run: prebundleDeps }
@@ -499,8 +505,9 @@ export async function createOptimizeDepsRun(
       // New deps that ended up with a different hash replaced while doing analysis import are going to
       // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
       for (const id in deps) {
-        metadata.optimized[id].browserHash = metadata.browserHash
+        metadata.optimized[id].browserHash = newBrowserHash
       }
+      metadata.browserHash = newBrowserHash
     }
 
     // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
