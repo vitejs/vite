@@ -30,7 +30,9 @@ export function createWebSocketServer(
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const wsServer =
     (hmr && hmr.server) ||
-    ((!(hmr && hmr.port) || hmr.port !== config.server.port) && server)
+    ((!(hmr && hmr.port) ||
+      (config.server.port && hmr.port !== config.server.port)) &&
+      server)
 
   if (wsServer) {
     wss = new WebSocket({ noServer: true })
