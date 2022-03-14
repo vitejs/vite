@@ -372,9 +372,7 @@ import MyWorker from './worker?worker&inline'
 
 ### new Worker()
 
-A web worker script can be imported by `new Worker()`. The difference between this syntax and imported by appending `?worker` or `?sharedworker` is that this one can use worker options. So we can create a `classic worker` by this syntax.
-
-Detect the case where `{ type: 'classic' }` is not provided or `{ type: 'classic' }` is passed with a static string and use classic workers.
+A web worker script can also be imported using [`new Worker()`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker) and [`new SharedWorker()`](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker/SharedWorker). Compared to the worker suffixes, this syntax leans closer to the standards and is the recommended way to create workers.
 
 ```ts
 const worker = new Worker(new URL('./worker.js', import.meta.url), {
