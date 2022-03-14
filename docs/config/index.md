@@ -549,7 +549,7 @@ export default defineConfig(({ command, mode }) => {
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
-  When using `server.middlewareMode` or `server.https`, assigning `server.hmr.server` to your HTTP(S) server will process HMR connection requests through your server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+  If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ### server.watch
 
