@@ -377,7 +377,13 @@ A web worker script can also be imported using [`new Worker()`](https://develope
 ```ts
 const worker = new Worker(new URL('./worker.js', import.meta.url))
 ```\
+The worker constructor also accepts options, which can be used to create "classic" workers:
 
+```ts
+const worker = new Worker(new URL('./worker.js', import.meta.url), {
+  type: 'classic'
+})
+```\
 ::: tip Note
 
 the worker options must be static for Vite to analyze it. if it contains dynamic expressions, `/* @vite-ignore */` can be used to opt-out of Vite processing
