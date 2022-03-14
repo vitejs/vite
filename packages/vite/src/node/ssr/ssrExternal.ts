@@ -79,9 +79,6 @@ export function resolveSSRExternal(
   return externals
 }
 
-const CJS_CONTENT_RE =
-  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
-
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
@@ -144,45 +141,35 @@ function collectExternals(
       debug(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
-    // no esm entry but has require entry
-    if (!esmEntry) {
-      ssrExternals.add(id)
+
+    const pkgPath = resolveFrom(`${id}/package.json`, root)
+    const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
+
+    if (!pkgContent) {
+      continue
     }
-    // trace the dependencies of linked packages
-    else if (!esmEntry.includes('node_modules')) {
+    const pkg = JSON.parse(pkgContent)
+
+    if (pkg.type === 'module') {
+      if (requireEntry && !requireEntry.endsWith('.cjs')) {
+        logger.warn(
+          `${id} must use a .cjs extension for the CJS entry point when "type": "module" is set. Please contact the package author to fix.`
+        )
+      }
+    } else {
+      if (esmEntry && !esmEntry.endsWith('.mjs')) {
+        logger.warn(
+          `${id} must either set "type": "module" or use an .mjs extension for the ESM entry point. Please contact the package author to fix.`
+        )
+      }
+    }
+
+    if (esmEntry && !esmEntry.includes('node_modules')) {
+      // trace the dependencies of linked packages
       const pkgPath = resolveFrom(`${id}/package.json`, root)
       depsToTrace.add(path.dirname(pkgPath))
-    }
-    // has separate esm/require entry, assume require entry is cjs
-    else if (esmEntry !== requireEntry) {
+    } else {
       ssrExternals.add(id)
-    }
-    // if we're externalizing ESM and CJS should basically just always do it?
-    // or are there others like SystemJS / AMD that we'd need to handle?
-    // for now, we'll just leave this as is
-    else if (/\.m?js$/.test(esmEntry)) {
-      const pkgPath = resolveFrom(`${id}/package.json`, root)
-      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
-
-      if (!pkgContent) {
-        continue
-      }
-      const pkg = JSON.parse(pkgContent)
-
-      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
-        ssrExternals.add(id)
-        continue
-      }
-      // check if the entry is cjs
-      const content = fs.readFileSync(esmEntry, 'utf-8')
-      if (CJS_CONTENT_RE.test(content)) {
-        ssrExternals.add(id)
-        continue
-      }
-
-      logger.warn(
-        `${id} doesn't appear to be written in CJS, but also doesn't appear to be a valid ES module (i.e. it doesn't have "type": "module" or an .mjs extension for the entry point). Please contact the package author to fix.`
-      )
     }
   }
 
