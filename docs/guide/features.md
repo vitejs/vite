@@ -370,7 +370,7 @@ By default, the worker script will be emitted as a separate chunk in the product
 import MyWorker from './worker?worker&inline'
 ```
 
-### Import with constructors
+### Import with Constructors
 
 A web worker script can also be imported using [`new Worker()`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker) and [`new SharedWorker()`](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker/SharedWorker). Compared to the worker suffixes, this syntax leans closer to the standards and is the recommended way to create workers.
 
