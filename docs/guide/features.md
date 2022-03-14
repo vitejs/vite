@@ -352,7 +352,7 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 
 ## Web Workers
 
-### Import with suffixes
+### Import with query suffixes
 
 A web worker script can be directly imported by appending `?worker` or `?sharedworker` to the import request. The default export will be a custom worker constructor:
 
