@@ -376,14 +376,16 @@ A web worker script can also be imported using [`new Worker()`](https://develope
 
 ```ts
 const worker = new Worker(new URL('./worker.js', import.meta.url))
-```\
+```
+
 The worker constructor also accepts options, which can be used to create "classic" workers:
 
 ```ts
 const worker = new Worker(new URL('./worker.js', import.meta.url), {
   type: 'classic'
 })
-```\
+```
+
 See [Worker Options](/config/#worker-options) for details on configuring the bundling of all workers.
 
 ## Build Optimizations
