@@ -62,6 +62,7 @@ const skipRE = /\.(map|json)$/
 const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
+const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
 
 function isExplicitImportRequired(url: string) {
   return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
@@ -451,11 +452,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               )
 
               if (needsInterop === undefined) {
-                config.logger.error(
-                  colors.red(
-                    `Vite Error, ${url} optimized info should be defined`
+                // Non-entry dynamic imports from dependencies will reach here as there isn't
+                // optimize info for them, but they don't need es interop. If the request isn't
+                // a dynamic import, then it is an internal Vite error
+                if (!file.match(optimizedDepDynamicRE)) {
+                  config.logger.error(
+                    colors.red(
+                      `Vite Error, ${url} optimized info should be defined`
+                    )
                   )
-                )
+                }
               } else if (needsInterop) {
                 debug(`${url} needs interop`)
                 if (isDynamicImport) {

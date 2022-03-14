@@ -41,6 +41,9 @@
 <h2>Import from dependency with .notjs files</h2>
 <div class="not-js"></div>
 
+<h2>Import from dependency with dynamic import</h2>
+<div class="dep-with-dynamic-import"></div>
+
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
@@ -87,6 +90,11 @@
 
   import { notjsValue } from 'dep-not-js'
   text('.not-js', notjsValue)
+
+  import { lazyFoo } from 'dep-with-dynamic-import'
+  lazyFoo().then((foo) => {
+    text('.dep-with-dynamic-import', foo)
+  })
 
   import { createApp } from 'vue'
   import { createStore } from 'vuex'

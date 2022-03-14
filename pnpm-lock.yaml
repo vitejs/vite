@@ -299,6 +299,7 @@ importers:
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
       dep-not-js: file:./dep-not-js
+      dep-with-dynamic-import: file:./dep-with-dynamic-import
       lodash-es: ^4.17.21
       nested-exclude: file:./nested-exclude
       phoenix: ^1.6.2
@@ -317,6 +318,7 @@ importers:
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
       dep-not-js: link:dep-not-js
+      dep-with-dynamic-import: link:dep-with-dynamic-import
       lodash-es: 4.17.21
       nested-exclude: link:nested-exclude
       phoenix: 1.6.5
