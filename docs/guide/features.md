@@ -384,22 +384,7 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
   type: 'classic'
 })
 ```\
-::: tip Note
-
-the worker options must be static for Vite to analyze it. if it contains dynamic expressions, `/* @vite-ignore */` can be used to opt-out of Vite processing
-
-```ts
-const generateWorkerOption = () => ({ type: 'classic' })
-// use dy dynamic expression will got a vite process error.
-const worker = new Worker(
-  new URL('./worker.js', import.meta.url),
-  generateWorkerOption()
-)
-```
-
-No matter which type of worker is used, the same [worker configuration](/config/#worker-options) will be used for bundle.
-
-:::
+See [Worker Options](/config/#worker-options) for details on configuring the bundling of all workers.
 
 ## Build Optimizations
 
