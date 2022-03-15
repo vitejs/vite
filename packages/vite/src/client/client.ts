@@ -444,6 +444,12 @@ export const createHotContext = (ownerPath: string) => {
       }
     },
 
+    // export names (first arg) are irrelevant on the client side, they're
+    // extracted in the server for propagation
+    acceptExports(_: string, callback?: any) {
+      acceptDeps([ownerPath], callback)
+    },
+
     acceptDeps() {
       throw new Error(
         `hot.acceptDeps() is deprecated. ` +

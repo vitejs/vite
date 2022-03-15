@@ -27,6 +27,8 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
+  acceptedHmrExports: Set<string> | null = null
+  importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting = false
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
@@ -126,7 +128,9 @@ export class ModuleGraph {
   async updateModuleInfo(
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
+    importedBindings: Map<string, Set<string>> | null,
     acceptedModules: Set<string | ModuleNode>,
+    acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean
   ): Promise<Set<ModuleNode> | undefined> {
@@ -162,6 +166,9 @@ export class ModuleGraph {
           : accepted
       deps.add(dep)
     }
+    // update accepted hmr exports
+    mod.acceptedHmrExports = acceptedExports
+    mod.importedBindings = importedBindings
     return noLongerImported
   }
 

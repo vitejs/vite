@@ -101,6 +101,7 @@
     "node-forge": "^1.2.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
+    "parse-static-imports": "^1.1.0",
     "periscopic": "^2.0.3",
     "picocolors": "^1.0.0",
     "postcss-import": "^14.0.2",

@@ -1,11 +1,13 @@
 import fs from 'fs'
 import path from 'path'
+import { isObject } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
+import parseStaticImports from 'parse-static-imports'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   isBuiltin,
@@ -27,7 +29,8 @@ import {
 import {
   debugHmr,
   handlePrunedModules,
-  lexAcceptedHmrDeps
+  lexAcceptedHmrDeps,
+  lexAcceptedHmrExports
 } from '../server/hmr'
 import {
   FS_PREFIX,
@@ -74,6 +77,42 @@ function markExplicitImport(url: string) {
   return url
 }
 
+async function extractImportedBindings(
+  id: string,
+  source: string,
+  importSpec: ImportSpecifier,
+  importedBindings: Map<string, Set<string>>
+) {
+  let bindings = importedBindings.get(id)
+  if (!bindings) {
+    bindings = new Set<string>()
+    importedBindings.set(id, bindings)
+  }
+
+  const exp = source.slice(importSpec.ss, importSpec.se)
+  const [parsed] = parseStaticImports(exp)
+  if (!parsed) {
+    return
+  }
+  if (parsed.sideEffectOnly) {
+    return
+  }
+  const isDynamic = importSpec.d > -1
+  const isMeta = importSpec.d === -2
+  if (isDynamic || isMeta || parsed.starImport) {
+    // this basically means the module will be impacted by any change in its dep
+    bindings.add('*')
+  }
+  if (parsed.defaultImport) {
+    bindings.add('default')
+  }
+  if (parsed.namedImports) {
+    for (const { name } of parsed.namedImports) {
+      bindings.add(name)
+    }
+  }
+}
+
 /**
  * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
@@ -111,6 +150,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
+  const enablePartialAccept =
+    isObject(config.server.hmr) && config.server.hmr.partialAccept
   let server: ViteDevServer
   let isOptimizedDepUrl: (url: string) => boolean
 
@@ -186,6 +227,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         start: number
         end: number
       }>()
+      let isPartiallySelfAccepting = false
+      const acceptedExports = new Set<string>()
+      const importedBindings = enablePartialAccept
+        ? new Map<string, Set<string>>()
+        : null
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
@@ -327,7 +373,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             hasHMR = true
             if (source.slice(end + 4, end + 11) === '.accept') {
               // further analyze accepted modules
-              if (
+              if (source.slice(end + 4, end + 18) === '.acceptExports') {
+                if (
+                  lexAcceptedHmrExports(
+                    source,
+                    source.indexOf('(', end + 18) + 1,
+                    acceptedExports
+                  )
+                ) {
+                  isPartiallySelfAccepting = true
+                }
+              } else if (
                 lexAcceptedHmrDeps(
                   source,
                   source.indexOf('(', end + 11) + 1,
@@ -487,6 +543,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // make sure to normalize away base
           const urlWithoutBase = url.replace(base, '/')
           importedUrls.add(urlWithoutBase)
+
+          if (enablePartialAccept && importedBindings) {
+            extractImportedBindings(
+              resolvedId,
+              source,
+              imports[index],
+              importedBindings
+            )
+          }
+
           if (!isDynamicImport) {
             // for pre-transforming
             staticImportedUrls.add(urlWithoutBase)
@@ -546,6 +612,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           `${
             isSelfAccepting
               ? `[self-accepts]`
+              : isPartiallySelfAccepting
+              ? `[accepts-exports]`
               : acceptedUrls.size
               ? `[accepts-deps]`
               : `[detected api usage]`
@@ -601,7 +669,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
+          importedBindings,
           normalizedAcceptedUrls,
+          isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
           ssr
         )
