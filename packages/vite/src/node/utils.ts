@@ -9,16 +9,14 @@ import {
   DEFAULT_EXTENSIONS,
   VALID_ID_PREFIX,
   CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
+  ENV_PUBLIC_PATH,
+  CLIENT_ENTRY
 } from './constants'
 import resolve from 'resolve'
 import { builtinModules } from 'module'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import type {
-  DecodedSourceMap,
-  RawSourceMap
-} from '@ampproject/remapping/dist/types/types'
+import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import { performance } from 'perf_hooks'
 import { parse as parseUrl, URLSearchParams } from 'url'
 
@@ -33,7 +31,7 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -139,7 +137,25 @@ export function createDebugger(
   }
 }
 
+function testCaseInsensitiveFS() {
+  if (!CLIENT_ENTRY.endsWith('client.mjs')) {
+    throw new Error(
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`
+    )
+  }
+  if (!fs.existsSync(CLIENT_ENTRY)) {
+    throw new Error(
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+        CLIENT_ENTRY
+    )
+  }
+  return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
+}
+
+export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+
 export const isWindows = os.platform() === 'win32'
+
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -147,10 +163,35 @@ export function normalizePath(id: string): string {
 }
 
 export function fsPathFromId(id: string): string {
-  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  const fsPath = normalizePath(
+    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
+  )
   return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
     ? fsPath
     : `/${fsPath}`
+}
+
+export function fsPathFromUrl(url: string): string {
+  return fsPathFromId(cleanUrl(url))
+}
+
+/**
+ * Check if dir is a parent of file
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param dir - normalized absolute path
+ * @param file - normalized absolute path
+ * @returns true if dir is a parent of file
+ */
+export function isParentDirectory(dir: string, file: string): boolean {
+  if (!dir.endsWith('/')) {
+    dir = `${dir}/`
+  }
+  return (
+    file.startsWith(dir) ||
+    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
 }
 
 export function ensureVolumeInPath(file: string): string {
@@ -189,8 +230,14 @@ const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
 export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
-export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
+export function getPotentialTsSrcPaths(filePath: string) {
+  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const paths = [name + type.replace('js', 'ts') + query]
+  if (!type.endsWith('x')) {
+    paths.push(name + type.replace('js', 'tsx') + query)
+  }
+  return paths
+}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
@@ -222,7 +269,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
+    hash ?? ''
   }`
 }
 
@@ -292,20 +339,28 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+interface LookupFileOptions {
+  pathOnly?: boolean
+  rootDir?: string
+}
+
 export function lookupFile(
   dir: string,
   formats: string[],
-  pathOnly = false
+  options?: LookupFileOptions
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
-  if (parentDir !== dir) {
-    return lookupFile(parentDir, formats, pathOnly)
+  if (
+    parentDir !== dir &&
+    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
+  ) {
+    return lookupFile(parentDir, formats, options)
   }
 }
 
@@ -422,8 +477,8 @@ export function writeFile(
  */
 export function isFileReadable(filename: string): boolean {
   try {
-    fs.accessSync(filename, fs.constants.R_OK)
-    return true
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
   } catch {
     return false
   }
@@ -464,10 +519,6 @@ export function copyDir(srcDir: string, destDir: string): void {
       fs.copyFileSync(srcFile, destFile)
     }
   }
-}
-
-export function ensureLeadingSlash(path: string): string {
-  return !path.startsWith('/') ? '/' + path : path
 }
 
 export function ensureWatchedFile(
@@ -518,7 +569,7 @@ export async function processSrcSet(
   )
 
   return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor = descriptor || ''
+    descriptor ??= ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
@@ -584,11 +635,7 @@ export function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Hostname {
   let host: string | undefined
-  if (
-    optionsHost === undefined ||
-    optionsHost === false ||
-    optionsHost === 'localhost'
-  ) {
+  if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
     host = '127.0.0.1'
   } else if (optionsHost === true) {
@@ -642,3 +689,5 @@ export function parseRequest(id: string): Record<string, string> | null {
   }
   return Object.fromEntries(new URLSearchParams(search.slice(1)))
 }
+
+export const blankReplacer = (match: string) => ' '.repeat(match.length)

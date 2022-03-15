@@ -19,9 +19,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
-      if (code.includes('new URL') && code.includes(`import.meta.url`)) {
+      if (
+        !options?.ssr &&
+        code.includes('new URL') &&
+        code.includes(`import.meta.url`)
+      ) {
         const importMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
@@ -29,13 +33,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: exp, 1: rawUrl, index } = match
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              index
-            )
-          }
 
           if (!s) s = new MagicString(code)
 
@@ -62,7 +59,14 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           const url = rawUrl.slice(1, -1)
           const file = path.resolve(path.dirname(id), url)
-          const builtUrl = await fileToUrl(file, config, this)
+          // Get final asset URL. Catch error if the file does not exist,
+          // in which we can resort to the initial URL and let it resolve in runtime
+          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            config.logger.warnOnce(
+              `\n${exp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            return url
+          })
           s.overwrite(
             index,
             index + exp.length,

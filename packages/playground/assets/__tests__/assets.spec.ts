@@ -8,7 +8,8 @@ import {
   readManifest,
   readFile,
   editFile,
-  notifyRebuildComplete
+  notifyRebuildComplete,
+  untilUpdated
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -37,7 +38,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+      'script[type="module"][src^="/foo/index.html?html-proxy"]'
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -120,6 +121,10 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
+    const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
+    const el = await page.$(`link.ico`)
+    const herf = await el.getAttribute('href')
+    expect(herf).toMatch(icoMatch)
   })
 
   test('multiple urls on the same line', async () => {
@@ -228,6 +233,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`non-existent`, import.meta.url)', async () => {
+  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+    '/foo/non-existent'
+  )
+})
+
 if (isBuild) {
   test('manifest', async () => {
     const manifest = readManifest('foo')
@@ -254,3 +265,15 @@ describe('css and assets in css in build watch', () => {
     })
   }
 })
+
+if (!isBuild) {
+  test('@import in html style tag hmr', async () => {
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    editFile(
+      './css/import.css',
+      (code) => code.replace('#0088ff', '#00ff88'),
+      true
+    )
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+  })
+}

@@ -49,7 +49,8 @@ import type {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
@@ -70,7 +71,6 @@ import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
-import { SourceMapConsumer } from 'source-map-js/lib/source-map-consumer'
 import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
@@ -376,13 +376,12 @@ export async function createPluginContainer(
       if (err.loc && ctx instanceof TransformContext) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
-          const consumer = new SourceMapConsumer(rawSourceMap as any)
-          const { source, line, column } = consumer.originalPositionFor({
+          const traced = new TraceMap(rawSourceMap as any)
+          const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
-            column: Number(err.loc.column),
-            bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+            column: Number(err.loc.column)
           })
-          if (source) {
+          if (source && line != null && column != null) {
             err.loc = { file: source, line, column }
           }
         }

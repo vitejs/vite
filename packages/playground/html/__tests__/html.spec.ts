@@ -197,25 +197,6 @@ describe('noBody', () => {
   })
 })
 
-describe('importAsString', () => {
-  // The build-html plugin should not alter HTML that is not an input.
-  test('not transformed', async () => {
-    const messages = []
-    function addConsoleMessage(message) {
-      messages.push(message.args()[0])
-    }
-
-    page.on('console', addConsoleMessage)
-    await page.goto(viteTestUrl + '/index.html')
-    await page.waitForLoadState()
-    page.off('console', addConsoleMessage)
-
-    const result = messages.map((m) => m.toString()).join('\n')
-    expect(result).toMatch('Some imported HTML')
-    expect(result).not.toMatch('This is injected')
-  })
-})
-
 describe('unicode path', () => {
   test('direct access', async () => {
     await page.goto(

@@ -1,3 +1,39 @@
+## [2.2.4](https://github.com/vitejs/vite/compare/plugin-vue@2.2.3...plugin-vue@2.2.4) (2022-02-28)
+
+
+
+## [2.2.3](https://github.com/vitejs/vite/compare/plugin-vue@2.2.2...plugin-vue@2.2.3) (2022-02-28)
+
+
+### Bug Fixes
+
+* **plugin-vue:** setup jsx script no hmr ([#6568](https://github.com/vitejs/vite/issues/6568)) ([c84601c](https://github.com/vitejs/vite/commit/c84601cee5232bad0f65c8fcc663e38bb457a0b3))
+
+
+
+## [2.2.2](https://github.com/vitejs/vite/compare/plugin-vue@2.2.1...plugin-vue@2.2.2) (2022-02-18)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@2.2.1) (2022-02-18)
+
+
+### Bug Fixes
+
+* adjust vue template sourcemap ([#6972](https://github.com/vitejs/vite/issues/6972)) ([a774303](https://github.com/vitejs/vite/commit/a7743039f263f41e1c3971e324f893a5ef5e5508))
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+# [2.2.0](https://github.com/vitejs/vite/compare/plugin-vue@2.1.0...plugin-vue@2.2.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* plugin-vue `options.compiler` field ([#6588](https://github.com/vitejs/vite/issues/6588)) ([caec019](https://github.com/vitejs/vite/commit/caec01998a9599d255761f3efc1c49827aadac0d)), closes [#6587](https://github.com/vitejs/vite/issues/6587)
+
+
+
 # [2.1.0](https://github.com/vitejs/vite/compare/plugin-vue@2.0.1...plugin-vue@2.1.0) (2022-01-21)
 
 
@@ -59,7 +95,7 @@
 
 ### Bug Fixes
 
-* **plugin-vue:** fix hmr issue in vuejs/vue-next[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
+* **plugin-vue:** fix hmr issue in vuejs/core[#4358](https://github.com/vitejs/vite/issues/4358) ([709e4b0](https://github.com/vitejs/vite/commit/709e4b0428d8cdc8299b22898c76e58d66ca92c9))
 
 
 

@@ -28,7 +28,9 @@ export function createWebSocketServer(
   let httpsServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
-  const wsServer = (hmr && hmr.server) || server
+  const wsServer =
+    (hmr && hmr.server) ||
+    ((!(hmr && hmr.port) || hmr.port !== config.server.port) && server)
 
   if (wsServer) {
     wss = new WebSocket({ noServer: true })
@@ -42,6 +44,7 @@ export function createWebSocketServer(
   } else {
     const websocketServerOptions: ServerOptions = {}
     const port = (hmr && hmr.port) || 24678
+    const host = (hmr && hmr.host) || undefined
     if (httpsOptions) {
       // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
       // create an inline https server and mount the websocket server to it
@@ -60,11 +63,14 @@ export function createWebSocketServer(
         res.end(body)
       })
 
-      httpsServer.listen(port)
+      httpsServer.listen(port, host)
       websocketServerOptions.server = httpsServer
     } else {
       // we don't need to serve over https, just let ws handle its own server
       websocketServerOptions.port = port
+      if (host) {
+        websocketServerOptions.host = host
+      }
     }
 
     // vite dev server in middleware mode
