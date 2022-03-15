@@ -44,7 +44,7 @@
     "@typescript-eslint/parser": "^5.11.0",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.14.14",
+    "esbuild": "^0.14.27",
     "eslint": "^8.8.0",
     "eslint-define-config": "^1.2.4",
     "eslint-plugin-node": "^11.1.0",
