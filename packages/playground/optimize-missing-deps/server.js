@@ -25,10 +25,11 @@ async function createServer(root = process.cwd()) {
       let template = fs.readFileSync(resolve('index.html'), 'utf-8')
       template = await vite.transformIndexHtml(req.originalUrl, template)
 
-      // this will import missing deps nest built-in deps that should not be optimized
+      // dependencies aren't discovered until `./main.js` is parsed and scanned, so they are "missing"
+      // this will import "missing" deps that are not yet discovered, but will not optimize them
       const { name } = await vite.ssrLoadModule('./main.js')
 
-      // this will import missing deps that should be optimized correctly
+      // this will import "missing" deps in such a manner that they will be optimized
       const appHtml = `<div id="app">${name}</div>
 <script type='module'>
   import { name } from './main.js'
