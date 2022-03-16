@@ -166,6 +166,11 @@
   <code class="dynamic-import-meta-url-2-comma"></code>
 </p>
 
+<h2>new URL(`non-existent`, import.meta.url)</h2>
+<p>
+  <code class="non-existent-import-meta-url"></code>
+</p>
+
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
 <script>
@@ -256,6 +261,9 @@
   text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
   document.querySelector('.import-meta-url-img-comma-nl').src =
     metaUrlWithCommaNL
+
+  const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
+  text('.non-existent-import-meta-url', metaUrlNonExistent)
 
   /**
    * don't process the code in the comment

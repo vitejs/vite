@@ -29,11 +29,11 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
     }))
     this.global.page = await browser.newPage()
 
-    // suppress @vue/compiler-sfc warning
+    // suppress @vue/ref-transform warning
     const console = this.global.console
     const warn = console.warn
     console.warn = (msg, ...args) => {
-      if (!msg.includes('@vue/compiler-sfc')) {
+      if (!msg.includes('@vue/ref-transform')) {
         warn.call(console, msg, ...args)
       }
     }

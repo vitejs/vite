@@ -229,7 +229,11 @@ export interface ViteDevServer {
     opts?: { fixStacktrace?: boolean }
   ): Promise<Record<string, any>>
   /**
-   * Fix ssr error stacktrace
+   * Returns a fixed version of the given stack
+   */
+  ssrRewriteStacktrace(stack: string): string
+  /**
+   * Mutates the given SSR error by rewriting the stacktrace
    */
   ssrFixStacktrace(e: Error): void
   /**
@@ -293,7 +297,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Map<string, Promise<TransformResult | null>>
+  _pendingRequests: Map<
+    string,
+    {
+      request: Promise<TransformResult | null>
+      timestamp: number
+      abort: () => void
+    }
+  >
 }
 
 export async function createServer(
@@ -385,6 +396,9 @@ export async function createServer(
         const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
         rebindErrorStacktrace(e, stacktrace)
       }
+    },
+    ssrRewriteStacktrace(stack: string) {
+      return ssrRewriteStacktrace(stack, moduleGraph)
     },
     listen(port?: number, isRestart?: boolean) {
       return startServer(server, port, isRestart)

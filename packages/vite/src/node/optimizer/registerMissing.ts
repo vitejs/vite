@@ -79,7 +79,14 @@ export function createMissingImporterRegisterFn(
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
-    const newDeps = { ...metadata.optimized, ...metadata.discovered }
+
+    // Clone optimized info objects, fileHash, browserHash may be changed for them
+    const clonedOptimizedDeps: Record<string, OptimizedDepInfo> = {}
+    for (const o of Object.keys(metadata.optimized)) {
+      clonedOptimizedDeps[o] = { ...metadata.optimized[o] }
+    }
+
+    const newDeps = { ...clonedOptimizedDeps, ...metadata.discovered }
     const thisDepOptimizationProcessing = depOptimizationProcessing
 
     // Other rerun will await until this run is finished
@@ -119,9 +126,8 @@ export function createMissingImporterRegisterFn(
       // While optimizeDeps is running, new missing deps may be discovered,
       // in which case they will keep being added to metadata.discovered
       for (const o of Object.keys(metadata.discovered)) {
-        if (!newData.optimized[o] && !newData.discovered[o]) {
+        if (!newData.optimized[o]) {
           newData.discovered[o] = metadata.discovered[o]
-          delete metadata.discovered[o]
         }
       }
       newData.processing = thisDepOptimizationProcessing.promise

@@ -1,3 +1,69 @@
+## 2.9.0-beta.2 (2022-03-14)
+
+* fix: `ssrExternal` should not skip nested dependencies (#7154) ([f8f934a](https://github.com/vitejs/vite/commit/f8f934a)), closes [#7154](https://github.com/vitejs/vite/issues/7154)
+* fix: dep with dynamic import wrong error log (#7313) ([769f535](https://github.com/vitejs/vite/commit/769f535)), closes [#7313](https://github.com/vitejs/vite/issues/7313)
+
+
+
+## 2.9.0-beta.1 (2022-03-14)
+
+* fix: avoid caching transform result of invalidated module (#7254) ([2d7ba72](https://github.com/vitejs/vite/commit/2d7ba72)), closes [#7254](https://github.com/vitejs/vite/issues/7254)
+* fix: dont replace define in json (#7294) ([fc5c937](https://github.com/vitejs/vite/commit/fc5c937)), closes [#7294](https://github.com/vitejs/vite/issues/7294)
+* fix: main browserHash after stable optimization rerun (#7284) ([98eefa8](https://github.com/vitejs/vite/commit/98eefa8)), closes [#7284](https://github.com/vitejs/vite/issues/7284)
+* fix: needs es interop check for newly discovered deps (#7243) ([ba3047d](https://github.com/vitejs/vite/commit/ba3047d)), closes [#7243](https://github.com/vitejs/vite/issues/7243)
+* fix: pending requests after module invalidation (#7283) ([a1044d7](https://github.com/vitejs/vite/commit/a1044d7)), closes [#7283](https://github.com/vitejs/vite/issues/7283)
+* fix: use browserHash for imports from node_modules (#7278) ([161f8ea](https://github.com/vitejs/vite/commit/161f8ea)), closes [#7278](https://github.com/vitejs/vite/issues/7278)
+* fix: use hmr port if specified (#7282) ([3ee04c0](https://github.com/vitejs/vite/commit/3ee04c0)), closes [#7282](https://github.com/vitejs/vite/issues/7282)
+* fix: use relative paths in _metadata.json (#7299) ([8b945f5](https://github.com/vitejs/vite/commit/8b945f5)), closes [#7299](https://github.com/vitejs/vite/issues/7299)
+* fix(asset): allow non-existent url (#7306) ([6bc45a2](https://github.com/vitejs/vite/commit/6bc45a2)), closes [#7306](https://github.com/vitejs/vite/issues/7306)
+* fix(hmr): hmr style tag no support in html (#7262) ([fae120a](https://github.com/vitejs/vite/commit/fae120a)), closes [#7262](https://github.com/vitejs/vite/issues/7262)
+* chore: clarify writableEnded guard comment (#7256) ([dddda1e](https://github.com/vitejs/vite/commit/dddda1e)), closes [#7256](https://github.com/vitejs/vite/issues/7256)
+* chore: new line for non-existent url (#7308) ([522faf8](https://github.com/vitejs/vite/commit/522faf8)), closes [#7308](https://github.com/vitejs/vite/issues/7308)
+* chore: remove unused code (#7303) ([467512b](https://github.com/vitejs/vite/commit/467512b)), closes [#7303](https://github.com/vitejs/vite/issues/7303)
+* feat: expose ssrRewriteStacktrace (#7091) ([d4ae45d](https://github.com/vitejs/vite/commit/d4ae45d)), closes [#7091](https://github.com/vitejs/vite/issues/7091)
+
+
+
+## 2.9.0-beta.0 (2022-03-09)
+
+* fix: `import.meta.url` should not throw (#7219) ([5de3a98](https://github.com/vitejs/vite/commit/5de3a98)), closes [#7219](https://github.com/vitejs/vite/issues/7219)
+* fix: allow `localhost` as a valid hostname (#7092) ([4194cce](https://github.com/vitejs/vite/commit/4194cce)), closes [#7092](https://github.com/vitejs/vite/issues/7092)
+* fix: build optimize deps metada location (#7214) ([dc46adf](https://github.com/vitejs/vite/commit/dc46adf)), closes [#7214](https://github.com/vitejs/vite/issues/7214)
+* fix: define plugin not ignore file names (#6340) ([7215a03](https://github.com/vitejs/vite/commit/7215a03)), closes [#6340](https://github.com/vitejs/vite/issues/6340)
+* fix: deprecate `{ assert: { type: raw }}` in favor of `{ as: raw }` (fix #7017) (#7215) ([87ecce5](https://github.com/vitejs/vite/commit/87ecce5)), closes [#7017](https://github.com/vitejs/vite/issues/7017) [#7215](https://github.com/vitejs/vite/issues/7215)
+* fix: execute classic worker in dev mode (#7099) ([3c0a609](https://github.com/vitejs/vite/commit/3c0a609)), closes [#7099](https://github.com/vitejs/vite/issues/7099)
+* fix: handle files with multiple comments (#7202) ([3f5b645](https://github.com/vitejs/vite/commit/3f5b645)), closes [#7202](https://github.com/vitejs/vite/issues/7202)
+* fix: honor the host param when creating a websocket server (#5617) ([882c8a8](https://github.com/vitejs/vite/commit/882c8a8)), closes [#5617](https://github.com/vitejs/vite/issues/5617)
+* fix: import css in less/scss (fix 3293) (#7147) ([9b51a3a](https://github.com/vitejs/vite/commit/9b51a3a)), closes [#7147](https://github.com/vitejs/vite/issues/7147)
+* fix: optimizeDeps.include missing in known imports fallback (#7218) ([6c08c86](https://github.com/vitejs/vite/commit/6c08c86)), closes [#7218](https://github.com/vitejs/vite/issues/7218)
+* fix: prevent loading env outside of root (#6995) ([e0a4d81](https://github.com/vitejs/vite/commit/e0a4d81)), closes [#6995](https://github.com/vitejs/vite/issues/6995)
+* fix: reoptimize deps on esbuild options change (#6855) ([4517c2b](https://github.com/vitejs/vite/commit/4517c2b)), closes [#6855](https://github.com/vitejs/vite/issues/6855)
+* fix: replacing compression with modern version (#6557) ([5648d09](https://github.com/vitejs/vite/commit/5648d09)), closes [#6557](https://github.com/vitejs/vite/issues/6557)
+* fix: restart optimize (#7004) ([47fbe29](https://github.com/vitejs/vite/commit/47fbe29)), closes [#7004](https://github.com/vitejs/vite/issues/7004)
+* fix: reusing variable names in html module scripts (fix #6851) (#6818) ([c46b56d](https://github.com/vitejs/vite/commit/c46b56d)), closes [#6851](https://github.com/vitejs/vite/issues/6851) [#6818](https://github.com/vitejs/vite/issues/6818)
+* fix: revert #6340, definePlugin tests, warning box (#7174) ([6cb0647](https://github.com/vitejs/vite/commit/6cb0647)), closes [#6340](https://github.com/vitejs/vite/issues/6340) [#7174](https://github.com/vitejs/vite/issues/7174)
+* fix: update postcss-load-config to load PostCSS plugins based on their config file path (#6856) ([f02f961](https://github.com/vitejs/vite/commit/f02f961)), closes [#6856](https://github.com/vitejs/vite/issues/6856)
+* fix(hmr): client pinging behind a proxy on websocket disconnect (fix #4501) (#5466) ([96573db](https://github.com/vitejs/vite/commit/96573db)), closes [#4501](https://github.com/vitejs/vite/issues/4501) [#5466](https://github.com/vitejs/vite/issues/5466)
+* fix(html): build mode ignore html define transform (#6663) ([79dd003](https://github.com/vitejs/vite/commit/79dd003)), closes [#6663](https://github.com/vitejs/vite/issues/6663)
+* fix(json): load json module error (#6352) ([c8a7ea8](https://github.com/vitejs/vite/commit/c8a7ea8)), closes [#6352](https://github.com/vitejs/vite/issues/6352)
+* fix(optimizer): add missing keys to hash (#7189) ([b0c0efe](https://github.com/vitejs/vite/commit/b0c0efe)), closes [#7189](https://github.com/vitejs/vite/issues/7189)
+* fix(resolve): try .tsx extension for .js import from typescript module (#7005) ([72b8cb6](https://github.com/vitejs/vite/commit/72b8cb6)), closes [#7005](https://github.com/vitejs/vite/issues/7005)
+* fix(server): base middleware redirect with search and hash (#6574) ([a516e85](https://github.com/vitejs/vite/commit/a516e85)), closes [#6574](https://github.com/vitejs/vite/issues/6574)
+* fix(server): ensure consistency for url to file mapping in importAnalysis and static middleware (#65 ([b214115](https://github.com/vitejs/vite/commit/b214115)), closes [#6518](https://github.com/vitejs/vite/issues/6518)
+* fix(ssr): bypass missing resolve error in SSR (#7164) ([a4927c5](https://github.com/vitejs/vite/commit/a4927c5)), closes [#7164](https://github.com/vitejs/vite/issues/7164)
+* chore: replace SourceMapConsumer with trace-mapping (#6746) ([ed4d191](https://github.com/vitejs/vite/commit/ed4d191)), closes [#6746](https://github.com/vitejs/vite/issues/6746)
+* feat: add `importedCss` and `importedAssets` to RenderedChunk type (#6629) ([8d0fc90](https://github.com/vitejs/vite/commit/8d0fc90)), closes [#6629](https://github.com/vitejs/vite/issues/6629)
+* feat: non-blocking pre bundling of dependencies (#6758) ([24bb3e4](https://github.com/vitejs/vite/commit/24bb3e4)), closes [#6758](https://github.com/vitejs/vite/issues/6758)
+* feat: optimize custom extensions (#6801) ([c11af23](https://github.com/vitejs/vite/commit/c11af23)), closes [#6801](https://github.com/vitejs/vite/issues/6801)
+* feat: show all prebundle deps when debug (#6726) ([e626055](https://github.com/vitejs/vite/commit/e626055)), closes [#6726](https://github.com/vitejs/vite/issues/6726)
+* feat(config): hmr add disable port config (#6624) ([ce07a0a](https://github.com/vitejs/vite/commit/ce07a0a)), closes [#6624](https://github.com/vitejs/vite/issues/6624)
+* feat(glob): import.meta.glob support alias path (#6526) ([86882ad](https://github.com/vitejs/vite/commit/86882ad)), closes [#6526](https://github.com/vitejs/vite/issues/6526)
+* feat(perf): tsconfck perf improvement (#7055) ([993ea39](https://github.com/vitejs/vite/commit/993ea39)), closes [#7055](https://github.com/vitejs/vite/issues/7055)
+* feat(worker): bundle worker emit asset file (#6599) ([0ade335](https://github.com/vitejs/vite/commit/0ade335)), closes [#6599](https://github.com/vitejs/vite/issues/6599)
+* refactor: avoid splitting vendor chunk by default (#6534) ([849e845](https://github.com/vitejs/vite/commit/849e845)), closes [#6534](https://github.com/vitejs/vite/issues/6534)
+
+
+
 ## [2.8.6](https://github.com/vitejs/vite/compare/v2.8.5...v2.8.6) (2022-03-01)
 
 

@@ -250,6 +250,8 @@ export async function createOptimizeDepsRun(
     JSON.stringify({ type: 'module' })
   )
 
+  let newBrowserHash: string
+
   let deps: Record<string, string>
   if (!newDeps) {
     // Initial optimizeDeps at server start. Perform a fast scan using esbuild to
@@ -281,7 +283,10 @@ export async function createOptimizeDepsRun(
     }
 
     // update browser hash
-    metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
+    newBrowserHash = metadata.browserHash = getOptimizedBrowserHash(
+      metadata.hash,
+      deps
+    )
 
     // We generate the mapping of dependency ids to their cache file location
     // before processing the dependencies with esbuild. This allow us to continue
@@ -291,7 +296,7 @@ export async function createOptimizeDepsRun(
       metadata.optimized[id] = {
         file: getOptimizedDepPath(id, config),
         src: entry,
-        browserHash: metadata.browserHash,
+        browserHash: newBrowserHash,
         processing: processing.promise
       }
     }
@@ -300,14 +305,12 @@ export async function createOptimizeDepsRun(
     // server is running
     deps = depsFromOptimizedDepInfo(newDeps)
 
-    // Clone optimized info objects, fileHash, browserHash may be changed for them
-    for (const o of Object.keys(newDeps)) {
-      metadata.optimized[o] = { ...newDeps[o] }
-    }
+    metadata.optimized = newDeps
 
-    // update global browser hash, but keep newDeps individual hashs until we know
+    // For reruns keep current global browser hash and newDeps individual hashes until we know
     // if files are stable so we can avoid a full page reload
-    metadata.browserHash = getOptimizedBrowserHash(metadata.hash, deps)
+    metadata.browserHash = currentData!.browserHash
+    newBrowserHash = getOptimizedBrowserHash(metadata.hash, deps)
   }
 
   return { metadata, run: prebundleDeps }
@@ -502,8 +505,9 @@ export async function createOptimizeDepsRun(
       // New deps that ended up with a different hash replaced while doing analysis import are going to
       // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
       for (const id in deps) {
-        metadata.optimized[id].browserHash = metadata.browserHash
+        metadata.optimized[id].browserHash = newBrowserHash
       }
+      metadata.browserHash = newBrowserHash
     }
 
     // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
@@ -517,7 +521,7 @@ export async function createOptimizeDepsRun(
   function commitProcessingDepsCacheSync() {
     // Rewire the file paths from the temporal processing dir to the final deps cache dir
     const dataPath = path.join(processingCacheDir, '_metadata.json')
-    writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata))
+    writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
     if (fs.existsSync(depsCacheDir)) {
       const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
@@ -636,19 +640,33 @@ function parseOptimizedDepsMetadata(
   depsCacheDir: string,
   processing: Promise<DepOptimizationResult | undefined>
 ) {
-  const metadata = JSON.parse(jsonMetadata)
+  const metadata = JSON.parse(jsonMetadata, (key: string, value: string) => {
+    // Paths can be absolute or relative to the deps cache dir where
+    // the _metadata.json is located
+    if (key === 'file' || key === 'src') {
+      return normalizePath(path.resolve(depsCacheDir, value))
+    }
+    return value
+  })
   for (const o of Object.keys(metadata.optimized)) {
     metadata.optimized[o].processing = processing
   }
   return { ...metadata, discovered: {}, processing }
 }
 
-function stringifyOptimizedDepsMetadata(metadata: DepOptimizationMetadata) {
+function stringifyOptimizedDepsMetadata(
+  metadata: DepOptimizationMetadata,
+  depsCacheDir: string
+) {
   return JSON.stringify(
     metadata,
     (key: string, value: any) => {
-      if (key === 'processing' || key === 'discovered') return
-
+      if (key === 'processing' || key === 'discovered') {
+        return
+      }
+      if (key === 'file' || key === 'src') {
+        return normalizePath(path.relative(depsCacheDir, value))
+      }
       return value
     },
     2
@@ -737,4 +755,40 @@ function getDepHash(root: string, config: ResolvedConfig): string {
     }
   )
   return createHash('sha256').update(content).digest('hex').substring(0, 8)
+}
+
+export function optimizeDepInfoFromFile(
+  metadata: DepOptimizationMetadata,
+  file: string
+): OptimizedDepInfo | undefined {
+  return (
+    findFileInfo(metadata.optimized, file) ||
+    findFileInfo(metadata.discovered, file)
+  )
+}
+
+function findFileInfo(
+  dependenciesInfo: Record<string, OptimizedDepInfo>,
+  file: string
+): OptimizedDepInfo | undefined {
+  for (const o of Object.keys(dependenciesInfo)) {
+    const info = dependenciesInfo[o]
+    if (info.file === file) {
+      return info
+    }
+  }
+}
+
+export async function optimizedDepNeedsInterop(
+  metadata: DepOptimizationMetadata,
+  file: string
+): Promise<boolean | undefined> {
+  const depInfo = optimizeDepInfoFromFile(metadata, file)
+
+  if (!depInfo) return undefined
+
+  // Wait until the dependency has been pre-bundled
+  await depInfo.processing
+
+  return depInfo?.needsInterop
 }
