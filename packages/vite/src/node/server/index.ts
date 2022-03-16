@@ -375,7 +375,6 @@ export async function createServer(
       let configFileDependencies: string[] = []
       const metadata = server._optimizeDepsMetadata
       if (metadata) {
-        await metadata.processing
         configFileDependencies = Object.keys(metadata.optimized)
       }
 
@@ -591,12 +590,19 @@ export async function createServer(
     // Don't await for the optimization to finish, we can start the
     // server right away here
     server._optimizeDepsMetadata = optimizeDeps.metadata
-    optimizeDeps.run()
+
+    // Run deps optimization in parallel
+    const initialProcessingPromise = optimizeDeps
+      .run()
+      .then((result) => result.commit())
 
     // While running the first optimizeDeps, _registerMissingImport is null
     // so the resolve plugin resolves straight to node_modules during the
     // deps discovery scan phase
-    server._registerMissingImport = createMissingImporterRegisterFn(server)
+    server._registerMissingImport = createMissingImporterRegisterFn(
+      server,
+      initialProcessingPromise
+    )
   }
 
   if (!middlewareMode && httpServer) {
