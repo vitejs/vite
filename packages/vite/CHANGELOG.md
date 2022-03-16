@@ -1,3 +1,13 @@
+## 2.9.0-beta.3 (2022-03-16)
+
+* fix: delayed full page reload (#7347) ([fa0820a](https://github.com/vitejs/vite/commit/fa0820a)), closes [#7347](https://github.com/vitejs/vite/issues/7347)
+* fix: early discovery of missing deps, fix #7333 (#7346) ([7d2f37c](https://github.com/vitejs/vite/commit/7d2f37c)), closes [#7333](https://github.com/vitejs/vite/issues/7333) [#7346](https://github.com/vitejs/vite/issues/7346)
+* fix: unhandled exception on eager transformRequest (#7345) ([c3260a4](https://github.com/vitejs/vite/commit/c3260a4)), closes [#7345](https://github.com/vitejs/vite/issues/7345)
+* fix: update to esbuild 0.14.27, fix #6994 (#7320) ([65aaeee](https://github.com/vitejs/vite/commit/65aaeee)), closes [#6994](https://github.com/vitejs/vite/issues/6994) [#7320](https://github.com/vitejs/vite/issues/7320)
+* chore: comment typo (#7344) ([61df324](https://github.com/vitejs/vite/commit/61df324)), closes [#7344](https://github.com/vitejs/vite/issues/7344)
+
+
+
 ## 2.9.0-beta.2 (2022-03-14)
 
 * fix: `ssrExternal` should not skip nested dependencies (#7154) ([f8f934a](https://github.com/vitejs/vite/commit/f8f934a)), closes [#7154](https://github.com/vitejs/vite/issues/7154)
