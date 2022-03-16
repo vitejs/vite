@@ -236,7 +236,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
-        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
+        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
