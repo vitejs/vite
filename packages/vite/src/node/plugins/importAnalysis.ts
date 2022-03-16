@@ -501,9 +501,26 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // check @vite-ignore which suppresses dynamic import warning
           const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
 
-          const url = rawUrl
+          let url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
+
+          const [,
+            startQuotation,
+            importee,
+            endQuotation
+          ] = url.match(/^(.{1})(.*)(.{1})$/)!
+          const matchedAlias = config.resolve.alias.find(
+            (alias) => alias.find instanceof RegExp
+              ? alias.find.test(importee)
+              : importee.startsWith(alias.find)
+            )
+          if (matchedAlias) {
+            url = startQuotation +
+              importee.replace(matchedAlias.find, matchedAlias.replacement) +
+              endQuotation
+          }
+
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
             this.warn(
               `\n` +
