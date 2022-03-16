@@ -132,7 +132,6 @@ beforeAll(async () => {
         const base = server.config.base === '/' ? '' : server.config.base
         const url =
           (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
-        console.log(url)
         await page.goto(url)
       } else {
         process.env.VITE_INLINE = 'inline-build'
@@ -145,7 +144,7 @@ beforeAll(async () => {
           }
         })
         options.plugins = [resolvedPlugin()]
-        const rollupOutput = await build(options)
+        const rollupOutput = await build(mergeConfig(options, config || {}))
         const isWatch = !!resolvedConfig!.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
