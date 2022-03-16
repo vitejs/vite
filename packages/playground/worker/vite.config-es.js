@@ -20,7 +20,7 @@ module.exports = vite.defineConfig({
         if (id.includes('main.js')) {
           return code.replace(
             `/* flag: will replace in vite config import("./format-es.js") */`,
-            `import("./format-es")`
+            `import("./main-format-es")`
           )
         }
       }
