@@ -90,7 +90,7 @@ beforeAll(async () => {
         }
       }
 
-      const testCustomConfig = resolve(dirname(testPath), 'config.js')
+      const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
       let config: InlineConfig | undefined
       if (fs.existsSync(testCustomConfig)) {
         // test has custom server configuration.
