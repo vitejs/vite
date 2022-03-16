@@ -653,10 +653,6 @@ function isSupportedDynamicImport(url: string) {
   if (!url.startsWith('./') && !url.startsWith('../')) {
     return false
   }
-  // must have extension
-  if (!path.extname(url)) {
-    return false
-  }
   // must be more specific if importing from same dir
   if (url.startsWith('./${') && url.indexOf('/') === url.lastIndexOf('/')) {
     return false
