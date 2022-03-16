@@ -13,9 +13,9 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```js
-const { createServer } = require('vite')
+const { createServer } = require('vite');
 
-;(async () => {
+(async () => {
   const server = await createServer({
     // any valid user config options, plus `mode` and `configFile`
     configFile: false,
