@@ -1,1 +1,1 @@
-export const msg = 'module'
+export default 'A string'

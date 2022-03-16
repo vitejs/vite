@@ -21,15 +21,14 @@
 </div>
 
 <p>
-  new Worker(new Url('./newUrl/url-worker.js', import.meta.url), { type:
-  'module' })
+  new Worker(new Url('./url-worker.js', import.meta.url), { type: 'module' })
   <span class="classname">.worker-import-meta-url</span>
 </p>
 <code class="worker-import-meta-url"></code>
 
 <p>
-  new SharedWorker(new Url('./newUrl/url-shared-worker.js', import.meta.url), {
-  type: 'module' })
+  new SharedWorker(new Url('./url-shared-worker.js', import.meta.url), { type:
+  'module' })
   <span class="classname">.shared-worker-import-meta-url</span>
 </p>
 <code class="shared-worker-import-meta-url"></code>
@@ -48,14 +47,14 @@
 <code class="nested-worker-dynamic-import"></code>
 
 <p>
-  new Worker(new Url('./newUrl/classic-worker.js', import.meta.url))
+  new Worker(new Url('./classic-worker.js', import.meta.url))
   <span class="classname">.classic-worker</span>
 </p>
 <code class="classic-worker"></code>
 
 <p>
-  new SharedWorker(new Url('./newUrl/classic-shared-worker.js',
-  import.meta.url), { type: 'classic' })
+  new SharedWorker(new Url('./classic-shared-worker.js', import.meta.url), {
+  type: 'classic' })
   <span class="classname">.classic-shared-worker</span>
 </p>
 <code class="classic-shared-worker"></code>
@@ -67,93 +66,5 @@
     color: green;
   }
 </style>
-<script type="module">
-  import myWorker from './my-worker?worker'
-  import InlineWorker from './my-worker?worker&inline'
-  import mySharedWorker from './my-shared-worker?sharedworker&name=shared'
-  import TSOutputWorker from './possible-ts-output-worker?worker'
-  import NestedWorker from './worker-nested-worker?worker'
-  import { mode } from './workerImport'
-  import './classic-worker'
-
-  function text(el, text) {
-    document.querySelector(el).textContent = text
-  }
-
-  document.querySelector('.mode-true').textContent = mode
-
-  const worker = new myWorker()
-  worker.addEventListener('message', (e) => {
-    text('.pong', e.data.msg)
-    text('.mode', e.data.mode)
-    text('.bundle-with-plugin', e.data.bundleWithPlugin)
-  })
-
-  document.querySelector('.ping').addEventListener('click', () => {
-    worker.postMessage('ping')
-  })
-
-  const inlineWorker = new InlineWorker()
-  inlineWorker.addEventListener('message', (e) => {
-    text('.pong-inline', e.data.msg)
-  })
-
-  document.querySelector('.ping-inline').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
-  })
-
-  const sharedWorker = new mySharedWorker()
-  document.querySelector('.tick-shared').addEventListener('click', () => {
-    sharedWorker.port.postMessage('tick')
-  })
-
-  sharedWorker.port.addEventListener('message', (event) => {
-    text('.tick-count', event.data)
-  })
-
-  sharedWorker.port.start()
-
-  const tsOutputWorker = new TSOutputWorker()
-  tsOutputWorker.addEventListener('message', (e) => {
-    text('.pong-ts-output', e.data.msg)
-  })
-
-  document.querySelector('.ping-ts-output').addEventListener('click', () => {
-    tsOutputWorker.postMessage('ping')
-  })
-
-  const workerOptions = { type: 'module' }
-  // url import worker
-  const w = new Worker(
-    new URL('./newUrl/url-worker.js', import.meta.url),
-    /* @vite-ignore */ workerOptions
-  )
-  w.addEventListener('message', (ev) =>
-    text('.worker-import-meta-url', JSON.stringify(ev.data))
-  )
-
-  const genWorkerName = () => 'module'
-  const w2 = new SharedWorker(
-    new URL('./newUrl/url-shared-worker.js', import.meta.url),
-    {
-      /* @vite-ignore */
-      name: genWorkerName(),
-      type: 'module'
-    }
-  )
-  w2.port.addEventListener('message', (ev) => {
-    text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
-  })
-  w2.port.start()
-
-  const nestedWorker = new NestedWorker()
-  nestedWorker.addEventListener('message', (ev) => {
-    console.log(ev)
-    if (typeof ev.data === 'string') {
-      text('.nested-worker', JSON.stringify(ev.data))
-    } else {
-      text('.nested-worker-dynamic-import', JSON.stringify(ev.data))
-    }
-  })
-  nestedWorker.postMessage('ping')
-</script>
+<script type="module" src="./worker/module.js"></script>
+<script type="module" src="./worker/classic.js"></script>
