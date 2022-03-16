@@ -37,6 +37,7 @@ import {
   VALID_ID_PREFIX,
   NULL_BYTE_PLACEHOLDER
 } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
 import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
@@ -630,7 +631,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          transformRequest(url, server, { ssr })
+          transformRequest(url, server, { ssr }).catch((e) => {
+            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+              // This are expected errors
+              return
+            }
+            // Unexpected error, log the issue but avoid an unhandled exception
+            config.logger.error(e.message)
+          })
         })
       }
 
