@@ -649,8 +649,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
  */
 function isSupportedDynamicImport(url: string) {
   url = url.trim().slice(1, -1)
-  // must be relative
-  if (!url.startsWith('./') && !url.startsWith('../')) {
+  // must be relative or root path
+  if (
+    !url.startsWith('./') &&
+    !url.startsWith('../') &&
+    !url.startsWith('/')
+  ) {
     return false
   }
   // must be more specific if importing from same dir
