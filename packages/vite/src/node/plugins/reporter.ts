@@ -213,7 +213,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           colors.yellow(
             `\n(!) Some chunks are larger than ${chunkLimit} KiB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +
-              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/guide/en/#outputmanualchunks\n` +
+              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://www.rollupjs.org/guide/en/#outputmanualchunks\n` +
               `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`
           )
         )
