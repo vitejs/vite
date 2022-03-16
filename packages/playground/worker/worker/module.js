@@ -53,11 +53,8 @@ document.querySelector('.ping-ts-output').addEventListener('click', () => {
 
 const nestedWorker = new NestedWorker()
 nestedWorker.addEventListener('message', (ev) => {
-  console.log(ev)
   if (typeof ev.data === 'string') {
     text('.nested-worker', JSON.stringify(ev.data))
-  } else {
-    text('.nested-worker-dynamic-import', JSON.stringify(ev.data))
   }
 })
 nestedWorker.postMessage('ping')

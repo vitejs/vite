@@ -1,3 +1,4 @@
+<h2 class="format-iife">format iife:</h2>
 <div>Expected values: <span class="mode-true"></span></div>
 <button class="ping">Ping</button>
 <div>
@@ -40,13 +41,6 @@
 <code class="nested-worker"></code>
 
 <p>
-  import NestedWorker from './worker-nested-worker?worker' - nested worker
-  (after dynamic import msg)
-  <span class="classname">.nested-worker-dynamic-import</span>
-</p>
-<code class="nested-worker-dynamic-import"></code>
-
-<p>
   new Worker(new Url('./classic-worker.js', import.meta.url))
   <span class="classname">.classic-worker</span>
 </p>
@@ -58,6 +52,22 @@
   <span class="classname">.classic-shared-worker</span>
 </p>
 <code class="classic-shared-worker"></code>
+
+<hr />
+<h2 class="format-es"></h2>
+
+<p>
+  worker emit chunk
+  <span class="classname">.emti-chunk-worker</span>
+</p>
+<code class="emti-chunk-worker"></code>
+
+<p>
+  worker dynamic import to emit chunk
+  <span class="classname">.emti-chunk-dynamic-import-worker</span>
+</p>
+<code class="emti-chunk-dynamic-import-worker"></code>
+
 <style>
   p {
     background: rgba(0, 0, 0, 0.1);
@@ -66,5 +76,4 @@
     color: green;
   }
 </style>
-<script type="module" src="./worker/module.js"></script>
-<script type="module" src="./worker/classic.js"></script>
+<script type="module" src="./worker/main.js"></script>

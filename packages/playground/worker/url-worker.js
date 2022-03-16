@@ -1,3 +1,1 @@
-import('./modules/module').then((module) => {
-  self.postMessage(module.default + import.meta.env.BASE_URL)
-})
+self.postMessage('A string' + import.meta.env.BASE_URL)
