@@ -49,7 +49,6 @@ import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
 import {
   isOptimizedDepFile,
-  createIsOptimizedDepUrl,
   getDepsCacheDir,
   optimizedDepNeedsInterop
 } from '../optimizer'
@@ -114,14 +113,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     extensions: []
   })
   let server: ViteDevServer
-  let isOptimizedDepUrl: (url: string) => boolean
 
   return {
     name: 'vite:import-analysis',
 
     configureServer(_server) {
       server = _server
-      isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
     },
 
     async transform(source, importer, options) {
@@ -274,11 +271,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if (
-            (isRelative || isSelfImport) &&
-            !(isOptimizedDepUrl(url) && optimizedDepChunkRE.test(url)) &&
-            !/[\?&]import=?\b/.test(url)
-          ) {
+          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
