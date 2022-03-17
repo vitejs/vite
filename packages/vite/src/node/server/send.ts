@@ -38,7 +38,8 @@ export function send(
 
   if (req.headers['if-none-match'] === etag) {
     res.statusCode = 304
-    return res.end()
+    res.end()
+    return
   }
 
   res.setHeader('Content-Type', alias[type] || type)
@@ -63,7 +64,8 @@ export function send(
   }
 
   res.statusCode = 200
-  return res.end(content)
+  res.end(content)
+  return
 }
 
 function genSourceMapString(map: SourceMap | string | undefined) {
