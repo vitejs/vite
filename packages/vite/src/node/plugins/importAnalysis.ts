@@ -381,7 +381,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        const isDynamicImport = dynamicIndex >= 0
+        const isDynamicImport = dynamicIndex > -1
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
