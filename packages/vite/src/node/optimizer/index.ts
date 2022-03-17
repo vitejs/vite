@@ -519,12 +519,6 @@ export async function createOptimizeDepsRun(
     }
 
     if (alteredFiles) {
-      // Overrite individual hashes with the new global browserHash, a full page reload is required
-      // New deps that ended up with a different hash replaced while doing analysis import are going to
-      // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
-      for (const id in deps) {
-        metadata.optimized[id].browserHash = newBrowserHash
-      }
       metadata.browserHash = newBrowserHash
     }
 
@@ -533,6 +527,14 @@ export async function createOptimizeDepsRun(
     return {
       alteredFiles,
       commit() {
+        if (alteredFiles) {
+          // Overwrite individual hashes with the new global browserHash, a full page reload is required
+          // New deps that ended up with a different hash replaced while doing analysis import are going to
+          // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
+          for (const id in deps) {
+            metadata.optimized[id].browserHash = newBrowserHash
+          }
+        }
         // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
         commitProcessingDepsCacheSync()
         processing.resolve()
