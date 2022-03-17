@@ -53,6 +53,7 @@ export function proxyMiddleware(
 
     if (opts.configure) {
       opts.configure(proxy, opts)
+      delete opts.configure
     }
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
