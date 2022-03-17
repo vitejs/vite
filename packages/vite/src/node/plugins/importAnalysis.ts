@@ -381,7 +381,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        const isDynamicImport = dynamicIndex > -1
+        const isDynamicImport = dynamicIndex >= 0
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
@@ -466,8 +466,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (isDynamicImport) {
                     // rewrite `import('package')` to expose the default directly
                     str().overwrite(
-                      expStart,
-                      expEnd,
+                      dynamicIndex,
+                      end + 1,
                       `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
                     )
                   } else {
