@@ -466,8 +466,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (isDynamicImport) {
                     // rewrite `import('package')` to expose the default directly
                     str().overwrite(
-                      dynamicIndex,
-                      end + 1,
+                      expStart,
+                      expEnd,
                       `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
                     )
                   } else {
