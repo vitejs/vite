@@ -88,7 +88,7 @@
     "debug": "^4.3.3",
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
-    "es-module-lexer": "~0.9.3",
+    "es-module-lexer": "^0.10.1",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.11",

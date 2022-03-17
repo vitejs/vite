@@ -803,7 +803,7 @@ importers:
       debug: ^4.3.3
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
-      es-module-lexer: ~0.9.3
+      es-module-lexer: ^0.10.1
       esbuild: ^0.14.27
       estree-walker: ^2.0.2
       etag: ^1.8.1
@@ -880,7 +880,7 @@ importers:
       debug: 4.3.3
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
-      es-module-lexer: 0.9.3
+      es-module-lexer: 0.10.1
       estree-walker: 2.0.2
       etag: 1.8.1
       fast-glob: 3.2.11
@@ -4399,8 +4399,8 @@ packages:
       unbox-primitive: 1.0.1
     dev: true
 
-  /es-module-lexer/0.9.3:
-    resolution: {integrity: sha512-1HQ2M2sPtxwnvOvT1ZClHyQDiggdNjURWpY2we6aMKCQiUVxTmVs2UYPLIrD84sS+kMdUwfBSylbJPwNnBrnHQ==}
+  /es-module-lexer/0.10.1:
+    resolution: {integrity: sha512-7zffMCLzbiuuRjL5FVs4BEIr6j+Istfrbwzrwg8de4ep1kSyZNJmmq5RQzyqJq4YhvOmAxZ3DBsZXDO4I5N71Q==}
     dev: true
 
   /es-to-primitive/1.2.1:

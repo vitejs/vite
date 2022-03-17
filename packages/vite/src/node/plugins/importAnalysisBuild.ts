@@ -142,6 +142,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
+          se: expEnd,
           n: specifier,
           d: dynamicIndex
         } = imports[index]
@@ -173,10 +174,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
-          const dynamicEnd = source.indexOf(`)`, end) + 1
-          const original = source.slice(dynamicIndex, dynamicEnd)
+          const original = source.slice(expStart, expEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(dynamicIndex, dynamicEnd, replacement)
+          str().overwrite(expStart, expEnd, replacement)
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -263,7 +263,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 n: name,
                 s: start,
                 e: end,
-                d: dynamicIndex
+                ss: expStart,
+                se: expEnd
               } = imports[index]
               // check the chunk being imported
               let url = name
@@ -302,7 +303,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         hasRemovedPureCssChunk = true
                       }
 
-                      s.overwrite(dynamicIndex, end + 1, 'Promise.resolve({})')
+                      s.overwrite(expStart, expEnd, 'Promise.resolve({})')
                     }
                   }
                 }
