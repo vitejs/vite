@@ -8,6 +8,36 @@ import path from 'path'
 import { onRollupWarning } from '../build'
 
 const WorkerFileId = 'worker_file'
+export const inlineWorkerLoaderId = `vite/inline-worker-loader`
+
+// run in client load inline worker
+export function inlineWorkerLoader(
+  workerConstructor: FunctionConstructor,
+  workerOptions: any,
+  encodedJs: string
+) {
+  // @ts-ignore
+  const blob =
+    typeof window !== 'undefined' &&
+    window.Blob &&
+    new Blob([atob(encodedJs)], { type: 'text/javascript;charset=utf-8' })
+  // @ts-ignore
+  const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob)
+  try {
+    return objURL
+      ? new workerConstructor(objURL, workerOptions)
+      : new workerConstructor(
+          'data:application/javascript;base64,' + encodedJs,
+          workerOptions
+        )
+  } finally {
+    // revokeObjectURL in nextTick
+    setTimeout(() => {
+      // @ts-ignore
+      objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL)
+    })
+  }
+}
 
 export async function bundleWorkerEntry(
   ctx: Rollup.TransformPluginContext,
@@ -55,11 +85,20 @@ export async function bundleWorkerEntry(
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-
+  const { inlineLimit } = config.worker
   return {
     name: 'vite:worker',
 
+    resolveId(id) {
+      if (id === inlineWorkerLoaderId) {
+        return id
+      }
+    },
+
     load(id) {
+      if (id === inlineWorkerLoaderId) {
+        return `export default ${inlineWorkerLoader.toString()}`
+      }
       if (isBuild) {
         const parsedQuery = parseRequest(id)
         if (
@@ -86,22 +125,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
 
       let url: string
+      const workerConstructor =
+        query.sharedworker != null ? 'SharedWorker' : 'Worker'
       if (isBuild) {
         const code = await bundleWorkerEntry(this, config, id)
-        if (query.inline != null) {
+        const inline = code.length < inlineLimit
+        if (query.inline != null || inline) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
-          return `const encodedJs = "${code.toString('base64')}";
-            const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
-            export default function WorkerWrapper() {
-              const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
-              try {
-                return objURL ? new Worker(objURL, ${workerOptions}) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
-              } finally {
-                objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
-              }
-            }`
+          return `import inlineWorkerLoader from "${inlineWorkerLoaderId}"\nexport default function() {return inlineWorkerLoader(${workerConstructor}, ${workerOptions}, "${code.toString(
+            'base64'
+          )}")}`
         } else {
           const basename = path.parse(cleanUrl(id)).name
           const contentHash = getAssetHash(code)
@@ -120,8 +155,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, WorkerFileId)
       }
 
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = { type: 'module' }
 
       return `export default function WorkerWrapper() {

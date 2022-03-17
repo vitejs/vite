@@ -1,4 +1,4 @@
-importScripts('/classic.js')
+importScripts(`${self.location.origin}/classic.js`)
 
 self.addEventListener('message', () => {
   self.postMessage(self.constant)

@@ -207,6 +207,12 @@ export interface UserConfig {
       RollupOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
+    /**
+     * Worker files smaller than this number (in bytes) will be inlined as
+     * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
+     * @default 4096
+     */
+    inlineLimit?: number
   }
 }
 
@@ -227,6 +233,7 @@ export interface ResolveWorkerOptions {
   format: 'es' | 'iife'
   plugins: Plugin[]
   rollupOptions: RollupOptions
+  inlineLimit: number
 }
 
 export interface InlineConfig extends UserConfig {
@@ -339,7 +346,8 @@ export async function resolveConfig(
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: config.worker?.format || 'iife',
     plugins: [],
-    rollupOptions: config.worker?.rollupOptions || {}
+    rollupOptions: config.worker?.rollupOptions || {},
+    inlineLimit: config.worker?.inlineLimit || 4096
   }
 
   // run config hooks
