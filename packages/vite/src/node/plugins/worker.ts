@@ -16,10 +16,12 @@ export function inlineWorkerLoader(
   workerOptions: any,
   encodedJs: string
 ) {
-  // @ts-ignore
   const blob =
+    // @ts-ignore
     typeof window !== 'undefined' &&
+    // @ts-ignore
     window.Blob &&
+    // @ts-ignore
     new Blob([atob(encodedJs)], { type: 'text/javascript;charset=utf-8' })
   // @ts-ignore
   const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob)
