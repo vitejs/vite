@@ -39,7 +39,8 @@ export type {
   DepOptimizationOptions,
   DepOptimizationResult,
   DepOptimizationProcessing,
-  OptimizedDepInfo
+  OptimizedDepInfo,
+  OptimizedDeps
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'

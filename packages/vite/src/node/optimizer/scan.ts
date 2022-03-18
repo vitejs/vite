@@ -165,7 +165,10 @@ function esbuildScanPlugin(
     }
     const resolved = await container.resolveId(
       id,
-      importer && normalizePath(importer)
+      importer && normalizePath(importer),
+      {
+        scan: true
+      }
     )
     const res = resolved?.id
     seen.set(key, res)

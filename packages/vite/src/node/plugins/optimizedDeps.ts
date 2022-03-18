@@ -25,7 +25,7 @@ export function optimizedDepsPlugin(): Plugin {
 
     async load(id) {
       if (server && isOptimizedDepFile(id, server.config)) {
-        const metadata = server?._optimizeDepsMetadata
+        const metadata = server?._optimizedDeps?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -49,7 +49,7 @@ export function optimizedDepsPlugin(): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = server._optimizeDepsMetadata
+            const newMetadata = server._optimizedDeps?.metadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizeDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {

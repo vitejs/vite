@@ -197,19 +197,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (
-          moduleListContains(config.optimizeDeps?.exclude, url) &&
-          server._optimizeDepsMetadata
-        ) {
-          // if the dependency encountered in the optimized file was excluded from the optimization
-          // the dependency needs to be resolved starting from the original source location of the optimized file
-          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-          // (that is, if it is under node_modules directory in the package source of the optimized file)
-          for (const optimizedModule of Object.values(
-            server._optimizeDepsMetadata.optimized
-          )) {
-            if (optimizedModule.file === importerModule.file) {
-              importerFile = optimizedModule.src
+        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+          const optimizedDeps = server._optimizedDeps
+          if (optimizedDeps) {
+            await optimizedDeps.scanProcessing
+
+            // if the dependency encountered in the optimized file was excluded from the optimization
+            // the dependency needs to be resolved starting from the original source location of the optimized file
+            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+            // (that is, if it is under node_modules directory in the package source of the optimized file)
+            for (const optimizedModule of [
+              ...Object.values(optimizedDeps.metadata.optimized),
+              ...Object.values(optimizedDeps.metadata.discovered)
+            ]) {
+              if (optimizedModule.file === importerModule.file) {
+                importerFile = optimizedModule.src
+              }
             }
           }
         }
@@ -271,7 +274,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
+          if (
+            (isRelative || isSelfImport) &&
+            !/[\?&]import=?\b/.test(url) &&
+            !url.match(DEP_VERSION_RE)
+          ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -446,7 +453,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
-                  server._optimizeDepsMetadata!,
+                  server._optimizedDeps!.metadata,
                   file
                 )
 

@@ -2,14 +2,19 @@ import colors from 'picocolors'
 import {
   createOptimizeDepsRun,
   getOptimizedDepPath,
-  getOptimizedBrowserHash,
+  getHash,
   depsFromOptimizedDepInfo,
-  newDepOptimizationProcessing
+  newDepOptimizationProcessing,
+  loadCachedDepOptimizationMetadata,
+  createOptimizedDepsMetadata,
+  discoverProjectDependencies,
+  depsLogString
 } from '.'
 import type {
   DepOptimizationMetadata,
   DepOptimizationProcessing,
-  OptimizedDepInfo
+  OptimizedDepInfo,
+  OptimizedDeps
 } from '.'
 import type { ViteDevServer } from '..'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
@@ -20,12 +25,19 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
  */
 const debounceMs = 100
 
-export function createMissingImporterRegisterFn(
+export async function createOptimizedDeps(
   server: ViteDevServer,
-  initialProcessingPromise: Promise<void>
-): (id: string, resolved: string, ssr?: boolean) => OptimizedDepInfo {
-  const { logger } = server.config
-  let metadata = server._optimizeDepsMetadata!
+  asCommand = false
+): Promise<OptimizedDeps> {
+  const { config } = server
+  const { logger } = config
+
+  const cachedMetadata = loadCachedDepOptimizationMetadata(config)
+
+  const optimizedDeps = {
+    metadata: cachedMetadata || createOptimizedDepsMetadata(config),
+    registerMissingImport
+  } as OptimizedDeps
 
   let handle: NodeJS.Timeout | undefined
   let newDepsDiscovered = false
@@ -41,40 +53,74 @@ export function createMissingImporterRegisterFn(
   }
 
   let enqueuedRerun: (() => void) | undefined
-  let currentlyProcessing = true
-  initialProcessingPromise.then(() => {
-    currentlyProcessing = false
-    enqueuedRerun?.()
-  })
+  let currentlyProcessing = false
 
-  async function rerun(ssr: boolean | undefined) {
-    // debounce time to wait for new missing deps finished, issue a new
-    // optimization of deps (both old and newly found) once the previous
-    // optimizeDeps processing is finished
+  // If there wasn't a cache or it is outdated, perform a fast scan with esbuild
+  // to quickly find project dependencies and do a first optimize run
+  if (!cachedMetadata) {
+    currentlyProcessing = true
 
-    // a succesful completion of the optimizeDeps rerun will end up
-    // creating new bundled version of all current and discovered deps
-    // in the cache dir and a new metadata info object assigned
-    // to server._optimizeDepsMetadata. A fullReload is only issued if
-    // the previous bundled dependencies have changed.
+    const scanPhaseProcessing = newDepOptimizationProcessing()
+    optimizedDeps.scanProcessing = scanPhaseProcessing.promise
 
-    // if the rerun fails, server._optimizeDepsMetadata remains untouched,
-    // current discovered deps are cleaned, and a fullReload is issued
+    const warmUp = async function () {
+      try {
+        logger.info(colors.green(`scanning for dependencies...`), {
+          timestamp: true
+        })
 
+        const { metadata } = optimizedDeps
+
+        const discovered = await discoverProjectDependencies(config)
+
+        // Respect the scan phase discover order to improve reproducibility
+        for (const dep of Object.keys(discovered)) {
+          discovered[dep].processing = depOptimizationProcessing.promise
+        }
+
+        // This is auto run on server start - let the user know that we are
+        // pre-optimizing deps
+        const depsString = depsLogString(config, Object.keys(discovered))
+        logger.info(colors.green(`dependencies found: ${depsString}`), {
+          timestamp: true
+        })
+
+        metadata.discovered = discovered
+
+        scanPhaseProcessing.resolve()
+        optimizedDeps.scanProcessing = undefined
+
+        runOptimizer()
+      } catch (e) {
+        logger.error(e.message)
+        if (optimizedDeps.scanProcessing) {
+          scanPhaseProcessing.resolve()
+          optimizedDeps.scanProcessing = undefined
+        }
+      }
+    }
+
+    setTimeout(warmUp, 0)
+  }
+
+  async function runOptimizer(ssr?: boolean) {
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
     currentlyProcessing = true
 
-    logger.info(
-      colors.yellow(
-        `new dependencies found: ${Object.keys(metadata.discovered).join(
-          ', '
-        )}, updating...`
-      ),
-      {
-        timestamp: true
-      }
-    )
+    // Ensure that a rerun will not be issued for current discovered deps
+    if (handle) clearTimeout(handle)
+
+    // a succesful completion of the optimizeDeps rerun will end up
+    // creating new bundled version of all current and discovered deps
+    // in the cache dir and a new metadata info object assigned
+    // to optimizeDeps.metadata. A fullReload is only issued if
+    // the previous bundled dependencies have changed.
+
+    // if the rerun fails, optimizeDeps.metadata remains untouched,
+    // current discovered deps are cleaned, and a fullReload is issued
+
+    let { metadata } = optimizedDeps
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
@@ -85,9 +131,10 @@ export function createMissingImporterRegisterFn(
     for (const dep of Object.keys(metadata.optimized)) {
       newDeps[dep] = { ...metadata.optimized[dep] }
     }
-    // Don't clone discovered info objects, they are read after awaited
     for (const dep of Object.keys(metadata.discovered)) {
-      newDeps[dep] = metadata.discovered[dep]
+      // Clone the discovered info discarding its processing promise
+      const { processing, ...info } = metadata.discovered[dep]
+      newDeps[dep] = info
     }
 
     newDepsDiscovered = false
@@ -103,21 +150,17 @@ export function createMissingImporterRegisterFn(
     let newData: DepOptimizationMetadata | null = null
 
     try {
-      const optimizeDeps = await createOptimizeDepsRun(
-        server.config,
-        true,
-        false,
-        metadata,
+      const processingResult = await createOptimizeDepsRun(
+        config,
         newDeps,
+        metadata,
         ssr
       )
-
-      const processingResult = await optimizeDeps.run()
 
       const commitProcessing = () => {
         processingResult.commit()
 
-        newData = optimizeDeps.metadata
+        newData = processingResult.metadata
 
         // update ssr externals
         if (ssr) {
@@ -134,7 +177,21 @@ export function createMissingImporterRegisterFn(
             newData.discovered[o] = metadata.discovered[o]
           }
         }
-        metadata = server._optimizeDepsMetadata = newData
+
+        // Commit hash and needsInterop changes to the discovered deps info
+        // object. Allow for code to await for the discovered processing promise
+        // and use the information in the same object
+        for (const o of Object.keys(newData.optimized)) {
+          const discovered = metadata.discovered[o]
+          if (discovered) {
+            const optimized = newData.optimized[o]
+            discovered.browserHash = optimized.browserHash
+            discovered.fileHash = optimized.fileHash
+            discovered.needsInterop = optimized.needsInterop
+          }
+        }
+
+        metadata = optimizedDeps.metadata = newData
 
         resolveEnqueuedProcessingPromises()
       }
@@ -142,7 +199,7 @@ export function createMissingImporterRegisterFn(
       if (!processingResult.alteredFiles) {
         commitProcessing()
 
-        logger.info(colors.green(`✨ new dependencies pre-bundled...`), {
+        logger.info(colors.green(`✨ dependencies pre-bundled...`), {
           timestamp: true
         })
       } else {
@@ -202,11 +259,44 @@ export function createMissingImporterRegisterFn(
     })
   }
 
-  return function registerMissingImport(
+  async function rerun(ssr?: boolean) {
+    // debounce time to wait for new missing deps finished, issue a new
+    // optimization of deps (both old and newly found) once the previous
+    // optimizeDeps processing is finished
+    const deps = Object.keys(optimizedDeps.metadata.discovered)
+    const depsString = depsLogString(config, deps)
+    logger.info(colors.green(`new dependencies found: ${depsString}`), {
+      timestamp: true
+    })
+    runOptimizer(ssr)
+  }
+
+  const optimizedDepsTimestamp = Date.now()
+
+  function getDiscoveredBrowserHash(
+    hash: string,
+    deps: Record<string, string>,
+    missing: Record<string, string>
+  ) {
+    return getHash(
+      hash +
+        JSON.stringify(deps) +
+        JSON.stringify(missing) +
+        optimizedDepsTimestamp
+    )
+  }
+
+  function registerMissingImport(
     id: string,
     resolved: string,
     ssr?: boolean
   ): OptimizedDepInfo {
+    if (optimizedDeps.scanProcessing) {
+      config.logger.error(
+        'Vite internal error: registering missing import before initial scanning is over'
+      )
+    }
+    const { metadata } = optimizedDeps
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -225,7 +315,7 @@ export function createMissingImporterRegisterFn(
       // the current state of known + missing deps. If its optimizeDeps run
       // doesn't alter the bundled files of previous known dependendencies,
       // we don't need a full reload and this browserHash will be kept
-      browserHash: getOptimizedBrowserHash(
+      browserHash: getDiscoveredBrowserHash(
         metadata.hash,
         depsFromOptimizedDepInfo(metadata.optimized),
         depsFromOptimizedDepInfo(metadata.discovered)
@@ -251,4 +341,6 @@ export function createMissingImporterRegisterFn(
     // esbuild is run to generate the pre-bundle
     return missing
   }
+
+  return optimizedDeps
 }

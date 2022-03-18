@@ -48,12 +48,13 @@ export function esbuildDepPlugin(
     : externalTypes
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false, scan: true })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
-    isRequire: true
+    isRequire: true,
+    scan: true
   })
 
   const resolve = (
