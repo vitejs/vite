@@ -1,6 +1,7 @@
 <pre class="result"></pre>
 <pre class="result-node_modules"></pre>
 <pre class="globraw"></pre>
+<pre class="relative-glob-raw"><!--issue #7307--></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -48,6 +49,25 @@
   })
   document.querySelector('.globraw').textContent = JSON.stringify(
     globraw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  // issue #7307
+  const relativeRawModules = import.meta.globEager(
+    '../dynamic-import/nested/shar*.js',
+    {
+      as: 'raw'
+    }
+  )
+  const relativeGlobRaw = {}
+  Object.keys(relativeRawModules).forEach((key) => {
+    relativeGlobRaw[key] = relativeRawModules[key]
+  })
+  document.querySelector('.relative-glob-raw').textContent = JSON.stringify(
+    relativeGlobRaw,
     null,
     2
   )
