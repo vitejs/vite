@@ -717,7 +717,7 @@ function parseOptimizedDepsMetadata(
   }
   metadata.chunks ||= {} // Support missing chunks for back compat
   for (const o of Object.keys(metadata.chunks)) {
-    const depInfo = metadata.optimized[o]
+    const depInfo = metadata.chunks[o]
     depInfo.src = ''
     depInfo.browserHash = browserHash
   }
