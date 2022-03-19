@@ -63,7 +63,7 @@ export function transformRequest(
   // In all cases, the next time this module is requested, it should be
   // re-processed.
   //
-  // We save the timestap when we start processing and compare it with the
+  // We save the timestamp when we start processing and compare it with the
   // last time this module is invalidated
   const timestamp = Date.now()
 
