@@ -34,10 +34,10 @@ export function createOptimizedDeps(
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
-  const optimizedDeps = {
+  const optimizedDeps: OptimizedDeps = {
     metadata: cachedMetadata || createOptimizedDepsMetadata(config),
     registerMissingImport
-  } as OptimizedDeps
+  }
 
   let handle: NodeJS.Timeout | undefined
   let newDepsDiscovered = false
@@ -86,6 +86,7 @@ export function createOptimizedDeps(
         })
 
         metadata.discovered = discovered
+        metadata.depInfoList = Object.values(discovered)
 
         scanPhaseProcessing.resolve()
         optimizedDeps.scanProcessing = undefined
@@ -172,9 +173,11 @@ export function createOptimizedDeps(
 
         // While optimizeDeps is running, new missing deps may be discovered,
         // in which case they will keep being added to metadata.discovered
-        for (const o of Object.keys(metadata.discovered)) {
-          if (!newData.optimized[o]) {
-            newData.discovered[o] = metadata.discovered[o]
+        for (const id of Object.keys(metadata.discovered)) {
+          if (!newData.optimized[id]) {
+            const depInfo = metadata.discovered[id]
+            newData.discovered[id] = depInfo
+            newData.depInfoList.push(depInfo)
           }
         }
 
@@ -313,6 +316,7 @@ export function createOptimizedDeps(
     }
     newDepsDiscovered = true
     missing = metadata.discovered[id] = {
+      id,
       file: getOptimizedDepPath(id, server.config),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
@@ -328,6 +332,7 @@ export function createOptimizedDeps(
       // promise to be resolved
       processing: depOptimizationProcessing.promise
     }
+    metadata.depInfoList.push(missing)
 
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps

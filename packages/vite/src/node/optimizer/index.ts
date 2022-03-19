@@ -130,6 +130,7 @@ export interface DepOptimizationProcessing {
 }
 
 export interface OptimizedDepInfo {
+  id: string
   file: string
   src: string
   needsInterop?: boolean
@@ -166,6 +167,10 @@ export interface DepOptimizationMetadata {
    * Metadata for each newly discovered dependency after processing
    */
   discovered: Record<string, OptimizedDepInfo>
+  /**
+   * OptimizedDepInfo list
+   */
+  depInfoList: OptimizedDepInfo[]
 }
 
 /**
@@ -203,7 +208,8 @@ export function createOptimizedDepsMetadata(config: ResolvedConfig) {
     browserHash: mainHash,
     optimized: {},
     chunks: {},
-    discovered: {}
+    discovered: {},
+    depInfoList: []
   }
 }
 
@@ -281,6 +287,7 @@ export async function discoverProjectDependencies(
   for (const id in deps) {
     const entry = deps[id]
     discovered[id] = {
+      id,
       file: getOptimizedDepPath(id, config),
       src: entry,
       browserHash: browserHash
@@ -356,7 +363,8 @@ export async function createOptimizeDepsRun(
     browserHash: currentData?.browserHash || newBrowserHash,
     optimized: depsInfo,
     chunks: {},
-    discovered: {}
+    discovered: {},
+    depInfoList: Object.values(depsInfo)
   }
 
   // We prebundle dependencies with esbuild and cache them, but there is no need
@@ -530,6 +538,7 @@ export async function createOptimizeDepsRun(
         )
       ) {
         metadata.chunks[id] = {
+          id,
           file,
           src: '',
           needsInterop: false,
@@ -702,15 +711,20 @@ function parseOptimizedDepsMetadata(
     return value
   })
   const { browserHash } = metadata
-  for (const o of Object.keys(metadata.optimized)) {
-    const depInfo = metadata.optimized[o]
+  metadata.depInfoList = []
+  for (const id of Object.keys(metadata.optimized)) {
+    const depInfo = metadata.optimized[id]
+    depInfo.id = id
     depInfo.browserHash = browserHash
+    metadata.depInfoList.push(depInfo)
   }
   metadata.chunks ||= {} // Support missing chunks for back compat
-  for (const o of Object.keys(metadata.chunks)) {
-    const depInfo = metadata.chunks[o]
+  for (const id of Object.keys(metadata.chunks)) {
+    const depInfo = metadata.chunks[id]
+    depInfo.id = id
     depInfo.src = ''
     depInfo.browserHash = browserHash
+    metadata.depInfoList.push(depInfo)
   }
   metadata.discovered = {}
   return metadata
@@ -729,7 +743,7 @@ function stringifyOptimizedDepsMetadata(
   return JSON.stringify(
     metadata,
     (key: string, value: any) => {
-      if (key === 'discovered' || key === 'processing') {
+      if (key === 'discovered' || key === 'processing' || key === 'id') {
         return
       }
       if (key === 'file' || key === 'src') {
@@ -865,28 +879,9 @@ export function optimizedDepInfoFromId(
 
 export function optimizedDepInfoFromFile(
   metadata: DepOptimizationMetadata,
-  file: string,
-  includeChunks: boolean = true
+  file: string
 ): OptimizedDepInfo | undefined {
-  return findOptimizedDepInfo(
-    metadata,
-    (depInfo) => depInfo.file === file,
-    includeChunks
-  )
-}
-
-export function findOptimizedDepInfo(
-  metadata: DepOptimizationMetadata,
-  callbackFn: (depInfo: OptimizedDepInfo, id: string) => any,
-  includeChunks: boolean = true
-): OptimizedDepInfo | undefined {
-  return (
-    findOptimizedDepInfoInRecord(metadata.optimized, callbackFn) ||
-    findOptimizedDepInfoInRecord(metadata.discovered, callbackFn) ||
-    (includeChunks
-      ? findOptimizedDepInfoInRecord(metadata.chunks, callbackFn)
-      : undefined)
-  )
+  return metadata.depInfoList.find((depInfo) => depInfo.file === file)
 }
 
 function findOptimizedDepInfoInRecord(

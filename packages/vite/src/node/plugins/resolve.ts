@@ -32,7 +32,6 @@ import {
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
-  findOptimizedDepInfo,
   isOptimizedDepFile,
   optimizedDepInfoFromFile,
   optimizedDepInfoFromId
@@ -670,42 +669,41 @@ export async function tryOptimizedResolve(
 
   await optimizedDeps.scanProcessing
 
-  const depData = optimizedDeps.metadata
-
-  const depInfo = optimizedDepInfoFromId(depData, id)
+  const depInfo = optimizedDepInfoFromId(optimizedDeps.metadata, id)
   if (depInfo) {
     return getOptimizedUrl(depInfo)
   }
 
   if (!importer) return
 
-  try {
-    // further check if id is imported by nested dependency
-    let resolvedSrc: string | undefined
+  // further check if id is imported by nested dependency
+  let resolvedSrc: string | undefined
 
-    const nestedDepInfo = findOptimizedDepInfo(
-      depData,
-      (optimizedData, pkgPath) => {
-        // check for scenarios, e.g.
-        //   pkgPath  => "my-lib > foo"
-        //   id       => "foo"
-        // this narrows the need to do a full resolve
-        if (!pkgPath.endsWith(id)) return false
+  for (const optimizedData of optimizedDeps.metadata.depInfoList) {
+    if (!optimizedData.src) continue // Ignore chunks
 
-        // lazily initialize resolvedSrc
-        if (resolvedSrc == null) {
-          // this may throw errors if unable to resolve, e.g. aliased id
-          resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-        }
+    const pkgPath = optimizedData.id
+    // check for scenarios, e.g.
+    //   pkgPath  => "my-lib > foo"
+    //   id       => "foo"
+    // this narrows the need to do a full resolve
+    if (!pkgPath.endsWith(id)) continue
 
-        // match by src to correctly identify if id belongs to nested dependency
-        return optimizedData.src === resolvedSrc
-      },
-      false // don't search chunks
-    )
-    if (nestedDepInfo) return getOptimizedUrl(nestedDepInfo)
-  } catch {
-    // this is best-effort only so swallow errors
+    // lazily initialize resolvedSrc
+    if (resolvedSrc == null) {
+      try {
+        // this may throw errors if unable to resolve, e.g. aliased id
+        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+      } catch {
+        // this is best-effort only so swallow errors
+        break
+      }
+    }
+
+    // match by src to correctly identify if id belongs to nested dependency
+    if (optimizedData.src === resolvedSrc) {
+      return getOptimizedUrl(optimizedData)
+    }
   }
 }
 
