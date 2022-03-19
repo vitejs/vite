@@ -361,7 +361,7 @@ export async function createOptimizeDepsRun(
 
   // We prebundle dependencies with esbuild and cache them, but there is no need
   // to wait here. Code that needs to access the cached deps needs to await
-  // the optimizeDepInfo.processing promise for each dep
+  // the optimizedDepInfo.processing promise for each dep
 
   const qualifiedIds = Object.keys(deps)
 
@@ -523,7 +523,12 @@ export async function createOptimizeDepsRun(
         .relative(processingCacheDirOutputPath, o)
         .replace(jsExtensionRE, '')
       const file = getOptimizedDepPath(id, config)
-      if (!findFileInfo(metadata.optimized, file)) {
+      if (
+        !findOptimizedDepInfoInRecord(
+          metadata.optimized,
+          (depInfo) => depInfo.file === file
+        )
+      ) {
         metadata.chunks[id] = {
           file,
           src: '',
@@ -849,24 +854,48 @@ function getDepHash(config: ResolvedConfig): string {
   return createHash('sha256').update(content).digest('hex').substring(0, 8)
 }
 
-export function optimizeDepInfoFromFile(
+export function optimizedDepInfoFromId(
   metadata: DepOptimizationMetadata,
-  file: string
+  id: string
 ): OptimizedDepInfo | undefined {
   return (
-    findFileInfo(metadata.optimized, file) ||
-    findFileInfo(metadata.discovered, file) ||
-    findFileInfo(metadata.chunks, file)
+    metadata.optimized[id] || metadata.discovered[id] || metadata.chunks[id]
   )
 }
 
-function findFileInfo(
+export function optimizedDepInfoFromFile(
+  metadata: DepOptimizationMetadata,
+  file: string,
+  includeChunks: boolean = true
+): OptimizedDepInfo | undefined {
+  return findOptimizedDepInfo(
+    metadata,
+    (depInfo) => depInfo.file === file,
+    includeChunks
+  )
+}
+
+export function findOptimizedDepInfo(
+  metadata: DepOptimizationMetadata,
+  callbackFn: (depInfo: OptimizedDepInfo, id: string) => any,
+  includeChunks: boolean = true
+): OptimizedDepInfo | undefined {
+  return (
+    findOptimizedDepInfoInRecord(metadata.optimized, callbackFn) ||
+    findOptimizedDepInfoInRecord(metadata.discovered, callbackFn) ||
+    (includeChunks
+      ? findOptimizedDepInfoInRecord(metadata.chunks, callbackFn)
+      : undefined)
+  )
+}
+
+function findOptimizedDepInfoInRecord(
   dependenciesInfo: Record<string, OptimizedDepInfo>,
-  file: string
+  callbackFn: (depInfo: OptimizedDepInfo, id: string) => any
 ): OptimizedDepInfo | undefined {
   for (const o of Object.keys(dependenciesInfo)) {
     const info = dependenciesInfo[o]
-    if (info.file === file) {
+    if (callbackFn(info, o)) {
       return info
     }
   }
@@ -876,7 +905,7 @@ export async function optimizedDepNeedsInterop(
   metadata: DepOptimizationMetadata,
   file: string
 ): Promise<boolean | undefined> {
-  const depInfo = optimizeDepInfoFromFile(metadata, file)
+  const depInfo = optimizedDepInfoFromFile(metadata, file)
 
   if (!depInfo) return undefined
 

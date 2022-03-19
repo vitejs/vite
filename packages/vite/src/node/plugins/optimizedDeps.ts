@@ -3,7 +3,7 @@ import type { Plugin } from '../plugin'
 import colors from 'picocolors'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import { isOptimizedDepFile, optimizeDepInfoFromFile } from '../optimizer'
+import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
 import type { ViteDevServer } from '..'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
@@ -34,7 +34,7 @@ export function optimizedDepsPlugin(): Plugin {
             : undefined
 
           // Search in both the currently optimized and newly discovered deps
-          const info = optimizeDepInfoFromFile(metadata, file)
+          const info = optimizedDepInfoFromFile(metadata, file)
           if (info) {
             if (browserHash && info.browserHash !== browserHash) {
               throwOutdatedRequest(id)
@@ -51,7 +51,7 @@ export function optimizedDepsPlugin(): Plugin {
             }
             const newMetadata = server._optimizedDeps?.metadata
             if (metadata !== newMetadata) {
-              const currentInfo = optimizeDepInfoFromFile(newMetadata!, file)
+              const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
                 throwOutdatedRequest(id)
               }

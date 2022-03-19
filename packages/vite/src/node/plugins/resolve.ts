@@ -32,8 +32,10 @@ import {
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
+  findOptimizedDepInfo,
   isOptimizedDepFile,
-  optimizeDepInfoFromFile
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId
 } from '../optimizer'
 import type { OptimizedDepInfo } from '../optimizer'
 import type { ViteDevServer, SSROptions } from '..'
@@ -180,7 +182,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
-            const browserHash = optimizeDepInfoFromFile(
+            const browserHash = optimizedDepInfoFromFile(
               server._optimizedDeps!.metadata!,
               normalizedFsPath
             )?.browserHash
@@ -670,52 +672,40 @@ export async function tryOptimizedResolve(
 
   const depData = optimizedDeps.metadata
 
-  // check if id has been optimized
-  const isOptimized = depData.optimized[id]
-  if (isOptimized) {
-    return getOptimizedUrl(isOptimized)
-  }
-
-  const isChunk = depData.chunks[id]
-  if (isChunk) {
-    return getOptimizedUrl(isChunk)
-  }
-
-  const isDiscovered = depData.discovered[id]
-  if (isDiscovered) {
-    return getOptimizedUrl(isDiscovered)
+  const depInfo = optimizedDepInfoFromId(depData, id)
+  if (depInfo) {
+    return getOptimizedUrl(depInfo)
   }
 
   if (!importer) return
 
-  // further check if id is imported by nested dependency
-  let resolvedSrc: string | undefined
+  try {
+    // further check if id is imported by nested dependency
+    let resolvedSrc: string | undefined
 
-  for (const [pkgPath, optimizedData] of [
-    ...Object.entries(depData.optimized),
-    ...Object.entries(depData.discovered)
-  ]) {
-    // check for scenarios, e.g.
-    //   pkgPath  => "my-lib > foo"
-    //   id       => "foo"
-    // this narrows the need to do a full resolve
-    if (!pkgPath.endsWith(id)) continue
+    const nestedDepInfo = findOptimizedDepInfo(
+      depData,
+      (optimizedData, pkgPath) => {
+        // check for scenarios, e.g.
+        //   pkgPath  => "my-lib > foo"
+        //   id       => "foo"
+        // this narrows the need to do a full resolve
+        if (!pkgPath.endsWith(id)) return false
 
-    // lazily initialize resolvedSrc
-    if (resolvedSrc == null) {
-      try {
-        // this may throw errors if unable to resolve, e.g. aliased id
-        resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
-      } catch {
-        // this is best-effort only so swallow errors
-        break
-      }
-    }
+        // lazily initialize resolvedSrc
+        if (resolvedSrc == null) {
+          // this may throw errors if unable to resolve, e.g. aliased id
+          resolvedSrc = normalizePath(resolveFrom(id, path.dirname(importer)))
+        }
 
-    // match by src to correctly identify if id belongs to nested dependency
-    if (optimizedData.src === resolvedSrc) {
-      return getOptimizedUrl(optimizedData)
-    }
+        // match by src to correctly identify if id belongs to nested dependency
+        return optimizedData.src === resolvedSrc
+      },
+      false // don't search chunks
+    )
+    if (nestedDepInfo) return getOptimizedUrl(nestedDepInfo)
+  } catch {
+    // this is best-effort only so swallow errors
   }
 }
 
