@@ -2,7 +2,7 @@ import colors from 'picocolors'
 import {
   createOptimizeDepsRun,
   getOptimizedDepPath,
-  getOptimizedBrowserHash,
+  getHash,
   depsFromOptimizedDepInfo,
   newDepOptimizationProcessing
 } from '.'
@@ -202,6 +202,21 @@ export function createMissingImporterRegisterFn(
     })
   }
 
+  const discoveredTimestamp = Date.now()
+
+  function getDiscoveredBrowserHash(
+    hash: string,
+    deps: Record<string, string>,
+    missing: Record<string, string>
+  ) {
+    return getHash(
+      hash +
+        JSON.stringify(deps) +
+        JSON.stringify(missing) +
+        discoveredTimestamp
+    )
+  }
+
   return function registerMissingImport(
     id: string,
     resolved: string,
@@ -210,6 +225,10 @@ export function createMissingImporterRegisterFn(
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
+    }
+    const chunk = metadata.chunks[id]
+    if (chunk) {
+      return chunk
     }
     let missing = metadata.discovered[id]
     if (missing) {
@@ -225,7 +244,7 @@ export function createMissingImporterRegisterFn(
       // the current state of known + missing deps. If its optimizeDeps run
       // doesn't alter the bundled files of previous known dependendencies,
       // we don't need a full reload and this browserHash will be kept
-      browserHash: getOptimizedBrowserHash(
+      browserHash: getDiscoveredBrowserHash(
         metadata.hash,
         depsFromOptimizedDepInfo(metadata.optimized),
         depsFromOptimizedDepInfo(metadata.discovered)

@@ -7,7 +7,8 @@ import {
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
-  OPTIMIZABLE_ENTRY_RE
+  OPTIMIZABLE_ENTRY_RE,
+  DEP_VERSION_RE
 } from '../constants'
 import {
   isBuiltin,
@@ -29,7 +30,11 @@ import {
   isPossibleTsOutput,
   getPotentialTsSrcPaths
 } from '../utils'
-import { createIsOptimizedDepUrl } from '../optimizer'
+import {
+  createIsOptimizedDepUrl,
+  isOptimizedDepFile,
+  optimizeDepInfoFromFile
+} from '../optimizer'
 import type { OptimizedDepInfo } from '../optimizer'
 import type { ViteDevServer, SSROptions } from '..'
 import type { PartialResolvedId } from 'rollup'
@@ -163,6 +168,22 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         // handle browser field mapping for relative imports
 
         const normalizedFsPath = normalizePath(fsPath)
+
+        if (server && isOptimizedDepFile(normalizedFsPath, server!.config)) {
+          // Optimized files could not yet exist in disk, resolve to the full path
+          // Inject the current browserHash version if the path doesn't have one
+          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+            const browserHash = optimizeDepInfoFromFile(
+              server._optimizeDepsMetadata!,
+              normalizedFsPath
+            )?.browserHash
+            if (browserHash) {
+              return injectQuery(normalizedFsPath, `v=${browserHash}`)
+            }
+          }
+          return normalizedFsPath
+        }
+
         const pathFromBasedir = normalizedFsPath.slice(basedir.length)
         if (pathFromBasedir.startsWith('/node_modules/')) {
           // normalize direct imports from node_modules to bare imports, so the
@@ -636,6 +657,11 @@ export function tryOptimizedResolve(
   const isOptimized = depData.optimized[id]
   if (isOptimized) {
     return getOptimizedUrl(isOptimized)
+  }
+
+  const isChunk = depData.chunks[id]
+  if (isChunk) {
+    return getOptimizedUrl(isChunk)
   }
 
   if (!importer) return
