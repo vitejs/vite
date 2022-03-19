@@ -271,7 +271,7 @@ export function createOptimizedDeps(
     runOptimizer(ssr)
   }
 
-  const optimizedDepsTimestamp = Date.now()
+  const discoveredTimestamp = Date.now()
 
   function getDiscoveredBrowserHash(
     hash: string,
@@ -282,7 +282,7 @@ export function createOptimizedDeps(
       hash +
         JSON.stringify(deps) +
         JSON.stringify(missing) +
-        optimizedDepsTimestamp
+        discoveredTimestamp
     )
   }
 
@@ -300,6 +300,10 @@ export function createOptimizedDeps(
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
+    }
+    const chunk = metadata.chunks[id]
+    if (chunk) {
+      return chunk
     }
     let missing = metadata.discovered[id]
     if (missing) {

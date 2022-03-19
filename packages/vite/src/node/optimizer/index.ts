@@ -633,10 +633,7 @@ export function getHash(text: string) {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
-export function getOptimizedBrowserHash(
-  hash: string,
-  deps: Record<string, string>
-) {
+function getOptimizedBrowserHash(hash: string, deps: Record<string, string>) {
   return getHash(hash + JSON.stringify(deps))
 }
 
@@ -858,8 +855,8 @@ export function optimizeDepInfoFromFile(
 ): OptimizedDepInfo | undefined {
   return (
     findFileInfo(metadata.optimized, file) ||
-    findFileInfo(metadata.chunks, file) ||
-    findFileInfo(metadata.discovered, file)
+    findFileInfo(metadata.discovered, file) ||
+    findFileInfo(metadata.chunks, file)
   )
 }
 
