@@ -25,10 +25,10 @@ import { resolveSSRExternal } from '../ssr/ssrExternal'
  */
 const debounceMs = 100
 
-export async function createOptimizedDeps(
+export function createOptimizedDeps(
   server: ViteDevServer,
   asCommand = false
-): Promise<OptimizedDeps> {
+): OptimizedDeps {
   const { config } = server
   const { logger } = config
 

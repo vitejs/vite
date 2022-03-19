@@ -173,7 +173,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
         const normalizedFsPath = normalizePath(fsPath)
 
-        if (server && isOptimizedDepFile(normalizedFsPath, server!.config)) {
+        if (
+          server?._optimizedDeps &&
+          isOptimizedDepFile(normalizedFsPath, server!.config)
+        ) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
@@ -611,6 +614,7 @@ export function tryNodeResolve(
     if (
       !resolved.includes('node_modules') || // linked
       !server || // build
+      !server._optimizedDeps || // resolving before listening to the server
       options.scan // initial esbuild scan phase
     ) {
       return { id: resolved }

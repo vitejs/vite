@@ -442,6 +442,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             importRewrites.push(async () => {
               let rewriteDone = false
               if (
+                server?._optimizedDeps &&
                 isOptimizedDepFile(resolvedId, config) &&
                 !resolvedId.match(optimizedDepChunkRE)
               ) {
