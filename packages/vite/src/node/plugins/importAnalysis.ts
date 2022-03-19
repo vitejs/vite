@@ -271,7 +271,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // (e.g. vue blocks), inherit importer's version query
           // do not do this for unknown type imports, otherwise the appended
           // query can break 3rd party plugin's extension checks.
-          if ((isRelative || isSelfImport) && !/[\?&]import=?\b/.test(url)) {
+          if (
+            (isRelative || isSelfImport) &&
+            !/[\?&]import=?\b/.test(url) &&
+            !url.match(DEP_VERSION_RE)
+          ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
