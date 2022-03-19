@@ -103,12 +103,11 @@
   )
 
   const genWorkerName = () => 'module'
-  // TODO
-  // /* @vite-ignore */
-  // name: genWorkerName(),
   const w2 = new SharedWorker(
     new URL('./newUrl/url-shared-worker.js', import.meta.url),
     {
+      /* @vite-ignore */
+      name: genWorkerName(),
       type: 'module'
     }
   )

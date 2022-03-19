@@ -32,7 +32,19 @@ function analyzeWorkerOptions(
   i: number
 ): ResolveWorkerOptions {
   const commaIndex = noCommentsCode.indexOf(',', i)
-  const endIndex = noCommentsCode.indexOf(')', i)
+  let endIndex = noCommentsCode.indexOf(')', i)
+  let closeIndex = noCommentsCode.indexOf('(', i)
+
+  // ensure no `(` before the `)`
+  while (closeIndex !== -1 && endIndex !== -1 && closeIndex < endIndex) {
+    endIndex = noCommentsCode.indexOf(')', endIndex + 1)
+    closeIndex = noCommentsCode.indexOf('(', endIndex + 1)
+  }
+
+  if (endIndex === -1) {
+    throw new Error(`can't resolve worker options`)
+  }
+
   const noCommentWorkerOptsStr = noCommentsCode.substring(
     commaIndex + 1,
     endIndex
