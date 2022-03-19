@@ -588,7 +588,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const shortEmitName = path.posix.relative(config.root, id)
+        const shortEmitName = path.relative(config.root, id)
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
