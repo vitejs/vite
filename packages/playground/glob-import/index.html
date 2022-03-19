@@ -1,7 +1,7 @@
 <pre class="result"></pre>
 <pre class="result-node_modules"></pre>
 <pre class="globraw"></pre>
-<pre class="relative-glob-raw"><!--issue #7307--></pre>
+<pre class="relative-glob-raw"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -55,16 +55,15 @@
 </script>
 
 <script type="module">
-  // issue #7307
   const relativeRawModules = import.meta.globEager(
-    '../dynamic-import/nested/shar*.js',
+    '../glob-import/dir/*.json',
     {
       as: 'raw'
     }
   )
   const relativeGlobRaw = {}
   Object.keys(relativeRawModules).forEach((key) => {
-    relativeGlobRaw[key] = relativeRawModules[key]
+    relativeGlobRaw[key] = JSON.parse(relativeRawModules[key])
   })
   document.querySelector('.relative-glob-raw').textContent = JSON.stringify(
     relativeGlobRaw,

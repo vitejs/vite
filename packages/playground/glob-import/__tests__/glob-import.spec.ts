@@ -66,9 +66,10 @@ const rawResult = {
   }
 }
 
-// issue #7307
 const relativeRawResult = {
-  '../dynamic-import/nested/shared.js': 'export const n = 1\n'
+  '../glob-import/dir/baz.json': {
+    msg: 'baz'
+  }
 }
 
 test('should work', async () => {
@@ -86,7 +87,6 @@ test('import glob raw', async () => {
   )
 })
 
-// issue #7307
 test('import relative glob raw', async () => {
   expect(await page.textContent('.relative-glob-raw')).toBe(
     JSON.stringify(relativeRawResult, null, 2)

@@ -146,7 +146,6 @@ export async function transformImportGlob(
           )
         )
       }
-      // issue #7307
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, files[i]), 'utf-8')
       )},`
