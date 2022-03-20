@@ -646,8 +646,7 @@ export function tryNodeResolve(
       // get a resolved its optimized info
       const optimizedInfo = server._optimizedDeps!.registerMissingImport(
         id,
-        resolved,
-        ssr
+        resolved
       )
       resolved = getOptimizedUrl(optimizedInfo)
     }

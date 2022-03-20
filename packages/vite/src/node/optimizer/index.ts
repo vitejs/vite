@@ -36,11 +36,7 @@ export type ExportsData = ReturnType<typeof parse> & {
 export type OptimizedDeps = {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
-  registerMissingImport: (
-    id: string,
-    resolved: string,
-    ssr?: boolean
-  ) => OptimizedDepInfo
+  registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
 }
 
 export interface DepOptimizationOptions {
@@ -109,13 +105,6 @@ export interface DepOptimizationOptions {
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
-   * After a re-optimization, the internal bundled chunks may change
-   * and a full page reload is required if that is the case
-   * If the files are stable, we can avoid the reload that is expensive
-   * for large applications
-   */
-  alteredFiles: boolean
-  /**
    * When doing a re-run, if there are newly discovered dependendencies
    * the page reload will be delayed until the next rerun so we need
    * to be able to discard the result
@@ -132,7 +121,7 @@ export interface DepOptimizationProcessing {
 export interface OptimizedDepInfo {
   id: string
   file: string
-  src: string
+  src?: string
   needsInterop?: boolean
   browserHash?: string
   fileHash?: string
@@ -194,7 +183,7 @@ export async function optimizeDeps(
   const depsString = depsLogString(config, Object.keys(depsInfo))
   config.logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
-  const result = await createOptimizeDepsRun(config, depsInfo)
+  const result = await runOptimizeDeps(config, depsInfo)
 
   result.commit()
 
@@ -332,11 +321,9 @@ export function depsLogString(
  * Internally, Vite uses this function to prepare a optimizeDeps run. When Vite starts, we can get
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
-export async function createOptimizeDepsRun(
+export async function runOptimizeDeps(
   config: ResolvedConfig,
-  depsInfo: Record<string, OptimizedDepInfo>,
-  currentData?: DepOptimizationMetadata,
-  ssr?: boolean
+  depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
   config = {
     ...config,
@@ -364,26 +351,22 @@ export async function createOptimizeDepsRun(
     JSON.stringify({ type: 'module' })
   )
 
-  const deps = depsFromOptimizedDepInfo(depsInfo)
-
-  const newBrowserHash = getOptimizedBrowserHash(mainHash, deps)
-
   const metadata = createOptimizedDepsMetadata(config)
 
-  // For reruns keep current global browser hash and newDeps individual hashes until we know
-  // if files are stable so we can avoid a full page reload
-  metadata.browserHash = currentData?.browserHash || newBrowserHash
+  metadata.browserHash = getOptimizedBrowserHash(
+    mainHash,
+    depsFromOptimizedDepInfo(depsInfo)
+  )
 
   // We prebundle dependencies with esbuild and cache them, but there is no need
   // to wait here. Code that needs to access the cached deps needs to await
   // the optimizedDepInfo.processing promise for each dep
 
-  const qualifiedIds = Object.keys(deps)
+  const qualifiedIds = Object.keys(depsInfo)
 
   if (!qualifiedIds.length) {
     return {
       metadata,
-      alteredFiles: false,
       commit() {
         // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
         commitProcessingDepsCacheSync()
@@ -407,9 +390,9 @@ export async function createOptimizeDepsRun(
     config.optimizeDeps?.esbuildOptions ?? {}
 
   await init
-  for (const id in deps) {
+  for (const id in depsInfo) {
     const flatId = flattenId(id)
-    const filePath = (flatIdDeps[flatId] = deps[id])
+    const filePath = (flatIdDeps[flatId] = depsInfo[id].src!)
     let exportsData: ExportsData
     if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
       // For custom supported extensions, build the entry file to transform it into JS,
@@ -480,7 +463,7 @@ export async function createOptimizeDepsRun(
     define,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
     ],
     ...esbuildOptions
   })
@@ -493,7 +476,7 @@ export async function createOptimizeDepsRun(
     processingCacheDir
   )
 
-  for (const id in deps) {
+  for (const id in depsInfo) {
     const output =
       meta.outputs[
         path.relative(process.cwd(), getProcessingDepPath(id, config))
@@ -511,26 +494,9 @@ export async function createOptimizeDepsRun(
       // and file path gives us a unique hash that may be useful for other things in the future
       fileHash: getHash(
         metadata.hash + depsInfo[id].file + JSON.stringify(output.imports)
-      )
+      ),
+      browserHash: metadata.browserHash
     })
-  }
-
-  // This only runs when missing deps are processed. Previous optimized deps are stable if
-  // the newly discovered deps don't have common chunks with them. Comparing their fileHash we
-  // can find out if it is safe to keep the current browser state. If one of the file hashes
-  // changed, a full page reload is needed
-  let alteredFiles = false
-  if (currentData) {
-    alteredFiles = Object.keys(currentData.optimized).some((dep) => {
-      const currentInfo = currentData.optimized[dep]
-      const info = metadata.optimized[dep]
-      return (
-        !info?.fileHash ||
-        !currentInfo?.fileHash ||
-        info?.fileHash !== currentInfo?.fileHash
-      )
-    })
-    debug(`optimized deps have altered files: ${alteredFiles}`)
   }
 
   for (const o of Object.keys(meta.outputs)) {
@@ -548,31 +514,17 @@ export async function createOptimizeDepsRun(
         addOptimizedDepInfo(metadata, 'chunks', {
           id,
           file,
-          src: '',
           needsInterop: false,
-          browserHash:
-            (!alteredFiles && currentData?.chunks[id]?.browserHash) ||
-            newBrowserHash
+          browserHash: metadata.browserHash
         })
       }
     }
-  }
-
-  if (alteredFiles) {
-    // Overwrite individual hashes with the new global browserHash, a full page reload is required
-    // New deps that ended up with a different hash replaced while doing analysis import are going to
-    // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
-    for (const id in deps) {
-      metadata.optimized[id].browserHash = newBrowserHash
-    }
-    metadata.browserHash = newBrowserHash
   }
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
   return {
     metadata,
-    alteredFiles,
     commit() {
       // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
       commitProcessingDepsCacheSync()
@@ -647,7 +599,7 @@ export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>
 ) {
   return Object.fromEntries(
-    Object.entries(depsInfo).map((d) => [d[0], d[1].src])
+    Object.entries(depsInfo).map((d) => [d[0], d[1].src!])
   )
 }
 
@@ -751,7 +703,12 @@ function stringifyOptimizedDepsMetadata(
   return JSON.stringify(
     metadata,
     (key: string, value: any) => {
-      if (key === 'discovered' || key === 'processing' || key === 'id') {
+      if (
+        key === 'discovered' ||
+        key === 'processing' ||
+        key === 'id' ||
+        key === 'depInfoList'
+      ) {
         return
       }
       if (key === 'file' || key === 'src') {

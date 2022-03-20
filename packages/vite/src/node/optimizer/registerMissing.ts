@@ -1,6 +1,6 @@
 import colors from 'picocolors'
 import {
-  createOptimizeDepsRun,
+  runOptimizeDeps,
   getOptimizedDepPath,
   getHash,
   depsFromOptimizedDepInfo,
@@ -12,13 +12,11 @@ import {
   depsLogString
 } from '.'
 import type {
-  DepOptimizationMetadata,
   DepOptimizationProcessing,
   OptimizedDepInfo,
   OptimizedDeps
 } from '.'
 import type { ViteDevServer } from '..'
-import { resolveSSRExternal } from '../ssr/ssrExternal'
 
 /**
  * The amount to wait for requests to register newly found dependencies before triggering
@@ -105,7 +103,7 @@ export function createOptimizedDeps(
     setTimeout(warmUp, 0)
   }
 
-  async function runOptimizer(ssr?: boolean) {
+  async function runOptimizer(isRerun = false) {
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
     currentlyProcessing = true
@@ -149,34 +147,42 @@ export function createOptimizedDeps(
     // dependencies will be asigned this promise from this point
     depOptimizationProcessing = newDepOptimizationProcessing()
 
-    let newData: DepOptimizationMetadata | null = null
-
     try {
-      const processingResult = await createOptimizeDepsRun(
-        config,
-        newDeps,
-        metadata,
-        ssr
-      )
+      const processingResult = await runOptimizeDeps(config, newDeps)
+
+      const newData = processingResult.metadata
+
+      // After a re-optimization, if the internal bundled chunks change a full page reload
+      // is required. If the files are stable, we can avoid the reload that is expensive
+      // for large applications. Comparing their fileHash we can find out if it is safe to
+      // keep the current browser state.
+      const needsReload = Object.keys(metadata.optimized).some((dep) => {
+        return (
+          metadata.optimized[dep]?.fileHash !== newData.optimized[dep]?.fileHash
+        )
+      })
 
       const commitProcessing = () => {
         processingResult.commit()
-
-        newData = processingResult.metadata
-
-        // update ssr externals
-        if (ssr) {
-          server._ssrExternals = resolveSSRExternal(
-            server.config,
-            Object.keys(newData.optimized)
-          )
-        }
 
         // While optimizeDeps is running, new missing deps may be discovered,
         // in which case they will keep being added to metadata.discovered
         for (const id of Object.keys(metadata.discovered)) {
           if (!newData.optimized[id]) {
             addOptimizedDepInfo(newData, 'discovered', metadata.discovered[id])
+          }
+        }
+
+        // If we don't need to reload the page, we need to keep browserHash stable
+        if (isRerun && !needsReload) {
+          newData.browserHash = metadata.browserHash
+          for (const dep in newData.optimized) {
+            newData.optimized[dep].browserHash = (
+              metadata.optimized[dep] || metadata.discovered[dep]
+            ).browserHash
+          }
+          for (const dep in newData.chunks) {
+            newData.chunks[dep].browserHash = metadata.browserHash
           }
         }
 
@@ -190,15 +196,15 @@ export function createOptimizedDeps(
             discovered.browserHash = optimized.browserHash
             discovered.fileHash = optimized.fileHash
             discovered.needsInterop = optimized.needsInterop
+            discovered.processing = undefined
           }
         }
 
         metadata = optimizedDeps.metadata = newData
-
         resolveEnqueuedProcessingPromises()
       }
 
-      if (!processingResult.alteredFiles) {
+      if (!needsReload) {
         commitProcessing()
 
         logger.info(colors.green(`✨ dependencies pre-bundled...`), {
@@ -261,7 +267,7 @@ export function createOptimizedDeps(
     })
   }
 
-  async function rerun(ssr?: boolean) {
+  async function rerun() {
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
@@ -270,7 +276,7 @@ export function createOptimizedDeps(
     logger.info(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
-    runOptimizer(ssr)
+    runOptimizer(true)
   }
 
   const discoveredTimestamp = Date.now()
@@ -338,7 +344,7 @@ export function createOptimizedDeps(
     if (handle) clearTimeout(handle)
     handle = setTimeout(() => {
       handle = undefined
-      enqueuedRerun = () => rerun(ssr)
+      enqueuedRerun = rerun
       if (!currentlyProcessing) {
         enqueuedRerun()
       }
