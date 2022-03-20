@@ -7,6 +7,7 @@ import {
   newDepOptimizationProcessing,
   loadCachedDepOptimizationMetadata,
   createOptimizedDepsMetadata,
+  addOptimizedDepInfo,
   discoverProjectDependencies,
   depsLogString
 } from '.'
@@ -74,8 +75,11 @@ export function createOptimizedDeps(
         const discovered = await discoverProjectDependencies(config)
 
         // Respect the scan phase discover order to improve reproducibility
-        for (const dep of Object.keys(discovered)) {
-          discovered[dep].processing = depOptimizationProcessing.promise
+        for (const depInfo of Object.values(discovered)) {
+          addOptimizedDepInfo(metadata, 'discovered', {
+            ...depInfo,
+            processing: depOptimizationProcessing.promise
+          })
         }
 
         // This is auto run on server start - let the user know that we are
@@ -84,9 +88,6 @@ export function createOptimizedDeps(
         logger.info(colors.green(`dependencies found: ${depsString}`), {
           timestamp: true
         })
-
-        metadata.discovered = discovered
-        metadata.depInfoList = Object.values(discovered)
 
         scanPhaseProcessing.resolve()
         optimizedDeps.scanProcessing = undefined
@@ -175,9 +176,7 @@ export function createOptimizedDeps(
         // in which case they will keep being added to metadata.discovered
         for (const id of Object.keys(metadata.discovered)) {
           if (!newData.optimized[id]) {
-            const depInfo = metadata.discovered[id]
-            newData.discovered[id] = depInfo
-            newData.depInfoList.push(depInfo)
+            addOptimizedDepInfo(newData, 'discovered', metadata.discovered[id])
           }
         }
 
@@ -315,7 +314,7 @@ export function createOptimizedDeps(
       return missing
     }
     newDepsDiscovered = true
-    missing = metadata.discovered[id] = {
+    missing = addOptimizedDepInfo(metadata, 'discovered', {
       id,
       file: getOptimizedDepPath(id, server.config),
       src: resolved,
@@ -331,8 +330,7 @@ export function createOptimizedDeps(
       // loading of this pre-bundled dep needs to await for its processing
       // promise to be resolved
       processing: depOptimizationProcessing.promise
-    }
-    metadata.depInfoList.push(missing)
+    })
 
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps

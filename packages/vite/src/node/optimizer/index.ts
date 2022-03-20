@@ -201,7 +201,9 @@ export async function optimizeDeps(
   return result.metadata
 }
 
-export function createOptimizedDepsMetadata(config: ResolvedConfig) {
+export function createOptimizedDepsMetadata(
+  config: ResolvedConfig
+): DepOptimizationMetadata {
   const mainHash = getDepHash(config)
   return {
     hash: mainHash,
@@ -211,6 +213,16 @@ export function createOptimizedDepsMetadata(config: ResolvedConfig) {
     discovered: {},
     depInfoList: []
   }
+}
+
+export function addOptimizedDepInfo(
+  metadata: DepOptimizationMetadata,
+  type: 'optimized' | 'discovered' | 'chunks',
+  depInfo: OptimizedDepInfo
+): OptimizedDepInfo {
+  metadata[type][depInfo.id] = depInfo
+  metadata.depInfoList.push(depInfo)
+  return depInfo
 }
 
 /**
@@ -356,16 +368,11 @@ export async function createOptimizeDepsRun(
 
   const newBrowserHash = getOptimizedBrowserHash(mainHash, deps)
 
-  const metadata: DepOptimizationMetadata = {
-    hash: mainHash,
-    // For reruns keep current global browser hash and newDeps individual hashes until we know
-    // if files are stable so we can avoid a full page reload
-    browserHash: currentData?.browserHash || newBrowserHash,
-    optimized: depsInfo,
-    chunks: {},
-    discovered: {},
-    depInfoList: Object.values(depsInfo)
-  }
+  const metadata = createOptimizedDepsMetadata(config)
+
+  // For reruns keep current global browser hash and newDeps individual hashes until we know
+  // if files are stable so we can avoid a full page reload
+  metadata.browserHash = currentData?.browserHash || newBrowserHash
 
   // We prebundle dependencies with esbuild and cache them, but there is no need
   // to wait here. Code that needs to access the cached deps needs to await
@@ -487,24 +494,25 @@ export async function createOptimizeDepsRun(
   )
 
   for (const id in deps) {
-    const optimizedInfo = metadata.optimized[id]
-    optimizedInfo.needsInterop = needsInterop(
-      id,
-      idToExports[id],
-      meta.outputs,
-      processingCacheDirOutputPath
-    )
     const output =
       meta.outputs[
         path.relative(process.cwd(), getProcessingDepPath(id, config))
       ]
-    if (output) {
+
+    addOptimizedDepInfo(metadata, 'optimized', {
+      ...depsInfo[id],
+      needsInterop: needsInterop(
+        id,
+        idToExports[id],
+        meta.outputs,
+        processingCacheDirOutputPath
+      ),
       // We only need to hash the output.imports in to check for stability, but adding the hash
       // and file path gives us a unique hash that may be useful for other things in the future
-      optimizedInfo.fileHash = getHash(
-        metadata.hash + optimizedInfo.file + JSON.stringify(output.imports)
+      fileHash: getHash(
+        metadata.hash + depsInfo[id].file + JSON.stringify(output.imports)
       )
-    }
+    })
   }
 
   // This only runs when missing deps are processed. Previous optimized deps are stable if
@@ -537,7 +545,7 @@ export async function createOptimizeDepsRun(
           (depInfo) => depInfo.file === file
         )
       ) {
-        metadata.chunks[id] = {
+        addOptimizedDepInfo(metadata, 'chunks', {
           id,
           file,
           src: '',
@@ -545,7 +553,7 @@ export async function createOptimizeDepsRun(
           browserHash:
             (!alteredFiles && currentData?.chunks[id]?.browserHash) ||
             newBrowserHash
-        }
+        })
       }
     }
   }
