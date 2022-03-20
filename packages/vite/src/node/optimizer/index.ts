@@ -477,19 +477,11 @@ export async function runOptimizeDeps(
   )
 
   for (const id in depsInfo) {
-    const output =
-      meta.outputs[
-        path.relative(process.cwd(), getProcessingDepPath(id, config))
-      ]
+    const output = esbuildOutputFromId(meta.outputs, id, processingCacheDir)
 
     addOptimizedDepInfo(metadata, 'optimized', {
       ...depsInfo[id],
-      needsInterop: needsInterop(
-        id,
-        idToExports[id],
-        meta.outputs,
-        processingCacheDirOutputPath
-      ),
+      needsInterop: needsInterop(id, idToExports[id], output),
       // We only need to hash the output.imports in to check for stability, but adding the hash
       // and file path gives us a unique hash that may be useful for other things in the future
       fileHash: getHash(
@@ -611,24 +603,14 @@ function getOptimizedBrowserHash(hash: string, deps: Record<string, string>) {
   return getHash(hash + JSON.stringify(deps))
 }
 
-function getCachedDepFilePath(id: string, depsCacheDir: string) {
-  return normalizePath(path.resolve(depsCacheDir, flattenId(id) + '.js'))
-}
-
 export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
-  return getCachedDepFilePath(id, getDepsCacheDir(config))
+  return normalizePath(
+    path.resolve(getDepsCacheDir(config), flattenId(id) + '.js')
+  )
 }
 
 export function getDepsCacheDir(config: ResolvedConfig) {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
-}
-
-function getProcessingDepFilePath(id: string, processingCacheDir: string) {
-  return normalizePath(path.resolve(processingCacheDir, flattenId(id) + '.js'))
-}
-
-function getProcessingDepPath(id: string, config: ResolvedConfig) {
-  return getProcessingDepFilePath(id, getProcessingDepsCacheDir(config))
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig) {
@@ -743,6 +725,19 @@ function stringifyOptimizedDepsMetadata(
   )
 }
 
+function esbuildOutputFromId(
+  outputs: Record<string, any>,
+  id: string,
+  cacheDirOutputPath: string
+): any {
+  const flatId = flattenId(id) + '.js'
+  return outputs[
+    normalizePath(
+      path.relative(process.cwd(), path.join(cacheDirOutputPath, flatId))
+    )
+  ]
+}
+
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
 // a list of modules that pretends to be ESM but still uses `require`.
 // this causes esbuild to wrap them as CJS even when its entry appears to be ESM.
@@ -751,8 +746,7 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   exportsData: ExportsData,
-  outputs: Record<string, any>,
-  cacheDirOutputPath: string
+  output: any
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -766,17 +760,7 @@ function needsInterop(
   // if a peer dependency used require() on a ESM dependency, esbuild turns the
   // ESM dependency's entry chunk into a single default export... detect
   // such cases by checking exports mismatch, and force interop.
-  const flatId = flattenId(id) + '.js'
-  let generatedExports: string[] | undefined
-  for (const output in outputs) {
-    if (
-      normalizePath(output) ===
-      normalizePath(path.join(cacheDirOutputPath, flatId))
-    ) {
-      generatedExports = outputs[output].exports
-      break
-    }
-  }
+  const generatedExports: string[] = output.exports
 
   if (
     !generatedExports ||
