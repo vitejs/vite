@@ -2,8 +2,10 @@ name: Publish docs on release
 
 on:
   push:
-    tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+    paths:
+      - "docs/**"
+  release:
+    types: [published]
 
 jobs:
   deploy:
@@ -33,13 +35,13 @@ jobs:
         uses: nwtgck/actions-netlify@v1.2
         with:
           publish-dir: "docs/.vitepress/dist"
-          production-branch: main
           github-token: ${{ secrets.VITE_GITHUB_TOKEN }}
-          deploy-message: "Deploy docs on release from GitHub Actions"
+          production-deploy: ${{ github.event_name == 'release' }}
+          deploy-message: "Deploy docs to Netlify by event: ${{ github.event_name }} from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: true
           overwrites-pull-request-comment: true
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 1
+        timeout-minutes: 5
