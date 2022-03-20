@@ -662,31 +662,40 @@ function parseOptimizedDepsMetadata(
   jsonMetadata: string,
   depsCacheDir: string
 ) {
-  const metadata = JSON.parse(jsonMetadata, (key: string, value: string) => {
-    // Paths can be absolute or relative to the deps cache dir where
-    // the _metadata.json is located
-    if (key === 'file' || key === 'src') {
-      return normalizePath(path.resolve(depsCacheDir, value))
+  const { hash, browserHash, optimized, chunks } = JSON.parse(
+    jsonMetadata,
+    (key: string, value: string) => {
+      // Paths can be absolute or relative to the deps cache dir where
+      // the _metadata.json is located
+      if (key === 'file' || key === 'src') {
+        return normalizePath(path.resolve(depsCacheDir, value))
+      }
+      return value
     }
-    return value
-  })
-  const { browserHash } = metadata
-  metadata.depInfoList = []
-  for (const id of Object.keys(metadata.optimized)) {
-    const depInfo = metadata.optimized[id]
-    depInfo.id = id
-    depInfo.browserHash = browserHash
-    metadata.depInfoList.push(depInfo)
+  )
+  const metadata = {
+    hash,
+    browserHash,
+    optimized: {},
+    discovered: {},
+    chunks: {},
+    depInfoList: []
   }
-  metadata.chunks ||= {} // Support missing chunks for back compat
-  for (const id of Object.keys(metadata.chunks)) {
-    const depInfo = metadata.chunks[id]
-    depInfo.id = id
-    depInfo.src = ''
-    depInfo.browserHash = browserHash
-    metadata.depInfoList.push(depInfo)
+  for (const id of Object.keys(optimized)) {
+    addOptimizedDepInfo(metadata, 'optimized', {
+      ...optimized[id],
+      id,
+      browserHash
+    })
   }
-  metadata.discovered = {}
+  for (const id of Object.keys(chunks)) {
+    addOptimizedDepInfo(metadata, 'chunks', {
+      ...chunks[id],
+      id,
+      browserHash,
+      needsInterop: false
+    })
+  }
   return metadata
 }
 
@@ -700,48 +709,33 @@ function stringifyOptimizedDepsMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
 ) {
+  const { hash, browserHash, optimized, chunks } = metadata
   return JSON.stringify(
-    metadata,
-    (key: string, value: any) => {
-      if (
-        key === 'discovered' ||
-        key === 'processing' ||
-        key === 'id' ||
-        key === 'depInfoList'
-      ) {
-        return
-      }
+    {
+      hash,
+      browserHash,
+      optimized: Object.fromEntries(
+        Object.values(optimized).map(
+          ({ id, src, file, fileHash, needsInterop }) => [
+            id,
+            {
+              src,
+              file,
+              fileHash,
+              needsInterop
+            }
+          ]
+        )
+      ),
+      chunks: Object.fromEntries(
+        Object.values(chunks).map(({ id, file }) => [id, { file }])
+      )
+    },
+    (key: string, value: string) => {
+      // Paths can be absolute or relative to the deps cache dir where
+      // the _metadata.json is located
       if (key === 'file' || key === 'src') {
         return normalizePath(path.relative(depsCacheDir, value))
-      }
-      if (key === 'optimized') {
-        // Only remove browserHash for individual dep info
-        const cleaned: Record<string, object> = {}
-        for (const dep of Object.keys(value)) {
-          const { browserHash, ...c } = value[dep]
-          cleaned[dep] = c
-        }
-        return cleaned
-      }
-      if (key === 'optimized') {
-        return Object.keys(value).reduce(
-          (cleaned: Record<string, object>, dep: string) => {
-            const { browserHash, ...c } = value[dep]
-            cleaned[dep] = c
-            return cleaned
-          },
-          {}
-        )
-      }
-      if (key === 'chunks') {
-        return Object.keys(value).reduce(
-          (cleaned: Record<string, object>, dep: string) => {
-            const { browserHash, needsInterop, src, ...c } = value[dep]
-            cleaned[dep] = c
-            return cleaned
-          },
-          {}
-        )
       }
       return value
     },
