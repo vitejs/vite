@@ -15,6 +15,7 @@ import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
+import type { RollupError } from 'rollup'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 
@@ -25,6 +26,12 @@ function getWorkerType(
   noCommentsCode: string,
   i: number
 ): WorkerType {
+  function err(e: string, pos: number) {
+    const error = new Error(e) as RollupError
+    error.pos = pos
+    throw error
+  }
+
   const commaIndex = noCommentsCode.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
@@ -55,9 +62,10 @@ function getWorkerType(
     workerOpts = JSON5.parse(workerOptsString)
   } catch (e) {
     // can't parse by JSON5, so the worker options had unexpect char.
-    throw new Error(
+    err(
       'Vite is unable to parse the worker options as the value is not static.' +
-        'To ignore this error, please use /* @vite-ignore */ in the worker options.'
+        'To ignore this error, please use /* @vite-ignore */ in the worker options.',
+      commaIndex + 1
     )
   }
 
