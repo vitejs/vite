@@ -64,7 +64,8 @@ const processNodeUrl = (
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${config.base + url.slice(1)}"`
+      `"${config.base + url.slice(1)}"`,
+      { contentOnly: true }
     )
   } else if (
     url.startsWith('.') &&
@@ -82,7 +83,8 @@ const processNodeUrl = (
       `"${path.posix.join(
         path.posix.relative(originalUrl, '/'),
         url.slice(1)
-      )}"`
+      )}"`,
+      { contentOnly: true }
     )
   }
 }
@@ -123,7 +125,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     s.overwrite(
       node.loc.start.offset,
       node.loc.end.offset,
-      `<script type="module" src="${modulePath}"></script>`
+      `<script type="module" src="${modulePath}"></script>`,
+      { contentOnly: true }
     )
   }
 

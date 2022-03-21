@@ -365,7 +365,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               resolve
             )
             str().prepend(importsString)
-            str().overwrite(expStart, endIndex, exp)
+            str().overwrite(expStart, endIndex, exp, { contentOnly: true })
             imports.forEach((url) => {
               url = url.replace(base, '/')
               importedUrls.add(url)
@@ -472,7 +472,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     str().overwrite(
                       expStart,
                       expEnd,
-                      `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
+                      `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+                      { contentOnly: true }
                     )
                   } else {
                     const exp = source.slice(expStart, expEnd)
@@ -483,17 +484,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                       index
                     )
                     if (rewritten) {
-                      str().overwrite(expStart, expEnd, rewritten)
+                      str().overwrite(expStart, expEnd, rewritten, {
+                        contentOnly: true
+                      })
                     } else {
                       // #1439 export * from '...'
-                      str().overwrite(start, end, url)
+                      str().overwrite(start, end, url, { contentOnly: true })
                     }
                   }
                   rewriteDone = true
                 }
               }
               if (!rewriteDone) {
-                str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
+                str().overwrite(
+                  start,
+                  end,
+                  isDynamicImport ? `'${url}'` : url,
+                  { contentOnly: true }
+                )
               }
             })
           }
@@ -533,7 +541,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             isExplicitImportRequired(url.slice(1, -1))
           ) {
             needQueryInjectHelper = true
-            str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+            str().overwrite(
+              start,
+              end,
+              `__vite__injectQuery(${url}, 'import')`,
+              { contentOnly: true }
+            )
           }
         }
       }
@@ -589,7 +602,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ssr
         )
         normalizedAcceptedUrls.add(normalized)
-        str().overwrite(start, end, JSON.stringify(normalized))
+        str().overwrite(start, end, JSON.stringify(normalized), {
+          contentOnly: true
+        })
       }
 
       // update the module graph for HMR analysis.
