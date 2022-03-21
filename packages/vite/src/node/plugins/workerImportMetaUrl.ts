@@ -10,7 +10,7 @@ import {
   singlelineCommentsRE
 } from '../utils'
 import path from 'path'
-import { bundleWorkerEntry, inlineWorkerLoader } from './worker'
+import { bundleWorkerEntry, inlineWorkerLoaderId } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
@@ -142,6 +142,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           .replace(singlelineCommentsRE, blankReplacer)
         let match: RegExpExecArray | null
         let s: MagicString | null = null
+        let needWorkerLoaderHelper = false
+
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const {
             0: allExp,
@@ -181,10 +183,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
             if (inline) {
               const workerOption = option.replace(/\s/g, '') || '{}'
+              needWorkerLoaderHelper = true
               // inline as blob data url
-              const inlineWorker = `(${inlineWorkerLoader.toString()})(${workerConstructor}, ${workerOption}, "${content.toString(
+              const inlineWorker = `inlineWorkerLoader(${workerConstructor}, ${workerOption}, "${content.toString(
                 'base64'
-              )}")`
+              )}")()`
               s.overwrite(index, optionEnd + 1, inlineWorker)
             } else {
               const basename = path.parse(cleanUrl(file)).name
@@ -208,6 +211,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
         }
         if (s) {
+          if (needWorkerLoaderHelper) {
+            s.prepend(
+              `import inlineWorkerLoader from "${inlineWorkerLoaderId}"\n`
+            )
+          }
           return {
             code: s.toString(),
             map: config.build.sourcemap ? s.generateMap({ hires: true }) : null

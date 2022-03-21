@@ -23,21 +23,23 @@ export function inlineWorkerLoader(
     window.Blob &&
     // @ts-ignore
     new Blob([atob(encodedJs)], { type: 'text/javascript;charset=utf-8' })
-  // @ts-ignore
-  const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob)
-  try {
-    return objURL
-      ? new workerConstructor(objURL, workerOptions)
-      : new workerConstructor(
-          'data:application/javascript;base64,' + encodedJs,
-          workerOptions
-        )
-  } finally {
-    // revokeObjectURL in nextTick
-    setTimeout(() => {
-      // @ts-ignore
-      objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL)
-    })
+  return function () {
+    // @ts-ignore
+    const objURL =
+      blob && (window.URL || window.webkitURL).createObjectURL(blob)
+    try {
+      return objURL
+        ? new workerConstructor(objURL, workerOptions)
+        : new workerConstructor(
+            'data:application/javascript;base64,' + encodedJs,
+            workerOptions
+          )
+    } finally {
+      setTimeout(() => {
+        // @ts-ignore
+        objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL)
+      })
+    }
   }
 }
 
@@ -136,9 +138,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
-          return `import inlineWorkerLoader from "${inlineWorkerLoaderId}"\nexport default function() {return inlineWorkerLoader(${workerConstructor}, ${workerOptions}, "${code.toString(
+          return `import inlineWorkerLoader from "${inlineWorkerLoaderId}"\nexport default inlineWorkerLoader(${workerConstructor}, ${workerOptions}, "${code.toString(
             'base64'
-          )}")}`
+          )}")`
         } else {
           const basename = path.parse(cleanUrl(id)).name
           const contentHash = getAssetHash(code)

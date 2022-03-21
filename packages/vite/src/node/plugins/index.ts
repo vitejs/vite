@@ -18,6 +18,7 @@ import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { metadataPlugin } from './metadata'
+import { buildHtmlPlugin } from './html'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -60,13 +61,14 @@ export async function resolvePlugins(
       isBuild
     ),
     wasmPlugin(config),
-    webWorkerPlugin(config),
-    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
+    buildHtmlPlugin(config),
+    webWorkerPlugin(config),
+    workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,

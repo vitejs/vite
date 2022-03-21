@@ -215,7 +215,8 @@ function handleParseError(
 /**
  * Compiles index.html into an entry js module
  */
-export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
+export function buildHtmlPlugin(config: ResolvedConfig): Plugin | null {
+  const isBuild = config.command === 'build'
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
@@ -225,6 +226,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     checkPublicFile(url, config)
   // Same reason with `htmlInlineProxyPlugin`
   isAsyncScriptMap.set(config, new Map())
+
+  if (!isBuild) {
+    return null
+  }
 
   return {
     name: 'vite:build-html',
