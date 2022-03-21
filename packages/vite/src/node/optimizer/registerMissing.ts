@@ -24,17 +24,17 @@ import type { ViteDevServer } from '..'
  */
 const debounceMs = 100
 
-export function createOptimizedDeps(
-  server: ViteDevServer,
-  asCommand = false
-): OptimizedDeps {
+export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
   const { config } = server
   const { logger } = config
+
+  const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
   const optimizedDeps: OptimizedDeps = {
-    metadata: cachedMetadata || createOptimizedDepsMetadata(config),
+    metadata:
+      cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
     registerMissingImport
   }
 
@@ -70,7 +70,10 @@ export function createOptimizedDeps(
 
         const { metadata } = optimizedDeps
 
-        const discovered = await discoverProjectDependencies(config)
+        const discovered = await discoverProjectDependencies(
+          config,
+          sessionTimestamp
+        )
 
         // Respect the scan phase discover order to improve reproducibility
         for (const depInfo of Object.values(discovered)) {
@@ -80,8 +83,6 @@ export function createOptimizedDeps(
           })
         }
 
-        // This is auto run on server start - let the user know that we are
-        // pre-optimizing deps
         const depsString = depsLogString(config, Object.keys(discovered))
         logger.info(colors.green(`dependencies found: ${depsString}`), {
           timestamp: true
@@ -103,7 +104,7 @@ export function createOptimizedDeps(
     setTimeout(warmUp, 0)
   }
 
-  async function runOptimizer(isRerun = false) {
+  async function runOptimizer() {
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
     currentlyProcessing = true
@@ -156,40 +157,43 @@ export function createOptimizedDeps(
       // is required. If the files are stable, we can avoid the reload that is expensive
       // for large applications. Comparing their fileHash we can find out if it is safe to
       // keep the current browser state.
-      const needsReload = Object.keys(metadata.optimized).some((dep) => {
-        return (
-          metadata.optimized[dep]?.fileHash !== newData.optimized[dep]?.fileHash
-        )
-      })
+      const needsReload =
+        metadata.hash !== newData.hash ||
+        Object.keys(metadata.optimized).some((dep) => {
+          return (
+            metadata.optimized[dep]?.fileHash !==
+            newData.optimized[dep]?.fileHash
+          )
+        })
 
       const commitProcessing = () => {
         processingResult.commit()
 
         // While optimizeDeps is running, new missing deps may be discovered,
         // in which case they will keep being added to metadata.discovered
-        for (const id of Object.keys(metadata.discovered)) {
+        for (const id in metadata.discovered) {
           if (!newData.optimized[id]) {
             addOptimizedDepInfo(newData, 'discovered', metadata.discovered[id])
           }
         }
 
-        // If we don't need to reload the page, we need to keep browserHash stable
-        if (isRerun && !needsReload) {
+        // If we don't reload the page, we need to keep browserHash stable
+        if (!needsReload) {
           newData.browserHash = metadata.browserHash
+          for (const dep in newData.chunks) {
+            newData.chunks[dep].browserHash = metadata.browserHash
+          }
           for (const dep in newData.optimized) {
             newData.optimized[dep].browserHash = (
               metadata.optimized[dep] || metadata.discovered[dep]
             ).browserHash
-          }
-          for (const dep in newData.chunks) {
-            newData.chunks[dep].browserHash = metadata.browserHash
           }
         }
 
         // Commit hash and needsInterop changes to the discovered deps info
         // object. Allow for code to await for the discovered processing promise
         // and use the information in the same object
-        for (const o of Object.keys(newData.optimized)) {
+        for (const o in newData.optimized) {
           const discovered = metadata.discovered[o]
           if (discovered) {
             const optimized = newData.optimized[o]
@@ -276,10 +280,8 @@ export function createOptimizedDeps(
     logger.info(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
-    runOptimizer(true)
+    runOptimizer()
   }
-
-  const discoveredTimestamp = Date.now()
 
   function getDiscoveredBrowserHash(
     hash: string,
@@ -287,10 +289,7 @@ export function createOptimizedDeps(
     missing: Record<string, string>
   ) {
     return getHash(
-      hash +
-        JSON.stringify(deps) +
-        JSON.stringify(missing) +
-        discoveredTimestamp
+      hash + JSON.stringify(deps) + JSON.stringify(missing) + sessionTimestamp
     )
   }
 

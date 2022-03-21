@@ -191,12 +191,13 @@ export async function optimizeDeps(
 }
 
 export function createOptimizedDepsMetadata(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  timestamp?: string
 ): DepOptimizationMetadata {
-  const mainHash = getDepHash(config)
+  const hash = getDepHash(config)
   return {
-    hash: mainHash,
-    browserHash: mainHash,
+    hash,
+    browserHash: getOptimizedBrowserHash(hash, {}, timestamp),
     optimized: {},
     chunks: {},
     discovered: {},
@@ -233,8 +234,6 @@ export function loadCachedDepOptimizationMetadata(
 
   const depsCacheDir = getDepsCacheDir(config)
 
-  const mainHash = getDepHash(config)
-
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
@@ -245,7 +244,7 @@ export function loadCachedDepOptimizationMetadata(
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (cachedMetadata && cachedMetadata.hash === mainHash) {
+    if (cachedMetadata && cachedMetadata.hash === getDepHash(config)) {
       log('Hash is consistent. Skipping. Use --force to override.')
       // Nothing to commit or cancel as we are using the cache, we only
       // need to resolve the processing promise so requests can move on
@@ -263,7 +262,8 @@ export function loadCachedDepOptimizationMetadata(
  */
 
 export async function discoverProjectDependencies(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  timestamp?: string
 ): Promise<Record<string, OptimizedDepInfo>> {
   const { deps, missing } = await scanImports(config)
 
@@ -283,7 +283,11 @@ export async function discoverProjectDependencies(
 
   await addManuallyIncludedOptimizeDeps(deps, config)
 
-  const browserHash = getOptimizedBrowserHash(getDepHash(config), deps)
+  const browserHash = getOptimizedBrowserHash(
+    getDepHash(config),
+    deps,
+    timestamp
+  )
   const discovered: Record<string, OptimizedDepInfo> = {}
   for (const id in deps) {
     const entry = deps[id]
@@ -333,8 +337,6 @@ export async function runOptimizeDeps(
   const depsCacheDir = getDepsCacheDir(config)
   const processingCacheDir = getProcessingDepsCacheDir(config)
 
-  const mainHash = getDepHash(config)
-
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
@@ -354,7 +356,7 @@ export async function runOptimizeDeps(
   const metadata = createOptimizedDepsMetadata(config)
 
   metadata.browserHash = getOptimizedBrowserHash(
-    mainHash,
+    metadata.hash,
     depsFromOptimizedDepInfo(depsInfo)
   )
 
@@ -513,6 +515,9 @@ export async function runOptimizeDeps(
     }
   }
 
+  const dataPath = path.join(processingCacheDir, '_metadata.json')
+  writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
+
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
   return {
@@ -525,10 +530,8 @@ export async function runOptimizeDeps(
   }
 
   function commitProcessingDepsCacheSync() {
-    // Rewire the file paths from the temporal processing dir to the final deps cache dir
-    const dataPath = path.join(processingCacheDir, '_metadata.json')
-    writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
+    // Rewire the file paths from the temporal processing dir to the final deps cache dir
     removeDirSync(depsCacheDir)
     fs.renameSync(processingCacheDir, depsCacheDir)
   }
@@ -593,14 +596,6 @@ export function depsFromOptimizedDepInfo(
   return Object.fromEntries(
     Object.entries(depsInfo).map((d) => [d[0], d[1].src!])
   )
-}
-
-export function getHash(text: string) {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
-}
-
-function getOptimizedBrowserHash(hash: string, deps: Record<string, string>) {
-  return getHash(hash + JSON.stringify(deps))
 }
 
 export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
@@ -777,7 +772,7 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
-function getDepHash(config: ResolvedConfig): string {
+export function getDepHash(config: ResolvedConfig): string {
   let content = lookupFile(config.root, lockfileFormats) || ''
   // also take config into account
   // only a subset of config options that can affect dep optimization
@@ -808,7 +803,19 @@ function getDepHash(config: ResolvedConfig): string {
       return value
     }
   )
-  return createHash('sha256').update(content).digest('hex').substring(0, 8)
+  return getHash(content)
+}
+
+function getOptimizedBrowserHash(
+  hash: string,
+  deps: Record<string, string>,
+  timestamp = ''
+) {
+  return getHash(hash + JSON.stringify(deps) + timestamp)
+}
+
+export function getHash(text: string) {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
 export function optimizedDepInfoFromId(
