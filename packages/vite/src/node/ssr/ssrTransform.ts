@@ -158,7 +158,8 @@ export async function ssrTransform(
         s.overwrite(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
+          { contentOnly: true }
         )
       }
     }
@@ -207,14 +208,16 @@ export async function ssrTransform(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding)
+        s.overwrite(id.start, id.end, binding, { contentOnly: true })
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
+      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+        contentOnly: true
+      })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }

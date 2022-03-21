@@ -165,7 +165,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               insertPreload
             )
           str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp)
+          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
           if (!isEager) {
             needPreloadHelper = true
           }
@@ -176,7 +176,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           needPreloadHelper = true
           const original = source.slice(expStart, expEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(expStart, expEnd, replacement)
+          str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -191,7 +191,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url)
+          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
@@ -223,7 +225,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(
               match.index,
               match.index + isModernFlag.length,
-              isModern
+              isModern,
+              { contentOnly: true }
             )
           }
           return {
@@ -303,7 +306,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                         hasRemovedPureCssChunk = true
                       }
 
-                      s.overwrite(expStart, expEnd, 'Promise.resolve({})')
+                      s.overwrite(expStart, expEnd, 'Promise.resolve({})', {
+                        contentOnly: true
+                      })
                     }
                   }
                 }
@@ -330,7 +335,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `[]`
+                    : `[]`,
+                  { contentOnly: true }
                 )
               }
             }

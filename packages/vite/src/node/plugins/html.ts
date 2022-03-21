@@ -266,7 +266,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                `"${config.base + url.slice(1)}"`
+                `"${config.base + url.slice(1)}"`,
+                { contentOnly: true }
               )
             }
 
@@ -340,7 +341,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    `"${config.base + url.slice(1)}"`
+                    `"${config.base + url.slice(1)}"`,
+                    { contentOnly: true }
                   )
                 }
               }
@@ -370,7 +372,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
+              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`,
+              { contentOnly: true }
             )
           }
 
@@ -430,7 +433,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 value.loc.start.offset,
                 value.loc.end.offset,
-                `"${url}"`
+                `"${url}"`,
+                { contentOnly: true }
               )
             } catch (e) {
               if (e.code !== 'ENOENT') {
@@ -442,9 +446,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (!isExcludedUrl(url)) {
-            s.overwrite(start, end, await urlToBuiltUrl(url, id, config, this))
+            s.overwrite(
+              start,
+              end,
+              await urlToBuiltUrl(url, id, config, this),
+              { contentOnly: true }
+            )
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, config.base + url.slice(1))
+            s.overwrite(start, end, config.base + url.slice(1), {
+              contentOnly: true
+            })
           }
         }
 
@@ -599,7 +610,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             match.index,
             match.index + full.length,
-            cssTransformedCode
+            cssTransformedCode,
+            { contentOnly: true }
           )
         }
         if (s) {

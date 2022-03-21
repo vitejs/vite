@@ -100,7 +100,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const outputFilepath = config.base + file + postfix
-        s.overwrite(match.index, match.index + full.length, outputFilepath)
+        s.overwrite(match.index, match.index + full.length, outputFilepath, {
+          contentOnly: true
+        })
       }
 
       if (s) {
