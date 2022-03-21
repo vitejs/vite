@@ -172,6 +172,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
+
         return url
       }
 
@@ -848,6 +849,8 @@ type CssUrlReplacer = (
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const cssDataUriRE =
+  /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
@@ -898,6 +901,16 @@ function rewriteCssUrls(
   })
 }
 
+function rewriteCssDataUris(
+  css: string,
+  replacer: CssUrlReplacer
+): Promise<string> {
+  return asyncReplace(css, cssDataUriRE, async (match) => {
+    const [matched, rawUrl] = match
+    return await doUrlReplace(rawUrl, matched, replacer, 'data-uri')
+  })
+}
+
 function rewriteImportCss(
   css: string,
   replacer: CssUrlReplacer
@@ -923,7 +936,8 @@ function rewriteCssImageSet(
 async function doUrlReplace(
   rawUrl: string,
   matched: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
+  funcName: string = 'url'
 ) {
   let wrap = ''
   const first = rawUrl[0]
@@ -935,7 +949,7 @@ async function doUrlReplace(
     return matched
   }
 
-  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+  return `${funcName}(${wrap}${await replacer(rawUrl)}${wrap})`
 }
 
 async function doImportCSSReplace(
@@ -1156,10 +1170,12 @@ async function rebaseUrls(
   const content = fs.readFileSync(file, 'utf-8')
   // no url()
   const hasUrls = cssUrlRE.test(content)
+  // data-uri() calls
+  const hasDataUris = cssDataUriRE.test(content)
   // no @import xxx.css
   const hasImportCss = importCssRE.test(content)
 
-  if (!hasUrls && !hasImportCss) {
+  if (!hasUrls && !hasDataUris && !hasImportCss) {
     return { file }
   }
 
@@ -1186,6 +1202,10 @@ async function rebaseUrls(
 
   if (hasUrls) {
     rebased = await rewriteCssUrls(rebased || content, rebaseFn)
+  }
+
+  if (hasDataUris) {
+    rebased = await rewriteCssDataUris(rebased || content, rebaseFn)
   }
 
   return {
