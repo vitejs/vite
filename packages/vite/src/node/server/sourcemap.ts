@@ -18,6 +18,7 @@ interface SourceMapLike {
   sourcesContent?: (string | null)[]
   sourceRoot?: string
 }
+const namespce = 'source-maps://'
 
 export async function injectSourcesContent(
   map: SourceMapLike,
@@ -56,4 +57,14 @@ export async function injectSourcesContent(
     logger.warnOnce(`Sourcemap for "${file}" points to missing source files`)
     isDebug && debug(`Missing sources:\n  ` + missingSources.join(`\n  `))
   }
+}
+export function addNamespace(map: SourceMapLike) {
+  map.sources = map.sources.map((value) => {
+    if (virtualSourceRE.test(value)) return value
+    const queryPos = value.indexOf('?')
+    return (
+      namespce +
+      path.resolve(queryPos > 0 ? value.substring(0, queryPos) : value)
+    )
+  })
 }
