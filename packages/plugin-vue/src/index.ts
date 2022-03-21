@@ -235,7 +235,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
             descriptor,
             Number(query.index),
             options,
-            this
+            this,
+            filename
           )
         }
       }

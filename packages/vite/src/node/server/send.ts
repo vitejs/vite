@@ -1,8 +1,7 @@
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'http'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
-
-const isDebug = process.env.DEBUG
+import { getCodeWithSourcemap } from './sourcemap'
 
 const alias: Record<string, string | undefined> = {
   js: 'application/javascript',
@@ -54,25 +53,12 @@ export function send(
 
   // inject source map reference
   if (map && map.mappings) {
-    if (isDebug) {
-      content += `\n/*${JSON.stringify(map, null, 2).replace(
-        /\*\//g,
-        '*\\/'
-      )}*/\n`
+    if (type === 'js' || type === 'css') {
+      content = getCodeWithSourcemap(type, content.toString(), map)
     }
-    content += genSourceMapString(map)
   }
 
   res.statusCode = 200
   res.end(content)
   return
-}
-
-function genSourceMapString(map: SourceMap | string | undefined) {
-  if (typeof map !== 'string') {
-    map = JSON.stringify(map)
-  }
-  return `\n//# sourceMappingURL=data:application/json;base64,${Buffer.from(
-    map
-  ).toString('base64')}`
 }
