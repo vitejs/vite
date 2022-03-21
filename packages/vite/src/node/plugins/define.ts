@@ -130,7 +130,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.overwrite(start, end, replacement, { contentOnly: true })
       }
 
       if (!hasReplaced) {
