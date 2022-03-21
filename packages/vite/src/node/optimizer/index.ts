@@ -24,6 +24,9 @@ import { performance } from 'perf_hooks'
 const debug = createDebugger('vite:deps')
 const isDebugEnabled = _debug('vite:deps').enabled
 
+const jsExtensionRE = /\.js$/i
+const jsMapExtensionRE = /\.js\.map$/i
+
 export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
@@ -101,11 +104,18 @@ export interface DepOptimizationResult {
    * for large applications
    */
   alteredFiles: boolean
+  /**
+   * When doing a re-run, if there are newly discovered dependendencies
+   * the page reload will be delayed until the next rerun so the
+   * result will be discarded
+   */
+  commit: () => void
+  cancel: () => void
 }
 
 export interface DepOptimizationProcessing {
-  promise: Promise<DepOptimizationResult | undefined>
-  resolve: (result?: DepOptimizationResult) => void
+  promise: Promise<void>
+  resolve: () => void
 }
 
 export interface OptimizedDepInfo {
@@ -118,7 +128,7 @@ export interface OptimizedDepInfo {
    * During optimization, ids can still be resolved to their final location
    * but the bundles may not yet be saved to disk
    */
-  processing: Promise<DepOptimizationResult | undefined>
+  processing?: Promise<void>
 }
 
 export interface DepOptimizationMetadata {
@@ -138,14 +148,13 @@ export interface DepOptimizationMetadata {
    */
   optimized: Record<string, OptimizedDepInfo>
   /**
+   * Metadata for non-entry optimized chunks and dynamic imports
+   */
+  chunks: Record<string, OptimizedDepInfo>
+  /**
    * Metadata for each newly discovered dependency after processing
    */
   discovered: Record<string, OptimizedDepInfo>
-  /**
-   * During optimization, ids can still be resolved to their final location
-   * but the bundles may not yet be saved to disk
-   */
-  processing: Promise<DepOptimizationResult | undefined>
 }
 
 /**
@@ -166,7 +175,8 @@ export async function optimizeDeps(
     newDeps,
     ssr
   )
-  await run()
+  const result = await run()
+  result.commit()
   return metadata
 }
 
@@ -183,7 +193,7 @@ export async function createOptimizeDepsRun(
   ssr?: boolean
 ): Promise<{
   metadata: DepOptimizationMetadata
-  run: () => Promise<DepOptimizationResult | undefined>
+  run: () => Promise<DepOptimizationResult>
 }> {
   config = {
     ...config,
@@ -210,8 +220,8 @@ export async function createOptimizeDepsRun(
     hash: mainHash,
     browserHash: mainHash,
     optimized: {},
-    discovered: {},
-    processing: processing.promise
+    chunks: {},
+    discovered: {}
   }
 
   if (!force) {
@@ -220,16 +230,26 @@ export async function createOptimizeDepsRun(
       const prevDataPath = path.join(depsCacheDir, '_metadata.json')
       prevData = parseOptimizedDepsMetadata(
         fs.readFileSync(prevDataPath, 'utf-8'),
-        depsCacheDir,
-        processing.promise
+        depsCacheDir
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
     if (prevData && prevData.hash === metadata.hash) {
       log('Hash is consistent. Skipping. Use --force to override.')
+      // Nothing to commit or cancel as we are using the cache, we only
+      // need to resolve the processing promise so requests can move on
+      const resolve = () => {
+        processing.resolve()
+      }
       return {
         metadata: prevData,
-        run: () => (processing.resolve(), processing.promise)
+        run: async () => {
+          return {
+            alteredFiles: false,
+            commit: resolve,
+            cancel: resolve
+          }
+        }
       }
     }
   }
@@ -315,19 +335,24 @@ export async function createOptimizeDepsRun(
 
   return { metadata, run: prebundleDeps }
 
-  async function prebundleDeps(): Promise<DepOptimizationResult | undefined> {
+  async function prebundleDeps(): Promise<DepOptimizationResult> {
     // We prebundle dependencies with esbuild and cache them, but there is no need
     // to wait here. Code that needs to access the cached deps needs to await
-    // the optimizeDepsMetadata.processing promise
+    // the optimizeDepInfo.processing promise for each dep
 
     const qualifiedIds = Object.keys(deps)
 
     if (!qualifiedIds.length) {
-      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-      commitProcessingDepsCacheSync()
-      log(`No dependencies to bundle. Skipping.\n\n\n`)
-      processing.resolve()
-      return
+      return {
+        alteredFiles: false,
+        commit() {
+          // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
+          commitProcessingDepsCacheSync()
+          log(`No dependencies to bundle. Skipping.\n\n\n`)
+          processing.resolve()
+        },
+        cancel
+      }
     }
 
     let depsString: string
@@ -472,7 +497,9 @@ export async function createOptimizeDepsRun(
         processingCacheDirOutputPath
       )
       const output =
-        meta.outputs[path.relative(process.cwd(), optimizedInfo.file)]
+        meta.outputs[
+          path.relative(process.cwd(), getProcessingDepPath(id, config))
+        ]
       if (output) {
         // We only need to hash the output.imports in to check for stability, but adding the hash
         // and file path gives us a unique hash that may be useful for other things in the future
@@ -500,22 +527,48 @@ export async function createOptimizeDepsRun(
       debug(`optimized deps have altered files: ${alteredFiles}`)
     }
 
-    if (alteredFiles) {
-      // Overrite individual hashes with the new global browserHash, a full page reload is required
-      // New deps that ended up with a different hash replaced while doing analysis import are going to
-      // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
-      for (const id in deps) {
-        metadata.optimized[id].browserHash = newBrowserHash
+    for (const o of Object.keys(meta.outputs)) {
+      if (!o.match(jsMapExtensionRE)) {
+        const id = path
+          .relative(processingCacheDirOutputPath, o)
+          .replace(jsExtensionRE, '')
+        const file = getOptimizedDepPath(id, config)
+        if (!findFileInfo(metadata.optimized, file)) {
+          metadata.chunks[id] = {
+            file,
+            src: '',
+            needsInterop: false,
+            browserHash:
+              (!alteredFiles && currentData?.chunks[id]?.browserHash) ||
+              newBrowserHash
+          }
+        }
       }
+    }
+
+    if (alteredFiles) {
       metadata.browserHash = newBrowserHash
     }
 
-    // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
-    commitProcessingDepsCacheSync()
-
     debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
-    processing.resolve({ alteredFiles })
-    return processing.promise
+
+    return {
+      alteredFiles,
+      commit() {
+        if (alteredFiles) {
+          // Overwrite individual hashes with the new global browserHash, a full page reload is required
+          // New deps that ended up with a different hash replaced while doing analysis import are going to
+          // return a not found so the browser doesn't cache them. And will properly get loaded after the reload
+          for (const id in deps) {
+            metadata.optimized[id].browserHash = newBrowserHash
+          }
+        }
+        // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
+        commitProcessingDepsCacheSync()
+        processing.resolve()
+      },
+      cancel
+    }
   }
 
   function commitProcessingDepsCacheSync() {
@@ -523,11 +576,20 @@ export async function createOptimizeDepsRun(
     const dataPath = path.join(processingCacheDir, '_metadata.json')
     writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-    if (fs.existsSync(depsCacheDir)) {
-      const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-      rmSync(depsCacheDir, { recursive: true })
-    }
+    removeDirSync(depsCacheDir)
     fs.renameSync(processingCacheDir, depsCacheDir)
+  }
+
+  function cancel() {
+    removeDirSync(processingCacheDir)
+    processing.resolve()
+  }
+}
+
+function removeDirSync(dir: string) {
+  if (fs.existsSync(dir)) {
+    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+    rmSync(dir, { recursive: true })
   }
 }
 
@@ -565,10 +627,10 @@ async function addManuallyIncludedOptimizeDeps(
 }
 
 export function newDepOptimizationProcessing(): DepOptimizationProcessing {
-  let resolve: (result?: DepOptimizationResult) => void
+  let resolve: () => void
   const promise = new Promise((_resolve) => {
     resolve = _resolve
-  }) as Promise<DepOptimizationResult | undefined>
+  }) as Promise<void>
   return { promise, resolve: resolve! }
 }
 
@@ -581,19 +643,12 @@ export function depsFromOptimizedDepInfo(
   )
 }
 
-function getHash(text: string) {
+export function getHash(text: string) {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
-export function getOptimizedBrowserHash(
-  hash: string,
-  deps: Record<string, string>,
-  missing?: Record<string, string>
-) {
-  // update browser hash
-  return getHash(
-    hash + JSON.stringify(deps) + (missing ? JSON.stringify(missing) : '')
-  )
+function getOptimizedBrowserHash(hash: string, deps: Record<string, string>) {
+  return getHash(hash + JSON.stringify(deps))
 }
 
 function getCachedDepFilePath(id: string, depsCacheDir: string) {
@@ -608,7 +663,15 @@ export function getDepsCacheDir(config: ResolvedConfig) {
   return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
-export function getProcessingDepsCacheDir(config: ResolvedConfig) {
+function getProcessingDepFilePath(id: string, processingCacheDir: string) {
+  return normalizePath(path.resolve(processingCacheDir, flattenId(id) + '.js'))
+}
+
+function getProcessingDepPath(id: string, config: ResolvedConfig) {
+  return getProcessingDepFilePath(id, getProcessingDepsCacheDir(config))
+}
+
+function getProcessingDepsCacheDir(config: ResolvedConfig) {
   return normalizePath(path.resolve(config.cacheDir, 'processing'))
 }
 
@@ -637,8 +700,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
 
 function parseOptimizedDepsMetadata(
   jsonMetadata: string,
-  depsCacheDir: string,
-  processing: Promise<DepOptimizationResult | undefined>
+  depsCacheDir: string
 ) {
   const metadata = JSON.parse(jsonMetadata, (key: string, value: string) => {
     // Paths can be absolute or relative to the deps cache dir where
@@ -648,12 +710,27 @@ function parseOptimizedDepsMetadata(
     }
     return value
   })
+  const { browserHash } = metadata
   for (const o of Object.keys(metadata.optimized)) {
-    metadata.optimized[o].processing = processing
+    const depInfo = metadata.optimized[o]
+    depInfo.browserHash = browserHash
   }
-  return { ...metadata, discovered: {}, processing }
+  metadata.chunks ||= {} // Support missing chunks for back compat
+  for (const o of Object.keys(metadata.chunks)) {
+    const depInfo = metadata.chunks[o]
+    depInfo.src = ''
+    depInfo.browserHash = browserHash
+  }
+  metadata.discovered = {}
+  return metadata
 }
 
+/**
+ * Stringify metadata for deps cache. Remove processing promises
+ * and individual dep info browserHash. Once the cache is reload
+ * the next time the server start we need to use the global
+ * browserHash to allow long term caching
+ */
 function stringifyOptimizedDepsMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
@@ -661,11 +738,40 @@ function stringifyOptimizedDepsMetadata(
   return JSON.stringify(
     metadata,
     (key: string, value: any) => {
-      if (key === 'processing' || key === 'discovered') {
+      if (key === 'discovered' || key === 'processing') {
         return
       }
       if (key === 'file' || key === 'src') {
         return normalizePath(path.relative(depsCacheDir, value))
+      }
+      if (key === 'optimized') {
+        // Only remove browserHash for individual dep info
+        const cleaned: Record<string, object> = {}
+        for (const dep of Object.keys(value)) {
+          const { browserHash, ...c } = value[dep]
+          cleaned[dep] = c
+        }
+        return cleaned
+      }
+      if (key === 'optimized') {
+        return Object.keys(value).reduce(
+          (cleaned: Record<string, object>, dep: string) => {
+            const { browserHash, ...c } = value[dep]
+            cleaned[dep] = c
+            return cleaned
+          },
+          {}
+        )
+      }
+      if (key === 'chunks') {
+        return Object.keys(value).reduce(
+          (cleaned: Record<string, object>, dep: string) => {
+            const { browserHash, needsInterop, src, ...c } = value[dep]
+            cleaned[dep] = c
+            return cleaned
+          },
+          {}
+        )
       }
       return value
     },
@@ -763,7 +869,8 @@ export function optimizeDepInfoFromFile(
 ): OptimizedDepInfo | undefined {
   return (
     findFileInfo(metadata.optimized, file) ||
-    findFileInfo(metadata.discovered, file)
+    findFileInfo(metadata.discovered, file) ||
+    findFileInfo(metadata.chunks, file)
   )
 }
 

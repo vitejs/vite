@@ -302,9 +302,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin | null {
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
             } else if (url && !isPublicFile) {
-              config.logger.warn(
-                `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
-              )
+              if (!isExcludedUrl(url)) {
+                config.logger.warn(
+                  `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
+                )
+              }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
               const code = scriptNode.content

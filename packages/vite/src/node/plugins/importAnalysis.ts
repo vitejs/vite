@@ -37,6 +37,7 @@ import {
   VALID_ID_PREFIX,
   NULL_BYTE_PLACEHOLDER
 } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
 import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
@@ -48,7 +49,6 @@ import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
 import {
   isOptimizedDepFile,
-  createIsOptimizedDepUrl,
   getDepsCacheDir,
   optimizedDepNeedsInterop
 } from '../optimizer'
@@ -113,14 +113,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     extensions: []
   })
   let server: ViteDevServer
-  let isOptimizedDepUrl: (url: string) => boolean
 
   return {
     name: 'vite:import-analysis',
 
     configureServer(_server) {
       server = _server
-      isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
     },
 
     async transform(source, importer, options) {
@@ -236,7 +234,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
         // normalize all imports into resolved URLs
-        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js`
+        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
         if (resolved.id.startsWith(root + '/')) {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
@@ -275,8 +273,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // query can break 3rd party plugin's extension checks.
           if (
             (isRelative || isSelfImport) &&
-            !(isOptimizedDepUrl(url) && optimizedDepChunkRE.test(url)) &&
-            !/[\?&]import=?\b/.test(url)
+            !/[\?&]import=?\b/.test(url) &&
+            !url.match(DEP_VERSION_RE)
           ) {
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
@@ -305,6 +303,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         return [url, resolved.id]
       }
+
+      // Import rewrites, we do them after all the URLs have been resolved
+      // to help with the discovery of new dependencies. If we need to wait
+      // for each dependency there could be one reload per import
+      const importRewrites: (() => Promise<void>)[] = []
 
       for (let index = 0; index < imports.length; index++) {
         const {
@@ -382,7 +385,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        const isDynamicImport = dynamicIndex >= 0
+        const isDynamicImport = dynamicIndex > -1
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
@@ -432,61 +435,67 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // record as safe modules
           server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
 
-          // rewrite
           if (url !== specifier) {
-            let rewriteDone = false
-            if (
-              isOptimizedDepFile(resolvedId, config) &&
-              !resolvedId.match(optimizedDepChunkRE)
-            ) {
-              // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
-              // internal optimized chunks don't need es interop and are excluded
+            importRewrites.push(async () => {
+              let rewriteDone = false
+              if (
+                isOptimizedDepFile(resolvedId, config) &&
+                !resolvedId.match(optimizedDepChunkRE)
+              ) {
+                // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
+                // internal optimized chunks don't need es interop and are excluded
 
-              // The browserHash in resolvedId could be stale in which case there will be a full
-              // page reload. We could return a 404 in that case but it is safe to return the request
-              const file = cleanUrl(resolvedId) // Remove ?v={hash}
+                // The browserHash in resolvedId could be stale in which case there will be a full
+                // page reload. We could return a 404 in that case but it is safe to return the request
+                const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
-              const needsInterop = await optimizedDepNeedsInterop(
-                server._optimizeDepsMetadata!,
-                file
-              )
+                const needsInterop = await optimizedDepNeedsInterop(
+                  server._optimizeDepsMetadata!,
+                  file
+                )
 
-              if (needsInterop === undefined) {
-                // Non-entry dynamic imports from dependencies will reach here as there isn't
-                // optimize info for them, but they don't need es interop. If the request isn't
-                // a dynamic import, then it is an internal Vite error
-                if (!file.match(optimizedDepDynamicRE)) {
-                  config.logger.error(
-                    colors.red(
-                      `Vite Error, ${url} optimized info should be defined`
+                if (needsInterop === undefined) {
+                  // Non-entry dynamic imports from dependencies will reach here as there isn't
+                  // optimize info for them, but they don't need es interop. If the request isn't
+                  // a dynamic import, then it is an internal Vite error
+                  if (!file.match(optimizedDepDynamicRE)) {
+                    config.logger.error(
+                      colors.red(
+                        `Vite Error, ${url} optimized info should be defined`
+                      )
                     )
-                  )
-                }
-              } else if (needsInterop) {
-                debug(`${url} needs interop`)
-                if (isDynamicImport) {
-                  // rewrite `import('package')` to expose the default directly
-                  str().overwrite(
-                    dynamicIndex,
-                    end + 1,
-                    `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
-                  )
-                } else {
-                  const exp = source.slice(expStart, expEnd)
-                  const rewritten = transformCjsImport(exp, url, rawUrl, index)
-                  if (rewritten) {
-                    str().overwrite(expStart, expEnd, rewritten)
-                  } else {
-                    // #1439 export * from '...'
-                    str().overwrite(start, end, url)
                   }
+                } else if (needsInterop) {
+                  debug(`${url} needs interop`)
+                  if (isDynamicImport) {
+                    // rewrite `import('package')` to expose the default directly
+                    str().overwrite(
+                      expStart,
+                      expEnd,
+                      `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
+                    )
+                  } else {
+                    const exp = source.slice(expStart, expEnd)
+                    const rewritten = transformCjsImport(
+                      exp,
+                      url,
+                      rawUrl,
+                      index
+                    )
+                    if (rewritten) {
+                      str().overwrite(expStart, expEnd, rewritten)
+                    } else {
+                      // #1439 export * from '...'
+                      str().overwrite(start, end, url)
+                    }
+                  }
+                  rewriteDone = true
                 }
-                rewriteDone = true
               }
-            }
-            if (!rewriteDone) {
-              str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
-            }
+              if (!rewriteDone) {
+                str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
+              }
+            })
           }
 
           // record for HMR import chain analysis
@@ -630,8 +639,23 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          transformRequest(url, server, { ssr })
+          transformRequest(url, server, { ssr }).catch((e) => {
+            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+              // This are expected errors
+              return
+            }
+            // Unexpected error, log the issue but avoid an unhandled exception
+            config.logger.error(e.message)
+          })
         })
+      }
+
+      // Await for import rewrites that requires dependencies to be pre-bundled to
+      // know if es interop is needed after starting further transformRequest calls
+      // This will let Vite process deeper into the user code and find more missing
+      // dependencies before the next page reload
+      for (const rewrite of importRewrites) {
+        await rewrite()
       }
 
       if (s) {
