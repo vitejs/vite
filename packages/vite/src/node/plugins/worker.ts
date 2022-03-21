@@ -24,8 +24,8 @@ export function inlineWorkerLoader(
     // @ts-ignore
     new Blob([atob(encodedJs)], { type: 'text/javascript;charset=utf-8' })
   return function () {
-    // @ts-ignore
     const objURL =
+      // @ts-ignore
       blob && (window.URL || window.webkitURL).createObjectURL(blob)
     try {
       return objURL

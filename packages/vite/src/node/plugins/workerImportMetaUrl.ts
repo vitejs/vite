@@ -178,10 +178,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
+            const { format } = config.worker
             const content = await bundleWorkerEntry(this, config, file)
             const inline = code.length < inlineLimit
 
-            if (inline) {
+            if (inline && workerType === 'module' && format === 'es') {
               const workerOption = option.replace(/\s/g, '') || '{}'
               needWorkerLoaderHelper = true
               // inline as blob data url
