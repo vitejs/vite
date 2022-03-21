@@ -10,7 +10,9 @@ To develop and test the core `vite` package:
 
 1. Run `pnpm i` in Vite's root folder
 
-2. Go to `packages/vite` and run `pnpm run dev` to build Vite. This starts `rollup` in watch mode.
+2. Run `pnpm run build` in Vite's root folder.
+
+3. If you are developing Vite itself, you can go to `packages/vite` and run `pnpm run dev` to automatically rebuild Vite whenever you change its code.
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
