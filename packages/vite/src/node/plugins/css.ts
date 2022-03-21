@@ -11,17 +11,19 @@ import {
   isObject,
   normalizePath,
   processSrcSet,
-  parseRequest
+  parseRequest,
+  combineSourcemaps
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import type {
+  ExistingRawSourceMap,
   NormalizedOutputOptions,
   OutputChunk,
   RenderedChunk,
   RollupError,
-  SourceMap
+  SourceMapInput
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
@@ -44,6 +46,8 @@ import type { Alias } from 'types/alias'
 import type { ModuleNode } from '../server/moduleGraph'
 import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
+import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
+import type { RawSourceMap } from '@ampproject/remapping'
 
 // const debug = createDebugger('vite:css')
 
@@ -178,7 +182,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const {
         code: css,
         modules,
-        deps
+        deps,
+        map
       } = await compileCSS(
         id,
         raw,
@@ -245,8 +250,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: css,
-        // TODO CSS source map
-        map: { mappings: '' }
+        map
       }
     }
   }
@@ -296,12 +300,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (inlined) {
             return `export default ${JSON.stringify(css)}`
           }
+
+          const sourcemap = this.getCombinedSourcemap()
+          await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
+          const cssContent = getCodeWithSourcemap('css', css, sourcemap)
+
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = ${JSON.stringify(css)}`,
+            `const __vite__css = ${JSON.stringify(cssContent)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
             `${
@@ -590,7 +599,7 @@ async function compileCSS(
   server?: ViteDevServer
 ): Promise<{
   code: string
-  map?: SourceMap
+  map?: SourceMapInput
   ast?: Postcss.Result
   modules?: Record<string, string>
   deps?: Set<string>
@@ -612,10 +621,10 @@ async function compileCSS(
     !needInlineImport &&
     !hasUrl
   ) {
-    return { code }
+    return { code, map: null }
   }
 
-  let map: SourceMap | undefined
+  let preprocessorMap: ExistingRawSourceMap | undefined
   let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
@@ -657,7 +666,12 @@ async function compileCSS(
     }
 
     code = preprocessResult.code
-    map = preprocessResult.map as SourceMap
+    preprocessorMap = combineSourcemapsIfExists(
+      opts.filename,
+      preprocessResult.map,
+      preprocessResult.additionalMap
+    )
+
     if (preprocessResult.deps) {
       preprocessResult.deps.forEach((dep) => {
         // sometimes sass registers the file itself as a dep
@@ -733,7 +747,7 @@ async function compileCSS(
   if (!postcssPlugins.length) {
     return {
       code,
-      map
+      map: preprocessorMap
     }
   }
 
@@ -742,12 +756,14 @@ async function compileCSS(
     .default(postcssPlugins)
     .process(code, {
       ...postcssOptions,
-      to: id,
-      from: id,
+      to: cleanUrl(id),
+      from: cleanUrl(id),
       map: {
         inline: false,
         annotation: false,
-        prev: map
+        sourcesContent: false
+        // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+        // prev: preprocessorMap,
       }
     })
 
@@ -791,13 +807,59 @@ async function compileCSS(
     }
   }
 
+  const rawPostcssMap = postcssResult.map.toJSON()
+
+  const postcssMap = formatPostcssSourceMap(
+    // version property of rawPostcssMap is declared as string
+    // but actually it is a number
+    rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
+    cleanUrl(id)
+  )
+
   return {
     ast: postcssResult,
     code: postcssResult.css,
-    map: postcssResult.map as any,
+    map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
     modules,
     deps
   }
+}
+
+export function formatPostcssSourceMap(
+  rawMap: ExistingRawSourceMap,
+  file: string
+): ExistingRawSourceMap {
+  const inputFileDir = path.dirname(file)
+  const sources = rawMap.sources
+    // remove <no source> from sources, to prevent source map to be combined incorrectly
+    .filter((source) => source !== '<no source>')
+    .map((source) => {
+      const cleanSource = cleanUrl(decodeURIComponent(source))
+      return normalizePath(path.resolve(inputFileDir, cleanSource))
+    })
+
+  return {
+    file,
+    mappings: rawMap.mappings,
+    names: rawMap.names,
+    sources,
+    version: rawMap.version
+  }
+}
+
+function combineSourcemapsIfExists(
+  filename: string,
+  map1: ExistingRawSourceMap | undefined,
+  map2: ExistingRawSourceMap | undefined
+): ExistingRawSourceMap | undefined {
+  return map1 && map2
+    ? (combineSourcemaps(filename, [
+        // type of version property of ExistingRawSourceMap is number
+        // but it is always 3
+        map1 as RawSourceMap,
+        map2 as RawSourceMap
+      ]) as ExistingRawSourceMap)
+    : map1
 }
 
 interface PostCSSConfigResult {
@@ -998,9 +1060,18 @@ AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
+type PreprocessorAdditionalDataResult =
+  | string
+  | { content: string; map?: ExistingRawSourceMap }
+
 type PreprocessorAdditionalData =
   | string
-  | ((source: string, filename: string) => string | Promise<string>)
+  | ((
+      source: string,
+      filename: string
+    ) =>
+      | PreprocessorAdditionalDataResult
+      | Promise<PreprocessorAdditionalDataResult>)
 
 type StylePreprocessorOptions = {
   [key: string]: any
@@ -1027,7 +1098,8 @@ type SassStylePreprocessor = (
 
 export interface StylePreprocessorResults {
   code: string
-  map?: object
+  map?: ExistingRawSourceMap | undefined
+  additionalMap?: ExistingRawSourceMap | undefined
   errors: RollupError[]
   deps: string[]
 }
@@ -1092,12 +1164,20 @@ const scss: SassStylePreprocessor = async (
       : importer.push(options.importer)
   }
 
+  const { content: data, map: additionalMap } = await getSource(
+    source,
+    options.filename,
+    options.additionalData
+  )
   const finalOptions: Sass.Options = {
     ...options,
-    data: await getSource(source, options.filename, options.additionalData),
+    data,
     file: options.filename,
     outFile: options.filename,
-    importer
+    importer,
+    sourceMap: true,
+    omitSourceMapUrl: true,
+    sourceMapRoot: path.dirname(options.filename)
   }
 
   try {
@@ -1111,9 +1191,14 @@ const scss: SassStylePreprocessor = async (
       })
     })
     const deps = result.stats.includedFiles
+    const map: ExistingRawSourceMap | undefined = result.map
+      ? JSON.parse(result.map.toString())
+      : undefined
 
     return {
       code: result.css.toString(),
+      map,
+      additionalMap,
       errors: [],
       deps
     }
@@ -1203,13 +1288,21 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     options.alias,
     resolvers
   )
-  source = await getSource(source, options.filename, options.additionalData)
+  const { content, map: additionalMap } = await getSource(
+    source,
+    options.filename,
+    options.additionalData
+  )
 
   let result: Less.RenderOutput | undefined
   try {
-    result = await nodeLess.render(source, {
+    result = await nodeLess.render(content, {
       ...options,
-      plugins: [viteResolverPlugin, ...(options.plugins || [])]
+      plugins: [viteResolverPlugin, ...(options.plugins || [])],
+      sourceMap: {
+        outputSourceFiles: true,
+        sourceMapFileInline: false
+      }
     })
   } catch (e) {
     const error = e as Less.RenderError
@@ -1222,8 +1315,14 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     }
     return { code: '', errors: [normalizedError], deps: [] }
   }
+
+  const map: ExistingRawSourceMap = JSON.parse(result.map)
+  delete map.sourcesContent
+
   return {
     code: result.css.toString(),
+    map,
+    additionalMap,
     deps: result.imports,
     errors: []
   }
@@ -1305,7 +1404,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
   const nodeStylus = loadPreprocessor(PreprocessLang.stylus, root)
   // Get source with preprocessor options.additionalData. Make sure a new line separator
   // is added to avoid any render error, as added stylus content may not have semi-colon separators
-  source = await getSource(
+  const { content, map: additionalMap } = await getSource(
     source,
     options.filename,
     options.additionalData,
@@ -1317,32 +1416,77 @@ const styl: StylePreprocessor = async (source, root, options) => {
     path.resolve(dep)
   )
   try {
-    const ref = nodeStylus(source, options)
-
-    // if (map) ref.set('sourcemap', { inline: false, comment: false })
+    const ref = nodeStylus(content, options)
+    ref.set('sourcemap', {
+      comment: false,
+      inline: false,
+      basePath: root
+    })
 
     const result = ref.render()
 
     // Concat imports deps with computed deps
     const deps = [...ref.deps(), ...importsDeps]
 
-    return { code: result, errors: [], deps }
+    // @ts-expect-error sourcemap exists
+    const map: ExistingRawSourceMap = ref.sourcemap
+
+    return {
+      code: result,
+      map: formatStylusSourceMap(map, root),
+      additionalMap,
+      errors: [],
+      deps
+    }
   } catch (e) {
     return { code: '', errors: [e], deps: [] }
   }
 }
 
-function getSource(
+function formatStylusSourceMap(
+  mapBefore: ExistingRawSourceMap,
+  root: string
+): ExistingRawSourceMap {
+  const map = { ...mapBefore }
+
+  const resolveFromRoot = (p: string) => normalizePath(path.resolve(root, p))
+
+  if (map.file) {
+    map.file = resolveFromRoot(map.file)
+  }
+  map.sources = map.sources.map(resolveFromRoot)
+
+  return map
+}
+
+async function getSource(
   source: string,
   filename: string,
   additionalData?: PreprocessorAdditionalData,
   sep: string = ''
-): string | Promise<string> {
-  if (!additionalData) return source
+): Promise<{ content: string; map?: ExistingRawSourceMap }> {
+  if (!additionalData) return { content: source }
+
   if (typeof additionalData === 'function') {
-    return additionalData(source, filename)
+    const newContent = await additionalData(source, filename)
+    if (typeof newContent === 'string') {
+      return { content: newContent }
+    }
+    return newContent
   }
-  return additionalData + sep + source
+
+  const ms = new MagicString(source)
+  ms.appendLeft(0, sep)
+  ms.appendLeft(0, additionalData)
+
+  const map = ms.generateMap({ hires: true })
+  map.file = filename
+  map.sources = [filename]
+
+  return {
+    content: ms.toString(),
+    map
+  }
 }
 
 const preProcessors = Object.freeze({

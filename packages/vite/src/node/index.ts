@@ -5,6 +5,7 @@ export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
 export { createLogger, printHttpServerUrls } from './logger'
+export { formatPostcssSourceMap } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export {
