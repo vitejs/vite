@@ -1,3 +1,12 @@
+## 2.3.0-beta.0 (2022-03-22)
+
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* feat: css sourcemap support during dev (#7173) ([38a655f](https://github.com/vitejs/vite/commit/38a655f)), closes [#7173](https://github.com/vitejs/vite/issues/7173)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+* docs(vue): add transformAssetUrls example (#7232) ([08e928c](https://github.com/vitejs/vite/commit/08e928c)), closes [#7232](https://github.com/vitejs/vite/issues/7232)
+
+
+
 ## [2.2.4](https://github.com/vitejs/vite/compare/plugin-vue@2.2.3...plugin-vue@2.2.4) (2022-02-28)
 
 
