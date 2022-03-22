@@ -29,9 +29,8 @@ export function createWebSocketServer(
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const hmrServer = hmr && hmr.server
-  const hmrPort = hmr && hmr.port
-  const portsNotEqual = config.server.port && hmrPort !== config.server.port
-  const wsServer = hmrServer || ((!hmrPort || portsNotEqual) && server)
+  const hmrPort = (hmr && hmr.port) || 24678
+  const wsServer = hmrServer || (hmrPort !== config.server.port && server)
 
   if (wsServer) {
     wss = new WebSocket({ noServer: true })
@@ -44,7 +43,6 @@ export function createWebSocketServer(
     })
   } else {
     const websocketServerOptions: ServerOptions = {}
-    const port = hmrPort || 24678
     const host = (hmr && hmr.host) || undefined
     if (httpsOptions) {
       // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
@@ -64,11 +62,11 @@ export function createWebSocketServer(
         res.end(body)
       })
 
-      httpsServer.listen(port, host)
+      httpsServer.listen(hmrPort, host)
       websocketServerOptions.server = httpsServer
     } else {
       // we don't need to serve over https, just let ws handle its own server
-      websocketServerOptions.port = port
+      websocketServerOptions.port = hmrPort
       if (host) {
         websocketServerOptions.host = host
       }
