@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx#readme",
   "dependencies": {
-    "@babel/core": "^7.17.7",
+    "@babel/core": "^7.17.8",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-typescript": "^7.16.8",
     "@rollup/pluginutils": "^4.2.0",
