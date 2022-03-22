@@ -51,7 +51,7 @@ export interface Options {
 }
 ```
 
-## Example for passing options to `@vue/compiler-dom`:
+## Example for passing options to `vue/compiler-sfc`:
 
 ```ts
 import vue from '@vitejs/plugin-vue'
@@ -62,6 +62,16 @@ export default {
       template: {
         compilerOptions: {
           // ...
+        },
+        transformAssetUrls: {
+          // default tags
+          tags: {
+            video: ['src', 'poster'],
+            source: ['src'],
+            img: ['src'],
+            image: ['xlink:href', 'href'],
+            use: ['xlink:href', 'href']
+          }
         }
       }
     })

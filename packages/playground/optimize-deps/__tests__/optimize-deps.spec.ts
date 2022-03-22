@@ -66,6 +66,12 @@ test('import from dep with .notjs files', async () => {
   expect(await page.textContent('.not-js')).toMatch(`[success]`)
 })
 
+test('dep with dynamic import', async () => {
+  expect(await page.textContent('.dep-with-dynamic-import')).toMatch(
+    `[success]`
+  )
+})
+
 test('dep with css import', async () => {
   expect(await getColor('h1')).toBe('red')
 })
@@ -94,4 +100,8 @@ test('import optimize-excluded package that imports optimized-included package',
 
 test('import aliased package with colon', async () => {
   expect(await page.textContent('.url')).toBe('vitejs.dev')
+})
+
+test('variable names are reused in different scripts', async () => {
+  expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })

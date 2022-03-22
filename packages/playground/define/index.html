@@ -9,9 +9,8 @@
 <p>process as property: <code class="process-as-property"></code></p>
 <p>spread object: <code class="spread-object"></code></p>
 <p>spread array: <code class="spread-array"></code></p>
-<p>import file: <code class="import-file"></code></p>
-<p>export file: <code class="export-file"></code></p>
-<p>path: <code class="path"></code></p>
+<p>define variable in html: <code class="exp-define">__EXP__</code></p>
+<p>import json: <code class="import-json"></code></p>
 
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
@@ -29,9 +28,9 @@
     })
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
-  text('.import-file', `import * from "__IMPORT_FILE_NAME__"`)
-  text('.export-file', `export * from "__EXPORT_FILE_NAME__"`)
-  text('.path', `import * from "xxxx/PATH"`)
+
+  import dataJson from './data.json'
+  text('.import-json', dataJson.foo)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

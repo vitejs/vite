@@ -27,13 +27,16 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
-Note that Vite will replace `__filename`, `__dirname`, and `import.meta.url`. Using these as variable names will result in an error:
+::: tip NOTE
+Vite will replace `__filename`, `__dirname`, and `import.meta.url` in **CommonJS** and **TypeScript** config files. Using these as variable names will result in an error:
 
 ```js
 const __filename = "value"
 // will be transformed to
 const "path/vite.config.js" = "value"
 ```
+
+:::
 
 ### Config Intellisense
 
@@ -96,6 +99,22 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
+### Environment Variables
+
+Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+
+```js
+import { defineConfig, loadEnv } from 'vite'
+
+export default defineConfig(({ command, mode }) => {
+  // Load env file based on `mode` in the current working directory
+  const env = loadEnv(mode, process.cwd())
+  return {
+    // build specific config
+  }
+})
+```
+
 ## Shared Options
 
 ### root
@@ -139,9 +158,11 @@ export default defineConfig(async ({ command, mode }) => {
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
+  ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+  :::
 
   ::: tip NOTE
   For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -223,6 +244,10 @@ export default defineConfig(async ({ command, mode }) => {
 
   Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
 
+  :::warning Resolving subpath exports
+  Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
+  :::
+
 ### resolve.mainFields
 
 - **Type:** `string[]`
@@ -277,7 +302,7 @@ export default defineConfig(async ({ command, mode }) => {
 
 - **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
 
-  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom path to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config).
+  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom directory to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
 
   Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
@@ -285,7 +310,7 @@ export default defineConfig(async ({ command, mode }) => {
 
 - **Type:** `Record<string, object>`
 
-  Specify options to pass to CSS pre-processors. Example:
+  Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
 
   ```js
   export default defineConfig({
@@ -293,6 +318,9 @@ export default defineConfig(async ({ command, mode }) => {
       preprocessorOptions: {
         scss: {
           additionalData: `$injectedColor: orange;`
+        },
+        styl: {
+          additionalData: `$injectedColor ?= orange`
         }
       }
     }
@@ -330,7 +358,7 @@ export default defineConfig(async ({ command, mode }) => {
   })
   ```
 
-  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
+  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
 
   In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
 
@@ -349,7 +377,7 @@ export default defineConfig(async ({ command, mode }) => {
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Static Asset Handling](/guide/assets)
 
-  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch) to be treated as static assets so that:
+  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) to be treated as static assets so that:
 
   - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
@@ -499,6 +527,12 @@ export default defineConfig(async ({ command, mode }) => {
 
   Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
 
+### server.headers
+
+- **Type:** `OutgoingHttpHeaders`
+
+  Specify server response headers.
+
 ### server.force
 
 - **Type:** `boolean`
@@ -518,7 +552,7 @@ export default defineConfig(async ({ command, mode }) => {
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
-  When using `server.middlewareMode` or `server.https`, assigning `server.hmr.server` to your HTTP(S) server will process HMR connection requests through your server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+  If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ### server.watch
 
@@ -581,6 +615,12 @@ async function createServer() {
 
 createServer()
 ```
+
+### server.base
+
+- **Type:** `string | undefined`
+
+  Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
 
 ### server.fs.strict
 

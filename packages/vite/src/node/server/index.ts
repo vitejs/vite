@@ -229,7 +229,11 @@ export interface ViteDevServer {
     opts?: { fixStacktrace?: boolean }
   ): Promise<Record<string, any>>
   /**
-   * Fix ssr error stacktrace
+   * Returns a fixed version of the given stack
+   */
+  ssrRewriteStacktrace(stack: string): string
+  /**
+   * Mutates the given SSR error by rewriting the stacktrace
    */
   ssrFixStacktrace(e: Error): void
   /**
@@ -293,7 +297,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _pendingRequests: Map<string, Promise<TransformResult | null>>
+  _pendingRequests: Map<
+    string,
+    {
+      request: Promise<TransformResult | null>
+      timestamp: number
+      abort: () => void
+    }
+  >
 }
 
 export async function createServer(
@@ -364,7 +375,6 @@ export async function createServer(
       let configFileDependencies: string[] = []
       const metadata = server._optimizeDepsMetadata
       if (metadata) {
-        await metadata.processing
         configFileDependencies = Object.keys(metadata.optimized)
       }
 
@@ -385,6 +395,9 @@ export async function createServer(
         const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
         rebindErrorStacktrace(e, stacktrace)
       }
+    },
+    ssrRewriteStacktrace(stack: string) {
+      return ssrRewriteStacktrace(stack, moduleGraph)
     },
     listen(port?: number, isRestart?: boolean) {
       return startServer(server, port, isRestart)
@@ -577,12 +590,19 @@ export async function createServer(
     // Don't await for the optimization to finish, we can start the
     // server right away here
     server._optimizeDepsMetadata = optimizeDeps.metadata
-    optimizeDeps.run()
+
+    // Run deps optimization in parallel
+    const initialProcessingPromise = optimizeDeps
+      .run()
+      .then((result) => result.commit())
 
     // While running the first optimizeDeps, _registerMissingImport is null
     // so the resolve plugin resolves straight to node_modules during the
     // deps discovery scan phase
-    server._registerMissingImport = createMissingImporterRegisterFn(server)
+    server._registerMissingImport = createMissingImporterRegisterFn(
+      server,
+      initialProcessingPromise
+    )
   }
 
   if (!middlewareMode && httpServer) {
