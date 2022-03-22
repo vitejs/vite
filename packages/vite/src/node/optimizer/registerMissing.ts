@@ -161,8 +161,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
         metadata.hash !== newData.hash ||
         Object.keys(metadata.optimized).some((dep) => {
           return (
-            metadata.optimized[dep]?.fileHash !==
-            newData.optimized[dep]?.fileHash
+            metadata.optimized[dep].fileHash !== newData.optimized[dep].fileHash
           )
         })
 

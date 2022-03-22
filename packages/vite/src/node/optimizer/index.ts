@@ -634,7 +634,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
 function parseOptimizedDepsMetadata(
   jsonMetadata: string,
   depsCacheDir: string
-) {
+): DepOptimizationMetadata | undefined {
   const { hash, browserHash, optimized, chunks } = JSON.parse(
     jsonMetadata,
     (key: string, value: string) => {
@@ -646,6 +646,13 @@ function parseOptimizedDepsMetadata(
       return value
     }
   )
+  if (
+    !chunks ||
+    Object.values(optimized).some((depInfo: any) => !depInfo.fileHash)
+  ) {
+    // outdated _metadata.json version, ignore
+    return
+  }
   const metadata = {
     hash,
     browserHash,
