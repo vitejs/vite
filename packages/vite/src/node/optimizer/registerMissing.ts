@@ -9,7 +9,8 @@ import {
   createOptimizedDepsMetadata,
   addOptimizedDepInfo,
   discoverProjectDependencies,
-  depsLogString
+  depsLogString,
+  debuggerViteDeps as debug
 } from '.'
 import type {
   DepOptimizationProcessing,
@@ -64,7 +65,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
     const warmUp = async () => {
       try {
-        logger.info(colors.green(`scanning for dependencies...`), {
+        debug(colors.green(`scanning for dependencies...`), {
           timestamp: true
         })
 
@@ -83,10 +84,14 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           })
         }
 
-        const depsString = depsLogString(Object.keys(discovered))
-        logger.info(colors.green(`dependencies found: ${depsString}`), {
-          timestamp: true
-        })
+        debug(
+          colors.green(
+            `dependencies found: ${depsLogString(Object.keys(discovered))}`
+          ),
+          {
+            timestamp: true
+          }
+        )
 
         scanPhaseProcessing.resolve()
         optimizedDeps.scanProcessing = undefined
@@ -203,14 +208,23 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           }
         }
 
+        const newDeps = Object.keys(newData.optimized).filter(
+          (dep) => !metadata.optimized[dep]
+        )
+        config.logger.info(
+          colors.green(`✨ dependencies optimized: ${depsLogString(newDeps)}`),
+          {
+            timestamp: true
+          }
+        )
+
         metadata = optimizedDeps.metadata = newData
         resolveEnqueuedProcessingPromises()
       }
 
       if (!needsReload) {
         commitProcessing()
-
-        logger.info(colors.green(`✨ dependencies pre-bundled...`), {
+        debug(colors.green(`✨ previous optimized dependencies unchanged`), {
           timestamp: true
         })
       } else {
@@ -221,7 +235,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           // once a rerun is committed
           processingResult.cancel()
 
-          logger.info(
+          debug(
             colors.green(
               `✨ delaying reload as new dependencies have been found...`
             ),
@@ -233,7 +247,9 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           commitProcessing()
 
           logger.info(
-            colors.green(`✨ dependencies updated, reloading page...`),
+            colors.green(
+              `✨ previous optimized dependencies have changed, reloading page`
+            ),
             {
               timestamp: true
             }
@@ -276,7 +292,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     // optimizeDeps processing is finished
     const deps = Object.keys(optimizedDeps.metadata.discovered)
     const depsString = depsLogString(deps)
-    logger.info(colors.green(`new dependencies found: ${depsString}`), {
+    debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
     runOptimizer()

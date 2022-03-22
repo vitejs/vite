@@ -21,7 +21,8 @@ import { scanImports } from './scan'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { performance } from 'perf_hooks'
 
-const debug = createDebugger('vite:deps')
+export const debuggerViteDeps = createDebugger('vite:deps')
+const debug = debuggerViteDeps
 const isDebugEnabled = _debug('vite:deps').enabled
 
 const jsExtensionRE = /\.js$/i
