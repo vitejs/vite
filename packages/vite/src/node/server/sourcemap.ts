@@ -69,6 +69,7 @@ export function addNamespace(map: SourceMapLike) {
       path.resolve(queryPos > 0 ? value.substring(0, queryPos) : value)
     )
   })
+}
 
 function genSourceMapUrl(map: SourceMap | string | undefined) {
   if (typeof map !== 'string') {
