@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "dependencies": {
-    "@babel/standalone": "^7.17.7",
+    "@babel/standalone": "^7.17.8",
     "core-js": "^3.21.1",
     "magic-string": "^0.26.1",
     "regenerator-runtime": "^0.13.9",
