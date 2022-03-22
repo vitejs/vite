@@ -170,6 +170,8 @@ export async function optimizeDeps(
   force = config.server.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
+  const log = asCommand ? config.logger.info : debug
+
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
     force,
@@ -181,7 +183,7 @@ export async function optimizeDeps(
   const depsInfo = await discoverProjectDependencies(config)
 
   const depsString = depsLogString(Object.keys(depsInfo))
-  config.logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+  log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
   const result = await runOptimizeDeps(config, depsInfo)
 
