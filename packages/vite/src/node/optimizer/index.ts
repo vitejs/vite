@@ -33,7 +33,7 @@ export type ExportsData = ReturnType<typeof parse> & {
   hasReExports?: true
 }
 
-export type OptimizedDeps = {
+export interface OptimizedDeps {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
@@ -180,7 +180,7 @@ export async function optimizeDeps(
   }
   const depsInfo = await discoverProjectDependencies(config)
 
-  const depsString = depsLogString(config, Object.keys(depsInfo))
+  const depsString = depsLogString(Object.keys(depsInfo))
   config.logger.info(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
   const result = await runOptimizeDeps(config, depsInfo)
@@ -237,9 +237,9 @@ export function loadCachedDepOptimizationMetadata(
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
-      const cachedMetadataPatah = path.join(depsCacheDir, '_metadata.json')
+      const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
       cachedMetadata = parseOptimizedDepsMetadata(
-        fs.readFileSync(cachedMetadataPatah, 'utf-8'),
+        fs.readFileSync(cachedMetadataPath, 'utf-8'),
         depsCacheDir
       )
     } catch (e) {}
@@ -260,7 +260,6 @@ export function loadCachedDepOptimizationMetadata(
  * Initial optimizeDeps at server start. Perform a fast scan using esbuild to
  * find deps to pre-bundle and include user hard-coded dependencies
  */
-
 export async function discoverProjectDependencies(
   config: ResolvedConfig,
   timestamp?: string
@@ -301,24 +300,19 @@ export async function discoverProjectDependencies(
   return discovered
 }
 
-export function depsLogString(
-  config: ResolvedConfig,
-  qualifiedIds: string[]
-): string {
-  let depsString: string
+export function depsLogString(qualifiedIds: string[]): string {
   if (isDebugEnabled) {
-    depsString = colors.yellow(qualifiedIds.join(`\n  `))
+    return colors.yellow(qualifiedIds.join(`\n  `))
   } else {
     const total = qualifiedIds.length
     const maxListed = 5
     const listed = Math.min(total, maxListed)
     const extra = Math.max(0, total - maxListed)
-    depsString = colors.yellow(
+    return colors.yellow(
       qualifiedIds.slice(0, listed).join(`, `) +
         (extra > 0 ? `, ...and ${extra} more` : ``)
     )
   }
-  return depsString
 }
 
 /**
@@ -741,7 +735,7 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 function needsInterop(
   id: string,
   exportsData: ExportsData,
-  output: any
+  output: { exports: string[] }
 ): boolean {
   if (KNOWN_INTEROP_IDS.has(id)) {
     return true
@@ -814,7 +808,7 @@ function getOptimizedBrowserHash(
   return getHash(hash + JSON.stringify(deps) + timestamp)
 }
 
-export function getHash(text: string) {
+export function getHash(text: string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 

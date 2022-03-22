@@ -62,7 +62,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     const scanPhaseProcessing = newDepOptimizationProcessing()
     optimizedDeps.scanProcessing = scanPhaseProcessing.promise
 
-    const warmUp = async function () {
+    const warmUp = async () => {
       try {
         logger.info(colors.green(`scanning for dependencies...`), {
           timestamp: true
@@ -83,7 +83,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           })
         }
 
-        const depsString = depsLogString(config, Object.keys(discovered))
+        const depsString = depsLogString(Object.keys(discovered))
         logger.info(colors.green(`dependencies found: ${depsString}`), {
           timestamp: true
         })
@@ -276,7 +276,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
     const deps = Object.keys(optimizedDeps.metadata.discovered)
-    const depsString = depsLogString(config, deps)
+    const depsString = depsLogString(deps)
     logger.info(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
