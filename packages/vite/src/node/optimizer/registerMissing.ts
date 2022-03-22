@@ -1,4 +1,5 @@
 import colors from 'picocolors'
+import _debug from 'debug'
 import {
   runOptimizeDeps,
   getOptimizedDepPath,
@@ -18,6 +19,8 @@ import type {
   OptimizedDeps
 } from '.'
 import type { ViteDevServer } from '..'
+
+const isDebugEnabled = _debug('vite:deps').enabled
 
 /**
  * The amount to wait for requests to register newly found dependencies before triggering
@@ -41,6 +44,18 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
   let handle: NodeJS.Timeout | undefined
   let newDepsDiscovered = false
+
+  let newDepsToLog: string[] = []
+  let newDepsToLogHandle: NodeJS.Timeout | undefined
+  const logNewDeps = () => {
+    config.logger.info(
+      colors.green(`✨ dependencies optimized: ${depsLogString(newDepsToLog)}`),
+      {
+        timestamp: true
+      }
+    )
+    newDepsToLog = []
+  }
 
   let depOptimizationProcessing = newDepOptimizationProcessing()
   let depOptimizationProcessingQueue: DepOptimizationProcessing[] = []
@@ -208,14 +223,10 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           }
         }
 
-        const newDeps = Object.keys(newData.optimized).filter(
-          (dep) => !metadata.optimized[dep]
-        )
-        config.logger.info(
-          colors.green(`✨ dependencies optimized: ${depsLogString(newDeps)}`),
-          {
-            timestamp: true
-          }
+        newDepsToLog.push(
+          ...Object.keys(newData.optimized).filter(
+            (dep) => !metadata.optimized[dep]
+          )
         )
 
         metadata = optimizedDeps.metadata = newData
@@ -224,9 +235,19 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
       if (!needsReload) {
         commitProcessing()
-        debug(colors.green(`✨ previous optimized dependencies unchanged`), {
-          timestamp: true
-        })
+
+        if (isDebugEnabled) {
+          logNewDeps()
+          debug(colors.green(`✨ previous optimized dependencies unchanged`), {
+            timestamp: true
+          })
+        } else {
+          if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
+          newDepsToLogHandle = setTimeout(() => {
+            newDepsToLogHandle = undefined
+            logNewDeps()
+          }, 2 * debounceMs)
+        }
       } else {
         if (newDepsDiscovered) {
           // There are newly discovered deps, and another rerun is about to be
@@ -245,6 +266,10 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           )
         } else {
           commitProcessing()
+
+          if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
+          newDepsToLogHandle = undefined
+          logNewDeps()
 
           logger.info(
             colors.green(
@@ -356,6 +381,8 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     // the running next optimizeDeps
     enqueuedRerun = undefined
     if (handle) clearTimeout(handle)
+    if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
+    newDepsToLogHandle = undefined
     handle = setTimeout(() => {
       handle = undefined
       enqueuedRerun = rerun
