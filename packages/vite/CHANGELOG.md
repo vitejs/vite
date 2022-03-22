@@ -1,3 +1,8 @@
+## 2.9.0-beta.6 (2022-03-22)
+
+
+
+
 ## 2.9.0-beta.5 (2022-03-22)
 
 * fix: avoid mangling code from incorrect magic-string usage (#7397) ([68d76c9](https://github.com/vitejs/vite/commit/68d76c9)), closes [#7397](https://github.com/vitejs/vite/issues/7397)
