@@ -262,7 +262,6 @@ export interface ViteDevServer {
    * @internal
    */
   _ssrExternals: string[] | null
-  _ssrExternalsOutdated?: boolean
   /**
    * @internal
    */
@@ -362,7 +361,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (!server._ssrExternals || server._ssrExternalsOutdated) {
+      if (!server._ssrExternals) {
         let knownImports: string[] = []
         const optimizedDeps = server._optimizedDeps
         if (optimizedDeps) {
@@ -373,7 +372,6 @@ export async function createServer(
           ]
         }
         server._ssrExternals = resolveSSRExternal(config, knownImports)
-        server._ssrExternalsOutdated = false
       }
       return ssrLoadModule(
         url,
@@ -429,7 +427,6 @@ export async function createServer(
 
     _optimizedDeps: null,
     _ssrExternals: null,
-    _ssrExternalsOutdated: false,
     _globImporters: Object.create(null),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,

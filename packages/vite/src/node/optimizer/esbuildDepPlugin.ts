@@ -37,8 +37,7 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig,
-  ssr?: boolean
+  config: ResolvedConfig
 ): Plugin {
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = config.optimizeDeps.extensions
@@ -73,7 +72,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined)
   }
 
   return {
