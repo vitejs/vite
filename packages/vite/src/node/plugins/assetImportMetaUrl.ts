@@ -51,7 +51,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL(import.meta.globEagerDefault(${JSON.stringify(
                   pattern
-                )})[${rawUrl}], self.location)`
+                )})[${rawUrl}], self.location)`,
+                { contentOnly: true }
               )
               continue
             }
@@ -70,7 +71,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
           )
         }
         if (s) {

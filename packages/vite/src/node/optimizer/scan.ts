@@ -503,7 +503,7 @@ async function transformGlob(
       resolve
     )
     s.prepend(importsString)
-    s.overwrite(expStart, endIndex, exp)
+    s.overwrite(expStart, endIndex, exp, { contentOnly: true })
   }
   return s.toString()
 }

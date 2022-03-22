@@ -155,7 +155,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             url = injectQuery(url, WORKER_FILE_ID)
             url = injectQuery(url, `type=${workerType}`)
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url))
+          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
+            contentOnly: true
+          })
         }
         if (s) {
           return {

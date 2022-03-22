@@ -51,7 +51,7 @@ import type {
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { combineSourcemaps } from '../utils'
+import { cleanUrl, combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import {
@@ -419,7 +419,7 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(this.filename, [
+          combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             {
               ...(m as RawSourceMap),
               sourcesContent: combinedMap.sourcesContent
