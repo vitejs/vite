@@ -124,7 +124,9 @@ export interface Plugin extends RollupPlugin {
     options: {
       custom?: CustomPluginOptions
       ssr?: boolean
-      // @internal
+      /**
+       * @internal
+       */
       scan?: boolean
     }
   ): Promise<ResolveIdResult> | ResolveIdResult
