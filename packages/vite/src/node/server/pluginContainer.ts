@@ -90,6 +90,7 @@ export interface PluginContainer {
     options?: {
       skip?: Set<Plugin>
       ssr?: boolean
+      // @internal
       scan?: boolean
     }
   ): Promise<PartialResolvedId | null>
