@@ -18,7 +18,7 @@ interface SourceMapLike {
   sourcesContent?: (string | null)[]
   sourceRoot?: string
 }
-const namespce = 'source-maps://'
+const namespace = 'source-maps://'
 
 export async function injectSourcesContent(
   map: SourceMapLike,
@@ -63,7 +63,7 @@ export function addNamespace(map: SourceMapLike) {
     if (virtualSourceRE.test(value)) return value
     const queryPos = value.indexOf('?')
     return (
-      namespce +
+      namespace +
       path.resolve(queryPos > 0 ? value.substring(0, queryPos) : value)
     )
   })
