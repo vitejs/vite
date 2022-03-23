@@ -1,3 +1,9 @@
+## 2.9.0-beta.7 (2022-03-23)
+
+* feat: non-blocking scanning of dependencies (#7379) ([676f545](https://github.com/vitejs/vite/commit/676f545)), closes [#7379](https://github.com/vitejs/vite/issues/7379)
+
+
+
 ## 2.9.0-beta.6 (2022-03-22)
 
 
