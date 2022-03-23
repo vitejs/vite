@@ -352,6 +352,24 @@ In the production build, `.wasm` files smaller than `assetInlineLimit` will be i
 
 ## Web Workers
 
+### Import with Constructors
+
+A web worker script can be imported using [`new Worker()`](https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker) and [`new SharedWorker()`](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker/SharedWorker). Compared to the worker suffixes, this syntax leans closer to the standards and is the **recommended** way to create workers.
+
+```ts
+const worker = new Worker(new URL('./worker.js', import.meta.url))
+```
+
+The worker constructor also accepts options, which can be used to create "module" workers:
+
+```ts
+const worker = new Worker(new URL('./worker.js', import.meta.url), {
+  type: 'module'
+})
+```
+
+### Import with Query Suffixes
+
 A web worker script can be directly imported by appending `?worker` or `?sharedworker` to the import request. The default export will be a custom worker constructor:
 
 ```js
@@ -367,6 +385,8 @@ By default, the worker script will be emitted as a separate chunk in the product
 ```js
 import MyWorker from './worker?worker&inline'
 ```
+
+See [Worker Options](/config/#worker-options) for details on configuring the bundling of all workers.
 
 ## Build Optimizations
 
