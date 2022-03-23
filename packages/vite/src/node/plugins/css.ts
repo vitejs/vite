@@ -1316,9 +1316,11 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     return { code: '', errors: [normalizedError], deps: [] }
   }
 
-  const map: ExistingRawSourceMap = result.map ? JSON.parse(result.map) : undefined
-  if(map && map.sourcesContent){
-      delete map.sourcesContent;
+  const map: ExistingRawSourceMap = result.map
+    ? JSON.parse(result.map)
+    : undefined
+  if (map && map.sourcesContent) {
+    delete map.sourcesContent
   }
 
   return {
