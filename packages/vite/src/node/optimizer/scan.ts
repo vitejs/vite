@@ -123,9 +123,17 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
 
   return {
-    deps,
+    // Ensure a fixed order so hashes are stable and improve logs
+    deps: orderedDependencies(deps),
     missing
   }
+}
+
+function orderedDependencies(deps: Record<string, string>) {
+  const depsList = Object.entries(deps)
+  // Ensure the same browserHash for the same set of dependencies
+  depsList.sort((a, b) => a[0].localeCompare(b[0]))
+  return Object.fromEntries(depsList)
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
@@ -165,7 +173,10 @@ function esbuildScanPlugin(
     }
     const resolved = await container.resolveId(
       id,
-      importer && normalizePath(importer)
+      importer && normalizePath(importer),
+      {
+        scan: true
+      }
     )
     const res = resolved?.id
     seen.set(key, res)

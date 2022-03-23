@@ -197,19 +197,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (
-          moduleListContains(config.optimizeDeps?.exclude, url) &&
-          server._optimizeDepsMetadata
-        ) {
-          // if the dependency encountered in the optimized file was excluded from the optimization
-          // the dependency needs to be resolved starting from the original source location of the optimized file
-          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-          // (that is, if it is under node_modules directory in the package source of the optimized file)
-          for (const optimizedModule of Object.values(
-            server._optimizeDepsMetadata.optimized
-          )) {
-            if (optimizedModule.file === importerModule.file) {
-              importerFile = optimizedModule.src
+        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+          const optimizedDeps = server._optimizedDeps
+          if (optimizedDeps) {
+            await optimizedDeps.scanProcessing
+
+            // if the dependency encountered in the optimized file was excluded from the optimization
+            // the dependency needs to be resolved starting from the original source location of the optimized file
+            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+            // (that is, if it is under node_modules directory in the package source of the optimized file)
+            for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
+              if (!optimizedModule.src) continue // Ignore chunks
+              if (optimizedModule.file === importerModule.file) {
+                importerFile = optimizedModule.src
+              }
             }
           }
         }
@@ -439,6 +440,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             importRewrites.push(async () => {
               let rewriteDone = false
               if (
+                server?._optimizedDeps &&
                 isOptimizedDepFile(resolvedId, config) &&
                 !resolvedId.match(optimizedDepChunkRE)
               ) {
@@ -450,7 +452,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
-                  server._optimizeDepsMetadata!,
+                  server._optimizedDeps!.metadata,
                   file
                 )
 

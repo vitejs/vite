@@ -37,8 +37,7 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig,
-  ssr?: boolean
+  config: ResolvedConfig
 ): Plugin {
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = config.optimizeDeps.extensions
@@ -48,12 +47,13 @@ export function esbuildDepPlugin(
     : externalTypes
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false, scan: true })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
-    isRequire: true
+    isRequire: true,
+    scan: true
   })
 
   const resolve = (
@@ -72,7 +72,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined)
   }
 
   return {

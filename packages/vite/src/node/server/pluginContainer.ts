@@ -90,6 +90,10 @@ export interface PluginContainer {
     options?: {
       skip?: Set<Plugin>
       ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -212,6 +216,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
@@ -241,7 +246,11 @@ export async function createPluginContainer(
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
+      let out = await container.resolveId(id, importer, {
+        skip,
+        ssr: this.ssr,
+        scan: this._scan
+      })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -487,8 +496,10 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
+      const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0
 
@@ -505,7 +516,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr }
+          { ssr, scan }
         )
         if (!result) continue
 
