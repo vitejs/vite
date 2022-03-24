@@ -1,6 +1,6 @@
 import path from 'path'
 import { promises as fsp } from 'fs'
-import glob from 'fast-glob'
+import fastGlob from 'fast-glob'
 import JSON5 from 'json5'
 import {
   isModernFlag,
@@ -112,11 +112,7 @@ export async function transformImportGlob(
   }
   const { base, parentDepth, isAbsolute, pattern } = globParams
 
-  const files = glob.sync(pattern, {
-    cwd: base,
-    // Ignore node_modules by default unless explicitly indicated in the pattern
-    ignore: /(^|\/)node_modules\//.test(pattern) ? [] : ['**/node_modules/**']
-  })
+  const files = glob(pattern, base)
   const imports: string[] = []
   let importsString = ``
   let entries = ``
@@ -260,4 +256,37 @@ function error(pos: number) {
   ) as RollupError
   err.pos = pos
   throw err
+}
+
+function glob(pattern: string, cwd: string): string[] {
+  const rebase = rebaseGlobPattern(pattern)
+  if (rebase !== '') {
+    pattern = pattern.slice(rebase.length)
+    cwd = path.posix.join(cwd, rebase)
+  }
+
+  let files = fastGlob.sync(pattern, {
+    cwd,
+    ignore: ['**/node_modules/**']
+  })
+
+  if (rebase !== '') {
+    files = files.map((file) => path.posix.join(rebase, file))
+  }
+
+  return files
+}
+
+// Make `ignore: ['**/node_modules/**']` work with patterns that include `node_modules/`.
+// E.g. `import.meta.glob('node_modules/framework/**/*.page.js')`.
+function rebaseGlobPattern(pattern: string) {
+  let rebase = ''
+  if (pattern.includes('/node_modules/')) {
+    rebase =
+      pattern.split('/node_modules/').slice(0, -1).join('/node_modules/') +
+      '/node_modules/'
+  } else if (pattern.startsWith('node_modules/')) {
+    rebase = 'node_modules/'
+  }
+  return rebase
 }
