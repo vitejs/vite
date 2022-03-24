@@ -58,6 +58,9 @@
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
 
+<h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
+<p class="require-pkg-with-module-field">fail</p>
+
 <h2>CSS Entry</h2>
 <p class="css"></p>
 
@@ -180,6 +183,9 @@
   ) {
     text('.browser', main)
   }
+
+  import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
+  text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)

@@ -456,6 +456,7 @@ importers:
       '@babel/runtime': ^7.16.0
       es5-ext: 0.10.53
       normalize.css: ^8.0.1
+      require-pkg-with-module-field: link:./require-pkg-with-module-field
       resolve-browser-field: link:./browser-field
       resolve-custom-condition: link:./custom-condition
       resolve-custom-main-field: link:./custom-main-field
@@ -466,6 +467,7 @@ importers:
       '@babel/runtime': 7.16.5
       es5-ext: 0.10.53
       normalize.css: 8.0.1
+      require-pkg-with-module-field: link:require-pkg-with-module-field
       resolve-browser-field: link:browser-field
       resolve-custom-condition: link:custom-condition
       resolve-custom-main-field: link:custom-main-field
@@ -496,6 +498,12 @@ importers:
 
   packages/playground/resolve/inline-package:
     specifiers: {}
+
+  packages/playground/resolve/require-pkg-with-module-field:
+    specifiers:
+      bignumber.js: 9.0.2
+    dependencies:
+      bignumber.js: 9.0.2
 
   packages/playground/ssr-deps:
     specifiers:
@@ -3363,6 +3371,10 @@ packages:
       node-addon-api: 3.2.1
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /bignumber.js/9.0.2:
+    resolution: {integrity: sha512-GAcQvbpsM0pUb0zw1EI0KhQEZ+lRwR5fYaAp3vPOYuP7aDvGy6cVN6XHLauvF8SOga2y0dcLcjt3iQDTSEliyw==}
     dev: false
 
   /binary-extensions/2.2.0:
