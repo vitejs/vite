@@ -262,8 +262,8 @@ function error(pos: number) {
 // work with patterns that include `node_modules/`. So that Vite can support patterns
 // like `import.meta.glob('node_modules/some-framework/**/*.page.js')`.
 function glob(pattern: string, base: string): string[] {
-  const rebase = pattern.match(/.*\/?node_modules\//)?.[0] ?? ''
-  if (rebase !== '') {
+  const rebase = pattern.match(/.*\/?node_modules\//)?.[0]
+  if (rebase) {
     pattern = pattern.slice(rebase.length)
     base = path.posix.join(base, rebase)
   }
@@ -273,7 +273,7 @@ function glob(pattern: string, base: string): string[] {
     ignore: ['**/node_modules/**']
   })
 
-  if (rebase !== '') {
+  if (rebase) {
     files = files.map((file) => path.posix.join(rebase, file))
   }
 
