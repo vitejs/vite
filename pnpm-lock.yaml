@@ -862,7 +862,7 @@ importers:
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       terser: ^5.12.1
-      tsconfck: ^1.2.0
+      tsconfck: ^1.2.1
       tslib: ^2.3.1
       types: link:./types
       ws: ^8.5.0
@@ -935,7 +935,7 @@ importers:
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       terser: 5.12.1
-      tsconfck: 1.2.0_typescript@4.5.4
+      tsconfck: 1.2.1_typescript@4.5.4
       tslib: 2.3.1
       types: link:types
       ws: 8.5.0
@@ -9079,8 +9079,8 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.2.0_typescript@4.5.4:
-    resolution: {integrity: sha512-uKBM6x6i5e7Tfof5Zhll2ypgYKwWZhsxsHOoCH/7enlcHjjlcZ8FnxFrqgVFtpN6ymzZX3zoDaVGIlkh/g4x6w==}
+  /tsconfck/1.2.1_typescript@4.5.4:
+    resolution: {integrity: sha512-x28dvgpazY0+Gdpheb+D47NiaepLoueunDXlNQ6gVruu9HJbUj3M07ORgjmOQBUpPbXUAQXyfACc8Mi/jlLDVw==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
     hasBin: true
     peerDependencies:
