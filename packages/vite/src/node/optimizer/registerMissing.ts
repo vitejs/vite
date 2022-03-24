@@ -51,7 +51,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     if (newDepsToLog.length) {
       config.logger.info(
         colors.green(
-          `✨ newfound dependencies optimized: ${depsLogString(
+          `✨ new dependencies optimized: ${depsLogString(
             newDepsToLog
           )}`
         ),
