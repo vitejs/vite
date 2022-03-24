@@ -59,6 +59,8 @@ interface ImportMeta {
         cb: (data: any) => void
       ): void
     }
+
+    send(payload: string): void
   }
 
   readonly env: ImportMetaEnv

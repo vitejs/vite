@@ -123,3 +123,9 @@ The following HMR events are dispatched by Vite automatically:
 - `'vite:error'` when an error occurs (e.g. syntax error)
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
+## `hot.send(payload)`
+
+Send custom data back to server.
+
+If called before connected, the data will be buffered and sent once the connection is established.

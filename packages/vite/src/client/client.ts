@@ -30,6 +30,7 @@ const socketHost = __HMR_PORT__
 
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
+const messageBuffer: string[] = []
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -59,6 +60,7 @@ async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
       console.log(`[vite] connected.`)
+      sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
@@ -361,6 +363,13 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   }
 }
 
+function sendMessageBuffer() {
+  if (socket.readyState === 1) {
+    messageBuffer.forEach((msg) => socket.send(msg))
+    messageBuffer.length = 0
+  }
+}
+
 interface HotModule {
   id: string
   callbacks: HotCallback[]
@@ -478,6 +487,11 @@ export const createHotContext = (ownerPath: string) => {
       }
       addToMap(customListenersMap)
       addToMap(newListeners)
+    },
+
+    send: (payload: string) => {
+      messageBuffer.push(payload)
+      sendMessageBuffer()
     }
   }
 
