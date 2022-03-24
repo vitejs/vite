@@ -253,6 +253,8 @@ export function loadCachedDepOptimizationMetadata(
       // need to resolve the processing promise so requests can move on
       return cachedMetadata
     }
+  } else {
+    config.logger.info('Forced re-optimization of dependencies')
   }
 
   // Start with a fresh cache
