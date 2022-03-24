@@ -30,6 +30,14 @@ if (!isBuild) {
     return m
   }
 
+  test('inline css', async () => {
+    const css = await getStyleTagContentIncluding('.inline ')
+    const map = extractSourcemap(css)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      TODO
+    `)
+  })
+
   test('linked css', async () => {
     const res = await page.request.get(
       new URL('./linked.css', page.url()).href,
