@@ -58,7 +58,6 @@ export async function transformMain(
   // inlined template cannot be individually hot updated.
   const useInlineTemplate =
     !devServer &&
-    !devToolsEnabled &&
     descriptor.scriptSetup &&
     !(descriptor.template && descriptor.template.src)
   const hasTemplateImport = descriptor.template && !useInlineTemplate

@@ -43,7 +43,7 @@ export function resolveScript(
     ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
-    inlineTemplate: !options.devServer && !options.devToolsEnabled,
+    inlineTemplate: !options.devServer,
     refTransform: options.refTransform !== false,
     templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr),
     // @ts-ignore TODO remove ignore when we support this in @vue/compiler-sfc
