@@ -148,7 +148,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       if (src) {
         processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
-      } else if (isModule) {
+      } else if (isModule && node.children.length) {
         addInlineModule(node, 'js')
       }
     }
