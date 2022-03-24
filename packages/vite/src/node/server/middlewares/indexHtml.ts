@@ -38,7 +38,9 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
-    return decodeURIComponent(path.join(server.config.root, url.slice(1)))
+    return decodeURIComponent(
+      normalizePath(path.join(server.config.root, url.slice(1)))
+    )
   }
 }
 
