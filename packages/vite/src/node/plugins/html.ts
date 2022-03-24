@@ -5,7 +5,8 @@ import type {
   OutputAsset,
   OutputBundle,
   OutputChunk,
-  RollupError
+  RollupError,
+  SourceMapInput
 } from 'rollup'
 import {
   cleanUrl,
@@ -54,7 +55,7 @@ export const isHTMLRequest = (request: string): boolean =>
 // HTML Proxy Caches are stored by config -> filePath -> index
 export const htmlProxyMap = new WeakMap<
   ResolvedConfig,
-  Map<string, Array<string>>
+  Map<string, Array<{ code: string; map?: SourceMapInput }>>
 >()
 
 // HTML Proxy Transform result are stored by config
@@ -83,7 +84,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (typeof result === 'string') {
+        if (result) {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
@@ -97,7 +98,7 @@ export function addToHTMLProxyCache(
   config: ResolvedConfig,
   filePath: string,
   index: number,
-  code: string
+  result: { code: string; map?: SourceMapInput }
 ): void {
   if (!htmlProxyMap.get(config)) {
     htmlProxyMap.set(config, new Map())
@@ -105,7 +106,7 @@ export function addToHTMLProxyCache(
   if (!htmlProxyMap.get(config)!.get(filePath)) {
     htmlProxyMap.get(config)!.set(filePath, [])
   }
-  htmlProxyMap.get(config)!.get(filePath)![index] = code
+  htmlProxyMap.get(config)!.get(filePath)![index] = result
 }
 
 export function addToHTMLProxyTransformResult(
@@ -284,12 +285,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   .join('')
                 // <script type="module">...</script>
                 const filePath = id.replace(normalizePath(config.root), '')
-                addToHTMLProxyCache(
-                  config,
-                  filePath,
-                  inlineModuleIndex,
-                  contents
-                )
+                addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                  code: contents
+                })
                 js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }
@@ -364,7 +362,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = inlineStyle.value!
             const code = styleNode.content!
             const filePath = id.replace(normalizePath(config.root), '')
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
 
@@ -382,12 +380,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = node.children.pop() as TextNode
             const filePath = id.replace(normalizePath(config.root), '')
             inlineModuleIndex++
-            addToHTMLProxyCache(
-              config,
-              filePath,
-              inlineModuleIndex,
-              styleNode.content
-            )
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+              code: styleNode.content
+            })
             js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
             shouldRemove = true
           }
