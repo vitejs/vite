@@ -615,13 +615,16 @@ export function combineSourcemaps(
 
   // hack for parse broken with normalized absolute paths on windows (C:/path/to/something).
   // escape them to linux like paths
-  sourcemapList.forEach((sourcemap) => {
-    sourcemap.sources = sourcemap.sources.map((source) =>
+  // also avoid mutation here to prevent breaking plugin's using cache to generate sourcemaps like vue (see #7442)
+  sourcemapList = sourcemapList.map((sourcemap) => {
+    const newSourcemaps = { ...sourcemap }
+    newSourcemaps.sources = sourcemap.sources.map((source) =>
       source ? escapeToLinuxLikePath(source) : null
     )
     if (sourcemap.sourceRoot) {
-      sourcemap.sourceRoot = escapeToLinuxLikePath(sourcemap.sourceRoot)
+      newSourcemaps.sourceRoot = escapeToLinuxLikePath(sourcemap.sourceRoot)
     }
+    return newSourcemaps
   })
   const escapedFilename = escapeToLinuxLikePath(filename)
 
