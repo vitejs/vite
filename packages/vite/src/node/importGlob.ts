@@ -258,15 +258,18 @@ function error(pos: number) {
   throw err
 }
 
-function glob(pattern: string, cwd: string): string[] {
-  const rebase = rebaseGlobPattern(pattern)
+// Thin wrapper around `fast-glob` to make the option `ignore: ['**/node_modules/**']`
+// work with patterns that include `node_modules/`. So that Vite can support patterns
+// like `import.meta.glob('node_modules/some-framework/**/*.page.js')`.
+function glob(pattern: string, base: string): string[] {
+  const rebase = pattern.match(/.*\/?node_modules\//)?.[0] ?? ''
   if (rebase !== '') {
     pattern = pattern.slice(rebase.length)
-    cwd = path.posix.join(cwd, rebase)
+    base = path.posix.join(base, rebase)
   }
 
   let files = fastGlob.sync(pattern, {
-    cwd,
+    cwd: base,
     ignore: ['**/node_modules/**']
   })
 
@@ -275,18 +278,4 @@ function glob(pattern: string, cwd: string): string[] {
   }
 
   return files
-}
-
-// Make `ignore: ['**/node_modules/**']` work with patterns that include `node_modules/`.
-// E.g. `import.meta.glob('node_modules/framework/**/*.page.js')`.
-function rebaseGlobPattern(pattern: string) {
-  let rebase = ''
-  if (pattern.includes('/node_modules/')) {
-    rebase =
-      pattern.split('/node_modules/').slice(0, -1).join('/node_modules/') +
-      '/node_modules/'
-  } else if (pattern.startsWith('node_modules/')) {
-    rebase = 'node_modules/'
-  }
-  return rebase
 }
