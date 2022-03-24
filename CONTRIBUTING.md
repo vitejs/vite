@@ -6,20 +6,70 @@ Hi! We are really excited that you are interested in contributing to Vite. Befor
 
 The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
 
-To development and test the core `vite` package:
+To develop and test the core `vite` package:
 
-1. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+1. Run `pnpm i` in Vite's root folder
 
-2. Run `pnpm link` in `packages/vite`. This links `vite` globally so that you can:
+2. Run `pnpm run build` in Vite's root folder.
 
-   - Run `pnpm link vite` in another Vite project to use the locally built Vite;
-   - Use the `vite` binary anywhere.
+3. If you are developing Vite itself, you can go to `packages/vite` and run `pnpm run dev` to automatically rebuild Vite whenever you change its code.
+
+You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
+
+## Debugging
+
+If you want to use break point and explore code execution you can use the ["Run and debug"](https://code.visualstudio.com/docs/editor/debugging) feature from vscode.
+
+1. Add a `debugger` statement where you want to stop the code execution.
+
+2. Click on the "Run and Debug" icon in the activity bar of the editor.
+
+3. Click on the "Javascript Debug Terminal" button.
+
+4. It will open a terminal, then go to `packages/playground/xxx` and run `pnpm run dev`.
+
+5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
+
+### Debugging errors in Jest tests using Playwright (Chromium)
+
+Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Jest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
+
+1. Add a `debugger` statement to the `scripts/jestPerTestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+
+1. Wait for inspector devtools to open in your browser and the debugger to attach.
+
+1. In the sources panel in the right column, click the play button to resume execution and allow the tests to run which will open a Chromium instance.
+
+1. Focusing the Chomium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+
+1. To close everything, just stop the test process back in your terminal.
+
+## Testing Vite against external packages
+
+You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
+
+```json
+{
+  "dependencies": {
+    "vite": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "link:../path/to/vite/packages/vite"
+    }
+  }
+}
+```
+
+And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
 Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
 
-Each test can be run under either dev server mode or build mode.
+Each test can be run under either dev server mode or build mode. Make sure that [Vite has been built](#repo-setup).
 
 - `pnpm test` by default runs every test in both serve and build mode.
 
@@ -84,7 +134,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "node ../../../scripts/patchFileDeps"
+  "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
 }
 ```
 
@@ -113,7 +163,7 @@ You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DE
 
 - Make sure tests pass!
 
-- Commit messages must follow the [commit message convention](./commit-convention.md) so that changelogs can be automatically generated. Commit messages are automatically validated before commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [yorkie](https://github.com/yyx990803/yorkie)).
+- Commit messages must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated. Commit messages are automatically validated before commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [yorkie](https://github.com/yyx990803/yorkie)).
 
 - No need to worry about code style as long as you have installed the dev dependencies - modified files are automatically formatted with Prettier on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [yorkie](https://github.com/yyx990803/yorkie)).
 
@@ -165,3 +215,28 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
+
+## Docs translation contribution
+
+If you would like to start a translation in your language, you are welcome to contribute! Please join [the #translations channel in Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
+
+The english docs are embedded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
+
+### How to start a translation repo
+
+1. In order to get all doc files, you first need to clone this repo in your personal account.
+2. Keep all the files in `docs/` and remove everything else.
+
+   - You should setup your translation site based on all the files in `docs/` folder as a Vitepress project.
+     (that said, `package.json` is need).
+
+   - Refresh git history by removing `.git` and then `git init`
+
+3. Translate the docs.
+
+   - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that, it's very common in translation contribution.
+
+4. Push your commits to your Github repo. you can setup a netlify preview as well.
+5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
+
+We recommend talking with others in Vite Land so you find more contributors for your language to share the maintenance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.

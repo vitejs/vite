@@ -6,10 +6,10 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.16",
+    "vue": "^3.2.25",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {

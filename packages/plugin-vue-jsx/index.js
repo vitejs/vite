@@ -48,6 +48,12 @@ function vueJsxPlugin(options = {}) {
     name: 'vite:vue-jsx',
 
     config(config) {
+      const optionsApi = config.define
+        ? config.define.__VUE_OPTIONS_API__
+        : undefined
+      const devTools = config.define
+        ? config.define.__VUE_PROD_DEVTOOLS__
+        : undefined
       return {
         // only apply esbuild to ts files
         // since we are handling jsx and tsx now
@@ -55,9 +61,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false,
-          ...config.define
+          __VUE_OPTIONS_API__: optionsApi != null ? optionsApi : true,
+          __VUE_PROD_DEVTOOLS__: devTools != null ? devTools : false
         }
       }
     },
@@ -80,7 +85,8 @@ function vueJsxPlugin(options = {}) {
       }
     },
 
-    transform(code, id, ssr) {
+    transform(code, id, opt) {
+      const ssr = typeof opt === 'boolean' ? opt : (opt && opt.ssr) === true
       const {
         include,
         exclude,
@@ -89,10 +95,13 @@ function vueJsxPlugin(options = {}) {
       } = options
 
       const filter = createFilter(include || /\.[jt]sx$/, exclude)
+      const [filepath] = id.split('?')
 
-      if (filter(id)) {
+      // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
+      // use filepath for plain jsx files (e.g. App.jsx)
+      if (filter(id) || filter(filepath)) {
         const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
-        if (id.endsWith('.tsx')) {
+        if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore

@@ -1,13 +1,13 @@
 import path from 'path'
-import chalk from 'chalk'
-import { Plugin } from '../plugin'
-import {
-  transform,
+import colors from 'picocolors'
+import type { Plugin } from '../plugin'
+import type {
   Message,
   Loader,
   TransformOptions,
   TransformResult
 } from 'esbuild'
+import { transform } from 'esbuild'
 import {
   cleanUrl,
   createDebugger,
@@ -15,12 +15,14 @@ import {
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
-import { SourceMap } from 'rollup'
-import { ResolvedConfig, ViteDevServer } from '..'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { SourceMap } from 'rollup'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import { createFilter } from '@rollup/pluginutils'
 import { combineSourcemaps } from '../utils'
-import { parse, TSConfckParseError, TSConfckParseResult } from 'tsconfck'
+import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import { parse, findAll, TSConfckParseError } from 'tsconfck'
+import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
 
@@ -44,6 +46,7 @@ type TSConfigJSON = {
     jsxFragmentFactory?: string
     useDefineForClassFields?: boolean
     importsNotUsedAsValues?: 'remove' | 'preserve' | 'error'
+    preserveValueImports?: boolean
   }
   [key: string]: any
 }
@@ -81,7 +84,8 @@ export async function transformWithEsbuild(
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
-      'importsNotUsedAsValues'
+      'importsNotUsedAsValues',
+      'preserveValueImports'
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
@@ -176,6 +180,13 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
         .on('change', reloadOnTsconfigChange)
         .on('unlink', reloadOnTsconfigChange)
     },
+    async configResolved(config) {
+      await initTSConfck(config)
+    },
+    buildEnd() {
+      // recycle serve to avoid preventing Node self-exit (#6815)
+      server = null as any
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, options)
@@ -202,12 +213,24 @@ const rollupToEsbuildFormatMap: Record<
 > = {
   es: 'esm',
   cjs: 'cjs',
-  iife: 'iife'
+
+  // passing `var Lib = (() => {})()` to esbuild with format = "iife"
+  // will turn it to `(() => { var Lib = (() => {})() })()`,
+  // so we remove the format config to tell esbuild not doing this
+  //
+  // although esbuild doesn't change format, there is still possibility
+  // that `{ treeShaking: true }` removes a top-level no-side-effect variable
+  // like: `var Lib = 1`, which becomes `` after esbuild transforming,
+  // but thankfully rollup does not do this optimization now
+  iife: undefined
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    async configResolved(config) {
+      await initTSConfck(config)
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-ignore injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
@@ -219,7 +242,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         config.build.minify === 'esbuild' &&
         // Do not minify ES lib output since that would remove pure annotations
         // and break tree-shaking
-        // https://github.com/vuejs/vue-next/issues/2860#issuecomment-926882793
+        // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
         !(config.build.lib && opts.format === 'es')
 
       if ((!target || target === 'esnext') && !minify) {
@@ -227,6 +250,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, {
+        ...config.esbuild,
         target: target || undefined,
         ...(minify
           ? {
@@ -242,7 +266,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 }
 
 function prettifyMessage(m: Message, code: string): string {
-  let res = chalk.yellow(m.text)
+  let res = colors.yellow(m.text)
   if (m.location) {
     const lines = code.split(/\r?\n/g)
     const line = Number(m.location.line)
@@ -257,15 +281,29 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-const tsconfigCache = new Map<string, TSConfckParseResult>()
+const tsconfckParseOptions: TSConfckParseOptions = {
+  cache: new Map<string, TSConfckParseResult>(),
+  tsConfigPaths: undefined,
+  root: undefined,
+  resolveWithEmptyIfConfigNotFound: true
+}
+
+async function initTSConfck(config: ResolvedConfig) {
+  tsconfckParseOptions.cache!.clear()
+  const workspaceRoot = searchForWorkspaceRoot(config.root)
+  tsconfckParseOptions.root = workspaceRoot
+  tsconfckParseOptions.tsConfigPaths = new Set([
+    ...(await findAll(workspaceRoot, {
+      skip: (dir) => dir === 'node_modules' || dir === '.git'
+    }))
+  ])
+}
+
 async function loadTsconfigJsonForFile(
   filename: string
 ): Promise<TSConfigJSON> {
   try {
-    const result = await parse(filename, {
-      cache: tsconfigCache,
-      resolveWithEmptyIfConfigNotFound: true
-    })
+    const result = await parse(filename, tsconfckParseOptions)
     // tsconfig could be out of root, make sure it is watched on dev
     if (server && result.tsconfigFile !== 'no_tsconfig_file_found') {
       ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
@@ -287,20 +325,24 @@ function reloadOnTsconfigChange(changedFile: string) {
   // any json file in the tsconfig cache could have been used to compile ts
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
-    (changedFile.endsWith('.json') && tsconfigCache.has(changedFile))
+    (changedFile.endsWith('.json') &&
+      tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
       { clear: server.config.clearScreen, timestamp: true }
     )
-    // clear tsconfig cache so that recompile works with up2date configs
-    tsconfigCache.clear()
+
     // clear module graph to remove code compiled with outdated config
     server.moduleGraph.invalidateAll()
-    // force full reload
-    server.ws.send({
-      type: 'full-reload',
-      path: '*'
+
+    // reset tsconfck so that recompile works with up2date configs
+    initTSConfck(server.config).finally(() => {
+      // force full reload
+      server.ws.send({
+        type: 'full-reload',
+        path: '*'
+      })
     })
   }
 }

@@ -1,8 +1,12 @@
 const path = require('path')
+
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  build: {
+    cssTarget: 'chrome61'
+  },
   resolve: {
     alias: {
       '@': __dirname

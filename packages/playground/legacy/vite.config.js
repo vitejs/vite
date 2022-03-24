@@ -10,9 +10,8 @@ module.exports = {
   ],
 
   build: {
-    // make tests faster
-    minify: false,
-
+    cssCodeSplit: false,
+    manifest: true,
     rollupOptions: {
       output: {
         chunkFileNames(chunkInfo) {

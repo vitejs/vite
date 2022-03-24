@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../testUtils'
-import { Page } from 'playwright-chromium'
+import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {
   await page.click('.ping')
@@ -10,6 +10,15 @@ test('normal', async () => {
     () => page.textContent('.mode'),
     isBuild ? 'production' : 'development'
   )
+  await untilUpdated(
+    () => page.textContent('.bundle-with-plugin'),
+    'worker bundle with plugin success!'
+  )
+})
+
+test('TS output', async () => {
+  await page.click('.ping-ts-output')
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
 })
 
 test('inlined', async () => {
@@ -42,13 +51,20 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
+test('worker emitted', async () => {
+  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.nested-worker-dynamic-import'),
+    '"msg":"pong"'
+  )
+})
+
 if (isBuild) {
+  const assetsDir = path.resolve(testDir, 'dist/assets')
   // assert correct files
   test('inlined code generation', async () => {
-    const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
-    expect(files.length).toBe(3)
+    expect(files.length).toBe(11)
     const index = files.find((f) => f.includes('index'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -68,3 +84,8 @@ if (isBuild) {
     expect(content).toMatch(`window.Blob`)
   })
 }
+
+test('classic worker is run', async () => {
+  expect(await page.textContent('.classic-worker')).toMatch('A classic')
+  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})

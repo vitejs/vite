@@ -5,7 +5,7 @@
 import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
-import { ElementHandle } from 'playwright-chromium'
+import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 
 export function slash(p: string): string {
@@ -17,6 +17,7 @@ export const isBuild = !!process.env.VITE_TEST_BUILD
 const testPath = expect.getState().testPath
 const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 export const testDir = path.resolve(__dirname, '../../packages/temp', testName)
+export const workspaceRoot = path.resolve(__dirname, '../../')
 
 const hexToNameMap: Record<string, string> = {}
 Object.keys(colors).forEach((color) => {
@@ -55,12 +56,17 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
 export async function getColor(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
-  return hexToNameMap[rgbToHex(rgb)] || rgb
+  return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
 export async function getBg(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
+}
+
+export async function getBgColor(el: string | ElementHandle): Promise<string> {
+  el = await toEl(el)
+  return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }
 
 export function readFile(filename: string): string {
@@ -118,7 +124,7 @@ export async function untilUpdated(
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) || ''
+    const actual = (await poll()) ?? ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
       expect(actual).toMatch(expected)
       break

@@ -1,4 +1,4 @@
-import { getColor, isBuild } from '../../testUtils'
+import { getColor, isBuild, editFile } from '../../testUtils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -162,6 +162,77 @@ if (isBuild) {
       expect((await page.textContent('#output')).trim()).toBe(
         'dep1 common dep2 unique'
       )
+    })
+  })
+}
+
+describe('noHead', () => {
+  beforeAll(async () => {
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/noHead.html')
+  })
+
+  test('noHead tags injection', async () => {
+    const el = await page.$('html meta[name=description]')
+    expect(await el.getAttribute('content')).toBe('a vite app')
+
+    const kw = await page.$('html meta[name=keywords]')
+    expect(await kw.getAttribute('content')).toBe('es modules')
+  })
+})
+
+describe('noBody', () => {
+  beforeAll(async () => {
+    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    await page.goto(viteTestUrl + '/noBody.html')
+  })
+
+  test('noBody tags injection', async () => {
+    // this selects the first noscript in body, even without a body tag
+    const el = await page.$('body noscript')
+    expect(await el.innerHTML()).toMatch(`<!-- this is prepended to body -->`)
+
+    const kw = await page.$('html:last-child')
+    expect(await kw.innerHTML()).toMatch(`<!-- this is appended to body -->`)
+  })
+})
+
+describe('unicode path', () => {
+  test('direct access', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+    )
+    expect(await page.textContent('h1')).toBe('unicode-path')
+  })
+
+  test('spa fallback', async () => {
+    await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
+    expect(await page.textContent('h1')).toBe('unicode-path')
+  })
+})
+
+if (!isBuild) {
+  describe('invalid', () => {
+    test('should be 500 with overlay', async () => {
+      const response = await page.goto(viteTestUrl + '/invalid.html')
+      expect(response.status()).toBe(500)
+
+      const errorOverlay = await page.waitForSelector('vite-error-overlay')
+      expect(errorOverlay).toBeTruthy()
+
+      const message = await errorOverlay.$$eval('.message-body', (m) => {
+        return m[0].innerHTML
+      })
+      expect(message).toMatch(/^Unable to parse HTML/)
+    })
+
+    test('should reload when fixed', async () => {
+      const response = await page.goto(viteTestUrl + '/invalid.html')
+      await editFile('invalid.html', (content) => {
+        return content.replace('<div Bad', '<div> Good')
+      })
+      const content = await page.waitForSelector('text=Good Html')
+      expect(content).toBeTruthy()
     })
   })
 }

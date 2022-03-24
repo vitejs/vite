@@ -31,6 +31,7 @@ A typical SSR application will have the following source file structure:
 
 ```
 - index.html
+- server.js # main application server
 - src/
   - main.js          # exports env-agnostic (universal) app code
   - entry-client.js  # mounts the app to a DOM element
@@ -76,8 +77,8 @@ async function createServer() {
   // Create Vite server in middleware mode. This disables Vite's own HTML
   // serving logic and let the parent server take control.
   //
-  // If you want to use Vite's own HTML serving logic (using Vite as
-  // a development middleware), using 'html' instead.
+  // In middleware mode, if you want to use Vite's own HTML serving logic
+  // use `'html'` as the `middlewareMode` (ref https://vitejs.dev/config/#server-middlewaremode)
   const vite = await createViteServer({
     server: { middlewareMode: 'ssr' }
   })
@@ -99,7 +100,7 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
 ```js
-app.use('*', async (req, res) => {
+app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   try {
@@ -111,7 +112,7 @@ app.use('*', async (req, res) => {
 
     // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
     //    also applies HTML transforms from Vite plugins, e.g. global preambles
-    //    from @vitejs/plugin-react-refresh
+    //    from @vitejs/plugin-react
     template = await vite.transformIndexHtml(url, template)
 
     // 3. Load the server entry. vite.ssrLoadModule automatically transforms
@@ -133,8 +134,7 @@ app.use('*', async (req, res) => {
     // If an error is caught, let Vite fix the stracktrace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
-    console.error(e)
-    res.status(500).end(e.message)
+    next(e)
   }
 })
 ```
@@ -227,7 +227,7 @@ If you have configured aliases that redirects one package to another, you may wa
 
 ## SSR-specific Plugin Logic
 
-Some frameworks such as Vue or Svelte compiles components into different formats based on client vs. SSR. To support conditional transforms, Vite passes an additional `ssr` argument to the following plugin hooks:
+Some frameworks such as Vue or Svelte compiles components into different formats based on client vs. SSR. To support conditional transforms, Vite passes an additional `ssr` property in the `options` object of the following plugin hooks:
 
 - `resolveId`
 - `load`
@@ -239,14 +239,20 @@ Some frameworks such as Vue or Svelte compiles components into different formats
 export function mySSRPlugin() {
   return {
     name: 'my-ssr',
-    transform(code, id, ssr) {
-      if (ssr) {
+    transform(code, id, options) {
+      if (options?.ssr) {
         // perform ssr-specific transform...
       }
     }
   }
 }
 ```
+
+The options object in `load` and `transform` is optional, rollup is not currently using this object but may extend these hooks with additional metadata in the future.
+
+:::tip Note
+Before Vite 2.7, this was informed to plugin hooks with a positional `ssr` param instead of using the `options` object. All major frameworks and plugins are updated but you may find outdated posts using the previous API.
+:::
 
 ## SSR Target
 

@@ -1,45 +1,84 @@
 import path from 'path'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
-import { Server } from 'http'
-import { ResolvedConfig, ServerOptions } from '.'
-import { Connect } from 'types/connect'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart
-} from './server/http'
+import compression from './server/middlewares/compression'
+import type { Server } from 'http'
+import type { InlineConfig, ResolvedConfig } from '.'
+import { resolveConfig } from '.'
+import type { Connect } from 'types/connect'
+import type { ResolvedServerOptions } from './server'
+import type { CommonServerOptions } from './http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
+import { printCommonServerUrls } from './logger'
+
+export interface PreviewOptions extends CommonServerOptions {}
+
+export interface ResolvedPreviewOptions extends PreviewOptions {}
+
+export function resolvePreviewOptions(
+  preview: PreviewOptions | undefined,
+  server: ResolvedServerOptions
+): ResolvedPreviewOptions {
+  // The preview server inherits every CommonServerOption from the `server` config
+  // except for the port to enable having both the dev and preview servers running
+  // at the same time without extra configuration
+  return {
+    port: preview?.port,
+    strictPort: preview?.strictPort ?? server.strictPort,
+    host: preview?.host ?? server.host,
+    https: preview?.https ?? server.https,
+    open: preview?.open ?? server.open,
+    proxy: preview?.proxy ?? server.proxy,
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers
+  }
+}
+
+export interface PreviewServer {
+  /**
+   * The resolved vite config object
+   */
+  config: ResolvedConfig
+  /**
+   * native Node http server instance
+   */
+  httpServer: Server
+  /**
+   * Print server urls
+   */
+  printUrls: () => void
+}
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param config - the resolve Vite config
+ * @param config - the resolved Vite config
  * @param serverOptions - what host and port to use
  * @experimental
  */
 export async function preview(
-  config: ResolvedConfig,
-  serverOptions: Pick<ServerOptions, 'port' | 'host'>
-): Promise<Server> {
+  inlineConfig: InlineConfig
+): Promise<PreviewServer> {
+  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
-    config.server,
+    config.preview,
     app,
-    await resolveHttpsConfig(config)
+    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
 
   // cors
-  const { cors } = config.server
+  const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  if (config.server.proxy) {
+  if (config.preview.proxy) {
     app.use(proxyMiddleware(httpServer, config))
   }
 
@@ -55,9 +94,9 @@ export async function preview(
     })
   )
 
-  const options = config.server
-  const hostname = resolveHostname(serverOptions.host ?? options.host)
-  const port = serverOptions.port ?? 5000
+  const options = config.preview
+  const hostname = resolveHostname(options.host)
+  const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
@@ -72,11 +111,19 @@ export async function preview(
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : base
     openBrowser(
-      path.startsWith('http') ? path : `${protocol}://${hostname.name}:${serverPort}${path}`,
+      path.startsWith('http')
+        ? path
+        : `${protocol}://${hostname.name}:${serverPort}${path}`,
       true,
       logger
     )
   }
 
-  return httpServer
+  return {
+    config,
+    httpServer,
+    printUrls() {
+      printCommonServerUrls(httpServer, config.preview, config)
+    }
+  }
 }
