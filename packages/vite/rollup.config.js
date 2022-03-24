@@ -40,6 +40,7 @@ const clientConfig = {
   input: path.resolve(__dirname, 'src/client/client.ts'),
   external: ['./env', '@vite/env'],
   plugins: [
+    nodeResolve(),
     typescript({
       target: 'es2018',
       include: ['src/client/**/*.ts'],
@@ -47,7 +48,8 @@ const clientConfig = {
       paths: {
         'types/*': ['../../types/*']
       }
-    })
+    }),
+    commonjs({ extensions: ['.js', '.ts'], sourceMap: true })
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),

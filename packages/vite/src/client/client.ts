@@ -8,6 +8,12 @@ import type {
 } from 'types/hmrPayload'
 import type { CustomEventName } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
+import {
+  getStackLineInformation,
+  isStackLineInfo,
+  transformError,
+  generateErrorPayload
+} from './error'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
@@ -500,6 +506,62 @@ export function injectQuery(url: string, queryToInject: string): string {
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
   }`
+}
+
+const exceptionHandler = async (e: ErrorEvent): Promise<void> => {
+  try {
+    const error = transformError(e.error)
+
+    const payload = await generateErrorPayload(
+      error.message,
+      e.filename,
+      e.lineno,
+      e.colno,
+      error.stack!
+    )
+
+    createErrorOverlay(payload)
+  } catch (err: unknown) {
+    console.error('Failed to generate error overlay', err)
+  }
+}
+
+const rejectionHandler = async (e: PromiseRejectionEvent): Promise<void> => {
+  const error = transformError(e.reason)
+  // Since promise rejection doesn't return the file we have to get it from the stack trace
+  const stackLines = error.stack!.split('\n')
+  let stackInfo = getStackLineInformation(stackLines[0])
+  // Chrome will include the error message as the first line of the stack trace so we have to check for a match or check the next line
+  if (!isStackLineInfo(stackInfo)) {
+    stackInfo = getStackLineInformation(stackLines[1])
+    if (!isStackLineInfo(stackInfo)) {
+      // no stack trace create a basic overlay
+      createErrorOverlay({
+        message: error.message,
+        stack: error.stack!
+      })
+      return
+    }
+  }
+
+  try {
+    const payload = await generateErrorPayload(
+      e.reason.message,
+      stackInfo.url,
+      stackInfo.line,
+      stackInfo.column,
+      e.reason.stack
+    )
+
+    createErrorOverlay(payload)
+  } catch (err: unknown) {
+    console.error('Failed to generate error overlay', err)
+  }
+}
+
+if (enableOverlay) {
+  window.addEventListener('error', exceptionHandler)
+  window.addEventListener('unhandledrejection', rejectionHandler)
 }
 
 export { ErrorOverlay }
