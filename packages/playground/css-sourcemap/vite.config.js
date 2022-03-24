@@ -36,5 +36,25 @@ module.exports = {
   },
   build: {
     sourcemap: true
-  }
+  },
+  plugins: [
+    {
+      name: 'virtual-html',
+      configureServer(server) {
+        server.middlewares.use(async (req, res, next) => {
+          if (req.url === '/virtual.html') {
+            const t = await server.transformIndexHtml(
+              '/virtual.html',
+              '<style> .foo { color: red; } </style> <p class="foo">virtual html</p>'
+            )
+            res.setHeader('Content-Type', 'text/html')
+            res.statusCode = 200
+            res.end(t)
+            return
+          }
+          next()
+        })
+      }
+    }
+  ]
 }

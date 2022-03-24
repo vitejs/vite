@@ -705,6 +705,8 @@ export function resolveHtmlTransforms(
   return [preHooks, postHooks]
 }
 
+export const maybeVirtualHtmlSet = new Set<string>()
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -714,6 +716,8 @@ export async function applyHtmlTransforms(
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
+
+  maybeVirtualHtmlSet.add(ctx.filename)
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)

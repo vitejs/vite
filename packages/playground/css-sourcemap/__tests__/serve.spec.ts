@@ -83,6 +83,8 @@ if (!isBuild) {
 
         import './imported.styl'
       </script>
+
+      <iframe src=\\"virtual.html\\"></iframe>
       ",
         ],
         "version": 3,
