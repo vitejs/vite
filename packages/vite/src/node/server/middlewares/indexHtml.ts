@@ -109,7 +109,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       .join('')
 
     // add HTML Proxy to Map
-    addToHTMLProxyCache(config, url, inlineModuleIndex, contents)
+    addToHTMLProxyCache(config, url, inlineModuleIndex, { code: contents })
 
     // inline js module. convert to src="proxy"
     const modulePath = `${
