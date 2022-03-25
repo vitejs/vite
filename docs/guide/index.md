@@ -34,6 +34,7 @@ The supported template presets are:
 |  [preact](https://vite.new/preact)  |  [preact-ts](https://vite.new/preact-ts)  |
 |     [lit](https://vite.new/lit)     |     [lit-ts](https://vite.new/lit-ts)     |
 |  [svelte](https://vite.new/svelte)  |  [svelte-ts](https://vite.new/svelte-ts)  |
+|  [nuxt](https://vite.new/nuxt)      |  [nuxt](https://vite.new/nuxt)            |
 
 ## Scaffolding Your First Vite Project
 
