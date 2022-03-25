@@ -84,7 +84,7 @@ export function getCodeWithSourcemap(
   map: SourceMap | null
 ) {
   if (isDebug) {
-    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
+    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/ \n`
   }
 
   if (type === 'js') {
