@@ -12,8 +12,6 @@ import type {
   OutputOptions,
   RollupOutput,
   ExternalOption,
-  GetManualChunk,
-  GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
   RollupError,
@@ -37,9 +35,8 @@ import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { isCSSRequest } from './plugins/css'
 import type { DepOptimizationMetadata } from './optimizer'
-import { scanImports } from './optimizer/scan'
+import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
@@ -309,6 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
+
   return {
     pre: [
       watchPackageDataPlugin(config),
@@ -404,7 +402,7 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    const dataPath = path.join(config.cacheDir, '_metadata.json')
+    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
     try {
       const data = JSON.parse(
         fs.readFileSync(dataPath, 'utf-8')
@@ -413,7 +411,7 @@ async function doBuild(
     } catch (e) {}
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
-      knownImports = Object.keys((await scanImports(config)).deps)
+      knownImports = await findKnownImports(config)
     }
     external = resolveExternal(
       resolveSSRExternal(config, knownImports),
@@ -483,13 +481,6 @@ async function doBuild(
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         inlineDynamicImports: ssr && typeof input === 'string',
-        manualChunks:
-          !ssr &&
-          !libOptions &&
-          output?.format !== 'umd' &&
-          output?.format !== 'iife'
-            ? createMoveToVendorChunkFn(config)
-            : undefined,
         ...output
       }
     }
@@ -614,55 +605,6 @@ function getPkgName(root: string) {
   const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 
   return name?.startsWith('@') ? name.split('/')[1] : name
-}
-
-function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
-  const cache = new Map<string, boolean>()
-  return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
-    }
-  }
-}
-
-function staticImportedByEntry(
-  id: string,
-  getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
-  importStack: string[] = []
-): boolean {
-  if (cache.has(id)) {
-    return cache.get(id) as boolean
-  }
-  if (importStack.includes(id)) {
-    // circular deps!
-    cache.set(id, false)
-    return false
-  }
-  const mod = getModuleInfo(id)
-  if (!mod) {
-    cache.set(id, false)
-    return false
-  }
-
-  if (mod.isEntry) {
-    cache.set(id, true)
-    return true
-  }
-  const someImporterIs = mod.importers.some((importer) =>
-    staticImportedByEntry(
-      importer,
-      getModuleInfo,
-      cache,
-      importStack.concat(id)
-    )
-  )
-  cache.set(id, someImporterIs)
-  return someImporterIs
 }
 
 export function resolveLibFilename(

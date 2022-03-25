@@ -7,13 +7,47 @@ import {
   preloadMethod,
   preloadMarker
 } from './plugins/importAnalysisBuild'
-import { cleanUrl } from './utils'
+import { isCSSRequest } from './plugins/css'
+import {
+  cleanUrl,
+  singlelineCommentsRE,
+  multilineCommentsRE,
+  blankReplacer,
+  normalizePath
+} from './utils'
 import type { RollupError } from 'rollup'
+import type { Logger } from '.'
+import colors from 'picocolors'
 
-export interface AssertOptions {
+interface GlobParams {
+  base: string
+  pattern: string
+  parentDepth: number
+  isAbsolute: boolean
+}
+
+interface GlobOptions {
+  as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }
+}
+
+function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
+  let parentDepth = 0
+  while (pattern.startsWith('../')) {
+    pattern = pattern.slice(3)
+    base = path.resolve(base, '../')
+    parentDepth++
+  }
+  if (pattern.startsWith('./')) {
+    pattern = pattern.slice(2)
+  }
+
+  return { base, pattern, parentDepth, isAbsolute: false }
 }
 
 export async function transformImportGlob(
@@ -22,7 +56,9 @@ export async function transformImportGlob(
   importer: string,
   importIndex: number,
   root: string,
+  logger: Logger,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
 ): Promise<{
   importsString: string
@@ -46,27 +82,36 @@ export async function transformImportGlob(
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
 
-  let [pattern, assertion, endIndex] = lexGlobPattern(source, pos)
-  if (!pattern.startsWith('.') && !pattern.startsWith('/')) {
-    throw err(`pattern must start with "." or "/" (relative to project root)`)
-  }
-  let base: string
-  let parentDepth = 0
-  const isAbsolute = pattern.startsWith('/')
-  if (isAbsolute) {
-    base = path.resolve(root)
-    pattern = pattern.slice(1)
-  } else {
-    base = path.dirname(importer)
-    while (pattern.startsWith('../')) {
-      pattern = pattern.slice(3)
-      base = path.resolve(base, '../')
-      parentDepth++
+  const [userPattern, options, endIndex] = lexGlobPattern(source, pos)
+
+  let globParams: GlobParams | null = null
+  if (userPattern.startsWith('/')) {
+    globParams = {
+      isAbsolute: true,
+      base: path.resolve(root),
+      pattern: userPattern.slice(1),
+      parentDepth: 0
     }
-    if (pattern.startsWith('./')) {
-      pattern = pattern.slice(2)
+  } else if (userPattern.startsWith('.')) {
+    globParams = formatGlobRelativePattern(path.dirname(importer), userPattern)
+  } else if (resolve) {
+    const resolvedId = await resolve(userPattern, importer)
+    if (resolvedId) {
+      const importerDirname = path.dirname(importer)
+      globParams = formatGlobRelativePattern(
+        importerDirname,
+        normalizePath(path.relative(importerDirname, resolvedId))
+      )
     }
   }
+
+  if (!globParams) {
+    throw err(
+      `pattern must start with "." or "/" (relative to project root) or alias path`
+    )
+  }
+  const { base, parentDepth, isAbsolute, pattern } = globParams
+
   const files = glob.sync(pattern, {
     cwd: base,
     // Ignore node_modules by default unless explicitly indicated in the pattern
@@ -88,25 +133,41 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    if (assertion?.assert?.type === 'raw') {
+    // TODO remove assert syntax for the Vite 3.0 release.
+    const isRawAssert = options?.assert?.type === 'raw'
+    const isRawType = options?.as === 'raw'
+    if (isRawType || isRawAssert) {
+      if (isRawAssert) {
+        logger.warn(
+          colors.yellow(
+            colors.bold(
+              "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
+            )
+          )
+        )
+      }
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, file), 'utf-8')
       )},`
-    } else if (isEager) {
-      const identifier = `__glob_${importIndex}_${i}`
-      importsString += `import ${
-        isEagerDefault ? `` : `* as `
-      }${identifier} from ${JSON.stringify(importee)};`
-      entries += ` ${JSON.stringify(file)}: ${identifier},`
     } else {
-      let imp = `import(${JSON.stringify(importee)})`
-      if (!normalizeUrl && preload) {
-        imp =
-          `(${isModernFlag}` +
-          `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
-          `: ${imp})`
+      const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
+      if (isEager) {
+        const identifier = `__glob_${importIndex}_${i}`
+        // css imports injecting a ?used query to export the css string
+        importsString += `import ${
+          isEagerDefault ? `` : `* as `
+        }${identifier} from ${JSON.stringify(importeeUrl)};`
+        entries += ` ${JSON.stringify(file)}: ${identifier},`
+      } else {
+        let imp = `import(${JSON.stringify(importeeUrl)})`
+        if (!normalizeUrl && preload) {
+          imp =
+            `(${isModernFlag}` +
+            `? ${preloadMethod}(()=>${imp},"${preloadMarker}")` +
+            `: ${imp})`
+        }
+        entries += ` ${JSON.stringify(file)}: () => ${imp},`
       }
-      entries += ` ${JSON.stringify(file)}: () => ${imp},`
     }
   }
 
@@ -131,7 +192,7 @@ const enum LexerState {
 function lexGlobPattern(
   code: string,
   pos: number
-): [string, AssertOptions, number] {
+): [string, GlobOptions, number] {
   let state = LexerState.inCall
   let pattern = ''
 
@@ -177,45 +238,20 @@ function lexGlobPattern(
         throw new Error('unknown import.meta.glob lexer state')
     }
   }
+  const noCommentCode = code
+    .slice(i + 1)
+    .replace(singlelineCommentsRE, blankReplacer)
+    .replace(multilineCommentsRE, blankReplacer)
 
-  const endIndex = getEndIndex(code, i)
-  const options = code.substring(i + 1, endIndex)
-  const commaIndex = options.indexOf(`,`)
-  let assert = {}
+  const endIndex = noCommentCode.indexOf(')')
+  const optionString = noCommentCode.substring(0, endIndex)
+  const commaIndex = optionString.indexOf(',')
+
+  let options = {}
   if (commaIndex > -1) {
-    assert = JSON5.parse(options.substr(commaIndex + 1))
+    options = JSON5.parse(optionString.substring(commaIndex + 1))
   }
-  return [pattern, assert, endIndex + 1]
-}
-
-// reg without the 'g' option, only matches the first match
-const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//m
-const singlelineCommentsRE = /\/\/.*/
-
-function getEndIndex(code: string, i: number): number {
-  const findStart = i
-  const endIndex = code.indexOf(`)`, findStart)
-  const subCode = code.substring(findStart)
-
-  const matched =
-    subCode.match(singlelineCommentsRE) ?? subCode.match(multilineCommentsRE)
-  if (!matched) {
-    return endIndex
-  }
-
-  const str = matched[0]
-  const index = matched.index
-  if (!index) {
-    return endIndex
-  }
-
-  const commentStart = findStart + index
-  const commentEnd = commentStart + str.length
-  if (endIndex > commentStart && endIndex < commentEnd) {
-    return getEndIndex(code, commentEnd)
-  } else {
-    return endIndex
-  }
+  return [pattern, options, endIndex + i + 2]
 }
 
 function error(pos: number) {

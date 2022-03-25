@@ -15,7 +15,7 @@ import '@vite/env'
 declare const __BASE__: string
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
-declare const __HMR_PORT__: string
+declare const __HMR_PORT__: string | false
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
@@ -24,7 +24,10 @@ console.log('[vite] connecting...')
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+const socketHost = __HMR_PORT__
+  ? `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+  : `${__HMR_HOSTNAME__ || location.hostname}`
+
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 
@@ -214,9 +217,14 @@ async function waitForSuccessfulPing(ms = 1000) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      await fetch(`${base}__vite_ping`)
-      break
+      const pingResponse = await fetch(`${base}__vite_ping`)
+
+      // success - 2xx status code
+      if (pingResponse.ok) break
+      // failure - non-2xx status code
+      else throw new Error()
     } catch (e) {
+      // wait ms before attempting to ping again
       await new Promise((resolve) => setTimeout(resolve, ms))
     }
   }
@@ -254,7 +262,7 @@ export function updateStyle(id: string, content: string): void {
     if (!style) {
       style = new CSSStyleSheet()
       style.replaceSync(content)
-      // @ts-ignore
+      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
       style.replaceSync(content)
@@ -281,7 +289,7 @@ export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-ignore
+      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
       )

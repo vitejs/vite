@@ -10,9 +10,41 @@ To develop and test the core `vite` package:
 
 1. Run `pnpm i` in Vite's root folder
 
-2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+2. Run `pnpm run build` in Vite's root folder.
+
+3. If you are developing Vite itself, you can go to `packages/vite` and run `pnpm run dev` to automatically rebuild Vite whenever you change its code.
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
+
+## Debugging
+
+If you want to use break point and explore code execution you can use the ["Run and debug"](https://code.visualstudio.com/docs/editor/debugging) feature from vscode.
+
+1. Add a `debugger` statement where you want to stop the code execution.
+
+2. Click on the "Run and Debug" icon in the activity bar of the editor.
+
+3. Click on the "Javascript Debug Terminal" button.
+
+4. It will open a terminal, then go to `packages/playground/xxx` and run `pnpm run dev`.
+
+5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
+
+### Debugging errors in Jest tests using Playwright (Chromium)
+
+Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Jest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
+
+1. Add a `debugger` statement to the `scripts/jestPerTestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+
+1. Wait for inspector devtools to open in your browser and the debugger to attach.
+
+1. In the sources panel in the right column, click the play button to resume execution and allow the tests to run which will open a Chromium instance.
+
+1. Focusing the Chomium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+
+1. To close everything, just stop the test process back in your terminal.
 
 ## Testing Vite against external packages
 
@@ -37,7 +69,7 @@ And re-run `pnpm install` to link the package.
 
 Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
 
-Each test can be run under either dev server mode or build mode.
+Each test can be run under either dev server mode or build mode. Make sure that [Vite has been built](#repo-setup).
 
 - `pnpm test` by default runs every test in both serve and build mode.
 

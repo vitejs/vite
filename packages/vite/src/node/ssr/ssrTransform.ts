@@ -12,7 +12,7 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import type { RawSourceMap } from '@ampproject/remapping'
 
 type Node = _Node & {
   start: number
@@ -66,7 +66,7 @@ export async function ssrTransform(
   }
 
   function defineExport(position: number, name: string, local = name) {
-    s.appendRight(
+    s.appendLeft(
       position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`
@@ -158,7 +158,8 @@ export async function ssrTransform(
         s.overwrite(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
+          { contentOnly: true }
         )
       }
     }
@@ -207,14 +208,16 @@ export async function ssrTransform(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding)
+        s.overwrite(id.start, id.end, binding, { contentOnly: true })
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
+      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+        contentOnly: true
+      })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }

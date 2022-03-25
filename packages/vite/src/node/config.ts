@@ -21,7 +21,7 @@ import { resolvePlugins } from './plugins'
 import colors from 'picocolors'
 import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
-import { expand as dotenvExpand } from 'dotenv-expand'
+import dotenvExpand from 'dotenv-expand'
 import type { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -92,7 +92,7 @@ export interface UserConfig {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to <root>.
-   * Default to `.vite` when no package.json is detected.
+   * Default to `.vite` when no `package.json` is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -248,6 +248,7 @@ export type ResolvedConfig = Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    isWorker: boolean
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -401,11 +402,7 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
-  const pkgPath = lookupFile(
-    resolvedRoot,
-    [`package.json`],
-    true /* pathOnly */
-  )
+  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
     : pkgPath
@@ -469,7 +466,9 @@ export async function resolveConfig(
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
-    configFileDependencies,
+    configFileDependencies: configFileDependencies.map((name) =>
+      normalizePath(path.resolve(name))
+    ),
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
@@ -478,6 +477,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isWorker: false,
     isProduction,
     plugins: userPlugins,
     server,
@@ -510,7 +510,7 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved = { ...resolved }
+  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
@@ -649,7 +649,7 @@ export async function resolveConfig(
     )
   }
 
-  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+  if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
@@ -1083,7 +1083,7 @@ export function loadEnv(
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(envDir, [file], true)
+    const path = lookupFile(envDir, [file], { pathOnly: true, rootDir: envDir })
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
         debug: process.env.DEBUG?.includes('vite:dotenv') || undefined

@@ -60,7 +60,7 @@ cli
 
 // dev
 cli
-  .command('[root]') // default command
+  .command('[root]', 'start dev server') // default command
   .alias('serve') // the command is called 'serve' in Vite's API
   .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`)
@@ -125,7 +125,7 @@ cli
 
 // build
 cli
-  .command('build [root]')
+  .command('build [root]', 'build for production')
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
@@ -181,7 +181,7 @@ cli
 
 // optimize
 cli
-  .command('optimize [root]')
+  .command('optimize [root]', 'pre-bundle dependencies')
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`
@@ -212,7 +212,7 @@ cli
   )
 
 cli
-  .command('preview [root]')
+  .command('preview [root]', 'locally preview production build')
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)

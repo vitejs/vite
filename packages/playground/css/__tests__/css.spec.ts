@@ -13,6 +13,14 @@ import {
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
+test('imported css', async () => {
+  const css = await page.textContent('.imported-css')
+  expect(css).toContain('.imported {')
+  const glob = await page.textContent('.imported-css-glob')
+  expect(glob).toContain('.dir-import')
+  const globEager = await page.textContent('.imported-css-globEager')
+  expect(globEager).toContain('.dir-import')
+})
 
 test('linked css', async () => {
   const linked = await page.$('.linked')
@@ -363,4 +371,9 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
   )
+})
+
+test('import css in less', async () => {
+  expect(await getColor('.css-in-less')).toBe('yellow')
+  expect(await getColor('.css-in-less-2')).toBe('blue')
 })
