@@ -4,12 +4,12 @@ import { resolve, dirname } from 'path'
 import sirv from 'sirv'
 import type {
   ViteDevServer,
-  UserConfig,
+  InlineConfig,
   PluginOption,
   ResolvedConfig,
   Logger
 } from 'vite'
-import { createServer, build } from 'vite'
+import { createServer, build, mergeConfig } from 'vite'
 import type { Page, ConsoleMessage } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 
@@ -90,9 +90,16 @@ beforeAll(async () => {
         }
       }
 
+      const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
+      let config: InlineConfig | undefined
+      if (fs.existsSync(testCustomConfig)) {
+        // test has custom server configuration.
+        config = require(testCustomConfig)
+      }
+
       const serverLogs: string[] = []
 
-      const options: UserConfig = {
+      const options: InlineConfig = {
         root: rootDir,
         logLevel: 'silent',
         server: {
@@ -120,7 +127,9 @@ beforeAll(async () => {
 
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
-        server = await (await createServer(options)).listen()
+        server = await (
+          await createServer(mergeConfig(options, config || {}))
+        ).listen()
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base
         const url =
@@ -137,14 +146,14 @@ beforeAll(async () => {
           }
         })
         options.plugins = [resolvedPlugin()]
-        const rollupOutput = await build(options)
+        const rollupOutput = await build(mergeConfig(options, config || {}))
         const isWatch = !!resolvedConfig!.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
           global.watcher = rollupOutput as RollupWatcher
           await notifyRebuildComplete(global.watcher)
         }
-        const url = (global.viteTestUrl = await startStaticServer())
+        const url = (global.viteTestUrl = await startStaticServer(config))
         await page.goto(url)
       }
     }
@@ -172,13 +181,15 @@ afterAll(async () => {
   }
 })
 
-function startStaticServer(): Promise<string> {
-  // check if the test project has base config
-  const configFile = resolve(rootDir, 'vite.config.js')
-  let config: UserConfig | undefined
-  try {
-    config = require(configFile)
-  } catch (e) {}
+function startStaticServer(config?: InlineConfig): Promise<string> {
+  if (!config) {
+    // check if the test project has base config
+    const configFile = resolve(rootDir, 'vite.config.js')
+    try {
+      config = require(configFile)
+    } catch (e) {}
+  }
+
   // fallback internal base to ''
   const base = (config?.base ?? '/') === '/' ? '' : config?.base ?? ''
 

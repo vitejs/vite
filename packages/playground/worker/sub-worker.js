@@ -3,11 +3,3 @@ self.onmessage = (event) => {
     self.postMessage('pong')
   }
 }
-const data = import('./workerImport')
-data.then((data) => {
-  const { mode, msg } = data
-  self.postMessage({
-    mode,
-    msg
-  })
-})
