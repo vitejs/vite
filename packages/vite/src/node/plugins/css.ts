@@ -998,7 +998,7 @@ async function doUrlReplace(
   }
 
   const newUrl = await replacer(rawUrl)
-  if (wrap === '' && newUrl != encodeURI(newUrl)) {
+  if (wrap === '' && newUrl !== encodeURI(newUrl)) {
     // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
     wrap = "'"
   }
