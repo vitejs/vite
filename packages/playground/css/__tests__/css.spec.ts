@@ -365,6 +365,14 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
+test('?raw', async () => {
+  const rawImportCss = await page.$('.raw-imported-css')
+
+  expect(await rawImportCss.textContent()).toBe(
+    require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+  )
+})
+
 test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
   expect(await getColor('.css-in-less-2')).toBe('blue')

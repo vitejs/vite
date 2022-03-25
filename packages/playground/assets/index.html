@@ -134,6 +134,9 @@
 <h2>?url import</h2>
 <code class="url"></code>
 
+<h2>?url import with css</h2>
+<code class="url-css"></code>
+
 <h2>new URL('...', import.meta.url)</h2>
 <img class="import-meta-url-img" />
 <code class="import-meta-url"></code>
@@ -241,6 +244,9 @@
 
   import unicodeUrl from './テスト-測試-white space.js?url'
   text('.unicode-url', unicodeUrl)
+
+  import cssUrl from './css/icons.css?url'
+  text('.url-css', cssUrl)
 
   // const url = new URL('non_existent_file.png', import.meta.url)
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
