@@ -54,6 +54,12 @@ test('css import from js', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('css import asset with space', async () => {
+  const importedWithSpace = await page.$('.import-with-space')
+
+  expect(await getBg(importedWithSpace)).toMatch(/.*ok\..*png/)
+})
+
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
