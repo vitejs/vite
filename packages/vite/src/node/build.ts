@@ -306,6 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
+
   return {
     pre: [
       watchPackageDataPlugin(config),

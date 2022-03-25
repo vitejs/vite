@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../testUtils'
+import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {
@@ -56,11 +56,11 @@ test('worker emitted', async () => {
 })
 
 if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/iife/assets')
+  const assetsDir = path.resolve(testDir, 'dist/es/assets')
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(13)
+    expect(files.length).toBe(20)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -73,8 +73,8 @@ if (isBuild) {
     expect(workerContent).not.toMatch(`import`)
     expect(workerContent).not.toMatch(`export`)
     // chunk
-    expect(content).toMatch(`new Worker("/iife/assets`)
-    expect(content).toMatch(`new SharedWorker("/iife/assets`)
+    expect(content).toMatch(`new Worker("/es/assets`)
+    expect(content).toMatch(`new SharedWorker("/es/assets`)
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
@@ -90,4 +90,13 @@ test('module worker', async () => {
 test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
+
+test('emit chunk', async () => {
+  expect(await page.textContent('.emti-chunk-worker')).toMatch(
+    '{"msg1":"module1","msg2":"module2","msg3":"module3"}'
+  )
+  expect(await page.textContent('.emti-chunk-dynamic-import-worker')).toMatch(
+    '"A string/es/"'
+  )
 })

@@ -1,4 +1,4 @@
-import { msg, mode } from './workerImport'
+import { msg, mode } from './modules/workerImport'
 
 self.onmessage = (e) => {
   if (e.data === 'ping') {
