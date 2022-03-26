@@ -62,6 +62,12 @@ export interface CSSOptions {
     | (Postcss.ProcessOptions & {
         plugins?: Postcss.Plugin[]
       })
+  /**
+   * Enables css sourcemaps during dev
+   *
+   * @experimental
+   */
+  devSourcemap?: boolean
 }
 
 export interface CSSModulesOptions {
@@ -301,9 +307,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `export default ${JSON.stringify(css)}`
           }
 
-          const sourcemap = this.getCombinedSourcemap()
-          await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-          const cssContent = getCodeWithSourcemap('css', css, sourcemap)
+          let cssContent = css
+          if (config.css?.devSourcemap) {
+            const sourcemap = this.getCombinedSourcemap()
+            await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
+            cssContent = getCodeWithSourcemap('css', css, sourcemap)
+          }
 
           return [
             `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
@@ -604,7 +613,11 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const { modules: modulesOptions, preprocessorOptions } = config.css || {}
+  const {
+    modules: modulesOptions,
+    preprocessorOptions,
+    devSourcemap
+  } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -653,6 +666,7 @@ async function compileCSS(
     }
     // important: set this for relative import resolving
     opts.filename = cleanUrl(id)
+    opts.enableSourcemap = devSourcemap ?? false
 
     const preprocessResult = await preProcessor(
       code,
@@ -804,6 +818,16 @@ async function compileCSS(
         })}`
       }
       config.logger.warn(colors.yellow(msg))
+    }
+  }
+
+  if (!devSourcemap) {
+    return {
+      ast: postcssResult,
+      code: postcssResult.css,
+      map: { mappings: '' },
+      modules,
+      deps
     }
   }
 
@@ -1078,6 +1102,7 @@ type StylePreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
   filename: string
   alias: Alias[]
+  enableSourcemap: boolean
 }
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
@@ -1167,7 +1192,8 @@ const scss: SassStylePreprocessor = async (
   const { content: data, map: additionalMap } = await getSource(
     source,
     options.filename,
-    options.additionalData
+    options.additionalData,
+    options.enableSourcemap
   )
   const finalOptions: Sass.Options = {
     ...options,
@@ -1175,9 +1201,13 @@ const scss: SassStylePreprocessor = async (
     file: options.filename,
     outFile: options.filename,
     importer,
-    sourceMap: true,
-    omitSourceMapUrl: true,
-    sourceMapRoot: path.dirname(options.filename)
+    ...(options.enableSourcemap
+      ? {
+          sourceMap: true,
+          omitSourceMapUrl: true,
+          sourceMapRoot: path.dirname(options.filename)
+        }
+      : {})
   }
 
   try {
@@ -1291,7 +1321,8 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   const { content, map: additionalMap } = await getSource(
     source,
     options.filename,
-    options.additionalData
+    options.additionalData,
+    options.enableSourcemap
   )
 
   let result: Less.RenderOutput | undefined
@@ -1299,10 +1330,14 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     result = await nodeLess.render(content, {
       ...options,
       plugins: [viteResolverPlugin, ...(options.plugins || [])],
-      sourceMap: {
-        outputSourceFiles: true,
-        sourceMapFileInline: false
-      }
+      ...(options.enableSourcemap
+        ? {
+            sourceMap: {
+              outputSourceFiles: true,
+              sourceMapFileInline: false
+            }
+          }
+        : {})
     })
   } catch (e) {
     const error = e as Less.RenderError
@@ -1410,6 +1445,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
     source,
     options.filename,
     options.additionalData,
+    options.enableSourcemap,
     '\n'
   )
   // Get preprocessor options.imports dependencies as stylus
@@ -1419,11 +1455,13 @@ const styl: StylePreprocessor = async (source, root, options) => {
   )
   try {
     const ref = nodeStylus(content, options)
-    ref.set('sourcemap', {
-      comment: false,
-      inline: false,
-      basePath: root
-    })
+    if (options.enableSourcemap) {
+      ref.set('sourcemap', {
+        comment: false,
+        inline: false,
+        basePath: root
+      })
+    }
 
     const result = ref.render()
 
@@ -1431,7 +1469,7 @@ const styl: StylePreprocessor = async (source, root, options) => {
     const deps = [...ref.deps(), ...importsDeps]
 
     // @ts-expect-error sourcemap exists
-    const map: ExistingRawSourceMap = ref.sourcemap
+    const map: ExistingRawSourceMap | undefined = ref.sourcemap
 
     return {
       code: result,
@@ -1446,9 +1484,10 @@ const styl: StylePreprocessor = async (source, root, options) => {
 }
 
 function formatStylusSourceMap(
-  mapBefore: ExistingRawSourceMap,
+  mapBefore: ExistingRawSourceMap | undefined,
   root: string
-): ExistingRawSourceMap {
+): ExistingRawSourceMap | undefined {
+  if (!mapBefore) return undefined
   const map = { ...mapBefore }
 
   const resolveFromRoot = (p: string) => normalizePath(path.resolve(root, p))
@@ -1464,7 +1503,8 @@ function formatStylusSourceMap(
 async function getSource(
   source: string,
   filename: string,
-  additionalData?: PreprocessorAdditionalData,
+  additionalData: PreprocessorAdditionalData | undefined,
+  enableSourcemap: boolean,
   sep: string = ''
 ): Promise<{ content: string; map?: ExistingRawSourceMap }> {
   if (!additionalData) return { content: source }
@@ -1475,6 +1515,10 @@ async function getSource(
       return { content: newContent }
     }
     return newContent
+  }
+
+  if (!enableSourcemap) {
+    return { content: additionalData + sep + source }
   }
 
   const ms = new MagicString(source)
