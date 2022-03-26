@@ -123,11 +123,16 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'edited')
   })
 
+  test('plugin client-server communication', async () => {
+    const el = await page.$('.custom-communication')
+    await untilUpdated(() => el.textContent(), '3')
+  })
+
   test('full-reload encodeURI path', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    let el = await page.$('#app')
+    const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     await editFile(
       'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',

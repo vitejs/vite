@@ -17,6 +17,15 @@ module.exports = {
             }
           })
         }
+      },
+      configureServer(server) {
+        server.ws.onMessage('remote-add', ({ a, b }, client) => {
+          client.send({
+            type: 'custom',
+            event: 'remote-add-result',
+            data: { result: a + b }
+          })
+        })
       }
     }
   ]

@@ -63,7 +63,7 @@ async function handleMessage(payload: HMRPayload) {
       sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
-      setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
+      setInterval(() => socket.send('{"type":"ping"}'), __HMR_TIMEOUT__)
       break
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
@@ -489,8 +489,8 @@ export const createHotContext = (ownerPath: string) => {
       addToMap(newListeners)
     },
 
-    send: (payload: string) => {
-      messageBuffer.push(payload)
+    send: (event: string, data?: unknown) => {
+      messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
       sendMessageBuffer()
     }
   }
