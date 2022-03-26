@@ -13,9 +13,9 @@ import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
-declare const __HMR_PROTOCOL__: string
-declare const __HMR_HOSTNAME__: string
-declare const __HMR_PORT__: string | false
+declare const __HMR_PROTOCOL__: string | null
+declare const __HMR_HOSTNAME__: string | null
+declare const __HMR_PORT__: string | null
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean

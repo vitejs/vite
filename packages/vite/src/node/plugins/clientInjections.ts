@@ -23,7 +23,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const protocol = options.protocol || null
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
-        let port: number | string | false | undefined | null
+        let port: number | string | undefined | null
         port = options.clientPort || options.port
         if (config.server.middlewareMode) {
           port = port || 24678
