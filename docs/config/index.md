@@ -327,6 +327,14 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
+### css.devSourcemap
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Whether to enable sourcemaps during dev.
+
 ### json.namedExports
 
 - **Type:** `boolean`
