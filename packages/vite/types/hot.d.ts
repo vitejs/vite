@@ -1,9 +1,4 @@
-import type {
-  ErrorPayload,
-  FullReloadPayload,
-  PrunePayload,
-  UpdatePayload
-} from './hmrPayload'
+import type { InferCustomEventPayload } from './customEvent'
 
 export interface ViteHotContext {
   readonly data: any
@@ -22,22 +17,9 @@ export interface ViteHotContext {
   decline(): void
   invalidate(): void
 
-  on: {
-    (event: 'vite:beforeUpdate', cb: (payload: UpdatePayload) => void): void
-    (event: 'vite:beforePrune', cb: (payload: PrunePayload) => void): void
-    (
-      event: 'vite:beforeFullReload',
-      cb: (payload: FullReloadPayload) => void
-    ): void
-    (event: 'vite:error', cb: (payload: ErrorPayload) => void): void
-    (event: string, cb: (data: any) => void): void
-  }
-
-  send(event: string, data?: any): void
+  on<T extends string>(
+    event: T,
+    cb: (payload: InferCustomEventPayload<T>) => void
+  ): void
+  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }
-
-// See https://stackoverflow.com/a/63549561.
-export type CustomEventName<T extends string> = (T extends `vite:${T}`
-  ? never
-  : T) &
-  (`vite:${T}` extends T ? never : T)

@@ -560,3 +560,19 @@ export default defineConfig({
   ]
 })
 ```
+
+### TypeScript for Custom Events
+
+It is possible to type custom events by extending the `CustomEventMap` interface:
+
+```ts
+// events.d.ts
+import 'vite/types/customEvent'
+
+declare module 'vite/types/customEvent' {
+  interface CustomEventMap {
+    'custom:foo': { msg: string }
+    // 'event-key': payload
+  }
+}
+```
