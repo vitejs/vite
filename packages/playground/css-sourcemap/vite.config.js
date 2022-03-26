@@ -10,6 +10,7 @@ module.exports = {
     }
   },
   css: {
+    devSourcemap: true,
     preprocessorOptions: {
       less: {
         additionalData: '@color: red;'

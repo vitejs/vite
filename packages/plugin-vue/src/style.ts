@@ -23,13 +23,17 @@ export async function transformStyle(
     isProd: options.isProduction,
     source: code,
     scoped: block.scoped,
-    postcssOptions: {
-      map: {
-        from: filename,
-        inline: false,
-        annotation: false
-      }
-    }
+    ...(options.cssDevSourcemap
+      ? {
+          postcssOptions: {
+            map: {
+              from: filename,
+              inline: false,
+              annotation: false
+            }
+          }
+        }
+      : {})
   })
 
   if (result.errors.length) {
