@@ -124,7 +124,7 @@ The following HMR events are dispatched by Vite automatically:
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
 
-## `hot.send({ event, data })`
+## `hot.send(event, data)`
 
 Send custom events back to Vite's dev server.
 

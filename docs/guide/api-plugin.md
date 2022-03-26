@@ -508,23 +508,23 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.send({
-          type: 'custom',
-          event: 'greetings',
-          data: { msg: 'hello' }
-        })
+        server.ws.send('my:greetings', { msg: 'hello' })
       }
     }
   ]
 })
 ```
 
-And on the client side, we can use [`hot.on`](/guide/api-hmr.html#hot-on-event-cb) to listen to the events:
+::: tip NOTE
+We recommend **alway prefixing** your event names to avoid collisions with other plugins.
+:::
+
+On the client side, use [`hot.on`](/guide/api-hmr.html#hot-on-event-cb) to listen to the events:
 
 ```ts
 // client side
 if (import.meta.hot) {
-  import.meta.hot.on('greetings', (data) => {
+  import.meta.hot.on('my:greetings', (data) => {
     console.log(data.msg) // hello
   })
 }
@@ -537,14 +537,11 @@ To send events from the client to the server, we can use [`hot.send`](/guide/api
 ```ts
 // client side
 if (import.meta.hot) {
-  import.meta.hot.send({
-    event: 'from-client',
-    data: { msg: 'Hey!' }
-  })
+  import.meta.hot.send('my:from-client', { msg: 'Hey!' })
 }
 ```
 
-On the plugin side, we can use `server.ws.onEvent` listening to the events:
+Then use `server.ws.on` and listen to the events on the server side:
 
 ```js
 // vite.config.js
@@ -553,14 +550,10 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.onEvent('from-client', (data, client) => {
+        server.ws.on('my:from-client', (data, client) => {
           console.log('Message from client:', data.msg) // Hey!
           // reply only to the client (if needed)
-          client.send({
-            type: 'custom',
-            event: 'ack',
-            data: { msg: 'Hi! I got your message!' }
-          })
+          client.send('my:ack', { msg: 'Hi! I got your message!' })
         })
       }
     }

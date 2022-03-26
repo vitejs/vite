@@ -60,7 +60,7 @@ interface ImportMeta {
       ): void
     }
 
-    send(payload: import('./customEvent').CustomEventPayload): void
+    send(event: string, data?: any): void
   }
 
   readonly env: ImportMetaEnv

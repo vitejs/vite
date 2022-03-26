@@ -3,9 +3,3 @@ export type CustomEventName<T extends string> = (T extends `vite:${T}`
   ? never
   : T) &
   (`vite:${T}` extends T ? never : T)
-
-export interface CustomEventPayload {
-  type?: 'custom'
-  event: string
-  data?: any
-}

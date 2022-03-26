@@ -59,7 +59,7 @@ if (import.meta.hot) {
   })
 
   // send custom event to server to calculate 1 + 2
-  import.meta.hot.send({ event: 'remote-add', data: { a: 1, b: 2 } })
+  import.meta.hot.send('remote-add', { a: 1, b: 2 })
   import.meta.hot.on('remote-add-result', ({ result }) => {
     text('.custom-communication', result)
   })

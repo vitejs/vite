@@ -5,7 +5,7 @@ import type { ServerOptions as HttpsServerOptions } from 'https'
 import { createServer as createHttpsServer } from 'https'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
-import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { Socket } from 'net'
@@ -26,23 +26,25 @@ export interface WebSocketServer {
    */
   send(payload: HMRPayload): void
   /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+  /**
    * Disconnect all clients and terminate the server.
    */
   close(): Promise<void>
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
-  onEvent<T>(event: string, listener: WebSocketCustomListener<T>): () => void
+  on: WebSocketServerRaw['on'] & {
+    (event: string, listener: WebSocketCustomListener<any>): void
+  }
   /**
-   * Listen to raw events from the WebSocket server.
-   * @advanced
+   * Unregister event listener.
    */
-  on: WebSocketServerRaw['on']
-  /**
-   * Unregister listeners for raw WebSocket server events.
-   * @advanced
-   */
-  off: WebSocketServerRaw['off']
+  off: WebSocketServerRaw['off'] & {
+    (event: string, listener: WebSocketCustomListener<any>): void
+  }
 }
 
 export interface WebSocketClient {
@@ -51,11 +53,23 @@ export interface WebSocketClient {
    */
   send(payload: HMRPayload): void
   /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+  /**
    * The raw WebSocket instance
    * @advanced
    */
   socket: WebSocketRaw
 }
+
+const wsServerEvents = [
+  'connection',
+  'error',
+  'headers',
+  'listening',
+  'message'
+]
 
 export function createWebSocketServer(
   server: Server | null,
@@ -153,7 +167,19 @@ export function createWebSocketServer(
   function getSocketClent(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
-        send: (payload) => socket.send(JSON.stringify(payload)),
+        send: (...args) => {
+          let payload: HMRPayload
+          if (typeof args[0] === 'string') {
+            payload = {
+              type: 'custom',
+              event: args[0],
+              data: args[1]
+            }
+          } else {
+            payload = args[0]
+          }
+          socket.send(JSON.stringify(payload))
+        },
         socket
       })
     }
@@ -167,17 +193,39 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
-    get on() {
-      return wss.on.bind(wss)
-    },
-    get off() {
-      return wss.off.bind(wss)
-    },
+    on: ((event: string, fn: () => void) => {
+      if (wsServerEvents.includes(event)) wss.on(event, fn)
+      else {
+        if (!customListeners.has(event)) {
+          customListeners.set(event, new Set())
+        }
+        customListeners.get(event)!.add(fn)
+      }
+    }) as WebSocketServer['on'],
+    off: ((event: string, fn: () => void) => {
+      if (wsServerEvents.includes(event)) {
+        wss.off(event, fn)
+      } else {
+        customListeners.get(event)?.delete(fn)
+      }
+    }) as WebSocketServer['off'],
+
     get clients() {
       return new Set(Array.from(wss.clients).map(getSocketClent))
     },
 
-    send(payload: HMRPayload) {
+    send(...args: any[]) {
+      let payload: HMRPayload
+      if (typeof args[0] === 'string') {
+        payload = {
+          type: 'custom',
+          event: args[0],
+          data: args[1]
+        }
+      } else {
+        payload = args[0]
+      }
+
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return
@@ -215,16 +263,6 @@ export function createWebSocketServer(
           }
         })
       })
-    },
-
-    onEvent<T>(event: string, listener: WebSocketCustomListener<T>) {
-      if (!customListeners.has(event)) customListeners.set(event, new Set())
-      customListeners.get(event)!.add(listener)
-
-      const off = () => {
-        customListeners.get(event)?.delete(listener)
-      }
-      return off
     }
   }
 }
