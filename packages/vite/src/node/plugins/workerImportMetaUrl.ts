@@ -75,6 +75,8 @@ function getWorkerType(
   return 'classic'
 }
 
+const workerUrlMap = new Map<string, string>()
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
@@ -152,18 +154,23 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            const content = await bundleWorkerEntry(this, config, file)
-            const basename = path.parse(cleanUrl(file)).name
-            const contentHash = getAssetHash(content)
-            const fileName = path.posix.join(
-              config.build.assetsDir,
-              `${basename}.${contentHash}.js`
-            )
-            url = `__VITE_ASSET__${this.emitFile({
-              fileName,
-              type: 'asset',
-              source: content
-            })}__`
+            if (workerUrlMap.has(file)) {
+              url = workerUrlMap.get(file)!
+            } else {
+              const content = await bundleWorkerEntry(this, config, file)
+              const basename = path.parse(cleanUrl(file)).name
+              const contentHash = getAssetHash(content)
+              const fileName = path.posix.join(
+                config.build.assetsDir,
+                `${basename}.${contentHash}.js`
+              )
+              url = `__VITE_ASSET__${this.emitFile({
+                fileName,
+                type: 'asset',
+                source: content
+              })}__`
+              workerUrlMap.set(file, url)
+            }
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
