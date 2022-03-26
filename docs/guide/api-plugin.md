@@ -495,7 +495,7 @@ normalizePath('foo/bar') // 'foo/bar'
 
 ## Client-server Communication
 
-As in Vite 2.9, we provides some utilities for plugins to handle the communcation with clients easier.
+As in Vite 2.9, we provide some utilities for plugins to handle the communication with clients easier.
 
 ### Server to Client
 
