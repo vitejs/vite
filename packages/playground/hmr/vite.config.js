@@ -9,7 +9,7 @@ module.exports = {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.ws.send('foo', { data: msg })
+          server.ws.send('foo', { msg })
         }
       },
       configureServer(server) {
