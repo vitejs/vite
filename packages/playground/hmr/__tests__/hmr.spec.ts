@@ -16,7 +16,7 @@ if (!isBuild) {
   test('self accept', async () => {
     const el = await page.$('.app')
 
-    editFile('hmr.js', (code) => code.replace('const foo = 1', 'const foo = 2'))
+    editFile('hmr.ts', (code) => code.replace('const foo = 1', 'const foo = 2'))
     await untilUpdated(() => el.textContent(), '2')
 
     expect(browserLogs).toMatchObject([
@@ -24,11 +24,11 @@ if (!isBuild) {
       'foo was: 1',
       '(self-accepting 1) foo is now: 2',
       '(self-accepting 2) foo is now: 2',
-      '[vite] hot updated: /hmr.js'
+      '[vite] hot updated: /hmr.ts'
     ])
     browserLogs.length = 0
 
-    editFile('hmr.js', (code) => code.replace('const foo = 2', 'const foo = 3'))
+    editFile('hmr.ts', (code) => code.replace('const foo = 2', 'const foo = 3'))
     await untilUpdated(() => el.textContent(), '3')
 
     expect(browserLogs).toMatchObject([
@@ -36,7 +36,7 @@ if (!isBuild) {
       'foo was: 2',
       '(self-accepting 1) foo is now: 3',
       '(self-accepting 2) foo is now: 3',
-      '[vite] hot updated: /hmr.js'
+      '[vite] hot updated: /hmr.ts'
     ])
     browserLogs.length = 0
   })
@@ -57,7 +57,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 2',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
 
@@ -74,7 +74,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
   })
@@ -95,7 +95,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 2',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 2',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
 
@@ -112,7 +112,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 3',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 3',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
   })

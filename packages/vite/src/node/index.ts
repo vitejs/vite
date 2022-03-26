@@ -108,6 +108,7 @@ export type {
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
 

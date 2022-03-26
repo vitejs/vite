@@ -6,9 +6,11 @@ import { createServer as createHttpsServer } from 'https'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { Socket } from 'net'
+
 export const HMR_HEADER = 'vite-hmr'
 
 export type WebSocketCustomListener<T> = (
@@ -28,7 +30,7 @@ export interface WebSocketServer {
   /**
    * Send custom event
    */
-  send(event: string, payload?: CustomPayload['data']): void
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Disconnect all clients and terminate the server.
    */
@@ -37,13 +39,16 @@ export interface WebSocketServer {
    * Handle custom event emitted by `import.meta.hot.send`
    */
   on: WebSocketServerRaw['on'] & {
-    (event: string, listener: WebSocketCustomListener<any>): void
+    <T extends string>(
+      event: T,
+      listener: WebSocketCustomListener<InferCustomEventPayload<T>>
+    ): void
   }
   /**
    * Unregister event listener.
    */
   off: WebSocketServerRaw['off'] & {
-    (event: string, listener: WebSocketCustomListener<any>): void
+    (event: string, listener: Function): void
   }
 }
 
