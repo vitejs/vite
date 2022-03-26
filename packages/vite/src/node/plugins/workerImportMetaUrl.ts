@@ -10,7 +10,7 @@ import {
   singlelineCommentsRE
 } from '../utils'
 import path from 'path'
-import { bundleWorkerEntry } from './worker'
+import { bundleWorkerEntry, emitWorkerChunks } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
@@ -74,8 +74,6 @@ function getWorkerType(
   }
   return 'classic'
 }
-
-const workerUrlMap = new Map<string, string>()
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -154,23 +152,19 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            if (workerUrlMap.has(file)) {
-              url = workerUrlMap.get(file)!
-            } else {
-              const content = await bundleWorkerEntry(this, config, file)
-              const basename = path.parse(cleanUrl(file)).name
-              const contentHash = getAssetHash(content)
-              const fileName = path.posix.join(
-                config.build.assetsDir,
-                `${basename}.${contentHash}.js`
-              )
-              url = `__VITE_ASSET__${this.emitFile({
-                fileName,
-                type: 'asset',
-                source: content
-              })}__`
-              workerUrlMap.set(file, url)
-            }
+            const content = await bundleWorkerEntry(this, config, file)
+            const basename = path.parse(cleanUrl(file)).name
+            const contentHash = getAssetHash(content)
+            const fileName = path.posix.join(
+              config.build.assetsDir,
+              `${basename}.${contentHash}.js`
+            )
+
+            url = `__VITE_ASSET__${emitWorkerChunks(this, {
+              fileName,
+              type: 'asset',
+              source: content
+            })}__`
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)

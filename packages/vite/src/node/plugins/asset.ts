@@ -10,6 +10,7 @@ import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
+import { getWorkerAssetFilename } from './worker'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -97,7 +98,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
-        const file = getAssetFilename(hash, config) || this.getFileName(hash)
+        const file =
+          getAssetFilename(hash, config) ||
+          getWorkerAssetFilename(hash) ||
+          this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const outputFilepath = config.base + file + postfix
         s.overwrite(match.index, match.index + full.length, outputFilepath, {

@@ -94,7 +94,7 @@ test('classic worker', async () => {
 
 test('emit chunk', async () => {
   expect(await page.textContent('.emti-chunk-worker')).toMatch(
-    '[{"type":"module-and-worker","data":"A string"},{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]'
+    '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]'
   )
   expect(await page.textContent('.emti-chunk-dynamic-import-worker')).toMatch(
     '"A string/es/"'

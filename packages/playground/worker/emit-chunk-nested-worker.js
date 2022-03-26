@@ -1,5 +1,4 @@
 import SubWorker from './emit-chunk-sub-worker?worker'
-
 const subWorker = new SubWorker()
 
 subWorker.onmessage = (event) => {
@@ -10,12 +9,20 @@ subWorker.onmessage = (event) => {
 }
 
 const moduleWorker = new Worker(
-  new URL('./module-and-worker.js', import.meta.url)
+  new URL('./module-and-worker.js', import.meta.url),
+  { type: 'module' }
 )
 
 moduleWorker.onmessage = (event) => {
   self.postMessage({
-    type: 'module-and-worker',
+    type: 'module-and-worker:worker',
     data: event.data
   })
 }
+
+import('./module-and-worker').then((res) => {
+  self.postMessage({
+    type: 'module-and-worker:module',
+    data: res.module
+  })
+})

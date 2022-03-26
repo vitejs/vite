@@ -6,8 +6,49 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
+import type { EmittedFile } from 'rollup'
 
 const WorkerFileId = 'worker_file'
+// <id, hash>
+const workerEmittedAssets = new Map<string, string>()
+const workerEmittedChunk = new Map<string, string>()
+// <hash, id>
+const workerEmittedFile = new Map<string, string>()
+
+function emitWorker(
+  ctx: Rollup.TransformPluginContext,
+  asset: EmittedFile,
+  map: Map<string, string>
+): string {
+  const fileName = asset.fileName!
+
+  if (map.has(fileName)) {
+    return map.get(fileName)!
+  }
+  const hash = ctx.emitFile(asset)
+  map.set(fileName, hash)
+  workerEmittedFile.set(hash, fileName)
+  return hash
+}
+
+// catch output filename avoid overwrites the same file.
+export function emitWorkerAssets(
+  ctx: Rollup.TransformPluginContext,
+  asset: EmittedFile
+): string {
+  return emitWorker(ctx, asset, workerEmittedAssets)
+}
+
+export function emitWorkerChunks(
+  ctx: Rollup.TransformPluginContext,
+  asset: EmittedFile
+): string {
+  return emitWorker(ctx, asset, workerEmittedChunk)
+}
+
+export function getWorkerAssetFilename(hash: string) {
+  return workerEmittedFile.get(hash)
+}
 
 export async function bundleWorkerEntry(
   ctx: Rollup.TransformPluginContext,
@@ -37,10 +78,9 @@ export async function bundleWorkerEntry(
     code = outputCode.code
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
-        ctx.emitFile(outputChunk)
-      }
-      if (outputChunk.type === 'chunk') {
-        ctx.emitFile({
+        emitWorkerAssets(ctx, outputChunk)
+      } else if (outputChunk.type === 'chunk') {
+        emitWorkerChunks(ctx, {
           fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
           source: outputChunk.code,
           type: 'asset'
@@ -109,7 +149,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             config.build.assetsDir,
             `${basename}.${contentHash}.js`
           )
-          url = `__VITE_ASSET__${this.emitFile({
+          url = `__VITE_ASSET__${emitWorkerChunks(this, {
             fileName,
             type: 'asset',
             source: code
