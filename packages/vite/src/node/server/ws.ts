@@ -32,7 +32,7 @@ export interface WebSocketServer {
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
-  onMessage<T>(event: string, listener: WebSocketCustomListener<T>): () => void
+  onEvent<T>(event: string, listener: WebSocketCustomListener<T>): () => void
   /**
    * Listen to raw events from the WebSocket server.
    * @advanced
@@ -217,7 +217,7 @@ export function createWebSocketServer(
       })
     },
 
-    onMessage<T>(event: string, listener: WebSocketCustomListener<T>) {
+    onEvent<T>(event: string, listener: WebSocketCustomListener<T>) {
       if (!customListeners.has(event)) customListeners.set(event, new Set())
       customListeners.get(event)!.add(listener)
 

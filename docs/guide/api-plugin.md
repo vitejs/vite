@@ -544,7 +544,7 @@ if (import.meta.hot) {
 }
 ```
 
-On the plugin side, we can use `server.ws.onMessage` listening to the events:
+On the plugin side, we can use `server.ws.onEvent` listening to the events:
 
 ```js
 // vite.config.js
@@ -553,7 +553,7 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.onMessage('from-client', (data, client) => {
+        server.ws.onEvent('from-client', (data, client) => {
           console.log('Message from client:', data.msg) // Hey!
           // reply only to the client (if needed)
           client.send({

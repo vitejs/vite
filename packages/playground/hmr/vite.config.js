@@ -19,7 +19,7 @@ module.exports = {
         }
       },
       configureServer(server) {
-        server.ws.onMessage('remote-add', ({ a, b }, client) => {
+        server.ws.onEvent('remote-add', ({ a, b }, client) => {
           client.send({
             type: 'custom',
             event: 'remote-add-result',
