@@ -8,8 +8,10 @@ function text(el, text) {
 text('.format-es', 'format es:')
 
 const nestedWorker = new NestedWorker()
+const dataList = []
 nestedWorker.addEventListener('message', (ev) => {
-  text('.emti-chunk-worker', JSON.stringify(ev.data))
+  dataList.push(ev.data)
+  text('.emti-chunk-worker', JSON.stringify(dataList.sort()))
 })
 
 const dynamicImportWorker = new Worker(
