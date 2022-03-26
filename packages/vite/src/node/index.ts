@@ -73,7 +73,11 @@ export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
-export type { WebSocketServer } from './server/ws'
+export type {
+  WebSocketServer,
+  WebSocketClient,
+  WebSocketCustomListener
+} from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
 export type { SendOptions } from './server/send'
