@@ -537,7 +537,10 @@ To send events from the client to the server, we can use [`hot.send`](/guide/api
 ```ts
 // client side
 if (import.meta.hot) {
-  import.meta.hot.send('from-client', { msg: 'Hey!' })
+  import.meta.hot.send({
+    event: 'from-client',
+    data: { msg: 'Hey!' }
+  })
 }
 ```
 

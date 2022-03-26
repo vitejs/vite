@@ -6,7 +6,7 @@ import type {
   Update,
   UpdatePayload
 } from 'types/hmrPayload'
-import type { CustomEventName } from 'types/customEvent'
+import type { CustomEventName, CustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
@@ -489,8 +489,8 @@ export const createHotContext = (ownerPath: string) => {
       addToMap(newListeners)
     },
 
-    send: (event: string, data?: unknown) => {
-      messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
+    send: (payload: CustomEventPayload) => {
+      messageBuffer.push(JSON.stringify({ type: 'custom', ...payload }))
       sendMessageBuffer()
     }
   }
