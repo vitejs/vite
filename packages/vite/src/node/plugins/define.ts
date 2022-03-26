@@ -10,6 +10,7 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isWorker = config.isWorker
 
   const processNodeEnv: Record<string, string> = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
@@ -62,7 +63,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
-      ...processEnv
+      ...processEnv,
+      ...(isWorker
+        ? {
+            'import.meta.url': 'self.location.href'
+          }
+        : {})
     }
 
     const replacementsKeys = Object.keys(replacements)
