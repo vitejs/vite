@@ -6,7 +6,7 @@ import { createServer as createHttpsServer } from 'https'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
-import type { GetCustomEventPayload } from 'types/customEvent'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { Socket } from 'net'
@@ -30,7 +30,7 @@ export interface WebSocketServer {
   /**
    * Send custom event
    */
-  send<T extends string>(event: T, payload?: GetCustomEventPayload<T>): void
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Disconnect all clients and terminate the server.
    */
@@ -41,7 +41,7 @@ export interface WebSocketServer {
   on: WebSocketServerRaw['on'] & {
     <T extends string>(
       event: T,
-      listener: WebSocketCustomListener<GetCustomEventPayload<T>>
+      listener: WebSocketCustomListener<InferCustomEventPayload<T>>
     ): void
   }
   /**

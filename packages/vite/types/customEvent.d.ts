@@ -12,5 +12,5 @@ export interface CustomEventMap {
   'vite:error': ErrorPayload
 }
 
-export type GetCustomEventPayload<T extends string> =
+export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : unknown

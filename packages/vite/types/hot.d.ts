@@ -1,4 +1,4 @@
-import type { GetCustomEventPayload } from './customEvent'
+import type { InferCustomEventPayload } from './customEvent'
 
 export interface ViteHotContext {
   readonly data: any
@@ -19,7 +19,7 @@ export interface ViteHotContext {
 
   on<T extends string>(
     event: T,
-    cb: (payload: GetCustomEventPayload<T>) => void
+    cb: (payload: InferCustomEventPayload<T>) => void
   ): void
-  send<T extends string>(event: T, data?: GetCustomEventPayload<T>): void
+  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
 }

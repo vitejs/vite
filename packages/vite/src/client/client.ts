@@ -1,6 +1,6 @@
 import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
-import type { GetCustomEventPayload } from 'types/customEvent'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
@@ -152,7 +152,7 @@ async function handleMessage(payload: HMRPayload) {
 
 function notifyListeners<T extends string>(
   event: T,
-  data: GetCustomEventPayload<T>
+  data: InferCustomEventPayload<T>
 ): void
 function notifyListeners(event: string, data: any): void {
   const cbs = customListenersMap.get(event)
