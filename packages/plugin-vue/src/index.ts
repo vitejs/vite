@@ -63,6 +63,7 @@ export interface ResolvedOptions extends Options {
   compiler: typeof _compiler
   root: string
   sourceMap: boolean
+  cssDevSourcemap: boolean
   devServer?: ViteDevServer
   devToolsEnabled?: boolean
 }
@@ -99,6 +100,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     reactivityTransform,
     root: process.cwd(),
     sourceMap: true,
+    cssDevSourcemap: false,
     devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
 
@@ -137,6 +139,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
+        cssDevSourcemap: config.css?.devSourcemap ?? false,
         isProduction: config.isProduction,
         devToolsEnabled:
           !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction
