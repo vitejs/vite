@@ -319,6 +319,7 @@ Note that:
 - This is a Vite-only feature and is not a web or ES standard.
 - The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root) or an alias path (see [`resolve.alias` option](/config/#resolve-alias)).
 - The glob matching is done via `fast-glob` - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
+- By default Vite sets the `fast-glob` option `ignore` to `['**/node_modules/**']`, which you can override, e.g. `import.meta.glob('node_modules/library/**/*.js', { ignore: ['node_modules/library/**/node_modules/**'] })`.
 - You should also be aware that glob imports do not accept variables, you need to directly pass the string pattern.
 - The glob patterns cannot contain the same quote string (i.e. `'`, `"`, `` ` ``) as outer quotes, e.g. `'/Tom\'s files/**'`, use `"/Tom's files/**"` instead.
 
