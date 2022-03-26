@@ -1,3 +1,12 @@
+## 2.9.0-beta.9 (2022-03-26)
+
+* feat: support importing css with ?raw (#5796) ([fedb106](https://github.com/vitejs/vite/commit/fedb106)), closes [#5796](https://github.com/vitejs/vite/issues/5796)
+* feat(css): css.devSourcemap option (#7471) ([57f14cb](https://github.com/vitejs/vite/commit/57f14cb)), closes [#7471](https://github.com/vitejs/vite/issues/7471)
+* feat(dev): expose APIs for client-server communication (#7437) ([e29ea8e](https://github.com/vitejs/vite/commit/e29ea8e)), closes [#7437](https://github.com/vitejs/vite/issues/7437)
+* fix: errors in worker handling (#7236) ([77dc1a1](https://github.com/vitejs/vite/commit/77dc1a1)), closes [#7236](https://github.com/vitejs/vite/issues/7236)
+
+
+
 ## 2.9.0-beta.8 (2022-03-24)
 
 * fix: consider undefined port when checking port (#7318) ([c7fc7c3](https://github.com/vitejs/vite/commit/c7fc7c3)), closes [#7318](https://github.com/vitejs/vite/issues/7318)
