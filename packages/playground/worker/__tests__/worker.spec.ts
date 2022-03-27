@@ -51,8 +51,11 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
-test('worker emitted', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+test('worker emitted and import.meta.url in nested worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.nested-worker'),
+    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+  )
 })
 
 if (isBuild) {
