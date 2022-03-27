@@ -142,7 +142,10 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
     ignore: [
       '**/node_modules/**',
       `**/${config.build.outDir}/**`,
-      `**/__tests__/**`
+      // if there aren't explicit entries, also ignore other common folders
+      ...(config.optimizeDeps.entries
+        ? []
+        : [`**/__tests__/**`, `**/coverage/**`])
     ],
     absolute: true
   })
