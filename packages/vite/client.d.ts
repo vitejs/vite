@@ -165,6 +165,10 @@ declare module '*.pdf' {
   const src: string
   export default src
 }
+declare module '*.txt' {
+  const src: string
+  export default src
+}
 
 // web worker
 declare module '*?worker' {

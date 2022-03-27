@@ -16,6 +16,7 @@ export interface BundleWorkerEntryOutput {
 }
 
 export async function bundleWorkerEntry(
+  ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
   id: string
 ): Promise<BundleWorkerEntryOutput> {
@@ -34,12 +35,26 @@ export async function bundleWorkerEntry(
   let code: string
   let sourcemap: Rollup.SourceMap | undefined
   try {
-    const { output } = await bundle.generate({
+    const {
+      output: [outputCode, ...outputChunks]
+    } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = output[0].code
-    sourcemap = output[0].map
+    code = outputCode.code
+    sourcemap = outputCode.map
+    outputChunks.forEach((outputChunk) => {
+      if (outputChunk.type === 'asset') {
+        ctx.emitFile(outputChunk)
+      }
+      if (outputChunk.type === 'chunk') {
+        ctx.emitFile({
+          fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
+          source: outputChunk.code,
+          type: 'asset'
+        })
+      }
+    })
   } finally {
     await bundle.close()
   }
@@ -139,7 +154,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const bundled = await bundleWorkerEntry(config, id)
+        const bundled = await bundleWorkerEntry(this, config, id)
         const { code } = emitSourcemapForWorkerEntry(
           this,
           config,

@@ -7,6 +7,9 @@ import {
 } from '../../testUtils'
 
 const filteredResult = {
+  './alias.js': {
+    default: 'hi'
+  },
   './foo.js': {
     msg: 'foo'
   }
@@ -30,11 +33,19 @@ const json = isBuild
 
 const allResult = {
   // JSON file should be properly transformed
+  '/dir/alias.js': {
+    default: 'hi'
+  },
   '/dir/baz.json': json,
   '/dir/foo.js': {
     msg: 'foo'
   },
   '/dir/index.js': {
+    globWithAlias: {
+      './alias.js': {
+        default: 'hi'
+      }
+    },
     modules: filteredResult
   },
   '/dir/nested/bar.js': {
@@ -43,6 +54,10 @@ const allResult = {
     },
     msg: 'bar'
   }
+}
+
+const nodeModulesResult = {
+  '/dir/node_modules/hoge.js': { msg: 'hoge' }
 }
 
 const rawResult = {
@@ -54,6 +69,9 @@ const rawResult = {
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
+  )
+  expect(await page.textContent('.result-node_modules')).toBe(
+    JSON.stringify(nodeModulesResult, null, 2)
   )
 })
 
@@ -73,6 +91,7 @@ if (!isBuild) {
           '/dir/a.js': {},
           ...allResult,
           '/dir/index.js': {
+            ...allResult['/dir/index.js'],
             modules: {
               './a.js': {},
               ...allResult['/dir/index.js'].modules
@@ -95,6 +114,7 @@ if (!isBuild) {
           },
           ...allResult,
           '/dir/index.js': {
+            ...allResult['/dir/index.js'],
             modules: {
               './a.js': {
                 msg: 'a'

@@ -1,0 +1,5 @@
+@import '@/be-imported.css';
+
+.imported-with-import {
+  color: red;
+}

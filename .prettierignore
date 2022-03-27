@@ -10,3 +10,4 @@ pnpm-lock.yaml
 pnpm-workspace.yaml
 packages/playground/tsconfig-json-load-error/has-error/tsconfig.json
 packages/playground/html/invalid.html
+packages/playground/worker/classic-worker.js

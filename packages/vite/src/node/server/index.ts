@@ -10,7 +10,7 @@ import chokidar from 'chokidar'
 import type { CommonServerOptions } from '../http'
 import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { mergeConfig, resolveConfig } from '../config'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { FSWatcher, WatchOptions } from 'types/chokidar'
@@ -33,7 +33,7 @@ import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
-import { ensureLeadingSlash, normalizePath } from '../utils'
+import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
 import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
@@ -44,8 +44,6 @@ import { transformRequest } from './transformRequest'
 import type { ESBuildTransformResult } from '../plugins/esbuild'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import type { DepOptimizationMetadata } from '../optimizer'
-import { optimizeDeps } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -53,7 +51,8 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { createOptimizedDeps } from '../optimizer/registerMissing'
+import type { OptimizedDeps } from '../optimizer'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
@@ -224,9 +223,16 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(url: string): Promise<Record<string, any>>
+  ssrLoadModule(
+    url: string,
+    opts?: { fixStacktrace?: boolean }
+  ): Promise<Record<string, any>>
   /**
-   * Fix ssr error stacktrace
+   * Returns a fixed version of the given stack
+   */
+  ssrRewriteStacktrace(stack: string): string
+  /**
+   * Mutates the given SSR error by rewriting the stacktrace
    */
   ssrFixStacktrace(e: Error): void
   /**
@@ -250,7 +256,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _optimizeDepsMetadata: DepOptimizationMetadata | null
+  _optimizedDeps: OptimizedDeps | null
   /**
    * Deps that are externalized
    * @internal
@@ -280,21 +286,14 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _isRunningOptimizer: boolean
-  /**
-   * @internal
-   */
-  _registerMissingImport:
-    | ((id: string, resolved: string, ssr: boolean | undefined) => void)
-    | null
-  /**
-   * @internal
-   */
-  _pendingReload: Promise<void> | null
-  /**
-   * @internal
-   */
-  _pendingRequests: Map<string, Promise<TransformResult | null>>
+  _pendingRequests: Map<
+    string,
+    {
+      request: Promise<TransformResult | null>
+      timestamp: number
+      abort: () => void
+    }
+  >
 }
 
 export async function createServer(
@@ -361,20 +360,35 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null!, // to be immediately set
-    ssrLoadModule(url) {
-      server._ssrExternals ||= resolveSSRExternal(
-        config,
-        server._optimizeDepsMetadata
-          ? Object.keys(server._optimizeDepsMetadata.optimized)
-          : []
+    async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      if (!server._ssrExternals) {
+        let knownImports: string[] = []
+        const optimizedDeps = server._optimizedDeps
+        if (optimizedDeps) {
+          await optimizedDeps.scanProcessing
+          knownImports = [
+            ...Object.keys(optimizedDeps.metadata.optimized),
+            ...Object.keys(optimizedDeps.metadata.discovered)
+          ]
+        }
+        server._ssrExternals = resolveSSRExternal(config, knownImports)
+      }
+      return ssrLoadModule(
+        url,
+        server,
+        undefined,
+        undefined,
+        opts?.fixStacktrace
       )
-      return ssrLoadModule(url, server)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {
         const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
         rebindErrorStacktrace(e, stacktrace)
       }
+    },
+    ssrRewriteStacktrace(stack: string) {
+      return ssrRewriteStacktrace(stack, moduleGraph)
     },
     listen(port?: number, isRestart?: boolean) {
       return startServer(server, port, isRestart)
@@ -400,7 +414,7 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
-    async restart(forceOptimize: boolean) {
+    async restart(forceOptimize?: boolean) {
       if (!server._restartPromise) {
         server._forceOptimizeOnRestart = !!forceOptimize
         server._restartPromise = restartServer(server).finally(() => {
@@ -411,14 +425,11 @@ export async function createServer(
       return server._restartPromise
     },
 
-    _optimizeDepsMetadata: null,
+    _optimizedDeps: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _isRunningOptimizer: false,
-    _registerMissingImport: null,
-    _pendingReload: null,
     _pendingRequests: new Map()
   }
 
@@ -560,30 +571,15 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const runOptimize = async () => {
-    if (config.cacheDir) {
-      server._isRunningOptimizer = true
-      try {
-        server._optimizeDepsMetadata = await optimizeDeps(
-          config,
-          config.server.force || server._forceOptimizeOnRestart
-        )
-      } finally {
-        server._isRunningOptimizer = false
-      }
-      server._registerMissingImport = createMissingImporterRegisterFn(server)
-    }
-  }
-
   if (!middlewareMode && httpServer) {
     let isOptimized = false
-    // overwrite listen to run optimizer before server start
+    // overwrite listen to init optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          await runOptimize()
+          server._optimizedDeps = createOptimizedDeps(server)
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -594,7 +590,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    await runOptimize()
+    server._optimizedDeps = createOptimizedDeps(server)
   }
 
   return server
@@ -695,7 +691,7 @@ function createServerCloseFn(server: http.Server | null) {
 }
 
 function resolvedAllowDir(root: string, dir: string): string {
-  return ensureLeadingSlash(normalizePath(path.resolve(root, dir)))
+  return normalizePath(path.resolve(root, dir))
 }
 
 export function resolveServerOptions(
@@ -717,7 +713,7 @@ export function resolveServerOptions(
 
   // only push client dir when vite itself is outside-of-root
   const resolvedClientDir = resolvedAllowDir(root, CLIENT_DIR)
-  if (!allowDirs.some((i) => resolvedClientDir.startsWith(i))) {
+  if (!allowDirs.some((dir) => isParentDirectory(dir, resolvedClientDir))) {
     allowDirs.push(resolvedClientDir)
   }
 
@@ -736,9 +732,18 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
+  let inlineConfig = server.config.inlineConfig
+  if (server._forceOptimizeOnRestart) {
+    inlineConfig = mergeConfig(inlineConfig, {
+      server: {
+        force: true
+      }
+    })
+  }
+
   let newServer = null
   try {
-    newServer = await createServer(server.config.inlineConfig)
+    newServer = await createServer(inlineConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true
@@ -747,7 +752,11 @@ async function restartServer(server: ViteDevServer) {
   }
 
   for (const key in newServer) {
-    if (key !== 'app') {
+    if (key === '_restartPromise') {
+      // prevent new server `restart` function from calling
+      // @ts-ignore
+      newServer[key] = server[key]
+    } else if (key !== 'app') {
       // @ts-ignore
       server[key] = newServer[key]
     }
@@ -767,4 +776,7 @@ async function restartServer(server: ViteDevServer) {
   } else {
     logger.info('server restarted.', { timestamp: true })
   }
+
+  // new server (the current server) can restart now
+  newServer._restartPromise = null
 }
