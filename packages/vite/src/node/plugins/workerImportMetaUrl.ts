@@ -1,7 +1,7 @@
 import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { getAssetHash, fileToUrl } from './asset'
+import { fileToUrl } from './asset'
 import {
   blankReplacer,
   cleanUrl,
@@ -10,7 +10,7 @@ import {
   singlelineCommentsRE
 } from '../utils'
 import path from 'path'
-import { bundleWorkerEntry, emitWorkerChunks } from './worker'
+import { workerFileToUrl } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
@@ -152,19 +152,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            const content = await bundleWorkerEntry(this, config, file)
-            const basename = path.parse(cleanUrl(file)).name
-            const contentHash = getAssetHash(content)
-            const fileName = path.posix.join(
-              config.build.assetsDir,
-              `${basename}.${contentHash}.js`
-            )
-
-            url = `__VITE_ASSET__${emitWorkerChunks(this, {
-              fileName,
-              type: 'asset',
-              source: content
-            })}__`
+            url = await workerFileToUrl(this, config, file)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)

@@ -9,13 +9,23 @@ import { onRollupWarning } from '../build'
 import type { EmittedFile } from 'rollup'
 
 const WorkerFileId = 'worker_file'
-// <id, hash>
+
+// save worker bundle emitted files avoid overwrites the same file.
+// <chunk_filename, hash>
 const workerEmittedAssets = new Map<string, string>()
 const workerEmittedChunk = new Map<string, string>()
+
+// worker bundle don't deps on any more worker runtime info an id only had an result.
+// save worker bundled file id to avoid repeated execution of bundles
+// <filename, hash>
+const workerBundled = new Map<string, string>()
+
+// nested worker bundle context don't had file what emitted by outside bundle
+// save the hash to id to rewrite truth id.
 // <hash, id>
 const workerEmittedFile = new Map<string, string>()
 
-function emitWorker(
+function emitWorkerFile(
   ctx: Rollup.TransformPluginContext,
   asset: EmittedFile,
   map: Map<string, string>
@@ -31,23 +41,18 @@ function emitWorker(
   return hash
 }
 
-// catch output filename avoid overwrites the same file.
-export function emitWorkerAssets(
+function emitWorkerAssets(
   ctx: Rollup.TransformPluginContext,
   asset: EmittedFile
 ): string {
-  return emitWorker(ctx, asset, workerEmittedAssets)
+  return emitWorkerFile(ctx, asset, workerEmittedAssets)
 }
 
-export function emitWorkerChunks(
+function emitWorkerChunks(
   ctx: Rollup.TransformPluginContext,
   asset: EmittedFile
 ): string {
-  return emitWorker(ctx, asset, workerEmittedChunk)
-}
-
-export function getWorkerAssetFilename(hash: string) {
-  return workerEmittedFile.get(hash)
+  return emitWorkerFile(ctx, asset, workerEmittedChunk)
 }
 
 export async function bundleWorkerEntry(
@@ -93,6 +98,32 @@ export async function bundleWorkerEntry(
   return Buffer.from(code)
 }
 
+export async function workerFileToUrl(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  id: string
+): Promise<string> {
+  let hash = workerBundled.get(id)
+  if (hash) {
+    // rewrite truth id, no need to replace by asset plugin
+    return workerEmittedFile.get(hash)!
+  }
+  const code = await bundleWorkerEntry(ctx, config, id)
+  const basename = path.parse(cleanUrl(id)).name
+  const contentHash = getAssetHash(code)
+  const fileName = path.posix.join(
+    config.build.assetsDir,
+    `${basename}.${contentHash}.js`
+  )
+  hash = emitWorkerChunks(ctx, {
+    fileName,
+    type: 'asset',
+    source: code
+  })
+  workerBundled.set(id, hash)
+  return `__VITE_ASSET__${hash}__`
+}
+
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
@@ -127,8 +158,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const code = await bundleWorkerEntry(this, config, id)
         if (query.inline != null) {
+          const code = await bundleWorkerEntry(this, config, id)
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
@@ -143,17 +174,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             }`
         } else {
-          const basename = path.parse(cleanUrl(id)).name
-          const contentHash = getAssetHash(code)
-          const fileName = path.posix.join(
-            config.build.assetsDir,
-            `${basename}.${contentHash}.js`
-          )
-          url = `__VITE_ASSET__${emitWorkerChunks(this, {
-            fileName,
-            type: 'asset',
-            source: code
-          })}__`
+          url = await workerFileToUrl(this, config, id)
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
