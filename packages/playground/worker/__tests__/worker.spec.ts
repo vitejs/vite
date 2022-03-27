@@ -52,7 +52,10 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
 })
 
 test('worker emitted', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.nested-worker'),
+    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+  )
 })
 
 if (isBuild) {
