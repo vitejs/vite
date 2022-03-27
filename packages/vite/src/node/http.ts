@@ -1,11 +1,14 @@
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
-import { Server as HttpServer } from 'http'
-import { ServerOptions as HttpsServerOptions } from 'https'
+import type {
+  OutgoingHttpHeaders as HttpServerHeaders,
+  Server as HttpServer
+} from 'http'
+import type { ServerOptions as HttpsServerOptions } from 'https'
 import { isObject } from './utils'
-import { ProxyOptions } from './server/middlewares/proxy'
-import { Connect } from 'types/connect'
-import { Logger } from './logger'
+import type { ProxyOptions } from './server/middlewares/proxy'
+import type { Connect } from 'types/connect'
+import type { Logger } from './logger'
 
 export interface CommonServerOptions {
   /**
@@ -62,6 +65,10 @@ export interface CommonServerOptions {
    * using an object.
    */
   cors?: CorsOptions | boolean
+  /**
+   * Specify server response headers.
+   */
+  headers?: HttpServerHeaders
 }
 
 /**
@@ -106,12 +113,12 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  https?: boolean | HttpsServerOptions,
-  cacheDir?: string
+  https: boolean | HttpsServerOptions | undefined,
+  cacheDir: string
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
@@ -129,7 +136,7 @@ export async function resolveHttpsConfig(
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }
@@ -137,83 +144,7 @@ function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
-/**
- * https://github.com/webpack/webpack-dev-server/blob/master/lib/utils/createCertificate.js
- *
- * Copyright JS Foundation and other contributors
- * This source code is licensed under the MIT license found in the
- * LICENSE file at
- * https://github.com/webpack/webpack-dev-server/blob/master/LICENSE
- */
-async function createCertificate() {
-  const { generate } = await import('selfsigned')
-  const pems = generate(null, {
-    algorithm: 'sha256',
-    days: 30,
-    keySize: 2048,
-    extensions: [
-      // {
-      //   name: 'basicConstraints',
-      //   cA: true,
-      // },
-      {
-        name: 'keyUsage',
-        keyCertSign: true,
-        digitalSignature: true,
-        nonRepudiation: true,
-        keyEncipherment: true,
-        dataEncipherment: true
-      },
-      {
-        name: 'extKeyUsage',
-        serverAuth: true,
-        clientAuth: true,
-        codeSigning: true,
-        timeStamping: true
-      },
-      {
-        name: 'subjectAltName',
-        altNames: [
-          {
-            // type 2 is DNS
-            type: 2,
-            value: 'localhost'
-          },
-          {
-            type: 2,
-            value: 'localhost.localdomain'
-          },
-          {
-            type: 2,
-            value: 'lvh.me'
-          },
-          {
-            type: 2,
-            value: '*.lvh.me'
-          },
-          {
-            type: 2,
-            value: '[::1]'
-          },
-          {
-            // type 7 is IP
-            type: 7,
-            ip: '127.0.0.1'
-          },
-          {
-            type: 7,
-            ip: 'fe80::1'
-          }
-        ]
-      }
-    ]
-  })
-  return pems.private + pems.cert
-}
-
-async function getCertificate(cacheDir?: string) {
-  if (!cacheDir) return await createCertificate()
-
+async function getCertificate(cacheDir: string) {
   const cachePath = path.join(cacheDir, '_cert.pem')
 
   try {
@@ -228,7 +159,7 @@ async function getCertificate(cacheDir?: string) {
 
     return content
   } catch {
-    const content = await createCertificate()
+    const content = (await import('./certificate')).createCertificate()
     fsp
       .mkdir(cacheDir, { recursive: true })
       .then(() => fsp.writeFile(cachePath, content))

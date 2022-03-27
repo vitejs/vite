@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+!**/glob-import/dir/node_modules
 dist
 dist-ssr
 TODOs.md
@@ -11,4 +12,3 @@ explorations
 /packages/vite/LICENSE
 *.cpuprofile
 /.vscode/
-/packages/playground/ssr-deps/node-addon/build/

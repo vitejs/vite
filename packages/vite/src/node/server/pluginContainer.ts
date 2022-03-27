@@ -31,8 +31,8 @@ SOFTWARE.
 
 import fs from 'fs'
 import { resolve, join } from 'path'
-import { Plugin } from '../plugin'
-import {
+import type { Plugin } from '../plugin'
+import type {
   InputOptions,
   MinimalPluginContext,
   OutputOptions,
@@ -49,12 +49,11 @@ import {
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import acornClassFields from 'acorn-class-fields'
-import acornStaticClassFeatures from 'acorn-static-class-features'
-import { RawSourceMap } from '@ampproject/remapping/dist/types/types'
-import { combineSourcemaps } from '../utils'
+import type { RawSourceMap } from '@ampproject/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import { cleanUrl, combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
-import { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import {
   createDebugger,
   ensureWatchedFile,
@@ -67,11 +66,12 @@ import {
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../config'
+import colors from 'picocolors'
+import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
-import { ModuleGraph } from './moduleGraph'
+import type { ModuleGraph } from './moduleGraph'
 import { performance } from 'perf_hooks'
+import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -90,6 +90,10 @@ export interface PluginContainer {
     options?: {
       skip?: Set<Plugin>
       ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -124,10 +128,7 @@ type PluginContext = Omit<
   | 'load'
 >
 
-export let parser = acorn.Parser.extend(
-  acornClassFields,
-  acornStaticClassFeatures
-)
+export let parser = acorn.Parser
 
 export async function createPluginContainer(
   { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
@@ -161,9 +162,9 @@ export async function createPluginContainer(
 
   function warnIncompatibleMethod(method: string, plugin: string) {
     logger.warn(
-      chalk.cyan(`[plugin:${plugin}] `) +
-        chalk.yellow(
-          `context method ${chalk.bold(
+      colors.cyan(`[plugin:${plugin}] `) +
+        colors.yellow(
+          `context method ${colors.bold(
             `${method}()`
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
@@ -215,6 +216,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
@@ -244,7 +246,11 @@ export async function createPluginContainer(
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
+      let out = await container.resolveId(id, importer, {
+        skip,
+        ssr: this.ssr,
+        scan: this._scan
+      })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -290,7 +296,7 @@ export async function createPluginContainer(
       const err = formatError(e, position, this)
       const msg = buildErrorMessage(
         err,
-        [chalk.yellow(`warning: ${err.message}`)],
+        [colors.yellow(`warning: ${err.message}`)],
         false
       )
       logger.warn(msg, {
@@ -314,11 +320,20 @@ export async function createPluginContainer(
     position: number | { column: number; line: number } | undefined,
     ctx: Context
   ) {
-    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+    const err = (
+      typeof e === 'string' ? new Error(e) : e
+    ) as postcss.CssSyntaxError & RollupError
+    if (err.pluginCode) {
+      return err // The plugin likely called `this.error`
+    }
+    if (err.file && err.name === 'CssSyntaxError') {
+      err.id = normalizePath(err.file)
+    }
     if (ctx._activePlugin) err.plugin = ctx._activePlugin.name
     if (ctx._activeId && !err.id) err.id = ctx._activeId
     if (ctx._activeCode) {
       err.pluginCode = ctx._activeCode
+
       const pos =
         position != null
           ? position
@@ -326,13 +341,14 @@ export async function createPluginContainer(
           ? err.pos
           : // some rollup plugins, e.g. json, sets position instead of pos
             (err as any).position
+
       if (pos != null) {
         let errLocation
         try {
           errLocation = numberToPos(ctx._activeCode, pos)
         } catch (err2) {
           logger.error(
-            chalk.red(
+            colors.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`
             ),
             // print extra newline to separate the two errors
@@ -363,7 +379,21 @@ export async function createPluginContainer(
           line: (err as any).line,
           column: (err as any).column
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+        err.frame = err.frame || generateCodeFrame(err.id!, err.loc)
+      }
+
+      if (err.loc && ctx instanceof TransformContext) {
+        const rawSourceMap = ctx._getCombinedSourcemap()
+        if (rawSourceMap) {
+          const traced = new TraceMap(rawSourceMap as any)
+          const { source, line, column } = originalPositionFor(traced, {
+            line: Number(err.loc.line),
+            column: Number(err.loc.column)
+          })
+          if (source && line != null && column != null) {
+            err.loc = { file: source, line, column }
+          }
+        }
       }
     }
     return err
@@ -398,7 +428,7 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(this.filename, [
+          combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             {
               ...(m as RawSourceMap),
               sourcesContent: combinedMap.sourcesContent
@@ -412,7 +442,7 @@ export async function createPluginContainer(
           ? new MagicString(this.originalCode).generateMap({
               includeContent: true,
               hires: true,
-              source: this.filename
+              source: cleanUrl(this.filename)
             })
           : null
       }
@@ -439,11 +469,7 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(
-          ...[acornClassFields, acornStaticClassFeatures].concat(
-            options.acornInjectPlugins
-          )
-        )
+        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
       }
       return {
         acorn,
@@ -470,8 +496,10 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
+      const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0
 
@@ -488,7 +516,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr }
+          { ssr, scan }
         )
         if (!result) continue
 
@@ -516,7 +544,9 @@ export async function createPluginContainer(
         if (!seenResolves[key]) {
           seenResolves[key] = true
           debugResolve(
-            `${timeFrom(resolveStart)} ${chalk.cyan(rawId)} -> ${chalk.dim(id)}`
+            `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
+              id
+            )}`
           )
         }
       }

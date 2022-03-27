@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import {
   createDebugger,
   isDefined,
@@ -8,10 +9,20 @@ import {
   normalizePath,
   resolveFrom
 } from '../utils'
-import { Logger, ResolvedConfig } from '..'
+import type { Logger, ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
+
+/**
+ * Converts "parent > child" syntax to just "child"
+ */
+export function stripNesting(packages: string[]) {
+  return packages.map((s) => {
+    const arr = s.split('>')
+    return arr[arr.length - 1].trim()
+  })
+}
 
 /**
  * Heuristics for determining whether a dependency should be externalized for
@@ -21,6 +32,10 @@ export function resolveSSRExternal(
   config: ResolvedConfig,
   knownImports: string[]
 ): string[] {
+  // strip nesting since knownImports may be passed in from optimizeDeps which
+  // supports a "parent > child" syntax
+  knownImports = stripNesting(knownImports)
+
   const ssrConfig = config.ssr
   if (ssrConfig?.noExternal === true) {
     return []
@@ -63,6 +78,9 @@ export function resolveSSRExternal(
   }
   return externals
 }
+
+const CJS_CONTENT_RE =
+  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
 
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
@@ -157,13 +175,13 @@ function collectExternals(
       }
       // check if the entry is cjs
       const content = fs.readFileSync(esmEntry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
+      if (CJS_CONTENT_RE.test(content)) {
         ssrExternals.add(id)
         continue
       }
 
       logger.warn(
-        `${id} is incorrectly packaged. Please contact the package author to fix.`
+        `${id} doesn't appear to be written in CJS, but also doesn't appear to be a valid ES module (i.e. it doesn't have "type": "module" or an .mjs extension for the entry point). Please contact the package author to fix.`
       )
     }
   }

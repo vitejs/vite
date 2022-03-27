@@ -1,12 +1,12 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
-import mime from 'mime/lite'
-import { Plugin } from '../plugin'
-import { ResolvedConfig } from '../config'
+import * as mrmime from 'mrmime'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { OutputOptions, PluginContext, RenderedChunk } from 'rollup'
+import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
@@ -15,8 +15,6 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
-
-export const chunkToEmittedAssetsMap = new WeakMap<RenderedChunk, Set<string>>()
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
@@ -33,6 +31,10 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+
+  // add own dictionary entry by directly assigning mrmine
+  // https://github.com/lukeed/mrmime/issues/3
+  mrmime.mimes['ico'] = 'image/x-icon'
   return {
     name: 'vite:asset',
 
@@ -96,9 +98,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // some internal plugins may still need to emit chunks (e.g. worker) so
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        registerAssetToChunk(chunk, file)
+        chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const outputFilepath = config.base + file + postfix
-        s.overwrite(match.index, match.index + full.length, outputFilepath)
+        s.overwrite(match.index, match.index + full.length, outputFilepath, {
+          contentOnly: true
+        })
       }
 
       if (s) {
@@ -127,15 +131,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-export function registerAssetToChunk(chunk: RenderedChunk, file: string): void {
-  let emitted = chunkToEmittedAssetsMap.get(chunk)
-  if (!emitted) {
-    emitted = new Set()
-    chunkToEmittedAssetsMap.set(chunk, emitted)
-  }
-  emitted.add(cleanUrl(file))
-}
-
 export function checkPublicFile(
   url: string,
   { publicDir }: ResolvedConfig
@@ -153,11 +148,11 @@ export function checkPublicFile(
   }
 }
 
-export function fileToUrl(
+export async function fileToUrl(
   id: string,
   config: ResolvedConfig,
   ctx: PluginContext
-): string | Promise<string> {
+): Promise<string> {
   if (config.command === 'serve') {
     return fileToDevUrl(id, config)
   } else {
@@ -295,7 +290,7 @@ async function fileToBuiltUrl(
       content.length < Number(config.build.assetsInlineLimit))
   ) {
     // base64 inlined as a string
-    url = `data:${mime.getType(file)};base64,${content.toString('base64')}`
+    url = `data:${mrmime.lookup(file)};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code

@@ -17,6 +17,7 @@ module.exports = {
     },
     'process.env.SOMEVAR': '"SOMEVAR"',
     $DOLLAR: 456,
-    ÖUNICODE_LETTERɵ: 789
+    ÖUNICODE_LETTERɵ: 789,
+    __VAR_NAME__: false,
   }
 }

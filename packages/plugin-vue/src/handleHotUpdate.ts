@@ -1,13 +1,13 @@
 import _debug from 'debug'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import {
   createDescriptor,
   getDescriptor,
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import { ModuleNode, HmrContext } from 'vite'
-import { ResolvedOptions } from '.'
+import type { ModuleNode, HmrContext } from 'vite'
+import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
 
@@ -40,9 +40,14 @@ export async function handleHotUpdate(
 
   if (hasScriptChanged(prevDescriptor, descriptor)) {
     let scriptModule: ModuleNode | undefined
-    if (descriptor.script?.lang && !descriptor.script.src) {
+    if (
+      (descriptor.scriptSetup?.lang && !descriptor.scriptSetup.src) ||
+      (descriptor.script?.lang && !descriptor.script.src)
+    ) {
       const scriptModuleRE = new RegExp(
-        `type=script.*&lang\.${descriptor.script.lang}$`
+        `type=script.*&lang\.${
+          descriptor.scriptSetup?.lang || descriptor.script?.lang
+        }$`
       )
       scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
     }

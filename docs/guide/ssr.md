@@ -100,7 +100,7 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
 ```js
-app.use('*', async (req, res) => {
+app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   try {
@@ -134,8 +134,7 @@ app.use('*', async (req, res) => {
     // If an error is caught, let Vite fix the stracktrace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
-    console.error(e)
-    res.status(500).end(e.message)
+    next(e)
   }
 })
 ```
@@ -251,7 +250,7 @@ export function mySSRPlugin() {
 
 The options object in `load` and `transform` is optional, rollup is not currently using this object but may extend these hooks with additional metadata in the future.
 
-::: tip Note
+:::tip Note
 Before Vite 2.7, this was informed to plugin hooks with a positional `ssr` param instead of using the `options` object. All major frameworks and plugins are updated but you may find outdated posts using the previous API.
 :::
 

@@ -35,6 +35,19 @@ if (import.meta.hot) {
 
   import.meta.hot.on('vite:beforeUpdate', (event) => {
     console.log(`>>> vite:beforeUpdate -- ${event.type}`)
+
+    const cssUpdate = event.updates.find(
+      (update) =>
+        update.type === 'css-update' && update.path.match('global.css')
+    )
+    if (cssUpdate) {
+      const el = document.querySelector('#global-css')
+      text('.css-prev', el.href)
+      // We don't have a vite:afterUpdate event, but updates are currently sync
+      setTimeout(() => {
+        text('.css-post', el.href)
+      }, 0)
+    }
   })
 
   import.meta.hot.on('vite:error', (event) => {
@@ -43,6 +56,12 @@ if (import.meta.hot) {
 
   import.meta.hot.on('foo', ({ msg }) => {
     text('.custom', msg)
+  })
+
+  // send custom event to server to calculate 1 + 2
+  import.meta.hot.send('remote-add', { a: 1, b: 2 })
+  import.meta.hot.on('remote-add-result', ({ result }) => {
+    text('.custom-communication', result)
   })
 }
 

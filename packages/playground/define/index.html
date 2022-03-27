@@ -13,8 +13,11 @@
 <p>unicode identifier: <code class="unicode-identifier"></code></p>
 <p>no property: <code class="no-property"></code></p>
 <p>no identifier substring: <span class="no-identifier-substring"></span></p>
+<p>define variable in html: <code class="exp-define">__EXP__</code></p>
+<p>import json: <code class="import-json"></code></p>
 
 <script type="module">
+  const __VAR_NAME__ = true // ensure define doesn't replace var name
   text('.exp', __EXP__)
   text('.string', __STRING__)
   text('.number', __NUMBER__)
@@ -38,6 +41,9 @@
 
   window[`${'_'}_EXP__SUBSTR__`] = true
   text('.no-identifier-substring', __EXP__SUBSTR__)
+
+  import dataJson from './data.json'
+  text('.import-json', dataJson.foo)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

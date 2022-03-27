@@ -1,8 +1,12 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { TransformResult } from 'rollup'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -42,9 +46,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   function generatePattern(
     ssr: boolean
-  ): [Record<string, string | undefined>, RegExp] {
+  ): [Record<string, string | undefined>, RegExp | null] {
     const processEnv: Record<string, string> = {}
-    if (!ssr || config.ssr?.target === 'webworker') {
+    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    if (isNeedProcessEnv) {
       Object.assign(processEnv, {
         'process.env.': `({}).`,
         'global.process.env.': `({}).`,
@@ -53,27 +59,33 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacements: Record<string, string> = {
-      ...processNodeEnv,
+      ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
     }
 
-    const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)' +
-        // Must follow beginning of a line or a char that can't be part of an identifier
-        '(?<=^|[^\\p{L}\\p{N}_$])(' +
-        Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|') +
-        // Must be followed by: end of a line, a char that can't be part of an identifier or
-        // anything following a dot (handles cases where replacement includes a trailing dot)
-        ')(?=$|[^\\p{L}\\p{N}_$]|(?<=\\.).)',
-      'gu'
-    )
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Do not allow preceding '.', but do allow preceding '...' for spread operations
+          '(?<!(?<!\\.\\.)\\.)' +
+            // Must follow beginning of a line or a char that can't be part of an identifier
+            '(?<=^|[^\\p{L}\\p{N}_$])(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // Replacement key must be followed by:
+            // - end of a line
+            // - a char that can't be part of an identifier and isn't whitespace or an assignment
+            // - whitespace, as long as it's not followed by an assignment
+            // - anything following a dot (handles cases where replacement includes a trailing dot)
+            ')(?=$|[^\\p{L}\\p{N}_$\\s=]|(\\s+[^=\\s])|(?<=\\.).)',
+          'gu'
+        )
+      : null
 
     return [replacements, pattern]
   }
@@ -83,6 +95,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
@@ -92,14 +105,20 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
       }
 
       const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
+      }
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
@@ -117,7 +136,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.overwrite(start, end, replacement, { contentOnly: true })
       }
 
       if (!hasReplaced) {

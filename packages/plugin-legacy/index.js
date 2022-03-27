@@ -18,7 +18,11 @@ const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("scrip
 const legacyPolyfillId = 'vite-legacy-polyfill'
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
-const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
+
+const detectDynamicImportVarName = '__vite_is_dynamic_import_support'
+const detectDynamicImportVarInitCode = `var ${detectDynamicImportVarName}=false;`
+const detectDynamicImportCode = `try{import("_").catch(()=>1);}catch(e){}window.${detectDynamicImportVarName}=true;`
+const dynamicFallbackInlineCode = `!function(){if(window.${detectDynamicImportVarName})return;console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
 const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
@@ -37,8 +41,9 @@ function viteLegacyPlugin(options = {}) {
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
-  const debugFlag = process.env.DEBUG
-  const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
+  const debugFlags = (process.env.DEBUG || '').split(',')
+  const isDebug =
+    debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
@@ -104,23 +109,6 @@ function viteLegacyPlugin(options = {}) {
   const legacyGenerateBundlePlugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
-
-    config() {
-      return {
-        build: {
-          minify: 'terser'
-        }
-      }
-    },
-
-    configResolved(config) {
-      if (!config.build.ssr && genLegacy && config.build.minify === 'esbuild') {
-        throw new Error(
-          `Can't use esbuild as the minifier when targeting legacy browsers ` +
-            `because esbuild minification is not legacy safe.`
-        )
-      }
-    },
 
     async generateBundle(opts, bundle) {
       if (config.build.ssr) {
@@ -297,6 +285,19 @@ function viteLegacyPlugin(options = {}) {
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
 
+      // @ts-ignore force terser for legacy chunks. This only takes effect if
+      // minification isn't disabled, because that leaves out the terser plugin
+      // entirely.
+      opts.__vite_force_terser__ = true
+
+      // @ts-ignore
+      // In the `generateBundle` hook,
+      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
+      // But that's still a waste of computing resource.
+      // So we add this flag to avoid emitting the asset in the first place whenever possible.
+      opts.__vite_skip_asset_emit__ = true
+
+      // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
@@ -433,6 +434,18 @@ function viteLegacyPlugin(options = {}) {
 
       // 5. inject dynamic import fallback entry
       if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'module' },
+          children: detectDynamicImportVarInitCode,
+          injectTo: 'head'
+        })
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'module' },
+          children: detectDynamicImportCode,
+          injectTo: 'head'
+        })
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
@@ -698,5 +711,7 @@ viteLegacyPlugin.default = viteLegacyPlugin
 viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64'),
+  createHash('sha256').update(detectDynamicImportVarInitCode).digest('base64'),
+  createHash('sha256').update(detectDynamicImportCode).digest('base64'),
   createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]

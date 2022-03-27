@@ -1,5 +1,5 @@
 import { extname } from 'path'
-import { ModuleInfo, PartialResolvedId } from 'rollup'
+import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
@@ -9,7 +9,7 @@ import {
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { TransformResult } from './transformRequest'
+import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
   /**
@@ -32,6 +32,7 @@ export class ModuleNode {
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
   lastHMRTimestamp = 0
+  lastInvalidationTimestamp = 0
 
   constructor(url: string) {
     this.url = url
@@ -62,11 +63,17 @@ export class ModuleGraph {
   safeModulesPath = new Set<string>()
 
   constructor(
-    private resolveId: (url: string) => Promise<PartialResolvedId | null>
+    private resolveId: (
+      url: string,
+      ssr: boolean
+    ) => Promise<PartialResolvedId | null>
   ) {}
 
-  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
-    const [url] = await this.resolveUrl(rawUrl)
+  async getModuleByUrl(
+    rawUrl: string,
+    ssr?: boolean
+  ): Promise<ModuleNode | undefined> {
+    const [url] = await this.resolveUrl(rawUrl, ssr)
     return this.urlToModuleMap.get(url)
   }
 
@@ -88,17 +95,26 @@ export class ModuleGraph {
     }
   }
 
-  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
-    mod.info = undefined
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now()
+  ): void {
+    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+    // processing being done for this module
+    mod.lastInvalidationTimestamp = timestamp
+    // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
+    // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
   }
 
   invalidateAll(): void {
+    const timestamp = Date.now()
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {
-      this.invalidateModule(mod, seen)
+      this.invalidateModule(mod, seen, timestamp)
     })
   }
 
@@ -111,7 +127,8 @@ export class ModuleGraph {
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
     acceptedModules: Set<string | ModuleNode>,
-    isSelfAccepting: boolean
+    isSelfAccepting: boolean,
+    ssr?: boolean
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
@@ -121,7 +138,7 @@ export class ModuleGraph {
     for (const imported of importedModules) {
       const dep =
         typeof imported === 'string'
-          ? await this.ensureEntryFromUrl(imported)
+          ? await this.ensureEntryFromUrl(imported, ssr)
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
@@ -141,15 +158,15 @@ export class ModuleGraph {
     for (const accepted of acceptedModules) {
       const dep =
         typeof accepted === 'string'
-          ? await this.ensureEntryFromUrl(accepted)
+          ? await this.ensureEntryFromUrl(accepted, ssr)
           : accepted
       deps.add(dep)
     }
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string): Promise<ModuleNode> {
-    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl)
+  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+    const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
       mod = new ModuleNode(url)
@@ -197,9 +214,9 @@ export class ModuleGraph {
   // 1. remove the HMR timestamp query (?t=xxxx)
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
-  async resolveUrl(url: string): Promise<ResolvedUrl> {
+  async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolved = await this.resolveId(url)
+    const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)

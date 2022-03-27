@@ -7,7 +7,7 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview",
-    "postinstall": "node ../../../scripts/patchFileDeps.cjs"
+    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
     "axios": "^0.24.0",
@@ -17,13 +17,16 @@
     "dep-esbuild-plugin-transform": "file:./dep-esbuild-plugin-transform",
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",
+    "dep-not-js": "file:./dep-not-js",
+    "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.6.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "resolve-linked": "workspace:0.0.0",
-    "vue": "^3.2.23",
+    "url": "^0.11.0",
+    "vue": "^3.2.25",
     "vuex": "^4.0.0"
   },
   "devDependencies": {

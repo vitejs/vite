@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../testUtils'
-import { Page } from 'playwright-chromium'
+import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {
   await page.click('.ping')
@@ -9,6 +9,10 @@ test('normal', async () => {
   await untilUpdated(
     () => page.textContent('.mode'),
     isBuild ? 'production' : 'development'
+  )
+  await untilUpdated(
+    () => page.textContent('.bundle-with-plugin'),
+    'worker bundle with plugin success!'
   )
 })
 
@@ -47,14 +51,17 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
+test('worker emitted', async () => {
+  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+})
+
 if (isBuild) {
+  const assetsDir = path.resolve(testDir, 'dist/iife/assets')
   // assert correct files
   test('inlined code generation', async () => {
-    const assetsDir = path.resolve(testDir, 'dist/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 3 worker chunk
-    expect(files.length).toBe(4)
-    const index = files.find((f) => f.includes('index'))
+    expect(files.length).toBe(13)
+    const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
     const workerContent = fs.readFileSync(
@@ -66,10 +73,21 @@ if (isBuild) {
     expect(workerContent).not.toMatch(`import`)
     expect(workerContent).not.toMatch(`export`)
     // chunk
-    expect(content).toMatch(`new Worker("/assets`)
-    expect(content).toMatch(`new SharedWorker("/assets`)
+    expect(content).toMatch(`new Worker("/iife/assets`)
+    expect(content).toMatch(`new SharedWorker("/iife/assets`)
     // inlined
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
   })
 }
+
+test('module worker', async () => {
+  expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
+    'A string'
+  )
+})
+
+test('classic worker', async () => {
+  expect(await page.textContent('.classic-worker')).toMatch('A classic')
+  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
