@@ -20,5 +20,10 @@ module.exports = {
         )
       }
     }
-  ]
+  ],
+  resolve: {
+    alias: {
+      '@views': path.resolve(__dirname, 'views')
+    }
+  }
 }
