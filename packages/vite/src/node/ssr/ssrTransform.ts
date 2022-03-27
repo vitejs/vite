@@ -60,7 +60,7 @@ export async function ssrTransform(
     const importId = `__vite_ssr_import_${uid++}__`
     s.appendLeft(
       node.start,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
+      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});`
     )
     return importId
   }
