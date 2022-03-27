@@ -106,7 +106,7 @@ export async function workerFileToUrl(
   let hash = workerBundled.get(id)
   if (hash) {
     // rewrite truth id, no need to replace by asset plugin
-    return workerEmittedFile.get(hash)!
+    return config.base + workerEmittedFile.get(hash)!
   }
   const code = await bundleWorkerEntry(ctx, config, id)
   const basename = path.parse(cleanUrl(id)).name
