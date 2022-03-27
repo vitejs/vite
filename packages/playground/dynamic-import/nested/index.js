@@ -6,8 +6,18 @@ async function setView(view) {
   text('.view', msg)
 }
 
+async function setViewWithAlias(view) {
+  const { msg } = await import(`@views/${view}.js`)
+  text('.view', msg + ' with alias')
+}
+
 ;['foo', 'bar'].forEach((id) => {
   document.querySelector(`.${id}`).addEventListener('click', () => setView(id))
+})
+;['foo', 'bar'].forEach((id) => {
+  document
+    .querySelector(`.alias-${id}`)
+    .addEventListener('click', () => setViewWithAlias(id))
 })
 
 // literal dynamic
