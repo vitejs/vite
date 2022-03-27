@@ -66,6 +66,12 @@ const rawResult = {
   }
 }
 
+const relativeRawResult = {
+  '../glob-import/dir/baz.json': {
+    msg: 'baz'
+  }
+}
+
 test('should work', async () => {
   expect(await page.textContent('.result')).toBe(
     JSON.stringify(allResult, null, 2)
@@ -78,6 +84,12 @@ test('should work', async () => {
 test('import glob raw', async () => {
   expect(await page.textContent('.globraw')).toBe(
     JSON.stringify(rawResult, null, 2)
+  )
+})
+
+test('import relative glob raw', async () => {
+  expect(await page.textContent('.relative-glob-raw')).toBe(
+    JSON.stringify(relativeRawResult, null, 2)
   )
 })
 

@@ -1,6 +1,7 @@
 <pre class="result"></pre>
 <pre class="result-node_modules"></pre>
 <pre class="globraw"></pre>
+<pre class="relative-glob-raw"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -48,6 +49,24 @@
   })
   document.querySelector('.globraw').textContent = JSON.stringify(
     globraw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  const relativeRawModules = import.meta.globEager(
+    '../glob-import/dir/*.json',
+    {
+      as: 'raw'
+    }
+  )
+  const relativeGlobRaw = {}
+  Object.keys(relativeRawModules).forEach((key) => {
+    relativeGlobRaw[key] = JSON.parse(relativeRawModules[key])
+  })
+  document.querySelector('.relative-glob-raw').textContent = JSON.stringify(
+    relativeGlobRaw,
     null,
     2
   )

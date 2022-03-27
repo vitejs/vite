@@ -147,7 +147,7 @@ export async function transformImportGlob(
         )
       }
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
-        await fsp.readFile(path.join(base, file), 'utf-8')
+        await fsp.readFile(path.join(base, files[i]), 'utf-8')
       )},`
     } else {
       const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
