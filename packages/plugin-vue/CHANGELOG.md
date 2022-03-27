@@ -1,3 +1,39 @@
+## 2.3.0-beta.0 (2022-03-22)
+
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* feat: css sourcemap support during dev (#7173) ([38a655f](https://github.com/vitejs/vite/commit/38a655f)), closes [#7173](https://github.com/vitejs/vite/issues/7173)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+* docs(vue): add transformAssetUrls example (#7232) ([08e928c](https://github.com/vitejs/vite/commit/08e928c)), closes [#7232](https://github.com/vitejs/vite/issues/7232)
+
+
+
+## [2.2.4](https://github.com/vitejs/vite/compare/plugin-vue@2.2.3...plugin-vue@2.2.4) (2022-02-28)
+
+
+
+## [2.2.3](https://github.com/vitejs/vite/compare/plugin-vue@2.2.2...plugin-vue@2.2.3) (2022-02-28)
+
+
+### Bug Fixes
+
+* **plugin-vue:** setup jsx script no hmr ([#6568](https://github.com/vitejs/vite/issues/6568)) ([c84601c](https://github.com/vitejs/vite/commit/c84601cee5232bad0f65c8fcc663e38bb457a0b3))
+
+
+
+## [2.2.2](https://github.com/vitejs/vite/compare/plugin-vue@2.2.1...plugin-vue@2.2.2) (2022-02-18)
+
+
+
+## [2.2.1](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@2.2.1) (2022-02-18)
+
+
+### Bug Fixes
+
+* adjust vue template sourcemap ([#6972](https://github.com/vitejs/vite/issues/6972)) ([a774303](https://github.com/vitejs/vite/commit/a7743039f263f41e1c3971e324f893a5ef5e5508))
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
 # [2.2.0](https://github.com/vitejs/vite/compare/plugin-vue@2.1.0...plugin-vue@2.2.0) (2022-02-09)
 
 
