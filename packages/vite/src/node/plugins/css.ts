@@ -1029,7 +1029,12 @@ async function doUrlReplace(
     return matched
   }
 
-  return `url(${wrap}${await replacer(rawUrl)}${wrap})`
+  const newUrl = await replacer(rawUrl)
+  if (wrap === '' && newUrl !== encodeURI(newUrl)) {
+    // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
+    wrap = "'"
+  }
+  return `url(${wrap}${newUrl}${wrap})`
 }
 
 async function doImportCSSReplace(
