@@ -505,20 +505,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
 
-          const [,
-            startQuotation,
-            importee,
-            endQuotation
-          ] = url.match(/^(.{1})(.*)(.{1})$/)!
-          const matchedAlias = config.resolve.alias.find(
-            (alias) => alias.find instanceof RegExp
-              ? alias.find.test(importee)
-              : importee.startsWith(alias.find)
-            )
-          if (matchedAlias) {
-            url = startQuotation +
-              importee.replace(matchedAlias.find, matchedAlias.replacement) +
-              endQuotation
+          const [, startQuotation, importee, endQuotation] = url.match(
+            /^([`'"]{1})(.*)([`'"]{1})$/
+          )!
+          const resolvedId = await resolve(importee, importer, true)
+          if (resolvedId) {
+            url = startQuotation + resolvedId + endQuotation
           }
 
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
@@ -667,11 +659,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 function isSupportedDynamicImport(url: string) {
   url = url.trim().slice(1, -1)
   // must be relative or root path
-  if (
-    !url.startsWith('./') &&
-    !url.startsWith('../') &&
-    !url.startsWith('/')
-  ) {
+  if (!url.startsWith('./') && !url.startsWith('../') && !url.startsWith('/')) {
     return false
   }
   // must be more specific if importing from same dir
