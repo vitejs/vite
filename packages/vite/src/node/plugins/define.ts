@@ -41,7 +41,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(importMetaKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
+      'import.meta.hot': `false`,
+      ...(isWorker
+        ? {
+            'import.meta.url': 'self.location.href'
+          }
+        : {})
     })
   }
 
@@ -63,12 +68,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
-      ...processEnv,
-      ...(isWorker
-        ? {
-            'import.meta.url': 'self.location.href'
-          }
-        : {})
+      ...processEnv
     }
 
     const replacementsKeys = Object.keys(replacements)
