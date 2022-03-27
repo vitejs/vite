@@ -520,23 +520,50 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // check @vite-ignore which suppresses dynamic import warning
           const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
 
-          const url = rawUrl
+          let url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
-          if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
-            this.warn(
-              `\n` +
-                colors.cyan(importerModule.file) +
+          if (!hasViteIgnore) {
+            const matched = url.match(/^([`'"]{1})(.*)([`'"]{1})$/)
+            if (matched) {
+              const [, startQuotation, importee, endQuotation] = matched
+              // it may start with an alias, try to convert alias using `resolve`
+              if (!importee.startsWith('./') && !importee.startsWith('../')) {
+                const aliasFlag = importee.slice(0, importee.indexOf('/'))
+                const resolvedId = await resolve(aliasFlag, importer, true)
+                if (resolvedId) {
+                  let relativePathOfAlias = path.posix.relative(
+                    path.dirname(importer),
+                    resolvedId
+                  )
+                  if (relativePathOfAlias === '') {
+                    relativePathOfAlias = '.'
+                  }
+
+                  url =
+                    startQuotation +
+                    importee.replace(aliasFlag, relativePathOfAlias) +
+                    endQuotation
+                  str().overwrite(start, end, url)
+                }
+              }
+            }
+
+            if (!isSupportedDynamicImport(url)) {
+              this.warn(
                 `\n` +
-                generateCodeFrame(source, start) +
-                `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${colors.blue(
-                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                )} ` +
-                `for supported dynamic import formats. ` +
-                `If this is intended to be left as-is, you can use the ` +
-                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
-            )
+                  colors.cyan(importerModule.file) +
+                  `\n` +
+                  generateCodeFrame(source, start) +
+                  `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                  `See ${colors.blue(
+                    `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                  )} ` +
+                  `for supported dynamic import formats. ` +
+                  `If this is intended to be left as-is, you can use the ` +
+                  `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+              )
+            }
           }
           if (
             !/^('.*'|".*"|`.*`)$/.test(url) ||
