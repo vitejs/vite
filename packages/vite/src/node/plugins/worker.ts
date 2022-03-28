@@ -33,27 +33,15 @@ export async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false
   })
-  let code: string
-  let sourcemap: Rollup.SourceMap | undefined
-  let buffer: Buffer
+  let chunk: Rollup.OutputChunk
   try {
     const {
-      output: [outputCode, ...outputChunks]
+      output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = outputCode.code
-    sourcemap = outputCode.map
-
-    buffer = emitSourcemapForWorkerEntry(
-      ctx,
-      config,
-      id,
-      query,
-      code,
-      sourcemap
-    )
+    chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
@@ -69,7 +57,7 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return buffer
+  return emitSourcemapForWorkerEntry(ctx, config, id, query, chunk)
 }
 
 export interface EmitResult {
@@ -81,9 +69,9 @@ function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
-  code: string,
-  sourcemap: Rollup.SourceMap | undefined
+  chunk: Rollup.OutputChunk
 ): Buffer {
+  let { code, map: sourcemap } = chunk
   if (sourcemap) {
     if (config.build.sourcemap === 'inline') {
       // Manually add the sourcemap to the code if configured for inline sourcemaps.
