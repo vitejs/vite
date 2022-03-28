@@ -28,18 +28,50 @@ describe('mergeConfig', () => {
       resolve: {
         alias: [
           {
-            find: 'foo',
-            replacement: 'foo-value'
-          },
-          {
             find: 'bar',
             replacement: 'bar-value'
           },
           {
             find: 'baz',
             replacement: 'baz-value'
+          },
+          {
+            find: 'foo',
+            replacement: 'foo-value'
           }
         ]
+      }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('keep object alias schema', () => {
+    const baseConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value',
+          baz: 'baz-value'
+        }
+      }
+    }
+
+    const newConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    const mergedConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          baz: 'baz-value',
+          foo: 'foo-value'
+        }
       }
     }
 
@@ -105,6 +137,22 @@ describe('mergeConfig', () => {
           foo: 'foo-value'
         }
       }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('merge array correctly', () => {
+    const baseConfig = {
+      foo: null
+    }
+
+    const newConfig = {
+      foo: ['bar']
+    }
+
+    const mergedConfig = {
+      foo: ['bar']
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)

@@ -16,9 +16,10 @@ export interface BundleWorkerEntryOutput {
 }
 
 export async function bundleWorkerEntry(
+  ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
   id: string
-): Promise<BundleWorkerEntryOutput> {
+): Promise<Buffer> {
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
   const { plugins, rollupOptions, format } = config.worker
@@ -32,21 +33,32 @@ export async function bundleWorkerEntry(
     preserveEntrySignatures: false
   })
   let code: string
-  let sourcemap: Rollup.SourceMap | undefined
+  // let sourcemap: Rollup.SourceMap | undefined
   try {
-    const { output } = await bundle.generate({
+    const {
+      output: [outputCode, ...outputChunks]
+    } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = output[0].code
-    sourcemap = output[0].map
+    code = outputCode.code
+    // sourcemap = outputCode.map
+    outputChunks.forEach((outputChunk) => {
+      if (outputChunk.type === 'asset') {
+        ctx.emitFile(outputChunk)
+      }
+      if (outputChunk.type === 'chunk') {
+        ctx.emitFile({
+          fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
+          source: outputChunk.code,
+          type: 'asset'
+        })
+      }
+    })
   } finally {
     await bundle.close()
   }
-  return {
-    code: code,
-    sourcemap
-  }
+  return Buffer.from(code)
 }
 
 export interface EmitResult {
@@ -139,14 +151,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const bundled = await bundleWorkerEntry(config, id)
-        const { code } = emitSourcemapForWorkerEntry(
-          this,
-          config,
-          id,
-          query,
-          bundled
-        )
+        const code = await bundleWorkerEntry(this, config, id)
         if (query.inline != null) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'

@@ -1,4 +1,5 @@
 @import './imported-at-import.css';
+@import 'spacefolder/space.css';
 
 .imported {
   color: green;

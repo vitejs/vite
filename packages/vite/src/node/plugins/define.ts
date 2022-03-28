@@ -3,9 +3,14 @@ import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isWorker = config.isWorker
 
   const processNodeEnv: Record<string, string> = {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
@@ -36,15 +41,22 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(importMetaKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
-      'import.meta.hot': `false`
+      'import.meta.hot': `false`,
+      ...(isWorker
+        ? {
+            'import.meta.url': 'self.location.href'
+          }
+        : {})
     })
   }
 
   function generatePattern(
     ssr: boolean
-  ): [Record<string, string | undefined>, RegExp] {
+  ): [Record<string, string | undefined>, RegExp | null] {
     const processEnv: Record<string, string> = {}
-    if (!ssr || config.ssr?.target === 'webworker') {
+    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    if (isNeedProcessEnv) {
       Object.assign(processEnv, {
         'process.env.': `({}).`,
         'global.process.env.': `({}).`,
@@ -53,24 +65,27 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacements: Record<string, string> = {
-      ...processNodeEnv,
+      ...(isNeedProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
     }
 
-    const pattern = new RegExp(
-      // Do not allow preceding '.', but do allow preceding '...' for spread operations
-      '(?<!(?<!\\.\\.)\\.)\\b(' +
-        Object.keys(replacements)
-          .map((str) => {
-            return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-          })
-          .join('|') +
-        // prevent trailing assignments
-        ')\\b(?!\\s*?=[^=])',
-      'g'
-    )
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Do not allow preceding '.', but do allow preceding '...' for spread operations
+          '(?<!(?<!\\.\\.)\\.)\\b(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // prevent trailing assignments
+            ')\\b(?!\\s*?=[^=])',
+          'g'
+        )
+      : null
 
     return [replacements, pattern]
   }
@@ -80,6 +95,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
@@ -89,14 +105,20 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
       }
 
       const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
+      }
 
       if (ssr && !isBuild) {
         // ssr + dev, simple replace
@@ -114,7 +136,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.overwrite(start, end, replacement, { contentOnly: true })
       }
 
       if (!hasReplaced) {
