@@ -10,11 +10,6 @@ import type { TransformPluginContext } from 'rollup'
 
 const WorkerFileId = 'worker_file'
 
-export interface BundleWorkerEntryOutput {
-  code: string
-  sourcemap: Rollup.SourceMap | undefined
-}
-
 export async function bundleWorkerEntry(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
@@ -58,10 +53,6 @@ export async function bundleWorkerEntry(
     await bundle.close()
   }
   return emitSourcemapForWorkerEntry(ctx, config, id, query, chunk)
-}
-
-export interface EmitResult {
-  code: Buffer
 }
 
 function emitSourcemapForWorkerEntry(
