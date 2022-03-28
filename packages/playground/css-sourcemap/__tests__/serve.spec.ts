@@ -1,11 +1,11 @@
-import { fromComment } from 'convert-source-map'
 import { URL } from 'url'
-import { normalizePath } from 'vite'
-import { isBuild, testDir } from 'testUtils'
+import {
+  extractSourcemap,
+  formatSourcemapForSnapshot,
+  isBuild
+} from 'testUtils'
 
 if (!isBuild) {
-  const root = normalizePath(testDir)
-
   const getStyleTagContentIncluding = async (content: string) => {
     const styles = await page.$$('style')
     for (const style of styles) {
@@ -15,19 +15,6 @@ if (!isBuild) {
       }
     }
     throw new Error('Not found')
-  }
-
-  const extractSourcemap = (content: string) => {
-    const lines = content.trim().split('\n')
-    return fromComment(lines[lines.length - 1]).toObject()
-  }
-
-  const formatSourcemapForSnapshot = (map: any) => {
-    const m = { ...map }
-    delete m.file
-    delete m.names
-    m.sources = m.sources.map((source) => source.replace(root, '/root'))
-    return m
   }
 
   test('inline css', async () => {

@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "convert-source-map": "^1.8.0",
     "less": "^4.1.2",
     "magic-string": "^0.25.7",
     "sass": "^1.43.4",

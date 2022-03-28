@@ -1,10 +1,11 @@
-import { fromComment } from 'convert-source-map'
-import { normalizePath } from 'vite'
-import { isBuild, testDir } from 'testUtils'
+import {
+  extractSourcemap,
+  formatSourcemapForSnapshot,
+  isBuild
+} from 'testUtils'
+import { URL } from 'url'
 
 if (!isBuild) {
-  const root = normalizePath(testDir)
-
   const getStyleTagContentIncluding = async (content: string) => {
     const styles = await page.$$('style')
     for (const style of styles) {
@@ -16,18 +17,63 @@ if (!isBuild) {
     throw new Error('Not found')
   }
 
-  const extractSourcemap = (content: string) => {
-    const lines = content.trim().split('\n')
-    return fromComment(lines[lines.length - 1]).toObject()
-  }
+  test('js', async () => {
+    const res = await page.request.get(new URL('./Js.vue', page.url()).href)
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
+        "sources": Array [
+          "/root/Js.vue",
+        ],
+        "sourcesContent": Array [
+          "<template>
+        <p>&lt;js&gt;</p>
+      </template>
 
-  const formatSourcemapForSnapshot = (map: any) => {
-    const m = { ...map }
-    delete m.file
-    delete m.names
-    m.sources = m.sources.map((source) => source.replace(root, '/root'))
-    return m
-  }
+      <script>
+      console.log('script')
+      </script>
+
+      <script setup>
+      console.log('setup')
+      </script>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('ts', async () => {
+    const res = await page.request.get(new URL('./Ts.vue', page.url()).href)
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
+        "sources": Array [
+          "/root/Ts.vue",
+        ],
+        "sourcesContent": Array [
+          "<template>
+        <p>&lt;ts&gt;</p>
+      </template>
+
+      <script lang=\\"ts\\">
+      console.log('ts script')
+      </script>
+
+      <script lang=\\"ts\\" setup>
+      console.log('ts setup')
+      </script>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
 
   test('css', async () => {
     const css = await getStyleTagContentIncluding('.css ')

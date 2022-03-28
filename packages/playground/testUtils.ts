@@ -6,7 +6,8 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
 import type { ElementHandle } from 'playwright-chromium'
-import type { Manifest } from 'vite'
+import { Manifest, normalizePath } from 'vite'
+import { fromComment } from 'convert-source-map'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -138,3 +139,17 @@ export async function untilUpdated(
  * Send the rebuild complete message in build watch
  */
 export { notifyRebuildComplete } from '../../scripts/jestPerTestSetup'
+
+export const extractSourcemap = (content: string) => {
+  const lines = content.trim().split('\n')
+  return fromComment(lines[lines.length - 1]).toObject()
+}
+
+export const formatSourcemapForSnapshot = (map: any) => {
+  const root = normalizePath(testDir)
+  const m = { ...map }
+  delete m.file
+  delete m.names
+  m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  return m
+}
