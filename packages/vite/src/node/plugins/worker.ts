@@ -18,7 +18,8 @@ export interface BundleWorkerEntryOutput {
 export async function bundleWorkerEntry(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
-  id: string
+  id: string,
+  query: Record<string, string> | null
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
@@ -33,7 +34,8 @@ export async function bundleWorkerEntry(
     preserveEntrySignatures: false
   })
   let code: string
-  // let sourcemap: Rollup.SourceMap | undefined
+  let sourcemap: Rollup.SourceMap | undefined
+  let buffer: Buffer
   try {
     const {
       output: [outputCode, ...outputChunks]
@@ -42,7 +44,16 @@ export async function bundleWorkerEntry(
       sourcemap: config.build.sourcemap
     })
     code = outputCode.code
-    // sourcemap = outputCode.map
+    sourcemap = outputCode.map
+
+    buffer = emitSourcemapForWorkerEntry(
+      ctx,
+      config,
+      id,
+      query,
+      code,
+      sourcemap
+    )
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
@@ -58,21 +69,21 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return Buffer.from(code)
+  return buffer
 }
 
 export interface EmitResult {
   code: Buffer
 }
 
-export function emitSourcemapForWorkerEntry(
+function emitSourcemapForWorkerEntry(
   context: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
-  workerEntry: BundleWorkerEntryOutput
-): EmitResult {
-  let { code, sourcemap } = workerEntry
+  code: string,
+  sourcemap: Rollup.SourceMap | undefined
+): Buffer {
   if (sourcemap) {
     if (config.build.sourcemap === 'inline') {
       // Manually add the sourcemap to the code if configured for inline sourcemaps.
@@ -112,9 +123,7 @@ export function emitSourcemapForWorkerEntry(
     }
   }
 
-  return {
-    code: Buffer.from(code)
-  }
+  return Buffer.from(code)
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -151,7 +160,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const code = await bundleWorkerEntry(this, config, id)
+        const code = await bundleWorkerEntry(this, config, id, query)
         if (query.inline != null) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
