@@ -54,23 +54,6 @@ if (isBuild) {
     )
     const subWorkerSourcemap = getSourceMapUrl(subWorkerContent)
 
-    // expect(files).toContainEqual(expect.stringMatching(/^index\.\w+\.js\.map$/))
-    // expect(files).toContainEqual(
-    //   expect.stringMatching(/^my-worker\.\w+\.js\.map$/)
-    // )
-    // expect(files).toContainEqual(
-    //   expect.stringMatching(/^my-shared-worker\.\w+\.js\.map$/)
-    // )
-    // expect(files).toContainEqual(
-    //   expect.stringMatching(/^possible-ts-output-worker\.\w+\.js\.map$/)
-    // )
-    // expect(files).toContainEqual(
-    //   expect.stringMatching(/^worker-nested-worker\.\w+\.js\.map$/)
-    // )
-    // expect(files).toContainEqual(
-    //   expect.stringMatching(/^sub-worker\.\w+\.js\.map$/)
-    // )
-
     // sourcemap should exist and have a data URL
     expect(indexSourcemap).toMatch(/^data:/)
     expect(workerSourcemap).toMatch(/^data:/)
