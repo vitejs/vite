@@ -7,7 +7,8 @@ import {
   cleanUrl,
   injectQuery,
   multilineCommentsRE,
-  singlelineCommentsRE
+  singlelineCommentsRE,
+  stringsRE
 } from '../utils'
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
@@ -122,9 +123,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const noCommentsCode = code
           .replace(multilineCommentsRE, blankReplacer)
           .replace(singlelineCommentsRE, blankReplacer)
+
+        const noStringCode = noCommentsCode.replace(
+          stringsRE,
+          (m) => `'${' '.repeat(m.length - 2)}'`
+        )
+
         let match: RegExpExecArray | null
         let s: MagicString | null = null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+        while ((match = importMetaUrlRE.exec(noStringCode))) {
           const { 0: allExp, 2: exp, 3: rawUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
 

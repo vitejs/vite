@@ -29,9 +29,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+
+        const noStringCode = noCommentsCode.replace(
+          /"[^"]*"|'[^']*'|`[^`]*`/g,
+          (m) => `'${' '.repeat(m.length - 2)}'`
+        )
+
         let s: MagicString | null = null
         let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+        while ((match = importMetaUrlRE.exec(noStringCode))) {
           const { 0: exp, 1: rawUrl, index } = match
 
           if (!s) s = new MagicString(code)
