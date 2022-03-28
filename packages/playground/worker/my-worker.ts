@@ -7,4 +7,4 @@ self.onmessage = (e) => {
   }
 }
 
-console.log('my-worker')
+console.log('my-worker: inline-worker')

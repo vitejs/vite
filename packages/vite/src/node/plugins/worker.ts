@@ -10,16 +10,12 @@ import type { TransformPluginContext } from 'rollup'
 
 const WorkerFileId = 'worker_file'
 
-export interface BundleWorkerEntryOutput {
-  code: string
-  sourcemap: Rollup.SourceMap | undefined
-}
-
 export async function bundleWorkerEntry(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
-  id: string
-): Promise<BundleWorkerEntryOutput> {
+  id: string,
+  query: Record<string, string> | null
+): Promise<Buffer> {
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
   const { plugins, rollupOptions, format } = config.worker
@@ -32,17 +28,15 @@ export async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false
   })
-  let code: string
-  let sourcemap: Rollup.SourceMap | undefined
+  let chunk: Rollup.OutputChunk
   try {
     const {
-      output: [outputCode, ...outputChunks]
+      output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
       format,
       sourcemap: config.build.sourcemap
     })
-    code = outputCode.code
-    sourcemap = outputCode.map
+    chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
@@ -58,66 +52,58 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return {
-    code: code,
-    sourcemap
-  }
+
+  return emitWorkerSourcemap(ctx, config, id, query, chunk)
 }
 
-export interface EmitResult {
-  code: Buffer
-}
-
-export function emitSourcemapForWorkerEntry(
+export function emitWorkerSourcemap(
   context: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null,
-  workerEntry: BundleWorkerEntryOutput
-): EmitResult {
-  let { code, sourcemap } = workerEntry
-  if (sourcemap) {
-    if (config.build.sourcemap === 'inline') {
-      // Manually add the sourcemap to the code if configured for inline sourcemaps.
-      // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
-      // Currently seems that it won't be resolved until Rollup 3
-      const dataUrl = sourcemap.toUrl()
-      code += `//# sourceMappingURL=${dataUrl}`
-    } else if (
-      config.build.sourcemap === 'hidden' ||
-      config.build.sourcemap === true
-    ) {
-      const basename = path.parse(cleanUrl(id)).name
-      const data = sourcemap.toString()
-      const content = Buffer.from(data)
-      const contentHash = getAssetHash(content)
-      const fileName = `${basename}.${contentHash}.js.map`
-      const filePath = path.posix.join(config.build.assetsDir, fileName)
-      if (!context.cache.has(contentHash)) {
-        context.cache.set(contentHash, true)
-        context.emitFile({
-          fileName: filePath,
-          type: 'asset',
-          source: data
-        })
-      }
+  chunk: Rollup.OutputChunk
+): Buffer {
+  let { code, map: sourcemap } = chunk
+  const { sourcemap: sourcemapConfig } = config.build
+  if (!sourcemap) {
+    return Buffer.from(code)
+  }
 
-      // Emit the comment that tells the JS debugger where it can find the
-      // sourcemap file.
-      // 'hidden' causes the sourcemap file to be created but
-      // the comment in the file to be omitted.
-      if (config.build.sourcemap === true) {
-        // inline web workers need to use the full sourcemap path
-        // non-inline web workers can use a relative path
-        const sourceMapUrl = query?.inline != null ? filePath : fileName
-        code += `//# sourceMappingURL=${sourceMapUrl}`
-      }
+  if (sourcemapConfig === 'inline') {
+    // Manually add the sourcemap to the code if configured for inline sourcemaps.
+    // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
+    // Currently seems that it won't be resolved until Rollup 3
+    const dataUrl = sourcemap.toUrl()
+    code += `//# sourceMappingURL=${dataUrl}`
+  } else if (sourcemapConfig === 'hidden' || sourcemapConfig === true) {
+    const basename = path.parse(cleanUrl(id)).name
+    const data = sourcemap.toString()
+    const content = Buffer.from(data)
+    const contentHash = getAssetHash(content)
+    const fileName = `${basename}.${contentHash}.js.map`
+    const filePath = path.posix.join(config.build.assetsDir, fileName)
+    if (!context.cache.has(contentHash)) {
+      context.cache.set(contentHash, true)
+      context.emitFile({
+        fileName: filePath,
+        type: 'asset',
+        source: data
+      })
+    }
+
+    // Emit the comment that tells the JS debugger where it can find the
+    // sourcemap file.
+    // 'hidden' causes the sourcemap file to be created but
+    // the comment in the file to be omitted.
+    if (sourcemapConfig === true) {
+      // inline web workers need to use the full sourcemap path
+      // non-inline web workers can use a relative path
+      const sourceMapUrl = query?.inline != null ? filePath : fileName
+      code += `//# sourceMappingURL=${sourceMapUrl}`
     }
   }
 
-  return {
-    code: Buffer.from(code)
-  }
+  return Buffer.from(code)
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -154,14 +140,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let url: string
       if (isBuild) {
-        const bundled = await bundleWorkerEntry(this, config, id)
-        const { code } = emitSourcemapForWorkerEntry(
-          this,
-          config,
-          id,
-          query,
-          bundled
-        )
+        const code = await bundleWorkerEntry(this, config, id, query)
         if (query.inline != null) {
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
