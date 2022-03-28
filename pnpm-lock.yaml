@@ -4,6 +4,8 @@ overrides:
   vite: workspace:*
   '@vitejs/plugin-vue': workspace:*
 
+packageExtensionsChecksum: 696422bac84dd936748019990f84746e
+
 importers:
 
   .:
@@ -935,7 +937,7 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.1.0_postcss@8.4.12
-      postcss-load-config: 3.1.3_ts-node@10.4.0
+      postcss-load-config: 3.1.3_postcss@8.4.12+ts-node@10.4.0
       postcss-modules: 4.3.1_postcss@8.4.12
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.6.1_rollup@2.62.0
@@ -7528,6 +7530,7 @@ packages:
     resolution: {integrity: sha512-ipM8Ds01ZUophjDTQYSVP70slFSYg3T0/zyfII5vzhN6V57YSxMgG5syXuwi5VtS8wSf3iL30v0uBdoIVx4Q0g==}
     engines: {node: '>= 10'}
     peerDependencies:
+      postcss: '*'
       ts-node: '>=9.0.0'
     peerDependenciesMeta:
       ts-node:
@@ -7539,16 +7542,18 @@ packages:
       yaml: 1.10.2
     dev: false
 
-  /postcss-load-config/3.1.3_ts-node@10.4.0:
+  /postcss-load-config/3.1.3_postcss@8.4.12+ts-node@10.4.0:
     resolution: {integrity: sha512-5EYgaM9auHGtO//ljHH+v/aC/TQ5LHXtL7bQajNAUBKUVKiYE8rYpFms7+V26D9FncaGe2zwCoPQsFKb5zF/Hw==}
     engines: {node: '>= 10'}
     peerDependencies:
+      postcss: '*'
       ts-node: '>=9.0.0'
     peerDependenciesMeta:
       ts-node:
         optional: true
     dependencies:
       lilconfig: 2.0.4
+      postcss: 8.4.12
       ts-node: 10.4.0_44ef5af6cbbc24239b4e70b5c7b0d7a6
       yaml: 1.10.2
     dev: true
