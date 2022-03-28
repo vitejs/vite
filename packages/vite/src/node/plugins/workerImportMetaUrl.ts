@@ -13,12 +13,7 @@ import {
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
 import { parseRequest } from '../utils'
-import {
-  ENV_ENTRY,
-  ENV_PUBLIC_PATH,
-  JS_TYPES_RE,
-  OPTIMIZABLE_ENTRY_RE
-} from '../constants'
+import { ENV_ENTRY, ENV_PUBLIC_PATH, JS_TYPES_RE } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
@@ -93,8 +88,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
-      // only run in js file
-      if (!(OPTIMIZABLE_ENTRY_RE.test(id) || JS_TYPES_RE.test(id))) {
+      if (!JS_TYPES_RE.test(id)) {
         return
       }
 
@@ -123,6 +117,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           code: injectEnv + code
         }
       }
+
       if (
         (code.includes('new Worker') || code.includes('new ShareWorker')) &&
         code.includes('new URL') &&

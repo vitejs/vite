@@ -4,7 +4,7 @@ import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
-import { JS_TYPES_RE, OPTIMIZABLE_ENTRY_RE } from '../constants'
+import { JS_TYPES_RE } from '../constants'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -21,7 +21,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
       // only run in js file
-      if (!(OPTIMIZABLE_ENTRY_RE.test(id) || JS_TYPES_RE.test(id))) {
+      if (!JS_TYPES_RE.test(id)) {
         return
       }
 
