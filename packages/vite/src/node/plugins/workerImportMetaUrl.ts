@@ -13,7 +13,12 @@ import {
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
 import { parseRequest } from '../utils'
-import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import {
+  ENV_ENTRY,
+  ENV_PUBLIC_PATH,
+  JS_TYPES_RE,
+  OPTIMIZABLE_ENTRY_RE
+} from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
@@ -88,6 +93,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
+      // only run in js file
+      if (!(OPTIMIZABLE_ENTRY_RE.test(id) || JS_TYPES_RE.test(id))) {
+        return
+      }
+
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
@@ -126,14 +136,18 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
         const noStringCode = noCommentsCode.replace(
           stringsRE,
-          (m) => `'${' '.repeat(m.length - 2)}'`
+          (m) => `'${'\0'.repeat(m.length - 2)}'`
         )
 
         let match: RegExpExecArray | null
         let s: MagicString | null = null
         while ((match = importMetaUrlRE.exec(noStringCode))) {
-          const { 0: allExp, 2: exp, 3: rawUrl, index } = match
+          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
+
+          const urlStart = allExp.indexOf(emptyUrl) + index
+          const urlEnd = urlStart + emptyUrl.length
+          const rawUrl = code.slice(urlStart, urlEnd)
 
           if (options?.ssr) {
             this.error(

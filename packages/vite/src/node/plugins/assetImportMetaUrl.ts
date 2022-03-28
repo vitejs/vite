@@ -4,6 +4,7 @@ import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import { JS_TYPES_RE, OPTIMIZABLE_ENTRY_RE } from '../constants'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -19,6 +20,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
+      // only run in js file
+      if (!(OPTIMIZABLE_ENTRY_RE.test(id) || JS_TYPES_RE.test(id))) {
+        return
+      }
+
       if (
         !options?.ssr &&
         code.includes('new URL') &&
@@ -29,16 +35,19 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const noCommentsCode = code
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
-
-        const noStringCode = noCommentsCode.replace(
-          /"[^"]*"|'[^']*'|`[^`]*`/g,
-          (m) => `'${' '.repeat(m.length - 2)}'`
-        )
+          .replace(
+            /"[^"]*"|'[^']*'|`[^`]*`/g,
+            (m) => `'${'\0'.repeat(m.length - 2)}'`
+          )
 
         let s: MagicString | null = null
         let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(noStringCode))) {
-          const { 0: exp, 1: rawUrl, index } = match
+        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+          const { 0: exp, 1: emptyUrl, index } = match
+
+          const urlStart = exp.indexOf(emptyUrl) + index
+          const urlEnd = urlStart + emptyUrl.length
+          const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
 
