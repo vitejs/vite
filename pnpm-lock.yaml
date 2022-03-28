@@ -223,6 +223,12 @@ importers:
   packages/playground/html:
     specifiers: {}
 
+  packages/playground/js-sourcemap:
+    specifiers:
+      convert-source-map: ^1.8.0
+    devDependencies:
+      convert-source-map: 1.8.0
+
   packages/playground/json:
     specifiers:
       json-module: file:./json-module
