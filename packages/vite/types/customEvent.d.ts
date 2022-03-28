@@ -13,4 +13,4 @@ export interface CustomEventMap {
 }
 
 export type InferCustomEventPayload<T extends string> =
-  T extends keyof CustomEventMap ? CustomEventMap[T] : unknown
+  T extends keyof CustomEventMap ? CustomEventMap[T] : any
