@@ -7,8 +7,5 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview"
-  },
-  "devDependencies": {
-    "convert-source-map": "^1.8.0"
   }
 }

@@ -1,24 +1,11 @@
-import { fromComment } from 'convert-source-map'
 import { URL } from 'url'
-import { normalizePath } from 'vite'
-import { isBuild, testDir } from 'testUtils'
+import {
+  extractSourcemap,
+  formatSourcemapForSnapshot,
+  isBuild
+} from 'testUtils'
 
 if (!isBuild) {
-  const root = normalizePath(testDir)
-
-  const extractSourcemap = (content: string) => {
-    const lines = content.trim().split('\n')
-    return fromComment(lines[lines.length - 1]).toObject()
-  }
-
-  const formatSourcemapForSnapshot = (map: any) => {
-    const m = { ...map }
-    delete m.file
-    delete m.names
-    m.sources = m.sources.map((source) => source.replace(root, '/root'))
-    return m
-  }
-
   test('js', async () => {
     const res = await page.request.get(new URL('./foo.js', page.url()).href)
     const js = await res.text()
