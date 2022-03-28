@@ -9,7 +9,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlInlineProxyPlugin } from './html'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -60,13 +60,14 @@ export async function resolvePlugins(
       isBuild
     ),
     wasmPlugin(config),
-    webWorkerPlugin(config),
-    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
+    isBuild && buildHtmlPlugin(config),
+    webWorkerPlugin(config),
+    workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,
