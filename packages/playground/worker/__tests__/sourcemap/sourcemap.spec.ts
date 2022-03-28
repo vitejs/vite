@@ -45,6 +45,10 @@ if (isBuild) {
   })
 }
 
+test('true', () => {
+  expect(true).toBe(true)
+})
+
 function getSourceMapUrl(code: string): string {
   const regex = /\/\/[#@]\s(?:source(?:Mapping)?URL)=\s*(\S+)/g
   const results = regex.exec(code)
