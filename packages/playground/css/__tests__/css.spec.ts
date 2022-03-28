@@ -54,6 +54,12 @@ test('css import from js', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('css import asset with space', async () => {
+  const importedWithSpace = await page.$('.import-with-space')
+
+  expect(await getBg(importedWithSpace)).toMatch(/.*ok\..*png/)
+})
+
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
@@ -363,6 +369,14 @@ test('minify css', async () => {
   const cssFile = findAssetFile(/index\.\w+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test('?raw', async () => {
+  const rawImportCss = await page.$('.raw-imported-css')
+
+  expect(await rawImportCss.textContent()).toBe(
+    require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+  )
 })
 
 test('import css in less', async () => {

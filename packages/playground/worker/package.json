@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "debug": "node --inspect-brk ../../vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:es": "vite --config ./vite.config-es.js dev",
+    "build:es": "vite --config ./vite.config-es.js build",
+    "preview:es": "vite --config ./vite.config-es.js preview",
+    "debug": "node --inspect-brk ../../vite/bin/vite"
   },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "workspace:*"

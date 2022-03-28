@@ -48,7 +48,7 @@ export async function handleHMRUpdate(
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === path.resolve(name)
+    (name) => file === name
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&

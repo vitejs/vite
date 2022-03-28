@@ -27,13 +27,16 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
-Note that Vite will replace `__filename`, `__dirname`, and `import.meta.url`. Using these as variable names will result in an error:
+::: tip NOTE
+Vite will replace `__filename`, `__dirname`, and `import.meta.url` in **CommonJS** and **TypeScript** config files. Using these as variable names will result in an error:
 
 ```js
 const __filename = "value"
 // will be transformed to
 const "path/vite.config.js" = "value"
 ```
+
+:::
 
 ### Config Intellisense
 
@@ -324,6 +327,14 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
+### css.devSourcemap
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Whether to enable sourcemaps during dev.
+
 ### json.namedExports
 
 - **Type:** `boolean`
@@ -355,7 +366,7 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
-  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
+  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
 
   In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
 
@@ -374,7 +385,7 @@ export default defineConfig(({ command, mode }) => {
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Static Asset Handling](/guide/assets)
 
-  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch) to be treated as static assets so that:
+  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) to be treated as static assets so that:
 
   - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
@@ -549,7 +560,7 @@ export default defineConfig(({ command, mode }) => {
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
-  When using `server.middlewareMode` or `server.https`, assigning `server.hmr.server` to your HTTP(S) server will process HMR connection requests through your server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+  If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ### server.watch
 
@@ -962,9 +973,9 @@ export default defineConfig({
 
 - **Type:** `string | string[]`
 
-  By default, Vite will crawl your `index.html` to detect dependencies that need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
+  By default, Vite will crawl all your `.html` files to detect dependencies that need to be pre-bundled (ignoring `node_modules`, `build.outDir`, `__tests__` and `coverage`). If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
-  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitily defined. If other folders needs to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`.
 
 ### optimizeDeps.exclude
 

@@ -1,29 +1,5 @@
-// prettier-ignore
-function text(el, text) {
-  document.querySelector(el).textContent = text
-}
+importScripts(`/${self.location.pathname.split("/")[1]}/classic.js`)
 
-const classicWorker = new Worker(
-  new URL('./newUrl/classic-worker.js', import.meta.url) /* , */  ,
-  // test comment
-
-)
-
-classicWorker.addEventListener('message', ({ data }) => {
-  text('.classic-worker', data)
+self.addEventListener('message', () => {
+  self.postMessage(self.constant)
 })
-classicWorker.postMessage('ping')
-
-const classicSharedWorker = new SharedWorker(
-  new URL('./newUrl/classic-shared-worker.js', import.meta.url),
-  {
-    type: 'classic'
-  }
-)
-classicSharedWorker.port.addEventListener('message', (ev) => {
-  text(
-    '.classic-shared-worker',
-    ev.data
-  )
-})
-classicSharedWorker.port.start()

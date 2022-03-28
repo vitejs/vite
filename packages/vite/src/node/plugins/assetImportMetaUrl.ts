@@ -51,7 +51,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 index + exp.length,
                 `new URL(import.meta.globEagerDefault(${JSON.stringify(
                   pattern
-                )})[${rawUrl}], self.location)`
+                )})[${rawUrl}], self.location)`,
+                { contentOnly: true }
               )
               continue
             }
@@ -59,11 +60,19 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           const url = rawUrl.slice(1, -1)
           const file = path.resolve(path.dirname(id), url)
-          const builtUrl = await fileToUrl(file, config, this)
+          // Get final asset URL. Catch error if the file does not exist,
+          // in which we can resort to the initial URL and let it resolve in runtime
+          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            config.logger.warnOnce(
+              `\n${exp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            return url
+          })
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
           )
         }
         if (s) {

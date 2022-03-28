@@ -7,7 +7,8 @@ import {
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
-  OPTIMIZABLE_ENTRY_RE
+  OPTIMIZABLE_ENTRY_RE,
+  DEP_VERSION_RE
 } from '../constants'
 import {
   isBuiltin,
@@ -29,7 +30,12 @@ import {
   isPossibleTsOutput,
   getPotentialTsSrcPaths
 } from '../utils'
-import { createIsOptimizedDepUrl } from '../optimizer'
+import {
+  createIsOptimizedDepUrl,
+  isOptimizedDepFile,
+  optimizedDepInfoFromFile,
+  optimizedDepInfoFromId
+} from '../optimizer'
 import type { OptimizedDepInfo } from '../optimizer'
 import type { ViteDevServer, SSROptions } from '..'
 import type { PartialResolvedId } from 'rollup'
@@ -78,6 +84,8 @@ export interface InternalResolveOptions extends ResolveOptions {
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
   tryEsmOnly?: boolean
+  // True when resolving during the scan phase to discover dependencies
+  scan?: boolean
 }
 
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
@@ -101,7 +109,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       isOptimizedDepUrl = createIsOptimizedDepUrl(server.config)
     },
 
-    resolveId(id, importer, resolveOpts) {
+    async resolveId(id, importer, resolveOpts) {
       const ssr = resolveOpts?.ssr === true
       if (id.startsWith(browserExternalId)) {
         return id
@@ -122,7 +130,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         isRequire,
 
         ...baseOptions,
-        isFromTsImporter: isTsRequest(importer ?? '')
+        isFromTsImporter: isTsRequest(importer ?? ''),
+        scan: resolveOpts?.scan ?? baseOptions.scan
       }
 
       let res: string | PartialResolvedId | undefined
@@ -131,9 +140,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // tryFileResolve or /fs/ resolution but these files may not yet
       // exists if we are in the middle of a deps re-processing
       if (asSrc && isOptimizedDepUrl?.(id)) {
-        return id.startsWith(FS_PREFIX)
+        const optimizedPath = id.startsWith(FS_PREFIX)
           ? fsPathFromId(id)
           : normalizePath(ensureVolumeInPath(path.resolve(root, id.slice(1))))
+        return optimizedPath
       }
 
       // explicit fs paths that starts with /@fs/*
@@ -163,6 +173,25 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         // handle browser field mapping for relative imports
 
         const normalizedFsPath = normalizePath(fsPath)
+
+        if (
+          server?._optimizedDeps &&
+          isOptimizedDepFile(normalizedFsPath, server!.config)
+        ) {
+          // Optimized files could not yet exist in disk, resolve to the full path
+          // Inject the current browserHash version if the path doesn't have one
+          if (!normalizedFsPath.match(DEP_VERSION_RE)) {
+            const browserHash = optimizedDepInfoFromFile(
+              server._optimizedDeps!.metadata!,
+              normalizedFsPath
+            )?.browserHash
+            if (browserHash) {
+              return injectQuery(normalizedFsPath, `v=${browserHash}`)
+            }
+          }
+          return normalizedFsPath
+        }
+
         const pathFromBasedir = normalizedFsPath.slice(basedir.length)
         if (pathFromBasedir.startsWith('/node_modules/')) {
           // normalize direct imports from node_modules to bare imports, so the
@@ -231,7 +260,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           asSrc &&
           server &&
           !ssr &&
-          (res = tryOptimizedResolve(id, server, importer))
+          !options.scan &&
+          (res = await tryOptimizedResolve(id, server, importer))
         ) {
           return res
         }
@@ -585,7 +615,8 @@ export function tryNodeResolve(
     if (
       !resolved.includes('node_modules') || // linked
       !server || // build
-      !server._registerMissingImport // initial esbuild scan phase
+      !server._optimizedDeps || // resolving before listening to the server
+      options.scan // initial esbuild scan phase
     ) {
       return { id: resolved }
     }
@@ -606,14 +637,17 @@ export function tryNodeResolve(
       // otherwise we may introduce duplicated modules for externalized files
       // from pre-bundled deps.
 
-      const versionHash = server._optimizeDepsMetadata?.browserHash
+      const versionHash = server._optimizedDeps!.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
     } else {
       // this is a missing import, queue optimize-deps re-run and
       // get a resolved its optimized info
-      const optimizedInfo = server._registerMissingImport!(id, resolved, ssr)
+      const optimizedInfo = server._optimizedDeps!.registerMissingImport(
+        id,
+        resolved
+      )
       resolved = getOptimizedUrl(optimizedInfo)
     }
     return { id: resolved! }
@@ -623,19 +657,20 @@ export function tryNodeResolve(
 const getOptimizedUrl = (optimizedData: OptimizedDepInfo) =>
   `${optimizedData.file}?v=${optimizedData.browserHash}`
 
-export function tryOptimizedResolve(
+export async function tryOptimizedResolve(
   id: string,
   server: ViteDevServer,
   importer?: string
-): string | undefined {
-  const depData = server._optimizeDepsMetadata
+): Promise<string | undefined> {
+  const optimizedDeps = server._optimizedDeps
 
-  if (!depData) return
+  if (!optimizedDeps) return
 
-  // check if id has been optimized
-  const isOptimized = depData.optimized[id]
-  if (isOptimized) {
-    return getOptimizedUrl(isOptimized)
+  await optimizedDeps.scanProcessing
+
+  const depInfo = optimizedDepInfoFromId(optimizedDeps.metadata, id)
+  if (depInfo) {
+    return getOptimizedUrl(depInfo)
   }
 
   if (!importer) return
@@ -643,7 +678,10 @@ export function tryOptimizedResolve(
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
-  for (const [pkgPath, optimizedData] of Object.entries(depData.optimized)) {
+  for (const optimizedData of optimizedDeps.metadata.depInfoList) {
+    if (!optimizedData.src) continue // Ignore chunks
+
+    const pkgPath = optimizedData.id
     // check for scenarios, e.g.
     //   pkgPath  => "my-lib > foo"
     //   id       => "foo"
@@ -700,7 +738,11 @@ export function resolvePackageEntry(
           : isObject(data.browser) && data.browser['.']
       if (browserEntry) {
         // check if the package also has a "module" field.
-        if (typeof data.module === 'string' && data.module !== browserEntry) {
+        if (
+          !options.isRequire &&
+          typeof data.module === 'string' &&
+          data.module !== browserEntry
+        ) {
           // if both are present, we may have a problem: some package points both
           // to ESM, with "module" targeting Node.js, while some packages points
           // "module" to browser ESM and "browser" to UMD.
