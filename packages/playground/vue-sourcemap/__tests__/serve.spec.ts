@@ -1,6 +1,7 @@
 import { fromComment } from 'convert-source-map'
 import { normalizePath } from 'vite'
 import { isBuild, testDir } from 'testUtils'
+import { URL } from 'url'
 
 if (!isBuild) {
   const root = normalizePath(testDir)
@@ -28,6 +29,64 @@ if (!isBuild) {
     m.sources = m.sources.map((source) => source.replace(root, '/root'))
     return m
   }
+
+  test('js', async () => {
+    const res = await page.request.get(new URL('./Js.vue', page.url()).href)
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
+        "sources": Array [
+          "/root/Js.vue",
+        ],
+        "sourcesContent": Array [
+          "<template>
+        <p>&lt;js&gt;</p>
+      </template>
+
+      <script>
+      console.log('script')
+      </script>
+
+      <script setup>
+      console.log('setup')
+      </script>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('ts', async () => {
+    const res = await page.request.get(new URL('./Ts.vue', page.url()).href)
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      Object {
+        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
+        "sources": Array [
+          "/root/Ts.vue",
+        ],
+        "sourcesContent": Array [
+          "<template>
+        <p>&lt;ts&gt;</p>
+      </template>
+
+      <script lang=\\"ts\\">
+      console.log('ts script')
+      </script>
+
+      <script lang=\\"ts\\" setup>
+      console.log('ts setup')
+      </script>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
 
   test('css', async () => {
     const css = await getStyleTagContentIncluding('.css ')
