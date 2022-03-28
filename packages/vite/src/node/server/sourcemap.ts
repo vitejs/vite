@@ -20,6 +20,7 @@ interface SourceMapLike {
   sourcesContent?: (string | null)[]
   sourceRoot?: string
 }
+const namespace = 'source-maps://'
 
 export async function injectSourcesContent(
   map: SourceMapLike,
@@ -61,6 +62,17 @@ export async function injectSourcesContent(
   }
 }
 
+export function addNamespace(map: SourceMapLike) {
+  map.sources = map.sources.map((value) => {
+    if (virtualSourceRE.test(value)) return value
+    const queryPos = value.indexOf('?')
+    return (
+      namespace +
+      path.resolve(queryPos > 0 ? value.substring(0, queryPos) : value)
+    )
+  })
+}
+
 function genSourceMapUrl(map: SourceMap | string | undefined) {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
@@ -74,7 +86,7 @@ export function getCodeWithSourcemap(
   map: SourceMap | null
 ) {
   if (isDebug) {
-    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
+    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/ \n`
   }
 
   if (type === 'js') {

@@ -16,7 +16,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { injectSourcesContent } from './sourcemap'
+import { addNamespace, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { performance } from 'perf_hooks'
 
@@ -232,8 +232,11 @@ async function doTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+    if (map.mappings) {
+      if (!map.sourcesContent) {
+        await injectSourcesContent(map, mod.file, logger)
+      }
+      addNamespace(map)
     }
   }
 
