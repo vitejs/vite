@@ -134,9 +134,8 @@ if (!isBuild) {
     )
     const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
-    await editFile(
-      'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-      (code) => code.replace('title', 'title2')
+    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+      code.replace('title', 'title2')
     )
     await page.waitForEvent('load')
     await untilUpdated(
