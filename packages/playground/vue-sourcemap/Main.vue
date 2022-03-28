@@ -1,5 +1,7 @@
 <template>
   <h1>Vue SFC Sourcemap</h1>
+  <Js />
+  <Ts />
   <Css />
   <Sass />
   <SassWithImport />
@@ -8,6 +10,8 @@
 </template>
 
 <script setup lang="ts">
+import Js from './Js.vue'
+import Ts from './Ts.vue'
 import Css from './Css.vue'
 import Sass from './Sass.vue'
 import SassWithImport from './SassWithImport.vue'

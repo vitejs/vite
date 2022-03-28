@@ -92,8 +92,10 @@ importers:
 
   packages/playground:
     specifiers:
+      convert-source-map: ^1.8.0
       css-color-names: ^1.0.1
     devDependencies:
+      convert-source-map: 1.8.0
       css-color-names: 1.0.1
 
   packages/playground/alias:
@@ -152,13 +154,11 @@ importers:
 
   packages/playground/css-sourcemap:
     specifiers:
-      convert-source-map: ^1.8.0
       less: ^4.1.2
       magic-string: ^0.25.7
       sass: ^1.43.4
       stylus: ^0.55.0
     devDependencies:
-      convert-source-map: 1.8.0
       less: 4.1.2
       magic-string: 0.25.7
       sass: 1.45.1
@@ -221,6 +221,9 @@ importers:
     specifiers: {}
 
   packages/playground/html:
+    specifiers: {}
+
+  packages/playground/js-sourcemap:
     specifiers: {}
 
   packages/playground/json:
@@ -711,7 +714,6 @@ importers:
   packages/playground/vue-sourcemap:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
-      convert-source-map: ^1.8.0
       less: ^4.1.2
       sass: ^1.43.4
       vue: ^3.2.31
@@ -719,7 +721,6 @@ importers:
       vue: 3.2.31
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
-      convert-source-map: 1.8.0
       less: 4.1.2
       sass: 1.45.1
 
