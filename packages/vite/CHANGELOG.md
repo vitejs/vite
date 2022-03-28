@@ -1,3 +1,16 @@
+## 2.9.0-beta.10 (2022-03-28)
+
+* fix: Correctly process urls when they are rewritten to contain space (#7452) ([9ee2cf6](https://github.com/vitejs/vite/commit/9ee2cf6)), closes [#7452](https://github.com/vitejs/vite/issues/7452)
+* fix: custom event payload type (#7498) ([28b0660](https://github.com/vitejs/vite/commit/28b0660)), closes [#7498](https://github.com/vitejs/vite/issues/7498)
+* fix: handle relative path glob raw import, fix #7307 (#7371) ([7f8dc58](https://github.com/vitejs/vite/commit/7f8dc58)), closes [#7307](https://github.com/vitejs/vite/issues/7307) [#7371](https://github.com/vitejs/vite/issues/7371)
+* fix: import.meta.url in worker (#7464) ([8ac4b12](https://github.com/vitejs/vite/commit/8ac4b12)), closes [#7464](https://github.com/vitejs/vite/issues/7464)
+* fix: optimizeDeps.entries default ignore paths (#7469) ([4c95e99](https://github.com/vitejs/vite/commit/4c95e99)), closes [#7469](https://github.com/vitejs/vite/issues/7469)
+* chore(deps): update all non-major dependencies (#7490) ([42c15f6](https://github.com/vitejs/vite/commit/42c15f6)), closes [#7490](https://github.com/vitejs/vite/issues/7490)
+* feat(type): support typing for custom events (#7476) ([50a8765](https://github.com/vitejs/vite/commit/50a8765)), closes [#7476](https://github.com/vitejs/vite/issues/7476)
+* refactor(types): share hot context type (#7475) ([64ddff0](https://github.com/vitejs/vite/commit/64ddff0)), closes [#7475](https://github.com/vitejs/vite/issues/7475)
+
+
+
 ## 2.9.0-beta.9 (2022-03-26)
 
 * feat: support importing css with ?raw (#5796) ([fedb106](https://github.com/vitejs/vite/commit/fedb106)), closes [#5796](https://github.com/vitejs/vite/issues/5796)
