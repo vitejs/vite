@@ -3,13 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "dev:es": "vite --config ./vite.config-es.js dev",
-    "build:es": "vite --config ./vite.config-es.js build",
-    "preview:es": "vite --config ./vite.config-es.js preview",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../vite/bin/vite",
+    "dev": "vite --config ./config/vite.config.iife.js dev",
+    "build": "vite --config ./config/vite.config.iife.js build",
+    "preview": "vite --config ./config/vite.config.iife.js preview",
+    "dev:sourcemap": "vite --config ./config/vite.config.iife.sourcemap.js dev",
+    "build:sourcemap": "vite --config ./config/vite.config.iife.sourcemap.js build",
+    "preview:sourcemap": "vite --config ./config/vite.config.iife.sourcemap.js preview",
+    "dev:sourcemap-inline": "vite --config ./config/vite.config.iife.sourcemap-inline.js dev",
+    "build:sourcemap-inline": "vite --config ./config/vite.config.iife.sourcemap-inline.js build",
+    "preview:sourcemap-inline": "vite --config ./config/vite.config.iife.sourcemap-inline.js preview",
+    "dev:sourcemap-hidden": "vite --config ./config/vite.config.iife.sourcemap-hidden.js dev",
+    "build:sourcemap-hidden": "vite --config ./config/vite.config.iife.sourcemap-hidden.js build",
+    "preview:sourcemap-hidden": "vite --config ./config/vite.config.iife.sourcemap-hidden.js preview",
+    "dev:es": "vite --config ./config/vite.config.es.js dev",
+    "build:es": "vite --config ./config/vite.config.es.js build",
+    "preview:es": "vite --config ./config/vite.config.es.js preview",
+    "dev:es-sourcemap": "vite --config ./config/vite.config.es.sourcemap.js dev",
+    "build:es-sourcemap": "vite --config ./config/vite.config.es.sourcemap.js build",
+    "preview:es-sourcemap": "vite --config ./config/vite.config.es.sourcemap.js preview"
   },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "workspace:*"

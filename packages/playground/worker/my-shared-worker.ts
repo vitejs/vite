@@ -14,3 +14,5 @@ onconnect = (event) => {
     }
   }
 }
+
+console.log('my-shared-worker')

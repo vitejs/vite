@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../testUtils'
+import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import { Page } from 'playwright-chromium'
 
 // Workaround so that testing serve does not emit
@@ -12,19 +12,20 @@ test('true', () => {
 if (isBuild) {
   // assert correct files
   test('hidden sourcemap generation for web workers', async () => {
-    const assetsDir = path.resolve(testDir, 'dist/assets')
+    const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap-hidden/assets')
     const files = fs.readdirSync(assetsDir)
-    // should have 2 worker chunk
-    expect(files.length).toBe(6)
-    const index = files.find((f) => /^index\.\w+\.js$/.test(f))
+
+    const index = files.find((f) => /^main-classic\.\w+\.js$/.test(f))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
+
     const worker = files.find((f) => /^my-worker\.\w+\.js$/.test(f))
     const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8'
     )
     const workerSourcemap = getSourceMapUrl(workerContent)
+
     const sharedWorker = files.find((f) =>
       /^my-shared-worker\.\w+\.js$/.test(f)
     )
@@ -46,27 +47,6 @@ if (isBuild) {
     expect(indexSourcemap).toBe(null)
     expect(workerSourcemap).toBe(null)
     expect(sharedWorkerSourcemap).toBe(null)
-
-    // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
-    expect(workerContent).not.toMatch(`export`)
-
-    // shared worker should have all imports resolved and no exports
-    expect(sharedWorkerContent).not.toMatch(`import`)
-    expect(sharedWorkerContent).not.toMatch(`export`)
-
-    // chunk
-    expect(content).toMatch(`new Worker("/assets`)
-    expect(content).toMatch(`new SharedWorker("/assets`)
-    // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
-  })
-} else {
-  // Workaround so that testing serve does not emit
-  // "Your test suite must contain at least one test"
-  test('true', () => {
-    expect(true).toBe(true)
   })
 }
 

@@ -51,6 +51,8 @@ document.querySelector('.ping-ts-output').addEventListener('click', () => {
   tsOutputWorker.postMessage('ping')
 })
 
+console.log('main-module')
+
 const nestedWorker = new NestedWorker()
 nestedWorker.addEventListener('message', (ev) => {
   if (typeof ev.data === 'string') {

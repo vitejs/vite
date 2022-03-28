@@ -6,3 +6,5 @@ self.onmessage = (e) => {
     self.postMessage({ msg, mode, bundleWithPlugin })
   }
 }
+
+console.log('my-worker')

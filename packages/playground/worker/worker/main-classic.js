@@ -26,3 +26,5 @@ classicSharedWorker.port.addEventListener('message', (ev) => {
   text('.classic-shared-worker', JSON.stringify(ev.data))
 })
 classicSharedWorker.port.start()
+
+console.log('main-classic')
