@@ -332,23 +332,28 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+function splitFileAndPostfix(path: string) {
+  let file = path
+  let postfix = ''
+
+  let postfixIndex = path.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = path.indexOf('#')
+  }
+  if (postfixIndex > 0) {
+    file = path.slice(0, postfixIndex)
+    postfix = path.slice(postfixIndex)
+  }
+  return { file, postfix }
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
-  let file = fsPath
-  let postfix = ''
-
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-  }
-  if (postfixIndex > 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
+  const { file, postfix } = splitFileAndPostfix(fsPath)
 
   let res: string | undefined
 
@@ -842,6 +847,7 @@ function resolveExports(
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
+
   return _resolveExports(pkg, key, {
     browser: targetWeb,
     require: options.isRequire,
@@ -872,12 +878,14 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(
-        data,
-        cleanUrl(relativeId),
-        options,
-        targetWeb
-      )
+      // resolve without postfix (see #7098)
+      const { file, postfix } = splitFileAndPostfix(relativeId)
+      const exportsId = resolveExports(data, file, options, targetWeb)
+      if (exportsId !== undefined) {
+        relativeId = exportsId + postfix
+      } else {
+        relativeId = undefined
+      }
     } else {
       // not exposed
       relativeId = undefined
@@ -889,9 +897,11 @@ function resolveDeepImport(
       )
     }
   } else if (targetWeb && isObject(browserField)) {
-    const mapped = mapWithBrowserField(relativeId, browserField)
+    // resolve without postfix (see #7098)
+    const { file, postfix } = splitFileAndPostfix(relativeId)
+    const mapped = mapWithBrowserField(file, browserField)
     if (mapped) {
-      relativeId = mapped
+      relativeId = mapped + postfix
     } else if (mapped === false) {
       return (webResolvedImports[id] = browserExternalId)
     }
