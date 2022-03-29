@@ -1,3 +1,16 @@
+## 2.9.0-beta.11 (2022-03-29)
+
+* feat(worker): Add sourcemap support for worker bundles (#5417) ([465b6b9](https://github.com/vitejs/vite/commit/465b6b9)), closes [#5417](https://github.com/vitejs/vite/issues/5417)
+* fix: build path error on Windows (#7383) ([e3c7c7a](https://github.com/vitejs/vite/commit/e3c7c7a)), closes [#7383](https://github.com/vitejs/vite/issues/7383)
+* fix: import url worker two times (#7468) ([f05a813](https://github.com/vitejs/vite/commit/f05a813)), closes [#7468](https://github.com/vitejs/vite/issues/7468)
+* fix: import with query with exports/browser field (#7098) ([9ce6732](https://github.com/vitejs/vite/commit/9ce6732)), closes [#7098](https://github.com/vitejs/vite/issues/7098)
+* fix: infer client port from page location (#7463) ([93ae8e5](https://github.com/vitejs/vite/commit/93ae8e5)), closes [#7463](https://github.com/vitejs/vite/issues/7463)
+* fix: make @fs URLs work with special characters (#7510) ([2b7dad1](https://github.com/vitejs/vite/commit/2b7dad1)), closes [#7510](https://github.com/vitejs/vite/issues/7510)
+* fix: tailwind css sourcemap warning (#7480) ([90df0bb](https://github.com/vitejs/vite/commit/90df0bb)), closes [#7480](https://github.com/vitejs/vite/issues/7480)
+* fix: worker match only run in js (#7500) ([9481c7d](https://github.com/vitejs/vite/commit/9481c7d)), closes [#7500](https://github.com/vitejs/vite/issues/7500)
+
+
+
 ## 2.9.0-beta.10 (2022-03-28)
 
 * fix: Correctly process urls when they are rewritten to contain space (#7452) ([9ee2cf6](https://github.com/vitejs/vite/commit/9ee2cf6)), closes [#7452](https://github.com/vitejs/vite/issues/7452)
