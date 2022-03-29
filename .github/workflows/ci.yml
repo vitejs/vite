@@ -11,6 +11,8 @@ on:
       - main
       - release/*
       - feat/*
+      - fix/*
+      - perf/*
   pull_request:
   workflow_dispatch:
 

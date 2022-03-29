@@ -197,19 +197,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (
-          moduleListContains(config.optimizeDeps?.exclude, url) &&
-          server._optimizeDepsMetadata
-        ) {
-          // if the dependency encountered in the optimized file was excluded from the optimization
-          // the dependency needs to be resolved starting from the original source location of the optimized file
-          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-          // (that is, if it is under node_modules directory in the package source of the optimized file)
-          for (const optimizedModule of Object.values(
-            server._optimizeDepsMetadata.optimized
-          )) {
-            if (optimizedModule.file === importerModule.file) {
-              importerFile = optimizedModule.src
+        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+          const optimizedDeps = server._optimizedDeps
+          if (optimizedDeps) {
+            await optimizedDeps.scanProcessing
+
+            // if the dependency encountered in the optimized file was excluded from the optimization
+            // the dependency needs to be resolved starting from the original source location of the optimized file
+            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+            // (that is, if it is under node_modules directory in the package source of the optimized file)
+            for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
+              if (!optimizedModule.src) continue // Ignore chunks
+              if (optimizedModule.file === importerModule.file) {
+                importerFile = optimizedModule.src
+              }
             }
           }
         }
@@ -365,7 +366,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               resolve
             )
             str().prepend(importsString)
-            str().overwrite(expStart, endIndex, exp)
+            str().overwrite(expStart, endIndex, exp, { contentOnly: true })
             imports.forEach((url) => {
               url = url.replace(base, '/')
               importedUrls.add(url)
@@ -439,6 +440,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             importRewrites.push(async () => {
               let rewriteDone = false
               if (
+                server?._optimizedDeps &&
                 isOptimizedDepFile(resolvedId, config) &&
                 !resolvedId.match(optimizedDepChunkRE)
               ) {
@@ -450,7 +452,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
-                  server._optimizeDepsMetadata!,
+                  server._optimizedDeps!.metadata,
                   file
                 )
 
@@ -472,7 +474,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                     str().overwrite(
                       expStart,
                       expEnd,
-                      `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`
+                      `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+                      { contentOnly: true }
                     )
                   } else {
                     const exp = source.slice(expStart, expEnd)
@@ -483,17 +486,24 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                       index
                     )
                     if (rewritten) {
-                      str().overwrite(expStart, expEnd, rewritten)
+                      str().overwrite(expStart, expEnd, rewritten, {
+                        contentOnly: true
+                      })
                     } else {
                       // #1439 export * from '...'
-                      str().overwrite(start, end, url)
+                      str().overwrite(start, end, url, { contentOnly: true })
                     }
                   }
                   rewriteDone = true
                 }
               }
               if (!rewriteDone) {
-                str().overwrite(start, end, isDynamicImport ? `'${url}'` : url)
+                str().overwrite(
+                  start,
+                  end,
+                  isDynamicImport ? `'${url}'` : url,
+                  { contentOnly: true }
+                )
               }
             })
           }
@@ -533,7 +543,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             isExplicitImportRequired(url.slice(1, -1))
           ) {
             needQueryInjectHelper = true
-            str().overwrite(start, end, `__vite__injectQuery(${url}, 'import')`)
+            str().overwrite(
+              start,
+              end,
+              `__vite__injectQuery(${url}, 'import')`,
+              { contentOnly: true }
+            )
           }
         }
       }
@@ -589,7 +604,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ssr
         )
         normalizedAcceptedUrls.add(normalized)
-        str().overwrite(start, end, JSON.stringify(normalized))
+        str().overwrite(start, end, JSON.stringify(normalized), {
+          contentOnly: true
+        })
       }
 
       // update the module graph for HMR analysis.

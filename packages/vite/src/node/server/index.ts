@@ -44,8 +44,6 @@ import { transformRequest } from './transformRequest'
 import type { ESBuildTransformResult } from '../plugins/esbuild'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
-import { createOptimizeDepsRun } from '../optimizer'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -53,7 +51,8 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { createMissingImporterRegisterFn } from '../optimizer/registerMissing'
+import { createOptimizedDeps } from '../optimizer/registerMissing'
+import type { OptimizedDeps } from '../optimizer'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
@@ -257,7 +256,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _optimizeDepsMetadata: DepOptimizationMetadata | null
+  _optimizedDeps: OptimizedDeps | null
   /**
    * Deps that are externalized
    * @internal
@@ -284,16 +283,6 @@ export interface ViteDevServer {
    * @internal
    */
   _forceOptimizeOnRestart: boolean
-  /**
-   * @internal
-   */
-  _registerMissingImport:
-    | ((
-        id: string,
-        resolved: string,
-        ssr: boolean | undefined
-      ) => OptimizedDepInfo)
-    | null
   /**
    * @internal
    */
@@ -372,16 +361,18 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      let configFileDependencies: string[] = []
-      const metadata = server._optimizeDepsMetadata
-      if (metadata) {
-        configFileDependencies = Object.keys(metadata.optimized)
+      if (!server._ssrExternals) {
+        let knownImports: string[] = []
+        const optimizedDeps = server._optimizedDeps
+        if (optimizedDeps) {
+          await optimizedDeps.scanProcessing
+          knownImports = [
+            ...Object.keys(optimizedDeps.metadata.optimized),
+            ...Object.keys(optimizedDeps.metadata.discovered)
+          ]
+        }
+        server._ssrExternals = resolveSSRExternal(config, knownImports)
       }
-
-      server._ssrExternals ||= resolveSSRExternal(
-        config,
-        configFileDependencies
-      )
       return ssrLoadModule(
         url,
         server,
@@ -434,12 +425,11 @@ export async function createServer(
       return server._restartPromise
     },
 
-    _optimizeDepsMetadata: null,
+    _optimizedDeps: null,
     _ssrExternals: null,
     _globImporters: Object.create(null),
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _registerMissingImport: null,
     _pendingRequests: new Map()
   }
 
@@ -581,39 +571,15 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const runOptimize = async () => {
-    const optimizeDeps = await createOptimizeDepsRun(
-      config,
-      config.server.force
-    )
-
-    // Don't await for the optimization to finish, we can start the
-    // server right away here
-    server._optimizeDepsMetadata = optimizeDeps.metadata
-
-    // Run deps optimization in parallel
-    const initialProcessingPromise = optimizeDeps
-      .run()
-      .then((result) => result.commit())
-
-    // While running the first optimizeDeps, _registerMissingImport is null
-    // so the resolve plugin resolves straight to node_modules during the
-    // deps discovery scan phase
-    server._registerMissingImport = createMissingImporterRegisterFn(
-      server,
-      initialProcessingPromise
-    )
-  }
-
   if (!middlewareMode && httpServer) {
     let isOptimized = false
-    // overwrite listen to run optimizer before server start
+    // overwrite listen to init optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          await runOptimize()
+          server._optimizedDeps = createOptimizedDeps(server)
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -624,7 +590,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    await runOptimize()
+    server._optimizedDeps = createOptimizedDeps(server)
   }
 
   return server

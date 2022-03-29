@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "2.2.4",
+  "version": "2.3.0-beta.0",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -37,7 +37,7 @@
   "devDependencies": {
     "@rollup/pluginutils": "^4.2.0",
     "@types/hash-sum": "^1.0.0",
-    "debug": "^4.3.3",
+    "debug": "^4.3.4",
     "hash-sum": "^2.0.0",
     "rollup": "^2.59.0",
     "slash": "^4.0.0",
