@@ -28,7 +28,7 @@ This is Vite performing what we call "dependency pre-bundling." This process ser
 
    By pre-bundling `lodash-es` into a single module, we now instead need only one HTTP request!
 
-> ℹ **Note** ℹ
+> ℹ **Note**
 > 
 > Dependency pre-bundling applies only in development mode and uses `esbuild` to convert dependencies to ESM. In production builds, `@rollup/plugin-commonjs` is used instead.
 
@@ -59,8 +59,8 @@ export default defineConfig({
 
 When making changes to the linked dependency, restart the dev server with the `--force` command line option for the changes to take effect.
 
-> ⚠ **Deduping** ⚠
->
+> ⚠ **Deduping**
+> 
 > Due to differences in linked dependency resolution, transitive dependencies can be deduplicated incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
 
 ## Customizing the Behavior
