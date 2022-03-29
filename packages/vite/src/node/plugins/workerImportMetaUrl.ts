@@ -22,9 +22,6 @@ type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-const importMetaUrlRE =
-  /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
-
 function getWorkerType(
   code: string,
   noCommentsCode: string,
@@ -91,7 +88,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
-      // format worker
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
@@ -136,17 +132,17 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      let match: RegExpExecArray | null
       let s: MagicString | undefined
-
       const transformWorkerImportMetaUrl = async (
-        content: string,
+        snippet: string,
         start: number
-      ) => {
-        const noCommentsCode = content
+      ): Promise<void> => {
+        const importMetaUrlRE =
+          /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+        const noCommentsCode = snippet
           .replace(multilineCommentsRE, blankReplacer)
           .replace(singlelineCommentsRE, blankReplacer)
-
+        let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
           const { 0: allExp, 2: exp, 3: rawUrl, index: matchIndex } = match
           const index = start + matchIndex
@@ -168,9 +164,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-
           const workerType = getWorkerType(
-            content,
+            snippet,
             noCommentsCode,
             matchIndex + allExp.length
           )
@@ -205,7 +200,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         while ((scriptMatch = scriptRE.exec(code))) {
           const { 0: exp, 2: script, index: scriptMatchIndex } = scriptMatch
           const index = exp.indexOf(script) + scriptMatchIndex
-
           await transformWorkerImportMetaUrl(script, index)
         }
       } else {
@@ -218,6 +212,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
         }
       }
+      return null
     }
   }
 }

@@ -7,9 +7,6 @@ import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 import { JS_TYPES_RE } from '../constants'
 import { htmlTypesRE, scriptRE } from '../optimizer/scan'
 
-const importMetaUrlRE =
-  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
@@ -49,6 +46,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         content: string,
         start: number
       ) => {
+        const importMetaUrlRE =
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const noCommentsCode = content
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
