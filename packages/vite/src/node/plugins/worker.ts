@@ -12,6 +12,7 @@ interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
   // <chunk_filename, hash>
   assets: Map<string, string>
+  chunks: Map<string, string>
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <filename, hash>
@@ -28,18 +29,41 @@ const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 function emitWorkerFile(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
-  asset: EmittedFile
+  asset: EmittedFile,
+  type: 'assets' | 'chunks'
 ): string {
   const fileName = asset.fileName!
   const workerMap = workerCache.get(config)!
 
-  if (workerMap.assets.has(fileName)) {
-    return workerMap.assets.get(fileName)!
+  if (workerMap[type].has(fileName)) {
+    return workerMap[type].get(fileName)!
   }
   const hash = ctx.emitFile(asset)
-  workerMap.assets.set(fileName, hash)
+  workerMap[type].set(fileName, hash)
   workerMap.emitted.set(hash, fileName)
   return hash
+}
+
+function emitWorkerAssets(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  asset: EmittedFile
+) {
+  const { format } = config.worker
+  return emitWorkerFile(
+    ctx,
+    config,
+    asset,
+    format === 'es' ? 'chunks' : 'assets'
+  )
+}
+
+function emitWorkerChunks(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  asset: EmittedFile
+) {
+  return emitWorkerFile(ctx, config, asset, 'chunks')
 }
 
 export async function bundleWorkerEntry(
@@ -70,10 +94,13 @@ export async function bundleWorkerEntry(
     code = outputCode.code
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
-        emitWorkerFile(ctx, config, outputChunk)
+        emitWorkerAssets(ctx, config, outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        emitWorkerFile(ctx, config, {
-          fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
+        emitWorkerChunks(ctx, config, {
+          fileName: path.posix.join(
+            config.build.assetsDir,
+            outputChunk.fileName
+          ),
           source: outputChunk.code,
           type: 'asset'
         })
@@ -104,7 +131,7 @@ export async function workerFileToUrl(
     config.build.assetsDir,
     `${basename}.${contentHash}.js`
   )
-  hash = emitWorkerFile(ctx, config, {
+  hash = emitWorkerAssets(ctx, config, {
     fileName,
     type: 'asset',
     source: code
@@ -115,6 +142,7 @@ export async function workerFileToUrl(
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
@@ -122,6 +150,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       workerCache.set(config, {
         assets: new Map(),
+        chunks: new Map(),
         bundle: new Map(),
         emitted: new Map()
       })
@@ -187,6 +216,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url
       )}, ${JSON.stringify(workerOptions, null, 2)})
       }`
+    },
+
+    renderChunk(code) {
+      if (isWorker && code.includes('import.meta.url')) {
+        return code.replace('import.meta.url', 'self.location.href')
+      }
     }
   }
 }
