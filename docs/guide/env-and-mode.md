@@ -57,7 +57,7 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 :::warning SECURITY NOTES
 
-- `.env.*.local` files are local-only and can contain sensitive variables. You should add `.local` to your `.gitignore` to avoid them being checked into git.
+- `.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
 
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
   :::
