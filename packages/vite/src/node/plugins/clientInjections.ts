@@ -2,7 +2,7 @@ import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { normalizePath, isObject } from '../utils'
+import { normalizePath } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -23,21 +23,19 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const protocol = options.protocol || null
         const timeout = options.timeout || 30000
         const overlay = options.overlay !== false
-        let port: number | string | false | undefined
-        if (isObject(config.server.hmr)) {
-          port = config.server.hmr.clientPort || config.server.hmr.port
-        }
+        let port: number | string | undefined | null
+        port = options.clientPort || options.port
         if (config.server.middlewareMode) {
-          port = String(port || 24678)
-        } else {
-          port = String(port || options.port || config.server.port!)
+          port = port || 24678
         }
+        port = port ? String(port) : null
+
         let hmrBase = config.base
         if (options.path) {
           hmrBase = path.posix.join(hmrBase, options.path)
         }
-        if (hmrBase !== '/') {
-          port = path.posix.normalize(`${port}${hmrBase}`)
+        if (hmrBase === '/') {
+          hmrBase = ''
         }
 
         return code
@@ -47,6 +45,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(/__HMR_PROTOCOL__/g, JSON.stringify(protocol))
           .replace(/__HMR_HOSTNAME__/g, JSON.stringify(host))
           .replace(/__HMR_PORT__/g, JSON.stringify(port))
+          .replace(/__HMR_BASE__/g, JSON.stringify(hmrBase))
           .replace(/__HMR_TIMEOUT__/g, JSON.stringify(timeout))
           .replace(/__HMR_ENABLE_OVERLAY__/g, JSON.stringify(overlay))
       } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
