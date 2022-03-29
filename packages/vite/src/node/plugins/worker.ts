@@ -8,51 +8,38 @@ import path from 'path'
 import { onRollupWarning } from '../build'
 import type { EmittedFile } from 'rollup'
 
+interface WorkerCache {
+  // save worker bundle emitted files avoid overwrites the same file.
+  // <chunk_filename, hash>
+  assets: Map<string, string>
+  // worker bundle don't deps on any more worker runtime info an id only had an result.
+  // save worker bundled file id to avoid repeated execution of bundles
+  // <filename, hash>
+  bundle: Map<string, string>
+  // nested worker bundle context don't had file what emitted by outside bundle
+  // save the hash to id to rewrite truth id.
+  // <hash, id>
+  emitted: Map<string, string>
+}
+
 const WorkerFileId = 'worker_file'
-
-// save worker bundle emitted files avoid overwrites the same file.
-// <chunk_filename, hash>
-const workerEmittedAssets = new Map<string, string>()
-const workerEmittedChunk = new Map<string, string>()
-
-// worker bundle don't deps on any more worker runtime info an id only had an result.
-// save worker bundled file id to avoid repeated execution of bundles
-// <filename, hash>
-const workerBundled = new Map<string, string>()
-
-// nested worker bundle context don't had file what emitted by outside bundle
-// save the hash to id to rewrite truth id.
-// <hash, id>
-const workerEmittedFile = new Map<string, string>()
+const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function emitWorkerFile(
   ctx: Rollup.TransformPluginContext,
-  asset: EmittedFile,
-  map: Map<string, string>
+  config: ResolvedConfig,
+  asset: EmittedFile
 ): string {
   const fileName = asset.fileName!
+  const workerMap = workerCache.get(config)!
 
-  if (map.has(fileName)) {
-    return map.get(fileName)!
+  if (workerMap.assets.has(fileName)) {
+    return workerMap.assets.get(fileName)!
   }
   const hash = ctx.emitFile(asset)
-  map.set(fileName, hash)
-  workerEmittedFile.set(hash, fileName)
+  workerMap.assets.set(fileName, hash)
+  workerMap.emitted.set(hash, fileName)
   return hash
-}
-
-function emitWorkerAssets(
-  ctx: Rollup.TransformPluginContext,
-  asset: EmittedFile
-): string {
-  return emitWorkerFile(ctx, asset, workerEmittedAssets)
-}
-
-function emitWorkerChunks(
-  ctx: Rollup.TransformPluginContext,
-  asset: EmittedFile
-): string {
-  return emitWorkerFile(ctx, asset, workerEmittedChunk)
 }
 
 export async function bundleWorkerEntry(
@@ -83,9 +70,9 @@ export async function bundleWorkerEntry(
     code = outputCode.code
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
-        emitWorkerAssets(ctx, outputChunk)
+        emitWorkerFile(ctx, config, outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        emitWorkerChunks(ctx, {
+        emitWorkerFile(ctx, config, {
           fileName: `${config.build.assetsDir}/${outputChunk.fileName}`,
           source: outputChunk.code,
           type: 'asset'
@@ -103,10 +90,12 @@ export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string
 ): Promise<string> {
-  let hash = workerBundled.get(id)
+  const workerMap = workerCache.get(config)!
+
+  let hash = workerMap.bundle.get(id)
   if (hash) {
     // rewrite truth id, no need to replace by asset plugin
-    return config.base + workerEmittedFile.get(hash)!
+    return config.base + workerMap.emitted.get(hash)!
   }
   const code = await bundleWorkerEntry(ctx, config, id)
   const basename = path.parse(cleanUrl(id)).name
@@ -115,12 +104,12 @@ export async function workerFileToUrl(
     config.build.assetsDir,
     `${basename}.${contentHash}.js`
   )
-  hash = emitWorkerChunks(ctx, {
+  hash = emitWorkerFile(ctx, config, {
     fileName,
     type: 'asset',
     source: code
   })
-  workerBundled.set(id, hash)
+  workerMap.bundle.set(id, hash)
   return `__VITE_ASSET__${hash}__`
 }
 
@@ -129,6 +118,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:worker',
+
+    buildStart() {
+      workerCache.set(config, {
+        assets: new Map(),
+        bundle: new Map(),
+        emitted: new Map()
+      })
+    },
 
     load(id) {
       if (isBuild) {
