@@ -156,6 +156,8 @@ export default defineConfig(({ command, mode }) => {
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
+  - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
+
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
   ::: warning
