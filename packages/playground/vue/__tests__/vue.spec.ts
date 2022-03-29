@@ -242,3 +242,9 @@ describe('setup import template', () => {
     expect(await page.textContent('.setup-import-template')).toMatch('1')
   })
 })
+
+describe('vue worker', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.vue-worker')).toMatch('worker load!')
+  })
+})

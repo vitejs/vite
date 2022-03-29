@@ -20,6 +20,7 @@
   </Suspense>
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
+  <WorkerTest />
 </template>
 
 <script setup lang="ts">
@@ -35,7 +36,7 @@ import ScanDep from './ScanDep.vue'
 import AsyncComponent from './AsyncComponent.vue'
 import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
-
+import WorkerTest from './worker.vue'
 import { ref } from 'vue'
 
 const time = ref('loading...')
