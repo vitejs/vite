@@ -783,7 +783,9 @@ async function compileCSS(
       map: {
         inline: false,
         annotation: false,
-        sourcesContent: false
+        // postcss may return virtual files
+        // we cannot obtain content of them, so this needs to be enabled
+        sourcesContent: true
         // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
         // prev: preprocessorMap,
       }
@@ -862,19 +864,33 @@ export function formatPostcssSourceMap(
   file: string
 ): ExistingRawSourceMap {
   const inputFileDir = path.dirname(file)
-  const sources = rawMap.sources
+
+  const sources: string[] = []
+  const sourcesContent: string[] = []
+  for (const [i, source] of rawMap.sources.entries()) {
     // remove <no source> from sources, to prevent source map to be combined incorrectly
-    .filter((source) => source !== '<no source>')
-    .map((source) => {
-      const cleanSource = cleanUrl(decodeURIComponent(source))
-      return normalizePath(path.resolve(inputFileDir, cleanSource))
-    })
+    if (source === '<no source>') continue
+
+    const cleanSource = cleanUrl(decodeURIComponent(source))
+
+    // postcss returns virtual files
+    if (/^<.+>$/.test(cleanSource)) {
+      sources.push(`\0${cleanSource}`)
+    } else {
+      sources.push(normalizePath(path.resolve(inputFileDir, cleanSource)))
+    }
+
+    if (rawMap.sourcesContent) {
+      sourcesContent.push(rawMap.sourcesContent[i])
+    }
+  }
 
   return {
     file,
     mappings: rawMap.mappings,
     names: rawMap.names,
     sources,
+    sourcesContent,
     version: rawMap.version
   }
 }

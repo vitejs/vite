@@ -732,3 +732,4 @@ export function parseRequest(id: string): Record<string, string> | null {
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+export const stringsRE = /"[^"]*"|'[^']*'|`[^`]*`/g
