@@ -33,7 +33,7 @@ import colors from 'picocolors'
 
 const debug = createDebugger('vite:deps')
 
-const htmlTypesRE = /\.(html|vue|svelte|astro)$/
+export const htmlTypesRE = /\.(html|vue|svelte|astro)$/
 
 // A simple regex to detect import sources. This is only used on
 // <script lang="ts"> blocks in vue (setup only) or svelte files, since

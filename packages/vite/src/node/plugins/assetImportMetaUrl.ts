@@ -5,6 +5,10 @@ import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 import { JS_TYPES_RE } from '../constants'
+import { htmlTypesRE, scriptRE } from '../optimizer/scan'
+
+const importMetaUrlRE =
+  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -20,36 +24,40 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
-      // only run in js file
-      if (!JS_TYPES_RE.test(id)) {
+      let inHTML = false
+      if (htmlTypesRE.test(id)) {
+        inHTML = true
+      } else if (JS_TYPES_RE.test(id)) {
+        inHTML = false
+      } else {
         return
       }
 
       if (
-        !options?.ssr &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
+        options?.ssr ||
+        !code.includes('new URL') ||
+        !code.includes(`import.meta.url`)
       ) {
-        const importMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-        const noCommentsCode = code
+        return
+      }
+
+      // new for code
+      let s: MagicString | undefined
+      let match: RegExpExecArray | null = null
+
+      const transformAssetImportMetaUrl = async (
+        content: string,
+        start: number
+      ) => {
+        const noCommentsCode = content
           .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
           .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
-          .replace(
-            /"[^"]*"|'[^']*'|`[^`]*`/g,
-            (m) => `'${'\0'.repeat(m.length - 2)}'`
-          )
 
-        let s: MagicString | null = null
-        let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
-          const { 0: exp, 1: emptyUrl, index } = match
+          const { 0: exp, 1: rawUrl, index: matchIndex } = match!
+          const index = start + matchIndex
 
-          const urlStart = exp.indexOf(emptyUrl) + index
-          const urlEnd = urlStart + emptyUrl.length
-          const rawUrl = code.slice(urlStart, urlEnd)
-
-          if (!s) s = new MagicString(code)
+          s ||= new MagicString(code)
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
@@ -69,7 +77,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 )})[${rawUrl}], self.location)`,
                 { contentOnly: true }
               )
-              continue
+              return
             }
           }
 
@@ -90,14 +98,26 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             { contentOnly: true }
           )
         }
-        if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
+      }
+
+      if (inHTML) {
+        let scriptMatch: RegExpExecArray | null = null
+        while ((scriptMatch = scriptRE.exec(code))) {
+          const { 0: exp, 2: script, index: scriptMatchIndex } = scriptMatch
+          const index = exp.indexOf(script) + scriptMatchIndex
+
+          await transformAssetImportMetaUrl(script, index)
+        }
+      } else {
+        await transformAssetImportMetaUrl(code, 0)
+      }
+
+      if (s) {
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
         }
       }
-      return null
     }
   }
 }

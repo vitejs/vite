@@ -7,8 +7,7 @@ import {
   cleanUrl,
   injectQuery,
   multilineCommentsRE,
-  singlelineCommentsRE,
-  stringsRE
+  singlelineCommentsRE
 } from '../utils'
 import path from 'path'
 import { bundleWorkerEntry } from './worker'
@@ -17,10 +16,14 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH, JS_TYPES_RE } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
+import { htmlTypesRE, scriptRE } from '../optimizer/scan'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
+
+const importMetaUrlRE =
+  /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 
 function getWorkerType(
   code: string,
@@ -88,10 +91,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
-      if (!JS_TYPES_RE.test(id)) {
-        return
-      }
-
+      // format worker
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
@@ -118,31 +118,39 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      // transfrom code
+      let inHTML = false
+      if (htmlTypesRE.test(id)) {
+        inHTML = true
+      } else if (JS_TYPES_RE.test(id)) {
+        inHTML = false
+      } else {
+        return
+      }
+
       if (
-        (code.includes('new Worker') || code.includes('new ShareWorker')) &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
+        !(code.includes('new Worker') || code.includes('new ShareWorker')) ||
+        !code.includes('new URL') ||
+        !code.includes(`import.meta.url`)
       ) {
-        const importMetaUrlRE =
-          /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
-        const noCommentsCode = code
+        return
+      }
+
+      let match: RegExpExecArray | null
+      let s: MagicString | undefined
+
+      const transformWorkerImportMetaUrl = async (
+        content: string,
+        start: number
+      ) => {
+        const noCommentsCode = content
           .replace(multilineCommentsRE, blankReplacer)
           .replace(singlelineCommentsRE, blankReplacer)
 
-        const noStringCode = noCommentsCode.replace(
-          stringsRE,
-          (m) => `'${'\0'.repeat(m.length - 2)}'`
-        )
-
-        let match: RegExpExecArray | null
-        let s: MagicString | null = null
-        while ((match = importMetaUrlRE.exec(noStringCode))) {
-          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
+        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+          const { 0: allExp, 2: exp, 3: rawUrl, index: matchIndex } = match
+          const index = start + matchIndex
           const urlIndex = allExp.indexOf(exp) + index
-
-          const urlStart = allExp.indexOf(emptyUrl) + index
-          const urlEnd = urlStart + emptyUrl.length
-          const rawUrl = code.slice(urlStart, urlEnd)
 
           if (options?.ssr) {
             this.error(
@@ -160,10 +168,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
+
           const workerType = getWorkerType(
-            code,
+            content,
             noCommentsCode,
-            index + allExp.length
+            matchIndex + allExp.length
           )
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
@@ -189,13 +198,25 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             contentOnly: true
           })
         }
-        if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
+      }
+
+      if (inHTML) {
+        let scriptMatch: RegExpExecArray | null = null
+        while ((scriptMatch = scriptRE.exec(code))) {
+          const { 0: exp, 2: script, index: scriptMatchIndex } = scriptMatch
+          const index = exp.indexOf(script) + scriptMatchIndex
+
+          await transformWorkerImportMetaUrl(script, index)
         }
-        return null
+      } else {
+        await transformWorkerImportMetaUrl(code, 0)
+      }
+
+      if (s) {
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+        }
       }
     }
   }
