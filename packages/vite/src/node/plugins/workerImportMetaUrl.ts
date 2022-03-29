@@ -114,7 +114,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      // transfrom code
       let inHTML = false
       if (htmlTypesRE.test(id)) {
         inHTML = true

@@ -3,9 +3,13 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
-import { JS_TYPES_RE } from '../constants'
+import {
+  blankReplacer,
+  multilineCommentsRE,
+  singlelineCommentsRE
+} from '../utils'
 import { htmlTypesRE, scriptRE } from '../optimizer/scan'
+import { JS_TYPES_RE } from '../constants'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -37,25 +41,22 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-
-      // new for code
       let s: MagicString | undefined
-      let match: RegExpExecArray | null = null
 
       const transformAssetImportMetaUrl = async (
-        content: string,
+        snippet: string,
         start: number
-      ) => {
+      ): Promise<void> => {
         const importMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-        const noCommentsCode = content
-          .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
-          .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
+        const noCommentsCode = snippet
+          .replace(multilineCommentsRE, blankReplacer)
+          .replace(singlelineCommentsRE, blankReplacer)
 
+        let match: RegExpExecArray | null
         while ((match = importMetaUrlRE.exec(noCommentsCode))) {
-          const { 0: exp, 1: rawUrl, index: matchIndex } = match!
+          const { 0: exp, 1: rawUrl, index: matchIndex } = match
           const index = start + matchIndex
-
           s ||= new MagicString(code)
 
           // potential dynamic template string
@@ -76,7 +77,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 )})[${rawUrl}], self.location)`,
                 { contentOnly: true }
               )
-              return
+              continue
             }
           }
 
@@ -104,7 +105,6 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         while ((scriptMatch = scriptRE.exec(code))) {
           const { 0: exp, 2: script, index: scriptMatchIndex } = scriptMatch
           const index = exp.indexOf(script) + scriptMatchIndex
-
           await transformAssetImportMetaUrl(script, index)
         }
       } else {
@@ -117,6 +117,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
         }
       }
+      return null
     }
   }
 }
