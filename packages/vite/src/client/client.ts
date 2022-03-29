@@ -103,7 +103,7 @@ async function handleMessage(payload: HMRPayload) {
     }
     case 'full-reload':
       notifyListeners('vite:beforeFullReload', payload)
-      if (payload.path && payload.path.endsWith('.html')) {
+      if (payload.path && payload.path !== '*') {
         // if html file is edited, only reload the page if the browser is
         // currently on that page.
         const pagePath = decodeURI(location.pathname)
@@ -114,7 +114,6 @@ async function handleMessage(payload: HMRPayload) {
         ) {
           location.reload()
         }
-        return
       } else {
         location.reload()
       }
