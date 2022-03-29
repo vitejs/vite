@@ -330,7 +330,10 @@ function viteLegacyPlugin(options = {}) {
               loose: false,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
-                ? { version: 3, proposals: false }
+                ? {
+                    version: require('core-js/package.json').version,
+                    proposals: false
+                  }
                 : undefined,
               shippedProposals: true,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig

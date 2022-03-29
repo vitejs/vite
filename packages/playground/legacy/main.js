@@ -21,6 +21,12 @@ text('#env', `is legacy: ${isLegacy}`)
 // Iterators
 text('#iterators', [...new Set(['hello'])].join(''))
 
+// structuredClone is supported core.js v3.20.0+
+text(
+  '#features-after-corejs-3',
+  JSON.stringify(structuredClone({ foo: 'foo' }))
+)
+
 // babel-helpers
 // Using `String.raw` to inject `@babel/plugin-transform-template-literals`
 // helpers.
