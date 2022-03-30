@@ -1,6 +1,6 @@
 module.exports = {
   define: {
-    __EXP__: '1 + 1',
+    __EXP__: 'false',
     __STRING__: '"hello"',
     __NUMBER__: 123,
     __BOOLEAN__: true,
