@@ -366,7 +366,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
 
-            // will transfrom in `applyHtmlTransforms`
+            // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
