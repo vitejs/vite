@@ -6,7 +6,8 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
 import type { ElementHandle } from 'playwright-chromium'
-import { Manifest, normalizePath } from 'vite'
+import type { Manifest } from 'vite'
+import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 
 export function slash(p: string): string {
