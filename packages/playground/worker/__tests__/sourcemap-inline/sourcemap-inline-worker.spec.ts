@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import { Page } from 'playwright-chromium'
@@ -7,14 +7,14 @@ if (isBuild) {
   const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap-inline/assets')
   // assert correct files
   test('sourcemap generation for web workers', async () => {
-    const files = await fs.readdir(assetsDir)
+    const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
     expect(files.length).toBe(13)
     const index = files.find((f) => f.includes('main-module'))
-    const content = await fs.readFile(path.resolve(assetsDir, index), 'utf-8')
+    const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
     const worker = files.find((f) => /^my-worker\.\w+\.js$/.test(f))
-    const workerContent = await fs.readFile(
+    const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8'
     )
@@ -22,7 +22,7 @@ if (isBuild) {
     const sharedWorker = files.find((f) =>
       /^my-shared-worker\.\w+\.js$/.test(f)
     )
-    const sharedWorkerContent = await fs.readFile(
+    const sharedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, sharedWorker),
       'utf-8'
     )
@@ -30,7 +30,7 @@ if (isBuild) {
     const possibleTsOutputWorker = files.find((f) =>
       /^possible-ts-output-worker\.\w+\.js$/.test(f)
     )
-    const possibleTsOutputWorkerContent = await fs.readFile(
+    const possibleTsOutputWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, possibleTsOutputWorker),
       'utf-8'
     )
@@ -40,7 +40,7 @@ if (isBuild) {
     const workerNestedWorker = files.find((f) =>
       /^worker-nested-worker\.\w+\.js$/.test(f)
     )
-    const workerNestedWorkerContent = await fs.readFile(
+    const workerNestedWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, workerNestedWorker),
       'utf-8'
     )
@@ -48,7 +48,7 @@ if (isBuild) {
       workerNestedWorkerContent
     )
     const subWorker = files.find((f) => /^sub-worker\.\w+\.js$/.test(f))
-    const subWorkerContent = await fs.readFile(
+    const subWorkerContent = fs.readFileSync(
       path.resolve(assetsDir, subWorker),
       'utf-8'
     )

@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
@@ -62,12 +62,12 @@ if (isBuild) {
   const assetsDir = path.resolve(testDir, 'dist/iife/assets')
   // assert correct files
   test('inlined code generation', async () => {
-    const files = await fs.readdir(assetsDir)
+    const files = fs.readdirSync(assetsDir)
     expect(files.length).toBe(13)
     const index = files.find((f) => f.includes('main-module'))
-    const content = await fs.readFile(path.resolve(assetsDir, index), 'utf-8')
+    const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
-    const workerContent = await fs.readFile(
+    const workerContent = fs.readFileSync(
       path.resolve(assetsDir, worker),
       'utf-8'
     )
