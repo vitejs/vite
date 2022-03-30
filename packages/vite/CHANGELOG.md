@@ -56,7 +56,7 @@ Replace the internal `chunkToEmittedCssFileMap` and `chunkToEmittedAssetsMap` va
 
 #### Optimize Custom Extensions (experimental)
 
-A new `optimizeDeps.extensions: string[]` option is available to enable pre-bundling of custom extensions. A respective esbuild plugin is required to handle that extension. e.g. ['.svelte', '.svelte.md']. See [#6801](https://github.com/vitejs/vite/issues/6801) for more information.
+A new `optimizeDeps.extensions: string[]` option is available to enable pre-bundling of custom extensions. A respective esbuild plugin is required to handle that extension. e.g. `['.svelte', '.svelte.md']`. See [#6801](https://github.com/vitejs/vite/issues/6801) for more information.
 
 
 ### Bug Fixes
