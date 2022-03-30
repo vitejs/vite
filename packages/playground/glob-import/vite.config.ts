@@ -8,5 +8,8 @@ export default defineConfig({
       '@dir': path.resolve(__dirname, './dir/')
     }
   },
-  plugins: [Glob({ takeover: true })]
+  plugins: [Glob({ takeover: true })],
+  optimizeDeps: {
+    entries: []
+  }
 })

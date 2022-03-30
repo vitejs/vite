@@ -218,9 +218,9 @@ importers:
 
   packages/playground/glob-import:
     specifiers:
-      vite-plugin-glob: ^0.1.1
+      vite-plugin-glob: ^0.2.1
     devDependencies:
-      vite-plugin-glob: 0.1.1
+      vite-plugin-glob: 0.2.1
 
   packages/playground/hmr:
     specifiers: {}
@@ -9378,8 +9378,8 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vite-plugin-glob/0.1.1:
-    resolution: {integrity: sha512-M2vtVfYOUZsEIikZeRz9au2E+LjpYVMrVFFXlEvqcmLW9wApTsq+wW/d632SPSaaj1scSbb1pNV6FO5wjcRTxw==}
+  /vite-plugin-glob/0.2.1:
+    resolution: {integrity: sha512-2I0erHho2M1opNT5vJ28RWZJKSHXZSFQgwpZTajr0Kg9C5ZEadn9EQ3yIu52KX43wSK3q+eewitbrT2x6eAGdg==}
     dependencies:
       fast-glob: 3.2.11
       magic-string: 0.26.1
