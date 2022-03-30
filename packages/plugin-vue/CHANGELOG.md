@@ -1,3 +1,9 @@
+## <small>2.3.1 (2022-03-30)</small>
+
+* chore(plugin-vue): revert #7527, lower vite peer dep ([447bbeb](https://github.com/vitejs/vite/commit/447bbeb)), closes [#7527](https://github.com/vitejs/vite/issues/7527)
+
+
+
 ## 2.3.0 (2022-03-30)
 
 * chore(plugin-vue): bump vite peer dep to 2.9.0 (#7472) ([12fd1d9](https://github.com/vitejs/vite/commit/12fd1d9)), closes [#7472](https://github.com/vitejs/vite/issues/7472)
