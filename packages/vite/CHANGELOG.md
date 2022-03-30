@@ -1,3 +1,10 @@
+## 2.9.0 (2022-03-30)
+
+* fix: revert #7463 and #6624 (#7522) ([8efc6a6](https://github.com/vitejs/vite/commit/8efc6a6)), closes [#7463](https://github.com/vitejs/vite/issues/7463) [#6624](https://github.com/vitejs/vite/issues/6624) [#7522](https://github.com/vitejs/vite/issues/7522)
+* chore: typo (#7520) ([4fda42f](https://github.com/vitejs/vite/commit/4fda42f)), closes [#7520](https://github.com/vitejs/vite/issues/7520)
+
+
+
 ## 2.9.0-beta.11 (2022-03-29)
 
 * feat(worker): Add sourcemap support for worker bundles (#5417) ([465b6b9](https://github.com/vitejs/vite/commit/465b6b9)), closes [#5417](https://github.com/vitejs/vite/issues/5417)
