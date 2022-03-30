@@ -14,7 +14,7 @@ Vite's default chunking strategy was a good fit for most SPAs, but it wasn't ide
 
 ### Web Workers enhancements
 
-Web Workers now supports source map generation (see [#5417](https://github.com/vitejs/vite/issues/5417)). The implementation is also now more robust, fixing several issues encountered in previous versions ([#6599](https://github.com/vitejs/vite/issues/6599),
+Web Workers now supports source map generation (see [#5417](https://github.com/vitejs/vite/issues/5417)). The implementation is also now more robust, fixing several issues encountered in previous versions ([#6599](https://github.com/vitejs/vite/issues/6599)).
 
 ### Raw Glob Imports
 
