@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../testUtils'
+import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {
@@ -94,13 +94,3 @@ test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
 })
-
-function getSourceMapUrl(code: string): string {
-  const regex = /\/\/[#@]\s(?:source(?:Mapping)?URL)=\s*(\S+)/g
-  const results = regex.exec(code)
-
-  if (results && results.length >= 2) {
-    return results[1]
-  }
-  return null
-}
