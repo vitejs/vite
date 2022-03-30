@@ -90,6 +90,13 @@
     "overrides": {
       "vite": "workspace:*",
       "@vitejs/plugin-vue": "workspace:*"
+    },
+    "packageExtensions": {
+      "postcss-load-config": {
+        "peerDependencies": {
+          "postcss": "*"
+        }
+      }
     }
   }
 }

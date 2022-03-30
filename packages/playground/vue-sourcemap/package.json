@@ -10,7 +10,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
-    "convert-source-map": "^1.8.0",
     "less": "^4.1.2",
     "sass": "^1.43.4"
   },
