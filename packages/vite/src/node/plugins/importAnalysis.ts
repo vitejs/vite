@@ -518,7 +518,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
-          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
+          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
+            // complete expression inside parens
+            source.slice(dynamicIndex + 1, end)
+          )
 
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
