@@ -21,7 +21,7 @@ Web Workers now supports source map generation (see [#5417](https://github.com/v
 Glob imports support for the `raw` modifier syntax has changed to using `{ as: 'raw' }`, which works in the same way as the `?raw` suffix in regular imports:
 
 ```js
-const examples = import.meta.globEager('./examples/*.html', { as: { 'raw' }})
+const examples = import.meta.globEager('./examples/*.html', { as: 'raw' })
 ```
 
 The `{ assert: { type: 'raw' }}` syntax introduced in v2.8 has been deprecated. See [#7017](https://github.com/vitejs/vite/issues/7017) for more information.
