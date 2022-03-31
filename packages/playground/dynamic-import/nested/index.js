@@ -35,7 +35,7 @@ document.querySelector('.mxd2').addEventListener('click', async () => {
   const test = { jss: '../mxd.js' }
   const ttest = test
   const view = 'mxd'
-  const { default: mxdDynamic } = await import(test.jss)
+  const { default: mxdDynamic } = await import(/*@vite-ignore*/ test.jss)
   text('.view', mxdStatic === mxdDynamic)
 })
 
