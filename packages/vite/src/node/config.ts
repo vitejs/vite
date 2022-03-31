@@ -107,6 +107,10 @@ export interface UserConfig {
    */
   define?: Record<string, any>
   /**
+   * Specify additional picomatch patterns to exclude global defines and env replacement.
+   */
+  replacementExclude?: string | RegExp | (string | RegExp)[]
+  /**
    * Array of vite plugins to use.
    */
   plugins?: (PluginOption | PluginOption[])[]
@@ -237,7 +241,13 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
+    | 'plugins'
+    | 'alias'
+    | 'dedupe'
+    | 'assetsInclude'
+    | 'replacementExclude'
+    | 'optimizeDeps'
+    | 'worker'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -259,6 +269,7 @@ export type ResolvedConfig = Readonly<
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
     assetsInclude: (file: string) => boolean
+    replacementExclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
@@ -413,6 +424,10 @@ export async function resolveConfig(
     ? createFilter(config.assetsInclude)
     : () => false
 
+  const definesFilter = config.replacementExclude
+    ? createFilter(config.replacementExclude)
+    : () => false
+
   // create an internal resolver to be used in special scenarios, e.g.
   // optimizer & handling css @imports
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
@@ -492,6 +507,9 @@ export async function resolveConfig(
     },
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
+    },
+    replacementExclude(file: string) {
+      return definesFilter(file)
     },
     logger,
     packageCache: new Map(),
@@ -740,7 +758,10 @@ function mergeConfigRecursively(
     if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
       merged[key] = mergeAlias(existing, value)
       continue
-    } else if (key === 'assetsInclude' && rootPath === '') {
+    } else if (
+      (key === 'assetsInclude' || key === 'replacementExclude') &&
+      rootPath === ''
+    ) {
       merged[key] = [].concat(existing, value)
       continue
     } else if (key === 'noExternal' && existing === true) {

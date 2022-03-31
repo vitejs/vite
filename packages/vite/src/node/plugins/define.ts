@@ -99,11 +99,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude html, css and static assets for performance
+        // exclude html, specified file, css and static assets for performance
         isHTMLRequest(id) ||
         isCSSRequest(id) ||
         isNonJsRequest(id) ||
-        config.assetsInclude(id)
+        config.assetsInclude(id) ||
+        config.replacementExclude(id)
       ) {
         return
       }

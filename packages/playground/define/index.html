@@ -11,8 +11,13 @@
 <p>spread array: <code class="spread-array"></code></p>
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
+<p id="md-to-vue" class="origin-text">{{msg}}</p>
 
 <script type="module">
+  import { createApp } from 'vue'
+  import EnvComponent from './env.md'
+  createApp(EnvComponent).mount('#md-to-vue')
+
   const __VAR_NAME__ = true // ensure define doesn't replace var name
   text('.exp', typeof __EXP__) // typeof __EXP_ would be `boolean` instead of `string`
   text('.string', __STRING__)

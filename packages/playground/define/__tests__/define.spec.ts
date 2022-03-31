@@ -26,3 +26,7 @@ test('string', async () => {
   expect(await page.textContent('.exp-define')).toBe('__EXP__')
   expect(await page.textContent('.import-json')).toBe('__EXP__')
 })
+
+test('exclude replacement', async () => {
+  expect(await page.textContent('.origin-text')).toMatch('process.env.NODE_ENV')
+})

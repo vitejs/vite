@@ -1,4 +1,14 @@
+const Vue = require('@vitejs/plugin-vue')
+const Markdown = require('vite-plugin-md').default
+
 module.exports = {
+  replacementExclude: ['**.md'],
+  plugins: [
+    Vue({
+      include: [/\.vue$/, /\.md$/]
+    }),
+    Markdown()
+  ],
   define: {
     __EXP__: 'false',
     __STRING__: '"hello"',
