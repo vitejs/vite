@@ -36,7 +36,7 @@ import {
   checkPublicFile
 } from './asset'
 import MagicString from 'magic-string'
-import type * as Postcss from 'postcss'
+import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 // We need to disable check of extraneous import which is buggy for stylus,
 // and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
@@ -59,8 +59,8 @@ export interface CSSOptions {
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string
-    | (Postcss.ProcessOptions & {
-        plugins?: Postcss.Plugin[]
+    | (PostCSS.ProcessOptions & {
+        plugins?: PostCSS.Plugin[]
       })
   /**
    * Enables css sourcemaps during dev
@@ -617,7 +617,7 @@ async function compileCSS(
 ): Promise<{
   code: string
   map?: SourceMapInput
-  ast?: Postcss.Result
+  ast?: PostCSS.Result
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
@@ -735,7 +735,7 @@ async function compileCSS(
   postcssPlugins.push(
     UrlRewritePostcssPlugin({
       replacer: urlReplacer
-    }) as Postcss.Plugin
+    }) as PostCSS.Plugin
   )
 
   if (isModule) {
@@ -911,8 +911,8 @@ function combineSourcemapsIfExists(
 }
 
 interface PostCSSConfigResult {
-  options: Postcss.ProcessOptions
-  plugins: Postcss.Plugin[]
+  options: PostCSS.ProcessOptions
+  plugins: PostCSS.Plugin[]
 }
 
 async function resolvePostcssConfig(
@@ -961,7 +961,7 @@ export const cssUrlRE =
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
 const cssImageSetRE = /image-set\(([^)]+)\)/
 
-const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
+const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
 }> = (opts) => {
   if (!opts) {
@@ -1094,11 +1094,11 @@ async function hoistAtImports(css: string) {
   return (await postcss.default([AtImportHoistPlugin]).process(css)).css
 }
 
-const AtImportHoistPlugin: Postcss.PluginCreator<any> = () => {
+const AtImportHoistPlugin: PostCSS.PluginCreator<any> = () => {
   return {
     postcssPlugin: 'vite-hoist-at-imports',
     Once(root) {
-      const imports: Postcss.AtRule[] = []
+      const imports: PostCSS.AtRule[] = []
       root.walkAtRules((rule) => {
         if (rule.name === 'import') {
           // record in reverse so that can simply prepend to preserve order

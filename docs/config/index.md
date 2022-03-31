@@ -357,7 +357,7 @@ export default defineConfig(({ command, mode }) => {
 
 - **Type:** `ESBuildOptions | false`
 
-  `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+  `ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
   export default defineConfig({
@@ -368,9 +368,9 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
-  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
+  By default, esbuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
 
-  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
+  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by esbuild:
 
   ```js
   export default defineConfig({
@@ -380,7 +380,7 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
-  Set to `false` to disable ESbuild transforms.
+  Set to `false` to disable esbuild transforms.
 
 ### assetsInclude
 
@@ -849,7 +849,7 @@ export default defineConfig({
 - **Type:** `boolean | 'terser' | 'esbuild'`
 - **Default:** `'esbuild'`
 
-  Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
+  Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
   Note the `build.minify` option is not available when using the `'es'` format in lib mode.
 
