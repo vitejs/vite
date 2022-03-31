@@ -499,7 +499,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.ws.send` to boardcast events to all the clients:
+On the plugin side, we could use `server.ws.send` to broadcast events to all the clients:
 
 ```js
 // vite.config.js
