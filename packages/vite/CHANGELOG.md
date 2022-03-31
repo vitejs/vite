@@ -325,7 +325,7 @@ See [2.9.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v2.9.0-beta.0/p
 
 ### Default preview port
 
-New default port for `vite preview` is 4173 (avoid conflicts in MacOS that took over the 5000 port)
+New default port for `vite preview` is 4173 (avoid conflicts in macOS that took over the 5000 port)
 
 ### Workers using standard syntax
 

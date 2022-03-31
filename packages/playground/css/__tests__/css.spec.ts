@@ -324,7 +324,7 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
-test('Url separation', async () => {
+test('URL separation', async () => {
   const urlSeparated = await page.$('.url-separated')
   const baseUrl = 'url(images/dog.webp)'
   const cases = new Array(5)

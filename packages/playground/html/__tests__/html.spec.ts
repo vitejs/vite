@@ -231,7 +231,7 @@ if (!isBuild) {
       await editFile('invalid.html', (content) => {
         return content.replace('<div Bad', '<div> Good')
       })
-      const content = await page.waitForSelector('text=Good Html')
+      const content = await page.waitForSelector('text=Good HTML')
       expect(content).toBeTruthy()
     })
   })
