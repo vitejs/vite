@@ -160,4 +160,33 @@ if (!isBuild) {
     expect(textprev).not.toMatch('direct')
     expect(textpost).not.toMatch('direct')
   })
+
+  test('not loaded dynamic import', async () => {
+    await page.goto(viteTestUrl + '/dynamic-import/index.html')
+
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // Modifying `index.ts` triggers a page reload, as expected
+    editFile('dynamic-import/index.ts', (code) => code)
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // Modifying a dynamic import that has not been loaded has no effect (doesn't trigger a page reload)
+    editFile('dynamic-import/dep.ts', (code) => code)
+    try {
+      await page.waitForNavigation({ timeout: 1000 })
+    } catch (err) {
+      const errMsg = 'page.waitForNavigation: Timeout 1000ms exceeded.'
+      expect(err.message.slice(0, errMsg.length)).toBe(errMsg)
+    }
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 1')
+  })
 }

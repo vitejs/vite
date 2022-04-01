@@ -225,6 +225,12 @@ function propagateUpdate(
   }>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  // if the imports of `node` have not been analyzed, then `node` has not
+  // been loaded in the browser and we should stop propagation.
+  if (node.id && node.isSelfAccepting === null) {
+    return false
+  }
+
   if (node.isSelfAccepting) {
     boundaries.add({
       boundary: node,

@@ -112,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  let server: ViteDevServer
+  let server: ViteDevServer | null = null
 
   return {
     name: 'vite:import-analysis',
@@ -122,6 +122,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
+      if (server === null) {
+        return null
+      }
+
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
@@ -159,7 +163,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const { moduleGraph } = server
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
+      const importerModule = moduleGraph.getModuleById(importer)!
+
       if (!imports.length) {
+        importerModule.isSelfAccepting = false
         isDebug &&
           debug(
             `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
@@ -173,11 +183,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      // vite-only server context
-      const { moduleGraph } = server
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
       const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
@@ -198,7 +203,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          const optimizedDeps = server._optimizedDeps
+          const optimizedDeps = server!._optimizedDeps
           if (optimizedDeps) {
             await optimizedDeps.scanProcessing
 
@@ -659,7 +664,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          transformRequest(url, server, { ssr }).catch((e) => {
+          transformRequest(url, server!, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
