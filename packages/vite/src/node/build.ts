@@ -263,7 +263,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     },
     dynamicImportVarsOptions: {
       warnOnError: true,
-      exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     }
   }
