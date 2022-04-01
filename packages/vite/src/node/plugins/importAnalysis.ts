@@ -112,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: []
   })
-  let server: ViteDevServer | null = null
+  let server: ViteDevServer
 
   return {
     name: 'vite:import-analysis',
@@ -122,9 +122,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
-      // In a real app `server` is always defined, but it can be `null` when
+      // In a real app `server` is always defined, but it is undefined when
       // running src/node/server/__tests__/pluginContainer.spec.ts
-      if (server === null) {
+      if (!server) {
         return null
       }
 
@@ -205,7 +205,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          const optimizedDeps = server!._optimizedDeps
+          const optimizedDeps = server._optimizedDeps
           if (optimizedDeps) {
             await optimizedDeps.scanProcessing
 
@@ -666,7 +666,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          transformRequest(url, server!, { ssr }).catch((e) => {
+          transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
