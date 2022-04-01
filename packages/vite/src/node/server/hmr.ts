@@ -18,7 +18,7 @@ const normalizedClientDir = normalizePath(CLIENT_DIR)
 export interface HmrOptions {
   protocol?: string
   host?: string
-  port?: number | false
+  port?: number
   clientPort?: number
   path?: string
   timeout?: number
@@ -47,7 +47,7 @@ export async function handleHMRUpdate(
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === path.resolve(name)
+    (name) => file === name
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&

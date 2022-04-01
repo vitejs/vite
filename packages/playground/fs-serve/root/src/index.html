@@ -11,6 +11,8 @@
 <h2>Safe Fetch Subdirectory</h2>
 <pre class="safe-fetch-subdir-status"></pre>
 <pre class="safe-fetch-subdir"></pre>
+<pre class="safe-fetch-subdir-special-characters-status"></pre>
+<pre class="safe-fetch-subdir-special-characters"></pre>
 
 <h2>Unsafe Fetch</h2>
 <pre class="unsafe-fetch-status"></pre>
@@ -19,6 +21,8 @@
 <h2>Safe /@fs/ Fetch</h2>
 <pre class="safe-fs-fetch-status"></pre>
 <pre class="safe-fs-fetch"></pre>
+<pre class="safe-fs-fetch-special-characters-status"></pre>
+<pre class="safe-fs-fetch-special-characters"></pre>
 
 <h2>Unsafe /@fs/ Fetch</h2>
 <pre class="unsafe-fs-fetch-status"></pre>
@@ -56,6 +60,16 @@
       text('.safe-fetch-subdir', JSON.stringify(data))
     })
 
+  // inside allowed dir, with special characters, safe fetch
+  fetch('/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt')
+    .then((r) => {
+      text('.safe-fetch-subdir-special-characters-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch-subdir-special-characters', JSON.stringify(data))
+    })
+
   // outside of allowed dir, treated as unsafe
   fetch('/unsafe.txt')
     .then((r) => {
@@ -90,6 +104,20 @@
     })
     .catch((e) => {
       console.error(e)
+    })
+
+  // not imported before, inside root with special characters, treated as safe
+  fetch(
+    '/@fs/' +
+      ROOT +
+      '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json'
+  )
+    .then((r) => {
+      text('.safe-fs-fetch-special-characters-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.safe-fs-fetch-special-characters', JSON.stringify(data))
     })
 
   // .env, denied by default

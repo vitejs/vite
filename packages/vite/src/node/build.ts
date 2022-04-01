@@ -19,7 +19,6 @@ import type {
 } from 'rollup'
 import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
-import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import type { Terser } from 'types/terser'
@@ -306,10 +305,10 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
+
   return {
     pre: [
       watchPackageDataPlugin(config),
-      buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),

@@ -3,35 +3,98 @@ import type { Server } from 'http'
 import { STATUS_CODES } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
 import { createServer as createHttpsServer } from 'https'
-import type { ServerOptions } from 'ws'
-import { WebSocketServer as WebSocket } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'types/ws'
-import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
+import { WebSocketServer as WebSocketServerRaw } from 'ws'
+import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { Socket } from 'net'
+
 export const HMR_HEADER = 'vite-hmr'
 
+export type WebSocketCustomListener<T> = (
+  data: T,
+  client: WebSocketClient
+) => void
+
 export interface WebSocketServer {
-  on: WebSocketTypes.Server['on']
-  off: WebSocketTypes.Server['off']
+  /**
+   * Get all connected clients.
+   */
+  clients: Set<WebSocketClient>
+  /**
+   * Boardcast events to all clients
+   */
   send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
+  /**
+   * Disconnect all clients and terminate the server.
+   */
   close(): Promise<void>
+  /**
+   * Handle custom event emitted by `import.meta.hot.send`
+   */
+  on: WebSocketServerRaw['on'] & {
+    <T extends string>(
+      event: T,
+      listener: WebSocketCustomListener<InferCustomEventPayload<T>>
+    ): void
+  }
+  /**
+   * Unregister event listener.
+   */
+  off: WebSocketServerRaw['off'] & {
+    (event: string, listener: Function): void
+  }
 }
+
+export interface WebSocketClient {
+  /**
+   * Send event to the client
+   */
+  send(payload: HMRPayload): void
+  /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+  /**
+   * The raw WebSocket instance
+   * @advanced
+   */
+  socket: WebSocketRaw
+}
+
+const wsServerEvents = [
+  'connection',
+  'error',
+  'headers',
+  'listening',
+  'message'
+]
 
 export function createWebSocketServer(
   server: Server | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions
 ): WebSocketServer {
-  let wss: WebSocket
+  let wss: WebSocketServerRaw
   let httpsServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
-  const wsServer = (hmr && hmr.server) || server
+  const hmrServer = hmr && hmr.server
+  const hmrPort = hmr && hmr.port
+  // TODO: the main server port may not have been chosen yet as it may use the next available
+  const portsAreCompatible = !hmrPort || hmrPort === config.server.port
+  const wsServer = hmrServer || (portsAreCompatible && server)
+  const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
+  const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
 
   if (wsServer) {
-    wss = new WebSocket({ noServer: true })
+    wss = new WebSocketServerRaw({ noServer: true })
     wsServer.on('upgrade', (req, socket, head) => {
       if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
@@ -41,7 +104,7 @@ export function createWebSocketServer(
     })
   } else {
     const websocketServerOptions: ServerOptions = {}
-    const port = (hmr && hmr.port) || 24678
+    const port = hmrPort || 24678
     const host = (hmr && hmr.host) || undefined
     if (httpsOptions) {
       // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
@@ -72,10 +135,22 @@ export function createWebSocketServer(
     }
 
     // vite dev server in middleware mode
-    wss = new WebSocket(websocketServerOptions)
+    wss = new WebSocketServerRaw(websocketServerOptions)
   }
 
   wss.on('connection', (socket) => {
+    socket.on('message', (raw) => {
+      if (!customListeners.size) return
+      let parsed: any
+      try {
+        parsed = JSON.parse(String(raw))
+      } catch {}
+      if (!parsed || parsed.type !== 'custom' || !parsed.event) return
+      const listeners = customListeners.get(parsed.event)
+      if (!listeners?.size) return
+      const client = getSocketClent(socket)
+      listeners.forEach((listener) => listener(parsed.data, client))
+    })
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
       socket.send(JSON.stringify(bufferedError))
@@ -92,6 +167,30 @@ export function createWebSocketServer(
     }
   })
 
+  // Provide a wrapper to the ws client so we can send messages in JSON format
+  // To be consistent with server.ws.send
+  function getSocketClent(socket: WebSocketRaw) {
+    if (!clientsMap.has(socket)) {
+      clientsMap.set(socket, {
+        send: (...args) => {
+          let payload: HMRPayload
+          if (typeof args[0] === 'string') {
+            payload = {
+              type: 'custom',
+              event: args[0],
+              data: args[1]
+            }
+          } else {
+            payload = args[0]
+          }
+          socket.send(JSON.stringify(payload))
+        },
+        socket
+      })
+    }
+    return clientsMap.get(socket)!
+  }
+
   // On page reloads, if a file fails to compile and returns 500, the server
   // sends the error payload before the client connection is established.
   // If we have no open clients, buffer the error and send it to the next
@@ -99,9 +198,39 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
-    on: wss.on.bind(wss),
-    off: wss.off.bind(wss),
-    send(payload: HMRPayload) {
+    on: ((event: string, fn: () => void) => {
+      if (wsServerEvents.includes(event)) wss.on(event, fn)
+      else {
+        if (!customListeners.has(event)) {
+          customListeners.set(event, new Set())
+        }
+        customListeners.get(event)!.add(fn)
+      }
+    }) as WebSocketServer['on'],
+    off: ((event: string, fn: () => void) => {
+      if (wsServerEvents.includes(event)) {
+        wss.off(event, fn)
+      } else {
+        customListeners.get(event)?.delete(fn)
+      }
+    }) as WebSocketServer['off'],
+
+    get clients() {
+      return new Set(Array.from(wss.clients).map(getSocketClent))
+    },
+
+    send(...args: any[]) {
+      let payload: HMRPayload
+      if (typeof args[0] === 'string') {
+        payload = {
+          type: 'custom',
+          event: args[0],
+          data: args[1]
+        }
+      } else {
+        payload = args[0]
+      }
+
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return

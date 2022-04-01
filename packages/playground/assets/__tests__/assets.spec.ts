@@ -8,7 +8,8 @@ import {
   readManifest,
   readFile,
   editFile,
-  notifyRebuildComplete
+  notifyRebuildComplete,
+  untilUpdated
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -37,7 +38,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+      'script[type="module"][src^="/foo/index.html?html-proxy"]'
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -193,6 +194,16 @@ test('?url import', async () => {
   )
 })
 
+test('?url import on css', async () => {
+  const src = readFile('css/icons.css')
+  const txt = await page.textContent('.url-css')
+  expect(txt).toEqual(
+    isBuild
+      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      : '/foo/css/icons.css'
+  )
+})
+
 describe('unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
@@ -232,6 +243,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`non-existent`, import.meta.url)', async () => {
+  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+    '/foo/non-existent'
+  )
+})
+
 if (isBuild) {
   test('manifest', async () => {
     const manifest = readManifest('foo')
@@ -258,3 +275,15 @@ describe('css and assets in css in build watch', () => {
     })
   }
 })
+
+if (!isBuild) {
+  test('@import in html style tag hmr', async () => {
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    editFile(
+      './css/import.css',
+      (code) => code.replace('#0088ff', '#00ff88'),
+      true
+    )
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+  })
+}
