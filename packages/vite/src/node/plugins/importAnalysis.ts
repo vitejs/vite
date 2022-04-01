@@ -122,6 +122,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
+      // In a real app `server` is always defined, but it can be `null` when
+      // running the test https://github.com/vitejs/vite/blob/a74bd7ba9947be193bccf636b8918bd1f59e89ae/packages/vite/src/node/server/__tests__/pluginContainer.spec.ts
       if (server === null) {
         return null
       }

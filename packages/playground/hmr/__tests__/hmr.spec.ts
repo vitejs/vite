@@ -178,7 +178,12 @@ if (!isBuild) {
     await btn.click()
     expect(await btn.textContent()).toBe('Counter 1')
 
-    // Modifying a dynamic import that has not been loaded has no effect (doesn't trigger a page reload)
+    // #7561
+    // `dep.ts` defines `import.module.hot.accept` and has not been loaded.
+    // Therefore, modifying it has no effect (doesn't trigger a page reload).
+    // (Note that, a dynamic import that is never loaded and that does not
+    // define `accept.module.hot.accept` may wrongfully trigger a full page
+    // reload, see discussion at #7561.)
     editFile('dynamic-import/dep.ts', (code) => code)
     try {
       await page.waitForNavigation({ timeout: 1000 })
