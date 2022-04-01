@@ -11,6 +11,7 @@ import {
   addOptimizedDepInfo,
   discoverProjectDependencies,
   depsLogString,
+  extractExportsData,
   debuggerViteDeps as debug
 } from '.'
 import type {
@@ -379,7 +380,8 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
       ),
       // loading of this pre-bundled dep needs to await for its processing
       // promise to be resolved
-      processing: depOptimizationProcessing.promise
+      processing: depOptimizationProcessing.promise,
+      exportsData: extractExportsData(resolved, config)
     })
 
     // Debounced rerun, let other missing dependencies be discovered before
