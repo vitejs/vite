@@ -21,7 +21,7 @@ Vite now supports CSS sourcemaps [#7173](https://github.com/vitejs/vite/issues/7
 
 ### Avoid splitting vendor chunks by default
 
-Vite's default chunking strategy was a good fit for most SPAs, but it wasn't ideal in some other use cases. Vite doesn't have enough context to make the best decision here, so in Vite 2.9 the previous chunking strategy is now opt-in [#6534](https://github.com/vitejs/vite/issues/6534) and Vite will no longer split vendor libs in a separate chunk.
+Vite's default chunking strategy was a good fit for most SPAs, but it wasn't ideal in some other use cases. Vite doesn't have enough context to make the best decision here, so in Vite 2.9 the previous chunking strategy is now [opt-in](https://vitejs.dev/guide/build.html#chunking-strategy) [#6534](https://github.com/vitejs/vite/issues/6534) and Vite will no longer split vendor libs in a separate chunk.
 
 ### Web Workers enhancements
 
@@ -37,6 +37,9 @@ const examples = import.meta.globEager('./examples/*.html', { as: 'raw' })
 
 The `{ assert: { type: 'raw' }}` syntax introduced in v2.8 has been deprecated. See [#7017](https://github.com/vitejs/vite/issues/7017) for more information.
 
+### `envDir` changes
+
+The `envDir` now correctly loads `.env` files in the specified directory only (defaults to `root`). Previously, it would load files above the directory, which imposed security issues. If you had relied on the previous behaviour, make sure you move your `.env` files to the correct directory, or configure the `envDir` option.
 
 ### New tools for Plugin and Framework Authors
 
