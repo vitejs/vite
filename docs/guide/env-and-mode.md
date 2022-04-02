@@ -37,7 +37,7 @@ Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional enviro
 
 An env file for a specific mode (e.g. `.env.production`) will take higher priority than a generic one (e.g. `.env`).
 
-In addition, environment variables that already exist when Vite is executed have the highest priority and will not be overwritten by `.env` files.
+In addition, environment variables that already exist when Vite is executed have the highest priority and will not be overwritten by `.env` files. For example, when running `VITE_SOME_KEY=123 vite build`.
 
 `.env` files are loaded at the start of Vite. Restart the server after making changes.
 :::
@@ -57,7 +57,7 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 :::warning SECURITY NOTES
 
-- `.env.*.local` files are local-only and can contain sensitive variables. You should add `.local` to your `.gitignore` to avoid them being checked into git.
+- `.env.*.local` files are local-only and can contain sensitive variables. You should add `*.local` to your `.gitignore` to avoid them being checked into git.
 
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
   :::
@@ -83,7 +83,7 @@ interface ImportMeta {
 
 ## Modes
 
-By default, the dev server (`dev` command) runs in `development` mode and the `build` and `serve` commands run in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 
@@ -110,4 +110,4 @@ NODE_ENV=production
 VITE_APP_TITLE=My App (staging)
 ```
 
-Now your staging app should have production-like behavior, but displaying a different title from production.
+Now your staging app should have production-like behavior, but display a different title from production.

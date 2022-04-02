@@ -12,8 +12,8 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import { combineSourcemaps } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
 import { isJSONRequest } from '../plugins/json'
+import type { RawSourceMap } from '@ampproject/remapping'
 
 type Node = _Node & {
   start: number
@@ -97,7 +97,7 @@ async function ssrTransformScript(
   }
 
   function defineExport(position: number, name: string, local = name) {
-    s.appendRight(
+    s.appendLeft(
       position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`
@@ -189,7 +189,8 @@ async function ssrTransformScript(
         s.overwrite(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
+          { contentOnly: true }
         )
       }
     }
@@ -221,7 +222,7 @@ async function ssrTransformScript(
         // { foo } -> { foo: __import_x__.foo }
         // skip for destructuring patterns
         if (
-          !(parent as any).inPattern ||
+          !isNodeInPatternWeakMap.get(parent) ||
           isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
@@ -238,14 +239,16 @@ async function ssrTransformScript(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding)
+        s.overwrite(id.start, id.end, binding, { contentOnly: true })
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
+      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+        contentOnly: true
+      })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
@@ -287,6 +290,8 @@ interface Visitors {
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
 }
+
+const isNodeInPatternWeakMap = new WeakMap<_Node, boolean>()
 
 /**
  * Same logic from \@vue/compiler-core & \@vue/compiler-sfc
@@ -406,7 +411,7 @@ function walk(
         })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
-        ;(node as any).inPattern = true
+        isNodeInPatternWeakMap.set(node, true)
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
@@ -456,7 +461,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 
   // property key
   // this also covers object destructuring pattern
-  if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
+  if (isStaticPropertyKey(id, parent) || isNodeInPatternWeakMap.get(parent)) {
     return false
   }
 

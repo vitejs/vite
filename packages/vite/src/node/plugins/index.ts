@@ -3,12 +3,13 @@ import type { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
+import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlInlineProxyPlugin } from './html'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -16,6 +17,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { metadataPlugin } from './metadata'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -30,6 +32,7 @@ export async function resolvePlugins(
     : { pre: [], post: [] }
 
   return [
+    isBuild ? metadataPlugin() : null,
     isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
@@ -45,6 +48,7 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
+    isBuild ? null : optimizedDepsPlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
@@ -57,12 +61,13 @@ export async function resolvePlugins(
     ),
     wasmPlugin(config),
     webWorkerPlugin(config),
-    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
+    isBuild && buildHtmlPlugin(config),
+    workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,

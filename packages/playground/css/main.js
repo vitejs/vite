@@ -12,6 +12,9 @@ text('.imported-less', less)
 import stylus from './stylus.styl'
 text('.imported-stylus', stylus)
 
+import rawCss from './raw-imported.css?raw'
+text('.raw-imported-css', rawCss)
+
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
@@ -68,3 +71,13 @@ if (import.meta.env.DEV) {
 // inlined
 import inlined from './inlined.css?inline'
 text('.inlined-code', inlined)
+
+// glob
+const glob = import.meta.glob('./glob-import/*.css')
+Promise.all(Object.keys(glob).map((key) => glob[key]())).then((res) => {
+  text('.imported-css-glob', JSON.stringify(res, null, 2))
+})
+
+// globEager
+const globEager = import.meta.globEager('./glob-import/*.css')
+text('.imported-css-globEager', JSON.stringify(globEager, null, 2))

@@ -7,6 +7,8 @@ import path from 'path'
 import colors from 'css-color-names'
 import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
+import { normalizePath } from 'vite'
+import { fromComment } from 'convert-source-map'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -56,12 +58,17 @@ async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
 export async function getColor(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   const rgb = await el.evaluate((el) => getComputedStyle(el as Element).color)
-  return hexToNameMap[rgbToHex(rgb)] || rgb
+  return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
 export async function getBg(el: string | ElementHandle): Promise<string> {
   el = await toEl(el)
   return el.evaluate((el) => getComputedStyle(el as Element).backgroundImage)
+}
+
+export async function getBgColor(el: string | ElementHandle): Promise<string> {
+  el = await toEl(el)
+  return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
 }
 
 export function readFile(filename: string): string {
@@ -119,7 +126,7 @@ export async function untilUpdated(
   if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 100 : 50
   for (let tries = 0; tries < maxTries; tries++) {
-    const actual = (await poll()) || ''
+    const actual = (await poll()) ?? ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
       expect(actual).toMatch(expected)
       break
@@ -133,3 +140,17 @@ export async function untilUpdated(
  * Send the rebuild complete message in build watch
  */
 export { notifyRebuildComplete } from '../../scripts/jestPerTestSetup'
+
+export const extractSourcemap = (content: string) => {
+  const lines = content.trim().split('\n')
+  return fromComment(lines[lines.length - 1]).toObject()
+}
+
+export const formatSourcemapForSnapshot = (map: any) => {
+  const root = normalizePath(testDir)
+  const m = { ...map }
+  delete m.file
+  delete m.names
+  m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  return m
+}

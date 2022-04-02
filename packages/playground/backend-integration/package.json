@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "tailwindcss": "^2.2.19"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.2.11"
   }
 }

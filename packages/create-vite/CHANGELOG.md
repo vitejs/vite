@@ -1,3 +1,26 @@
+## 2.9.0 (2022-03-30)
+
+* chore: add isolatedModules to create-vite > template-vue-ts > tsconfig (#7304) ([21990ea](https://github.com/vitejs/vite/commit/21990ea)), closes [#7304](https://github.com/vitejs/vite/issues/7304)
+* chore(deps): update all non-major dependencies (#7490) ([42c15f6](https://github.com/vitejs/vite/commit/42c15f6)), closes [#7490](https://github.com/vitejs/vite/issues/7490)
+* docs(vue-ts): update note on vue type support in ts (#6165) ([cfc7648](https://github.com/vitejs/vite/commit/cfc7648)), closes [#6165](https://github.com/vitejs/vite/issues/6165)
+* workflow: separate version bumping and publishing on release (#6879) ([fe8ef39](https://github.com/vitejs/vite/commit/fe8ef39)), closes [#6879](https://github.com/vitejs/vite/issues/6879)
+
+
+
+# [2.8.0](https://github.com/vitejs/vite/compare/create-vite@2.7.2...create-vite@2.8.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* **create-vite:** use `reset` for prompts for white bg color shell ([#6131](https://github.com/vitejs/vite/issues/6131)) ([dd3bbb8](https://github.com/vitejs/vite/commit/dd3bbb8e21aff812ec482f760e1abceb6bd67aef))
+
+
+### Features
+
+* **create-vite:** tsconfig support vite.config.ts ([#6324](https://github.com/vitejs/vite/issues/6324)) ([bfbdb22](https://github.com/vitejs/vite/commit/bfbdb2242e57cfba0309a88475a1f9cf2a50413f))
+
+
+
 ## [2.7.2](https://github.com/vitejs/vite/compare/create-vite@2.7.1...create-vite@2.7.2) (2021-12-13)
 
 

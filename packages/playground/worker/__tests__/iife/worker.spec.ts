@@ -1,0 +1,96 @@
+import fs from 'fs'
+import path from 'path'
+import { untilUpdated, isBuild, testDir } from '../../../testUtils'
+import type { Page } from 'playwright-chromium'
+
+test('normal', async () => {
+  await page.click('.ping')
+  await untilUpdated(() => page.textContent('.pong'), 'pong')
+  await untilUpdated(
+    () => page.textContent('.mode'),
+    isBuild ? 'production' : 'development'
+  )
+  await untilUpdated(
+    () => page.textContent('.bundle-with-plugin'),
+    'worker bundle with plugin success!'
+  )
+})
+
+test('TS output', async () => {
+  await page.click('.ping-ts-output')
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
+})
+
+test('inlined', async () => {
+  await page.click('.ping-inline')
+  await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
+})
+
+const waitSharedWorkerTick = (
+  (resolvedSharedWorkerCount: number) => async (page: Page) => {
+    await untilUpdated(async () => {
+      const count = await page.textContent('.tick-count')
+      // ignore the initial 0
+      return count === '1' ? 'page loaded' : ''
+    }, 'page loaded')
+    // test.concurrent sequential is not guaranteed
+    // force page to wait to ensure two pages overlap in time
+    resolvedSharedWorkerCount++
+    if (resolvedSharedWorkerCount < 2) return
+
+    await untilUpdated(() => {
+      return resolvedSharedWorkerCount === 2 ? 'all pages loaded' : ''
+    }, 'all pages loaded')
+  }
+)(0)
+
+test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
+  if (doTick) {
+    await page.click('.tick-shared')
+  }
+  await waitSharedWorkerTick(page)
+})
+
+test('worker emitted and import.meta.url in nested worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.nested-worker'),
+    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+  )
+})
+
+if (isBuild) {
+  const assetsDir = path.resolve(testDir, 'dist/iife/assets')
+  // assert correct files
+  test('inlined code generation', async () => {
+    const files = fs.readdirSync(assetsDir)
+    expect(files.length).toBe(13)
+    const index = files.find((f) => f.includes('main-module'))
+    const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
+    const worker = files.find((f) => f.includes('my-worker'))
+    const workerContent = fs.readFileSync(
+      path.resolve(assetsDir, worker),
+      'utf-8'
+    )
+
+    // worker should have all imports resolved and no exports
+    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(`export`)
+    // chunk
+    expect(content).toMatch(`new Worker("/iife/assets`)
+    expect(content).toMatch(`new SharedWorker("/iife/assets`)
+    // inlined
+    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
+    expect(content).toMatch(`window.Blob`)
+  })
+}
+
+test('module worker', async () => {
+  expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
+    'A string'
+  )
+})
+
+test('classic worker', async () => {
+  expect(await page.textContent('.classic-worker')).toMatch('A classic')
+  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
