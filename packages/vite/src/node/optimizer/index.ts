@@ -32,7 +32,8 @@ export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
-  jsxLoader: boolean
+  // hint if the dep requires loading as jsx
+  jsxLoader?: true
 }
 
 export interface OptimizedDeps {
