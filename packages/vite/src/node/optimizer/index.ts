@@ -112,6 +112,7 @@ export interface DepOptimizationOptions {
 
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
+  needsInteropMismatch: string[]
   /**
    * When doing a re-run, if there are newly discovered dependendencies
    * the page reload will be delayed until the next rerun so we need
@@ -378,15 +379,23 @@ export async function runOptimizeDeps(
 
   const qualifiedIds = Object.keys(depsInfo)
 
-  if (!qualifiedIds.length) {
-    return {
-      metadata,
-      commit() {
-        // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-        commitProcessingDepsCacheSync()
-      },
-      cancel
+  const processingResult: DepOptimizationResult = {
+    metadata,
+    needsInteropMismatch: [],
+    commit() {
+      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
+      // Processing is done, we can now replace the depsCacheDir with processingCacheDir
+      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+      removeDirSync(depsCacheDir)
+      fs.renameSync(processingCacheDir, depsCacheDir)
+    },
+    cancel() {
+      removeDirSync(processingCacheDir)
     }
+  }
+
+  if (!qualifiedIds.length) {
+    return processingResult
   }
 
   // esbuild generates nested directory output with lowest common ancestor base
@@ -481,9 +490,7 @@ export async function runOptimizeDeps(
       !depsInfo[id].needsInterop &&
       hasExportsMismatch(idToExports[id], output)
     ) {
-      config.logger.warn(
-        `${id} needs ES Interop, add it to the optimizeDeps.needsInterop config array`
-      )
+      processingResult.needsInteropMismatch.push(id)
     }
   }
 
@@ -514,25 +521,7 @@ export async function runOptimizeDeps(
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
-  return {
-    metadata,
-    commit() {
-      // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
-      commitProcessingDepsCacheSync()
-    },
-    cancel
-  }
-
-  function commitProcessingDepsCacheSync() {
-    // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-    // Rewire the file paths from the temporal processing dir to the final deps cache dir
-    removeDirSync(depsCacheDir)
-    fs.renameSync(processingCacheDir, depsCacheDir)
-  }
-
-  function cancel() {
-    removeDirSync(processingCacheDir)
-  }
+  return processingResult
 }
 
 function removeDirSync(dir: string) {
