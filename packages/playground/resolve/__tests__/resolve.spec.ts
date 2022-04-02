@@ -67,6 +67,12 @@ test('resolve to the `browser` field instead of `module` when the importer is a 
   ).toMatch('[success]')
 })
 
+test('resolve to the `main` field instead of `module` when the importer is a `require` call', async () => {
+  expect(await page.textContent('.require-pkg-with-esm-entries')).toMatch(
+    '[success]'
+  )
+})
+
 test('a ts module can import another ts module using its corresponding js file name', async () => {
   expect(await page.textContent('.ts-extension')).toMatch('[success]')
 })

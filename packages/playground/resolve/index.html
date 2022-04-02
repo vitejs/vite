@@ -64,6 +64,12 @@
 </h2>
 <p class="require-pkg-with-browser-and-module-field">fail</p>
 
+<h2>
+  Resolve to the `main` field instead of `module` when the importer is a
+  `require` call
+</h2>
+<p class="require-pkg-with-esm-entries">fail</p>
+
 <h2>CSS Entry</h2>
 <p class="css"></p>
 
@@ -188,11 +194,11 @@
     text('.browser', main)
   }
 
-  import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-browser-and-module-field'
-  text(
-    '.require-pkg-with-browser-and-module-field',
-    requireButWithModuleFieldMsg
-  )
+  import { msg as requireBrowserMsg } from 'require-pkg-with-browser-and-module-field'
+  text('.require-pkg-with-browser-and-module-field', requireBrowserMsg)
+
+  import { msg as requireMainMsg } from 'require-pkg-with-esm-entries'
+  text('.require-pkg-with-esm-entries', requireMainMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)
