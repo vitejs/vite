@@ -61,10 +61,10 @@ test('dont add extension to directory name (./dir-with-ext.js/index.js)', async 
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
-test('do not resolve to the `module` field if the importer is a `require` call', async () => {
-  expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
-    '[success]'
-  )
+test('resolve to the `browser` field instead of `module` when the importer is a `require` call', async () => {
+  expect(
+    await page.textContent('.require-pkg-with-browser-and-module-field')
+  ).toMatch('[success]')
 })
 
 test('a ts module can import another ts module using its corresponding js file name', async () => {

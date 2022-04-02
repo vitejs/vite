@@ -42,6 +42,6 @@ module.exports = {
     }
   ],
   optimizeDeps: {
-    include: ['require-pkg-with-module-field']
+    include: ['require-pkg-with-browser-and-module-field']
   }
 }
