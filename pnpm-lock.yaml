@@ -232,6 +232,7 @@ importers:
     specifiers:
       cross-env: ^7.0.3
       express: ^4.17.1
+      json-module: file:./json-module
       vue: ^3.2.25
     devDependencies:
       cross-env: 7.0.3
