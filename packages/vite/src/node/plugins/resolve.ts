@@ -7,6 +7,7 @@ import {
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
+  KNOWN_ESM_MAIN_FIELDS,
   OPTIMIZABLE_ENTRY_RE,
   DEP_VERSION_RE
 } from '../constants'
@@ -777,6 +778,11 @@ export function resolvePackageEntry(
 
     if (!entryPoint || entryPoint.endsWith('.mjs')) {
       for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
+        // If the initiator is a `require` call, don't use the ESM entries
+        if (options.isRequire && KNOWN_ESM_MAIN_FIELDS.includes(field)) {
+          continue
+        }
+
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
