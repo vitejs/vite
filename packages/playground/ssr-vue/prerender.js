@@ -16,9 +16,9 @@ const routesToPrerender = fs
   .map((file) => {
     const name = file.replace(/\.vue$/, '').toLowerCase()
     return name === 'home' ? `/` : `/${name}`
-  })
+  });
 
-;(async () => {
+(async () => {
   // pre-render each route...
   for (const url of routesToPrerender) {
     const [appHtml, preloadLinks] = await render(url, manifest)
