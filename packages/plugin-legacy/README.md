@@ -1,8 +1,6 @@
 # @vitejs/plugin-legacy [![npm](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg)](https://npmjs.com/package/@vitejs/plugin-legacy)
 
-**Note: this plugin requires `vite@^2.0.0`**.
-
-Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM.
+Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM when building for production.
 
 By default, this plugin will:
 
