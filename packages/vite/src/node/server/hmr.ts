@@ -44,6 +44,7 @@ export async function handleHMRUpdate(
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
+  const fileName = path.basename(file)
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
@@ -51,7 +52,7 @@ export async function handleHMRUpdate(
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (file === '.env' || file.startsWith('.env.'))
+    (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
