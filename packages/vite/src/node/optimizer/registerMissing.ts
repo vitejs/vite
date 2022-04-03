@@ -176,7 +176,23 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     try {
       const processingResult = await runOptimizeDeps(config, newDeps)
 
-      const { metadata: newData, needsInteropMismatch } = processingResult
+      const newData = processingResult.metadata
+
+      const needsInteropMismatch = []
+      for (const dep in metadata.discovered) {
+        const discoveredDepInfo = metadata.discovered[dep]
+        const depInfo = newData.optimized[dep]
+        if (depInfo) {
+          if (
+            discoveredDepInfo.needsInterop !== undefined &&
+            depInfo.needsInterop !== discoveredDepInfo.needsInterop
+          ) {
+            // This only happens when a discovered dependency has mixed ESM and CJS syntax
+            // and it hasn't been manually added to optimizeDeps.needsInterop
+            needsInteropMismatch.push(dep)
+          }
+        }
+      }
 
       // After a re-optimization, if the internal bundled chunks change a full page reload
       // is required. If the files are stable, we can avoid the reload that is expensive

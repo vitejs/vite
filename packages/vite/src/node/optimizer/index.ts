@@ -112,7 +112,6 @@ export interface DepOptimizationOptions {
 
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
-  needsInteropMismatch: string[]
   /**
    * When doing a re-run, if there are newly discovered dependendencies
    * the page reload will be delayed until the next rerun so we need
@@ -381,7 +380,6 @@ export async function runOptimizeDeps(
 
   const processingResult: DepOptimizationResult = {
     metadata,
-    needsInteropMismatch: [],
     commit() {
       // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
       // Processing is done, we can now replace the depsCacheDir with processingCacheDir
@@ -427,8 +425,6 @@ export async function runOptimizeDeps(
     flatIdDeps[flatId] = src
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
-
-    depsInfo[id].needsInterop ??= needsInterop(id, idToExports[id], config)
   }
 
   const define: Record<string, string> = {
@@ -481,17 +477,11 @@ export async function runOptimizeDeps(
       fileHash: getHash(
         metadata.hash + depsInfo[id].file + JSON.stringify(output.imports)
       ),
-      browserHash: metadata.browserHash
+      browserHash: metadata.browserHash,
+      // After bundling we have more information and can warn the user about legacy packages
+      // that require manual configuration
+      needsInterop: needsInterop(config, id, idToExports[id], output)
     })
-
-    // After bundling we have more information and can warn the user about legacy packages
-    // that require manual configuration
-    if (
-      !depsInfo[id].needsInterop &&
-      hasExportsMismatch(idToExports[id], output)
-    ) {
-      processingResult.needsInteropMismatch.push(id)
-    }
   }
 
   for (const o of Object.keys(meta.outputs)) {
@@ -778,9 +768,10 @@ export async function extractExportsData(
 const KNOWN_INTEROP_IDS = new Set(['moment'])
 
 function needsInterop(
+  config: ResolvedConfig,
   id: string,
   exportsData: ExportsData,
-  config: ResolvedConfig
+  output?: { exports: string[] }
 ): boolean {
   if (
     config.optimizeDeps?.needsInterop?.includes(id) ||
@@ -793,26 +784,20 @@ function needsInterop(
   if (!exports.length && !imports.length) {
     return true
   }
-  // ESM module
-  return false
-}
 
-function hasExportsMismatch(
-  exportsData: ExportsData,
-  output: { exports: string[] }
-): boolean {
-  const [, exports] = exportsData
+  if (output) {
+    // if a peer dependency used require() on a ESM dependency, esbuild turns the
+    // ESM dependency's entry chunk into a single default export... detect
+    // such cases by checking exports mismatch, and force interop.
+    const generatedExports: string[] = output.exports
 
-  // if a peer dependency used require() on a ESM dependency, esbuild turns the
-  // ESM dependency's entry chunk into a single default export... we can detect
-  // such cases by checking exports mismatch, and warn the user.
-  const generatedExports: string[] = output.exports
-
-  if (
-    !generatedExports ||
-    (isSingleDefaultExport(generatedExports) && !isSingleDefaultExport(exports))
-  ) {
-    return true
+    if (
+      !generatedExports ||
+      (isSingleDefaultExport(generatedExports) &&
+        !isSingleDefaultExport(exports))
+    ) {
+      return true
+    }
   }
   return false
 }
@@ -906,9 +891,9 @@ export async function optimizedDepNeedsInterop(
   if (depInfo?.src && depInfo.needsInterop === undefined) {
     depInfo.exportsData ??= extractExportsData(depInfo.src, config)
     depInfo.needsInterop = needsInterop(
+      config,
       depInfo.id,
-      await depInfo.exportsData,
-      config
+      await depInfo.exportsData
     )
   }
   return depInfo?.needsInterop
