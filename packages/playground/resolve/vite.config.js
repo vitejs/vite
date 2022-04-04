@@ -40,5 +40,11 @@ module.exports = {
         }
       }
     }
-  ]
+  ],
+  optimizeDeps: {
+    include: [
+      'require-pkg-with-browser-and-module-field',
+      'require-pkg-with-esm-entries'
+    ]
+  }
 }

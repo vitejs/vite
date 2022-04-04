@@ -134,6 +134,9 @@
 <h2>?url import</h2>
 <code class="url"></code>
 
+<h2>?url import with css</h2>
+<code class="url-css"></code>
+
 <h2>new URL('...', import.meta.url)</h2>
 <img class="import-meta-url-img" />
 <code class="import-meta-url"></code>
@@ -164,6 +167,11 @@
 <p>
   <img class="dynamic-import-meta-url-img-2-comma" />
   <code class="dynamic-import-meta-url-2-comma"></code>
+</p>
+
+<h2>new URL(`non-existent`, import.meta.url)</h2>
+<p>
+  <code class="non-existent-import-meta-url"></code>
 </p>
 
 <h2>simple script tag import-expression</h2>
@@ -237,6 +245,9 @@
   import unicodeUrl from './テスト-測試-white space.js?url'
   text('.unicode-url', unicodeUrl)
 
+  import cssUrl from './css/icons.css?url'
+  text('.url-css', cssUrl)
+
   // const url = new URL('non_existent_file.png', import.meta.url)
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)
@@ -256,6 +267,9 @@
   text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
   document.querySelector('.import-meta-url-img-comma-nl').src =
     metaUrlWithCommaNL
+
+  const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
+  text('.non-existent-import-meta-url', metaUrlNonExistent)
 
   /**
    * don't process the code in the comment

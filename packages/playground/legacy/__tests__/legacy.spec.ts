@@ -83,4 +83,8 @@ if (isBuild) {
   test('should emit css file', async () => {
     expect(listAssets().some((filename) => filename.endsWith('.css')))
   })
+
+  test('includes structuredClone polyfill which is supported after core-js v3', () => {
+    expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
+  })
 }

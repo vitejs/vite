@@ -248,6 +248,7 @@ export type ResolvedConfig = Readonly<
     cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    isWorker: boolean
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -401,11 +402,7 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
-  const pkgPath = lookupFile(
-    resolvedRoot,
-    [`package.json`],
-    true /* pathOnly */
-  )
+  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
     : pkgPath
@@ -469,7 +466,9 @@ export async function resolveConfig(
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
-    configFileDependencies,
+    configFileDependencies: configFileDependencies.map((name) =>
+      normalizePath(path.resolve(name))
+    ),
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
@@ -478,6 +477,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isWorker: false,
     isProduction,
     plugins: userPlugins,
     server,
@@ -510,7 +510,7 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved = { ...resolved }
+  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
@@ -1083,7 +1083,7 @@ export function loadEnv(
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(envDir, [file], true)
+    const path = lookupFile(envDir, [file], { pathOnly: true, rootDir: envDir })
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
         debug: process.env.DEBUG?.includes('vite:dotenv') || undefined

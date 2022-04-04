@@ -4,10 +4,14 @@
 
 /* eslint-disable @typescript-eslint/consistent-type-imports */
 
-// Duplicate import('../src/node/importGlob').AssertOptions
-// Avoid breaking the production client type because this file is referenced
-// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist
-interface AssertOptions {
+// Duplicate of import('../src/node/importGlob').GlobOptions in order to
+// avoid breaking the production client type. Because this file is referenced
+// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
+interface GlobOptions {
+  as?: string
+  /**
+   * @deprecated
+   */
   assert?: {
     type: string
   }
@@ -16,57 +20,18 @@ interface AssertOptions {
 interface ImportMeta {
   url: string
 
-  readonly hot?: {
-    readonly data: any
-
-    accept(): void
-    accept(cb: (mod: any) => void): void
-    accept(dep: string, cb: (mod: any) => void): void
-    accept(deps: readonly string[], cb: (mods: any[]) => void): void
-
-    /**
-     * @deprecated
-     */
-    acceptDeps(): never
-
-    dispose(cb: (data: any) => void): void
-    decline(): void
-    invalidate(): void
-
-    on: {
-      (
-        event: 'vite:beforeUpdate',
-        cb: (payload: import('./hmrPayload').UpdatePayload) => void
-      ): void
-      (
-        event: 'vite:beforePrune',
-        cb: (payload: import('./hmrPayload').PrunePayload) => void
-      ): void
-      (
-        event: 'vite:beforeFullReload',
-        cb: (payload: import('./hmrPayload').FullReloadPayload) => void
-      ): void
-      (
-        event: 'vite:error',
-        cb: (payload: import('./hmrPayload').ErrorPayload) => void
-      ): void
-      <T extends string>(
-        event: import('./customEvent').CustomEventName<T>,
-        cb: (data: any) => void
-      ): void
-    }
-  }
+  readonly hot?: import('./hot').ViteHotContext
 
   readonly env: ImportMetaEnv
 
   glob<Module = { [key: string]: any }>(
     pattern: string,
-    options?: AssertOptions
+    options?: GlobOptions
   ): Record<string, () => Promise<Module>>
 
   globEager<Module = { [key: string]: any }>(
     pattern: string,
-    options?: AssertOptions
+    options?: GlobOptions
   ): Record<string, Module>
 }
 

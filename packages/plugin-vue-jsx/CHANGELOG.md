@@ -1,3 +1,10 @@
+## <small>1.3.9 (2022-03-30)</small>
+
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+
+
+
 ## [1.3.8](https://github.com/vitejs/vite/compare/plugin-vue@2.2.4...plugin-vue@1.3.8) (2022-02-28)
 
 

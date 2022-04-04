@@ -194,6 +194,16 @@ test('?url import', async () => {
   )
 })
 
+test('?url import on css', async () => {
+  const src = readFile('css/icons.css')
+  const txt = await page.textContent('.url-css')
+  expect(txt).toEqual(
+    isBuild
+      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      : '/foo/css/icons.css'
+  )
+})
+
 describe('unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
@@ -230,6 +240,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch
+  )
+})
+
+test('new URL(`non-existent`, import.meta.url)', async () => {
+  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+    '/foo/non-existent'
   )
 })
 
