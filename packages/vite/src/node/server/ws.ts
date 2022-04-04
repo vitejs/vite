@@ -5,6 +5,7 @@ import type { ServerOptions as HttpsServerOptions } from 'https'
 import { createServer as createHttpsServer } from 'https'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
+import type { WebSocket as WebSocketTypes } from 'types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
@@ -38,7 +39,7 @@ export interface WebSocketServer {
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
-  on: WebSocketServerRaw['on'] & {
+  on: WebSocketTypes.Server['on'] & {
     <T extends string>(
       event: T,
       listener: WebSocketCustomListener<InferCustomEventPayload<T>>
@@ -47,7 +48,7 @@ export interface WebSocketServer {
   /**
    * Unregister event listener.
    */
-  off: WebSocketServerRaw['off'] & {
+  off: WebSocketTypes.Server['off'] & {
     (event: string, listener: Function): void
   }
 }
@@ -65,7 +66,7 @@ export interface WebSocketClient {
    * The raw WebSocket instance
    * @advanced
    */
-  socket: WebSocketRaw
+  socket: WebSocketTypes
 }
 
 const wsServerEvents = [
