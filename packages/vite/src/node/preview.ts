@@ -78,8 +78,9 @@ export async function preview(
   }
 
   // proxy
-  if (config.preview.proxy) {
-    app.use(proxyMiddleware(httpServer, config))
+  const { proxy } = config.preview
+  if (proxy) {
+    app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   app.use(compression())
