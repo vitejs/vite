@@ -242,6 +242,11 @@ test('css modules w/ sass', async () => {
   await untilUpdated(() => getColor(imported), 'blue')
 })
 
+test('inline css modules', async () => {
+  const css = await page.textContent('.modules-inline')
+  expect(css).toMatch(/\.inline-module__apply-color-inline___[\w-]{5}/)
+})
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
