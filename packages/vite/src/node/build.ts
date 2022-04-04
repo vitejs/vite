@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
-import { resolveConfig, InlineConfig, ResolvedConfig } from './config'
-import Rollup, {
+import colors from 'picocolors'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import type {
   Plugin,
   RollupBuild,
   RollupOptions,
@@ -11,35 +12,33 @@ import Rollup, {
   OutputOptions,
   RollupOutput,
   ExternalOption,
-  GetManualChunk,
-  GetModuleInfo,
   WatcherOptions,
   RollupWatcher,
   RollupError,
   ModuleFormat
 } from 'rollup'
+import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
-import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { Terser } from 'types/terser'
+import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
 import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import { Logger } from './logger'
-import { TransformOptions } from 'esbuild'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { Logger } from './logger'
+import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { isCSSRequest } from './plugins/css'
-import { DepOptimizationMetadata } from './optimizer'
-import { scanImports } from './optimizer/scan'
+import type { DepOptimizationMetadata } from './optimizer'
+import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import { watchPackageDataPlugin } from './packages'
 
 export interface BuildOptions {
   /**
@@ -103,6 +102,15 @@ export interface BuildOptions {
    */
   cssCodeSplit?: boolean
   /**
+   * An optional separate target for CSS minification.
+   * As esbuild only supports configuring targets to mainstream
+   * browsers, users may need this option when they are targeting
+   * a niche browser that comes with most modern JavaScript features
+   * but has poor CSS support, e.g. Android WeChat WebView, which
+   * doesn't support the #RGBA syntax.
+   */
+  cssTarget?: TransformOptions['target'] | false
+  /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
@@ -113,7 +121,7 @@ export interface BuildOptions {
   /**
    * Set to `false` to disable minification, or specify the minifier to use.
    * Available options are 'terser' or 'esbuild'.
-   * @default 'terser'
+   * @default 'esbuild'
    */
   minify?: boolean | 'terser' | 'esbuild'
   /**
@@ -167,7 +175,7 @@ export interface BuildOptions {
    * ```
    * @default false
    */
-  manifest?: boolean
+  manifest?: boolean | string
   /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
@@ -183,10 +191,16 @@ export interface BuildOptions {
    * Generate SSR manifest for determining style links and asset preload
    * directives in production.
    */
-  ssrManifest?: boolean
+  ssrManifest?: boolean | string
+  /**
+   * Set to false to disable reporting compressed chunk sizes.
+   * Can slightly improve build speed.
+   */
+  reportCompressedSize?: boolean
   /**
    * Set to false to disable brotli compressed size reporting for build.
    * Can slightly improve build speed.
+   * @deprecated use `build.reportCompressedSize` instead.
    */
   brotliSize?: boolean
   /**
@@ -211,7 +225,11 @@ export interface LibraryOptions {
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'base' | 'cleanCssOptions' | 'polyfillDynamicImport'>
+  Omit<
+    BuildOptions,
+    // make deprecated options optional
+    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
+  >
 >
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
@@ -222,8 +240,22 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
+    cssTarget: false,
     sourcemap: false,
     rollupOptions: {},
+    minify: raw?.ssr ? false : 'esbuild',
+    terserOptions: {},
+    write: true,
+    emptyOutDir: null,
+    manifest: false,
+    lib: false,
+    ssr: false,
+    ssrManifest: false,
+    reportCompressedSize: true,
+    // brotliSize: true,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    ...raw,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
@@ -233,19 +265,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    },
-    minify: raw?.ssr ? false : 'terser',
-    terserOptions: {},
-    write: true,
-    emptyOutDir: null,
-    manifest: false,
-    lib: false,
-    ssr: false,
-    ssrManifest: false,
-    brotliSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: null,
-    ...raw
+    }
   }
 
   // handle special build targets
@@ -264,9 +284,17 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     resolved.target = 'es2019'
   }
 
+  if (!resolved.cssTarget) {
+    resolved.cssTarget = resolved.target
+  }
+
   // normalize false string into actual false
   if ((resolved.minify as any) === 'false') {
     resolved.minify = false
+  }
+
+  if (resolved.minify === true) {
+    resolved.minify = 'esbuild'
   }
 
   return resolved
@@ -277,23 +305,22 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
+
   return {
     pre: [
-      buildHtmlPlugin(config),
+      watchPackageDataPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
-        ? (options.rollupOptions.plugins.filter((p) => !!p) as Plugin[])
+        ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
     ],
     post: [
       buildImportAnalysisPlugin(config),
       ...(config.esbuild === false ? [] : [buildEsbuildPlugin(config)]),
-      ...(options.minify && options.minify !== 'esbuild'
-        ? [terserPlugin(options.terserOptions)]
-        : []),
+      ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
@@ -339,8 +366,8 @@ async function doBuild(
   const libOptions = options.lib
 
   config.logger.info(
-    chalk.cyan(
-      `vite v${require('vite/package.json').version} ${chalk.green(
+    colors.cyan(
+      `vite v${require('vite/package.json').version} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
       )}`
     )
@@ -373,18 +400,16 @@ async function doBuild(
   if (ssr) {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
-    if (config.cacheDir) {
-      const dataPath = path.join(config.cacheDir, '_metadata.json')
-      try {
-        const data = JSON.parse(
-          fs.readFileSync(dataPath, 'utf-8')
-        ) as DepOptimizationMetadata
-        knownImports = Object.keys(data.optimized)
-      } catch (e) {}
-    }
+    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+    try {
+      const data = JSON.parse(
+        fs.readFileSync(dataPath, 'utf-8')
+      ) as DepOptimizationMetadata
+      knownImports = Object.keys(data.optimized)
+    } catch (e) {}
     if (!knownImports) {
       // no dev deps optimization data, do a fresh scan
-      knownImports = Object.keys((await scanImports(config)).deps)
+      knownImports = await findKnownImports(config)
     }
     external = resolveExternal(
       resolveSSRExternal(config, knownImports),
@@ -395,6 +420,7 @@ async function doBuild(
   const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
+    context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
@@ -409,22 +435,29 @@ async function doBuild(
   }
 
   const outputBuildError = (e: RollupError) => {
-    let msg = chalk.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
+    let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
-      msg += `\nfile: ${chalk.cyan(
+      msg += `\nfile: ${colors.cyan(
         e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : '')
       )}`
     }
     if (e.frame) {
-      msg += `\n` + chalk.yellow(e.frame)
+      msg += `\n` + colors.yellow(e.frame)
     }
     config.logger.error(msg, { error: e })
   }
 
   try {
-    const pkgName = libOptions && getPkgName(config.root)
-
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -434,7 +467,7 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].js`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', pkgName)
+          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].js`
@@ -446,13 +479,6 @@ async function doBuild(
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
         inlineDynamicImports: ssr && typeof input === 'string',
-        manualChunks:
-          !ssr &&
-          !libOptions &&
-          output?.format !== 'umd' &&
-          output?.format !== 'iife'
-            ? createMoveToVendorChunkFn(config)
-            : undefined,
         ...output
       }
     }
@@ -466,7 +492,7 @@ async function doBuild(
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(chalk.cyanBright(`\nwatching for file changes...`))
+      config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const output: OutputOptions[] = []
       if (Array.isArray(outputs)) {
@@ -484,27 +510,27 @@ async function doBuild(
         watch: {
           ...watcherOptions,
           chokidar: {
+            ignoreInitial: true,
+            ignorePermissionErrors: true,
+            ...watcherOptions.chokidar,
             ignored: [
               '**/node_modules/**',
               '**/.git/**',
               ...(watcherOptions?.chokidar?.ignored || [])
-            ],
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar
+            ]
           }
         }
       })
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(chalk.cyanBright(`\nbuild started...`))
+          config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
             prepareOutDir(outDir, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          config.logger.info(chalk.cyanBright(`built in ${event.duration}ms.`))
+          config.logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
         }
@@ -557,9 +583,9 @@ function prepareOutDir(
     ) {
       // warn if outDir is outside of root
       config.logger.warn(
-        chalk.yellow(
-          `\n${chalk.bold(`(!)`)} outDir ${chalk.white.dim(
-            outDir
+        colors.yellow(
+          `\n${colors.bold(`(!)`)} outDir ${colors.white(
+            colors.dim(outDir)
           )} is not inside project root and will not be emptied.\n` +
             `Use --emptyOutDir to override.\n`
         )
@@ -576,68 +602,26 @@ function prepareOutDir(
 function getPkgName(root: string) {
   const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
 
-  if (!name) throw new Error('no name found in package.json')
-
-  return name.startsWith('@') ? name.split('/')[1] : name
-}
-
-function createMoveToVendorChunkFn(config: ResolvedConfig): GetManualChunk {
-  const cache = new Map<string, boolean>()
-  return (id, { getModuleInfo }) => {
-    if (
-      id.includes('node_modules') &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache)
-    ) {
-      return 'vendor'
-    }
-  }
-}
-
-function staticImportedByEntry(
-  id: string,
-  getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
-  importStack: string[] = []
-): boolean {
-  if (cache.has(id)) {
-    return cache.get(id) as boolean
-  }
-  if (importStack.includes(id)) {
-    // circular deps!
-    cache.set(id, false)
-    return false
-  }
-  const mod = getModuleInfo(id)
-  if (!mod) {
-    cache.set(id, false)
-    return false
-  }
-
-  if (mod.isEntry) {
-    cache.set(id, true)
-    return true
-  }
-  const someImporterIs = mod.importers.some((importer) =>
-    staticImportedByEntry(
-      importer,
-      getModuleInfo,
-      cache,
-      importStack.concat(id)
-    )
-  )
-  cache.set(id, someImporterIs)
-  return someImporterIs
+  return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  pkgName: string
+  root: string
 ): string {
-  return typeof libOptions.fileName === 'function'
-    ? libOptions.fileName(format)
-    : `${libOptions.fileName || pkgName}.${format}.js`
+  if (typeof libOptions.fileName === 'function') {
+    return libOptions.fileName(format)
+  }
+
+  const name = libOptions.fileName || getPkgName(root)
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.fileName" is not provided.'
+    )
+
+  return `${name}.${format}.js`
 }
 
 function resolveBuildOutputs(
@@ -663,7 +647,7 @@ function resolveBuildOutputs(
     } else if (libOptions.formats) {
       // user explicitly specifying own output array
       logger.warn(
-        chalk.yellow(
+        colors.yellow(
           `"build.lib.formats" will be ignored because ` +
             `"build.rollupOptions.output" is already an array format`
         )
@@ -711,9 +695,9 @@ export function onRollupWarning(
       userOnWarn(warning, warn)
     } else if (warning.code === 'PLUGIN_WARNING') {
       config.logger.warn(
-        `${chalk.bold.yellow(`[plugin:${warning.plugin}]`)} ${chalk.yellow(
-          warning.message
-        )}`
+        `${colors.bold(
+          colors.yellow(`[plugin:${warning.plugin}]`)
+        )} ${colors.yellow(warning.message)}`
       )
     } else {
       warn(warning)
@@ -725,7 +709,7 @@ function resolveExternal(
   ssrExternals: string[],
   user: ExternalOption | undefined
 ): ExternalOption {
-  return ((id, parentId, isResolved) => {
+  return (id, parentId, isResolved) => {
     if (shouldExternalizeForSSR(id, ssrExternals)) {
       return true
     }
@@ -738,7 +722,7 @@ function resolveExternal(
         return isExternal(id, user)
       }
     }
-  }) as ExternalOption
+  }
 }
 
 function isExternal(id: string, test: string | RegExp) {
@@ -749,19 +733,48 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(p: Plugin): Plugin {
-  const { resolveId, load, transform } = p
+function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+  const { resolveId, load, transform } = plugin
   return {
-    ...p,
-    resolveId: wrapSsrHook(resolveId),
-    load: wrapSsrHook(load),
-    transform: wrapSsrHook(transform)
+    ...plugin,
+    resolveId: wrapSsrResolveId(resolveId),
+    load: wrapSsrLoad(load),
+    transform: wrapSsrTransform(transform)
   }
 }
 
-function wrapSsrHook(fn: Function | undefined) {
+function wrapSsrResolveId(
+  fn?: Rollup.ResolveIdHook
+): Rollup.ResolveIdHook | undefined {
   if (!fn) return
-  return function (this: any, ...args: any[]) {
-    return fn.call(this, ...args, true)
+
+  return function (id, importer, options) {
+    return fn.call(this, id, importer, injectSsrFlag(options))
   }
+}
+
+function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
+  if (!fn) return
+
+  return function (id, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+    return fn.call(this, id, injectSsrFlag(args[0]))
+  }
+}
+
+function wrapSsrTransform(
+  fn?: Rollup.TransformHook
+): Rollup.TransformHook | undefined {
+  if (!fn) return
+
+  return function (code, importer, ...args) {
+    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+}
+
+function injectSsrFlag<T extends Record<string, any>>(
+  options?: T
+): T & { ssr: boolean } {
+  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }

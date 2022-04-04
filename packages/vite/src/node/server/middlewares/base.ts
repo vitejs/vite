@@ -1,6 +1,6 @@
 import { parse as parseUrl } from 'url'
-import { ViteDevServer } from '..'
-import { Connect } from 'types/connect'
+import type { ViteDevServer } from '..'
+import type { Connect } from 'types/connect'
 
 // this middleware is only active when (config.base !== '/')
 
@@ -28,9 +28,9 @@ export function baseMiddleware({
     }
 
     if (path === '/' || path === '/index.html') {
-      // redirect root visit to based url
+      // redirect root visit to based url with search and hash
       res.writeHead(302, {
-        Location: base
+        Location: base + (parsed.search || '') + (parsed.hash || '')
       })
       res.end()
       return

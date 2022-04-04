@@ -12,6 +12,9 @@
 <h2>Deep import with exports field</h2>
 <p class="exports-deep">fail</p>
 
+<h2>Deep import with query with exports field</h2>
+<p class="exports-deep-query">fail</p>
+
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -33,11 +36,39 @@
 <h2>Don't add extensions to directory names</h2>
 <p class="dir-with-ext">fail</p>
 
+<h2>
+  A ts module can import another ts module using its corresponding js file name
+</h2>
+<p class="ts-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding jsx file
+  name
+</h2>
+<p class="jsx-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding js file name
+</h2>
+<p class="tsx-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
+
+<h2>
+  Resolve to the `browser` field instead of `module` when the importer is a
+  `require` call
+</h2>
+<p class="require-pkg-with-browser-and-module-field">fail</p>
+
+<h2>
+  Resolve to the `main` field instead of `module` when the importer is a
+  `require` call
+</h2>
+<p class="require-pkg-with-esm-entries">fail</p>
 
 <h2>CSS Entry</h2>
 <p class="css"></p>
@@ -47,6 +78,9 @@
 
 <h2>Plugin resolved virtual file</h2>
 <p class="virtual"></p>
+
+<h2>Plugin resolved custom virtual file</h2>
+<p class="custom-virtual"></p>
 
 <h2>Inline package</h2>
 <p class="inline-pkg"></p>
@@ -59,6 +93,9 @@
 
 <h2>resolve.conditions</h2>
 <p class="custom-condition"></p>
+
+<h2>resolve package that contains # in path</h2>
+<p class="path-contains-sharp-symbol"></p>
 
 <script type="module">
   function text(selector, text) {
@@ -89,6 +126,10 @@
   import { msg as deepMsg } from 'resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
 
+  // deep import w/ exports w/ query
+  import deepPath from 'resolve-exports-path/deep.json?url'
+  text('.exports-deep-query', deepPath)
+
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
   text('.exports-deep-exposed-dir', exposedDirMsg)
@@ -116,6 +157,15 @@
   import { file as dirWithExtMsg } from './dir-with-ext'
   text('.dir-with-ext', dirWithExtMsg)
 
+  import { msg as tsExtensionMsg } from './ts-extension'
+  text('.ts-extension', tsExtensionMsg)
+
+  import { msgJsx as tsJsxExtensionMsg } from './ts-extension'
+  text('.jsx-extension', tsJsxExtensionMsg)
+
+  import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
+  text('.tsx-extension', tsTsxExtensionMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
@@ -130,10 +180,11 @@
   import e from 'resolve-browser-field/ext-index/index.js'
   import f from 'resolve-browser-field/ext-index'
   import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
+  import h from 'resolve-browser-field/no-ext?query'
 
   import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, ra, rc, rd, re, rf]
+  const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
   const noSuccess = [b, g, rb, rg]
 
   if (
@@ -142,6 +193,12 @@
   ) {
     text('.browser', main)
   }
+
+  import { msg as requireBrowserMsg } from 'require-pkg-with-browser-and-module-field'
+  text('.require-pkg-with-browser-and-module-field', requireBrowserMsg)
+
+  import { msg as requireMainMsg } from 'require-pkg-with-esm-entries'
+  text('.require-pkg-with-esm-entries', requireMainMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)
@@ -169,8 +226,14 @@
   import { msg as virtualMsg } from '@virtual-file'
   text('.virtual', virtualMsg)
 
+  import { msg as customVirtualMsg } from '@custom-virtual-file'
+  text('.custom-virtual', customVirtualMsg)
+
   import { msg as inlineMsg } from './inline-package'
   text('.inline-pkg', inlineMsg)
+
+  import es5Ext from 'es5-ext'
+  text('.path-contains-sharp-symbol', '[success]')
 </script>
 
 <style>

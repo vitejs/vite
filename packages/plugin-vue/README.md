@@ -1,6 +1,6 @@
 # @vitejs/plugin-vue [![npm](https://img.shields.io/npm/v/@vitejs/plugin-vue.svg)](https://npmjs.com/package/@vitejs/plugin-vue)
 
-Note: requires `@vue/compiler-sfc` as peer dependency. This is largely a port of `rollup-plugin-vue` with some vite-specific tweaks.
+> Note: as of `vue` 3.2.13+ and `@vitejs/plugin-vue` 1.9.0+, `@vue/compiler-sfc` is no longer required as a peer dependency.
 
 ```js
 // vite.config.js
@@ -22,7 +22,7 @@ export interface Options {
   isProduction?: boolean
 
   /**
-   * Transform Vue SFCs into custom elements (requires Vue >= 3.2.0)
+   * Transform Vue SFCs into custom elements (requires vue@^3.2.0)
    * - `true` -> all `*.vue` imports are converted into custom elements
    * - `string | RegExp` -> matched files are converted into custom elements
    *
@@ -30,14 +30,28 @@ export interface Options {
    */
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
-  // options to pass on to @vue/compiler-sfc
+  /**
+   * Enable Vue reactivity transform (experimental, requires vue@^3.2.25).
+   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
+   *
+   * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
+   *           those inside node_modules
+   * - `string | RegExp`: apply to vue + only matched files (will include
+   *                      node_modules, so specify directories in necessary)
+   * - `false`: disable in all cases
+   *
+   * @default false
+   */
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
+
+  // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
   template?: Partial<SFCTemplateCompileOptions>
   style?: Partial<SFCStyleCompileOptions>
 }
 ```
 
-## Example for passing options to `@vue/compiler-dom`:
+## Example for passing options to `vue/compiler-sfc`:
 
 ```ts
 import vue from '@vitejs/plugin-vue'
@@ -48,6 +62,16 @@ export default {
       template: {
         compilerOptions: {
           // ...
+        },
+        transformAssetUrls: {
+          // default tags
+          tags: {
+            video: ['src', 'poster'],
+            source: ['src'],
+            img: ['src'],
+            image: ['xlink:href', 'href'],
+            use: ['xlink:href', 'href']
+          }
         }
       }
     })
@@ -67,7 +91,7 @@ const vueI18nPlugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+      code = JSON.stringify(require('js-yaml').load(code.trim()))
     }
     return `export default Comp => {
       Comp.i18n = ${code}

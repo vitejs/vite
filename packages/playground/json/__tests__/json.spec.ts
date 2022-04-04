@@ -1,7 +1,7 @@
 import { isBuild } from '../../testUtils'
 
 const json = require('../test.json')
-const deepJson = require('@vue/runtime-core/package.json')
+const deepJson = require('vue/package.json')
 const stringified = JSON.stringify(json)
 const deepStringified = JSON.stringify(deepJson)
 

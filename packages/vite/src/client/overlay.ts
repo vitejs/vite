@@ -1,4 +1,4 @@
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 
 const template = /*html*/ `
 <style>
@@ -34,6 +34,8 @@ const template = /*html*/ `
   box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
   overflow: hidden;
   border-top: 8px solid var(--red);
+  direction: ltr;
+  text-align: left;
 }
 
 pre {
@@ -104,8 +106,8 @@ code {
   <pre class="stack"></pre>
   <div class="tip">
     Click outside or fix the code to dismiss.<br>
-    You can also disable this overlay with
-    <code>hmr: { overlay: false }</code> in <code>vite.config.js.</code>
+    You can also disable this overlay by setting
+    <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
   </div>
 </div>
 `
@@ -182,4 +184,6 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
-!customElements.get(overlayId) && customElements.define(overlayId, ErrorOverlay)
+if (customElements && !customElements.get(overlayId)) {
+  customElements.define(overlayId, ErrorOverlay)
+}

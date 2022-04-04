@@ -18,9 +18,13 @@ const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("scrip
 const legacyPolyfillId = 'vite-legacy-polyfill'
 const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
-const dynamicFallbackInlineCode = `!function(){try{new Function("m","return import(m)")}catch(o){console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}}();`
 
-const blankDynamicImport = `import('data:text/javascript;base64,Cg==');`
+const detectDynamicImportVarName = '__vite_is_dynamic_import_support'
+const detectDynamicImportVarInitCode = `var ${detectDynamicImportVarName}=false;`
+const detectDynamicImportCode = `try{import("_").catch(()=>1);}catch(e){}window.${detectDynamicImportVarName}=true;`
+const dynamicFallbackInlineCode = `!function(){if(window.${detectDynamicImportVarName})return;console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
+
+const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -37,8 +41,9 @@ function viteLegacyPlugin(options = {}) {
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
-  const debugFlag = process.env.DEBUG
-  const isDebug = debugFlag === 'vite:*' || debugFlag === 'vite:legacy'
+  const debugFlags = (process.env.DEBUG || '').split(',')
+  const isDebug =
+    debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
@@ -79,12 +84,21 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyConfigPlugin = {
-    name: 'legacy-config',
+    name: 'vite:legacy-config',
 
     apply: 'build',
     config(config) {
       if (!config.build) {
         config.build = {}
+      }
+
+      if (!config.build.cssTarget) {
+        // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
+        // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
+        // But note that only the `HexRGBA` feature affects the minify outcome.
+        // HSL & rebeccapurple values will be minified away regardless the target.
+        // So targeting `chrome61` suffices to fix the compatiblity issue.
+        config.build.cssTarget = 'chrome61'
       }
     }
   }
@@ -93,19 +107,14 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyGenerateBundlePlugin = {
-    name: 'legacy-generate-polyfill-chunk',
+    name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
 
-    configResolved(config) {
-      if (config.build.minify === 'esbuild') {
-        throw new Error(
-          `Can't use esbuild as the minifier when targeting legacy browsers ` +
-            `because esbuild minification is not legacy safe.`
-        )
-      }
-    },
-
     async generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyBundle(bundle, opts)) {
         if (!modernPolyfills.size) {
           return
@@ -120,7 +129,8 @@ function viteLegacyPlugin(options = {}) {
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
-          config.build
+          config.build,
+          options.externalSystemJS
         )
         return
       }
@@ -150,7 +160,8 @@ function viteLegacyPlugin(options = {}) {
           facadeToLegacyPolyfillMap,
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
-          config.build
+          config.build,
+          options.externalSystemJS
         )
       }
     }
@@ -160,7 +171,7 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyPostPlugin = {
-    name: 'legacy-post-process',
+    name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
 
@@ -170,14 +181,14 @@ function viteLegacyPlugin(options = {}) {
       }
       config = _config
 
-      if (!genLegacy) {
+      if (!genLegacy || config.build.ssr) {
         return
       }
 
       /**
        * @param {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)} fileNames
        * @param {string?} defaultFileName
-       * @returns {(chunkInfo: import('rollup').PreRenderedChunk) => string)}
+       * @returns {string | ((chunkInfo: import('rollup').PreRenderedChunk) => string)}
        */
       const getLegacyOutputFileName = (
         fileNames,
@@ -226,6 +237,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     renderChunk(raw, chunk, opts) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
@@ -238,7 +253,7 @@ function viteLegacyPlugin(options = {}) {
         const ms = new MagicString(raw)
 
         if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(blankDynamicImport)
+          ms.prepend(forceDynamicImportUsage)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
@@ -270,6 +285,19 @@ function viteLegacyPlugin(options = {}) {
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
 
+      // @ts-ignore force terser for legacy chunks. This only takes effect if
+      // minification isn't disabled, because that leaves out the terser plugin
+      // entirely.
+      opts.__vite_force_terser__ = true
+
+      // @ts-ignore
+      // In the `generateBundle` hook,
+      // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
+      // But that's still a waste of computing resource.
+      // So we add this flag to avoid emitting the asset in the first place whenever possible.
+      opts.__vite_skip_asset_emit__ = true
+
+      // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
@@ -302,7 +330,10 @@ function viteLegacyPlugin(options = {}) {
               loose: false,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
-                ? { version: 3, proposals: false }
+                ? {
+                    version: require('core-js/package.json').version,
+                    proposals: false
+                  }
                 : undefined,
               shippedProposals: true,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
@@ -315,6 +346,7 @@ function viteLegacyPlugin(options = {}) {
     },
 
     transformIndexHtml(html, { chunk }) {
+      if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually
@@ -408,6 +440,18 @@ function viteLegacyPlugin(options = {}) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
+          children: detectDynamicImportVarInitCode,
+          injectTo: 'head'
+        })
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'module' },
+          children: detectDynamicImportCode,
+          injectTo: 'head'
+        })
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'module' },
           children: dynamicFallbackInlineCode,
           injectTo: 'head'
         })
@@ -420,6 +464,10 @@ function viteLegacyPlugin(options = {}) {
     },
 
     generateBundle(opts, bundle) {
+      if (config.build.ssr) {
+        return
+      }
+
       if (isLegacyBundle(bundle, opts)) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
@@ -436,14 +484,16 @@ function viteLegacyPlugin(options = {}) {
    * @type {import('vite').Plugin}
    */
   const legacyEnvPlugin = {
-    name: 'legacy-env',
+    name: 'vite:legacy-env',
 
-    config(_, env) {
+    config(config, env) {
       if (env) {
         return {
           define: {
             'import.meta.env.LEGACY':
-              env.command === 'serve' ? false : legacyEnvVarMarker
+              env.command === 'serve' || config.build.ssr
+                ? false
+                : legacyEnvVarMarker
           }
         }
       } else {
@@ -518,7 +568,8 @@ async function buildPolyfillChunk(
   imports,
   bundle,
   facadeToChunkMap,
-  buildOptions
+  buildOptions,
+  externalSystemJS
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
@@ -527,7 +578,7 @@ async function buildPolyfillChunk(
     root: __dirname,
     configFile: false,
     logLevel: 'error',
-    plugins: [polyfillsPlugin(imports)],
+    plugins: [polyfillsPlugin(imports, externalSystemJS)],
     build: {
       write: false,
       target: false,
@@ -544,7 +595,9 @@ async function buildPolyfillChunk(
       }
     }
   })
-  const polyfillChunk = (Array.isArray(res) ? res[0] : res).output[0]
+  const _polyfillChunk = Array.isArray(res) ? res[0] : res
+  if (!('output' in _polyfillChunk)) return
+  const polyfillChunk = _polyfillChunk.output[0]
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
@@ -559,15 +612,15 @@ async function buildPolyfillChunk(
   bundle[polyfillChunk.name] = polyfillChunk
 }
 
-const polyfillId = 'vite/legacy-polyfills'
+const polyfillId = '\0vite/legacy-polyfills'
 
 /**
  * @param {Set<string>} imports
  * @return {import('rollup').Plugin}
  */
-function polyfillsPlugin(imports) {
+function polyfillsPlugin(imports, externalSystemJS) {
   return {
-    name: 'polyfills',
+    name: 'vite:legacy-polyfills',
     resolveId(id) {
       if (id === polyfillId) {
         return id
@@ -577,7 +630,7 @@ function polyfillsPlugin(imports) {
       if (id === polyfillId) {
         return (
           [...imports].map((i) => `import "${i}";`).join('') +
-          `import "systemjs/dist/s.min.js";`
+          (externalSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
     }
@@ -661,5 +714,7 @@ viteLegacyPlugin.default = viteLegacyPlugin
 viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64'),
+  createHash('sha256').update(detectDynamicImportVarInitCode).digest('base64'),
+  createHash('sha256').update(detectDynamicImportCode).digest('base64'),
   createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]

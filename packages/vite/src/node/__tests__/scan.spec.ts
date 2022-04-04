@@ -1,10 +1,5 @@
-import {
-  scriptRE,
-  commentRE,
-  importsRE,
-  multilineCommentsRE,
-  singlelineCommentsRE
-} from '../optimizer/scan'
+import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -35,7 +30,8 @@ describe('optimizer-scan:script-test', () => {
     scriptRE.lastIndex = 0
     const ret = scriptRE.exec(
       `<template>
-        <!--  <script >var test = null</script> -->
+        <!--  <script >var test1 = null</script> -->
+        <!--  <script >var test2 = null</script> -->
       </template>`.replace(commentRE, '')
     )
     expect(ret).toEqual(null)

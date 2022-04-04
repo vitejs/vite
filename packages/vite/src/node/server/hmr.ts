@@ -1,14 +1,14 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
-import { createServer, ViteDevServer } from '..'
+import colors from 'picocolors'
+import type { ViteDevServer } from '..'
 import { createDebugger, normalizePath } from '../utils'
-import { ModuleNode } from './moduleGraph'
-import { Update } from 'types/hmrPayload'
+import type { ModuleNode } from './moduleGraph'
+import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
-import { RollupError } from 'rollup'
-import match from 'minimatch'
-import { Server } from 'http'
+import type { RollupError } from 'rollup'
+import { isMatch } from 'micromatch'
+import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -44,26 +44,33 @@ export async function handleHMRUpdate(
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
+  const fileName = path.basename(file)
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === path.resolve(name)
+    (name) => file === name
   )
-  const isEnv = config.inlineConfig.envFile !== false && file.endsWith('.env')
+  const isEnv =
+    config.inlineConfig.envFile !== false &&
+    (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
-    debugHmr(`[config change] ${chalk.dim(shortFile)}`)
+    debugHmr(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
-      chalk.green(
+      colors.green(
         `${path.relative(process.cwd(), file)} changed, restarting server...`
       ),
       { clear: true, timestamp: true }
     )
-    await restartServer(server)
+    try {
+      await server.restart()
+    } catch (e) {
+      config.logger.error(colors.red(e))
+    }
     return
   }
 
-  debugHmr(`[file change] ${chalk.dim(shortFile)}`)
+  debugHmr(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
@@ -98,7 +105,7 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
         clear: true,
         timestamp: true
       })
@@ -110,7 +117,7 @@ export async function handleHMRUpdate(
       })
     } else {
       // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${chalk.dim(shortFile)}`)
+      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
     }
     return
   }
@@ -155,7 +162,7 @@ function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
+    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
       clear: true,
       timestamp: true
     })
@@ -165,7 +172,7 @@ function updateModules(
   } else {
     config.logger.info(
       updates
-        .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
+        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
         .join('\n'),
       { clear: true, timestamp: true }
     )
@@ -188,7 +195,10 @@ export async function handleFileAddUnlink(
     for (const i in server._globImporters) {
       const { module, importGlobs } = server._globImporters[i]
       for (const { base, pattern } of importGlobs) {
-        if (match(file, pattern) || match(path.relative(base, file), pattern)) {
+        if (
+          isMatch(file, pattern) ||
+          isMatch(path.relative(base, file), pattern)
+        ) {
           modules.push(module)
           // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
           // calls get fresh glob import results with(out) the newly added(/removed) `file`.
@@ -295,7 +305,7 @@ export function handlePrunedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
-    debugHmr(`[dispose] ${chalk.dim(mod.file)}`)
+    debugHmr(`[dispose] ${colors.dim(mod.file)}`)
   })
   ws.send({
     type: 'prune',
@@ -454,35 +464,5 @@ async function readModifiedFile(file: string): Promise<string> {
     return fs.readFileSync(file, 'utf-8')
   } else {
     return content
-  }
-}
-
-async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
-  global.__vite_start_time = Date.now()
-  const { port } = server.config.server
-  
-  await server.close()
-  
-  let newServer = null
-  try {
-    newServer = await createServer(server.config.inlineConfig)
-  } catch (err) {
-    server.config.logger.error(err.message, {
-      timestamp: true,
-    })
-    return
-  }
-
-  for (const key in newServer) {
-    if (key !== 'app') {
-      // @ts-ignore
-      server[key] = newServer[key]
-    }
-  }
-  if (!server.config.server.middlewareMode) {
-    await server.listen(port, true)
-  } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
   }
 }

@@ -1,5 +1,5 @@
-import { UserConfig } from './config'
-import {
+import type { UserConfig } from './config'
+import type {
   CustomPluginOptions,
   LoadResult,
   Plugin as RollupPlugin,
@@ -8,11 +8,11 @@ import {
   TransformPluginContext,
   TransformResult
 } from 'rollup'
-import { ServerHook } from './server'
-import { IndexHtmlTransform } from './plugins/html'
-import { ModuleNode } from './server/moduleGraph'
-import { ConfigEnv, ResolvedConfig } from './'
-import { HmrContext } from './server/hmr'
+import type { ServerHook } from './server'
+import type { IndexHtmlTransform } from './plugins/html'
+import type { ModuleNode } from './server/moduleGraph'
+import type { ConfigEnv, ResolvedConfig } from './'
+import type { HmrContext } from './server/hmr'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -50,9 +50,9 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Apply the plugin only for serve or for build.
+   * Apply the plugin only for serve or build, or on certain conditions.
    */
-  apply?: 'serve' | 'build'
+  apply?: 'serve' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be
@@ -121,18 +121,24 @@ export interface Plugin extends RollupPlugin {
     this: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: CustomPluginOptions },
-    ssr?: boolean
+    options: {
+      custom?: CustomPluginOptions
+      ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
+    }
   ): Promise<ResolveIdResult> | ResolveIdResult
   load?(
     this: PluginContext,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<LoadResult> | LoadResult
   transform?(
     this: TransformPluginContext,
     code: string,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<TransformResult> | TransformResult
 }

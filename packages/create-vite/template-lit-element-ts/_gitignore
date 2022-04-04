@@ -1,5 +1,0 @@
-node_modules
-.DS_Store
-dist
-types
-*.local

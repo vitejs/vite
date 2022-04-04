@@ -1,11 +1,11 @@
-import * as http from 'http'
+import type * as http from 'http'
 import { createDebugger, isObject } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { Connect } from 'types/connect'
-import { HttpProxy } from 'types/http-proxy'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../..'
+import type { Connect } from 'types/connect'
+import type { HttpProxy } from 'types/http-proxy'
+import colors from 'picocolors'
+import type { ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -45,7 +45,7 @@ export function proxyMiddleware(
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
     proxy.on('error', (err) => {
-      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
+      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err
       })
@@ -62,7 +62,7 @@ export function proxyMiddleware(
     httpServer.on('upgrade', (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
-        if (url.startsWith(context)) {
+        if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
             (opts.ws || opts.target?.toString().startsWith('ws:')) &&
@@ -71,7 +71,9 @@ export function proxyMiddleware(
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
+            debug(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
+            return
           }
         }
       }
@@ -82,10 +84,7 @@ export function proxyMiddleware(
   return function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
-      if (
-        (context.startsWith('^') && new RegExp(context).test(url)) ||
-        url.startsWith(context)
-      ) {
+      if (doesProxyContextMatchUrl(context, url)) {
         const [proxy, opts] = proxies[context]
         const options: HttpProxy.ServerOptions = {}
 
@@ -115,4 +114,11 @@ export function proxyMiddleware(
     }
     next()
   }
+}
+
+function doesProxyContextMatchUrl(context: string, url: string): boolean {
+  return (
+    (context.startsWith('^') && new RegExp(context).test(url)) ||
+    url.startsWith(context)
+  )
 }

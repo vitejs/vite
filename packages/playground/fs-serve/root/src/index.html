@@ -1,0 +1,135 @@
+<link rel="icon" href="/src/favicon.ico" />
+
+<h2>Normal Import</h2>
+<pre class="full"></pre>
+<pre class="named"></pre>
+
+<h2>Safe Fetch</h2>
+<pre class="safe-fetch-status"></pre>
+<pre class="safe-fetch"></pre>
+
+<h2>Safe Fetch Subdirectory</h2>
+<pre class="safe-fetch-subdir-status"></pre>
+<pre class="safe-fetch-subdir"></pre>
+<pre class="safe-fetch-subdir-special-characters-status"></pre>
+<pre class="safe-fetch-subdir-special-characters"></pre>
+
+<h2>Unsafe Fetch</h2>
+<pre class="unsafe-fetch-status"></pre>
+<pre class="unsafe-fetch"></pre>
+
+<h2>Safe /@fs/ Fetch</h2>
+<pre class="safe-fs-fetch-status"></pre>
+<pre class="safe-fs-fetch"></pre>
+<pre class="safe-fs-fetch-special-characters-status"></pre>
+<pre class="safe-fs-fetch-special-characters"></pre>
+
+<h2>Unsafe /@fs/ Fetch</h2>
+<pre class="unsafe-fs-fetch-status"></pre>
+<pre class="unsafe-fs-fetch"></pre>
+
+<h2>Nested Entry</h2>
+<pre class="nested-entry"></pre>
+
+<h2>Denied</h2>
+<pre class="unsafe-dotenv"></pre>
+
+<script type="module">
+  import '../../entry'
+  import json, { msg } from '../../safe.json'
+
+  text('.full', JSON.stringify(json))
+  text('.named', msg)
+
+  // inside allowed dir, safe fetch
+  fetch('/src/safe.txt')
+    .then((r) => {
+      text('.safe-fetch-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch', JSON.stringify(data))
+    })
+  // inside allowed dir, safe fetch
+  fetch('/src/subdir/safe.txt')
+    .then((r) => {
+      text('.safe-fetch-subdir-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch-subdir', JSON.stringify(data))
+    })
+
+  // inside allowed dir, with special characters, safe fetch
+  fetch('/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.txt')
+    .then((r) => {
+      text('.safe-fetch-subdir-special-characters-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch-subdir-special-characters', JSON.stringify(data))
+    })
+
+  // outside of allowed dir, treated as unsafe
+  fetch('/unsafe.txt')
+    .then((r) => {
+      text('.unsafe-fetch-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.unsafe-fetch', data)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // imported before, should be treated as safe
+  fetch('/@fs/' + ROOT + '/safe.json')
+    .then((r) => {
+      text('.safe-fs-fetch-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.safe-fs-fetch', JSON.stringify(data))
+    })
+
+  // not imported before, outside of root, treated as unsafe
+  fetch('/@fs/' + ROOT + '/unsafe.json')
+    .then((r) => {
+      text('.unsafe-fs-fetch-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // not imported before, inside root with special characters, treated as safe
+  fetch(
+    '/@fs/' +
+      ROOT +
+      '/root/src/special%20characters%20%C3%A5%C3%A4%C3%B6/safe.json'
+  )
+    .then((r) => {
+      text('.safe-fs-fetch-special-characters-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.safe-fs-fetch-special-characters', JSON.stringify(data))
+    })
+
+  // .env, denied by default
+  fetch('/@fs/' + ROOT + '/root/.env')
+    .then((r) => {
+      text('.unsafe-dotenv', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  function text(sel, text) {
+    document.querySelector(sel).textContent = text
+  }
+</script>

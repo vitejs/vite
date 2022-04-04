@@ -6,9 +6,14 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "serve": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
-    "vue": "^3.0.8"
+    "aliased-module": "file:./dir/module",
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "resolve-linked": "workspace:*"
   }
 }

@@ -1,0 +1,45 @@
+{
+  "name": "@vitejs/plugin-react",
+  "version": "1.3.0",
+  "license": "MIT",
+  "author": "Evan You",
+  "contributors": [
+    "Alec Larson"
+  ],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsc -p . -w --incremental",
+    "build": "rimraf dist && run-s build-bundle build-types",
+    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@babel/* --external:@rollup/* --external:resolve --external:react-refresh/* --outfile=dist/index.js && npm run patch-dist",
+    "patch-dist": "ts-node ../../scripts/patchEsbuildDist.ts dist/index.js viteReact",
+    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
+    "prepublishOnly": "(cd ../vite && npm run build) && npm run build"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/plugin-react"
+  },
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react#readme",
+  "dependencies": {
+    "@babel/core": "^7.17.8",
+    "@babel/plugin-transform-react-jsx": "^7.17.3",
+    "@babel/plugin-transform-react-jsx-development": "^7.16.7",
+    "@babel/plugin-transform-react-jsx-self": "^7.16.7",
+    "@babel/plugin-transform-react-jsx-source": "^7.16.7",
+    "@rollup/pluginutils": "^4.2.0",
+    "react-refresh": "^0.11.0",
+    "resolve": "^1.22.0"
+  }
+}

@@ -37,3 +37,15 @@ test('optimized dep', async () => {
     '[success] alias optimized'
   )
 })
+
+test('aliased module', async () => {
+  expect(await page.textContent('.aliased-module')).toMatch(
+    '[success] aliased module'
+  )
+})
+
+test('custom resolver', async () => {
+  expect(await page.textContent('.custom-resolver')).toMatch(
+    '[success] alias to custom-resolver path'
+  )
+})

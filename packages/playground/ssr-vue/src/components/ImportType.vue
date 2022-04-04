@@ -3,7 +3,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Foo } from 'dep-import-type/deep'
-
+import { Foo } from 'dep-import-type/deep'
 const msg: Foo = {}
 </script>

@@ -3,7 +3,7 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-// Avoids autoconversion to number of the project name by defining that the args 
+// Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
@@ -15,7 +15,8 @@ const {
   blue,
   magenta,
   lightRed,
-  red
+  red,
+  reset
 } = require('kolorist')
 
 const cwd = process.cwd()
@@ -86,16 +87,16 @@ const FRAMEWORKS = [
     ]
   },
   {
-    name: 'lit-element',
+    name: 'lit',
     color: lightRed,
     variants: [
       {
-        name: 'lit-element',
+        name: 'lit',
         display: 'JavaScript',
         color: yellow
       },
       {
-        name: 'lit-element-ts',
+        name: 'lit-ts',
         display: 'TypeScript',
         color: blue
       }
@@ -141,7 +142,7 @@ async function init() {
         {
           type: targetDir ? null : 'text',
           name: 'projectName',
-          message: 'Project name:',
+          message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
             (targetDir = state.value.trim() || defaultProjectName)
@@ -168,7 +169,7 @@ async function init() {
         {
           type: () => (isValidPackageName(targetDir) ? null : 'text'),
           name: 'packageName',
-          message: 'Package name:',
+          message: reset('Package name:'),
           initial: () => toValidPackageName(targetDir),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name'
@@ -178,8 +179,10 @@ async function init() {
           name: 'framework',
           message:
             typeof template === 'string' && !TEMPLATES.includes(template)
-              ? `"${template}" isn't a valid template. Please choose from below: `
-              : 'Select a framework:',
+              ? reset(
+                  `"${template}" isn't a valid template. Please choose from below: `
+                )
+              : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
@@ -193,7 +196,7 @@ async function init() {
           type: (framework) =>
             framework && framework.variants ? 'select' : null,
           name: 'variant',
-          message: 'Select a variant:',
+          message: reset('Select a variant:'),
           // @ts-ignore
           choices: (framework) =>
             framework.variants.map((variant) => {

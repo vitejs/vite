@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+!**/glob-import/dir/node_modules
 dist
 dist-ssr
 TODOs.md
@@ -10,4 +11,4 @@ explorations
 *.local
 /packages/vite/LICENSE
 *.cpuprofile
-.vscode/
+/.vscode/

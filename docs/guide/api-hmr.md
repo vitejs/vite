@@ -18,6 +18,7 @@ interface ImportMeta {
     accept(dep: string, cb: (mod: any) => void): void
     accept(deps: string[], cb: (mods: any[]) => void): void
 
+    prune(cb: () => void): void
     dispose(cb: (data: any) => void): void
     decline(): void
     invalidate(): void
@@ -122,3 +123,11 @@ The following HMR events are dispatched by Vite automatically:
 - `'vite:error'` when an error occurs (e.g. syntax error)
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
+
+## `hot.send(event, data)`
+
+Send custom events back to Vite's dev server.
+
+If called before connected, the data will be buffered and sent once the connection is established.
+
+See [Client-server Communication](/guide/api-plugin.html#client-server-communication) for more details.

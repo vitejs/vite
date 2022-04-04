@@ -1,20 +1,23 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import { AttributeNode, NodeTypes } from '@vue/compiler-dom'
-import { Connect } from 'types/connect'
+import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import type { Connect } from 'types/connect'
+import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
+  addToHTMLProxyCache,
   applyHtmlTransforms,
+  assetAttrsConfig,
   getScriptInfo,
-  IndexHtmlTransformHook,
   resolveHtmlTransforms,
   traverseHtml
 } from '../../plugins/html'
-import { ResolvedConfig, ViteDevServer } from '../..'
+import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId } from '../../utils'
-import { assetAttrsConfig } from '../../plugins/html'
+import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
+import type { ModuleGraph } from '../moduleGraph'
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
@@ -33,9 +36,11 @@ export function createDevHtmlTransformFn(
 
 function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
-    return fsPathFromId(url)
+    return decodeURIComponent(fsPathFromId(url))
   } else {
-    return path.join(server.config.root, url.slice(1))
+    return decodeURIComponent(
+      normalizePath(path.join(server.config.root, url.slice(1)))
+    )
   }
 }
 
@@ -45,15 +50,24 @@ const processNodeUrl = (
   s: MagicString,
   config: ResolvedConfig,
   htmlPath: string,
-  originalUrl?: string
+  originalUrl?: string,
+  moduleGraph?: ModuleGraph
 ) => {
-  const url = node.value?.content || ''
+  let url = node.value?.content || ''
+
+  if (moduleGraph) {
+    const mod = moduleGraph.urlToModuleMap.get(url)
+    if (mod && mod.lastHMRTimestamp > 0) {
+      url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+    }
+  }
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${config.base + url.slice(1)}"`
+      `"${config.base + url.slice(1)}"`,
+      { contentOnly: true }
     )
   } else if (
     url.startsWith('.') &&
@@ -71,22 +85,57 @@ const processNodeUrl = (
       `"${path.posix.join(
         path.posix.relative(originalUrl, '/'),
         url.slice(1)
-      )}"`
+      )}"`,
+      { contentOnly: true }
     )
   }
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, server, originalUrl }
+  { path: htmlPath, filename, server, originalUrl }
 ) => {
-  // TODO: solve this design issue
-  // Optional chain expressions can return undefined by design
-  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-  const config = server?.config!
+  const { config, moduleGraph } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
-  let scriptModuleIndex = -1
+  let inlineModuleIndex = -1
+  const filePath = cleanUrl(htmlPath)
+
+  const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
+    inlineModuleIndex++
+
+    const url = filePath.replace(normalizePath(config.root), '')
+
+    const contentNode = node.children[0] as TextNode
+
+    const code = contentNode.content
+    const map = new MagicString(html)
+      .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
+      .generateMap({ hires: true })
+    map.sources = [filename]
+    map.file = filename
+
+    // add HTML Proxy to Map
+    addToHTMLProxyCache(config, url, inlineModuleIndex, { code, map })
+
+    // inline js module. convert to src="proxy"
+    const modulePath = `${
+      config.base + htmlPath.slice(1)
+    }?html-proxy&index=${inlineModuleIndex}.${ext}`
+
+    // invalidate the module so the newly cached contents will be served
+    const module = server?.moduleGraph.getModuleById(modulePath)
+    if (module) {
+      server?.moduleGraph.invalidateModule(module)
+    }
+
+    s.overwrite(
+      node.loc.start.offset,
+      node.loc.end.offset,
+      `<script type="module" src="${modulePath}"></script>`,
+      { contentOnly: true }
+    )
+  }
 
   await traverseHtml(html, htmlPath, (node) => {
     if (node.type !== NodeTypes.ELEMENT) {
@@ -96,22 +145,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // script tags
     if (node.tag === 'script') {
       const { src, isModule } = getScriptInfo(node)
-      if (isModule) {
-        scriptModuleIndex++
-      }
 
       if (src) {
-        processNodeUrl(src, s, config, htmlPath, originalUrl)
-      } else if (isModule) {
-        // inline js module. convert to src="proxy"
-        s.overwrite(
-          node.loc.start.offset,
-          node.loc.end.offset,
-          `<script type="module" src="${
-            config.base + htmlPath.slice(1)
-          }?html-proxy&index=${scriptModuleIndex}.js"></script>`
-        )
+        processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
+      } else if (isModule && node.children.length) {
+        addInlineModule(node, 'js')
       }
+    }
+
+    if (node.tag === 'style' && node.children.length) {
+      addInlineModule(node, 'css')
     }
 
     // elements with [href/src] attrs
@@ -151,6 +194,10 @@ export function indexHtmlMiddleware(
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
+    if (res.writableEnded) {
+      return next()
+    }
+
     const url = req.url && cleanUrl(req.url)
     // spa-fallback always redirects to /index.html
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
@@ -159,7 +206,9 @@ export function indexHtmlMiddleware(
         try {
           let html = fs.readFileSync(filename, 'utf-8')
           html = await server.transformIndexHtml(url, html, req.originalUrl)
-          return send(req, res, html, 'html')
+          return send(req, res, html, 'html', {
+            headers: server.config.server.headers
+          })
         } catch (e) {
           return next(e)
         }
