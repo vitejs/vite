@@ -176,7 +176,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await loadPlugin('react-refresh/babel.js'),
+              await loadPlugin('react-refresh/babel'),
               { skipEnvCheck: true }
             ])
           }
