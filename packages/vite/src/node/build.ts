@@ -290,7 +290,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      buildEsbuildPlugin(config),
+      ...(config.esbuild === false ? [] : [buildEsbuildPlugin(config)]),
       ...(options.minify && options.minify !== 'esbuild'
         ? [terserPlugin(options.terserOptions)]
         : []),
