@@ -319,7 +319,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      buildEsbuildPlugin(config),
+      ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
