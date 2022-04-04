@@ -122,6 +122,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
+      // In a real app `server` is always defined, but it is undefined when
+      // running src/node/server/__tests__/pluginContainer.spec.ts
+      if (!server) {
+        return null
+      }
+
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
@@ -159,7 +165,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const { moduleGraph } = server
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
+      const importerModule = moduleGraph.getModuleById(importer)!
+
       if (!imports.length) {
+        importerModule.isSelfAccepting = false
         isDebug &&
           debug(
             `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
@@ -173,11 +185,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      // vite-only server context
-      const { moduleGraph } = server
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
       const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{

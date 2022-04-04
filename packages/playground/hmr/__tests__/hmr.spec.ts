@@ -160,4 +160,38 @@ if (!isBuild) {
     expect(textprev).not.toMatch('direct')
     expect(textpost).not.toMatch('direct')
   })
+
+  test('not loaded dynamic import', async () => {
+    await page.goto(viteTestUrl + '/dynamic-import/index.html')
+
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // Modifying `index.ts` triggers a page reload, as expected
+    editFile('dynamic-import/index.ts', (code) => code)
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // #7561
+    // `dep.ts` defines `import.module.hot.accept` and has not been loaded.
+    // Therefore, modifying it has no effect (doesn't trigger a page reload).
+    // (Note that, a dynamic import that is never loaded and that does not
+    // define `accept.module.hot.accept` may wrongfully trigger a full page
+    // reload, see discussion at #7561.)
+    editFile('dynamic-import/dep.ts', (code) => code)
+    try {
+      await page.waitForNavigation({ timeout: 1000 })
+    } catch (err) {
+      const errMsg = 'page.waitForNavigation: Timeout 1000ms exceeded.'
+      expect(err.message.slice(0, errMsg.length)).toBe(errMsg)
+    }
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 1')
+  })
 }
