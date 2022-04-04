@@ -3,8 +3,9 @@
 // the default e2e test serve behavior
 
 const path = require('path')
+const { ports } = require('../../testUtils')
 
-const port = (exports.port = 9529)
+const port = (exports.port = ports['optimize-missing-deps'])
 
 /**
  * @param {string} root

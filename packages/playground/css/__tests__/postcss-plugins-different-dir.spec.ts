@@ -1,10 +1,10 @@
-import { getColor, getBgColor } from '../../testUtils'
+import { getColor, getBgColor, ports } from '../../testUtils'
 import { createServer } from 'vite'
 import path from 'path'
 
 // Regression test for https://github.com/vitejs/vite/issues/4000
 test('postcss plugins in different dir', async () => {
-  const port = 5006
+  const port = ports['css/postcss-plugins-different-dir']
   const server = await createServer({
     root: path.join(__dirname, '..', '..', 'tailwind'),
     logLevel: 'silent',

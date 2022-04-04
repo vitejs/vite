@@ -10,6 +10,23 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 
+// make sure these ports are unique
+export const ports = {
+  cli: 9510,
+  'cli-module': 9511,
+  'legacy/ssr': 9520,
+  lib: 9521,
+  'optimize-missing-deps': 9522,
+  'ssr-deps': 9600,
+  'ssr-html': 9601,
+  'ssr-pug': 9602,
+  'ssr-react': 9603,
+  'ssr-vue': 9604,
+  'ssr-webworker': 9605,
+  'css/postcss-caching': 5005,
+  'css/postcss-plugins-different-dir': 5006
+}
+
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
