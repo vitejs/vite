@@ -27,7 +27,7 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
-  isSelfAccepting = false
+  isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
