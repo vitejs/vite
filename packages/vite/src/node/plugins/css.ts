@@ -358,14 +358,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         styles.set(id, css)
       }
 
+      let code: string
+      if (usedRE.test(id)) {
+        if (inlined) {
+          code = `export default ${JSON.stringify(
+            await minifyCSS(css, config)
+          )}`
+        } else {
+          code = modulesCode || `export default ${JSON.stringify(css)}`
+        }
+      } else {
+        code = `export default ''`
+      }
+
       return {
-        code:
-          modulesCode ||
-          (usedRE.test(id)
-            ? `export default ${JSON.stringify(
-                inlined ? await minifyCSS(css, config) : css
-              )}`
-            : `export default ''`),
+        code,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
