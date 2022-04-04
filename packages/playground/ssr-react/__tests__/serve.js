@@ -3,8 +3,9 @@
 // the default e2e test serve behavior
 
 const path = require('path')
+const { ports } = require('../../testUtils')
 
-const port = (exports.port = 9528)
+const port = (exports.port = ports['ssr-react'])
 
 /**
  * @param {string} root
