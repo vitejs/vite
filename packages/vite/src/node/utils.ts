@@ -83,6 +83,7 @@ export function resolveFrom(
 ): string {
   return resolve.sync(id, {
     basedir,
+    paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
     preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
