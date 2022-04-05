@@ -388,3 +388,11 @@ test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
   expect(await getColor('.css-in-less-2')).toBe('blue')
 })
+
+test("relative path rewritten in Less's data-uri", async () => {
+  // relative path passed to Less's data-uri is rewritten to absolute,
+  // the Less inlines it
+  expect(await getBg('.form-box-data-uri')).toMatch(
+    /^url\("data:image\/svg\+xml,%3Csvg/
+  )
+})
