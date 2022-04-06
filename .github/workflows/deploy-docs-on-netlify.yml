@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - "docs/**"
-  release:
-    types: [published]
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   deploy:
@@ -36,7 +36,7 @@ jobs:
         with:
           publish-dir: "docs/.vitepress/dist"
           github-token: ${{ secrets.VITE_GITHUB_TOKEN }}
-          production-deploy: ${{ github.event_name == 'release' }}
+          production-deploy: ${{ startsWith(github.ref.start, 'refs/tags/v') }}
           deploy-message: "Deploy docs to Netlify by event: ${{ github.event_name }} from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: true
