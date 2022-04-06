@@ -178,8 +178,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   const partialConfigPlugin = () => ({
     name: 'return-partial',
     config: () => ({
-      alias: {
-        foo: 'bar'
+      resolve: {
+        alias: {
+          foo: 'bar'
+        }
       }
     })
   })
