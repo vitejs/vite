@@ -37,7 +37,7 @@ jobs:
           publish-dir: "docs/.vitepress/dist"
           github-token: ${{ secrets.VITE_GITHUB_TOKEN }}
           production-deploy: ${{ startsWith(github.ref.start, 'refs/tags/v') }}
-          deploy-message: "Deploy docs to Netlify by event: ${{ github.event_name }} from GitHub Actions"
+          deploy-message: "Deploy docs to Netlify by ref: ${{ github.ref }} from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: true
           overwrites-pull-request-comment: true
