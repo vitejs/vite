@@ -273,11 +273,11 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     // Support browserslist
     // "defaults and supports es6-module and supports es6-module-dynamic-import",
     resolved.target = [
-      'es2019',
+      'es2020', // support import.meta.url
       'edge88',
       'firefox78',
       'chrome87',
-      'safari13.1'
+      'safari13' // transpile nullish coallesing
     ]
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2019 so it can be minified by terser
@@ -777,4 +777,29 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+}
+
+export function isRelativeBase(base: string): boolean {
+  return base === '' || base.startsWith('.')
+}
+
+export function assetFilenameWithBase(filename: string, base: string): string {
+  if (isRelativeBase(base)) {
+    // relative base - asset file will be in the same dir
+    return `./${path.posix.basename(filename)}`
+  } else {
+    return base + filename
+  }
+}
+
+export function publicURLfromAsset(
+  url: string,
+  config: ResolvedConfig
+): string {
+  if (isRelativeBase(config.base)) {
+    // Assume flat assets structure
+    return path.posix.relative(config.build.assetsDir, '') + url
+  } else {
+    return config.base + url.slice(1)
+  }
 }

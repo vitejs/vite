@@ -9,6 +9,7 @@ import {
   stringsRE,
   blankReplacer
 } from '../utils'
+import { preloadHelperId } from './importAnalysisBuild'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -26,6 +27,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     async transform(code, id, options) {
       if (
         !options?.ssr &&
+        id !== preloadHelperId &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
@@ -82,7 +84,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            `new URL(\`${builtUrl}\`, self.location)`,
             { contentOnly: true }
           )
         }

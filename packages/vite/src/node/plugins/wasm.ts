@@ -65,7 +65,7 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
 
       return `
 import initWasm from "${wasmHelperId}"
-export default opts => initWasm(opts, ${JSON.stringify(url)})
+export default opts => initWasm(opts, \`${url}\`)
 `
     }
   }

@@ -16,10 +16,10 @@ if (isBuild) {
     await page.goto(viteTestUrl + '/#/hello')
     const html = await page.content()
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/Hello\.\w{8}\.js"/
+      /link rel="modulepreload".*?href=".*?\/assets\/Hello\.\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/assets\/Hello\.\w{8}\.css"/
+      /link rel="stylesheet".*?href=".*?\/assets\/Hello\.\w{8}\.css"/
     )
   })
 }

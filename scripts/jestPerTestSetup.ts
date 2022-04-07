@@ -35,6 +35,7 @@ declare const global: {
 
   browserLogs: string[]
   serverLogs: string[]
+  resolvedConfig: ResolvedConfig
   viteTestUrl?: string
   watcher?: RollupWatcher
   beforeAllError: Error | null
@@ -130,6 +131,7 @@ beforeAll(async () => {
         server = await (
           await createServer(mergeConfig(options, config || {}))
         ).listen()
+        global.resolvedConfig = server.config
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base
         const url =
@@ -138,16 +140,15 @@ beforeAll(async () => {
       } else {
         process.env.VITE_INLINE = 'inline-build'
         // determine build watch
-        let resolvedConfig: ResolvedConfig
         const resolvedPlugin: () => PluginOption = () => ({
           name: 'vite-plugin-watcher',
           configResolved(config) {
-            resolvedConfig = config
+            global.resolvedConfig = config
           }
         })
         options.plugins = [resolvedPlugin()]
         const rollupOutput = await build(mergeConfig(options, config || {}))
-        const isWatch = !!resolvedConfig!.build.watch
+        const isWatch = !!global.resolvedConfig.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
           global.watcher = rollupOutput as RollupWatcher
@@ -191,7 +192,10 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // fallback internal base to ''
-  const base = (config?.base ?? '/') === '/' ? '' : config?.base ?? ''
+  let base = config?.base
+  if (!base || base === '/' || base === './') {
+    base = ''
+  }
 
   // @ts-ignore
   if (config && config.__test__) {

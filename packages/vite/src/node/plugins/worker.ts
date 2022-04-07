@@ -174,7 +174,7 @@ export async function workerFileToUrl(
   let hash = workerMap.bundle.get(id)
   if (hash) {
     // rewrite truth id, no need to replace by asset plugin
-    return config.base + workerMap.emitted.get(hash)!
+    return config.base + workerMap.emitted.get(hash)! // TODO
   }
   const code = await bundleWorkerEntry(ctx, config, id, query)
   const basename = path.parse(cleanUrl(id)).name
@@ -270,9 +270,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(${JSON.stringify(
-          url
-        )}, ${JSON.stringify(workerOptions, null, 2)})
+          return new ${workerConstructor}(\`${url}\`, ${JSON.stringify(
+          workerOptions,
+          null,
+          2
+        )})
         }`,
         map: { mappings: '' } // Empty sourcemap to supress Rolup warning
       }

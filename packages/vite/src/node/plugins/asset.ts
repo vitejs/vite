@@ -4,12 +4,16 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl } from '../utils'
+import { cleanUrl, normalizePath } from '../utils'
+import {
+  assetFilenameWithBase,
+  isRelativeBase,
+  publicURLfromAsset
+} from '../build'
 import { FS_PREFIX } from '../constants'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import { createHash } from 'crypto'
-import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -77,7 +81,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
       const url = await fileToUrl(id, config, this)
-      return `export default ${JSON.stringify(url)}`
+      // Return a template string so we can use interpolation when replacing __VITE_ASSET__
+      return `export default \`${url}\``
     },
 
     renderChunk(code, chunk) {
@@ -85,12 +90,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
 
       // Urls added with JS using e.g.
-      // imgElement.src = "my/file.png" are using quotes
+      // imgElement.src = `__VITE_ASSET___5aa0ddc0__` are using quotes
 
       // Urls added in CSS that is imported in JS end up like
-      // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
+      // var inlined = `.inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n`;
 
-      // In both cases, the wrapping should already be fine
+      // In both cases, the wrapping allows us to use interpolation
 
       while ((match = assetUrlRE.exec(code))) {
         s = s || (s = new MagicString(code))
@@ -99,8 +104,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const outputFilepath = config.base + file + postfix
-        s.overwrite(match.index, match.index + full.length, outputFilepath, {
+        const outputFilepath = assetFilenameWithBase(
+          file + postfix,
+          config.base
+        )
+        const replacement = isRelativeBase(config.base)
+          ? `\${new URL(${JSON.stringify(outputFilepath)},import.meta.url)}`
+          : outputFilepath
+        s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
         })
       }
@@ -271,7 +282,7 @@ async function fileToBuiltUrl(
   skipPublicCheck = false
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
-    return config.base + id.slice(1)
+    return publicURLfromAsset(id, config)
   }
 
   const cache = assetCache.get(config)!
@@ -348,7 +359,7 @@ export async function urlToBuiltUrl(
   pluginContext: PluginContext
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
-    return config.base + url.slice(1)
+    return publicURLfromAsset(url, config)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)

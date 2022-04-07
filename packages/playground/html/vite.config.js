@@ -4,6 +4,7 @@ const { resolve } = require('path')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  base: './',
   build: {
     rollupOptions: {
       input: {

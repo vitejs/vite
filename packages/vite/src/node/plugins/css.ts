@@ -48,6 +48,7 @@ import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { assetFilenameWithBase, publicURLfromAsset } from '../build'
 
 // const debug = createDebugger('vite:css')
 
@@ -180,7 +181,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
-          return config.base + url.slice(1)
+          return publicURLfromAsset(url, config)
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
@@ -309,10 +310,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           // server only
           if (options?.ssr) {
-            return modulesCode || `export default ${JSON.stringify(css)}`
+            return modulesCode || `export default \`${css}\``
           }
           if (inlined) {
-            return `export default ${JSON.stringify(css)}`
+            return `export default \`${css}\``
           }
 
           let cssContent = css
@@ -327,7 +328,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = ${JSON.stringify(cssContent)}`,
+            `const __vite__css = \`${cssContent}\``,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
             `${
@@ -361,11 +362,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let code: string
       if (usedRE.test(id)) {
         if (inlined) {
-          code = `export default ${JSON.stringify(
-            await minifyCSS(css, config)
-          )}`
+          code = `export default \`${await minifyCSS(css, config)}\``
         } else {
-          code = modulesCode || `export default ${JSON.stringify(css)}`
+          code = modulesCode || `export default \`${css}\``
         }
       } else {
         code = `export default ''`
@@ -414,18 +413,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       ) => {
         // replace asset url references with resolved url.
-        const isRelativeBase = config.base === '' || config.base.startsWith('.')
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (!isRelativeBase || inlined) {
-            // absolute base or relative base but inlined (injected as style tag into
-            // index.html) use the base as-is
+          if (inlined) {
+            // inlined (injected as style tag into index.html) use the base as-is
             return config.base + filename
-          } else {
-            // relative base + extracted CSS - asset file will be in the same dir
-            return `./${path.posix.basename(filename)}`
           }
+          return assetFilenameWithBase(filename, config.base)
         })
         // only external @imports should exist at this point - and they need to
         // be hoisted to the top of the CSS chunk per spec (#1845)
@@ -464,7 +459,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `${style}.innerHTML = \`${chunkCSS}\`;` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
             const s = new MagicString(code)

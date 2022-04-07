@@ -8,6 +8,7 @@ import type { OutputChunk } from 'rollup'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
 import { bareImportRE } from '../utils'
+import { isRelativeBase } from '../build'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -19,7 +20,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
-const preloadHelperId = 'vite/preload-helper'
+export const preloadHelperId = '\0vite/preload-helper'
 const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
 
 /**
@@ -46,7 +47,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${base}${dep}`
+      dep = `${assetsURL}${dep}`
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -87,11 +88,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const insertPreload = !(ssr || !!config.build.lib)
   const isWorker = config.isWorker
+  const rollupOptionsOutput = config.build?.rollupOptions?.output
+  const hasCustomAssetFileNames =
+    rollupOptionsOutput &&
+    !Array.isArray(rollupOptionsOutput) &&
+    !!rollupOptionsOutput.assetFileNames
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
+  const assetsURL = hasCustomAssetFileNames
+    ? config.base
+    : isRelativeBase(config.base)
+    ? `new URL('./',import.meta.url).pathname`
+    : JSON.stringify(path.posix.join(config.base, config.build.assetsDir, '/'))
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
   const resolve = config.createResolver({
     preferRelative: true,
     tryIndex: false,
@@ -109,7 +120,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode.replace(preloadBaseMarker, config.base)
+        return preloadCode
       }
     },
 
@@ -334,12 +345,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.overwrite(
                   markPos - 1,
                   markPos + preloadMarker.length + 1,
-                  // the dep list includes the main chunk, so only need to
-                  // preload when there are actual other deps.
+                  // the dep list includes the main chunk, so only need to reload when there are
+                  // actual other deps. Don't include the assets dir if the default asset file names
+                  // are used, the path will be reconstructed by the import preload helper
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    ? `[${[...deps]
+                        .map((d) =>
+                          JSON.stringify(
+                            hasCustomAssetFileNames ? d : path.basename(d)
+                          )
+                        )
+                        .join(',')}]`
                     : `[]`,
                   { contentOnly: true }
                 )

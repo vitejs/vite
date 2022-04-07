@@ -62,7 +62,7 @@ const processNodeUrl = (
     }
   }
   if (startsWithSingleSlashRE.test(url)) {
-    // prefix with base
+    // prefix with base (dev only, base is never relative)
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
@@ -118,7 +118,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // add HTML Proxy to Map
     addToHTMLProxyCache(config, url, inlineModuleIndex, { code, map })
 
-    // inline js module. convert to src="proxy"
+    // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${
       config.base + htmlPath.slice(1)
     }?html-proxy&index=${inlineModuleIndex}.${ext}`
