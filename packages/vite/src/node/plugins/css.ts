@@ -310,10 +310,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else {
           // server only
           if (options?.ssr) {
-            return modulesCode || `export default \`${css}\``
+            return modulesCode || `export default ${JSON.stringify(css)}`
           }
           if (inlined) {
-            return `export default \`${css}\``
+            return `export default ${JSON.stringify(css)}`
           }
 
           let cssContent = css
@@ -328,7 +328,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               path.posix.join(config.base, CLIENT_PUBLIC_PATH)
             )}`,
             `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = \`${cssContent}\``,
+            `const __vite__css = ${JSON.stringify(cssContent)}`,
             `__vite__updateStyle(__vite__id, __vite__css)`,
             // css modules exports change on edit so it can't self accept
             `${
