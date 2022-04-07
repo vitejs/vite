@@ -7,6 +7,7 @@ import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
+// @ts-ignore
 import parseStaticImports from 'parse-static-imports'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
@@ -90,6 +91,13 @@ async function extractImportedBindings(
     importedBindings.set(id, bindings)
   }
 
+  const isDynamic = importSpec.d > -1
+  const isMeta = importSpec.d === -2
+  if (isDynamic || isMeta) {
+    // this basically means the module will be impacted by any change in its dep
+    bindings.add('*')
+  }
+
   const exp = source.slice(importSpec.ss, importSpec.se)
   const [parsed] = parseStaticImports(exp)
   if (!parsed) {
@@ -98,10 +106,7 @@ async function extractImportedBindings(
   if (parsed.sideEffectOnly) {
     return
   }
-  const isDynamic = importSpec.d > -1
-  const isMeta = importSpec.d === -2
-  if (isDynamic || isMeta || parsed.starImport) {
-    // this basically means the module will be impacted by any change in its dep
+  if (parsed.starImport) {
     bindings.add('*')
   }
   if (parsed.defaultImport) {
@@ -174,12 +179,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
+      let exports: readonly string[] = []
       // strip UTF-8 BOM
       if (source.charCodeAt(0) === 0xfeff) {
         source = source.slice(1)
       }
       try {
-        imports = parseImports(source)[0]
+        ;[imports, exports] = parseImports(source)
       } catch (e: any) {
         const isVue = importer.endsWith('.vue')
         const maybeJSX = !isVue && isJSRequest(importer)
@@ -379,15 +385,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (source.slice(end + 4, end + 11) === '.accept') {
               // further analyze accepted modules
               if (source.slice(end + 4, end + 18) === '.acceptExports') {
-                if (
-                  lexAcceptedHmrExports(
-                    source,
-                    source.indexOf('(', end + 18) + 1,
-                    acceptedExports
-                  )
-                ) {
-                  isPartiallySelfAccepting = true
-                }
+                lexAcceptedHmrExports(
+                  source,
+                  source.indexOf('(', end + 18) + 1,
+                  acceptedExports
+                )
+                isPartiallySelfAccepting = true
               } else if (
                 lexAcceptedHmrDeps(
                   source,
@@ -696,6 +699,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // never be injected. Avoid updating the `isSelfAccepting`
         // property for our module node in that case.
         if (ssr && importerModule.isSelfAccepting) {
+          isSelfAccepting = true
+        }
+        // a partially accepted module that accepts all its exports
+        // behaves like a self-accepted module in practice
+        if (
+          !isSelfAccepting &&
+          isPartiallySelfAccepting &&
+          acceptedExports.size >= exports.length &&
+          exports.every((name) => acceptedExports.has(name))
+        ) {
           isSelfAccepting = true
         }
         const prunedImports = await moduleGraph.updateModuleInfo(
