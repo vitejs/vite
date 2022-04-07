@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  server: {
+    hmr: {
+      partialAccept: true
+    }
+  },
   plugins: [
     {
       name: 'mock-custom',
