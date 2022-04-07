@@ -8,6 +8,12 @@ export interface ViteHotContext {
   accept(dep: string, cb: (mod: any) => void): void
   accept(deps: readonly string[], cb: (mods: any[]) => void): void
 
+  acceptExports(exportNames: string | readonly string[]): void
+  acceptExports(
+    exportNames: string | readonly string[],
+    cb: (mod: any) => void
+  ): void
+
   /**
    * @deprecated
    */
