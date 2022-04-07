@@ -113,7 +113,7 @@ Virtual modules are a useful scheme that allows you to pass build time informati
 
 ```js
 export default function myPlugin() {
-  const virtualModuleId = '@my-virtual-module'
+  const virtualModuleId = 'virtual:my-module'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
@@ -135,7 +135,7 @@ export default function myPlugin() {
 Which allows importing the module in JavaScript:
 
 ```js
-import { msg } from '@my-virtual-module'
+import { msg } from 'virtual:my-module'
 
 console.log(msg)
 ```
