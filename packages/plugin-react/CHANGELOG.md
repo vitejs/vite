@@ -1,3 +1,14 @@
+## 1.3.0 (2022-03-30)
+
+* feat(plugin-react): adding jsxPure option (#7088) ([d451435](https://github.com/vitejs/vite/commit/d451435)), closes [#7088](https://github.com/vitejs/vite/issues/7088)
+* fix(deps): update all non-major dependencies (#6782) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e)), closes [#6782](https://github.com/vitejs/vite/issues/6782)
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* chore: fix publish, build vite before plugin-react and plugin-vue (#6988) ([620a9bd](https://github.com/vitejs/vite/commit/620a9bd)), closes [#6988](https://github.com/vitejs/vite/issues/6988)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+* workflow: separate version bumping and publishing on release (#6879) ([fe8ef39](https://github.com/vitejs/vite/commit/fe8ef39)), closes [#6879](https://github.com/vitejs/vite/issues/6879)
+
+
+
 # [1.2.0](https://github.com/vitejs/vite/compare/plugin-react@1.1.4...plugin-react@1.2.0) (2022-02-09)
 
 

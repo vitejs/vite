@@ -83,6 +83,7 @@ export function resolveFrom(
 ): string {
   return resolve.sync(id, {
     basedir,
+    paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
     preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
@@ -732,3 +733,4 @@ export function parseRequest(id: string): Record<string, string> | null {
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+export const stringsRE = /"[^"]*"|'[^']*'|`[^`]*`/g

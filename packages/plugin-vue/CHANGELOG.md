@@ -1,3 +1,17 @@
+## <small>2.3.1 (2022-03-30)</small>
+
+* chore(plugin-vue): revert #7527, lower vite peer dep ([447bbeb](https://github.com/vitejs/vite/commit/447bbeb)), closes [#7527](https://github.com/vitejs/vite/issues/7527)
+
+
+
+## 2.3.0 (2022-03-30)
+
+* chore(plugin-vue): bump vite peer dep to 2.9.0 (#7472) ([12fd1d9](https://github.com/vitejs/vite/commit/12fd1d9)), closes [#7472](https://github.com/vitejs/vite/issues/7472)
+* feat(css): css.devSourcemap option (#7471) ([57f14cb](https://github.com/vitejs/vite/commit/57f14cb)), closes [#7471](https://github.com/vitejs/vite/issues/7471)
+* fix(plugin-vue): respect __VUE_PROD_DEVTOOLS__ setting (#4984) ([90e812a](https://github.com/vitejs/vite/commit/90e812a)), closes [#4984](https://github.com/vitejs/vite/issues/4984)
+
+
+
 ## 2.3.0-beta.0 (2022-03-22)
 
 * fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)

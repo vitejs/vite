@@ -28,6 +28,7 @@ inlineWorker.addEventListener('message', (e) => {
 })
 
 document.querySelector('.ping-inline').addEventListener('click', () => {
+  console.log('111')
   inlineWorker.postMessage('ping')
 })
 

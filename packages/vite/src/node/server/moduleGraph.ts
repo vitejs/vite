@@ -29,7 +29,7 @@ export class ModuleNode {
   acceptedHmrDeps = new Set<ModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
-  isSelfAccepting = false
+  isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null

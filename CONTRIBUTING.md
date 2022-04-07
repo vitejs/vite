@@ -24,7 +24,7 @@ If you want to use break point and explore code execution you can use the ["Run 
 
 2. Click on the "Run and Debug" icon in the activity bar of the editor.
 
-3. Click on the "Javascript Debug Terminal" button.
+3. Click on the "JavaScript Debug Terminal" button.
 
 4. It will open a terminal, then go to `packages/playground/xxx` and run `pnpm run dev`.
 
@@ -229,7 +229,7 @@ The english docs are embedded in the main Vite repo, to allow contributors to wo
 1. In order to get all doc files, you first need to clone this repo in your personal account.
 2. Keep all the files in `docs/` and remove everything else.
 
-   - You should setup your translation site based on all the files in `docs/` folder as a Vitepress project.
+   - You should setup your translation site based on all the files in `docs/` folder as a VitePress project.
      (that said, `package.json` is need).
 
    - Refresh git history by removing `.git` and then `git init`
@@ -238,7 +238,7 @@ The english docs are embedded in the main Vite repo, to allow contributors to wo
 
    - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that, it's very common in translation contribution.
 
-4. Push your commits to your Github repo. you can setup a netlify preview as well.
-5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a Github Action, automatically track English docs update later.
+4. Push your commits to your GitHub repo. you can setup a netlify preview as well.
+5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a GitHub Action, automatically track English docs update later.
 
 We recommend talking with others in Vite Land so you find more contributors for your language to share the maintenance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.
