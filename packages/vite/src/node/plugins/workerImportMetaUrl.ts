@@ -2,14 +2,7 @@ import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
-import {
-  blankReplacer,
-  cleanUrl,
-  injectQuery,
-  multilineCommentsRE,
-  singlelineCommentsRE,
-  stringsRE
-} from '../utils'
+import { cleanUrl, injectQuery } from '../utils'
 import path from 'path'
 import { workerFileToUrl } from './worker'
 import { parseRequest } from '../utils'
@@ -17,27 +10,25 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
+import type { CleanString } from '../cleanString'
+import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-function getWorkerType(
-  code: string,
-  noCommentsCode: string,
-  i: number
-): WorkerType {
+function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
   function err(e: string, pos: number) {
     const error = new Error(e) as RollupError
     error.pos = pos
     throw error
   }
 
-  const commaIndex = noCommentsCode.indexOf(',', i)
+  const commaIndex = cleanCode.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = noCommentsCode.indexOf(')', i)
+  const endIndex = cleanCode.indexOf(')', i)
 
   // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {
@@ -45,22 +36,22 @@ function getWorkerType(
   }
 
   // need to find in comment code
-  let workerOptsString = code.substring(commaIndex + 1, endIndex)
+  const workerOptString = cleanCode.raw.substring(commaIndex + 1, endIndex)
 
-  const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptsString)
+  const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(workerOptString)
   if (hasViteIgnore) {
     return 'ignore'
   }
 
   // need to find in no comment code
-  workerOptsString = noCommentsCode.substring(commaIndex + 1, endIndex)
-  if (!workerOptsString.trim().length) {
+  const cleanworkerOptString = cleanCode.substring(commaIndex + 1, endIndex)
+  if (!cleanworkerOptString.trim().length) {
     return 'classic'
   }
 
   let workerOpts: { type: WorkerType } = { type: 'classic' }
   try {
-    workerOpts = JSON5.parse(workerOptsString)
+    workerOpts = JSON5.parse(workerOptString)
   } catch (e) {
     // can't parse by JSON5, so the worker options had unexpect char.
     err(
@@ -120,22 +111,20 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         const importMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
-        const noCommentsCode = code
-          .replace(multilineCommentsRE, blankReplacer)
-          .replace(singlelineCommentsRE, blankReplacer)
 
-        const noStringCode = noCommentsCode.replace(
-          stringsRE,
-          (m) => `'${' '.repeat(m.length - 2)}'`
-        )
+        const cleanCode = emptyString(code)
+
         let match: RegExpExecArray | null
         let s: MagicString | null = null
-        while ((match = importMetaUrlRE.exec(noStringCode))) {
+        while ((match = importMetaUrlRE.exec(cleanCode.toString()))) {
           const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
 
-          const urlStart = allExp.indexOf(emptyUrl) + index
-          const urlEnd = urlStart + emptyUrl.length
+          const [urlStart, urlEnd] = findEmptyStringRawIndex(
+            cleanCode,
+            emptyUrl,
+            index
+          )
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (options?.ssr) {
@@ -154,11 +143,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(
-            code,
-            noCommentsCode,
-            index + allExp.length
-          )
+          const workerType = getWorkerType(cleanCode, index + allExp.length)
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {

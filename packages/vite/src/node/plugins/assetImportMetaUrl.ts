@@ -3,12 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import {
-  multilineCommentsRE,
-  singlelineCommentsRE,
-  stringsRE,
-  blankReplacer
-} from '../utils'
+import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -31,18 +26,18 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         const importMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-        const noCommentsCode = code
-          .replace(multilineCommentsRE, blankReplacer)
-          .replace(singlelineCommentsRE, blankReplacer)
-          .replace(stringsRE, (m) => `'${'\0'.repeat(m.length - 2)}'`)
+        const cleanCode = emptyString(code)
 
         let s: MagicString | null = null
         let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+        while ((match = importMetaUrlRE.exec(cleanCode.toString()))) {
           const { 0: exp, 1: emptyUrl, index } = match
 
-          const urlStart = exp.indexOf(emptyUrl) + index
-          const urlEnd = urlStart + emptyUrl.length
+          const [urlStart, urlEnd] = findEmptyStringRawIndex(
+            cleanCode,
+            emptyUrl,
+            index
+          )
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
@@ -74,8 +69,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           // Get final asset URL. Catch error if the file does not exist,
           // in which we can resort to the initial URL and let it resolve in runtime
           const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            const truthExp = cleanCode.raw.slice(index, index + exp.length)
             config.logger.warnOnce(
-              `\n${exp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+              `\n${truthExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
             return url
           })
