@@ -3,7 +3,7 @@
 // FIXME: nested string template (PS: `${`${}`}`)
 const cleanerRE = /"[^"]*"|'[^']*'|`[^`]*`|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
 
-const blankReplacer = (s: string) => '\0'.repeat(s.length)
+const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
   `${s[0]}${'\0'.repeat(s.length - 2)}${s[0]}`
 
@@ -61,7 +61,6 @@ export function findEmptyStringRawIndex(
   emptyFlag: string,
   start: number
 ): [number, number] {
-  // FIXME: if there are sub-strings of the same length in the same string. (PS: fn('   ', '   '))
   const flagIndex = raw.clean.indexOf(emptyFlag, start)
   const flagEndIndex = flagIndex + emptyFlag.length
   return [flagIndex, flagEndIndex]
