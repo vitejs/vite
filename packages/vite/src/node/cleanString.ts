@@ -29,18 +29,12 @@ export class CleanString extends String {
   raw = ''
 
   constructor(raw: string | CleanCommentString) {
-    super(raw.toString())
-    if (raw instanceof CleanCommentString) {
-      this.raw = raw.raw
-      this.clean = raw.clean.replace(cleanerRE, (s: string) =>
-        s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
-      )
-    } else {
-      this.raw = raw
-      this.clean = raw.replace(cleanerRE, (s: string) =>
-        s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
-      )
-    }
+    const cleaned = raw.toString()
+    super(cleaned)
+    this.raw = raw instanceof CleanCommentString ? raw.raw : cleaned
+    this.clean = cleaned.replace(cleanerRE, (s: string) =>
+      s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
+    )
   }
 
   override toString() {
