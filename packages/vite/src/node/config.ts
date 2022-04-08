@@ -176,6 +176,27 @@ export interface UserConfig {
    * @default 'VITE_'
    */
   envPrefix?: string | string[]
+  /**
+   * Worker bundle options
+   */
+  worker?: {
+    /**
+     * Output format for worker bundle
+     * @default 'iife'
+     */
+    format?: 'es' | 'iife'
+    /**
+     * Vite plugins that apply to worker bundle
+     */
+    plugins?: (PluginOption | PluginOption[])[]
+    /**
+     * Rollup options to build worker bundle
+     */
+    rollupOptions?: Omit<
+      RollupOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
@@ -203,7 +224,7 @@ export interface InlineConfig extends UserConfig {
 }
 
 export type ResolvedConfig = Readonly<
-  Omit<UserConfig, 'plugins' | 'assetsInclude'> & {
+  Omit<UserConfig, 'plugins' | 'assetsInclude' | 'optimizeDeps' | 'worker'> & {
     configFile: string | undefined
     configFileDependencies: string[]
     inlineConfig: InlineConfig
