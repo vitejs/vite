@@ -8,24 +8,23 @@ const stringBlankReplacer = (s: string) =>
   `${s[0]}${'\0'.repeat(s.length - 2)}${s[0]}`
 
 export class CleanCommentString extends String {
-  cleanComment = ''
+  clean = ''
   raw = ''
 
   constructor(raw: string) {
     super(raw.toString())
     this.raw = raw
-    this.cleanComment = raw.replace(cleanerRE, (s: string) =>
+    this.clean = raw.replace(cleanerRE, (s: string) =>
       s[0] === '/' ? blankReplacer(s) : s
     )
   }
 
   override toString() {
-    return this.cleanComment
+    return this.clean
   }
 }
 
 export class CleanString extends String {
-  cleanComment = ''
   clean = ''
   raw = ''
 
@@ -33,14 +32,12 @@ export class CleanString extends String {
     super(raw.toString())
     if (raw instanceof CleanCommentString) {
       this.raw = raw.raw
-      this.cleanComment = raw.cleanComment
-      this.clean = raw.cleanComment.replace(cleanerRE, (s: string) =>
+      this.clean = raw.clean.replace(cleanerRE, (s: string) =>
         s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
       )
     } else {
       this.raw = raw
-      this.cleanComment = emptyCommentsString(raw).cleanComment
-      this.clean = this.cleanComment.replace(cleanerRE, (s: string) =>
+      this.clean = raw.replace(cleanerRE, (s: string) =>
         s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
       )
     }
