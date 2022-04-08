@@ -12,7 +12,7 @@ import {
 } from '../utils'
 import path from 'path'
 import { workerFileToUrl } from './worker'
-import { parseRequest } from '../utils'
+import { parseRequest, normalizePath } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
@@ -159,7 +159,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             noCommentsCode,
             index + allExp.length
           )
-          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          const file = normalizePath(
+            path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          )
           let url: string
           if (isBuild) {
             url = await workerFileToUrl(this, config, file, query)
