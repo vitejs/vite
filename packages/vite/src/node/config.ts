@@ -351,11 +351,13 @@ export async function resolveConfig(
   ]
 
   // resolve alias with internal client alias
-  const resolvedAlias = mergeAlias(
-    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-    // replacement, but its implementation does work with function values.
-    clientAlias,
-    config.resolve?.alias || []
+  const resolvedAlias = normalizeAlias(
+    mergeAlias(
+      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+      // replacement, but its implementation does work with function values.
+      clientAlias,
+      config.resolve?.alias || []
+    )
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
