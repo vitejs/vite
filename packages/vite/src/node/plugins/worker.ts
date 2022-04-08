@@ -1,7 +1,12 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
+import {
+  cleanUrl,
+  injectQuery,
+  parseRequest,
+  stringifyAsTemplateLiteral
+} from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
@@ -270,11 +275,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(\`${url}\`, ${JSON.stringify(
-          workerOptions,
-          null,
-          2
-        )})
+          return new ${workerConstructor}(${stringifyAsTemplateLiteral(
+          url
+        )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
         map: { mappings: '' } // Empty sourcemap to supress Rolup warning
       }

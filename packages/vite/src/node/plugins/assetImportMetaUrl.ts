@@ -7,7 +7,8 @@ import {
   multilineCommentsRE,
   singlelineCommentsRE,
   stringsRE,
-  blankReplacer
+  blankReplacer,
+  stringifyAsTemplateLiteral
 } from '../utils'
 import { preloadHelperId } from './importAnalysisBuild'
 
@@ -84,7 +85,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(\`${builtUrl}\`, self.location)`,
+            `new URL(${stringifyAsTemplateLiteral(builtUrl)}, self.location)`,
             { contentOnly: true }
           )
         }

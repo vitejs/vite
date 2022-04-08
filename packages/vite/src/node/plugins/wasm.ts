@@ -1,5 +1,6 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { stringifyAsTemplateLiteral } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '/__vite-wasm-helper'
@@ -65,7 +66,7 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
 
       return `
 import initWasm from "${wasmHelperId}"
-export default opts => initWasm(opts, \`${url}\`)
+export default opts => initWasm(opts, ${stringifyAsTemplateLiteral(url)})
 `
     }
   }

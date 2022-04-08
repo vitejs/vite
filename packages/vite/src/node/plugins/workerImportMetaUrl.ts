@@ -8,7 +8,8 @@ import {
   injectQuery,
   multilineCommentsRE,
   singlelineCommentsRE,
-  stringsRE
+  stringsRE,
+  stringifyAsTemplateLiteral
 } from '../utils'
 import path from 'path'
 import { workerFileToUrl } from './worker'
@@ -170,9 +171,14 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             url = injectQuery(url, WORKER_FILE_ID)
             url = injectQuery(url, `type=${workerType}`)
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, `\`${url}\``, {
-            contentOnly: true
-          })
+          s.overwrite(
+            urlIndex,
+            urlIndex + exp.length,
+            stringifyAsTemplateLiteral(url),
+            {
+              contentOnly: true
+            }
+          )
         }
         if (s) {
           return {

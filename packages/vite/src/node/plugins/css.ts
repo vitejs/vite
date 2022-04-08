@@ -12,7 +12,8 @@ import {
   normalizePath,
   processSrcSet,
   parseRequest,
-  combineSourcemaps
+  combineSourcemaps,
+  stringifyAsTemplateLiteral
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -362,9 +363,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let code: string
       if (usedRE.test(id)) {
         if (inlined) {
-          code = `export default \`${await minifyCSS(css, config)}\``
+          code = `export default ${stringifyAsTemplateLiteral(
+            await minifyCSS(css, config)
+          )}`
         } else {
-          code = modulesCode || `export default \`${css}\``
+          code =
+            modulesCode || `export default ${stringifyAsTemplateLiteral(css)}`
         }
       } else {
         code = `export default ''`
@@ -459,7 +463,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = \`${chunkCSS}\`;` +
+            `${style}.innerHTML = ${stringifyAsTemplateLiteral(chunkCSS)};` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
             const s = new MagicString(code)
