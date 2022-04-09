@@ -1,23 +1,25 @@
 import { emptyString, findEmptyStringRawIndex } from '../../node/cleanString'
 
 test('comments', () => {
-  const str = `
+  expect(
+    emptyString(`
+    // comment1 // comment
     // comment1
     /* coment2 */
     /*
       // coment3
     */
     /* // coment3 */
+    /* // coment3 */ // comment
     // comment 4 /* comment 5 */
-  `
-  const clean = emptyString(str)
-  expect(clean.clean.trim()).toBe('')
+  `).clean.trim()
+  ).toBe('')
 })
 
 test('strings', () => {
-  const str = `
+  const clean = emptyString(`
     // comment1
-    const a = "aaaa"
+    const a = 'aaaa'
     /* coment2 */
     const b = "bbbb"
     /*
@@ -25,31 +27,69 @@ test('strings', () => {
     */
     /* // coment3 */
     // comment 4 /* comment 5 */
-  `
-  const clean = emptyString(str)
-  expect(clean.clean).toMatch('const a = "\0\0\0\0"')
+  `)
+  expect(clean.clean).toMatch("const a = '\0\0\0\0'")
   expect(clean.clean).toMatch('const b = "\0\0\0\0"')
 })
 
 test('strings comment nested', () => {
-  const commentNestedString = `
+  expect(
+    emptyString(`
     // comment 1 "
     const a = "a //"
     // comment 2 "
-  `
-  const commentNestedStringClean = emptyString(commentNestedString)
-  expect(commentNestedStringClean.clean).toMatch('const a = "\0\0\0\0"')
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
 
-  const stringNestedComment = `
+  expect(
+    emptyString(`
+    // comment 1 '
+    const a = "a //"
+    // comment 2 '
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
+
+  expect(
+    emptyString(`
+    // comment 1 \`
+    const a = "a //"
+    // comment 2 \`
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
+
+  expect(
+    emptyString(`
     const a = "a //"
     console.log("console")
-  `
-  const stringNestedCommentClean = emptyString(stringNestedComment)
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
 
-  expect(stringNestedCommentClean.clean).toMatch('const a = "\0\0\0\0"')
+  expect(
+    emptyString(`
+    const a = "a /*"
+    console.log("console")
+    const b = "b */"
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
+
+  expect(
+    emptyString(`
+    const a = "a ' "
+    console.log("console")
+    const b = "b ' "
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
+
+  expect(
+    emptyString(`
+    const a = "a \` "
+    console.log("console")
+    const b = "b \` "
+  `).clean
+  ).toMatch('const a = "\0\0\0\0"')
 })
 
-test('empty string flag', () => {
+test('find empty string flag in raw index', () => {
   const str = `
     const a = "aaaaa"
     const b = "bbbbb"
@@ -68,7 +108,7 @@ test('empty string flag', () => {
 })
 
 // describe('template string nested', () => {
-//   const str = "`##${ a + b + `##${c + `##${d}`}##`}##`"
+//   const str = "`##${a + b + `##${c + `##${d}`}##`}##`"
 
 //   const clean = emptyString(str)
 //   expect(clean.clean).toMatch('`\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0`')
