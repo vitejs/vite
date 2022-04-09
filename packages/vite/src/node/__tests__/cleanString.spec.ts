@@ -67,9 +67,9 @@ test('empty string flag', () => {
   expect(str.slice(b[0], b[1])).toMatch('bbbbb')
 })
 
-// TODO
 // describe('template string nested', () => {
 //   const str = "`##${ a + b + `##${c + `##${d}`}##`}##`"
+
 //   const clean = emptyString(str)
-//   expect(clean.clean).toMatch('\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0')
+//   expect(clean.clean).toMatch('`\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0`')
 // })

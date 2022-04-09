@@ -1,7 +1,7 @@
-// bank on the non-overlapping nature of regex matches
-// and combine all our current filters into one giant regex
-// FIXME: nested string template (PS: `${`${}`}`)
-const cleanerRE = /"[^"]*"|'[^']*'|`[^`]*`|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
+// bank on the non-overlapping nature of regex matches and combine all filters into one giant regex
+// `([^`\$\{\}]|\$\{(`|\g<1>)*\})*` can match nested string template
+// but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
+const cleanerRE = /"[^"]*"|'[^']*'|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
 
 const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
@@ -38,6 +38,7 @@ export function emptyString(raw: string | CleanString): CleanString {
   res.clean = res.clean.replace(cleanerRE, (s: string) =>
     s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
   )
+  // TODO replace string template
   return res
 }
 
