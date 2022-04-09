@@ -1,3 +1,4 @@
+import type { CleanString } from './../cleanString'
 import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -10,8 +11,7 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
-import type { CleanString } from '../cleanString'
-import { emptyString, findEmptyStringRawIndex } from '../cleanString'
+import { walkCleanString, findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 
@@ -24,11 +24,11 @@ function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
     throw error
   }
 
-  const commaIndex = cleanCode.indexOf(',', i)
+  const commaIndex = cleanCode.clean.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = cleanCode.indexOf(')', i)
+  const endIndex = cleanCode.clean.indexOf(')', i)
 
   // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {
@@ -44,7 +44,10 @@ function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
   }
 
   // need to find in no comment code
-  const cleanworkerOptString = cleanCode.substring(commaIndex + 1, endIndex)
+  const cleanworkerOptString = cleanCode.clean.substring(
+    commaIndex + 1,
+    endIndex
+  )
   if (!cleanworkerOptString.trim().length) {
     return 'classic'
   }
@@ -112,51 +115,53 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const importMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 
-        const cleanCode = emptyString(code)
+        let s: MagicString | undefined
+        await walkCleanString(
+          importMetaUrlRE,
+          code,
+          async (match, cleanString) => {
+            const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
+            const urlIndex = allExp.indexOf(exp) + index
 
-        let match: RegExpExecArray | null
-        let s: MagicString | null = null
-        while ((match = importMetaUrlRE.exec(cleanCode.toString()))) {
-          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
-          const urlIndex = allExp.indexOf(exp) + index
-
-          const [urlStart, urlEnd] = findEmptyStringRawIndex(
-            cleanCode,
-            emptyUrl,
-            index
-          )
-          const rawUrl = code.slice(urlStart, urlEnd)
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              urlIndex
+            const [urlStart, urlEnd] = findEmptyStringRawIndex(
+              cleanString,
+              emptyUrl,
+              index
             )
-          }
+            const rawUrl = code.slice(urlStart, urlEnd)
 
-          // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              urlIndex
-            )
-          }
+            if (options?.ssr) {
+              this.error(
+                `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
+                urlIndex
+              )
+            }
 
-          s ||= new MagicString(code)
-          const workerType = getWorkerType(cleanCode, index + allExp.length)
-          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
-          let url: string
-          if (isBuild) {
-            url = await workerFileToUrl(this, config, file, query)
-          } else {
-            url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WORKER_FILE_ID)
-            url = injectQuery(url, `type=${workerType}`)
+            // potential dynamic template string
+            if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+              this.error(
+                `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
+                urlIndex
+              )
+            }
+
+            s ||= new MagicString(code)
+            const workerType = getWorkerType(cleanString, index + allExp.length)
+            const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+            let url: string
+            if (isBuild) {
+              url = await workerFileToUrl(this, config, file, query)
+            } else {
+              url = await fileToUrl(cleanUrl(file), config, this)
+              url = injectQuery(url, WORKER_FILE_ID)
+              url = injectQuery(url, `type=${workerType}`)
+            }
+            s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
+              contentOnly: true
+            })
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
-            contentOnly: true
-          })
-        }
+        )
+
         if (s) {
           return {
             code: s.toString(),
