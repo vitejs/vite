@@ -128,8 +128,20 @@ test('template string nested', () => {
   clean = emptyString(str)
   expect(clean).toMatch(res)
 
+  str = '`aa${a + `a` + a}aa` `aa${a + `a` + a}aa`'
+  res = '`\0\0${a + `\0` + a}\0\0` `\0\0${a + `\0` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
   str = '`aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa`'
   res = '`\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str =
+    '`aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa` `aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa`'
+  res =
+    '`\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0` `\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0`'
   clean = emptyString(str)
   expect(clean).toMatch(res)
 
