@@ -159,7 +159,7 @@ export default defineConfig(({ command, mode }) => {
   - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
     ::: warning
-  Because it's implemented as straightforward [RegExp-based](https://github.com/vitejs/vite/blob/4aecf7dc6df6878b7de3c395a0a9ec8fc0f6a1af/packages/vite/src/node/plugins/define.ts#L70-L87) text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
+    Because it's implemented as straightforward [RegExp-based](https://github.com/vitejs/vite/blob/4aecf7dc6df6878b7de3c395a0a9ec8fc0f6a1af/packages/vite/src/node/plugins/define.ts#L70-L87) text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
   :::
