@@ -20,76 +20,75 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
       if (
-        options?.ssr ||
-        !code.includes('new URL') ||
-        !code.includes(`import.meta.url`)
+        !options?.ssr &&
+        code.includes('new URL') &&
+        code.includes(`import.meta.url`)
       ) {
-        return null
-      }
-      let s: MagicString | undefined
-      let match: RegExpExecArray | null
-      const assetImportMetaUrlRE =
-        /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-      const cleanString = emptyString(code)
-      while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-        const { 0: exp, 1: emptyUrl, index } = match
+        let s: MagicString | undefined
+        let match: RegExpExecArray | null
+        const assetImportMetaUrlRE =
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
+        const cleanString = emptyString(code)
+        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
+          const { 0: exp, 1: emptyUrl, index } = match
 
-        const [urlStart, urlEnd] = findEmptyStringRawIndex(
-          cleanString,
-          emptyUrl,
-          index
-        )
-        const rawUrl = code.slice(urlStart, urlEnd)
+          const [urlStart, urlEnd] = findEmptyStringRawIndex(
+            cleanString,
+            emptyUrl,
+            index
+          )
+          const rawUrl = code.slice(urlStart, urlEnd)
 
-        if (!s) s = new MagicString(code)
+          if (!s) s = new MagicString(code)
 
-        // potential dynamic template string
-        if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-          const ast = this.parse(rawUrl)
-          const templateLiteral = (ast as any).body[0].expression
-          if (templateLiteral.expressions.length) {
-            const pattern = buildGlobPattern(templateLiteral)
-            // Note: native import.meta.url is not supported in the baseline
-            // target so we use the global location here. It can be
-            // window.location or self.location in case it is used in a Web Worker.
-            // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
-            s.overwrite(
-              index,
-              index + exp.length,
-              `new URL(import.meta.globEagerDefault(${JSON.stringify(
-                pattern
-              )})[${rawUrl}], self.location)`,
-              { contentOnly: true }
+          // potential dynamic template string
+          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+            const ast = this.parse(rawUrl)
+            const templateLiteral = (ast as any).body[0].expression
+            if (templateLiteral.expressions.length) {
+              const pattern = buildGlobPattern(templateLiteral)
+              // Note: native import.meta.url is not supported in the baseline
+              // target so we use the global location here. It can be
+              // window.location or self.location in case it is used in a Web Worker.
+              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
+              s.overwrite(
+                index,
+                index + exp.length,
+                `new URL(import.meta.globEagerDefault(${JSON.stringify(
+                  pattern
+                )})[${rawUrl}], self.location)`,
+                { contentOnly: true }
+              )
+              continue
+            }
+          }
+
+          const url = rawUrl.slice(1, -1)
+          const file = path.resolve(path.dirname(id), url)
+          // Get final asset URL. Catch error if the file does not exist,
+          // in which we can resort to the initial URL and let it resolve in runtime
+          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            const truthExp = code.slice(index, index + exp.length)
+            config.logger.warnOnce(
+              `\n${truthExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
-            continue
+            return url
+          })
+          s.overwrite(
+            index,
+            index + exp.length,
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
+          )
+        }
+        if (s) {
+          return {
+            code: s.toString(),
+            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
           }
         }
-
-        const url = rawUrl.slice(1, -1)
-        const file = path.resolve(path.dirname(id), url)
-        // Get final asset URL. Catch error if the file does not exist,
-        // in which we can resort to the initial URL and let it resolve in runtime
-        const builtUrl = await fileToUrl(file, config, this).catch(() => {
-          const truthExp = code.slice(index, index + exp.length)
-          config.logger.warnOnce(
-            `\n${truthExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
-          )
-          return url
-        })
-        s.overwrite(
-          index,
-          index + exp.length,
-          `new URL(${JSON.stringify(builtUrl)}, self.location)`,
-          { contentOnly: true }
-        )
+        return null
       }
-      if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-        }
-      }
-      return null
     }
   }
 }
