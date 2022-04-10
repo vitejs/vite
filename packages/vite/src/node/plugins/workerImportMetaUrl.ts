@@ -14,8 +14,6 @@ import type { CleanString } from '../cleanString'
 import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
-const workerImportMetaUrlRE =
-  /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const WORKER_FILE_ID = 'worker_url_file'
@@ -120,6 +118,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       let match: RegExpExecArray | null
       const cleanString = emptyString(code)
+      const workerImportMetaUrlRE =
+        /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
       while ((match = workerImportMetaUrlRE.exec(cleanString.clean))) {
         const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
         const urlIndex = allExp.indexOf(exp) + index

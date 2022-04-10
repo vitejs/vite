@@ -5,9 +5,6 @@ import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
 import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
-const assetImportMetaUrlRE =
-  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
@@ -31,6 +28,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       }
       let s: MagicString | undefined
       let match: RegExpExecArray | null
+      const assetImportMetaUrlRE =
+        /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
       const cleanString = emptyString(code)
       while ((match = assetImportMetaUrlRE.exec(cleanString.clean))) {
         const { 0: exp, 1: emptyUrl, index } = match
