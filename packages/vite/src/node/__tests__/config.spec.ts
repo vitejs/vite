@@ -112,7 +112,7 @@ describe('mergeConfig', () => {
 
   test('not handles alias not under `resolve`', () => {
     const baseConfig = {
-      custom: {
+      resolve: {
         alias: {
           bar: 'bar-value',
           baz: 'baz-value'
@@ -121,7 +121,7 @@ describe('mergeConfig', () => {
     }
 
     const newConfig = {
-      custom: {
+      resolve: {
         alias: {
           bar: 'bar-value-2',
           foo: 'foo-value'
@@ -130,7 +130,7 @@ describe('mergeConfig', () => {
     }
 
     const mergedConfig = {
-      custom: {
+      resolve: {
         alias: {
           bar: 'bar-value-2',
           baz: 'baz-value',
@@ -144,15 +144,15 @@ describe('mergeConfig', () => {
 
   test('merge array correctly', () => {
     const baseConfig = {
-      foo: null
+      assetsInclude: null
     }
 
     const newConfig = {
-      foo: ['bar']
+      assetsInclude: ['bar']
     }
 
     const mergedConfig = {
-      foo: ['bar']
+      assetsInclude: ['bar']
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)

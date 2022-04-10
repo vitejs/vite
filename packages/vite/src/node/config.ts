@@ -766,10 +766,10 @@ function mergeConfigRecursively(
 }
 
 export function mergeConfig(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
+  defaults: UserConfig,
+  overrides: UserConfig,
   isRoot = true
-): Record<string, any> {
+): UserConfig {
   return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
