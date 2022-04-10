@@ -1,5 +1,3 @@
-import type { CleanString } from './../cleanString'
-import { emptyString } from './../cleanString'
 import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -12,7 +10,8 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
-import { findEmptyStringRawIndex } from '../cleanString'
+import type { CleanString } from '../cleanString'
+import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 const workerImportMetaUrlRE =
