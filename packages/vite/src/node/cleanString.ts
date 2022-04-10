@@ -1,5 +1,5 @@
 // bank on the non-overlapping nature of regex matches and combine all filters into one giant regex
-// `([^`\$\{\}]|\$\{(`|\g<1>)*\})*` can match nested string template
+// /`([^`\$\{\}]|\$\{(`|\g<1>)*\})*`/g can match nested string template
 // but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
 const cleanerRE = /"[^"]*"|'[^']*'|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
 
@@ -43,35 +43,11 @@ export function emptyString(raw: string | CleanString): CleanString {
 }
 
 export function findEmptyStringRawIndex(
-  raw: CleanString,
+  clean: string,
   emptyFlag: string,
   start: number
 ): [number, number] {
-  const flagIndex = raw.clean.indexOf(emptyFlag, start)
+  const flagIndex = clean.indexOf(emptyFlag, start)
   const flagEndIndex = flagIndex + emptyFlag.length
   return [flagIndex, flagEndIndex]
-}
-
-export async function walkCleanString(
-  re: RegExp,
-  raw: string,
-  callback: (match: RegExpExecArray, cleanString: CleanString) => Promise<void>
-): Promise<void> {
-  const cleanString = emptyString(raw)
-  let match: RegExpExecArray | null
-  while ((match = re.exec(cleanString.clean))) {
-    await callback(match, cleanString)
-  }
-}
-
-export function walkCleanStringSync(
-  re: RegExp,
-  raw: string,
-  callback: (match: RegExpExecArray, cleanString: CleanString) => void
-): void {
-  const cleanString = emptyString(raw)
-  let match: RegExpExecArray | null
-  while ((match = re.exec(cleanString.clean))) {
-    callback(match, cleanString)
-  }
 }

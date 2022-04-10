@@ -35,25 +35,25 @@ test('strings', () => {
 test('strings comment nested', () => {
   expect(
     emptyString(`
-    // comment 1 "
+    // comment 1 /* " */
     const a = "a //"
-    // comment 2 "
+    // comment 2 /* " */
   `).clean
   ).toMatch('const a = "\0\0\0\0"')
 
   expect(
     emptyString(`
-    // comment 1 '
+    // comment 1 /* ' */
     const a = "a //"
-    // comment 2 '
+    // comment 2 /* ' */
   `).clean
   ).toMatch('const a = "\0\0\0\0"')
 
   expect(
     emptyString(`
-    // comment 1 \`
+    // comment 1 /* \` */
     const a = "a //"
-    // comment 2 \`
+    // comment 2 /* \` */
   `).clean
   ).toMatch('const a = "\0\0\0\0"')
 
@@ -99,11 +99,11 @@ test('find empty string flag in raw index', () => {
   expect(clean.clean).toMatch('const b = "\0\0\0\0\0"')
 
   const aIndex = str.indexOf('const a = "aaaaa"')
-  const a = findEmptyStringRawIndex(clean, '\0\0\0\0\0', aIndex)
+  const a = findEmptyStringRawIndex(clean.clean, '\0\0\0\0\0', aIndex)
   expect(str.slice(a[0], a[1])).toMatch('aaaaa')
 
   const bIndex = str.indexOf('const b = "bbbbb"')
-  const b = findEmptyStringRawIndex(clean, '\0\0\0\0\0', bIndex)
+  const b = findEmptyStringRawIndex(clean.clean, '\0\0\0\0\0', bIndex)
   expect(str.slice(b[0], b[1])).toMatch('bbbbb')
 })
 
