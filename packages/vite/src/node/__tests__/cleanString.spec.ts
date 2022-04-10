@@ -123,11 +123,6 @@ test('template string nested', () => {
   clean = emptyString(str)
   expect(clean).toMatch(res)
 
-  str = '`aa${a}aa`'
-  res = '`\0\0${a}\0\0`'
-  clean = emptyString(str)
-  expect(clean).toMatch(res)
-
   str = '`aa${a + `a` + a}aa`'
   res = '`\0\0${a + `\0` + a}\0\0`'
   clean = emptyString(str)
