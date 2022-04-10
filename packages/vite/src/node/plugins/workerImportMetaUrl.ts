@@ -15,7 +15,7 @@ import type { RollupError } from 'rollup'
 import { findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
-const importMetaUrlRE =
+const workerImportMetaUrlRE =
   /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -121,7 +121,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       let match: RegExpExecArray | null
       const cleanString = emptyString(code)
-      while ((match = importMetaUrlRE.exec(cleanString.clean))) {
+      while ((match = workerImportMetaUrlRE.exec(cleanString.clean))) {
         const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
         const urlIndex = allExp.indexOf(exp) + index
 
