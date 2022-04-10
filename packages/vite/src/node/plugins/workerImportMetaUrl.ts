@@ -10,7 +10,6 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
-import type { CleanString } from '../cleanString'
 import { emptyString, findEmptyStringRawIndex } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
@@ -18,18 +17,18 @@ const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const WORKER_FILE_ID = 'worker_url_file'
 
-function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
+function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   function err(e: string, pos: number) {
     const error = new Error(e) as RollupError
     error.pos = pos
     throw error
   }
 
-  const commaIndex = cleanCode.clean.indexOf(',', i)
+  const commaIndex = clean.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = cleanCode.clean.indexOf(')', i)
+  const endIndex = clean.indexOf(')', i)
 
   // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {
@@ -37,7 +36,7 @@ function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
   }
 
   // need to find in comment code
-  const workerOptString = cleanCode.raw.substring(commaIndex + 1, endIndex)
+  const workerOptString = raw.substring(commaIndex + 1, endIndex)
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -45,10 +44,7 @@ function getWorkerType(cleanCode: CleanString, i: number): WorkerType {
   }
 
   // need to find in no comment code
-  const cleanworkerOptString = cleanCode.clean.substring(
-    commaIndex + 1,
-    endIndex
-  )
+  const cleanworkerOptString = clean.substring(commaIndex + 1, endIndex)
   if (!cleanworkerOptString.trim().length) {
     return 'classic'
   }
@@ -120,12 +116,12 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       const cleanString = emptyString(code)
       const workerImportMetaUrlRE =
         /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
-      while ((match = workerImportMetaUrlRE.exec(cleanString.clean))) {
+      while ((match = workerImportMetaUrlRE.exec(cleanString))) {
         const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
         const urlIndex = allExp.indexOf(exp) + index
 
         const [urlStart, urlEnd] = findEmptyStringRawIndex(
-          cleanString.clean,
+          cleanString,
           emptyUrl,
           index
         )
@@ -147,7 +143,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
 
         s ||= new MagicString(code)
-        const workerType = getWorkerType(cleanString, index + allExp.length)
+        const workerType = getWorkerType(
+          code,
+          cleanString,
+          index + allExp.length
+        )
         const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
         let url: string
         if (isBuild) {

@@ -31,11 +31,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       const assetImportMetaUrlRE =
         /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
       const cleanString = emptyString(code)
-      while ((match = assetImportMetaUrlRE.exec(cleanString.clean))) {
+      while ((match = assetImportMetaUrlRE.exec(cleanString))) {
         const { 0: exp, 1: emptyUrl, index } = match
 
         const [urlStart, urlEnd] = findEmptyStringRawIndex(
-          cleanString.clean,
+          cleanString,
           emptyUrl,
           index
         )
@@ -70,7 +70,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         // Get final asset URL. Catch error if the file does not exist,
         // in which we can resort to the initial URL and let it resolve in runtime
         const builtUrl = await fileToUrl(file, config, this).catch(() => {
-          const truthExp = cleanString.raw.slice(index, index + exp.length)
+          const truthExp = code.slice(index, index + exp.length)
           config.logger.warnOnce(
             `\n${truthExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
           )
