@@ -112,63 +112,64 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
       if (
-        (code.includes('new Worker') || code.includes('new ShareWorker')) &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
+        !(code.includes('new Worker') || code.includes('new ShareWorker')) ||
+        !code.includes('new URL') ||
+        !code.includes(`import.meta.url`)
       ) {
-        let s: MagicString | undefined
-        let match: RegExpExecArray | null
-        const cleanString = emptyString(code)
-        while ((match = importMetaUrlRE.exec(cleanString.clean))) {
-          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
-          const urlIndex = allExp.indexOf(exp) + index
-
-          const [urlStart, urlEnd] = findEmptyStringRawIndex(
-            cleanString.clean,
-            emptyUrl,
-            index
-          )
-          const rawUrl = code.slice(urlStart, urlEnd)
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              urlIndex
-            )
-          }
-
-          // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              urlIndex
-            )
-          }
-
-          s ||= new MagicString(code)
-          const workerType = getWorkerType(cleanString, index + allExp.length)
-          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
-          let url: string
-          if (isBuild) {
-            url = await workerFileToUrl(this, config, file, query)
-          } else {
-            url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WORKER_FILE_ID)
-            url = injectQuery(url, `type=${workerType}`)
-          }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
-            contentOnly: true
-          })
-        }
-
-        if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
-        }
         return null
       }
+      let s: MagicString | undefined
+      let match: RegExpExecArray | null
+      const cleanString = emptyString(code)
+      while ((match = importMetaUrlRE.exec(cleanString.clean))) {
+        const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
+        const urlIndex = allExp.indexOf(exp) + index
+
+        const [urlStart, urlEnd] = findEmptyStringRawIndex(
+          cleanString.clean,
+          emptyUrl,
+          index
+        )
+        const rawUrl = code.slice(urlStart, urlEnd)
+
+        if (options?.ssr) {
+          this.error(
+            `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
+            urlIndex
+          )
+        }
+
+        // potential dynamic template string
+        if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
+          this.error(
+            `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
+            urlIndex
+          )
+        }
+
+        s ||= new MagicString(code)
+        const workerType = getWorkerType(cleanString, index + allExp.length)
+        const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+        let url: string
+        if (isBuild) {
+          url = await workerFileToUrl(this, config, file, query)
+        } else {
+          url = await fileToUrl(cleanUrl(file), config, this)
+          url = injectQuery(url, WORKER_FILE_ID)
+          url = injectQuery(url, `type=${workerType}`)
+        }
+        s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
+          contentOnly: true
+        })
+      }
+
+      if (s) {
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+        }
+      }
+      return null
     }
   }
 }
