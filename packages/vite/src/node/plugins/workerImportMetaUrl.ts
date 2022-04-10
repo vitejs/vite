@@ -1,16 +1,17 @@
 import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { getAssetHash, fileToUrl } from './asset'
+import { fileToUrl } from './asset'
 import {
   blankReplacer,
   cleanUrl,
   injectQuery,
   multilineCommentsRE,
-  singlelineCommentsRE
+  singlelineCommentsRE,
+  stringsRE
 } from '../utils'
 import path from 'path'
-import { bundleWorkerEntry } from './worker'
+import { workerFileToUrl } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
@@ -122,11 +123,20 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         const noCommentsCode = code
           .replace(multilineCommentsRE, blankReplacer)
           .replace(singlelineCommentsRE, blankReplacer)
+
+        const noStringCode = noCommentsCode.replace(
+          stringsRE,
+          (m) => `'${' '.repeat(m.length - 2)}'`
+        )
         let match: RegExpExecArray | null
         let s: MagicString | null = null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
-          const { 0: allExp, 2: exp, 3: rawUrl, index } = match
+        while ((match = importMetaUrlRE.exec(noStringCode))) {
+          const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
+
+          const urlStart = allExp.indexOf(emptyUrl) + index
+          const urlEnd = urlStart + emptyUrl.length
+          const rawUrl = code.slice(urlStart, urlEnd)
 
           if (options?.ssr) {
             this.error(
@@ -152,18 +162,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           let url: string
           if (isBuild) {
-            const content = await bundleWorkerEntry(this, config, file)
-            const basename = path.parse(cleanUrl(file)).name
-            const contentHash = getAssetHash(content)
-            const fileName = path.posix.join(
-              config.build.assetsDir,
-              `${basename}.${contentHash}.js`
-            )
-            url = `__VITE_ASSET__${this.emitFile({
-              fileName,
-              type: 'asset',
-              source: content
-            })}__`
+            url = await workerFileToUrl(this, config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)

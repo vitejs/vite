@@ -1,12 +1,6 @@
-import type {
-  ErrorPayload,
-  FullReloadPayload,
-  HMRPayload,
-  PrunePayload,
-  Update,
-  UpdatePayload
-} from 'types/hmrPayload'
-import type { CustomEventName } from 'types/customEvent'
+import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import type { ViteHotContext } from 'types/hot'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
@@ -15,7 +9,7 @@ import '@vite/env'
 declare const __BASE__: string
 declare const __HMR_PROTOCOL__: string
 declare const __HMR_HOSTNAME__: string
-declare const __HMR_PORT__: string | false
+declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
@@ -24,10 +18,7 @@ console.log('[vite] connecting...')
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = __HMR_PORT__
-  ? `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
-  : `${__HMR_HOSTNAME__ || location.hostname}`
-
+const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
 const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
@@ -103,7 +94,7 @@ async function handleMessage(payload: HMRPayload) {
       })
       break
     case 'custom': {
-      notifyListeners(payload.event as CustomEventName<any>, payload.data)
+      notifyListeners(payload.event, payload.data)
       break
     }
     case 'full-reload':
@@ -156,19 +147,9 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
-function notifyListeners(
-  event: 'vite:beforeUpdate',
-  payload: UpdatePayload
-): void
-function notifyListeners(event: 'vite:beforePrune', payload: PrunePayload): void
-function notifyListeners(
-  event: 'vite:beforeFullReload',
-  payload: FullReloadPayload
-): void
-function notifyListeners(event: 'vite:error', payload: ErrorPayload): void
 function notifyListeners<T extends string>(
-  event: CustomEventName<T>,
-  data: any
+  event: T,
+  data: InferCustomEventPayload<T>
 ): void
 function notifyListeners(event: string, data: any): void {
   const cbs = customListenersMap.get(event)
@@ -391,9 +372,7 @@ const ctxToListenersMap = new Map<
   Map<string, ((data: any) => void)[]>
 >()
 
-// Just infer the return type for now
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const createHotContext = (ownerPath: string) => {
+export function createHotContext(ownerPath: string): ViteHotContext {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
   }
@@ -434,12 +413,12 @@ export const createHotContext = (ownerPath: string) => {
     hotModulesMap.set(ownerPath, mod)
   }
 
-  const hot = {
+  const hot: ViteHotContext = {
     get data() {
       return dataMap.get(ownerPath)
     },
 
-    accept(deps: any, callback?: any) {
+    accept(deps?: any, callback?: any) {
       if (typeof deps === 'function' || !deps) {
         // self-accept: hot.accept(() => {})
         acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
@@ -460,10 +439,11 @@ export const createHotContext = (ownerPath: string) => {
       )
     },
 
-    dispose(cb: (data: any) => void) {
+    dispose(cb) {
       disposeMap.set(ownerPath, cb)
     },
 
+    // @ts-expect-error untyped
     prune(cb: (data: any) => void) {
       pruneMap.set(ownerPath, cb)
     },
@@ -479,7 +459,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // custom events
-    on: (event: string, cb: (data: any) => void) => {
+    on(event, cb) {
       const addToMap = (map: Map<string, any[]>) => {
         const existing = map.get(event) || []
         existing.push(cb)
@@ -489,7 +469,7 @@ export const createHotContext = (ownerPath: string) => {
       addToMap(newListeners)
     },
 
-    send: (event: string, data?: any) => {
+    send(event, data) {
       messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
       sendMessageBuffer()
     }

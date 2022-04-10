@@ -19,7 +19,6 @@ import type {
 } from 'rollup'
 import type Rollup from 'rollup'
 import { buildReporterPlugin } from './plugins/reporter'
-import { buildHtmlPlugin } from './plugins/html'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
 import type { Terser } from 'types/terser'
@@ -310,7 +309,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   return {
     pre: [
       watchPackageDataPlugin(config),
-      buildHtmlPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
       dynamicImportVars(options.dynamicImportVarsOptions),
@@ -321,7 +319,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      buildEsbuildPlugin(config),
+      ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(options.manifest ? [manifestPlugin(config)] : []),
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),

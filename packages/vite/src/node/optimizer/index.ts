@@ -371,7 +371,6 @@ export async function runOptimizeDeps(
       commit() {
         // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
         commitProcessingDepsCacheSync()
-        config.logger.info(`No dependencies to bundle. Skipping.\n\n\n`)
       },
       cancel
     }

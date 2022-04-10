@@ -7,6 +7,25 @@ import path from 'path'
 import colors from 'css-color-names'
 import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
+import { normalizePath } from 'vite'
+import { fromComment } from 'convert-source-map'
+
+// make sure these ports are unique
+export const ports = {
+  cli: 9510,
+  'cli-module': 9511,
+  'legacy/ssr': 9520,
+  lib: 9521,
+  'optimize-missing-deps': 9522,
+  'ssr-deps': 9600,
+  'ssr-html': 9601,
+  'ssr-pug': 9602,
+  'ssr-react': 9603,
+  'ssr-vue': 9604,
+  'ssr-webworker': 9605,
+  'css/postcss-caching': 5005,
+  'css/postcss-plugins-different-dir': 5006
+}
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -138,3 +157,17 @@ export async function untilUpdated(
  * Send the rebuild complete message in build watch
  */
 export { notifyRebuildComplete } from '../../scripts/jestPerTestSetup'
+
+export const extractSourcemap = (content: string) => {
+  const lines = content.trim().split('\n')
+  return fromComment(lines[lines.length - 1]).toObject()
+}
+
+export const formatSourcemapForSnapshot = (map: any) => {
+  const root = normalizePath(testDir)
+  const m = { ...map }
+  delete m.file
+  delete m.names
+  m.sources = m.sources.map((source) => source.replace(root, '/root'))
+  return m
+}

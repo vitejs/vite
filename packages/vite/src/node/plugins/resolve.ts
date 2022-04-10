@@ -7,6 +7,7 @@ import {
   SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
+  KNOWN_ESM_MAIN_FIELDS,
   OPTIMIZABLE_ENTRY_RE,
   DEP_VERSION_RE
 } from '../constants'
@@ -332,23 +333,28 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   }
 }
 
+function splitFileAndPostfix(path: string) {
+  let file = path
+  let postfix = ''
+
+  let postfixIndex = path.indexOf('?')
+  if (postfixIndex < 0) {
+    postfixIndex = path.indexOf('#')
+  }
+  if (postfixIndex > 0) {
+    file = path.slice(0, postfixIndex)
+    postfix = path.slice(postfixIndex)
+  }
+  return { file, postfix }
+}
+
 function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
   targetWeb = true
 ): string | undefined {
-  let file = fsPath
-  let postfix = ''
-
-  let postfixIndex = fsPath.indexOf('?')
-  if (postfixIndex < 0) {
-    postfixIndex = fsPath.indexOf('#')
-  }
-  if (postfixIndex > 0) {
-    file = fsPath.slice(0, postfixIndex)
-    postfix = fsPath.slice(postfixIndex)
-  }
+  const { file, postfix } = splitFileAndPostfix(fsPath)
 
   let res: string | undefined
 
@@ -772,6 +778,11 @@ export function resolvePackageEntry(
 
     if (!entryPoint || entryPoint.endsWith('.mjs')) {
       for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
+        // If the initiator is a `require` call, don't use the ESM entries
+        if (options.isRequire && KNOWN_ESM_MAIN_FIELDS.includes(field)) {
+          continue
+        }
+
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
@@ -842,6 +853,7 @@ function resolveExports(
   if (options.conditions) {
     conditions.push(...options.conditions)
   }
+
   return _resolveExports(pkg, key, {
     browser: targetWeb,
     require: options.isRequire,
@@ -872,12 +884,14 @@ function resolveDeepImport(
   // map relative based on exports data
   if (exportsField) {
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
-      relativeId = resolveExports(
-        data,
-        cleanUrl(relativeId),
-        options,
-        targetWeb
-      )
+      // resolve without postfix (see #7098)
+      const { file, postfix } = splitFileAndPostfix(relativeId)
+      const exportsId = resolveExports(data, file, options, targetWeb)
+      if (exportsId !== undefined) {
+        relativeId = exportsId + postfix
+      } else {
+        relativeId = undefined
+      }
     } else {
       // not exposed
       relativeId = undefined
@@ -889,9 +903,11 @@ function resolveDeepImport(
       )
     }
   } else if (targetWeb && isObject(browserField)) {
-    const mapped = mapWithBrowserField(relativeId, browserField)
+    // resolve without postfix (see #7098)
+    const { file, postfix } = splitFileAndPostfix(relativeId)
+    const mapped = mapWithBrowserField(file, browserField)
     if (mapped) {
-      relativeId = mapped
+      relativeId = mapped + postfix
     } else if (mapped === false) {
       return (webResolvedImports[id] = browserExternalId)
     }

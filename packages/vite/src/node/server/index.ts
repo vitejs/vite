@@ -516,7 +516,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(httpServer, config))
+    middlewares.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   // base
@@ -607,7 +607,7 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort || options.port || 3000
+  const port = inlinePort ?? options.port ?? 3000
   const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
