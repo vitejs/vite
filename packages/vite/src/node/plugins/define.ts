@@ -68,21 +68,17 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     const replacementsKeys = Object.keys(replacements)
     const pattern = replacementsKeys.length
       ? new RegExp(
-          // Do not allow preceding '.', but do allow preceding '...' for spread operations
-          '(?<!(?<!\\.\\.)\\.)' +
-            // Must follow beginning of a line or a char that can't be part of an identifier
-            '(?<=^|[^\\p{L}\\p{N}_$])(' +
+          // Mustn't be preceded by a char that can be part of an identifier
+          //or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
             replacementsKeys
               .map((str) => {
                 return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
               })
               .join('|') +
-            // Replacement key must be followed by:
-            // - end of a line
-            // - a char that can't be part of an identifier and isn't whitespace or an assignment
-            // - whitespace, as long as it's not followed by an assignment
-            // - anything following a dot (handles cases where replacement includes a trailing dot)
-            ')(?=$|[^\\p{L}\\p{N}_$\\s=]|(\\s+[^=\\s])|(?<=\\.).)',
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
           'gu'
         )
       : null
