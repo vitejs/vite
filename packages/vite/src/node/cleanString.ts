@@ -19,10 +19,13 @@ export function emptyString(raw: string): string {
     s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
   )
 
-  // TODO replace string template
-  const start = res.indexOf('`')
-  const [clean, end] = lexStringTemplateExpression(res, start)
-  res = replaceAt(res, start, end, clean)
+  let lastEnd = 0
+  let start = 0
+  while ((start = res.indexOf('`', lastEnd)) >= 0) {
+    let clean
+    ;[clean, lastEnd] = lexStringTemplateExpression(res, start)
+    res = replaceAt(res, start, lastEnd, clean)
+  }
 
   return res
 }
