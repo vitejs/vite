@@ -1,4 +1,4 @@
-import { emptyString, findEmptyStringRawIndex } from '../../node/cleanString'
+import { emptyString } from '../../node/cleanString'
 
 test('comments', () => {
   expect(
@@ -99,10 +99,10 @@ test('find empty string flag in raw index', () => {
   expect(clean).toMatch('const b = "\0\0\0\0\0"')
 
   const aIndex = str.indexOf('const a = "aaaaa"')
-  const a = findEmptyStringRawIndex(clean, '\0\0\0\0\0', aIndex)
-  expect(str.slice(a[0], a[1])).toMatch('aaaaa')
+  const aStart = clean.indexOf('\0\0\0\0\0', aIndex)
+  expect(str.slice(aStart, aStart + 5)).toMatch('aaaaa')
 
   const bIndex = str.indexOf('const b = "bbbbb"')
-  const b = findEmptyStringRawIndex(clean, '\0\0\0\0\0', bIndex)
-  expect(str.slice(b[0], b[1])).toMatch('bbbbb')
+  const bStart = clean.indexOf('\0\0\0\0\0', bIndex)
+  expect(str.slice(bStart, bStart + 5)).toMatch('bbbbb')
 })
