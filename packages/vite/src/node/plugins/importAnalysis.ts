@@ -122,6 +122,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
+      // In a real app `server` is always defined, but it is undefined when
+      // running src/node/server/__tests__/pluginContainer.spec.ts
+      if (!server) {
+        return null
+      }
+
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
@@ -159,7 +165,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const { moduleGraph } = server
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
+      const importerModule = moduleGraph.getModuleById(importer)!
+
       if (!imports.length) {
+        importerModule.isSelfAccepting = false
         isDebug &&
           debug(
             `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
@@ -173,11 +185,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      // vite-only server context
-      const { moduleGraph } = server
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
       const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
@@ -197,19 +204,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (
-          moduleListContains(config.optimizeDeps?.exclude, url) &&
-          server._optimizeDepsMetadata
-        ) {
-          // if the dependency encountered in the optimized file was excluded from the optimization
-          // the dependency needs to be resolved starting from the original source location of the optimized file
-          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-          // (that is, if it is under node_modules directory in the package source of the optimized file)
-          for (const optimizedModule of Object.values(
-            server._optimizeDepsMetadata.optimized
-          )) {
-            if (optimizedModule.file === importerModule.file) {
-              importerFile = optimizedModule.src
+        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+          const optimizedDeps = server._optimizedDeps
+          if (optimizedDeps) {
+            await optimizedDeps.scanProcessing
+
+            // if the dependency encountered in the optimized file was excluded from the optimization
+            // the dependency needs to be resolved starting from the original source location of the optimized file
+            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+            // (that is, if it is under node_modules directory in the package source of the optimized file)
+            for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
+              if (!optimizedModule.src) continue // Ignore chunks
+              if (optimizedModule.file === importerModule.file) {
+                importerFile = optimizedModule.src
+              }
             }
           }
         }
@@ -439,6 +447,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             importRewrites.push(async () => {
               let rewriteDone = false
               if (
+                server?._optimizedDeps &&
                 isOptimizedDepFile(resolvedId, config) &&
                 !resolvedId.match(optimizedDepChunkRE)
               ) {
@@ -450,7 +459,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
-                  server._optimizeDepsMetadata!,
+                  server._optimizedDeps!.metadata,
                   file
                 )
 
@@ -516,7 +525,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
-          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(rawUrl)
+          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
+            // complete expression inside parens
+            source.slice(dynamicIndex + 1, end)
+          )
 
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')

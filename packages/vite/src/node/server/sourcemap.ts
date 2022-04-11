@@ -1,8 +1,9 @@
 import path from 'path'
 import { promises as fs } from 'fs'
 import type { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import type { SourceMap } from 'rollup'
+import { maybeVirtualHtmlSet } from '../plugins/html'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
@@ -42,6 +43,7 @@ export async function injectSourcesContent(
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
         return fs.readFile(sourcePath, 'utf-8').catch(() => {
+          if (maybeVirtualHtmlSet.has(normalizePath(sourcePath))) return null
           missingSources.push(sourcePath)
           return null
         })

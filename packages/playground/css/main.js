@@ -12,6 +12,9 @@ text('.imported-less', less)
 import stylus from './stylus.styl'
 text('.imported-stylus', stylus)
 
+import rawCss from './raw-imported.css?raw'
+text('.raw-imported-css', rawCss)
+
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
@@ -34,6 +37,9 @@ text(
   '.path-resolved-modules-code',
   JSON.stringify(composesPathResolvingMod, null, 2)
 )
+
+import inlineMod from './inline.module.css?inline'
+text('.modules-inline', inlineMod)
 
 import './dep.css'
 import './glob-dep.css'

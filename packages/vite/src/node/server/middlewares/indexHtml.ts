@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
-import type { AttributeNode, ElementNode } from '@vue/compiler-dom'
+import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
@@ -38,7 +38,9 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
-    return decodeURIComponent(path.join(server.config.root, url.slice(1)))
+    return decodeURIComponent(
+      normalizePath(path.join(server.config.root, url.slice(1)))
+    )
   }
 }
 
@@ -90,7 +92,7 @@ const processNodeUrl = (
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
   html,
-  { path: htmlPath, server, originalUrl }
+  { path: htmlPath, filename, server, originalUrl }
 ) => {
   const { config, moduleGraph } = server!
   const base = config.base || '/'
@@ -104,12 +106,17 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     const url = filePath.replace(normalizePath(config.root), '')
 
-    const contents = node.children
-      .map((child: any) => child.content || '')
-      .join('')
+    const contentNode = node.children[0] as TextNode
+
+    const code = contentNode.content
+    const map = new MagicString(html)
+      .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
+      .generateMap({ hires: true })
+    map.sources = [filename]
+    map.file = filename
 
     // add HTML Proxy to Map
-    addToHTMLProxyCache(config, url, inlineModuleIndex, contents)
+    addToHTMLProxyCache(config, url, inlineModuleIndex, { code, map })
 
     // inline js module. convert to src="proxy"
     const modulePath = `${
@@ -141,7 +148,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       if (src) {
         processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
-      } else if (isModule) {
+      } else if (isModule && node.children.length) {
         addInlineModule(node, 'js')
       }
     }
