@@ -34,18 +34,18 @@
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.20.0",
+    "@microsoft/api-extractor": "^7.21.2",
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.4.1",
     "@types/node": "^16.11.26",
     "@types/prompts": "^2.0.14",
     "@types/semver": "^7.3.9",
-    "@typescript-eslint/eslint-plugin": "^5.17.0",
-    "@typescript-eslint/parser": "^5.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.27",
-    "eslint": "^8.12.0",
+    "eslint": "^8.13.0",
     "eslint-define-config": "^1.3.0",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^5.1.1",
@@ -61,7 +61,7 @@
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
     "rollup": "^2.59.0",
-    "semver": "^7.3.5",
+    "semver": "^7.3.6",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",
     "ts-jest": "^27.1.4",
@@ -85,7 +85,7 @@
       "eslint --ext .ts"
     ]
   },
-  "packageManager": "pnpm@6.32.4",
+  "packageManager": "pnpm@6.32.6",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
