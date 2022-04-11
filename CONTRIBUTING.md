@@ -79,7 +79,7 @@ Each test can be run under either dev server mode or build mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
-- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
+- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
