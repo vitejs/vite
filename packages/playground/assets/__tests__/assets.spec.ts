@@ -263,6 +263,7 @@ if (isBuild) {
     }
   })
 }
+
 describe('css and assets in css in build watch', () => {
   if (isBuild) {
     test('css will not be lost and css does not contain undefined', async () => {
@@ -271,7 +272,26 @@ describe('css and assets in css in build watch', () => {
       const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
       expect(cssFile).not.toBe('')
       expect(cssFile).not.toMatch(/undefined/)
-      watcher?.close()
+    })
+
+    test('import module.css', async () => {
+      expect(await getColor('#foo')).toBe('red')
+      editFile(
+        'css/foo.module.css',
+        (code) => code.replace('red', 'blue'),
+        true
+      )
+      await notifyRebuildComplete(watcher)
+      await page.reload()
+      expect(await getColor('#foo')).toBe('blue')
+    })
+
+    test('import with raw query', async () => {
+      expect(await page.textContent('.raw-query')).toBe('foo')
+      editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'), true)
+      await notifyRebuildComplete(watcher)
+      await page.reload()
+      expect(await page.textContent('.raw-query')).toBe('zoo')
     })
   }
 })

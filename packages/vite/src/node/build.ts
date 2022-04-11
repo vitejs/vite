@@ -39,6 +39,7 @@ import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
+import { ensureWatchPlugin } from './plugins/ensureWatch'
 
 export interface BuildOptions {
   /**
@@ -308,6 +309,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
 
   return {
     pre: [
+      ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),

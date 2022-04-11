@@ -212,6 +212,10 @@
 <h3 class="foo-public">
   @import CSS from publicDir should load (this should be red)
 </h3>
+<h3 id="foo">import module css</h3>
+
+<h3 class="raw-query"></h3>
+
 <style>
   @import '/foo.css';
 </style>
@@ -267,6 +271,12 @@
   text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
   document.querySelector('.import-meta-url-img-comma-nl').src =
     metaUrlWithCommaNL
+
+  import classNames from './css/foo.module.css'
+  document.querySelector('#foo').className = classNames['foo-module']
+
+  import someString from './static/foo.txt?raw'
+  document.querySelector('.raw-query').textContent = someString
 
   const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
