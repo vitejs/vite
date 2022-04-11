@@ -25,10 +25,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes(`import.meta.url`)
       ) {
         let s: MagicString | undefined
-        let match: RegExpExecArray | null
         const assetImportMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
         const cleanString = emptyString(code)
+
+        let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const { 0: exp, 1: emptyUrl, index } = match
 

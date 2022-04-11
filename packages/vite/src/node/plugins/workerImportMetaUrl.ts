@@ -44,8 +44,8 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   // need to find in no comment code
-  const cleanworkerOptString = clean.substring(commaIndex + 1, endIndex)
-  if (!cleanworkerOptString.trim().length) {
+  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex)
+  if (!cleanWorkerOptString.trim().length) {
     return 'classic'
   }
 
@@ -110,11 +110,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
-        let match: RegExpExecArray | null
         const cleanString = emptyString(code)
         const workerImportMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 
+        let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
           const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index

@@ -7,17 +7,10 @@ const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
   `${s[0]}${'\0'.repeat(s.length - 2)}${s[0]}`
 
-export function emptyCommentsString(raw: string): string {
-  return raw.replace(cleanerRE, (s: string) =>
-    s[0] === '/' ? blankReplacer(s) : s
-  )
-}
-
 export function emptyString(raw: string): string {
-  const res = raw.replace(cleanerRE, (s: string) =>
+  return raw.replace(cleanerRE, (s: string) =>
     s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
   )
-  return res
 }
 
 export function findEmptyStringRawIndex(
