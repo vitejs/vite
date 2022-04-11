@@ -3,12 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import {
-  multilineCommentsRE,
-  singlelineCommentsRE,
-  stringsRE,
-  blankReplacer
-} from '../utils'
+import { emptyString } from '../cleanString'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -29,19 +24,16 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
-        const importMetaUrlRE =
+        let s: MagicString | undefined
+        const assetImportMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-        const noCommentsCode = code
-          .replace(multilineCommentsRE, blankReplacer)
-          .replace(singlelineCommentsRE, blankReplacer)
-          .replace(stringsRE, (m) => `'${'\0'.repeat(m.length - 2)}'`)
+        const cleanString = emptyString(code)
 
-        let s: MagicString | null = null
         let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
+        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const { 0: exp, 1: emptyUrl, index } = match
 
-          const urlStart = exp.indexOf(emptyUrl) + index
+          const urlStart = cleanString.indexOf(emptyUrl, index)
           const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
@@ -74,8 +66,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           // Get final asset URL. Catch error if the file does not exist,
           // in which we can resort to the initial URL and let it resolve in runtime
           const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            const rawExp = code.slice(index, index + exp.length)
             config.logger.warnOnce(
-              `\n${exp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
             return url
           })
