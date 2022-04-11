@@ -42,10 +42,6 @@ export interface OptimizedDeps {
 
 export interface DepOptimizationOptions {
   /**
-   * @default false
-   */
-  disabled?: boolean
-  /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
    * will crawl those entry points instead.
@@ -105,6 +101,12 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   extensions?: string[]
+  /**
+   * Disables dependencies optimizations
+   * @default false
+   * @experimental
+   */
+  disabled?: boolean
 }
 
 export interface DepOptimizationResult {
