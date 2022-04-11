@@ -69,7 +69,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     const pattern = replacementsKeys.length
       ? new RegExp(
           // Mustn't be preceded by a char that can be part of an identifier
-          //or a '.' that isn't part of a spread operator
+          // or a '.' that isn't part of a spread operator
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
             replacementsKeys
               .map((str) => {
