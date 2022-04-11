@@ -62,6 +62,10 @@ test('import * from optimized dep', async () => {
   expect(await page.textContent('.import-star')).toMatch(`[success]`)
 })
 
+test('import from dep with process.env.NODE_ENV', async () => {
+  expect(await page.textContent('.node-env')).toMatch(`prod`)
+})
+
 test('import from dep with .notjs files', async () => {
   expect(await page.textContent('.not-js')).toMatch(`[success]`)
 })
