@@ -85,8 +85,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
           }
         }
-        return null
       }
+      return null
     }
   }
 }
