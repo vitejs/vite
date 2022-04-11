@@ -7,8 +7,7 @@ import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-// @ts-ignore
-import parseStaticImports from 'parse-static-imports'
+import { findStaticImports, parseStaticImport } from 'mlly'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import {
   isBuiltin,
@@ -96,24 +95,26 @@ async function extractImportedBindings(
   if (isDynamic || isMeta) {
     // this basically means the module will be impacted by any change in its dep
     bindings.add('*')
+    return
   }
 
   const exp = source.slice(importSpec.ss, importSpec.se)
-  const [parsed] = parseStaticImports(exp)
+  const [match0] = findStaticImports(exp)
+  if (!match0) {
+    return
+  }
+  const parsed = parseStaticImport(match0)
   if (!parsed) {
     return
   }
-  if (parsed.sideEffectOnly) {
-    return
-  }
-  if (parsed.starImport) {
+  if (parsed.namespacedImport) {
     bindings.add('*')
   }
   if (parsed.defaultImport) {
     bindings.add('default')
   }
   if (parsed.namedImports) {
-    for (const { name } of parsed.namedImports) {
+    for (const name of Object.keys(parsed.namedImports)) {
       bindings.add(name)
     }
   }
