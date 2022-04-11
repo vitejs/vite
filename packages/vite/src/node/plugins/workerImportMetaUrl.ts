@@ -157,15 +157,16 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             contentOnly: true
           })
         }
-      }
 
-      if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+        if (s) {
+          return {
+            code: s.toString(),
+            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+          }
         }
+
+        return null
       }
-      return null
     }
   }
 }
