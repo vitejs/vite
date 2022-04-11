@@ -106,3 +106,55 @@ test('find empty string flag in raw index', () => {
   const bStart = clean.indexOf('\0\0\0\0\0', bIndex)
   expect(str.slice(bStart, bStart + 5)).toMatch('bbbbb')
 })
+
+test('template string nested', () => {
+  let str = '`aaaa`'
+  let res = '`\0\0\0\0`'
+  let clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aaaa` `aaaa`'
+  res = '`\0\0\0\0` `\0\0\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aa${a}aa`'
+  res = '`\0\0${a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aa${a + `a` + a}aa`'
+  res = '`\0\0${a + `\0` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aa${a + `a` + a}aa` `aa${a + `a` + a}aa`'
+  res = '`\0\0${a + `\0` + a}\0\0` `\0\0${a + `\0` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa`'
+  res = '`\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str =
+    '`aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa` `aa${a + `aaaa${c + (a = {b: 1}) + d}` + a}aa`'
+  res =
+    '`\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0` `\0\0${a + `\0\0\0\0${c + (a = {b: 1}) + d}` + a}\0\0`'
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+
+  str = '`aaaa'
+  res = ''
+  try {
+    clean = emptyString(str)
+  } catch {}
+  expect(clean).toMatch(res)
+
+  str =
+    "<img src=\"${new URL('../assets/images/loading/loading.gif', import.meta.url).href}\" alt=''>"
+  res = `<img src="\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" alt=''>`
+  clean = emptyString(str)
+  expect(clean).toMatch(res)
+})
