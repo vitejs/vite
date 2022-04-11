@@ -247,6 +247,15 @@ test('inline css modules', async () => {
   expect(css).toMatch(/\.inline-module__apply-color-inline___[\w-]{5}/)
 })
 
+if (isBuild) {
+  test('@charset hoist', async () => {
+    serverLogs.forEach((log) => {
+      // no warning from esbuild css minifier
+      expect(log).not.toMatch('"@charset" must be the first rule in the file')
+    })
+  })
+}
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })

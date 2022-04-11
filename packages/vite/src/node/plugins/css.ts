@@ -427,10 +427,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `./${path.posix.basename(filename)}`
           }
         })
-        // only external @imports should exist at this point - and they need to
-        // be hoisted to the top of the CSS chunk per spec (#1845)
-        if (css.includes('@import')) {
-          css = await hoistAtImports(css)
+        // only external @imports and @charset should exist at this point
+        // hoist them to the top of the CSS chunk per spec (#1845 and #6333)
+        if (css.includes('@import') || css.includes('@charset')) {
+          css = await hoistAtRules(css)
         }
         if (minify && config.build.minify) {
           css = await minifyCSS(css, config)
@@ -1109,27 +1109,33 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 // #1845
 // CSS @import can only appear at top of the file. We need to hoist all @import
 // to top when multiple files are concatenated.
-async function hoistAtImports(css: string) {
+// #6333
+// CSS @charset must be the top-first in the file, hoist to top too
+async function hoistAtRules(css: string) {
   const postcss = await import('postcss')
-  return (await postcss.default([AtImportHoistPlugin]).process(css)).css
+  return (await postcss.default([AtRuleHoistPlugin]).process(css)).css
 }
 
-const AtImportHoistPlugin: PostCSS.PluginCreator<any> = () => {
+const AtRuleHoistPlugin: PostCSS.PluginCreator<any> = () => {
   return {
-    postcssPlugin: 'vite-hoist-at-imports',
+    postcssPlugin: 'vite-hoist-at-rules',
     Once(root) {
       const imports: PostCSS.AtRule[] = []
+      let charset: PostCSS.AtRule | undefined
       root.walkAtRules((rule) => {
         if (rule.name === 'import') {
           // record in reverse so that can simply prepend to preserve order
           imports.unshift(rule)
+        } else if (!charset && rule.name === 'charset') {
+          charset = rule
         }
       })
       imports.forEach((i) => root.prepend(i))
+      if (charset) root.prepend(charset)
     }
   }
 }
-AtImportHoistPlugin.postcss = true
+AtRuleHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
