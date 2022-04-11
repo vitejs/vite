@@ -10,7 +10,7 @@ import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import type { RollupError } from 'rollup'
-import { emptyString, findEmptyStringRawIndex } from '../cleanString'
+import { emptyString } from '../cleanString'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
@@ -119,11 +119,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const { 0: allExp, 2: exp, 3: emptyUrl, index } = match
           const urlIndex = allExp.indexOf(exp) + index
 
-          const [urlStart, urlEnd] = findEmptyStringRawIndex(
-            cleanString,
-            emptyUrl,
-            index
-          )
+          const urlStart = cleanString.indexOf(emptyUrl, index)
+          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (options?.ssr) {

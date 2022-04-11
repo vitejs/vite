@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import { emptyString, findEmptyStringRawIndex } from '../cleanString'
+import { emptyString } from '../cleanString'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -33,11 +33,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const { 0: exp, 1: emptyUrl, index } = match
 
-          const [urlStart, urlEnd] = findEmptyStringRawIndex(
-            cleanString,
-            emptyUrl,
-            index
-          )
+          const urlStart = cleanString.indexOf(emptyUrl, index)
+          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)

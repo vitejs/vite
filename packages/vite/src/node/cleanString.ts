@@ -12,13 +12,3 @@ export function emptyString(raw: string): string {
     s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
   )
 }
-
-export function findEmptyStringRawIndex(
-  clean: string,
-  emptyFlag: string,
-  start: number
-): [number, number] {
-  const flagIndex = clean.indexOf(emptyFlag, start)
-  const flagEndIndex = flagIndex + emptyFlag.length
-  return [flagIndex, flagEndIndex]
-}
