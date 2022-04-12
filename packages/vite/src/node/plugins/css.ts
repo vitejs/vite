@@ -1106,36 +1106,28 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   return code
 }
 
-// #1845
-// CSS @import can only appear at top of the file. We need to hoist all @import
-// to top when multiple files are concatenated.
-// #6333
-// CSS @charset must be the top-first in the file, hoist to top too
-async function hoistAtRules(css: string) {
-  const postcss = await import('postcss')
-  return (await postcss.default([AtRuleHoistPlugin]).process(css)).css
-}
-
-const AtRuleHoistPlugin: PostCSS.PluginCreator<any> = () => {
-  return {
-    postcssPlugin: 'vite-hoist-at-rules',
-    Once(root) {
-      const imports: PostCSS.AtRule[] = []
-      let charset: PostCSS.AtRule | undefined
-      root.walkAtRules((rule) => {
-        if (rule.name === 'import') {
-          // record in reverse so that can simply prepend to preserve order
-          imports.unshift(rule)
-        } else if (!charset && rule.name === 'charset') {
-          charset = rule
-        }
-      })
-      imports.forEach((i) => root.prepend(i))
-      if (charset) root.prepend(charset)
+export async function hoistAtRules(css: string) {
+  const s = new MagicString(css)
+  // #1845
+  // CSS @import can only appear at top of the file. We need to hoist all @import
+  // to top when multiple files are concatenated.
+  // match until semicolon that's not in quotes
+  s.replace(/@import\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
+    s.appendLeft(0, match)
+    return ''
+  })
+  // #6333
+  // CSS @charset must be the top-first in the file, hoist the first to top
+  let foundCharset = false
+  s.replace(/@charset\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
+    if (!foundCharset) {
+      s.prepend(match)
+      foundCharset = true
     }
-  }
+    return ''
+  })
+  return s.toString()
 }
-AtRuleHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
