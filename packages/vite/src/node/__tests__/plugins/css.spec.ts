@@ -122,6 +122,12 @@ describe('hoist @ rules', () => {
     expect(result).toBe(`@import "bla";.foo{color:red;}`)
   })
 
+  test('hoist @import with semicolon in rl', async () => {
+    const css = `.foo{color:red;}@import "bla;bar";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import "bla;bar";.foo{color:red;}`)
+  })
+
   test('hoist @charset', async () => {
     const css = `.foo{color:red;}@charset "utf-8";`
     const result = await hoistAtRules(css)
