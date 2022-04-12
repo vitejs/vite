@@ -37,6 +37,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
+import { emptyString } from '../cleanString'
 
 interface ScriptAssetsUrl {
   start: number
@@ -306,24 +307,18 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const code = scriptNode.content
-                .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
-                .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
-                .replace(
-                  /"[^"]*"|'[^']*'|`[^`]*`/g,
-                  (m) => `'${' '.repeat(m.length - 2)}'`
-                )
+              const cleanCode = emptyString(scriptNode.content)
 
               let match: RegExpExecArray | null
-              while ((match = inlineImportRE.exec(code))) {
-                const { 0: full, 1: url, index } = match
-                const startUrl = full.indexOf(url)
-                const start = index + startUrl + 1
+              while ((match = inlineImportRE.exec(cleanCode))) {
+                const { 1: url, index } = match
+                const startUrl = cleanCode.indexOf(url, index)
+                const start = startUrl + 1
                 const end = start + url.length - 2
                 scriptUrls.push({
                   start: start + scriptNode.loc.start.offset,
                   end: end + scriptNode.loc.start.offset,
-                  url: scriptNode.content.slice(index + startUrl + 1, end)
+                  url: scriptNode.content.slice(start, end)
                 })
               }
             }

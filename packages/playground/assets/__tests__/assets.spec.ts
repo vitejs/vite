@@ -307,3 +307,10 @@ if (!isBuild) {
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
   })
 }
+
+test('html import word boundary', async () => {
+  expect(await page.textContent('.obj-import-express')).toMatch(
+    'ignore object import prop'
+  )
+  expect(await page.textContent('.string-import-express')).toMatch('no load')
+})
