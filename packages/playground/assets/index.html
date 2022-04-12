@@ -176,9 +176,28 @@
 
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
+<code class="obj-import-express"></code>
+<code class="string-import-express"></code>
 <script>
+  const obj = {
+    import(t) {
+      text('.obj-import-express', t)
+    }
+  }
+  const stringImport = "const t = import('package')"
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
   import('./static/import-expression.js')
   import('/import-expression.js')
+  // import('./static/raw.js')
+  /* import('./static/raw.js') */
+  obj.import('ignore object import prop')
+  try {
+    text('.string-import-express', t)
+  } catch {
+    text('.string-import-express', 'no load')
+  }
 </script>
 <h2>url in style tag</h2>
 <h3>url</h3>
