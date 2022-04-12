@@ -130,7 +130,7 @@ cli
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
-    `[string] directory under outDir to place assets in (default: _assets)`
+    `[string] directory under outDir to place assets in (default: assets)`
   )
   .option(
     '--assetsInlineLimit <number>',
