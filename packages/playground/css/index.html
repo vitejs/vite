@@ -10,6 +10,10 @@
   <p class="imported-at-import">
     @import in import from js: This should be purple
   </p>
+  <p class="import-with-space">
+    @import from file with space: This should be green and have a background
+    image
+  </p>
   <p>Imported css string:</p>
   <pre class="imported-css"></pre>
   <pre class="imported-css-glob"></pre>
@@ -44,6 +48,10 @@
   </p>
   <p>Imported Less string:</p>
   <pre class="imported-less"></pre>
+
+  <div class="form-box-data-uri">
+    tests Less's `data-uri()` function with relative image paths
+  </div>
 
   <p class="stylus">Stylus: This should be blue</p>
   <p class="stylus-additional-data">
@@ -85,6 +93,12 @@
   </p>
   <pre class="path-resolved-modules-code"></pre>
 
+  <p>Inline CSS module:</p>
+  <pre class="modules-inline"></pre>
+
+  <p>CSS with @charset:</p>
+  <pre class="charset-css"></pre>
+
   <p class="css-dep">
     @import dependency w/ style enrtrypoints: this should be purple
   </p>
@@ -101,7 +115,7 @@
   </p>
 
   <p class="url-separated">
-    Url separation preservation: should have valid background-image
+    URL separation preservation: should have valid background-image
   </p>
 
   <p class="inlined">Inlined import - this should NOT be red.</p>

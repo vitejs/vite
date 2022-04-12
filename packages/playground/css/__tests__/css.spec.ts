@@ -54,6 +54,12 @@ test('css import from js', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('css import asset with space', async () => {
+  const importedWithSpace = await page.$('.import-with-space')
+
+  expect(await getBg(importedWithSpace)).toMatch(/.*ok\..*png/)
+})
+
 test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
@@ -236,6 +242,20 @@ test('css modules w/ sass', async () => {
   await untilUpdated(() => getColor(imported), 'blue')
 })
 
+test('inline css modules', async () => {
+  const css = await page.textContent('.modules-inline')
+  expect(css).toMatch(/\.inline-module__apply-color-inline___[\w-]{5}/)
+})
+
+if (isBuild) {
+  test('@charset hoist', async () => {
+    serverLogs.forEach((log) => {
+      // no warning from esbuild css minifier
+      expect(log).not.toMatch('"@charset" must be the first rule in the file')
+    })
+  })
+}
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
@@ -318,7 +338,7 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
-test('Url separation', async () => {
+test('URL separation', async () => {
   const urlSeparated = await page.$('.url-separated')
   const baseUrl = 'url(images/dog.webp)'
   const cases = new Array(5)
@@ -376,4 +396,12 @@ test('?raw', async () => {
 test('import css in less', async () => {
   expect(await getColor('.css-in-less')).toBe('yellow')
   expect(await getColor('.css-in-less-2')).toBe('blue')
+})
+
+test("relative path rewritten in Less's data-uri", async () => {
+  // relative path passed to Less's data-uri is rewritten to absolute,
+  // the Less inlines it
+  expect(await getBg('.form-box-data-uri')).toMatch(
+    /^url\("data:image\/svg\+xml,%3Csvg/
+  )
 })

@@ -299,7 +299,7 @@ Vercel CLI
 
 ### Vercel for Git
 
-1. Push your code to your git repository (GitHub, GitLab, BitBucket).
+1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
 2. [Import your Vite project](https://vercel.com/new) into Vercel.
 3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
 4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))

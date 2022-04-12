@@ -380,7 +380,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
 
-            // will transfrom in `applyHtmlTransforms`
+            // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
@@ -608,7 +608,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const shortEmitName = path.posix.relative(config.root, id)
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
@@ -626,8 +625,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           result = s.toString()
         }
+        const relativeUrlPath = path.posix.relative(config.root, id)
         result = await applyHtmlTransforms(result, postHooks, {
-          path: '/' + shortEmitName,
+          path: '/' + relativeUrlPath,
           filename: id,
           bundle,
           chunk
@@ -642,6 +642,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           delete bundle[chunk.fileName]
         }
 
+        const shortEmitName = path.relative(config.root, id)
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,

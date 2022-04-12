@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../testUtils'
+import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {
@@ -51,8 +51,11 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
-test('worker emitted', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), 'pong')
+test('worker emitted and import.meta.url in nested worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.nested-worker'),
+    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+  )
 })
 
 if (isBuild) {

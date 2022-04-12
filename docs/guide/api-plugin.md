@@ -113,7 +113,7 @@ Virtual modules are a useful scheme that allows you to pass build time informati
 
 ```js
 export default function myPlugin() {
-  const virtualModuleId = '@my-virtual-module'
+  const virtualModuleId = 'virtual:my-module'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
@@ -135,7 +135,7 @@ export default function myPlugin() {
 Which allows importing the module in JavaScript:
 
 ```js
-import { msg } from '@my-virtual-module'
+import { msg } from 'virtual:my-module'
 
 console.log(msg)
 ```
@@ -186,8 +186,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   const partialConfigPlugin = () => ({
     name: 'return-partial',
     config: () => ({
-      alias: {
-        foo: 'bar'
+      resolve: {
+        alias: {
+          foo: 'bar'
+        }
       }
     })
   })
@@ -499,7 +501,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.ws.send` to boardcast events to all the clients:
+On the plugin side, we could use `server.ws.send` to broadcast events to all the clients:
 
 ```js
 // vite.config.js
