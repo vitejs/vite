@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import compression from './server/middlewares/compression'
@@ -90,10 +91,19 @@ export async function preview(
     config.base,
     sirv(distDir, {
       etag: true,
-      dev: true,
-      single: true
+      dev: true
     })
   )
+
+  app.use(config.base, (_, res, next) => {
+    const file = path.join(distDir, './404.html')
+    if (fs.existsSync(file)) {
+      res.statusCode = 404
+      res.end(fs.readFileSync(file))
+    } else {
+      next()
+    }
+  })
 
   const options = config.preview
   const hostname = resolveHostname(options.host)
