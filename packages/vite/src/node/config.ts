@@ -145,6 +145,7 @@ export interface UserConfig {
   preview?: PreviewOptions
   /**
    * Dep optimization options
+   *
    * false disables optimization completely (experimental)
    */
   optimizeDeps?: DepOptimizationOptions | false
