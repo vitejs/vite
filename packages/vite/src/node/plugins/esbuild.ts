@@ -102,6 +102,7 @@ export async function transformWithEsbuild(
     }
 
     tsconfigRaw = {
+      ...tsconfigRaw,
       compilerOptions: {
         ...compilerOptionsForFile,
         ...tsconfigRaw?.compilerOptions
