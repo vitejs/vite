@@ -13,10 +13,8 @@ import {
   generateCodeFrame,
   isDataUrl,
   isExternalUrl,
-  multilineCommentsRE,
   normalizePath,
   processSrcSet,
-  singlelineCommentsRE,
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
