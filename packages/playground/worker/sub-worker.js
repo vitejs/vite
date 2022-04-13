@@ -3,3 +3,6 @@ self.onmessage = (event) => {
     self.postMessage(`pong ${import.meta.url}`)
   }
 }
+
+// for sourcemap
+console.log('sub-worker.js')

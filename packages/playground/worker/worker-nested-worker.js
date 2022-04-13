@@ -26,3 +26,6 @@ classicWorker.addEventListener('message', (ev) => {
     data: ev.data
   })
 })
+
+// for sourcemap
+console.log('worker-nested-worker.js')
