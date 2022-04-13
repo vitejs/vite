@@ -35,5 +35,6 @@ export default defineComponent(() => {
   build: {
     // to make tests faster
     minify: false
-  }
+  },
+  optimizeDeps: false
 }

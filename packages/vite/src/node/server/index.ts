@@ -571,6 +571,12 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
+  const initOptimizer = () => {
+    if (!config.optimizeDeps.disabled) {
+      server._optimizedDeps = createOptimizedDeps(server)
+    }
+  }
+
   if (!middlewareMode && httpServer) {
     let isOptimized = false
     // overwrite listen to init optimizer before server start
@@ -579,7 +585,7 @@ export async function createServer(
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          server._optimizedDeps = createOptimizedDeps(server)
+          initOptimizer()
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -590,7 +596,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    server._optimizedDeps = createOptimizedDeps(server)
+    initOptimizer()
   }
 
   return server
