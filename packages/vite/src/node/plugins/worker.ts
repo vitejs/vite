@@ -194,7 +194,6 @@ export async function workerFileToUrl(
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
@@ -276,11 +275,24 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`,
         map: { mappings: '' } // Empty sourcemap to supress Rolup warning
       }
-    },
+    }
+  }
+}
 
-    renderChunk(code) {
-      if (isWorker && code.includes('import.meta.url')) {
-        return code.replace('import.meta.url', 'self.location.href')
+// just run in build mode
+export function webWorkerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  const isWorker = config.isWorker
+
+  return {
+    name: 'vite:workerImportMetaUrl',
+    transform(code) {
+      if (isWorker && config.worker.format !== 'es') {
+        // if build with iife it will polyfill with rollup will be used document in the worker
+        // else if build with es it will replace with `define plugin` will got a unexpected data.
+        // so replace import.meta.url break the default handle.
+        // And it must be done at this (after `(?new Worker)new URL('xxx', import.meta.url)` match),
+        // Otherwise, the following regex will be incorrectly matched.
+        return code.replaceAll('import.meta.url', 'self.location.href')
       }
     }
   }

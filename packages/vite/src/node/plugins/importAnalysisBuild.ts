@@ -85,8 +85,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
-  const insertPreload = !(ssr || !!config.build.lib)
   const isWorker = config.isWorker
+  const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -121,11 +121,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      if (isWorker) {
-        // preload method use `document` and can't run in the worker
-        return
-      }
-
       await init
 
       let imports: readonly ImportSpecifier[] = []
@@ -157,6 +152,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
         ) {
+          // es worker allow globEager / glob
+          // iife worker just allow globEager
+          if (
+            isWorker &&
+            config.worker.format === 'iife' &&
+            source.slice(end, end + 10) !== '.globEager'
+          ) {
+            this.error(
+              'can not use dynamic import(import.meta.glob) in iife worker. Just support import.meta.globEager in iife worker.',
+              end
+            )
+          }
           const { importsString, exp, endIndex, isEager } =
             await transformImportGlob(
               source,
@@ -180,7 +187,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
           const original = source.slice(expStart, expEnd)
-          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
+          const replacement = isWorker
+            ? `() => ${original}`
+            : `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
         }
 

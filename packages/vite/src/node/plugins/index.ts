@@ -12,7 +12,7 @@ import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
-import { webWorkerPlugin } from './worker'
+import { webWorkerPlugin, webWorkerImportMetaUrlPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
@@ -72,6 +72,7 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    isBuild && webWorkerImportMetaUrlPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else
