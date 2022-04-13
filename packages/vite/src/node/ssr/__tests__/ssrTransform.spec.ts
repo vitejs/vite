@@ -657,3 +657,26 @@ export function fn1() {
             "
   `)
 })
+
+// https://github.com/vitest-dev/vitest/issues/1141
+test('export default expression', async () => {
+  // esbuild transform result of following TS code
+  // export default <MyFn> function getRandom() {
+  //   return Math.random()
+  // }
+  const code = `
+export default (function getRandom() {
+  return Math.random();
+});
+`.trim()
+
+  expect((await ssrTransform(code, null, null)).code).toMatchInlineSnapshot(`
+    "__vite_ssr_exports__.default = (function getRandom() {
+      return Math.random();
+    });"
+  `)
+
+  expect(
+    (await ssrTransform(`export default (class A {});`, null, null)).code
+  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = (class A {});"`)
+})

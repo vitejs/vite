@@ -143,7 +143,12 @@ export async function ssrTransform(
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      if ('id' in node.declaration && node.declaration.id) {
+      const expressionTypes = ['FunctionExpression', 'ClassExpression']
+      if (
+        'id' in node.declaration &&
+        node.declaration.id &&
+        !expressionTypes.includes(node.declaration.type)
+      ) {
         // named hoistable/class exports
         // export default function foo() {}
         // export default class A {}
