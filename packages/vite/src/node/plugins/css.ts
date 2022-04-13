@@ -1112,10 +1112,13 @@ export async function hoistAtRules(css: string) {
   // CSS @import can only appear at top of the file. We need to hoist all @import
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
-  s.replace(/@import\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
-    s.appendLeft(0, match)
-    return ''
-  })
+  s.replace(
+    /@import\s*(?:url\([^\)]*\)|"[^"]*"|'[^']*'|[^;]*).*?;/gm,
+    (match) => {
+      s.appendLeft(0, match)
+      return ''
+    }
+  )
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   let foundCharset = false
