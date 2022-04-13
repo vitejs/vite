@@ -1,4 +1,4 @@
-import constant from './modules/module'
+import constant from './modules/module0'
 
 self.postMessage(constant)
 
