@@ -277,7 +277,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       'edge88',
       'firefox78',
       'chrome87',
-      'safari13' // transpile nullish coallesing
+      'safari13' // transpile nullish coalescing
     ]
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2019 so it can be minified by terser
