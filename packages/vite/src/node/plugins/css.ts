@@ -1113,7 +1113,7 @@ export async function hoistAtRules(css: string) {
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
   s.replace(
-    /@import\s*(?:url\()?(?:[^)]*\)|"[^"]*"|'[^']*'|[^;]*).*?;/gm,
+    /@import\s*(?:url\([^\)]*\)|"[^"]*"|'[^']*'|[^;]*).*?;/gm,
     (match) => {
       s.appendLeft(0, match)
       return ''
