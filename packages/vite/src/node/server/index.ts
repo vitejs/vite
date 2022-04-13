@@ -96,8 +96,6 @@ export interface ServerOptions extends CommonServerOptions {
   origin?: string
   /**
    * Pre-transform known direct imports
-   *
-   * @experimental this option is experimental and might be changed in the future
    * @default true
    */
   preTransformRequests?: boolean
@@ -132,8 +130,6 @@ export interface FileSystemServeOptions {
    * Glob patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
-   *
-   * @experimental
    */
   deny?: string[]
 }
@@ -213,7 +209,6 @@ export interface ViteDevServer {
   ): Promise<ESBuildTransformResult>
   /**
    * Transform module code into SSR format.
-   * @experimental
    */
   ssrTransform(
     code: string,
