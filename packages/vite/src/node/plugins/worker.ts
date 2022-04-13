@@ -299,8 +299,7 @@ export function webWorkerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         // Otherwise, the following regex will be incorrectly matched.
         return {
           code: code.replace(/\bimport.meta.url\b/g, 'self.location.href'),
-          // Empty sourcemap to supress Rollup warning
-          map: { mappings: '' }
+          map: this.getCombinedSourcemap()
         }
       }
     }
