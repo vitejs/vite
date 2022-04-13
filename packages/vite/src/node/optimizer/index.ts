@@ -101,6 +101,12 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   extensions?: string[]
+  /**
+   * Disables dependencies optimizations
+   * @default false
+   * @experimental
+   */
+  disabled?: boolean
 }
 
 export interface DepOptimizationResult {

@@ -42,7 +42,7 @@ In addition, environment variables that already exist when Vite is executed have
 `.env` files are loaded at the start of Vite. Restart the server after making changes.
 :::
 
-Loaded env variables are also exposed to your client source code via `import.meta.env`.
+Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
 

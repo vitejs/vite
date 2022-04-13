@@ -463,6 +463,8 @@ export async function resolveConfig(
 
   const server = resolveServerOptions(resolvedRoot, config.server)
 
+  const optimizeDeps = config.optimizeDeps || {}
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -497,11 +499,11 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      ...config.optimizeDeps,
+      ...optimizeDeps,
       esbuildOptions: {
-        keepNames: config.optimizeDeps?.keepNames,
+        keepNames: optimizeDeps.keepNames,
         preserveSymlinks: config.resolve?.preserveSymlinks,
-        ...config.optimizeDeps?.esbuildOptions
+        ...optimizeDeps.esbuildOptions
       }
     },
     worker: resolvedWorkerOptions
@@ -605,7 +607,7 @@ export async function resolveConfig(
     }
   })
 
-  if (config.optimizeDeps?.keepNames) {
+  if (optimizeDeps.keepNames) {
     logDeprecationWarning(
       'optimizeDeps.keepNames',
       'Use "optimizeDeps.esbuildOptions.keepNames" instead.'

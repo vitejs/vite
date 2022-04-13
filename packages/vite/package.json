@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "2.9.1",
+  "version": "2.9.3",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.1.2",
-    "@babel/parser": "^7.17.8",
+    "@babel/parser": "^7.17.9",
     "@babel/types": "^7.17.0",
     "@jridgewell/trace-mapping": "^0.3.4",
     "@rollup/plugin-alias": "^3.1.9",
