@@ -40,6 +40,7 @@ import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
+import { webWorkerImportMetaUrlPlugin } from './plugins/worker'
 
 export interface BuildOptions {
   /**
@@ -309,6 +310,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
 
   return {
     pre: [
+      webWorkerImportMetaUrlPlugin(config),
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       commonjsPlugin(options.commonjsOptions),
