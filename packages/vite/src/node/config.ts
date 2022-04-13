@@ -145,8 +145,10 @@ export interface UserConfig {
   preview?: PreviewOptions
   /**
    * Dep optimization options
+   *
+   * false disables optimization completely (experimental)
    */
-  optimizeDeps?: DepOptimizationOptions
+  optimizeDeps?: DepOptimizationOptions | false
   /**
    * SSR specific options
    * @alpha
@@ -463,6 +465,8 @@ export async function resolveConfig(
 
   const server = resolveServerOptions(resolvedRoot, config.server)
 
+  const optimizeDeps = config.optimizeDeps || {}
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -497,11 +501,12 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      ...config.optimizeDeps,
+      disabled: config.optimizeDeps === false,
+      ...optimizeDeps,
       esbuildOptions: {
-        keepNames: config.optimizeDeps?.keepNames,
+        keepNames: optimizeDeps.keepNames,
         preserveSymlinks: config.resolve?.preserveSymlinks,
-        ...config.optimizeDeps?.esbuildOptions
+        ...optimizeDeps.esbuildOptions
       }
     },
     worker: resolvedWorkerOptions
@@ -605,7 +610,7 @@ export async function resolveConfig(
     }
   })
 
-  if (config.optimizeDeps?.keepNames) {
+  if (optimizeDeps.keepNames) {
     logDeprecationWarning(
       'optimizeDeps.keepNames',
       'Use "optimizeDeps.esbuildOptions.keepNames" instead.'
