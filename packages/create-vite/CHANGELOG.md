@@ -1,3 +1,13 @@
+## <small>2.9.1 (2022-04-13)</small>
+
+* chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)
+* chore: update @types/react version (#7655) ([eb57627](https://github.com/vitejs/vite/commit/eb57627)), closes [#7655](https://github.com/vitejs/vite/issues/7655)
+* chore: update vue template setup api doc url (#7628) ([4433df4](https://github.com/vitejs/vite/commit/4433df4)), closes [#7628](https://github.com/vitejs/vite/issues/7628)
+* chore(create-vite-app): upgrade react to 18 (#7597) ([8b21029](https://github.com/vitejs/vite/commit/8b21029)), closes [#7597](https://github.com/vitejs/vite/issues/7597)
+* chore(create-vite): add isolatedModules (#7697) ([8f28350](https://github.com/vitejs/vite/commit/8f28350)), closes [#7697](https://github.com/vitejs/vite/issues/7697)
+
+
+
 ## 2.9.0 (2022-03-30)
 
 * chore: add isolatedModules to create-vite > template-vue-ts > tsconfig (#7304) ([21990ea](https://github.com/vitejs/vite/commit/21990ea)), closes [#7304](https://github.com/vitejs/vite/issues/7304)
