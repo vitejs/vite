@@ -289,7 +289,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 }
 
 // just run in build mode
-export function webWorkerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+export function redirectWorkerImportMetaUrlPlugin(
+  config: ResolvedConfig
+): Plugin {
   const isWorker = config.isWorker
 
   return {
