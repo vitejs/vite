@@ -145,10 +145,8 @@ export interface UserConfig {
   preview?: PreviewOptions
   /**
    * Dep optimization options
-   *
-   * false disables optimization completely (experimental)
    */
-  optimizeDeps?: DepOptimizationOptions | false
+  optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
    * @alpha
@@ -501,7 +499,6 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      disabled: config.optimizeDeps === false,
       ...optimizeDeps,
       esbuildOptions: {
         keepNames: optimizeDeps.keepNames,
