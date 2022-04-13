@@ -5,11 +5,7 @@ import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
-import {
-  chunkToEmittedCssFileMap,
-  isCSSRequest,
-  removedPureCssFilesCache
-} from './css'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
 import { bareImportRE } from '../utils'
 
@@ -75,7 +71,9 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
       if (isCss) {
         return new Promise((res, rej) => {
           link.addEventListener('load', res)
-          link.addEventListener('error', rej)
+          link.addEventListener('error', () =>
+            rej(new Error(`Unable to preload CSS for ${dep}`))
+          )
         })
       }
     })
@@ -88,11 +86,17 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const insertPreload = !(ssr || !!config.build.lib)
+  const isWorker = config.isWorker
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
+  const resolve = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
 
   return {
     name: 'vite:build-import-analysis',
@@ -117,6 +121,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      if (isWorker) {
+        // preload method use `document` and can't run in the worker
+        return
+      }
+
       await init
 
       let imports: readonly ImportSpecifier[] = []
@@ -129,7 +138,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         return null
       }
-
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
@@ -139,6 +147,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
+          se: expEnd,
           n: specifier,
           d: dynamicIndex
         } = imports[index]
@@ -155,11 +164,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer,
               index,
               config.root,
+              config.logger,
               undefined,
+              resolve,
               insertPreload
             )
           str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp)
+          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
           if (!isEager) {
             needPreloadHelper = true
           }
@@ -168,10 +179,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
-          const dynamicEnd = source.indexOf(`)`, end) + 1
-          const original = source.slice(dynamicIndex, dynamicEnd)
+          const original = source.slice(expStart, expEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(dynamicIndex, dynamicEnd, replacement)
+          str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -186,7 +196,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url)
+          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
@@ -218,7 +230,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(
               match.index,
               match.index + isModernFlag.length,
-              isModern
+              isModern,
+              { contentOnly: true }
             )
           }
           return {
@@ -233,7 +246,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr) {
+      if (format !== 'es' || ssr || isWorker) {
         return
       }
 
@@ -258,7 +271,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 n: name,
                 s: start,
                 e: end,
-                d: dynamicIndex
+                ss: expStart,
+                se: expEnd
               } = imports[index]
               // check the chunk being imported
               let url = name
@@ -281,27 +295,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     deps.add(chunk.fileName)
-                    const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-                    if (cssFiles) {
-                      cssFiles.forEach((file) => {
-                        deps.add(file)
-                      })
-                    }
+                    chunk.viteMetadata.importedCss.forEach((file) => {
+                      deps.add(file)
+                    })
                     chunk.imports.forEach(addDeps)
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
                     const chunk = removedPureCssFiles.get(filename)
                     if (chunk) {
-                      const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-                      if (cssFiles && cssFiles.size > 0) {
-                        cssFiles.forEach((file) => {
+                      if (chunk.viteMetadata.importedCss.size) {
+                        chunk.viteMetadata.importedCss.forEach((file) => {
                           deps.add(file)
                         })
                         hasRemovedPureCssChunk = true
                       }
 
-                      s.overwrite(dynamicIndex, end + 1, 'Promise.resolve({})')
+                      s.overwrite(expStart, expEnd, 'Promise.resolve({})', {
+                        contentOnly: true
+                      })
                     }
                   }
                 }
@@ -328,7 +340,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
-                    : `[]`
+                    : `[]`,
+                  { contentOnly: true }
                 )
               }
             }

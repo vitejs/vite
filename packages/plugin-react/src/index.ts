@@ -32,6 +32,12 @@ export interface Options {
    * @default "react"
    */
   jsxImportSource?: string
+  /**
+   * Set this to `true` to annotate the JSX factory with `\/* @__PURE__ *\/`.
+   * This option is ignored when `jsxRuntime` is not `"automatic"`.
+   * @default true
+   */
+  jsxPure?: boolean
 
   /**
    * Babel configuration applied in both dev and prod.
@@ -60,6 +66,7 @@ export type BabelOptions = Omit<
 export interface ReactBabelOptions extends BabelOptions {
   plugins: Extract<BabelOptions['plugins'], any[]>
   presets: Extract<BabelOptions['presets'], any[]>
+  overrides: Extract<BabelOptions['overrides'], any[]>
   parserOpts: ParserOptions & {
     plugins: Extract<ParserOptions['plugins'], any[]>
   }
@@ -95,6 +102,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   babelOptions.plugins ||= []
   babelOptions.presets ||= []
+  babelOptions.overrides ||= []
   babelOptions.parserOpts ||= {} as any
   babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
 
@@ -168,7 +176,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await loadPlugin('react-refresh/babel.js'),
+              await loadPlugin('react-refresh/babel'),
               { skipEnvCheck: true }
             ])
           }
@@ -193,7 +201,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 ),
                 {
                   runtime: 'automatic',
-                  importSource: opts.jsxImportSource
+                  importSource: opts.jsxImportSource,
+                  pure: opts.jsxPure !== false
                 }
               ])
 
@@ -366,5 +375,8 @@ function loadPlugin(path: string): Promise<any> {
 }
 
 // overwrite for cjs require('...')() usage
-module.exports = viteReact
-viteReact['default'] = viteReact
+// The following lines are inserted by scripts/patchEsbuildDist.ts,
+// this doesn't bundle correctly after esbuild 0.14.4
+//
+// module.exports = viteReact
+// viteReact['default'] = viteReact

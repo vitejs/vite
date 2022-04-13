@@ -16,6 +16,13 @@ test('deep import with exports field', async () => {
   expect(await page.textContent('.exports-deep')).toMatch('[success]')
 })
 
+test('deep import with query with exports field', async () => {
+  // since it is imported with `?url` it should return a url
+  expect(await page.textContent('.exports-deep-query')).toMatch(
+    isBuild ? /base64/ : '/exports-path/deep.json'
+  )
+})
+
 test('deep import with exports field + exposed dir', async () => {
   expect(await page.textContent('.exports-deep-exposed-dir')).toMatch(
     '[success]'
@@ -52,6 +59,18 @@ test('exact extension vs. duplicated (.js.js)', async () => {
 
 test('dont add extension to directory name (./dir-with-ext.js/index.js)', async () => {
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
+})
+
+test('resolve to the `browser` field instead of `module` when the importer is a `require` call', async () => {
+  expect(
+    await page.textContent('.require-pkg-with-browser-and-module-field')
+  ).toMatch('[success]')
+})
+
+test('resolve to the `main` field instead of `module` when the importer is a `require` call', async () => {
+  expect(await page.textContent('.require-pkg-with-esm-entries')).toMatch(
+    '[success]'
+  )
 })
 
 test('a ts module can import another ts module using its corresponding js file name', async () => {

@@ -1,5 +1,6 @@
 {
   "name": "vite-typescript-starter",
+  "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
@@ -8,6 +9,6 @@
   },
   "devDependencies": {
     "typescript": "^4.5.4",
-    "vite": "^2.7.2"
+    "vite": "^2.9.2"
   }
 }

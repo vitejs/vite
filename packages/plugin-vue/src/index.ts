@@ -42,7 +42,7 @@ export interface Options {
 
   /**
    * Enable Vue reactivity transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/reactivity-transform
+   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
@@ -63,7 +63,9 @@ export interface ResolvedOptions extends Options {
   compiler: typeof _compiler
   root: string
   sourceMap: boolean
+  cssDevSourcemap: boolean
   devServer?: ViteDevServer
+  devToolsEnabled?: boolean
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
@@ -97,7 +99,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     customElement,
     reactivityTransform,
     root: process.cwd(),
-    sourceMap: true
+    sourceMap: true,
+    cssDevSourcemap: false,
+    devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
 
   // Temporal handling for 2.7 breaking change
@@ -135,7 +139,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction
+        cssDevSourcemap: config.css?.devSourcemap ?? false,
+        isProduction: config.isProduction,
+        devToolsEnabled:
+          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction
       }
     },
 
@@ -235,7 +242,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
             descriptor,
             Number(query.index),
             options,
-            this
+            this,
+            filename
           )
         }
       }
@@ -244,5 +252,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
 }
 
 // overwrite for cjs require('...')() usage
-module.exports = vuePlugin
-vuePlugin['default'] = vuePlugin
+// The following lines are inserted by scripts/patchEsbuildDist.ts,
+// this doesn't bundle correctly after esbuild 0.14.4
+//
+// module.exports = vuePlugin
+// vuePlugin['default'] = vuePlugin
