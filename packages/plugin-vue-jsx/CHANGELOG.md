@@ -1,3 +1,9 @@
+## <small>1.3.10 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+
+
+
 ## <small>1.3.9 (2022-03-30)</small>
 
 * fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
