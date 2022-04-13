@@ -292,7 +292,7 @@ export function webWorkerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         // so replace import.meta.url break the default handle.
         // And it must be done at this (after `(?new Worker)new URL('xxx', import.meta.url)` match),
         // Otherwise, the following regex will be incorrectly matched.
-        return code.replaceAll('import.meta.url', 'self.location.href')
+        return code.replace('import.meta.url', 'self.location.href')
       }
     }
   }
