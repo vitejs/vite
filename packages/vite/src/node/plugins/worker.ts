@@ -159,7 +159,10 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl = query?.inline != null ? filePath : fileName
+        const sourceMapUrl =
+          query?.inline != null
+            ? path.posix.join(config.base, filePath)
+            : fileName
         code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
