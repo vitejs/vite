@@ -499,7 +499,6 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      disabled: optimizeDeps.disabled === true,
       ...optimizeDeps,
       esbuildOptions: {
         keepNames: optimizeDeps.keepNames,
