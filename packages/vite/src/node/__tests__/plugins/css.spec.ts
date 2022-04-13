@@ -122,6 +122,20 @@ describe('hoist @ rules', () => {
     expect(result).toBe(`@import "bla";.foo{color:red;}`)
   })
 
+  test('hoist @import url with semicolon', async () => {
+    const css = `.foo{color:red;}@import url("bla;bla");`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import url("bla;bla");.foo{color:red;}`)
+  })
+
+  test('hoist @import url data with semicolon', async () => {
+    const css = `.foo{color:red;}@import url(data:image/png;base64,iRxVB0);`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(
+      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`
+    )
+  })
+
   test('hoist @import with semicolon in quotes', async () => {
     const css = `.foo{color:red;}@import "bla;bar";`
     const result = await hoistAtRules(css)
