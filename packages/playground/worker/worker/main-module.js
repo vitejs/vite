@@ -57,10 +57,13 @@ const nestedWorker = new NestedWorker()
 nestedWorker.addEventListener('message', (ev) => {
   if (typeof ev.data === 'string') {
     text('.nested-worker', JSON.stringify(ev.data))
-  } else if (ev.data.type === 'module') {
-    text('.nested-worker-module', JSON.stringify(ev.data))
-  } else if (ev.data.type === 'constructor') {
-    text('.nested-worker-constructor', JSON.stringify(ev.data))
+  } else if (typeof ev.data === 'object') {
+    const data = ev.data
+    if (data.type === 'module') {
+      text('.nested-worker-module', JSON.stringify(ev.data))
+    } else if (data.type === 'constructor') {
+      text('.nested-worker-constructor', JSON.stringify(ev.data))
+    }
   }
 })
 nestedWorker.postMessage('ping')

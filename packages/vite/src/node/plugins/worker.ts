@@ -58,6 +58,14 @@ function emitWorkerAssets(
   )
 }
 
+function emitWorkerSourcemap(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  asset: EmittedFile
+) {
+  return emitWorkerFile(ctx, config, asset, 'assets')
+}
+
 function emitWorkerChunks(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
@@ -138,14 +146,11 @@ function emitSourcemapForWorkerEntry(
       const contentHash = getAssetHash(content)
       const fileName = `${basename}.${contentHash}.js.map`
       const filePath = path.posix.join(config.build.assetsDir, fileName)
-      if (!context.cache.has(contentHash)) {
-        context.cache.set(contentHash, true)
-        context.emitFile({
-          fileName: filePath,
-          type: 'asset',
-          source: data
-        })
-      }
+      emitWorkerSourcemap(context, config, {
+        fileName: filePath,
+        type: 'asset',
+        source: data
+      })
 
       // Emit the comment that tells the JS debugger where it can find the
       // sourcemap file.
@@ -286,13 +291,17 @@ export function webWorkerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:workerImportMetaUrl',
     transform(code) {
-      if (isWorker && config.worker.format !== 'es') {
-        // if build with iife it will polyfill with rollup will be used document in the worker
-        // else if build with es it will replace with `define plugin` will got a unexpected data.
+      if (isWorker) {
+        // if build with iife it will polyfill with `rollup` will be used document in the worker
+        // else if build with es it will replace with `esbuild` will got a unexpected data.
         // so replace import.meta.url break the default handle.
         // And it must be done at this (after `(?new Worker)new URL('xxx', import.meta.url)` match),
         // Otherwise, the following regex will be incorrectly matched.
-        return code.replace(/\bimport.meta.url\b/g, 'self.location.href')
+        return {
+          code: code.replace(/\bimport.meta.url\b/g, 'self.location.href'),
+          // Empty sourcemap to supress Rollup warning
+          map: { mappings: '' }
+        }
       }
     }
   }
