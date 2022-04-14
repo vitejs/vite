@@ -427,10 +427,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `./${path.posix.basename(filename)}`
           }
         })
-        // only external @imports should exist at this point - and they need to
-        // be hoisted to the top of the CSS chunk per spec (#1845)
-        if (css.includes('@import')) {
-          css = await hoistAtImports(css)
+        // only external @imports and @charset should exist at this point
+        // hoist them to the top of the CSS chunk per spec (#1845 and #6333)
+        if (css.includes('@import') || css.includes('@charset')) {
+          css = await hoistAtRules(css)
         }
         if (minify && config.build.minify) {
           css = await minifyCSS(css, config)
@@ -1106,30 +1106,31 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   return code
 }
 
-// #1845
-// CSS @import can only appear at top of the file. We need to hoist all @import
-// to top when multiple files are concatenated.
-async function hoistAtImports(css: string) {
-  const postcss = await import('postcss')
-  return (await postcss.default([AtImportHoistPlugin]).process(css)).css
-}
-
-const AtImportHoistPlugin: PostCSS.PluginCreator<any> = () => {
-  return {
-    postcssPlugin: 'vite-hoist-at-imports',
-    Once(root) {
-      const imports: PostCSS.AtRule[] = []
-      root.walkAtRules((rule) => {
-        if (rule.name === 'import') {
-          // record in reverse so that can simply prepend to preserve order
-          imports.unshift(rule)
-        }
-      })
-      imports.forEach((i) => root.prepend(i))
+export async function hoistAtRules(css: string) {
+  const s = new MagicString(css)
+  // #1845
+  // CSS @import can only appear at top of the file. We need to hoist all @import
+  // to top when multiple files are concatenated.
+  // match until semicolon that's not in quotes
+  s.replace(
+    /@import\s*(?:url\([^\)]*\)|"[^"]*"|'[^']*'|[^;]*).*?;/gm,
+    (match) => {
+      s.appendLeft(0, match)
+      return ''
     }
-  }
+  )
+  // #6333
+  // CSS @charset must be the top-first in the file, hoist the first to top
+  let foundCharset = false
+  s.replace(/@charset\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
+    if (!foundCharset) {
+      s.prepend(match)
+      foundCharset = true
+    }
+    return ''
+  })
+  return s.toString()
 }
-AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 

@@ -35,6 +35,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
+import { emptyString } from '../cleanString'
 
 interface ScriptAssetsUrl {
   start: number
@@ -44,8 +45,9 @@ interface ScriptAssetsUrl {
 
 const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
+// Do not allow preceding '.', but do allow preceding '...' for spread operations
+const inlineImportRE = /(?<!(?<!\.\.)\.)\bimport\s*\(("[^"]*"|'[^']*')\)/g
 const htmlLangRE = /\.(html|htm)$/
-const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -303,14 +305,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const code = scriptNode.content
+              const cleanCode = emptyString(scriptNode.content)
+
               let match: RegExpExecArray | null
-              while ((match = inlineImportRE.exec(code))) {
-                const { 0: full, 1: url, index } = match
-                const startUrl = full.indexOf(url)
-                const start = scriptNode.loc.start.offset + index + startUrl + 1
+              while ((match = inlineImportRE.exec(cleanCode))) {
+                const { 1: url, index } = match
+                const startUrl = cleanCode.indexOf(url, index)
+                const start = startUrl + 1
                 const end = start + url.length - 2
-                scriptUrls.push({ start, end, url: url.slice(1, -1) })
+                scriptUrls.push({
+                  start: start + scriptNode.loc.start.offset,
+                  end: end + scriptNode.loc.start.offset,
+                  url: scriptNode.content.slice(start, end)
+                })
               }
             }
           }

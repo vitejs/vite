@@ -1,4 +1,4 @@
-import { cssUrlRE, cssPlugin } from '../../plugins/css'
+import { cssUrlRE, cssPlugin, hoistAtRules } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
@@ -112,5 +112,53 @@ describe('css path resolutions', () => {
     `)
 
     mockFs.mockReset()
+  })
+})
+
+describe('hoist @ rules', () => {
+  test('hoist @import', async () => {
+    const css = `.foo{color:red;}@import "bla";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import "bla";.foo{color:red;}`)
+  })
+
+  test('hoist @import url with semicolon', async () => {
+    const css = `.foo{color:red;}@import url("bla;bla");`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import url("bla;bla");.foo{color:red;}`)
+  })
+
+  test('hoist @import url data with semicolon', async () => {
+    const css = `.foo{color:red;}@import url(data:image/png;base64,iRxVB0);`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(
+      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`
+    )
+  })
+
+  test('hoist @import with semicolon in quotes', async () => {
+    const css = `.foo{color:red;}@import "bla;bar";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import "bla;bar";.foo{color:red;}`)
+  })
+
+  test('hoist @charset', async () => {
+    const css = `.foo{color:red;}@charset "utf-8";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@charset "utf-8";.foo{color:red;}`)
+  })
+
+  test('hoist one @charset only', async () => {
+    const css = `.foo{color:red;}@charset "utf-8";@charset "utf-8";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@charset "utf-8";.foo{color:red;}`)
+  })
+
+  test('hoist @import and @charset', async () => {
+    const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:grren;}@import "baz";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(
+      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:grren;}`
+    )
   })
 })

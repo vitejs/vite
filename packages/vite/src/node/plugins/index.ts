@@ -17,6 +17,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 
 export async function resolvePlugins(
@@ -26,12 +27,14 @@ export async function resolvePlugins(
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isWatch = isBuild && !!config.build.watch
 
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
 
   return [
+    isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.resolve.alias }),
