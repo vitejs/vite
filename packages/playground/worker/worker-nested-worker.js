@@ -8,7 +8,7 @@ self.onmessage = (event) => {
   }
 }
 
-self.postMessage(import.meta.url)
+self.postMessage(self.location.href)
 
 subWorker.onmessage = (ev) => {
   self.postMessage({

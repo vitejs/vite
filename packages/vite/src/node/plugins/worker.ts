@@ -7,7 +7,6 @@ import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
 import type { TransformPluginContext, EmittedFile } from 'rollup'
-import MagicString from 'magic-string'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -283,32 +282,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
         map: { mappings: '' } // Empty sourcemap to supress Rolup warning
-      }
-    }
-  }
-}
-
-// just run in build mode
-export function redirectWorkerImportMetaUrlPlugin(
-  config: ResolvedConfig
-): Plugin {
-  const isWorker = config.isWorker
-
-  return {
-    name: 'vite:workerImportMetaUrl',
-    transform(code, id) {
-      if (isWorker) {
-        // if build with iife it will polyfill with `rollup` will be used document in the worker
-        // else if build with es it will replace with `esbuild` will got a unexpected data.
-        // so replace import.meta.url break the default handle.
-        // And it must be done at this (after `(?new Worker)new URL('xxx', import.meta.url)` match),
-        // Otherwise, the following regex will be incorrectly matched.
-        const s = new MagicString(code, {})
-        s.replace(/\bimport.meta.url\b/g, 'self.location.href')
-        return {
-          code: s.toString(),
-          map: s.generateMap({ source: id, hires: true })
-        }
       }
     }
   }

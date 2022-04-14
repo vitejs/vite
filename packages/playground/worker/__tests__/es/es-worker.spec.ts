@@ -85,17 +85,6 @@ if (isBuild) {
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
-    // import.meta.url will minify in esbuild in build mode so can't use runtime result.
-    const files = fs.readdirSync(assetsDir)
-    const nestedWorkerFile = files.find((f) =>
-      f.includes('worker-nested-worker')
-    )
-    const content = fs.readFileSync(
-      path.resolve(assetsDir, nestedWorkerFile),
-      'utf-8'
-    )
-    expect(content).toMatch('self.location.href')
-
     expect(await page.textContent('.nested-worker-module')).toMatch(
       '"type":"module"'
     )
