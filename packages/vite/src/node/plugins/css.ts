@@ -1092,18 +1092,27 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  const { code, warnings } = await transform(css, {
-    loader: 'css',
-    minify: true,
-    target: config.build.cssTarget || undefined
-  })
-  if (warnings.length) {
-    const msgs = await formatMessages(warnings, { kind: 'warning' })
-    config.logger.warn(
-      colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
-    )
+  try {
+    const { code, warnings } = await transform(css, {
+      loader: 'css',
+      minify: true,
+      target: config.build.cssTarget || undefined
+    })
+    if (warnings.length) {
+      const msgs = await formatMessages(warnings, { kind: 'warning' })
+      config.logger.warn(
+        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+      )
+    }
+    return code
+  } catch (e) {
+    if (e.errors) {
+      const msgs = await formatMessages(e.errors, { kind: 'error' })
+      e.frame = '\n' + msgs.join('\n')
+      e.loc = e.errors[0].location
+    }
+    throw e
   }
-  return code
 }
 
 export async function hoistAtRules(css: string) {
