@@ -36,7 +36,7 @@ jobs:
         with:
           publish-dir: "docs/.vitepress/dist"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          production-deploy: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          production-deploy: ${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'beta') }}
           deploy-message: "Deploy docs to Netlify by ref: ${{ github.ref }} from GitHub Actions"
           enable-pull-request-comment: true
           enable-commit-comment: true
