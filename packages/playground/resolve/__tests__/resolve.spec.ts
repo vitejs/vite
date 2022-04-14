@@ -61,14 +61,8 @@ test('dont add extension to directory name (./dir-with-ext.js/index.js)', async 
   expect(await page.textContent('.dir-with-ext')).toMatch('[success]')
 })
 
-test('resolve to the `browser` field instead of `module` when the importer is a `require` call', async () => {
-  expect(
-    await page.textContent('.require-pkg-with-browser-and-module-field')
-  ).toMatch('[success]')
-})
-
-test('resolve to the `main` field instead of `module` when the importer is a `require` call', async () => {
-  expect(await page.textContent('.require-pkg-with-esm-entries')).toMatch(
+test('do not resolve to the `module` field if the importer is a `require` call', async () => {
+  expect(await page.textContent('.require-pkg-with-module-field')).toMatch(
     '[success]'
   )
 })
