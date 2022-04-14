@@ -1,9 +1,0 @@
-{
-  "name": "require-pkg-with-esm-entries",
-  "private": true,
-  "version": "1.0.0",
-  "main": "./index.cjs",
-  "dependencies": {
-    "callbag-from-event": "1.3.0"
-  }
-}
