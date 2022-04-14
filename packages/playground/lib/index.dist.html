@@ -26,3 +26,17 @@
 <script>
   MyLib('.iife')
 </script>
+
+<img class="emit-es" />
+<img class="emit-umd" />
+
+<script type="module">
+  import setSrc from './lib2/my-lib-emit-assets.es.js'
+
+  setSrc('.emit-es')
+</script>
+
+<script src="./lib2/my-lib-emit-assets.umd.js"></script>
+<script>
+  SetSrc('.emit-umd')
+</script>

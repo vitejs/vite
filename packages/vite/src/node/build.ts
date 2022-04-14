@@ -221,6 +221,7 @@ export interface LibraryOptions {
   name?: string
   formats?: LibraryFormats[]
   fileName?: string | ((format: ModuleFormat) => string)
+  emitAssets?: boolean
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
@@ -274,7 +275,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     // Support browserslist
     // "defaults and supports es6-module and supports es6-module-dynamic-import",
     resolved.target = [
-      'es2019',
+      // for not transpile import.meta.url
+      raw?.lib && raw.lib.emitAssets ? 'es2020' : 'es2019',
       'edge88',
       'firefox78',
       'chrome87',

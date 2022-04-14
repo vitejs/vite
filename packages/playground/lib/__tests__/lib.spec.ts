@@ -1,6 +1,7 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
+import { isBuild, findAssetFile, testDir, getBg } from 'testUtils'
 import path from 'path'
 import fs from 'fs'
+import { ports } from '../../testUtils'
 
 if (isBuild) {
   test('es', async () => {
@@ -22,6 +23,22 @@ if (isBuild) {
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
+  })
+
+  test('emit assets in es', async () => {
+    const src = await page.evaluate(async () => {
+      return (document.querySelector('.emit-es') as HTMLImageElement).src
+    })
+
+    expect(src).toMatch(`http://localhost:${ports.lib}`)
+  })
+
+  test('not emit assets in other format', async () => {
+    const src = await page.evaluate(async () => {
+      return (document.querySelector('.emit-umd') as HTMLImageElement).src
+    })
+
+    expect(src).toMatch('data:image/png;base64')
   })
 } else {
   test('dev', async () => {

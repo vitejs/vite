@@ -59,6 +59,12 @@ exports.serve = async function serve(root, isBuildTest) {
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
     })
 
+    await build({
+      root,
+      logLevel: 'silent',
+      configFile: path.resolve(__dirname, '../vite.emitAssets.config.js')
+    })
+
     // start static file server
     const serve = sirv(path.resolve(root, 'dist'))
     const httpServer = http.createServer((req, res) => {
