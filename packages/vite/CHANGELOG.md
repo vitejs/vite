@@ -1,3 +1,10 @@
+## <small>2.9.5 (2022-04-14)</small>
+
+* fix: revert #7582, fix #7721 and #7736 (#7737) ([fa86d69](https://github.com/vitejs/vite/commit/fa86d69)), closes [#7721](https://github.com/vitejs/vite/issues/7721) [#7736](https://github.com/vitejs/vite/issues/7736) [#7737](https://github.com/vitejs/vite/issues/7737)
+* chore: format css minify esbuild error (#7731) ([c445075](https://github.com/vitejs/vite/commit/c445075)), closes [#7731](https://github.com/vitejs/vite/issues/7731)
+
+
+
 ## <small>2.9.4 (2022-04-13)</small>
 
 * fix: handle url imports with semicolon (fix #7717) (#7718) ([a5c2a78](https://github.com/vitejs/vite/commit/a5c2a78)), closes [#7717](https://github.com/vitejs/vite/issues/7717) [#7718](https://github.com/vitejs/vite/issues/7718)
