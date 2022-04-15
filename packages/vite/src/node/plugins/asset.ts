@@ -313,18 +313,24 @@ async function fileToBuiltUrl(
 
   const libOption = config.build.lib
 
-  if (libOption) {
+  // condition should directly replace to inline assets
+  const replaceUrl =
+    (libOption && !libOption.emitAssets) ||
+    (!file.endsWith('.svg') &&
+      content.length < Number(config.build.assetsInlineLimit))
+
+  const emitAssets = libOption && libOption.emitAssets
+
+  const genInlineAssets = replaceUrl || emitAssets
+
+  if (genInlineAssets) {
+    // base64 inlined as a string
     inlineContent = `data:${mrmime.lookup(file)};base64,${content.toString(
       'base64'
     )}`
   }
 
-  if (
-    (libOption && !libOption.emitAssets) ||
-    (!file.endsWith('.svg') &&
-      content.length < Number(config.build.assetsInlineLimit))
-  ) {
-    // base64 inlined as a string
+  if (replaceUrl) {
     url = inlineContent!
   } else {
     // emit as asset
@@ -368,7 +374,7 @@ async function fileToBuiltUrl(
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
   }
 
-  if (libOption && libOption.emitAssets) {
+  if (emitAssets) {
     const map = inlineAssetsMap.get(config)!
     if (!map.has(url)) {
       map.set(url, inlineContent!)
