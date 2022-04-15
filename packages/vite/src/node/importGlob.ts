@@ -13,11 +13,13 @@ import {
   singlelineCommentsRE,
   multilineCommentsRE,
   blankReplacer,
-  normalizePath
+  normalizePath,
+  parseRequest
 } from './utils'
-import type { RollupError } from 'rollup'
+import type { RollupError, TransformPluginContext } from 'rollup'
 import type { Logger } from '.'
 import colors from 'picocolors'
+import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 
 interface GlobParams {
   base: string
@@ -36,6 +38,10 @@ interface GlobOptions {
   }
 }
 
+interface DynamicImportRequest {
+  raw?: boolean
+}
+
 function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
   let parentDepth = 0
   while (pattern.startsWith('../')) {
@@ -50,13 +56,15 @@ function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
   return { base, pattern, parentDepth, isAbsolute: false }
 }
 
-export async function transformImportGlob(
+export async function transformGlob(
   source: string,
   pos: number,
   importer: string,
   importIndex: number,
+  importEndIndex: number,
+  query: DynamicImportRequest,
+  userPattern: string,
   root: string,
-  logger: Logger,
   normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
   resolve?: (url: string, importer?: string) => Promise<string | undefined>,
   preload = true
@@ -69,20 +77,8 @@ export async function transformImportGlob(
   pattern: string
   base: string
 }> {
-  const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
-  const isEagerDefault =
-    isEager && source.slice(pos + 21, pos + 28) === 'Default'
-
-  const err = (msg: string) => {
-    const e = new Error(`Invalid glob import syntax: ${msg}`)
-    ;(e as any).pos = pos
-    return e
-  }
-
   importer = cleanUrl(importer)
   const importerBasename = path.basename(importer)
-
-  const [userPattern, options, endIndex] = lexGlobPattern(source, pos)
 
   let globParams: GlobParams | null = null
   if (userPattern.startsWith('/')) {
@@ -106,9 +102,7 @@ export async function transformImportGlob(
   }
 
   if (!globParams) {
-    throw err(
-      `pattern must start with "." or "/" (relative to project root) or alias path`
-    )
+    throw `pattern must start with "." or "/" (relative to project root) or alias path`
   }
   const { base, parentDepth, isAbsolute, pattern } = globParams
 
@@ -117,6 +111,8 @@ export async function transformImportGlob(
     // Ignore node_modules by default unless explicitly indicated in the pattern
     ignore: /(^|\/)node_modules\//.test(pattern) ? [] : ['**/node_modules/**']
   })
+
+  const isEager = source.slice(pos, pos + 21) === 'import.meta.globEager'
   const imports: string[] = []
   let importsString = ``
   let entries = ``
@@ -133,23 +129,13 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    // TODO remove assert syntax for the Vite 3.0 release.
-    const isRawAssert = options?.assert?.type === 'raw'
-    const isRawType = options?.as === 'raw'
-    if (isRawType || isRawAssert) {
-      if (isRawAssert) {
-        logger.warn(
-          colors.yellow(
-            colors.bold(
-              "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
-            )
-          )
-        )
-      }
+    if (query.raw) {
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, files[i]), 'utf-8')
       )},`
     } else {
+      const isEagerDefault =
+        isEager && source.slice(pos + 21, pos + 28) === 'Default'
       const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
       if (isEager) {
         const identifier = `__glob_${importIndex}_${i}`
@@ -175,10 +161,137 @@ export async function transformImportGlob(
     imports,
     importsString,
     exp: `{${entries}}`,
-    endIndex,
+    endIndex: importEndIndex,
     isEager,
     pattern,
     base
+  }
+}
+
+export async function transformImportGlob(
+  source: string,
+  pos: number,
+  importer: string,
+  importIndex: number,
+  root: string,
+  logger: Logger,
+  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
+  preload = true
+): Promise<{
+  importsString: string
+  imports: string[]
+  exp: string
+  endIndex: number
+  isEager: boolean
+  pattern: string
+  base: string
+}> {
+  const err = (msg: string) => {
+    const e = new Error(`Invalid glob import syntax: ${msg}`)
+    ;(e as any).pos = pos
+    return e
+  }
+  const [userPattern, options, endIndex] = lexGlobPattern(source, pos)
+  const query: DynamicImportRequest = {}
+
+  // TODO remove assert syntax for the Vite 3.0 release.
+  const isRawAssert = options?.assert?.type === 'raw'
+  const isRawType = options?.as === 'raw'
+  if (isRawType || isRawAssert) {
+    if (isRawAssert) {
+      logger.warn(
+        colors.yellow(
+          colors.bold(
+            "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
+          )
+        )
+      )
+    }
+    query.raw = true
+  }
+  try {
+    return transformGlob(
+      source,
+      pos,
+      importer,
+      importIndex,
+      endIndex,
+      query,
+      userPattern,
+      root,
+      normalizeUrl,
+      resolve,
+      preload
+    )
+  } catch (error) {
+    throw err(error)
+  }
+}
+
+export async function transformDynamicImportGlob(
+  ctx: TransformPluginContext,
+  source: string,
+  expStart: number,
+  expEnd: number,
+  importer: string,
+  start: number,
+  end: number,
+  root: string,
+  normalizeUrl?: (url: string, pos: number) => Promise<[string, string]>,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>,
+  preload = false
+): Promise<{
+  importsString: string
+  imports: string[]
+  exp: string
+  endIndex: number
+  isEager: boolean
+  pattern: string
+  rawPattern: string
+  base: string
+} | null> {
+  const err = (msg: string) => {
+    const e = new Error(`Invalid dynamic import syntax: ${msg}`)
+    ;(e as any).pos = start
+    return e
+  }
+  const original = source.slice(expStart, expEnd)
+  const filename = source.slice(start + 1, end - 1)
+  const [rawPattern, _] = filename.split('?')
+  const rawQuery = parseRequest(filename)
+  const query: DynamicImportRequest = {}
+  const ast = (ctx.parse(original) as any).body[0].expression
+
+  const userPattern = dynamicImportToGlob(ast.source, rawPattern)
+
+  if (!userPattern) {
+    return null
+  }
+
+  if (rawQuery?.raw) {
+    query.raw = true
+  }
+
+  try {
+    return {
+      rawPattern,
+      ...(await transformGlob(
+        source,
+        start,
+        importer,
+        expStart,
+        expEnd,
+        query,
+        userPattern,
+        root,
+        normalizeUrl,
+        resolve,
+        preload
+      ))
+    }
+  } catch (error) {
+    throw err(error)
   }
 }
 

@@ -73,3 +73,11 @@ document.querySelector('.css').addEventListener('click', async () => {
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
+
+const variable = 'mxd'
+const mod = import(`../${variable}.js?raw`)
+console.log(mod)
+
+const base = ''
+const glob = import.meta.glob(`./*.js`, { as: 'raw' })
+console.log(glob)
