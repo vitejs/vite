@@ -1,8 +1,23 @@
 import { findAssetFile, getColor, isBuild, readManifest } from '../../testUtils'
 
-test('should load both stylesheets', async () => {
+test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
+  expect(await getColor('.dynamic')).toBe('green')
+})
+
+test('should load dynamic import with inline', async () => {
+  const css = await page.textContent('.dynamic-inline')
+  expect(css).toMatch('.inline')
+
+  expect(await getColor('.inline')).not.toBe('yellow')
+})
+
+test('should load dynamic import with module', async () => {
+  const css = await page.textContent('.dynamic-module')
+  expect(css).toMatch('_mod_')
+
+  expect(await getColor('.mod')).toBe('yellow')
 })
 
 if (isBuild) {
@@ -10,6 +25,7 @@ if (isBuild) {
     expect(findAssetFile(/style.*\.js$/)).toBe('')
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile('other.*.js$')).toMatch(`/* empty css`)
+    expect(findAssetFile(/async.*\.js$/)).toBe('')
   })
 
   test('should generate correct manifest', async () => {

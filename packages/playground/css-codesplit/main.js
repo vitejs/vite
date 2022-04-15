@@ -1,6 +1,15 @@
 import './style.css'
 import './main.css'
 
-document.getElementById(
-  'app'
-).innerHTML = `<h1>This should be red</h1><h2>This should be blue</h2>`
+import('./async.css')
+
+import('./inline.css?inline').then((css) => {
+  document.querySelector('.dynamic-inline').textContent = css.default
+})
+
+import('./mod.module.css').then((css) => {
+  document.querySelector('.dynamic-module').textContent = JSON.stringify(
+    css.default
+  )
+  document.querySelector('.mod').classList.add(css.default.mod)
+})
