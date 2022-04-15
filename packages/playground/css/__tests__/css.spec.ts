@@ -13,6 +13,14 @@ import {
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
+test('imported css', async () => {
+  const css = await page.textContent('.imported-css')
+  expect(css).toContain('.imported {')
+  const glob = await page.textContent('.imported-css-glob')
+  expect(glob).toContain('.dir-import')
+  const globEager = await page.textContent('.imported-css-globEager')
+  expect(globEager).toContain('.dir-import')
+})
 
 test('linked css', async () => {
   const linked = await page.$('.linked')
@@ -44,6 +52,12 @@ test('css import from js', async () => {
     code.replace('color: purple', 'color: blue')
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+test('css import asset with space', async () => {
+  const importedWithSpace = await page.$('.import-with-space')
+
+  expect(await getBg(importedWithSpace)).toMatch(/.*ok\..*png/)
 })
 
 test('postcss config', async () => {
@@ -228,6 +242,20 @@ test('css modules w/ sass', async () => {
   await untilUpdated(() => getColor(imported), 'blue')
 })
 
+test('inline css modules', async () => {
+  const css = await page.textContent('.modules-inline')
+  expect(css).toMatch(/\.inline-module__apply-color-inline___[\w-]{5}/)
+})
+
+if (isBuild) {
+  test('@charset hoist', async () => {
+    serverLogs.forEach((log) => {
+      // no warning from esbuild css minifier
+      expect(log).not.toMatch('"@charset" must be the first rule in the file')
+    })
+  })
+}
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
@@ -310,7 +338,7 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
-test('Url separation', async () => {
+test('URL separation', async () => {
   const urlSeparated = await page.$('.url-separated')
   const baseUrl = 'url(images/dog.webp)'
   const cases = new Array(5)
@@ -355,4 +383,25 @@ test('minify css', async () => {
   const cssFile = findAssetFile(/index\.\w+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test('?raw', async () => {
+  const rawImportCss = await page.$('.raw-imported-css')
+
+  expect(await rawImportCss.textContent()).toBe(
+    require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+  )
+})
+
+test('import css in less', async () => {
+  expect(await getColor('.css-in-less')).toBe('yellow')
+  expect(await getColor('.css-in-less-2')).toBe('blue')
+})
+
+test("relative path rewritten in Less's data-uri", async () => {
+  // relative path passed to Less's data-uri is rewritten to absolute,
+  // the Less inlines it
+  expect(await getBg('.form-box-data-uri')).toMatch(
+    /^url\("data:image\/svg\+xml,%3Csvg/
+  )
 })

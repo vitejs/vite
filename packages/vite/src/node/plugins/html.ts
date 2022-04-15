@@ -5,7 +5,8 @@ import type {
   OutputAsset,
   OutputBundle,
   OutputChunk,
-  RollupError
+  RollupError,
+  SourceMapInput
 } from 'rollup'
 import {
   cleanUrl,
@@ -24,7 +25,7 @@ import {
   urlToBuiltUrl,
   getAssetFilename
 } from './asset'
-import { isCSSRequest, chunkToEmittedCssFileMap } from './css'
+import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 import type {
   AttributeNode,
@@ -34,6 +35,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
+import { emptyString } from '../cleanString'
 
 interface ScriptAssetsUrl {
   start: number
@@ -41,15 +43,21 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy[&inline\-css]*&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
-const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
+// Do not allow preceding '.', but do allow preceding '...' for spread operations
+const inlineImportRE = /(?<!(?<!\.\.)\.)\bimport\s*\(("[^"]*"|'[^']*')\)/g
+const htmlLangRE = /\.(html|htm)$/
+
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
+
+export const isHTMLRequest = (request: string): boolean =>
+  htmlLangRE.test(request)
 
 // HTML Proxy Caches are stored by config -> filePath -> index
 export const htmlProxyMap = new WeakMap<
   ResolvedConfig,
-  Map<string, Array<string>>
+  Map<string, Array<{ code: string; map?: SourceMapInput }>>
 >()
 
 // HTML Proxy Transform result are stored by config
@@ -78,7 +86,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const file = cleanUrl(id)
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)![index]
-        if (typeof result === 'string') {
+        if (result) {
           return result
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
@@ -92,7 +100,7 @@ export function addToHTMLProxyCache(
   config: ResolvedConfig,
   filePath: string,
   index: number,
-  code: string
+  result: { code: string; map?: SourceMapInput }
 ): void {
   if (!htmlProxyMap.get(config)) {
     htmlProxyMap.set(config, new Map())
@@ -100,7 +108,7 @@ export function addToHTMLProxyCache(
   if (!htmlProxyMap.get(config)!.get(filePath)) {
     htmlProxyMap.get(config)!.set(filePath, [])
   }
-  htmlProxyMap.get(config)!.get(filePath)![index] = code
+  htmlProxyMap.get(config)!.get(filePath)![index] = result
 }
 
 export function addToHTMLProxyTransformResult(
@@ -261,7 +269,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                `"${config.base + url.slice(1)}"`
+                `"${config.base + url.slice(1)}"`,
+                { contentOnly: true }
               )
             }
 
@@ -278,12 +287,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   .join('')
                 // <script type="module">...</script>
                 const filePath = id.replace(normalizePath(config.root), '')
-                addToHTMLProxyCache(
-                  config,
-                  filePath,
-                  inlineModuleIndex,
-                  contents
-                )
+                addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                  code: contents
+                })
                 js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
                 shouldRemove = true
               }
@@ -292,19 +298,26 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               someScriptsAreAsync ||= isAsync
               someScriptsAreDefer ||= !isAsync
             } else if (url && !isPublicFile) {
-              config.logger.warn(
-                `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
-              )
+              if (!isExcludedUrl(url)) {
+                config.logger.warn(
+                  `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`
+                )
+              }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const code = scriptNode.content
+              const cleanCode = emptyString(scriptNode.content)
+
               let match: RegExpExecArray | null
-              while ((match = inlineImportRE.exec(code))) {
-                const { 0: full, 1: url, index } = match
-                const startUrl = full.indexOf(url)
-                const start = scriptNode.loc.start.offset + index + startUrl + 1
+              while ((match = inlineImportRE.exec(cleanCode))) {
+                const { 1: url, index } = match
+                const startUrl = cleanCode.indexOf(url, index)
+                const start = startUrl + 1
                 const end = start + url.length - 2
-                scriptUrls.push({ start, end, url: url.slice(1, -1) })
+                scriptUrls.push({
+                  start: start + scriptNode.loc.start.offset,
+                  end: end + scriptNode.loc.start.offset,
+                  url: scriptNode.content.slice(start, end)
+                })
               }
             }
           }
@@ -333,7 +346,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    `"${config.base + url.slice(1)}"`
+                    `"${config.base + url.slice(1)}"`,
+                    { contentOnly: true }
                   )
                 }
               }
@@ -355,15 +369,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = inlineStyle.value!
             const code = styleNode.content!
             const filePath = id.replace(normalizePath(config.root), '')
-            addToHTMLProxyCache(config, filePath, inlineModuleIndex, code)
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
 
-            // will transfrom in `applyHtmlTransforms`
+            // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`
+              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`,
+              { contentOnly: true }
             )
           }
 
@@ -372,12 +387,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             const styleNode = node.children.pop() as TextNode
             const filePath = id.replace(normalizePath(config.root), '')
             inlineModuleIndex++
-            addToHTMLProxyCache(
-              config,
-              filePath,
-              inlineModuleIndex,
-              styleNode.content
-            )
+            addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+              code: styleNode.content
+            })
             js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
             shouldRemove = true
           }
@@ -423,7 +435,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 value.loc.start.offset,
                 value.loc.end.offset,
-                `"${url}"`
+                `"${url}"`,
+                { contentOnly: true }
               )
             } catch (e) {
               if (e.code !== 'ENOENT') {
@@ -435,9 +448,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (!isExcludedUrl(url)) {
-            s.overwrite(start, end, await urlToBuiltUrl(url, id, config, this))
+            s.overwrite(
+              start,
+              end,
+              await urlToBuiltUrl(url, id, config, this),
+              { contentOnly: true }
+            )
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, config.base + url.slice(1))
+            s.overwrite(start, end, config.base + url.slice(1), {
+              contentOnly: true
+            })
           }
         }
 
@@ -511,21 +531,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           })
         }
 
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          cssFiles.forEach((file) => {
-            if (!seen.has(file)) {
-              seen.add(file)
-              tags.push({
-                tag: 'link',
-                attrs: {
-                  rel: 'stylesheet',
-                  href: toPublicPath(file, config)
-                }
-              })
-            }
-          })
-        }
+        chunk.viteMetadata.importedCss.forEach((file) => {
+          if (!seen.has(file)) {
+            seen.add(file)
+            tags.push({
+              tag: 'link',
+              attrs: {
+                rel: 'stylesheet',
+                href: toPublicPath(file, config)
+              }
+            })
+          }
+        })
+
         return tags
       }
 
@@ -583,7 +601,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const shortEmitName = path.posix.relative(config.root, id)
         // no use assets plugin because it will emit file
         let match: RegExpExecArray | null
         let s: MagicString | undefined
@@ -594,14 +611,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             match.index,
             match.index + full.length,
-            cssTransformedCode
+            cssTransformedCode,
+            { contentOnly: true }
           )
         }
         if (s) {
           result = s.toString()
         }
+        const relativeUrlPath = path.posix.relative(config.root, id)
         result = await applyHtmlTransforms(result, postHooks, {
-          path: '/' + shortEmitName,
+          path: '/' + relativeUrlPath,
           filename: id,
           bundle,
           chunk
@@ -616,6 +635,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           delete bundle[chunk.fileName]
         }
 
+        const shortEmitName = path.relative(config.root, id)
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,
@@ -693,11 +713,15 @@ export function resolveHtmlTransforms(
   return [preHooks, postHooks]
 }
 
+export const maybeVirtualHtmlSet = new Set<string>()
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
   ctx: IndexHtmlTransformContext
 ): Promise<string> {
+  maybeVirtualHtmlSet.add(ctx.filename)
+
   for (const hook of hooks) {
     const res = await hook(html, ctx)
     if (!res) {

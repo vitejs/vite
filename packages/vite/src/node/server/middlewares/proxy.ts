@@ -5,7 +5,7 @@ import { HMR_HEADER } from '../ws'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '../..'
+import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -30,10 +30,9 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
+  options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const options = config.server.proxy!
-
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
