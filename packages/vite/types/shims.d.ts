@@ -59,7 +59,6 @@ declare module 'postcss-modules' {
 
 declare module '@rollup/plugin-dynamic-import-vars' {
   import type { Plugin } from 'rollup'
-  import type { walk } from 'estree-walker'
 
   interface Options {
     include?: string | RegExp | (string | RegExp)[]

@@ -263,7 +263,7 @@ export async function transformDynamicImportGlob(
   const query: DynamicImportRequest = {}
   const ast = (ctx.parse(original) as any).body[0].expression
 
-  const userPattern = dynamicImportToGlob(ast.source, rawPattern)
+  const userPattern = dynamicImportToGlob(ast.source, rawPattern as any)
 
   if (!userPattern) {
     return null
