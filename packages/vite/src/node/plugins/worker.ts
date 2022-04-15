@@ -177,23 +177,21 @@ export async function workerFileToUrl(
   const workerMap = workerCache.get(config)!
 
   let hash = workerMap.bundle.get(id)
-  if (hash) {
-    // rewrite truth id, no need to replace by asset plugin
-    return config.base + workerMap.emitted.get(hash)! // TODO
+  if (!hash) {
+    const code = await bundleWorkerEntry(ctx, config, id, query)
+    const basename = path.parse(cleanUrl(id)).name
+    const contentHash = getAssetHash(code)
+    const fileName = path.posix.join(
+      config.build.assetsDir,
+      `${basename}.${contentHash}.js`
+    )
+    hash = emitWorkerAssets(ctx, config, {
+      fileName,
+      type: 'asset',
+      source: code
+    })
+    workerMap.bundle.set(id, hash)
   }
-  const code = await bundleWorkerEntry(ctx, config, id, query)
-  const basename = path.parse(cleanUrl(id)).name
-  const contentHash = getAssetHash(code)
-  const fileName = path.posix.join(
-    config.build.assetsDir,
-    `${basename}.${contentHash}.js`
-  )
-  hash = emitWorkerAssets(ctx, config, {
-    fileName,
-    type: 'asset',
-    source: code
-  })
-  workerMap.bundle.set(id, hash)
   return `__VITE_ASSET__${hash}__`
 }
 
