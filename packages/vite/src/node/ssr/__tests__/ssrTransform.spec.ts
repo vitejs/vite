@@ -545,6 +545,45 @@ class A {
   `)
 })
 
+test('class methods', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import foo from 'foo'
+
+const bar = 'bar'
+
+class A {
+  foo() {}
+  [foo]() {}
+  [bar]() {}
+  #foo() {}
+  bar(foo) {}
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+
+    const bar = 'bar'
+
+    class A {
+      foo() {}
+      [__vite_ssr_import_0__.default]() {}
+      [bar]() {}
+      #foo() {}
+      bar(foo) {}
+    }
+    "
+  `)
+})
+
 test('declare scope', async () => {
   expect(
     (
