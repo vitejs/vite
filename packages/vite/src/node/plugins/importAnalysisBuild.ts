@@ -85,7 +85,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
-  const insertPreload = !(ssr || !!config.build.lib)
+  const insertPreload =
+    !(ssr || !!config.build.lib) && !!config.build.modulePreload
   const isWorker = config.isWorker
 
   const scriptRel = config.build.polyfillModulePreload

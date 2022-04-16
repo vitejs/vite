@@ -280,7 +280,9 @@ for (const path in modules) {
 }
 ```
 
-Matched files are by default lazy loaded via dynamic import and will be split into separate chunks during build. If you'd rather import all the modules directly (e.g. relying on side-effects in these modules to be applied first), you can use `import.meta.globEager` instead:
+Matched files are by default lazy loaded via dynamic import and will be split into separate chunks during build. Be careful with this function, as this can lead to double fetching of files, if `build.modulePreload` is turned on.
+
+If you'd rather import all the modules directly (e.g. relying on side-effects in these modules to be applied first), you can use `import.meta.globEager` instead:
 
 ```js
 const modules = import.meta.globEager('./dir/*.js')

@@ -726,6 +726,15 @@ export default defineConfig({
 
   Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
+### build.modulePreload
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Whether to automatically inject module preloads.
+
+  If set to `true`, the proxy module is injected in each `index.html` entry. If `.js`-chunks are manually resolved (e. g. via Glob Import) this could lead to problems like double fetching or wrong path resolving when linking to the main JavaScript file from other domains.
+
 ### build.polyfillModulePreload
 
 - **Type:** `boolean`

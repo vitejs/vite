@@ -65,6 +65,12 @@ export interface BuildOptions {
    */
   target?: 'modules' | TransformOptions['target'] | false
   /**
+   * whether to inject module preload.
+   * Note: does not apply to library mode and SSR.
+   * @default true
+   */
+  modulePreload?: boolean
+  /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
@@ -236,6 +242,7 @@ export type ResolvedBuildOptions = Required<
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
+    modulePreload: true,
     polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
