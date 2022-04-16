@@ -163,7 +163,6 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-xYj09txJ9OsgySe5ommpqul6FiaJZRrwe3KTD7wbV6w=`
 - `sha256-4m6wOIrq/wFDmi9Xh3mFM2mwI4ik9n3TMgHk6xDtLxk=`
 - `sha256-uS7/g9fhQwNZS1f/MqYqqKv8y9hCu36IfX9XZB5L7YY=`
 
