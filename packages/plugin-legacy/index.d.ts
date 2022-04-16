@@ -26,6 +26,10 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: true
+   */
+  skipAssetsEmits?: boolean
 }
 
 declare function createPlugin(options?: Options): Plugin

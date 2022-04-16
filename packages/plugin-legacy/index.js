@@ -39,6 +39,7 @@ function viteLegacyPlugin(options = {}) {
   const targets = options.targets || 'defaults'
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
+  const skipAssetsEmit = options.skipAssetsEmits !== false
 
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
@@ -293,8 +294,9 @@ function viteLegacyPlugin(options = {}) {
       // In the `generateBundle` hook,
       // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
       // But that's still a waste of computing resource.
-      // So we add this flag to avoid emitting the asset in the first place whenever possible.
-      opts.__vite_skip_asset_emit__ = true
+      // By default, we add this flag to true to avoid emitting the asset in the first place whenever possible.
+      // By configuring skipAssetsEmits to false, you can re-enable the asset emit to have compatibility with other plugins that require its use.
+      opts.__vite_skip_asset_emit__ = skipAssetsEmit
 
       // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
