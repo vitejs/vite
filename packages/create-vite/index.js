@@ -51,6 +51,16 @@ const FRAMEWORKS = [
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue
+      },
+      {
+        name: 'vue-jsx',
+        display: 'JavaScript',
+        color: yellow
+      },
+      {
+        name: 'vue-jsx-ts',
+        display: 'TypeScript',
+        color: blue
       }
     ]
   },
