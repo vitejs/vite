@@ -1,0 +1,20 @@
+{
+  "name": "vite-vue-jsx-typescript-starter",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.1",
+    "@vitejs/plugin-vue-jsx": "^1.3.10",
+    "typescript": "^4.5.4",
+    "vite": "^2.9.2",
+    "vue-tsc": "^0.34.7"
+  }
+}
