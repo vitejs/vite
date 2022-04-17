@@ -1,5 +1,5 @@
 import { ref, defineComponent } from 'vue'
-import { container } from '../styles/HelloWorld.module.css'
+import styles from '../styles/HelloWorld.module.css'
 
 export default defineComponent({
   name: 'HelloWorld',
@@ -12,7 +12,7 @@ export default defineComponent({
     const btnOnClick = () => (count.value += 1)
 
     return () => (
-      <div class={container}>
+      <div class={styles.container}>
         <h1>{msg}</h1>
 
         <p>
