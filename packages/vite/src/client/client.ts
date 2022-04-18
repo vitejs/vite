@@ -432,7 +432,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       }
     },
 
-    dispose(cb: (data: any) => void) {
+    dispose(cb) {
       disposeMap.set(ownerPath, cb)
     },
 

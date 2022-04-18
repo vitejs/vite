@@ -188,7 +188,7 @@ export interface UserConfig {
     /**
      * Vite plugins that apply to worker bundle
      */
-    plugins?: (PluginOption | PluginOption[])[]
+    plugins?: PluginOption[]
     /**
      * Rollup options to build worker bundle
      */
