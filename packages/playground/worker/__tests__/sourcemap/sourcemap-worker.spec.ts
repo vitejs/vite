@@ -9,7 +9,7 @@ if (isBuild) {
   test('sourcemap generation for web workers', async () => {
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(25)
+    expect(files.length).toBe(24)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
