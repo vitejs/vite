@@ -9,6 +9,15 @@
     "dev:es": "vite --config ./vite.config-es.js dev",
     "build:es": "vite --config ./vite.config-es.js build",
     "preview:es": "vite --config ./vite.config-es.js preview",
+    "dev:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js preview",
     "debug": "node --inspect-brk ../../vite/bin/vite"
   },
   "devDependencies": {

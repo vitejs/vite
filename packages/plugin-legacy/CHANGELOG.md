@@ -1,3 +1,24 @@
+## <small>1.8.1 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+* docs(legacy): note works in build only (#7596) ([f26b14a](https://github.com/vitejs/vite/commit/f26b14a)), closes [#7596](https://github.com/vitejs/vite/issues/7596)
+
+
+
+## 1.8.0 (2022-03-30)
+
+* fix(deps): update all non-major dependencies (#6782) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e)), closes [#6782](https://github.com/vitejs/vite/issues/6782)
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* fix(plugin-legacy): always fallback legacy build when CSP (#6535) ([a118a1d](https://github.com/vitejs/vite/commit/a118a1d)), closes [#6535](https://github.com/vitejs/vite/issues/6535)
+* fix(plugin-legacy): polyfill latest features (#7514) ([cb388e2](https://github.com/vitejs/vite/commit/cb388e2)), closes [#7514](https://github.com/vitejs/vite/issues/7514)
+* fix(plugin-legacy): require Vite 2.8.0 (#6272) (#6869) ([997b8f1](https://github.com/vitejs/vite/commit/997b8f1)), closes [#6272](https://github.com/vitejs/vite/issues/6272) [#6869](https://github.com/vitejs/vite/issues/6869)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+* docs(vite-legacy): Note about using `regenerator-runtime` in Content Security Policy environment (#7 ([0fd6422](https://github.com/vitejs/vite/commit/0fd6422)), closes [#7234](https://github.com/vitejs/vite/issues/7234)
+* workflow: separate version bumping and publishing on release (#6879) ([fe8ef39](https://github.com/vitejs/vite/commit/fe8ef39)), closes [#6879](https://github.com/vitejs/vite/issues/6879)
+* release: plugin-legacy@1.7.1 ([19a58dd](https://github.com/vitejs/vite/commit/19a58dd))
+
+
+
 ## [1.7.1](https://github.com/vitejs/vite/compare/plugin-legacy@1.7.0...plugin-legacy@1.7.1) (2022-02-11)
 
 ### Bug Fixes

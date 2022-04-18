@@ -101,7 +101,9 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### Environment Variables
 
-Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+Environmental Variables can be obtained from `process.env` as usual.
+
+Note that Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
 
 ```js
 import { defineConfig, loadEnv } from 'vite'
@@ -155,6 +157,8 @@ export default defineConfig(({ command, mode }) => {
   Define global constant replacements. Entries will be defined as globals during dev and statically replaced during build.
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
+
+  - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
@@ -355,7 +359,7 @@ export default defineConfig(({ command, mode }) => {
 
 - **Type:** `ESBuildOptions | false`
 
-  `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+  `ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
   export default defineConfig({
@@ -366,9 +370,9 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
-  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
+  By default, esbuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
 
-  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
+  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by esbuild:
 
   ```js
   export default defineConfig({
@@ -378,7 +382,7 @@ export default defineConfig(({ command, mode }) => {
   })
   ```
 
-  Set to `false` to disable ESbuild transforms.
+  Set to `false` to disable esbuild transforms.
 
 ### assetsInclude
 
@@ -550,13 +554,11 @@ export default defineConfig(({ command, mode }) => {
 
 ### server.hmr
 
-- **Type:** `boolean | { protocol?: string, host?: string, port?: number | false, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
+- **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
 
   Disable or configure HMR connection (in cases where the HMR websocket must use a different address from the http server).
 
   Set `server.hmr.overlay` to `false` to disable the server error overlay.
-
-  Set `server.hmr.port` to `false` when connecting to a domain without a port.
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
@@ -849,7 +851,7 @@ export default defineConfig({
 - **Type:** `boolean | 'terser' | 'esbuild'`
 - **Default:** `'esbuild'`
 
-  Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
+  Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
   Note the `build.minify` option is not available when using the `'es'` format in lib mode.
 

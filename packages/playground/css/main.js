@@ -38,6 +38,12 @@ text(
   JSON.stringify(composesPathResolvingMod, null, 2)
 )
 
+import inlineMod from './inline.module.css?inline'
+text('.modules-inline', inlineMod)
+
+import charset from './charset.css'
+text('.charset-css', charset)
+
 import './dep.css'
 import './glob-dep.css'
 

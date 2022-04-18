@@ -20,7 +20,6 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 const detectDynamicImportVarName = '__vite_is_dynamic_import_support'
-const detectDynamicImportVarInitCode = `var ${detectDynamicImportVarName}=false;`
 const detectDynamicImportCode = `try{import("_").catch(()=>1);}catch(e){}window.${detectDynamicImportVarName}=true;`
 const dynamicFallbackInlineCode = `!function(){if(window.${detectDynamicImportVarName})return;console.warn("vite: loading legacy build because dynamic import is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
@@ -330,7 +329,10 @@ function viteLegacyPlugin(options = {}) {
               loose: false,
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
-                ? { version: 3, proposals: false }
+                ? {
+                    version: require('core-js/package.json').version,
+                    proposals: false
+                  }
                 : undefined,
               shippedProposals: true,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
@@ -434,12 +436,6 @@ function viteLegacyPlugin(options = {}) {
 
       // 5. inject dynamic import fallback entry
       if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
-        tags.push({
-          tag: 'script',
-          attrs: { type: 'module' },
-          children: detectDynamicImportVarInitCode,
-          injectTo: 'head'
-        })
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
@@ -711,7 +707,6 @@ viteLegacyPlugin.default = viteLegacyPlugin
 viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64'),
-  createHash('sha256').update(detectDynamicImportVarInitCode).digest('base64'),
   createHash('sha256').update(detectDynamicImportCode).digest('base64'),
   createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]

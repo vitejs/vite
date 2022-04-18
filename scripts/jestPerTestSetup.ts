@@ -175,6 +175,7 @@ afterAll(async () => {
   global.serverLogs = []
   await global.page?.close()
   await server?.close()
+  global.watcher?.close()
   const beforeAllErr = getBeforeAllError()
   if (beforeAllErr) {
     throw beforeAllErr
@@ -200,7 +201,7 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'))
+  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200

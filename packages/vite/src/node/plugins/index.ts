@@ -9,7 +9,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { htmlInlineProxyPlugin } from './html'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { wasmPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -17,6 +17,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 
 export async function resolvePlugins(
@@ -26,12 +27,14 @@ export async function resolvePlugins(
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isWatch = isBuild && !!config.build.watch
 
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
 
   return [
+    isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.resolve.alias }),
@@ -61,12 +64,13 @@ export async function resolvePlugins(
     ),
     wasmPlugin(config),
     webWorkerPlugin(config),
-    workerImportMetaUrlPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
+    isBuild && buildHtmlPlugin(config),
+    workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     ...postPlugins,
     ...buildPlugins.post,
