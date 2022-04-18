@@ -31,7 +31,7 @@ import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
 import type { ResolvedBuildOptions } from '.'
-import { parse as parseUrl } from 'url'
+import { parse as parseUrl, pathToFileURL } from 'url'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -1008,7 +1008,7 @@ async function bundleConfigFile(
               contents: contents
                 .replace(
                   /\bimport\.meta\.url\b/g,
-                  JSON.stringify(`file://${args.path}`)
+                  JSON.stringify(pathToFileURL(args.path).href)
                 )
                 .replace(
                   /\b__dirname\b/g,
