@@ -7,10 +7,24 @@ module.exports = vite.defineConfig({
   enforce: 'pre',
   worker: {
     format: 'es',
-    plugins: [vueJsx()]
+    plugins: [vueJsx()],
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js'
+      }
+    }
   },
   build: {
-    outDir: 'dist/es'
+    outDir: 'dist/es',
+    rollupOptions: {
+      output: {
+        assetFileNames: 'assets/asset.[name].[ext]',
+        chunkFileNames: 'assets/chunk.[name].js',
+        entryFileNames: 'assets/entry.[name].js'
+      }
+    }
   },
   plugins: [
     {

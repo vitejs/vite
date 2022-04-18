@@ -1,53 +1,57 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl, getAssetHash } from './asset'
+import { assetFileNamesToFileName, fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedFile } from 'rollup'
+import type {
+  TransformPluginContext,
+  OutputOptions,
+  EmittedAsset
+} from 'rollup'
+
+interface WorkerEmittedAsset extends EmittedAsset {
+  hash: string
+}
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
-  // <chunk_filename, hash>
-  assets: Map<string, string>
-  chunks: Map<string, string>
+  // <chunk_filename, WorkerEmittedAsset>
+  assets: Map<string, WorkerEmittedAsset>
+  chunks: Map<string, WorkerEmittedAsset>
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <filename, hash>
   bundle: Map<string, string>
-  // nested worker bundle context don't had file what emitted by outside bundle
-  // save the hash to id to rewrite truth id.
-  // <hash, id>
-  emitted: Map<string, string>
 }
 
 const WorkerFileId = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function emitWorkerFile(
-  ctx: Rollup.TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
-  asset: EmittedFile,
+  asset: EmittedAsset,
   type: 'assets' | 'chunks'
 ): string {
   const fileName = asset.fileName!
-  const workerMap = workerCache.get(config)!
+  const workerMap = workerCache.get(config.rawConfig || config)!
 
   if (workerMap[type].has(fileName)) {
-    return workerMap[type].get(fileName)!
+    return workerMap[type].get(fileName)!.hash
   }
-  const hash = ctx.emitFile(asset)
-  workerMap[type].set(fileName, hash)
-  workerMap.emitted.set(hash, fileName)
+  const hash = getAssetHash(fileName)
+  ;(asset as WorkerEmittedAsset).hash = hash
+  workerMap[type].set(fileName, asset as WorkerEmittedAsset)
   return hash
 }
 
 function emitWorkerAssets(
-  ctx: Rollup.TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
-  asset: EmittedFile
+  asset: EmittedAsset
 ) {
   const { format } = config.worker
   return emitWorkerFile(
@@ -59,15 +63,24 @@ function emitWorkerAssets(
 }
 
 function emitWorkerChunks(
-  ctx: Rollup.TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
-  asset: EmittedFile
+  asset: EmittedAsset
 ) {
   return emitWorkerFile(ctx, config, asset, 'chunks')
 }
 
+function getWorkerOutputFormat(config: ResolvedConfig): OutputOptions {
+  const workerOutputConfig = config.worker.rollupOptions.output
+  return workerOutputConfig
+    ? Array.isArray(workerOutputConfig)
+      ? workerOutputConfig[0] || {}
+      : workerOutputConfig
+    : {}
+}
+
 export async function bundleWorkerEntry(
-  ctx: Rollup.TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
@@ -86,22 +99,29 @@ export async function bundleWorkerEntry(
   })
   let chunk: Rollup.OutputChunk
   try {
+    const workerConfig = getWorkerOutputFormat(config)
     const {
       output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
+      dir: config.build.assetsDir,
+      assetFileNames:
+        workerConfig.assetFileNames ||
+        path.posix.join(config.build.assetsDir, '[name].[hash].[ext]'),
+      chunkFileNames:
+        workerConfig.chunkFileNames ||
+        path.posix.join(config.build.assetsDir, '[name].[hash].js'),
+      ...workerConfig,
       format,
       sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
+      // console.log(outputChunk.type, outputChunk.fileName);
       if (outputChunk.type === 'asset') {
         emitWorkerAssets(ctx, config, outputChunk)
       } else if (outputChunk.type === 'chunk') {
         emitWorkerChunks(ctx, config, {
-          fileName: path.posix.join(
-            config.build.assetsDir,
-            outputChunk.fileName
-          ),
+          fileName: outputChunk.fileName,
           source: outputChunk.code,
           type: 'asset'
         })
@@ -169,26 +189,27 @@ export async function workerFileToUrl(
   id: string,
   query: Record<string, string> | null
 ): Promise<string> {
-  const workerMap = workerCache.get(config)!
+  const workerMap = workerCache.get(config.rawConfig || config)!
 
   let hash = workerMap.bundle.get(id)
-  if (hash) {
-    // rewrite truth id, no need to replace by asset plugin
-    return config.base + workerMap.emitted.get(hash)!
+  if (!hash) {
+    const code = await bundleWorkerEntry(ctx, config, id, query)
+    const basename = path.parse(cleanUrl(id)).name
+    const contentHash = getAssetHash(code)
+    const fileName = assetFileNamesToFileName(
+      getWorkerOutputFormat(config).assetFileNames ||
+        path.posix.join(config.build.assetsDir, '[name].[hash].[ext]'),
+      `${basename}.js`,
+      contentHash,
+      code
+    )
+    hash = emitWorkerAssets(ctx, config, {
+      fileName,
+      type: 'asset',
+      source: code
+    })
+    workerMap.bundle.set(id, hash)
   }
-  const code = await bundleWorkerEntry(ctx, config, id, query)
-  const basename = path.parse(cleanUrl(id)).name
-  const contentHash = getAssetHash(code)
-  const fileName = path.posix.join(
-    config.build.assetsDir,
-    `${basename}.${contentHash}.js`
-  )
-  hash = emitWorkerAssets(ctx, config, {
-    fileName,
-    type: 'asset',
-    source: code
-  })
-  workerMap.bundle.set(id, hash)
   return `__VITE_ASSET__${hash}__`
 }
 
@@ -200,11 +221,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker',
 
     buildStart() {
+      if (isWorker) {
+        return
+      }
       workerCache.set(config, {
         assets: new Map(),
         chunks: new Map(),
-        bundle: new Map(),
-        emitted: new Map()
+        bundle: new Map()
       })
     },
 

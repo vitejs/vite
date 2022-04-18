@@ -251,6 +251,7 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    rawConfig: ResolvedConfig | null
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -482,6 +483,7 @@ export async function resolveConfig(
     command,
     mode,
     isWorker: false,
+    rawConfig: null,
     isProduction,
     plugins: userPlugins,
     server,
@@ -515,7 +517,11 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
+  const workerResolved: ResolvedConfig = {
+    ...resolved,
+    isWorker: true,
+    rawConfig: resolved
+  }
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
