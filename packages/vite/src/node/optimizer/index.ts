@@ -412,10 +412,7 @@ export async function runOptimizeDeps(
       try {
         exportsData = parse(entryContent) as ExportsData
       } catch {
-        const loader =
-          (esbuildOptions.loader &&
-            esbuildOptions.loader[path.extname(filePath)]) ||
-          'jsx'
+        const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
         debug(
           `Unable to parse dependency: ${id}. Trying again with a ${loader} transform.`
         )

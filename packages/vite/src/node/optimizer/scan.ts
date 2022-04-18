@@ -463,22 +463,26 @@ function esbuildScanPlugin(
           contents = config.esbuild.jsxInject + `\n` + contents
         }
 
+        const loader =
+          config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
+          (ext as Loader)
+
         if (contents.includes('import.meta.glob')) {
           return transformGlob(
             contents,
             id,
             config.root,
-            ext as Loader,
+            loader,
             resolve,
             config.logger
           ).then((contents) => ({
-            loader: ext as Loader,
+            loader,
             contents
           }))
         }
-        const { loader } = config.optimizeDeps?.esbuildOptions ?? {}
+
         return {
-          loader: ((loader && loader[`.${ext}`]) || ext) as Loader,
+          loader,
           contents
         }
       })
