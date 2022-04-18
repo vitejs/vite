@@ -12,62 +12,30 @@ import type {
   EmittedAsset
 } from 'rollup'
 
-interface WorkerEmittedAsset extends EmittedAsset {
-  hash: string
-}
-
 interface WorkerCache {
-  // save worker bundle emitted files avoid overwrites the same file.
-  // <chunk_filename, WorkerEmittedAsset>
-  assets: Map<string, WorkerEmittedAsset>
-  chunks: Map<string, WorkerEmittedAsset>
+  // let the worker chunks all emit in the top-level emitFile
+  // <chunk_filename, WorkerEmitAsset>
+  chunks: Map<string, EmittedAsset>
+
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
-  // <filename, hash>
+  // <input_filename, hash>
   bundle: Map<string, string>
 }
 
 const WorkerFileId = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
-function emitWorkerFile(
-  ctx: TransformPluginContext,
-  config: ResolvedConfig,
-  asset: EmittedAsset,
-  type: 'assets' | 'chunks'
-): string {
+function emitWorkerChunks(config: ResolvedConfig, asset: EmittedAsset): string {
   const fileName = asset.fileName!
   const workerMap = workerCache.get(config.rawConfig || config)!
-
-  if (workerMap[type].has(fileName)) {
-    return workerMap[type].get(fileName)!.hash
+  if (workerMap.chunks.has(fileName)) {
+    return (workerMap.chunks.get(fileName)! as any).hash
   }
   const hash = getAssetHash(fileName)
-  ;(asset as WorkerEmittedAsset).hash = hash
-  workerMap[type].set(fileName, asset as WorkerEmittedAsset)
+  ;(asset as any).hash = hash
+  workerMap.chunks.set(fileName, asset)
   return hash
-}
-
-function emitWorkerAssets(
-  ctx: TransformPluginContext,
-  config: ResolvedConfig,
-  asset: EmittedAsset
-) {
-  const { format } = config.worker
-  return emitWorkerFile(
-    ctx,
-    config,
-    asset,
-    format === 'es' ? 'chunks' : 'assets'
-  )
-}
-
-function emitWorkerChunks(
-  ctx: TransformPluginContext,
-  config: ResolvedConfig,
-  asset: EmittedAsset
-) {
-  return emitWorkerFile(ctx, config, asset, 'chunks')
 }
 
 function getWorkerOutputFormat(config: ResolvedConfig): OutputOptions {
@@ -79,6 +47,11 @@ function getWorkerOutputFormat(config: ResolvedConfig): OutputOptions {
     : {}
 }
 
+// Nested worker construction is a recursive process. The outputChunk of asset type can be output directly.
+// But the outputChunk of the chunk type needs to use the asset type to emitFile,
+// which will cause it to become an asset in the recursive process.
+// In a recursive process Rollup avoids the asset and chunk to add count to the name of the outputChunk generated later.
+// will generate the exact same file (file.js / file2.js) So we let the worker chunks all emit in the top-level emitFile
 export async function bundleWorkerEntry(
   ctx: TransformPluginContext,
   config: ResolvedConfig,
@@ -103,30 +76,38 @@ export async function bundleWorkerEntry(
     const {
       output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
-      dir: config.build.assetsDir,
-      assetFileNames:
-        workerConfig.assetFileNames ||
-        path.posix.join(config.build.assetsDir, '[name].[hash].[ext]'),
-      chunkFileNames:
-        workerConfig.chunkFileNames ||
-        path.posix.join(config.build.assetsDir, '[name].[hash].js'),
-      ...workerConfig,
+      assetFileNames: path.posix.join(
+        config.build.assetsDir,
+        '[name].[hash].[ext]'
+      ),
+      chunkFileNames: path.posix.join(
+        config.build.assetsDir,
+        '[name].[hash].js'
+      ),
+      dir: path.join(config.root, config.build.outDir, config.build.assetsDir),
       format,
-      sourcemap: config.build.sourcemap
+      sourcemap: config.build.sourcemap,
+      ...workerConfig
     })
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
-      // console.log(outputChunk.type, outputChunk.fileName);
       if (outputChunk.type === 'asset') {
-        emitWorkerAssets(ctx, config, outputChunk)
+        ctx.emitFile(outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        emitWorkerChunks(ctx, config, {
+        emitWorkerChunks(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
           type: 'asset'
         })
       }
     })
+    if (!config.isWorker) {
+      const workerMap = workerCache.get(config.rawConfig || config)!
+      workerMap.chunks.forEach((asset) => {
+        ctx.emitFile(asset)
+      })
+      workerMap.chunks.clear()
+    }
   } finally {
     await bundle.close()
   }
@@ -190,27 +171,26 @@ export async function workerFileToUrl(
   query: Record<string, string> | null
 ): Promise<string> {
   const workerMap = workerCache.get(config.rawConfig || config)!
-
-  let hash = workerMap.bundle.get(id)
-  if (!hash) {
+  let fileName = workerMap.bundle.get(id)
+  if (!fileName) {
     const code = await bundleWorkerEntry(ctx, config, id, query)
     const basename = path.parse(cleanUrl(id)).name
     const contentHash = getAssetHash(code)
-    const fileName = assetFileNamesToFileName(
+    fileName = assetFileNamesToFileName(
       getWorkerOutputFormat(config).assetFileNames ||
         path.posix.join(config.build.assetsDir, '[name].[hash].[ext]'),
       `${basename}.js`,
       contentHash,
       code
     )
-    hash = emitWorkerAssets(ctx, config, {
+    ctx.emitFile({
       fileName,
       type: 'asset',
       source: code
     })
-    workerMap.bundle.set(id, hash)
+    workerMap.bundle.set(id, fileName)
   }
-  return `__VITE_ASSET__${hash}__`
+  return fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -225,7 +205,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
       workerCache.set(config, {
-        assets: new Map(),
         chunks: new Map(),
         bundle: new Map()
       })

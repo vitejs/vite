@@ -10,9 +10,9 @@ module.exports = vite.defineConfig({
     plugins: [vueJsx()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        chunkFileNames: 'assets/[name].[hash].js',
-        entryFileNames: 'assets/[name].[hash].js'
+        // assetFileNames: 'assets/worker_asset.[name].[ext]',
+        // chunkFileNames: 'assets/worker_chunk.[name].js',
+        // entryFileNames: 'assets/[name].js'
       }
     }
   },
@@ -20,9 +20,9 @@ module.exports = vite.defineConfig({
     outDir: 'dist/es',
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/asset.[name].[ext]',
-        chunkFileNames: 'assets/chunk.[name].js',
-        entryFileNames: 'assets/entry.[name].js'
+        assetFileNames: 'assets/[name].[ext]',
+        chunkFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name].js'
       }
     }
   },
