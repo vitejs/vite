@@ -1,6 +1,6 @@
 import { Logo } from './logo'
 
-export function App(props) {
+export function App() {
   return (
     <>
       <Logo />
