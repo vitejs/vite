@@ -417,11 +417,12 @@ export async function runOptimizeDeps(
       try {
         exportsData = parse(entryContent) as ExportsData
       } catch {
+        const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
         debug(
-          `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
+          `Unable to parse dependency: ${id}. Trying again with a ${loader} transform.`
         )
         const transformed = await transformWithEsbuild(entryContent, filePath, {
-          loader: 'jsx'
+          loader
         })
         // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
         // This is useful for packages such as Gatsby.
