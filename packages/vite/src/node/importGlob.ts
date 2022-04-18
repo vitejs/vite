@@ -17,7 +17,6 @@ import {
 } from './utils'
 import type { RollupError } from 'rollup'
 import type { Logger } from '.'
-import colors from 'picocolors'
 
 interface GlobParams {
   base: string
