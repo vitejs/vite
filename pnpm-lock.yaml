@@ -370,6 +370,7 @@ importers:
   playground/css:
     specifiers:
       '@vitejs/test-css-dep': link:./css-dep
+      '@vitejs/test-css-dep-exports': link:./css-dep-exports
       '@vitejs/test-css-js-dep': file:./css-js-dep
       fast-glob: ^3.2.12
       less: ^4.1.3
@@ -379,6 +380,7 @@ importers:
       sugarss: ^4.0.1
     devDependencies:
       '@vitejs/test-css-dep': link:css-dep
+      '@vitejs/test-css-dep-exports': link:css-dep-exports
       '@vitejs/test-css-js-dep': file:playground/css/css-js-dep
       fast-glob: 3.2.12
       less: 4.1.3
@@ -411,6 +413,9 @@ importers:
       sugarss: 4.0.1
 
   playground/css/css-dep:
+    specifiers: {}
+
+  playground/css/css-dep-exports:
     specifiers: {}
 
   playground/css/css-js-dep:

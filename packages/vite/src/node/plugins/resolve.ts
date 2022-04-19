@@ -91,6 +91,9 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   skipPackageJson?: boolean
   preferRelative?: boolean
   isRequire?: boolean
+  isImport?: boolean
+  // When true, the export resolver should opt out of Node's default resolution conditions
+  isUnsafeExport?: boolean
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -1085,7 +1088,8 @@ function resolveExports(
   }
   if (
     (!overrideConditions || overrideConditions.has('module')) &&
-    !options.isRequire
+    !options.isRequire &&
+    !options.isUnsafeExport
   ) {
     conditions.push('module')
   }
@@ -1102,6 +1106,7 @@ function resolveExports(
   return _resolveExports(pkg, key, {
     browser: targetWeb && !conditions.includes('node'),
     require: options.isRequire && !conditions.includes('import'),
+    unsafe: options.isUnsafeExport,
     conditions,
   })
 }
