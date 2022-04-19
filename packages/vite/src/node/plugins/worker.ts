@@ -1,6 +1,6 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl, getAssetHash } from './asset'
+import { fileToUrl } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
@@ -83,13 +83,12 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return emitSourcemapForWorkerEntry(ctx, config, id, query, chunk)
+  return emitSourcemapForWorkerEntry(ctx, config, query, chunk)
 }
 
 function emitSourcemapForWorkerEntry(
-  context: TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
-  id: string,
   query: Record<string, string> | null,
   chunk: Rollup.OutputChunk
 ): Rollup.OutputChunk {
@@ -106,20 +105,13 @@ function emitSourcemapForWorkerEntry(
       config.build.sourcemap === 'hidden' ||
       config.build.sourcemap === true
     ) {
-      const basename = path.parse(cleanUrl(id)).name
       const data = sourcemap.toString()
-      const content = Buffer.from(data)
-      const contentHash = getAssetHash(content)
-      const fileName = `${basename}.${contentHash}.js.map`
-      const filePath = path.posix.join(config.build.assetsDir, fileName)
-      if (!context.cache.has(contentHash)) {
-        context.cache.set(contentHash, true)
-        context.emitFile({
-          fileName: filePath,
-          type: 'asset',
-          source: data
-        })
-      }
+      const mapFileName = chunk.fileName + '.map'
+      ctx.emitFile({
+        fileName: mapFileName,
+        type: 'asset',
+        source: data
+      })
 
       // Emit the comment that tells the JS debugger where it can find the
       // sourcemap file.
@@ -128,7 +120,8 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl = query?.inline != null ? filePath : fileName
+        const sourceMapUrl =
+          query?.inline != null ? mapFileName : chunk.fileName
         chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
