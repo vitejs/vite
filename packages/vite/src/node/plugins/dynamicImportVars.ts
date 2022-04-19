@@ -83,8 +83,11 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
 
         s.prepend(`function __variableDynamicImportRuntime_${importIndex}_(path) {
           const glob = ${exp}
-
-          return glob[path] ?? new Promise((resolve, reject) => {
+          const v = glob[path]
+          if (v) {
+            return typeof v === 'function' ? v() : v
+          }
+          return new Promise((resolve, reject) => {
             (typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
               reject.bind(null, new Error("Unknown variable dynamic import: " + path))
             );
