@@ -6,9 +6,13 @@ import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext } from 'rollup'
+import type { TransformPluginContext, EmittedAsset } from 'rollup'
 
 interface WorkerCache {
+  // let the worker chunks all emit in the top-level emitFile
+  // <chunk_filename, WorkerEmitAsset>
+  chunks: Map<string, EmittedAsset>
+
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, hash>
@@ -17,6 +21,18 @@ interface WorkerCache {
 
 const WorkerFileId = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+function emitWorkerChunks(config: ResolvedConfig, asset: EmittedAsset): string {
+  const fileName = asset.fileName!
+  const workerMap = workerCache.get(config.rawConfig || config)!
+  if (workerMap.chunks.has(fileName)) {
+    return (workerMap.chunks.get(fileName)! as any).hash
+  }
+  const hash = getAssetHash(fileName)
+  ;(asset as any).hash = hash
+  workerMap.chunks.set(fileName, asset)
+  return hash
+}
 
 // Nested worker construction is a recursive process. The outputChunk of asset type can be output directly.
 // But the outputChunk of the chunk type needs to use the asset type to emitFile,
@@ -73,13 +89,20 @@ export async function bundleWorkerEntry(
       if (outputChunk.type === 'asset') {
         ctx.emitFile(outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        ctx.emitFile({
+        emitWorkerChunks(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
           type: 'asset'
         })
       }
     })
+    if (!config.isWorker) {
+      const workerMap = workerCache.get(config.rawConfig || config)!
+      workerMap.chunks.forEach((asset) => {
+        ctx.emitFile(asset)
+      })
+      workerMap.chunks.clear()
+    }
   } finally {
     await bundle.close()
   }
@@ -163,6 +186,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
       workerCache.set(config, {
+        chunks: new Map(),
         bundle: new Map()
       })
     },
