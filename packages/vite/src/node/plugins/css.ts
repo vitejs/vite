@@ -376,7 +376,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = modulesCode
         } else {
           let content = css
-          if (inlined) {
+          if (config.build.minify) {
             content = await minifyCSS(content, config)
           }
           code = `export default ${JSON.stringify(content)}`
