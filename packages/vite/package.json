@@ -71,7 +71,7 @@
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/mime": "^2.0.3",
-    "@types/node": "^16.11.27",
+    "@types/node": "^17.0.25",
     "@types/resolve": "^1.20.1",
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.37",
