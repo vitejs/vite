@@ -9,9 +9,8 @@ import { onRollupWarning } from '../build'
 import type { TransformPluginContext, EmittedAsset } from 'rollup'
 
 interface WorkerCache {
-  // let the worker chunks all emit in the top-level emitFile
-  // <chunk_filename, WorkerEmitAsset>
-  chunks: Map<string, EmittedAsset>
+  // save worker all emit chunk avoid rollup make the same asset unique.
+  assets: Map<string, EmittedAsset>
 
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
@@ -22,23 +21,15 @@ interface WorkerCache {
 const WorkerFileId = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
-function emitWorkerChunks(config: ResolvedConfig, asset: EmittedAsset): string {
+function saveEmitWorkerAsset(
+  config: ResolvedConfig,
+  asset: EmittedAsset
+): void {
   const fileName = asset.fileName!
   const workerMap = workerCache.get(config.rawConfig || config)!
-  if (workerMap.chunks.has(fileName)) {
-    return (workerMap.chunks.get(fileName)! as any).hash
-  }
-  const hash = getAssetHash(fileName)
-  ;(asset as any).hash = hash
-  workerMap.chunks.set(fileName, asset)
-  return hash
+  workerMap.assets.set(fileName, asset)
 }
 
-// Nested worker construction is a recursive process. The outputChunk of asset type can be output directly.
-// But the outputChunk of the chunk type needs to use the asset type to emitFile,
-// which will cause it to become an asset in the recursive process.
-// In a recursive process Rollup avoids the asset and chunk to add count to the name of the outputChunk generated later.
-// will generate the exact same file (file.js / file2.js) So we let the worker chunks all emit in the top-level emitFile
 export async function bundleWorkerEntry(
   ctx: TransformPluginContext,
   config: ResolvedConfig,
@@ -87,22 +78,15 @@ export async function bundleWorkerEntry(
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
-        ctx.emitFile(outputChunk)
+        saveEmitWorkerAsset(config, outputChunk)
       } else if (outputChunk.type === 'chunk') {
-        emitWorkerChunks(config, {
+        saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
           type: 'asset'
         })
       }
     })
-    if (!config.isWorker) {
-      const workerMap = workerCache.get(config.rawConfig || config)!
-      workerMap.chunks.forEach((asset) => {
-        ctx.emitFile(asset)
-      })
-      workerMap.chunks.clear()
-    }
   } finally {
     await bundle.close()
   }
@@ -130,7 +114,7 @@ function emitSourcemapForWorkerEntry(
     ) {
       const data = sourcemap.toString()
       const mapFileName = chunk.fileName + '.map'
-      ctx.emitFile({
+      saveEmitWorkerAsset(config, {
         fileName: mapFileName,
         type: 'asset',
         source: data
@@ -144,7 +128,9 @@ function emitSourcemapForWorkerEntry(
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
         const sourceMapUrl =
-          query?.inline != null ? mapFileName : chunk.fileName
+          query?.inline != null
+            ? mapFileName
+            : path.relative(config.build.assetsDir, mapFileName)
         chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
@@ -164,7 +150,7 @@ export async function workerFileToUrl(
   if (!fileName) {
     const outputChunk = await bundleWorkerEntry(ctx, config, id, query)
     fileName = outputChunk.fileName
-    ctx.emitFile({
+    saveEmitWorkerAsset(config, {
       fileName,
       source: outputChunk.code,
       type: 'asset'
@@ -186,7 +172,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
       workerCache.set(config, {
-        chunks: new Map(),
+        assets: new Map(),
         bundle: new Map()
       })
     },
@@ -266,6 +252,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     renderChunk(code) {
       if (isWorker && code.includes('import.meta.url')) {
         return code.replace('import.meta.url', 'self.location.href')
+      }
+      if (!isWorker) {
+        const workerMap = workerCache.get(config)!
+        workerMap.assets.forEach((asset) => {
+          this.emitFile(asset)
+          workerMap.assets.delete(asset.fileName!)
+        })
       }
     }
   }
