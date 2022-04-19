@@ -258,18 +258,18 @@ export async function transformDynamicImportGlob(
   }
   const original = source.slice(expStart, expEnd)
   const filename = source.slice(start + 1, end - 1)
-  const [rawPattern, _] = filename.split('?')
   const rawQuery = parseRequest(filename)
   const query: DynamicImportRequest = {}
   const ast = (ctx.parse(original) as any).body[0].expression
 
-  const userPattern = dynamicImportToGlob(ast.source, rawPattern as any)
-
-  if (!userPattern) {
+  const userPatternQuery = dynamicImportToGlob(ast.source, filename)
+  if (!userPatternQuery) {
     return null
   }
+  const [userPattern] = userPatternQuery.split('?', 2)
+  const [rawPattern] = filename.split('?', 2)
 
-  if (rawQuery?.raw) {
+  if (rawQuery?.raw !== undefined) {
     query.raw = true
   }
 

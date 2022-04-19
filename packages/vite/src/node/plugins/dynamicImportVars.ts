@@ -20,11 +20,7 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
     name: 'vite:dynamic-import-vars',
 
     async transform(source, importer) {
-      if (
-        !filter(importer) ||
-        (importer.includes('node_modules') &&
-          !source.includes('import.meta.glob'))
-      ) {
+      if (!filter(importer)) {
         return
       }
 
