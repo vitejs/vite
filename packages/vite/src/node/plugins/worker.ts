@@ -1,16 +1,12 @@
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { assetFileNamesToFileName, fileToUrl, getAssetHash } from './asset'
+import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
-import type {
-  TransformPluginContext,
-  OutputOptions,
-  EmittedAsset
-} from 'rollup'
+import type { TransformPluginContext, EmittedAsset } from 'rollup'
 
 interface WorkerCache {
   // let the worker chunks all emit in the top-level emitFile
@@ -38,15 +34,6 @@ function emitWorkerChunks(config: ResolvedConfig, asset: EmittedAsset): string {
   return hash
 }
 
-function getWorkerOutputFormat(config: ResolvedConfig): OutputOptions {
-  const workerOutputConfig = config.worker.rollupOptions.output
-  return workerOutputConfig
-    ? Array.isArray(workerOutputConfig)
-      ? workerOutputConfig[0] || {}
-      : workerOutputConfig
-    : {}
-}
-
 // Nested worker construction is a recursive process. The outputChunk of asset type can be output directly.
 // But the outputChunk of the chunk type needs to use the asset type to emitFile,
 // which will cause it to become an asset in the recursive process.
@@ -57,7 +44,7 @@ export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
-): Promise<Buffer> {
+): Promise<Rollup.OutputChunk> {
   // bundle the file as entry to support imports
   const rollup = require('rollup') as typeof Rollup
   const { plugins, rollupOptions, format } = config.worker
@@ -72,22 +59,30 @@ export async function bundleWorkerEntry(
   })
   let chunk: Rollup.OutputChunk
   try {
-    const workerConfig = getWorkerOutputFormat(config)
+    const workerOutputConfig = config.worker.rollupOptions.output
+    const workerConfig = workerOutputConfig
+      ? Array.isArray(workerOutputConfig)
+        ? workerOutputConfig[0] || {}
+        : workerOutputConfig
+      : {}
     const {
       output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
-      assetFileNames: path.posix.join(
+      entryFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name].[hash].[ext]'
+        '[name].[hash].js'
       ),
       chunkFileNames: path.posix.join(
         config.build.assetsDir,
         '[name].[hash].js'
       ),
-      dir: path.join(config.root, config.build.outDir, config.build.assetsDir),
+      assetFileNames: path.posix.join(
+        config.build.assetsDir,
+        '[name].[hash].[ext]'
+      ),
+      ...workerConfig,
       format,
-      sourcemap: config.build.sourcemap,
-      ...workerConfig
+      sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
     outputChunks.forEach((outputChunk) => {
@@ -120,15 +115,16 @@ function emitSourcemapForWorkerEntry(
   id: string,
   query: Record<string, string> | null,
   chunk: Rollup.OutputChunk
-): Buffer {
-  let { code, map: sourcemap } = chunk
+): Rollup.OutputChunk {
+  const { map: sourcemap } = chunk
+
   if (sourcemap) {
     if (config.build.sourcemap === 'inline') {
       // Manually add the sourcemap to the code if configured for inline sourcemaps.
       // TODO: Remove when https://github.com/rollup/rollup/issues/3913 is resolved
       // Currently seems that it won't be resolved until Rollup 3
       const dataUrl = sourcemap.toUrl()
-      code += `//# sourceMappingURL=${dataUrl}`
+      chunk.code += `//# sourceMappingURL=${dataUrl}`
     } else if (
       config.build.sourcemap === 'hidden' ||
       config.build.sourcemap === true
@@ -156,12 +152,12 @@ function emitSourcemapForWorkerEntry(
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
         const sourceMapUrl = query?.inline != null ? filePath : fileName
-        code += `//# sourceMappingURL=${sourceMapUrl}`
+        chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
   }
 
-  return Buffer.from(code)
+  return chunk
 }
 
 export async function workerFileToUrl(
@@ -173,24 +169,16 @@ export async function workerFileToUrl(
   const workerMap = workerCache.get(config.rawConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const code = await bundleWorkerEntry(ctx, config, id, query)
-    const basename = path.parse(cleanUrl(id)).name
-    const contentHash = getAssetHash(code)
-    fileName = assetFileNamesToFileName(
-      getWorkerOutputFormat(config).assetFileNames ||
-        path.posix.join(config.build.assetsDir, '[name].[hash].[ext]'),
-      `${basename}.js`,
-      contentHash,
-      code
-    )
+    const outputChunk = await bundleWorkerEntry(ctx, config, id, query)
+    fileName = outputChunk.fileName
     ctx.emitFile({
       fileName,
-      type: 'asset',
-      source: code
+      source: outputChunk.code,
+      type: 'asset'
     })
     workerMap.bundle.set(id, fileName)
   }
-  return fileName
+  return config.base + fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -239,12 +227,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       let url: string
       if (isBuild) {
         if (query.inline != null) {
-          const code = await bundleWorkerEntry(this, config, id, query)
+          const chunk = await bundleWorkerEntry(this, config, id, query)
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
           return {
-            code: `const encodedJs = "${code.toString('base64')}";
+            code: `const encodedJs = "${Buffer.from(chunk.code).toString(
+              'base64'
+            )}";
             const blob = typeof window !== "undefined" && window.Blob && new Blob([atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
