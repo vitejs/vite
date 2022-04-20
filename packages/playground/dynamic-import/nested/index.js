@@ -81,3 +81,8 @@ console.log(mod)
 const base = ''
 const glob = import.meta.glob(`./*.js`, { as: 'raw' })
 console.log(glob)
+
+// TODO
+// const resolvePath = 'hello'
+// const resplvePathMod = import(`@/${resolvePath}.js`)
+// console.log(resplvePathMod)
