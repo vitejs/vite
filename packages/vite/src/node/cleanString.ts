@@ -25,9 +25,16 @@ export function emptyString(raw: string): string {
 }
 
 const enum LexerState {
+  // template string
   inTemplateString,
   inInterpolationExpression,
-  inObjectExpression
+  inObjectExpression,
+  // strings
+  inSingleQuoteString,
+  inDoubleQuoteString,
+  // comments
+  inMultilineCommentsRE,
+  inSinglelineCommentsRE
 }
 
 function replaceAt(
