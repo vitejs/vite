@@ -187,9 +187,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
           const original = source.slice(expStart, expEnd)
-          const replacement = isWorker
-            ? `() => ${original}`
-            : `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
+          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
         }
 
