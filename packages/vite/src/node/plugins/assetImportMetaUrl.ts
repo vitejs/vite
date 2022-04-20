@@ -1,9 +1,9 @@
-import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { transformStableResult } from '../utils'
+import type { ResolveFn } from '../'
+import { isParentDirectory, normalizePath, transformStableResult } from '../utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 
@@ -18,6 +18,8 @@ import { preloadHelperId } from './importAnalysisBuild'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  let assetResolver: ResolveFn
+
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
@@ -63,16 +65,31 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           const url = rawUrl.slice(1, -1)
-          const file = path.resolve(path.dirname(id), url)
-          // Get final asset URL. Catch error if the file does not exist,
-          // in which we can resort to the initial URL and let it resolve in runtime
-          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+          assetResolver ??= config.createResolver({
+            root: config.publicDir,
+            extensions: [],
+            mainFields: [],
+            tryIndex: false,
+            preferRelative: true
+          })
+          const resolved = await assetResolver(url, id)
+          if (!resolved) {
             const rawExp = code.slice(index, index + exp.length)
             config.logger.warnOnce(
               `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
-            return url
-          })
+          }
+          // Get final asset URL. If the file does not exist,
+          // we fall back to the initial URL and let it resolve in runtime
+          const builtUrl = resolved
+            ? await fileToUrl(
+                isParentDirectory(normalizePath(config.publicDir), resolved)
+                  ? url
+                  : resolved,
+                config,
+                this
+              )
+            : url
           s.overwrite(
             index,
             index + exp.length,

@@ -281,6 +281,10 @@ test('new URL(..., import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
 })
 
+test('new URL("@/...", import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
+})
+
 test('new URL("/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-base-path')).toMatch(
     iconMatch
