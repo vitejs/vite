@@ -4,10 +4,12 @@ import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk, SourceMap } from 'rollup'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
-import { bareImportRE } from '../utils'
+import { bareImportRE, combineSourcemaps } from '../utils'
+import type { RawSourceMap } from '@ampproject/remapping'
+import { genSourceMapUrl } from '../server/sourcemap'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -263,6 +265,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             this.error(e, e.idx)
           }
 
+          const updateChunkCode = (ms: MagicString) => {
+            if (!ms.hasChanged()) return
+
+            chunk.code = ms.toString()
+            if (config.build.sourcemap && chunk.map) {
+              const nextMap = ms.generateMap({
+                source: chunk.fileName,
+                hires: true
+              })
+              const map = combineSourcemaps(
+                chunk.fileName,
+                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
+                false
+              ) as SourceMap
+              map.toUrl = () => genSourceMapUrl(map)
+              chunk.map = map
+            }
+          }
+
           if (imports.length) {
             const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
@@ -345,13 +366,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 )
               }
             }
-            chunk.code = s.toString()
-            // TODO source map
+            updateChunkCode(s)
           }
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          chunk.code = chunk.code.replace(preloadMarkerRE, 'void 0')
+          const s = new MagicString(chunk.code)
+          s.replace(preloadMarkerRE, 'void 0')
+          updateChunkCode(s)
         }
       }
     }
