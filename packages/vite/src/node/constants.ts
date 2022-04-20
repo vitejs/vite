@@ -6,21 +6,6 @@ export const DEFAULT_MAIN_FIELDS = [
   'jsnext'
 ]
 
-/**
- * A non-exhaustive list of known-to-be-ES-module entry names.
- * From <https://github.com/stereobooster/package.json#package-bundlers>
- */
-export const KNOWN_ESM_MAIN_FIELDS = [
-  'module',
-  'jsnext:main',
-  'jsnext',
-  'esnext',
-  'es2015',
-  'es2020',
-  'fesm2015',
-  'fesm2020'
-]
-
 export const DEFAULT_EXTENSIONS = [
   '.mjs',
   '.js',

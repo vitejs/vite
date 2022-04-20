@@ -32,6 +32,12 @@ if (isBuild) {
     expect(htmlEntry.assets.length).toEqual(1)
   })
 } else {
+  test('No ReferenceError', async () => {
+    browserErrors.forEach((error) => {
+      expect(error.name).not.toBe('ReferenceError')
+    })
+  })
+
   describe('CSS HMR', () => {
     test('preserve the base in CSS HMR', async () => {
       await untilUpdated(() => getColor('body'), 'black') // sanity check
