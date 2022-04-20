@@ -405,3 +405,9 @@ test("relative path rewritten in Less's data-uri", async () => {
     /^url\("data:image\/svg\+xml,%3Csvg/
   )
 })
+
+test('PostCSS source.input.from includes query', async () => {
+  const code = await page.textContent('.postcss-source-input')
+  // should resolve assets
+  expect(code).toContain('/postcss-source-input.css?query=foo')
+})
