@@ -283,6 +283,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }`,
         map: { mappings: '' } // Empty sourcemap to supress Rolup warning
       }
+    },
+
+    renderChunk(code) {
+      if (config.isWorker && code.includes('import.meta.url')) {
+        return code.replace('import.meta.url', 'self.location.href')
+      }
     }
   }
 }
