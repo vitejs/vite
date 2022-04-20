@@ -28,7 +28,7 @@ vite --config my-config.js
 ```
 
 ::: tip NOTE
-Vite will replace `__filename`, `__dirname`, and `import.meta.url` in **CommonJS** and **TypeScript** config files. Using these as variable names will result in an error:
+Vite will replace `__filename`, `__dirname`, and `import.meta.url` in config files and its deps. Using these as variable names will result in an error:
 
 ```js
 const __filename = "value"
@@ -101,7 +101,9 @@ export default defineConfig(async ({ command, mode }) => {
 
 ### Environment Variables
 
-Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+Environmental Variables can be obtained from `process.env` as usual.
+
+Note that Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
 
 ```js
 import { defineConfig, loadEnv } from 'vite'
@@ -304,7 +306,11 @@ export default defineConfig(({ command, mode }) => {
 
 - **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
 
-  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom directory to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
+  Inline PostCSS config or a custom directory to search PostCSS config from (default is project root).
+
+  For inline PostCSS config, it expects the same format as `postcss.config.js`. But for `plugins` property, only [array format](https://github.com/postcss/postcss-load-config/blob/main/README.md#array) can be used.
+
+  The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
 
   Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 

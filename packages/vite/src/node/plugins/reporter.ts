@@ -184,10 +184,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (chunk.source) {
               const isCSS = chunk.fileName.endsWith('.css')
+              const isMap = chunk.fileName.endsWith('.js.map')
               printFileInfo(
                 chunk.fileName,
                 chunk.source,
-                isCSS ? WriteType.CSS : WriteType.ASSET,
+                isCSS
+                  ? WriteType.CSS
+                  : isMap
+                  ? WriteType.SOURCE_MAP
+                  : WriteType.ASSET,
                 longest,
                 isCSS ? await getCompressedSize(chunk.source) : undefined
               )

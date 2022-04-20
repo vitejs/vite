@@ -35,13 +35,13 @@
     "vue": "^3.2.25"
   },
   "devDependencies": {
-    "@rollup/pluginutils": "^4.2.0",
+    "@rollup/pluginutils": "^4.2.1",
     "@types/hash-sum": "^1.0.0",
     "debug": "^4.3.4",
     "hash-sum": "^2.0.0",
     "rollup": "^2.59.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.31"
+    "vue": "^3.2.33"
   }
 }
