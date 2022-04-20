@@ -25,7 +25,7 @@
     "@babel/core": "^7.17.9",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-typescript": "^7.16.8",
-    "@rollup/pluginutils": "^4.2.0",
+    "@rollup/pluginutils": "^4.2.1",
     "@vue/babel-plugin-jsx": "^1.1.1",
     "hash-sum": "^2.0.0"
   }

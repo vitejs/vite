@@ -24,6 +24,7 @@ declare global {
   const page: Page | undefined
 
   const browserLogs: string[]
+  const browserErrors: Error[]
   const serverLogs: string[]
   const viteTestUrl: string | undefined
   const watcher: RollupWatcher | undefined
@@ -34,6 +35,7 @@ declare const global: {
   page?: Page
 
   browserLogs: string[]
+  browserErrors: Error[]
   serverLogs: string[]
   viteTestUrl?: string
   watcher?: RollupWatcher
@@ -56,6 +58,11 @@ const onConsole = (msg: ConsoleMessage) => {
   logs.push(msg.text())
 }
 
+const errors: Error[] = (global.browserErrors = [])
+const onPageError = (error: Error) => {
+  errors.push(error)
+}
+
 beforeAll(async () => {
   const page = global.page
   if (!page) {
@@ -63,6 +70,7 @@ beforeAll(async () => {
   }
   try {
     page.on('console', onConsole)
+    page.on('pageerror', onPageError)
 
     const testPath = expect.getState().testPath
     const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
