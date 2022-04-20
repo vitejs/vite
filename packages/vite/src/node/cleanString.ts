@@ -2,7 +2,8 @@ import type { RollupError } from 'rollup'
 // bank on the non-overlapping nature of regex matches and combine all filters into one giant regex
 // /`([^`\$\{\}]|\$\{(`|\g<1>)*\})*`/g can match nested string template
 // but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
-const cleanerRE = /"[^"]*"|'[^']*'|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
+const cleanerRE =
+  /"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
 
 const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
@@ -25,9 +26,16 @@ export function emptyString(raw: string): string {
 }
 
 const enum LexerState {
+  // template string
   inTemplateString,
   inInterpolationExpression,
-  inObjectExpression
+  inObjectExpression,
+  // strings
+  inSingleQuoteString,
+  inDoubleQuoteString,
+  // comments
+  inMultilineCommentsRE,
+  inSinglelineCommentsRE
 }
 
 function replaceAt(

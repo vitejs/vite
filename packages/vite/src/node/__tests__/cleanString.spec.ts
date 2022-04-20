@@ -32,6 +32,25 @@ test('strings', () => {
   expect(clean).toMatch('const b = "\0\0\0\0"')
 })
 
+test('escape character', () => {
+  const clean = emptyString(`
+    '1\\'1'
+    "1\\"1"
+    "1\\"1\\"1"
+    "1\\'1'\\"1"
+    "1'1'"
+    "1'\\'1\\''\\"1\\"\\""
+    '1"\\"1\\""\\"1\\"\\"'
+    '""1""'
+    '"""1"""'
+    '""""1""""'
+    "''1''"
+    "'''1'''"
+    "''''1''''"
+  `)
+  expect(clean).not.toMatch('1')
+})
+
 test('strings comment nested', () => {
   expect(
     emptyString(`

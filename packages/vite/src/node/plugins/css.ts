@@ -1122,7 +1122,7 @@ export async function hoistAtRules(css: string) {
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
   s.replace(
-    /@import\s*(?:url\([^\)]*\)|"[^"]*"|'[^']*'|[^;]*).*?;/gm,
+    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
     (match) => {
       s.appendLeft(0, match)
       return ''
@@ -1131,13 +1131,16 @@ export async function hoistAtRules(css: string) {
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   let foundCharset = false
-  s.replace(/@charset\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
-    if (!foundCharset) {
-      s.prepend(match)
-      foundCharset = true
+  s.replace(
+    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
+    (match) => {
+      if (!foundCharset) {
+        s.prepend(match)
+        foundCharset = true
+      }
+      return ''
     }
-    return ''
-  })
+  )
   return s.toString()
 }
 
