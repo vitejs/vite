@@ -56,7 +56,6 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
         let result
         try {
           result = await transformDynamicImportGlob(
-            this,
             source,
             expStart,
             expEnd,
@@ -85,7 +84,7 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
           const glob = ${exp}
           const v = glob[path]
           if (v) {
-            return typeof v === 'function' ? v() : v
+            return typeof v === 'function' ? v() : Promise.resolve(v)
           }
           return new Promise((resolve, reject) => {
             (typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(

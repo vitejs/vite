@@ -16,10 +16,11 @@ import {
   normalizePath,
   parseRequest
 } from './utils'
-import type { RollupError, TransformPluginContext } from 'rollup'
+import type { RollupError } from 'rollup'
 import type { Logger } from '.'
 import colors from 'picocolors'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import { parse as parseJS } from 'acorn'
 
 interface GlobParams {
   base: string
@@ -40,6 +41,44 @@ interface GlobOptions {
 
 interface DynamicImportRequest {
   raw?: boolean
+}
+
+interface DynamicImportPattern {
+  query: DynamicImportRequest
+  userPattern: string
+  rawPattern: string
+}
+
+export function parseDynamicImportPattern(
+  strings: string
+): DynamicImportPattern | null {
+  const filename = strings.slice(1, -1)
+  const rawQuery = parseRequest(filename)
+  const query: DynamicImportRequest = {}
+  const ast = (
+    parseJS(strings, {
+      ecmaVersion: 'latest',
+      sourceType: 'module'
+    }) as any
+  ).body[0].expression
+
+  const userPatternQuery = dynamicImportToGlob(ast, filename)
+  if (!userPatternQuery) {
+    return null
+  }
+
+  const [userPattern] = userPatternQuery.split('?', 2)
+  const [rawPattern] = filename.split('?', 2)
+
+  if (rawQuery?.raw !== undefined) {
+    query.raw = true
+  }
+
+  return {
+    query,
+    userPattern,
+    rawPattern
+  }
 }
 
 function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
@@ -230,7 +269,6 @@ export async function transformImportGlob(
 }
 
 export async function transformDynamicImportGlob(
-  ctx: TransformPluginContext,
   source: string,
   expStart: number,
   expEnd: number,
@@ -256,22 +294,25 @@ export async function transformDynamicImportGlob(
     ;(e as any).pos = start
     return e
   }
-  const original = source.slice(expStart, expEnd)
-  const filename = source.slice(start + 1, end - 1)
-  const rawQuery = parseRequest(filename)
-  const query: DynamicImportRequest = {}
-  const ast = (ctx.parse(original) as any).body[0].expression
+  let fileName = source.slice(start, end)
 
-  const userPatternQuery = dynamicImportToGlob(ast.source, filename)
-  if (!userPatternQuery) {
+  if (fileName[1] !== '.' && fileName[1] !== '/' && resolve) {
+    const resolvedFileName = await resolve(fileName.slice(1, -1), importer)
+    if (!resolvedFileName) {
+      return null
+    }
+    const relativeFileName = path.relative(
+      path.dirname(importer),
+      resolvedFileName
+    )
+    fileName = `\`${relativeFileName}\``
+  }
+
+  const dynamicImportPattern = parseDynamicImportPattern(fileName)
+  if (!dynamicImportPattern) {
     return null
   }
-  const [userPattern] = userPatternQuery.split('?', 2)
-  const [rawPattern] = filename.split('?', 2)
-
-  if (rawQuery?.raw !== undefined) {
-    query.raw = true
-  }
+  const { query, rawPattern, userPattern } = dynamicImportPattern
 
   try {
     return {

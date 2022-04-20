@@ -42,7 +42,7 @@ import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-import { transformImportGlob } from '../importGlob'
+import { transformDynamicImportGlob, transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
@@ -534,19 +534,66 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
           if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
-            this.warn(
-              `\n` +
-                colors.cyan(importerModule.file) +
-                `\n` +
-                generateCodeFrame(source, start) +
-                `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${colors.blue(
-                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                )} ` +
-                `for supported dynamic import formats. ` +
-                `If this is intended to be left as-is, you can use the ` +
-                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+            const glob = await transformDynamicImportGlob(
+              source,
+              expStart,
+              expEnd,
+              importer,
+              start,
+              end,
+              config.root,
+              undefined,
+              resolve
             )
+            if (glob) {
+              const { exp, imports, rawPattern } = glob
+              str()
+                .prepend(`function __variableDynamicImportRuntime_${index}_(path) {
+                const glob = ${exp}
+                const v = glob[path]
+                if (v) {
+                  return typeof v === 'function' ? v() : Promise.resolve(v)
+                }
+                return new Promise((resolve, reject) => {
+                  (typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
+                    reject.bind(null, new Error("Unknown variable dynamic import: " + path))
+                  );
+                })
+              }\n`)
+              str().overwrite(
+                expStart,
+                expEnd,
+                `__variableDynamicImportRuntime_${index}_(\`${rawPattern}\`)`
+              )
+              imports.forEach((url) => {
+                url = url.replace(base, '/')
+                importedUrls.add(url)
+              })
+              if (!(importerModule.file! in server._globImporters)) {
+                server._globImporters[importerModule.file!] = {
+                  module: importerModule,
+                  importGlobs: []
+                }
+              }
+              server._globImporters[importerModule.file!].importGlobs.push({
+                base,
+                pattern: rawPattern
+              })
+            } else {
+              this.warn(
+                `\n` +
+                  colors.cyan(importerModule.file) +
+                  `\n` +
+                  generateCodeFrame(source, start) +
+                  `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                  `See ${colors.blue(
+                    `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                  )} ` +
+                  `for supported dynamic import formats. ` +
+                  `If this is intended to be left as-is, you can use the ` +
+                  `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+              )
+            }
           }
           if (
             !/^('.*'|".*"|`.*`)$/.test(url) ||
