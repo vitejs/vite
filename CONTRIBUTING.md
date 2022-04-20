@@ -95,7 +95,31 @@ test('should work', async () => {
 
 Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
 
-Note: test build environment skip transpilation during tests to make it faster, This makes the js files not process by `esbuild` compared to the production environment.
+Note: test build environment uses a different default set of Vite config to skip transpilation during tests to make it faster. But this makes the js files not process by `esbuild` compared to the production environment.
+
+```ts
+export default {
+  root: rootDir,
+  logLevel: 'silent',
+  server: {
+    watch: {
+      // During tests we edit the files too fast and sometimes chokidar
+      // misses change events, so enforce polling for consistency
+      usePolling: true,
+      interval: 100
+    },
+    host: true,
+    fs: {
+      strict: !isBuildTest
+    }
+  },
+  build: {
+    // skip transpilation during tests to make it faster
+    target: 'esnext'
+  },
+  customLogger: createInMemoryLogger(serverLogs)
+}
+```
 
 ### Extending the Test Suite
 
