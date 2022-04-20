@@ -160,7 +160,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             source.slice(end, end + 10) !== '.globEager'
           ) {
             this.error(
-              'can not use dynamic import(import.meta.glob) in iife worker. Just support import.meta.globEager in `format: iife` worker.',
+              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
               end
             )
           }
