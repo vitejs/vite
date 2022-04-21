@@ -22,7 +22,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
+const preloadMarkerWithQuote = `"${preloadMarker}"`
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -265,27 +265,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             this.error(e, e.idx)
           }
 
-          const updateChunkCode = (ms: MagicString) => {
-            if (!ms.hasChanged()) return
-
-            chunk.code = ms.toString()
-            if (config.build.sourcemap && chunk.map) {
-              const nextMap = ms.generateMap({
-                source: chunk.fileName,
-                hires: true
-              })
-              const map = combineSourcemaps(
-                chunk.fileName,
-                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
-                false
-              ) as SourceMap
-              map.toUrl = () => genSourceMapUrl(map)
-              chunk.map = map
-            }
-          }
+          const s = new MagicString(code)
+          const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
           if (imports.length) {
-            const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
@@ -364,16 +347,46 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     : `[]`,
                   { contentOnly: true }
                 )
+                rewroteMarkerStartPos.add(markPos - 1)
               }
             }
-            updateChunkCode(s)
           }
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          const s = new MagicString(chunk.code)
-          s.replace(preloadMarkerRE, 'void 0')
-          updateChunkCode(s)
+          let markerStartPos = code.indexOf(preloadMarkerWithQuote)
+          do {
+            if (!rewroteMarkerStartPos.has(markerStartPos)) {
+              s.overwrite(
+                markerStartPos,
+                markerStartPos + 1 + preloadMarker.length + 1,
+                'void 0',
+                { contentOnly: true }
+              )
+            }
+
+            markerStartPos = code.indexOf(
+              preloadMarkerWithQuote,
+              markerStartPos + 1 + preloadMarker.length + 1
+            )
+          } while (markerStartPos >= 0)
+
+          if (s.hasChanged()) {
+            chunk.code = s.toString()
+            if (config.build.sourcemap && chunk.map) {
+              const nextMap = s.generateMap({
+                source: chunk.fileName,
+                hires: true
+              })
+              const map = combineSourcemaps(
+                chunk.fileName,
+                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
+                false
+              ) as SourceMap
+              map.toUrl = () => genSourceMapUrl(map)
+              chunk.map = map
+            }
+          }
         }
       }
     }
