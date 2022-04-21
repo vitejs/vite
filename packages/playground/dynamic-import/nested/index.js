@@ -77,16 +77,13 @@ function text(el, text) {
 const base = 'hello'
 
 import(`../alias/${base}.js`).then((mod) => {
-  console.log('dynamic-import-with-vars', mod)
+  text('.dynamic-import-with-vars', mod.hello())
 })
 
 import(`@/${base}.js`).then((mod) => {
-  console.log('dynamic-import-with-vars-alias', mod)
+  text('.dynamic-import-with-vars-alias', mod.hello())
 })
 
 import(`../alias/${base}.js?raw`).then((mod) => {
-  console.log('dynamic-import-with-vars-?raw', mod)
+  text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
 })
-
-const glob = import.meta.glob(`../alias/*.js`, { as: 'raw' })
-console.log('dynamic-import-import.meta.glob-vars', glob)
