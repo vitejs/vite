@@ -90,7 +90,7 @@ function markExplicitImport(url: string) {
  *     ```
  *     is rewritten to
  *     ```js
- *     import '/@fs//project/node_modules/foo/dist/foo.js'
+ *     import '/@fs/project/node_modules/foo/dist/foo.js'
  *     ```
  *
  * - CSS imports are appended with `.js` since both the js module and the actual
