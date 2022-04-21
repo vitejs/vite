@@ -6,7 +6,37 @@ import type { ResolvedConfig } from '../config'
 import { transformDynamicImportGlob } from '../importGlob'
 import { createFilter } from '@rollup/pluginutils'
 
-export function dynamicImportVars(config: ResolvedConfig): Plugin {
+const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
+  const v = glob[path]
+  if (v) {
+    return typeof v === 'function' ? v() : Promise.resolve(v)
+  }
+  return new Promise((_, reject) => {
+    ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
+      reject.bind(null, new Error('Unknown variable dynamic import: ' + path))
+    )
+  })
+}
+export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
+
+export function dynamicImportHelperPlugin(): Plugin {
+  return {
+    name: 'vite:dynamic-import-helper',
+    resolveId(id) {
+      if (id === dynamicImportHelperId) {
+        return id
+      }
+    },
+
+    load(id) {
+      if (id === dynamicImportHelperId) {
+        return 'export default' + dynamicImportHelper.toString()
+      }
+    }
+  }
+}
+
+export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const resolve = config.createResolver({
     preferRelative: true,
     tryIndex: false,
@@ -38,7 +68,8 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
       }
 
       let s: MagicString | undefined
-      let importIndex = 0
+      let needDynamicImportHelper = false
+
       for (let index = 0; index < imports.length; index++) {
         const {
           s: start,
@@ -80,27 +111,20 @@ export function dynamicImportVars(config: ResolvedConfig): Plugin {
 
         const { rawPattern, exp } = result
 
-        s.prepend(`function __variableDynamicImportRuntime_${importIndex}_(path) {
-          const glob = ${exp}
-          const v = glob[path]
-          if (v) {
-            return typeof v === 'function' ? v() : Promise.resolve(v)
-          }
-          return new Promise((resolve, reject) => {
-            (typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
-              reject.bind(null, new Error("Unknown variable dynamic import: " + path))
-            );
-          })
-        }\n`)
+        needDynamicImportHelper = true
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntime_${importIndex}_(\`${rawPattern}\`)`
+          `__variableDynamicImportRuntimeHelper(${exp}, \`${rawPattern}\`)`
         )
-        importIndex++
       }
 
       if (s) {
+        if (needDynamicImportHelper) {
+          s.prepend(
+            `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
+          )
+        }
         return {
           code: s.toString(),
           map: config.build.sourcemap ? s.generateMap({ hires: true }) : null

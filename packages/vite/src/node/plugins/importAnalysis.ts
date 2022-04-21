@@ -52,6 +52,7 @@ import {
   getDepsCacheDir,
   optimizedDepNeedsInterop
 } from '../optimizer'
+import { dynamicImportHelperId } from './dynamicImportVars'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -183,6 +184,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let isSelfAccepting = false
       let hasEnv = false
       let needQueryInjectHelper = false
+      let needDynamicImportHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
@@ -533,37 +535,31 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
-          if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
-            const glob = await transformDynamicImportGlob(
-              source,
-              expStart,
-              expEnd,
-              importer,
-              start,
-              end,
-              config.root,
-              undefined,
-              resolve
-            )
+          if (!isSupportedDynamicImport(url)) {
+            let glob
+            try {
+              glob = await transformDynamicImportGlob(
+                source,
+                expStart,
+                expEnd,
+                importer,
+                start,
+                end,
+                config.root,
+                undefined,
+                resolve
+              )
+            } catch (e) {
+              this.error(e)
+            }
+
             if (glob) {
               const { exp, imports, rawPattern } = glob
-              str()
-                .prepend(`function __variableDynamicImportRuntime_${index}_(path) {
-                const glob = ${exp}
-                const v = glob[path]
-                if (v) {
-                  return typeof v === 'function' ? v() : Promise.resolve(v)
-                }
-                return new Promise((resolve, reject) => {
-                  (typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
-                    reject.bind(null, new Error("Unknown variable dynamic import: " + path))
-                  );
-                })
-              }\n`)
+              needDynamicImportHelper = true
               str().overwrite(
                 expStart,
                 expEnd,
-                `__variableDynamicImportRuntime_${index}_(\`${rawPattern}\`)`
+                `__variableDynamicImportRuntimeHelper(${exp}, \`${rawPattern}\`)`
               )
               imports.forEach((url) => {
                 url = url.replace(base, '/')
@@ -580,19 +576,21 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 pattern: rawPattern
               })
             } else {
-              this.warn(
-                `\n` +
-                  colors.cyan(importerModule.file) +
+              if (!hasViteIgnore) {
+                this.warn(
                   `\n` +
-                  generateCodeFrame(source, start) +
-                  `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                  `See ${colors.blue(
-                    `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                  )} ` +
-                  `for supported dynamic import formats. ` +
-                  `If this is intended to be left as-is, you can use the ` +
-                  `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
-              )
+                    colors.cyan(importerModule.file) +
+                    `\n` +
+                    generateCodeFrame(source, start) +
+                    `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                    `See ${colors.blue(
+                      `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                    )} ` +
+                    `for supported dynamic import formats. ` +
+                    `If this is intended to be left as-is, you can use the ` +
+                    `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+                )
+              }
             }
           }
           if (
@@ -650,6 +648,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (needQueryInjectHelper) {
         str().prepend(
           `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
+        )
+      }
+
+      if (needDynamicImportHelper) {
+        str().prepend(
+          `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
         )
       }
 
