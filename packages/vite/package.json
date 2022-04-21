@@ -55,7 +55,7 @@
     "@ampproject/remapping": "^2.1.2",
     "@babel/parser": "^7.17.9",
     "@babel/types": "^7.17.0",
-    "@jridgewell/trace-mapping": "^0.3.4",
+    "@jridgewell/trace-mapping": "^0.3.9",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-dynamic-import-vars": "^1.4.3",
