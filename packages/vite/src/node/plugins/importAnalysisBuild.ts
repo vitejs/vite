@@ -355,7 +355,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
           let markerStartPos = code.indexOf(preloadMarkerWithQuote)
-          do {
+          while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.overwrite(
                 markerStartPos,
@@ -369,7 +369,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               preloadMarkerWithQuote,
               markerStartPos + preloadMarkerWithQuote.length
             )
-          } while (markerStartPos >= 0)
+          }
 
           if (s.hasChanged()) {
             chunk.code = s.toString()
