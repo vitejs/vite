@@ -25,6 +25,7 @@ interface ViteHotContext {
   decline(): void
   invalidate(): void
 
+  // `InferCustomEventPayload` provides types for built-in Vite events
   on<T extends string>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void
