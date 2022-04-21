@@ -15,6 +15,7 @@ const {
   blue,
   magenta,
   lightRed,
+  lightGreen,
   red,
   reset
 } = require('kolorist')
@@ -51,7 +52,13 @@ const FRAMEWORKS = [
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue
-      },
+      }
+    ]
+  },
+  {
+    name: 'vue-jsx',
+    color: lightGreen,
+    variants: [
       {
         name: 'vue-jsx',
         display: 'JavaScript',
