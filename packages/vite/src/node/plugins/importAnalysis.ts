@@ -114,6 +114,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   })
   let server: ViteDevServer
 
+  const seen = new Map<string, string>()
+
   return {
     name: 'vite:import-analysis',
 
@@ -240,6 +242,21 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         const isRelative = url.startsWith('.')
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
+
+        // #7621 bare import and direct import from node_modules for the
+        // same module will get the different result, use map to dedupe
+        if (
+          resolved.id.includes('node_modules') &&
+          // exclude cache dir
+          !resolved.id.startsWith(getDepsCacheDir(config))
+        ) {
+          const file = cleanUrl(resolved.id)
+          if (seen.has(file)) {
+            resolved.id = seen.get(file)!
+          } else {
+            seen.set(file, resolved.id)
+          }
+        }
 
         // normalize all imports into resolved URLs
         // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
