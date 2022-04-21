@@ -92,6 +92,8 @@ export interface ServerOptions extends CommonServerOptions {
   fs?: FileSystemServeOptions
   /**
    * Origin for the generated asset URLs.
+   *
+   * @example `http://127.0.0.1:8080`
    */
   origin?: string
   /**
