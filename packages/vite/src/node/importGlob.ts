@@ -301,7 +301,7 @@ export async function transformDynamicImportGlob(
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = path.relative(
+    const relativeFileName = path.posix.relative(
       path.dirname(importer),
       resolvedFileName
     )
