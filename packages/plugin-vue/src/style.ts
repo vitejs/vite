@@ -22,7 +22,7 @@ export async function transformStyle(
     id: `data-v-${descriptor.id}`,
     isProd: options.isProduction,
     source: code,
-    scoped: options.style.scoped ?? block.scoped,
+    scoped: options?.style?.scoped ?? block.scoped,
     ...(options.cssDevSourcemap
       ? {
           postcssOptions: {
