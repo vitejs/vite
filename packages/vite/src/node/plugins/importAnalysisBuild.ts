@@ -22,7 +22,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadMarkerWithQuote = `"${preloadMarker}"`
+const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -328,16 +328,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markPos = code.indexOf(preloadMarker, end)
+              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
               // fix issue #3051
-              if (markPos === -1 && imports.length === 1) {
-                markPos = code.indexOf(preloadMarker)
+              if (markerStartPos === -1 && imports.length === 1) {
+                markerStartPos = code.indexOf(preloadMarkerWithQuote)
               }
 
-              if (markPos > 0) {
+              if (markerStartPos > 0) {
                 s.overwrite(
-                  markPos - 1,
-                  markPos + preloadMarker.length + 1,
+                  markerStartPos,
+                  markerStartPos + preloadMarkerWithQuote.length,
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
                   deps.size > 1 ||
@@ -347,7 +347,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     : `[]`,
                   { contentOnly: true }
                 )
-                rewroteMarkerStartPos.add(markPos - 1)
+                rewroteMarkerStartPos.add(markerStartPos)
               }
             }
           }
@@ -359,7 +359,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.overwrite(
                 markerStartPos,
-                markerStartPos + 1 + preloadMarker.length + 1,
+                markerStartPos + preloadMarkerWithQuote.length,
                 'void 0',
                 { contentOnly: true }
               )
@@ -367,7 +367,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
             markerStartPos = code.indexOf(
               preloadMarkerWithQuote,
-              markerStartPos + 1 + preloadMarker.length + 1
+              markerStartPos + preloadMarkerWithQuote.length
             )
           } while (markerStartPos >= 0)
 
