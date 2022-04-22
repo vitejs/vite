@@ -27,12 +27,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 16, 17]
+        node_version: [12, 14, 16, 17, 18]
         include:
           - os: macos-latest
             node_version: 16
+          - os: macos-latest
+            node_version: 18
           - os: windows-latest
             node_version: 16
+          # Maybe bug with jest on windows and node-v18
+          # - os: windows-latest
+          #   node_version: 18
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
