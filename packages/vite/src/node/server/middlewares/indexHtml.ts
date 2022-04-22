@@ -128,13 +128,17 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-
-    s.overwrite(
-      node.loc.start.offset,
-      node.loc.end.offset,
-      `<script type="module" src="${modulePath}"></script>`,
-      { contentOnly: true }
-    )
+    if (ext === 'js') {
+      s.overwrite(
+        node.loc.start.offset,
+        node.loc.end.offset,
+        `<script type="module" src="${modulePath}"></script>`,
+        { contentOnly: true }
+      )
+    } else if (ext === 'css') {
+      // just use the style update hmr don't render css
+      s.append(`<script type="module" src="${modulePath}"></script>`)
+    }
   }
 
   await traverseHtml(html, htmlPath, (node) => {

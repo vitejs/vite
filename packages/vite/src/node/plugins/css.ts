@@ -300,6 +300,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
@@ -311,7 +312,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
-          if (inlined) {
+          if (inlined || isHTMLProxy) {
             return `export default ${JSON.stringify(css)}`
           }
 
@@ -346,7 +347,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       const inlineCSS = inlineCSSRE.test(id)
       const query = parseRequest(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
