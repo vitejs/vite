@@ -61,7 +61,7 @@ export async function injectSourcesContent(
   }
 }
 
-function genSourceMapUrl(map: SourceMap | string | undefined) {
+export function genSourceMapUrl(map: SourceMap | string | undefined) {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
