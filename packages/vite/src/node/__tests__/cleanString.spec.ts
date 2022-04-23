@@ -81,8 +81,6 @@ test('regexp', () => {
     "''''1''''"
   `)
   expect(clean).not.toMatch('1')
-  expect(clean).not.toMatch('"')
-  expect(clean).not.toMatch("'")
 })
 
 test('strings comment nested', () => {
