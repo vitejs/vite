@@ -51,6 +51,27 @@ test('escape character', () => {
   expect(clean).not.toMatch('1')
 })
 
+test('regexp', () => {
+  const clean = emptyString(`
+    /'1\\'1'/
+    /"1\\"1"/
+    /"1\\"1\\"1"/
+    /"1\\'1'\\"1"/
+    /"1'1'"/
+    /"1'\\'1\\''\\"1\\"\\""/
+    /'1"\\"1\\""\\"1\\"\\"'/
+    /'""1""'/
+    /'"""1"""'/
+    /'""""1""""'/
+    /"''1''"/
+    /"'''1'''"/
+    /"''''1''''"/
+  `)
+  expect(clean).not.toMatch('1')
+  expect(clean).not.toMatch('"')
+  expect(clean).not.toMatch("'")
+})
+
 test('strings comment nested', () => {
   expect(
     emptyString(`
