@@ -52,18 +52,12 @@ test('escape character', () => {
   expect(clean).not.toMatch('1')
 })
 
-test('regexp', () => {
+test('regexp affect', () => {
   const clean = emptyString(`
-    /'1\\'1'/
-    '1\\'1'
-    /"''''1''''"/
-    "''''1''''"
-    /'1'/  // '1'
-    /'1'/  /* '1' */
-    /'1'/  // '1'
-    /'1'/  /* '1' */
-    /'\\/1'/  // '1'
-    /'\\/1'/  /* '1' */
+    /'/
+    '1'
+    /"/
+    "1"
   `)
   expect(clean).not.toMatch('1')
 })
