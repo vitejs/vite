@@ -25,6 +25,7 @@ export function emptyString(raw: string): string {
 
   return res
 }
+
 const enum LexerState {
   // template string
   inTemplateString,
