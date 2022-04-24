@@ -25,8 +25,6 @@ export function emptyString(raw: string): string {
 
   return res
 }
-;/\/*/
-1 / 2 + /* 123 */ 5 / 3
 const enum LexerState {
   // template string
   inTemplateString,
