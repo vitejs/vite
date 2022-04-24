@@ -190,7 +190,15 @@ function printServerUrls(
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
+      .filter(
+        (detail) =>
+          detail &&
+          detail.address &&
+          // Node < v18
+          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+            // Node >= v18
+            (typeof detail.family === 'number' && detail.family === 4))
+      )
       .map((detail) => {
         const type = detail.address.includes('127.0.0.1')
           ? 'Local:   '

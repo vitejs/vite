@@ -81,6 +81,7 @@ export async function transformWithEsbuild(
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
+      'target',
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
@@ -97,13 +98,6 @@ export async function transformWithEsbuild(
           // @ts-ignore TypeScript can't tell they are of the same type
           compilerOptionsForFile[field] = loadedCompilerOptions[field]
         }
-      }
-
-      // align with TypeScript 4.3
-      // https://github.com/microsoft/TypeScript/pull/42663
-      if (loadedCompilerOptions.target?.toLowerCase() === 'esnext') {
-        compilerOptionsForFile.useDefineForClassFields =
-          loadedCompilerOptions.useDefineForClassFields ?? true
       }
     }
 

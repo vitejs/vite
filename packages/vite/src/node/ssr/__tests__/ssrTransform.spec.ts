@@ -545,6 +545,45 @@ class A {
   `)
 })
 
+test('class methods', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import foo from 'foo'
+
+const bar = 'bar'
+
+class A {
+  foo() {}
+  [foo]() {}
+  [bar]() {}
+  #foo() {}
+  bar(foo) {}
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+
+    const bar = 'bar'
+
+    class A {
+      foo() {}
+      [__vite_ssr_import_0__.default]() {}
+      [bar]() {}
+      #foo() {}
+      bar(foo) {}
+    }
+    "
+  `)
+})
+
 test('declare scope', async () => {
   expect(
     (
@@ -656,4 +695,27 @@ export function fn1() {
     Object.defineProperty(__vite_ssr_exports__, \\"fn2\\", { enumerable: true, configurable: true, get(){ return fn2 }});
             "
   `)
+})
+
+// https://github.com/vitest-dev/vitest/issues/1141
+test('export default expression', async () => {
+  // esbuild transform result of following TS code
+  // export default <MyFn> function getRandom() {
+  //   return Math.random()
+  // }
+  const code = `
+export default (function getRandom() {
+  return Math.random();
+});
+`.trim()
+
+  expect((await ssrTransform(code, null, null)).code).toMatchInlineSnapshot(`
+    "__vite_ssr_exports__.default = (function getRandom() {
+      return Math.random();
+    });"
+  `)
+
+  expect(
+    (await ssrTransform(`export default (class A {});`, null, null)).code
+  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = (class A {});"`)
 })

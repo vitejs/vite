@@ -106,7 +106,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       }
       let s: MagicString | undefined
       if (
-        (code.includes('new Worker') || code.includes('new ShareWorker')) &&
+        (code.includes('new Worker') || code.includes('new SharedWorker')) &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
