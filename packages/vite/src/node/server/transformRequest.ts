@@ -150,7 +150,7 @@ async function doTransform(
   // load
   const loadStart = isDebug ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, { ssr })
-  if (loadResult == null) {
+  if (!loadResult) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
     if (options.html && !id.endsWith('.html')) {
