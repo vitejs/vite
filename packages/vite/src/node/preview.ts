@@ -55,7 +55,6 @@ export interface PreviewServer {
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param inlineConfig - the resolved Vite config
  * @experimental
  */
 export async function preview(
