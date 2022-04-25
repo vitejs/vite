@@ -98,7 +98,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const assetsURL = hasCustomAssetFileNames
-    ? config.base
+    ? JSON.stringify(config.base)
     : isRelativeBase(config.base)
     ? `new URL('./',import.meta.url).pathname`
     : JSON.stringify(path.posix.join(config.base, config.build.assetsDir, '/'))
