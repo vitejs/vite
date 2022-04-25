@@ -11,6 +11,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
+import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 
 export class ModuleNode {
   /**
@@ -39,9 +40,9 @@ export class ModuleNode {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
     // #7870
-    // The `isSelfAccepting` value is set by importAnalysis, but HTML
+    // The `isSelfAccepting` value is set by importAnalysis, but some
     // assets don't go through importAnalysis.
-    if (isHTMLRequest(url)) {
+    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
       this.isSelfAccepting = false
     }
   }
