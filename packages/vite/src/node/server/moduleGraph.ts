@@ -2,6 +2,7 @@ import { extname } from 'path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
+import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -37,6 +38,12 @@ export class ModuleNode {
   constructor(url: string) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
+    // #7870
+    // The `isSelfAccepting` value is set by importAnalysis, but HTML
+    // assets don't go through importAnalysis.
+    if (isHTMLRequest(url)) {
+      this.isSelfAccepting = false
+    }
   }
 }
 
