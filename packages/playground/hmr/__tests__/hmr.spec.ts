@@ -194,4 +194,16 @@ if (!isBuild) {
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
   })
+
+  test('HTML', async () => {
+    await page.goto(viteTestUrl + '/dynamic-import/index.html')
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    editFile('dynamic-import/index.html', (code) =>
+      code.replace('Counter', 'Compteur')
+    )
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Compteur 0')
+  })
 }
