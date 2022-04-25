@@ -59,7 +59,8 @@ const debug = createDebugger('vite:import-analysis')
 const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
+export const canSkipImportAnalysis = (id: string) =>
+  skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
@@ -131,7 +132,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
-      if (canSkip(importer)) {
+      if (canSkipImportAnalysis(importer)) {
         isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
