@@ -849,6 +849,7 @@ importers:
       acorn: ^8.7.0
       cac: 6.7.9
       chokidar: ^3.5.3
+      colorette: ^2.0.16
       connect: ^3.7.0
       connect-history-api-fallback: ^1.6.0
       convert-source-map: ^1.8.0
@@ -927,6 +928,7 @@ importers:
       acorn: 8.7.0
       cac: 6.7.9
       chokidar: 3.5.3
+      colorette: 2.0.16
       connect: 3.7.0
       connect-history-api-fallback: 1.6.0
       convert-source-map: 1.8.0
@@ -5111,6 +5113,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.14.6_debug@4.3.4:
+    resolution: {integrity: sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/3.0.1:
     resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
@@ -5511,7 +5526,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.6
+      follow-redirects: 1.14.6_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
