@@ -469,16 +469,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             })
           }
         }
-        for (const styleUrl of styleUrls) {
-          const resolvedUrl = await this.resolve(styleUrl)
-          if (!resolvedUrl) {
-            config.logger.warnOnce(
-              `\n${styleUrl} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
-            )
-          } else {
-            js += `\nimport ${JSON.stringify(styleUrl)}`
-          }
-        }
+
+        await Promise.all(
+          styleUrls.map(async (styleUrl) => {
+            const resolvedUrl = await this.resolve(styleUrl, id)
+            if (resolvedUrl == null) {
+              config.logger.warnOnce(
+                `\n${styleUrl} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+              )
+            } else {
+              js += `\nimport ${JSON.stringify(styleUrl)}`
+            }
+          })
+        )
 
         processedHtml.set(id, s.toString())
 
