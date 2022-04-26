@@ -60,7 +60,7 @@ if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(21)
+    expect(files.length).toBe(23)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -98,5 +98,11 @@ test('emit chunk', async () => {
   )
   expect(await page.textContent('.emti-chunk-dynamic-import-worker')).toMatch(
     '"A string/es/"'
+  )
+})
+
+test('url query worker', async () => {
+  expect(await page.textContent('.simple-worker-url')).toMatch(
+    'Hello from simple worker!'
   )
 })

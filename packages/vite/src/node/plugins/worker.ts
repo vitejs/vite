@@ -3,10 +3,11 @@ import type { Plugin } from '../plugin'
 import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
 import type Rollup from 'rollup'
-import { ENV_PUBLIC_PATH } from '../constants'
+import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import path from 'path'
 import { onRollupWarning } from '../build'
 import type { TransformPluginContext, EmittedFile } from 'rollup'
+import type { ViteDevServer } from '../server'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -23,7 +24,9 @@ interface WorkerCache {
   emitted: Map<string, string>
 }
 
-const WorkerFileId = 'worker_file'
+export type WorkerType = 'classic' | 'module' | 'ignore'
+
+export const WorkerFileId = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function emitWorkerFile(
@@ -195,9 +198,14 @@ export async function workerFileToUrl(
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
+  let server: ViteDevServer
 
   return {
     name: 'vite:worker',
+
+    configureServer(_server) {
+      server = _server
+    },
 
     buildStart() {
       workerCache.set(config, {
@@ -220,11 +228,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(_, id) {
+    async transform(raw, id) {
       const query = parseRequest(id)
-      if (query && query[WorkerFileId] != null) {
+      if (query && query[WorkerFileId] != null && query['type'] != null) {
+        const workerType = query['type'] as WorkerType
+        let injectEnv = ''
+
+        if (workerType === 'classic') {
+          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+        } else if (workerType === 'module') {
+          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+        } else if (workerType === 'ignore') {
+          if (isBuild) {
+            injectEnv = ''
+          } else if (server) {
+            // dynamic worker type we can't know how import the env
+            // so we copy /@vite/env code of server transform result into file header
+            const { moduleGraph } = server
+            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            injectEnv = module?.transformResult?.code || ''
+          }
+        }
+
         return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + _
+          code: injectEnv + raw
         }
       }
       if (
@@ -233,6 +260,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+      const isUrl = query.url != null
 
       let url: string
       if (isBuild) {
@@ -262,6 +290,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, WorkerFileId)
+      }
+
+      if (isUrl) {
+        return {
+          code: `export default ${JSON.stringify(url)}`,
+          map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+        }
       }
 
       const workerConstructor =
