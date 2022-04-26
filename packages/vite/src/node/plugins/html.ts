@@ -246,7 +246,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
-        const styleUrls: string[] = []
+        const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -339,8 +339,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
-                    styleUrls.push(url)
-                    shouldRemove = true
+                    styleUrls.push({
+                      url,
+                      start: node.loc.start.offset,
+                      end: node.loc.end.offset
+                    })
                   } else {
                     assetUrls.push(p)
                   }
@@ -470,18 +473,18 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        await Promise.all(
-          styleUrls.map(async (styleUrl) => {
-            const resolvedUrl = await this.resolve(styleUrl, id)
-            if (resolvedUrl == null) {
-              config.logger.warnOnce(
-                `\n${styleUrl} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
-              )
-            } else {
-              js += `\nimport ${JSON.stringify(styleUrl)}`
-            }
-          })
-        )
+        // ignore <link rel="stylesheet"> can't resolve src
+        for (const { start, end, url } of styleUrls) {
+          const resolvedUrl = await this.resolve(url, id)
+          if (resolvedUrl == null) {
+            config.logger.warnOnce(
+              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+          } else {
+            js += `\nimport ${JSON.stringify(url)}`
+            s.remove(start, end)
+          }
+        }
 
         processedHtml.set(id, s.toString())
 
