@@ -246,6 +246,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
+        const styleUrls: string[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -338,7 +339,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
-                    js += `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push(url)
                     shouldRemove = true
                   } else {
                     assetUrls.push(p)
@@ -466,6 +467,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(start, end, config.base + url.slice(1), {
               contentOnly: true
             })
+          }
+        }
+        for (const styleUrl of styleUrls) {
+          const resolvedUrl = await this.resolve(styleUrl)
+          if (!resolvedUrl) {
+            config.logger.warnOnce(
+              `\n${styleUrl} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+          } else {
+            js += `\nimport ${JSON.stringify(styleUrl)}`
           }
         }
 
