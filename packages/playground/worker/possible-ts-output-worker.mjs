@@ -5,3 +5,6 @@ self.onmessage = (e) => {
     self.postMessage({ msg, mode })
   }
 }
+
+// for sourcemap
+console.log('possible-ts-output-worker.mjs')

@@ -1,5 +1,6 @@
 // run when format es
 import NestedWorker from '../emit-chunk-nested-worker?worker'
+import ImportMetaGlobWorker from '../importMetaGlob.worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -38,4 +39,12 @@ const moduleWorker = new Worker(
 
 moduleWorker.addEventListener('message', (ev) => {
   text('.module-and-worker-worker', JSON.stringify(ev.data))
+})
+
+const importMetaGlobWorker = new ImportMetaGlobWorker()
+
+importMetaGlobWorker.postMessage('1')
+
+importMetaGlobWorker.addEventListener('message', (e) => {
+  text('.importMetaGlob-worker', JSON.stringify(e.data))
 })

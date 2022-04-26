@@ -6,3 +6,6 @@ Promise.all([
   const _data = { ...data[0], ...data[1], ...data[2] }
   self.postMessage(_data)
 })
+
+// for sourcemap
+console.log('emit-chunk-sub-worker.js')

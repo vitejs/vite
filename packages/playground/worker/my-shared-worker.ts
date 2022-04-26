@@ -14,3 +14,6 @@ onconnect = (event) => {
     }
   }
 }
+
+// for sourcemap
+console.log('my-shared-worker.js')

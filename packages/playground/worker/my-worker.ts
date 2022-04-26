@@ -6,3 +6,6 @@ self.onmessage = (e) => {
     self.postMessage({ msg, mode, bundleWithPlugin })
   }
 }
+
+// for sourcemap
+console.log('my-worker.js')

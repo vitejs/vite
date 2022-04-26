@@ -26,3 +26,6 @@ import('./module-and-worker').then((res) => {
     data: res.module
   })
 })
+
+// for sourcemap
+console.log('emit-chunk-nested-worker.js')
