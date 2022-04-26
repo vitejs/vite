@@ -51,10 +51,11 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
-test('worker emitted and import.meta.url in nested worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.nested-worker'),
-    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+test('worker emitted and import.meta.url in nested worker (serve)', async () => {
+  expect(await page.textContent('.nested-worker')).toMatch('/worker-nested')
+  expect(await page.textContent('.nested-worker-module')).toMatch('/sub-worker')
+  expect(await page.textContent('.nested-worker-constructor')).toMatch(
+    '"type":"constructor"'
   )
 })
 
@@ -63,7 +64,7 @@ if (isBuild) {
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(12)
+    expect(files.length).toBe(13)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -82,6 +83,15 @@ if (isBuild) {
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
   })
+
+  test('worker emitted and import.meta.url in nested worker (build)', async () => {
+    expect(await page.textContent('.nested-worker-module')).toMatch(
+      '"type":"module"'
+    )
+    expect(await page.textContent('.nested-worker-constructor')).toMatch(
+      '"type":"constructor"'
+    )
+  })
 }
 
 test('module worker', async () => {
@@ -93,4 +103,8 @@ test('module worker', async () => {
 test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
+
+test('import.meta.globEager in worker', async () => {
+  expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
 })
