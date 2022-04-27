@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')
@@ -11,6 +11,18 @@ if (!isBuild) {
     expect(browserLogs.length).toBe(2)
     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
     browserLogs.length = 0
+  })
+
+  test('css in html hmr', async () => {
+    expect(await getBg('.import-image')).toMatch('icon')
+    // test relative path
+    await (viteTestUrl + '/foo/')
+    expect(await getBg('.import-image')).toMatch('icon')
+    await page.goto(viteTestUrl)
+    editFile('dynamic-import/dep.ts', (code) =>
+      code.replace('url("./icon.png")', '')
+    )
+    expect(await getBg('.import-image')).toMatch('')
   })
 
   test('self accept', async () => {
@@ -129,9 +141,7 @@ if (!isBuild) {
   })
 
   test('full-reload encodeURI path', async () => {
-    await page.goto(
-      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
-    )
+    await (viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html')
     const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     await editFile(
@@ -146,7 +156,7 @@ if (!isBuild) {
   })
 
   test('CSS update preserves query params', async () => {
-    await page.goto(viteTestUrl)
+    await viteTestUrl
 
     editFile('global.css', (code) => code.replace('white', 'tomato'))
 
@@ -162,7 +172,7 @@ if (!isBuild) {
   })
 
   test('not loaded dynamic import', async () => {
-    await page.goto(viteTestUrl + '/dynamic-import/index.html')
+    await (viteTestUrl + '/dynamic-import/index.html')
 
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
