@@ -339,11 +339,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
-                      url,
+                      url: importExpression,
                       start: node.loc.start.offset,
                       end: node.loc.end.offset
                     })
+                    js += importExpression
                   } else {
                     assetUrls.push(p)
                   }
@@ -480,8 +482,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config.logger.warnOnce(
               `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
+            js = js.replace(url, '')
           } else {
-            js += `\nimport ${JSON.stringify(url)}`
             s.remove(start, end)
           }
         }
