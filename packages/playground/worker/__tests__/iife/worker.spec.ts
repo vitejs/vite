@@ -51,10 +51,11 @@ test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
   await waitSharedWorkerTick(page)
 })
 
-test('worker emitted and import.meta.url in nested worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.nested-worker'),
-    'pong http://localhost:3000/iife/sub-worker.js?worker_file'
+test('worker emitted and import.meta.url in nested worker (serve)', async () => {
+  expect(await page.textContent('.nested-worker')).toMatch('/worker-nested')
+  expect(await page.textContent('.nested-worker-module')).toMatch('/sub-worker')
+  expect(await page.textContent('.nested-worker-constructor')).toMatch(
+    '"type":"constructor"'
   )
 })
 
@@ -82,6 +83,15 @@ if (isBuild) {
     expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
     expect(content).toMatch(`window.Blob`)
   })
+
+  test('worker emitted and import.meta.url in nested worker (build)', async () => {
+    expect(await page.textContent('.nested-worker-module')).toMatch(
+      '"type":"module"'
+    )
+    expect(await page.textContent('.nested-worker-constructor')).toMatch(
+      '"type":"constructor"'
+    )
+  })
 }
 
 test('module worker', async () => {
@@ -99,4 +109,8 @@ test('url query worker', async () => {
   expect(await page.textContent('.simple-worker-url')).toMatch(
     'Hello from simple worker!'
   )
+})
+
+test('import.meta.globEager in worker', async () => {
+  expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
 })
