@@ -48,6 +48,7 @@ import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { emptyCssComments } from '../cleanString'
 
 // const debug = createDebugger('vite:css')
 
@@ -1117,30 +1118,34 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 
 export async function hoistAtRules(css: string) {
   const s = new MagicString(css)
+  const cleanCss = emptyCssComments(css)
+  let match: RegExpExecArray | null
+
   // #1845
   // CSS @import can only appear at top of the file. We need to hoist all @import
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
-  s.replace(
-    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
-    (match) => {
-      s.appendLeft(0, match)
-      return ''
-    }
-  )
+  const atImportRE =
+    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+  while ((match = atImportRE.exec(cleanCss))) {
+    s.remove(match.index, match.index + match[0].length)
+    // Use `appendLeft` instead of `prepend` to preserve original @import order
+    s.appendLeft(0, match[0])
+  }
+
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
+  const atCharsetRE =
+    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
   let foundCharset = false
-  s.replace(
-    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
-    (match) => {
-      if (!foundCharset) {
-        s.prepend(match)
-        foundCharset = true
-      }
-      return ''
+  while ((match = atCharsetRE.exec(cleanCss))) {
+    s.remove(match.index, match.index + match[0].length)
+    if (!foundCharset) {
+      s.prepend(match[0])
+      foundCharset = true
     }
-  )
+  }
+
   return s.toString()
 }
 
