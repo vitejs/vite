@@ -8,8 +8,7 @@ import {
   readFile,
   editFile,
   notifyRebuildComplete,
-  untilUpdated,
-  timeout
+  untilUpdated
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -294,6 +293,11 @@ describe('css and assets in css in build watch', () => {
       expect(await page.textContent('.raw-query')).toBe('zoo')
     })
   }
+})
+
+test('inline style test', async () => {
+  expect(await getBg('.inline-style')).toMatch(assetMatch)
+  expect(await getBg('.style-url-assets')).toMatch(assetMatch)
 })
 
 if (!isBuild) {
