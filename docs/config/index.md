@@ -94,7 +94,7 @@ If the config needs to call async function, it can export a async function inste
 export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
-    // build specific config
+    // vite config
   }
 })
 ```
@@ -109,10 +109,14 @@ Note that Vite doesn't load `.env` files by default as the files to load can onl
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ command, mode }) => {
-  // Load env file based on `mode` in the current working directory
-  const env = loadEnv(mode, process.cwd())
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
   return {
-    // build specific config
+    // vite config
+    define: {
+      __APP_ENV__: env.APP_ENV
+    }
   }
 })
 ```
