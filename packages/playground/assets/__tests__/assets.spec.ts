@@ -105,6 +105,13 @@ describe('css url() references', () => {
     })
   })
 
+  test('image-set with var', async () => {
+    const imageSet = await getBg('.css-image-set-with-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })
