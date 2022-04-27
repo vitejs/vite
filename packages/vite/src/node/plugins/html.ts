@@ -473,7 +473,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        // ignore <link rel="stylesheet"> can't resolve src
+        // ignore <link rel="stylesheet"> if its url can't be resolved
         for (const { start, end, url } of styleUrls) {
           const resolvedUrl = await this.resolve(url, id)
           if (resolvedUrl == null) {
