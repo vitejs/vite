@@ -461,7 +461,7 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server)
+  const server = resolveServerOptions(resolvedRoot, config.server, logger)
 
   const optimizeDeps = config.optimizeDeps || {}
 
