@@ -304,8 +304,7 @@ if (!isBuild) {
       (code) => code.replace('#0088ff', '#00ff88'),
       true
     )
-    // wait for page reload
-    await timeout(200)
+    await page.waitForNavigation()
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
   })
 }
