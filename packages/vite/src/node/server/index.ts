@@ -56,6 +56,7 @@ import type { OptimizedDeps } from '../optimizer'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
@@ -92,6 +93,8 @@ export interface ServerOptions extends CommonServerOptions {
   fs?: FileSystemServeOptions
   /**
    * Origin for the generated asset URLs.
+   *
+   * @example `http://127.0.0.1:8080`
    */
   origin?: string
   /**
@@ -701,7 +704,8 @@ function resolvedAllowDir(root: string, dir: string): string {
 
 export function resolveServerOptions(
   root: string,
-  raw?: ServerOptions
+  raw: ServerOptions | undefined,
+  logger: Logger
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
@@ -727,6 +731,18 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
+
+  if (server.origin?.endsWith('/')) {
+    server.origin = server.origin.slice(0, -1)
+    logger.warn(
+      colors.yellow(
+        `${colors.bold('(!)')} server.origin should not end with "/". Using "${
+          server.origin
+        }" instead.`
+      )
+    )
+  }
+
   return server
 }
 

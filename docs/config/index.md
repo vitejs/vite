@@ -706,7 +706,7 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080/'
+    origin: 'http://127.0.0.1:8080'
   }
 })
 ```
