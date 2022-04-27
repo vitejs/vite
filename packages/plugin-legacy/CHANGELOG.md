@@ -1,3 +1,10 @@
+## <small>1.8.1 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+* docs(legacy): note works in build only (#7596) ([f26b14a](https://github.com/vitejs/vite/commit/f26b14a)), closes [#7596](https://github.com/vitejs/vite/issues/7596)
+
+
+
 ## 1.8.0 (2022-03-30)
 
 * fix(deps): update all non-major dependencies (#6782) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e)), closes [#6782](https://github.com/vitejs/vite/issues/6782)

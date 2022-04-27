@@ -31,7 +31,7 @@ import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
 import type { ResolvedBuildOptions } from '.'
-import { parse as parseUrl } from 'url'
+import { parse as parseUrl, pathToFileURL } from 'url'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -63,7 +63,7 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption = Plugin | false | null | undefined
+export type PluginOption = Plugin | false | null | undefined | PluginOption[]
 
 export interface UserConfig {
   /**
@@ -109,7 +109,7 @@ export interface UserConfig {
   /**
    * Array of vite plugins to use.
    */
-  plugins?: (PluginOption | PluginOption[])[]
+  plugins?: PluginOption[]
   /**
    * Configure resolver
    */
@@ -145,10 +145,8 @@ export interface UserConfig {
   preview?: PreviewOptions
   /**
    * Dep optimization options
-   *
-   * false disables optimization completely (experimental)
    */
-  optimizeDeps?: DepOptimizationOptions | false
+  optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
    * @alpha
@@ -201,7 +199,7 @@ export interface UserConfig {
     /**
      * Vite plugins that apply to worker bundle
      */
-    plugins?: (PluginOption | PluginOption[])[]
+    plugins?: PluginOption[]
     /**
      * Rollup options to build worker bundle
      */
@@ -325,7 +323,7 @@ export async function resolveConfig(
   configEnv.mode = mode
 
   // resolve plugins
-  const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
+  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -503,7 +501,6 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      disabled: config.optimizeDeps === false,
       ...optimizeDeps,
       esbuildOptions: {
         keepNames: optimizeDeps.keepNames,
@@ -754,7 +751,8 @@ function mergeConfigRecursively(
     } else if (key === 'assetsInclude' && rootPath === '') {
       merged[key] = [].concat(existing, value)
       continue
-    } else if (key === 'noExternal' && existing === true) {
+    } else if (key === 'noExternal' && (existing === true || value === true)) {
+      merged[key] = true
       continue
     }
 
@@ -1017,7 +1015,7 @@ async function bundleConfigFile(
               contents: contents
                 .replace(
                   /\bimport\.meta\.url\b/g,
-                  JSON.stringify(`file://${args.path}`)
+                  JSON.stringify(pathToFileURL(args.path).href)
                 )
                 .replace(
                   /\b__dirname\b/g,

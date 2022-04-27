@@ -1,3 +1,4 @@
+import { assetAttrsConfig } from './../plugins/html'
 import { emptyString } from '../../node/cleanString'
 
 test('comments', () => {
@@ -30,6 +31,35 @@ test('strings', () => {
   `)
   expect(clean).toMatch("const a = '\0\0\0\0'")
   expect(clean).toMatch('const b = "\0\0\0\0"')
+})
+
+test('escape character', () => {
+  const clean = emptyString(`
+    '1\\'1'
+    "1\\"1"
+    "1\\"1\\"1"
+    "1\\'1'\\"1"
+    "1'1'"
+    "1'\\'1\\''\\"1\\"\\""
+    '1"\\"1\\""\\"1\\"\\"'
+    '""1""'
+    '"""1"""'
+    '""""1""""'
+    "''1''"
+    "'''1'''"
+    "''''1''''"
+  `)
+  expect(clean).not.toMatch('1')
+})
+
+test('regexp affect', () => {
+  const clean = emptyString(`
+    /'/
+    '1'
+    /"/
+    "1"
+  `)
+  expect(clean).not.toMatch('1')
 })
 
 test('strings comment nested', () => {

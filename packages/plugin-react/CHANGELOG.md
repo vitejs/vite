@@ -1,3 +1,11 @@
+## <small>1.3.1 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+* chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)
+* chore(deps): update all non-major dependencies (#7603) ([fc51a15](https://github.com/vitejs/vite/commit/fc51a15)), closes [#7603](https://github.com/vitejs/vite/issues/7603)
+
+
+
 ## 1.3.0 (2022-03-30)
 
 * feat(plugin-react): adding jsxPure option (#7088) ([d451435](https://github.com/vitejs/vite/commit/d451435)), closes [#7088](https://github.com/vitejs/vite/issues/7088)

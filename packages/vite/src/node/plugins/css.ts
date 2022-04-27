@@ -1092,18 +1092,27 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  const { code, warnings } = await transform(css, {
-    loader: 'css',
-    minify: true,
-    target: config.build.cssTarget || undefined
-  })
-  if (warnings.length) {
-    const msgs = await formatMessages(warnings, { kind: 'warning' })
-    config.logger.warn(
-      colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
-    )
+  try {
+    const { code, warnings } = await transform(css, {
+      loader: 'css',
+      minify: true,
+      target: config.build.cssTarget || undefined
+    })
+    if (warnings.length) {
+      const msgs = await formatMessages(warnings, { kind: 'warning' })
+      config.logger.warn(
+        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+      )
+    }
+    return code
+  } catch (e) {
+    if (e.errors) {
+      const msgs = await formatMessages(e.errors, { kind: 'error' })
+      e.frame = '\n' + msgs.join('\n')
+      e.loc = e.errors[0].location
+    }
+    throw e
   }
-  return code
 }
 
 export async function hoistAtRules(css: string) {
@@ -1112,20 +1121,26 @@ export async function hoistAtRules(css: string) {
   // CSS @import can only appear at top of the file. We need to hoist all @import
   // to top when multiple files are concatenated.
   // match until semicolon that's not in quotes
-  s.replace(/@import\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
-    s.appendLeft(0, match)
-    return ''
-  })
+  s.replace(
+    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
+    (match) => {
+      s.appendLeft(0, match)
+      return ''
+    }
+  )
   // #6333
   // CSS @charset must be the top-first in the file, hoist the first to top
   let foundCharset = false
-  s.replace(/@charset\s*(?:"[^"]*"|'[^']*'|[^;]*).*?;/gm, (match) => {
-    if (!foundCharset) {
-      s.prepend(match)
-      foundCharset = true
+  s.replace(
+    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm,
+    (match) => {
+      if (!foundCharset) {
+        s.prepend(match)
+        foundCharset = true
+      }
+      return ''
     }
-    return ''
-  })
+  )
   return s.toString()
 }
 

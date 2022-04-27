@@ -46,7 +46,8 @@ interface ScriptAssetsUrl {
 const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
-const inlineImportRE = /(?<!(?<!\.\.)\.)\bimport\s*\(("[^"]*"|'[^']*')\)/g
+const inlineImportRE =
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
 const htmlLangRE = /\.(html|htm)$/
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
@@ -390,8 +391,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.content
             })
-            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
-            shouldRemove = true
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+
+            // will transform in `applyHtmlTransforms`
+            s.overwrite(
+              styleNode.loc.start.offset,
+              styleNode.loc.end.offset,
+              `__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__`,
+              { contentOnly: true }
+            )
           }
 
           if (shouldRemove) {

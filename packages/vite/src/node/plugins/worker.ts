@@ -163,7 +163,6 @@ export async function workerFileToUrl(
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
-
   return {
     name: 'vite:worker',
 
@@ -250,7 +249,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code) {
-      if (isWorker && code.includes('import.meta.url')) {
+      if (config.isWorker && code.includes('import.meta.url')) {
         return code.replace('import.meta.url', 'self.location.href')
       }
       if (!isWorker) {

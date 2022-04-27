@@ -300,8 +300,7 @@ export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
-  const root = config.root
-  const serverConfig = config.server
+  const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(
     config.server.https,
     config.cacheDir

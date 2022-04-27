@@ -1,5 +1,4 @@
 import path from 'path'
-import fs from 'fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import compression from './server/middlewares/compression'
@@ -56,8 +55,6 @@ export interface PreviewServer {
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param config - the resolved Vite config
- * @param serverOptions - what host and port to use
  * @experimental
  */
 export async function preview(
@@ -91,19 +88,10 @@ export async function preview(
     config.base,
     sirv(distDir, {
       etag: true,
-      dev: true
+      dev: true,
+      single: true
     })
   )
-
-  app.use(config.base, (_, res, next) => {
-    const file = path.join(distDir, './404.html')
-    if (fs.existsSync(file)) {
-      res.statusCode = 404
-      res.end(fs.readFileSync(file))
-    } else {
-      next()
-    }
-  })
 
   const options = config.preview
   const hostname = resolveHostname(options.host)

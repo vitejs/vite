@@ -8,6 +8,24 @@ self.onmessage = (event) => {
   }
 }
 
-subWorker.onmessage = (event) => {
-  self.postMessage(event.data)
+self.postMessage(self.location.href)
+
+subWorker.onmessage = (ev) => {
+  self.postMessage({
+    type: 'module',
+    data: ev.data
+  })
 }
+
+const classicWorker = new Worker(new URL('./url-worker.js', import.meta.url), {
+  type: 'module'
+})
+classicWorker.addEventListener('message', (ev) => {
+  self.postMessage({
+    type: 'constructor',
+    data: ev.data
+  })
+})
+
+// for sourcemap
+console.log('worker-nested-worker.js')
