@@ -445,7 +445,7 @@ export async function runOptimizeDeps(
   }
 
   const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(config.mode)
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
   }
   for (const key in config.define) {
     const value = config.define[key]
@@ -790,7 +790,7 @@ export function getDepHash(config: ResolvedConfig): string {
   // only a subset of config options that can affect dep optimization
   content += JSON.stringify(
     {
-      mode: config.mode,
+      mode: process.env.NODE_ENV || config.mode,
       root: config.root,
       define: config.define,
       resolve: config.resolve,

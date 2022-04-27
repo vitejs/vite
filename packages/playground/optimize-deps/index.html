@@ -38,6 +38,9 @@
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
+<h2>Import from dependency with process.env.NODE_ENV</h2>
+<div class="node-env"></div>
+
 <h2>Import from dependency with .notjs files</h2>
 <div class="not-js"></div>
 
@@ -87,6 +90,9 @@
   if (keys.length) {
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
+
+  import { env } from 'dep-node-env'
+  text('.node-env', env)
 
   import { notjsValue } from 'dep-not-js'
   text('.not-js', notjsValue)
