@@ -942,14 +942,22 @@ async function resolvePostcssConfig(
       plugins: inlineOptions.plugins || []
     }
   } else {
+    const searchPath =
+      typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      const searchPath =
-        typeof inlineOptions === 'string' ? inlineOptions : config.root
       // @ts-ignore
       result = await postcssrc({}, searchPath)
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {
-        throw e
+        if (e instanceof Error) {
+          const { name, message, stack } = e
+          e.name = 'Failed to load PostCSS config'
+          e.message = `Failed to load PostCSS config (searchPath: ${searchPath}): [${name}] ${message}\n${stack}`
+          e.stack = '' // add stack to message to retain stack
+          throw e
+        } else {
+          throw new Error(`Failed to load PostCSS config: ${e}`)
+        }
       }
       result = null
     }
