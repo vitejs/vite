@@ -1128,9 +1128,8 @@ export async function hoistAtRules(css: string) {
   const atImportRE =
     /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
   while ((match = atImportRE.exec(cleanCss))) {
-    s.overwrite(match.index, match.index + match[0].length, '', {
-      contentOnly: true
-    })
+    s.remove(match.index, match.index + match[0].length)
+    // Use `appendLeft` instead of `prepend` to preserve original @import order
     s.appendLeft(0, match[0])
   }
 
@@ -1140,9 +1139,7 @@ export async function hoistAtRules(css: string) {
     /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
   let foundCharset = false
   while ((match = atCharsetRE.exec(cleanCss))) {
-    s.overwrite(match.index, match.index + match[0].length, '', {
-      contentOnly: true
-    })
+    s.remove(match.index, match.index + match[0].length)
     if (!foundCharset) {
       s.prepend(match[0])
       foundCharset = true
