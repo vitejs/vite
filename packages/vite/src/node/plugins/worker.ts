@@ -26,7 +26,7 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
-export const WorkerFileId = 'worker_file'
+export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function emitWorkerFile(
@@ -230,7 +230,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     async transform(raw, id) {
       const query = parseRequest(id)
-      if (query && query[WorkerFileId] != null && query['type'] != null) {
+      if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
         const workerType = query['type'] as WorkerType
         let injectEnv = ''
 
@@ -260,7 +260,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-      const isUrl = query.url != null
 
       let url: string
       if (isBuild) {
@@ -289,13 +288,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WorkerFileId)
+        url = injectQuery(url, WORKER_FILE_ID)
       }
 
-      if (isUrl) {
+      if (query.url != null) {
         return {
           code: `export default ${JSON.stringify(url)}`,
-          map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+          map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
         }
       }
 
@@ -309,7 +308,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url
         )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
-        map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+        map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
       }
     },
 

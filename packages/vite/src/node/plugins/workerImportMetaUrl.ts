@@ -5,7 +5,7 @@ import { fileToUrl } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
 import path from 'path'
 import type { WorkerType } from './worker'
-import { workerFileToUrl, WorkerFileId } from './worker'
+import { workerFileToUrl, WORKER_FILE_ID } from './worker'
 import { parseRequest } from '../utils'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rollup'
@@ -117,7 +117,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             url = await workerFileToUrl(this, config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WorkerFileId)
+            url = injectQuery(url, WORKER_FILE_ID)
             url = injectQuery(url, `type=${workerType}`)
           }
           s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
