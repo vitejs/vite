@@ -155,10 +155,54 @@ describe('hoist @ rules', () => {
   })
 
   test('hoist @import and @charset', async () => {
-    const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:grren;}@import "baz";`
+    const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:green;}@import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:grren;}`
+      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`
+    )
+  })
+
+  test('dont hoist @import in comments', async () => {
+    const css = `.foo{color:red;}/* @import "bla"; */@import "bar";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(`@import "bar";.foo{color:red;}/* @import "bla"; */`)
+  })
+
+  test('dont hoist @charset in comments', async () => {
+    const css = `.foo{color:red;}/* @charset "utf-8"; */@charset "utf-8";`
+    const result = await hoistAtRules(css)
+    expect(result).toBe(
+      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`
+    )
+  })
+
+  test('dont hoist @import and @charset in comments', async () => {
+    const css = `
+      .foo{color:red;}
+      /*
+        @import "bla";
+      */
+      @charset "utf-8";
+      /*
+        @charset "utf-8";
+        @import "bar";
+      */
+      @import "baz";
+    `
+    const result = await hoistAtRules(css)
+    expect(result).toBe(
+      `@charset "utf-8";@import "baz";
+      .foo{color:red;}
+      /*
+        @import "bla";
+      */
+      
+      /*
+        @charset "utf-8";
+        @import "bar";
+      */
+      
+    `
     )
   })
 })
