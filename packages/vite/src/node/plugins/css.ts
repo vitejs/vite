@@ -102,6 +102,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
+const varRE = /^var/i
 
 const enum PreprocessLang {
   less = 'less',
@@ -968,7 +969,7 @@ export const cssUrlRE =
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /image-set\(([^)]+)\)/
+const cssImageSetRE = /(?<=image-set\()([^)]+)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -1046,7 +1047,7 @@ function rewriteCssImageSet(
     const url = await processSrcSet(rawUrl, ({ url }) =>
       doUrlReplace(url, matched, replacer)
     )
-    return `image-set(${url})`
+    return url
   })
 }
 async function doUrlReplace(
@@ -1061,7 +1062,13 @@ async function doUrlReplace(
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+
+  if (
+    isExternalUrl(rawUrl) ||
+    isDataUrl(rawUrl) ||
+    rawUrl.startsWith('#') ||
+    varRE.test(rawUrl)
+  ) {
     return matched
   }
 
