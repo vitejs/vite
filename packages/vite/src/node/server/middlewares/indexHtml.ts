@@ -101,7 +101,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   { path: htmlPath, filename, server, originalUrl }
 ) => {
   // css compile need to emitFile in build mode, and serve mode is not need.
-  const compileCSS = createCSSCompiler(server!.config, null as any)
+  const compileCSS = createCSSCompiler(server!.config, null as any, server)
   const { config, moduleGraph } = server!
   const base = config.base || '/'
 
@@ -110,7 +110,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const filePath = cleanUrl(htmlPath)
   const styleUrl: AssetNode[] = []
 
-  const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
+  const addInlineModule = (node: ElementNode, ext: 'js') => {
     inlineModuleIndex++
 
     const url = filePath.replace(normalizePath(config.root), '')
@@ -137,17 +137,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    if (ext === 'js') {
-      s.overwrite(
-        node.loc.start.offset,
-        node.loc.end.offset,
-        `<script type="module" src="${modulePath}"></script>`,
-        { contentOnly: true }
-      )
-    } else if (ext === 'css') {
-      // just use the style update hmr don't render css
-      s.append(`<script type="module" src="${modulePath}"></script>`)
-    }
+    s.overwrite(
+      node.loc.start.offset,
+      node.loc.end.offset,
+      `<script type="module" src="${modulePath}"></script>`,
+      { contentOnly: true }
+    )
   }
 
   await traverseHtml(html, htmlPath, (node) => {
@@ -173,7 +168,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         end: children.loc.end.offset,
         code: children.content
       })
-      addInlineModule(node, 'css')
     }
 
     // elements with [href/src] attrs
@@ -192,8 +186,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   for (const { start, end, code } of styleUrl) {
-    const compliedCode = await compileCSS(filename + '.css', code)
-    s.overwrite(start, end, compliedCode.code)
+    const complied = await compileCSS(filename + '.css', code)
+    s.overwrite(start, end, complied.code)
   }
 
   html = s.toString()
