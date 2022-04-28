@@ -16,9 +16,14 @@ import {
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
+import {
+  cleanUrl,
+  fsPathFromId,
+  normalizePath,
+  injectQuery,
+  ensureWatchedFile
+} from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
-import { createCSSCompiler } from '../../plugins/css'
 
 interface AssetNode {
   start: number
@@ -100,9 +105,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl }
 ) => {
-  // css compile need to emitFile in build mode, and serve mode is not need.
-  const compileCSS = createCSSCompiler(server!.config, null as any, server)
-  const { config, moduleGraph } = server!
+  const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
@@ -185,9 +188,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
   })
 
-  for (const { start, end, code } of styleUrl) {
-    const complied = await compileCSS(filename + '.css', code)
-    s.overwrite(start, end, complied.code)
+  for (let index = 0; index < styleUrl.length; index++) {
+    const { start, end, code } = styleUrl[index]
+    const url = filename + `?html-proxy&${index}.css`
+
+    // ensure module in graph after successful load
+    const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+    ensureWatchedFile(watcher, mod.file, config.root)
+
+    const result = await server!.pluginContainer.transform(code, url)
+    s.overwrite(start, end, result?.code || '')
   }
 
   html = s.toString()

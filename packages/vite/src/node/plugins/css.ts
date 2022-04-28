@@ -243,10 +243,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (options?.ssr) {
             return modulesCode || `export default ${JSON.stringify(css)}`
           }
-          if (inlined || isHTMLProxy) {
+          if (inlined) {
             return `export default ${JSON.stringify(css)}`
           }
-
+          if (isHTMLProxy) {
+            return css
+          }
           let cssContent = css
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
@@ -567,6 +569,7 @@ export function createCSSCompiler(
     }
     return url
   }
+  const moduleCache = cssModulesCache.get(config)!
 
   return async (id: string, raw: string, ssr?: boolean) => {
     const compiledResult = await compileCSS(
@@ -579,7 +582,7 @@ export function createCSSCompiler(
     )
     const { modules, deps } = compiledResult
     if (modules) {
-      cssModulesCache.get(config)?.set(id, modules)
+      moduleCache.set(id, modules)
     }
 
     // track deps for build watch mode
