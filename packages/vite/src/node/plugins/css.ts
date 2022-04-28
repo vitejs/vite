@@ -94,20 +94,6 @@ export interface CSSModulesOptions {
     | null
 }
 
-interface CompileCSSResult {
-  code: string
-  map?: SourceMapInput
-  ast?: PostCSS.Result
-  modules?: Record<string, string>
-  deps?: Set<string>
-}
-
-type CSSCompiler = (
-  id: string,
-  raw: string,
-  ssr?: boolean
-) => Promise<CompileCSSResult>
-
 const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
@@ -638,7 +624,13 @@ async function compileCSS(
   urlReplacer: CssUrlReplacer,
   atImportResolvers: CSSAtImportResolvers,
   server?: ViteDevServer
-): Promise<CompileCSSResult> {
+): Promise<{
+  code: string
+  map?: SourceMapInput
+  ast?: PostCSS.Result
+  modules?: Record<string, string>
+  deps?: Set<string>
+}> {
   const {
     modules: modulesOptions,
     preprocessorOptions,
