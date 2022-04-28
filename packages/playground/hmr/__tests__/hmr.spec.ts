@@ -13,18 +13,6 @@ if (!isBuild) {
     browserLogs.length = 0
   })
 
-  test('css in html hmr', async () => {
-    expect(await getBg('.import-image')).toMatch('icon')
-    // test relative path
-    await (viteTestUrl + '/foo/')
-    expect(await getBg('.import-image')).toMatch('icon')
-    await page.goto(viteTestUrl)
-    editFile('dynamic-import/dep.ts', (code) =>
-      code.replace('url("./icon.png")', '')
-    )
-    expect(await getBg('.import-image')).toMatch('')
-  })
-
   test('self accept', async () => {
     const el = await page.$('.app')
 
@@ -141,7 +129,9 @@ if (!isBuild) {
   })
 
   test('full-reload encodeURI path', async () => {
-    await (viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html')
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+    )
     const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     await editFile(
@@ -156,7 +146,7 @@ if (!isBuild) {
   })
 
   test('CSS update preserves query params', async () => {
-    await viteTestUrl
+    await page.goto(viteTestUrl)
 
     editFile('global.css', (code) => code.replace('white', 'tomato'))
 
@@ -203,6 +193,15 @@ if (!isBuild) {
     }
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  test('css in html hmr', async () => {
+    await page.goto(viteTestUrl)
+    expect(await getBg('.import-image')).toMatch('icon')
+    await page.goto(viteTestUrl + '/foo/')
+    expect(await getBg('.import-image')).toMatch('icon')
+    editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    expect(await getBg('.import-image')).toMatch('')
   })
 
   test('HTML', async () => {
