@@ -552,11 +552,12 @@ export async function processSrcSet(
   const imageCandidates: ImageCandidate[] = srcs
     .split(',')
     .map((s) => {
-      const [url, descriptor] = s
+      const [url, ...descriptorArr] = s
         .replace(escapedSpaceCharacters, ' ')
         .trim()
-        .split(' ', 2)
-      return { url, descriptor }
+        .split(' ')
+
+      return { url, descriptor: descriptorArr.join(' ') }
     })
     .filter(({ url }) => !!url)
 
