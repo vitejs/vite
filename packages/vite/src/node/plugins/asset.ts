@@ -25,6 +25,11 @@ const assetHashToFilenameMap = new WeakMap<
 // save hashes of the files that has been emitted in build watch
 const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 
+export const inlineAssetsMap = new WeakMap<
+  ResolvedConfig,
+  Map<string, string>
+>()
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
@@ -41,6 +46,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       emittedHashMap.set(config, new Set())
+      inlineAssetsMap.set(config, new Map())
     },
 
     resolveId(id) {
@@ -80,7 +86,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, option) {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
@@ -99,7 +105,26 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const outputFilepath = config.base + file + postfix
+        let outputFilepath = config.base + file + postfix
+
+        if (config.build.lib && config.build.lib.emitAssets) {
+          if (option.format === 'es') {
+            const newUrl = `new URL('${outputFilepath}', import.meta.url).href`
+            // transform the string
+            s.overwrite(
+              match.index - 1,
+              match.index + full.length + 1,
+              newUrl,
+              {
+                contentOnly: true
+              }
+            )
+            continue
+          } else {
+            outputFilepath = inlineAssetsMap.get(config)!.get(full)!
+          }
+        }
+
         s.overwrite(match.index, match.index + full.length, outputFilepath, {
           contentOnly: true
         })
@@ -284,13 +309,29 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (
-    config.build.lib ||
+  let inlineContent: string
+
+  const libOption = config.build.lib
+
+  // condition should directly replace to inline assets
+  const replaceUrl =
+    (libOption && !libOption.emitAssets) ||
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
-  ) {
+
+  const emitAssets = libOption && libOption.emitAssets
+
+  const genInlineAssets = replaceUrl || emitAssets
+
+  if (genInlineAssets) {
     // base64 inlined as a string
-    url = `data:${mrmime.lookup(file)};base64,${content.toString('base64')}`
+    inlineContent = `data:${mrmime.lookup(file)};base64,${content.toString(
+      'base64'
+    )}`
+  }
+
+  if (replaceUrl) {
+    url = inlineContent!
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
@@ -331,6 +372,13 @@ async function fileToBuiltUrl(
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
+  }
+
+  if (emitAssets) {
+    const map = inlineAssetsMap.get(config)!
+    if (!map.has(url)) {
+      map.set(url, inlineContent!)
+    }
   }
 
   cache.set(id, url)

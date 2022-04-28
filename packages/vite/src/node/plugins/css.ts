@@ -33,7 +33,8 @@ import {
   getAssetFilename,
   assetUrlRE,
   fileToUrl,
-  checkPublicFile
+  checkPublicFile,
+  inlineAssetsMap
 } from './asset'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -419,6 +420,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
+          if (config.build.lib && config.build.lib.emitAssets) {
+            return inlineAssetsMap.get(config)!.get(_)!
+          }
           if (!isRelativeBase || inlined) {
             // absolute base or relative base but inlined (injected as style tag into
             // index.html) use the base as-is
