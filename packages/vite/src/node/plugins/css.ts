@@ -21,7 +21,6 @@ import type {
   ExistingRawSourceMap,
   NormalizedOutputOptions,
   OutputChunk,
-  PluginContext,
   RenderedChunk,
   RollupError,
   SourceMapInput
