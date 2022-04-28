@@ -160,7 +160,13 @@ const postcssConfigCache = new WeakMap<
 export function cssPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer
   let moduleCache: Map<string, Record<string, string>>
-  let cssCompiler: CSSCompiler
+
+  const resolveUrl = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
+  const atImportResolvers = createCSSResolvers(config)
 
   return {
     name: 'vite:css',
@@ -185,9 +191,87 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-      cssCompiler ||= createCSSCompiler(config, this, server)
       const ssr = options?.ssr === true
-      const { code: css, map } = await cssCompiler(id, raw, ssr)
+
+      const urlReplacer: CssUrlReplacer = async (url, importer) => {
+        if (checkPublicFile(url, config)) {
+          return config.base + url.slice(1)
+        }
+        const resolved = await resolveUrl(url, importer)
+        if (resolved) {
+          return fileToUrl(resolved, config, this)
+        }
+        return url
+      }
+
+      const {
+        code: css,
+        modules,
+        deps,
+        map
+      } = await compileCSS(
+        id,
+        raw,
+        config,
+        urlReplacer,
+        atImportResolvers,
+        server
+      )
+      if (modules) {
+        moduleCache.set(id, modules)
+      }
+
+      // track deps for build watch mode
+      if (config.command === 'build' && config.build.watch && deps) {
+        for (const file of deps) {
+          this.addWatchFile(file)
+        }
+      }
+
+      // dev
+      if (server) {
+        // server only logic for handling CSS @import dependency hmr
+        const { moduleGraph } = server
+        const thisModule = moduleGraph.getModuleById(id)
+        if (thisModule) {
+          // CSS modules cannot self-accept since it exports values
+          const isSelfAccepting = !modules && !inlineRE.test(id)
+          if (deps) {
+            // record deps in the module graph so edits to @import css can trigger
+            // main import to hot update
+            const depModules = new Set<string | ModuleNode>()
+            for (const file of deps) {
+              depModules.add(
+                isCSSRequest(file)
+                  ? moduleGraph.createFileOnlyEntry(file)
+                  : await moduleGraph.ensureEntryFromUrl(
+                      (
+                        await fileToUrl(file, config, this)
+                      ).replace(
+                        (config.server?.origin ?? '') + config.base,
+                        '/'
+                      ),
+                      ssr
+                    )
+              )
+            }
+            moduleGraph.updateModuleInfo(
+              thisModule,
+              depModules,
+              // The root CSS proxy module is self-accepting and should not
+              // have an explicit accept list
+              new Set(),
+              isSelfAccepting,
+              ssr
+            )
+            for (const file of deps) {
+              this.addWatchFile(file)
+            }
+          } else {
+            thisModule.isSelfAccepting = isSelfAccepting
+          }
+        }
+      }
 
       return {
         code: css,
@@ -545,97 +629,6 @@ function getCssResolversKeys(
   resolvers: CSSAtImportResolvers
 ): Array<keyof CSSAtImportResolvers> {
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
-}
-
-export function createCSSCompiler(
-  config: ResolvedConfig,
-  ctx: PluginContext,
-  server?: ViteDevServer
-): CSSCompiler {
-  const resolveUrl = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
-  const atImportResolvers = createCSSResolvers(config)
-
-  const urlReplacer: CssUrlReplacer = async (url, importer) => {
-    if (checkPublicFile(url, config)) {
-      return config.base + url.slice(1)
-    }
-    const resolved = await resolveUrl(url, importer)
-    if (resolved) {
-      return fileToUrl(resolved, config, ctx)
-    }
-    return url
-  }
-  const moduleCache = cssModulesCache.get(config)!
-
-  return async (id: string, raw: string, ssr?: boolean) => {
-    const compiledResult = await compileCSS(
-      id,
-      raw,
-      config,
-      urlReplacer,
-      atImportResolvers,
-      server
-    )
-    const { modules, deps } = compiledResult
-    if (modules) {
-      moduleCache.set(id, modules)
-    }
-
-    // track deps for build watch mode
-    if (config.command === 'build' && config.build.watch && deps) {
-      for (const file of deps) {
-        ctx.addWatchFile(file)
-      }
-    }
-
-    // dev
-    if (server) {
-      // server only logic for handling CSS @import dependency hmr
-      const { moduleGraph } = server
-      const thisModule = moduleGraph.getModuleById(id)
-      if (thisModule) {
-        // CSS modules cannot self-accept since it exports values
-        const isSelfAccepting = !modules && !inlineRE.test(id)
-        if (deps) {
-          // record deps in the module graph so edits to @import css can trigger
-          // main import to hot update
-          const depModules = new Set<string | ModuleNode>()
-          for (const file of deps) {
-            depModules.add(
-              isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
-                    (
-                      await fileToUrl(file, config, ctx)
-                    ).replace((config.server?.origin ?? '') + config.base, '/'),
-                    ssr
-                  )
-            )
-          }
-          moduleGraph.updateModuleInfo(
-            thisModule,
-            depModules,
-            // The root CSS proxy module is self-accepting and should not
-            // have an explicit accept list
-            new Set(),
-            isSelfAccepting,
-            ssr
-          )
-          for (const file of deps) {
-            ctx.addWatchFile(file)
-          }
-        } else {
-          thisModule.isSelfAccepting = isSelfAccepting
-        }
-      }
-    }
-
-    return compiledResult
-  }
 }
 
 async function compileCSS(
