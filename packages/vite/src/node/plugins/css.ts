@@ -21,6 +21,7 @@ import type {
   ExistingRawSourceMap,
   NormalizedOutputOptions,
   OutputChunk,
+  PluginContext,
   RenderedChunk,
   RollupError,
   SourceMapInput
@@ -612,6 +613,29 @@ function getCssResolversKeys(
   resolvers: CSSAtImportResolvers
 ): Array<keyof CSSAtImportResolvers> {
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
+}
+
+export function createCSSCompiler(config: ResolvedConfig, ctx: PluginContext) {
+  const resolveUrl = config.createResolver({
+    preferRelative: true,
+    tryIndex: false,
+    extensions: []
+  })
+  const atImportResolvers = createCSSResolvers(config)
+
+  const urlReplacer: CssUrlReplacer = async (url, importer) => {
+    if (checkPublicFile(url, config)) {
+      return config.base + url.slice(1)
+    }
+    const resolved = await resolveUrl(url, importer)
+    if (resolved) {
+      return fileToUrl(resolved, config, ctx)
+    }
+    return url
+  }
+
+  return (id: string, code: string) =>
+    compileCSS(id, code, config, urlReplacer, atImportResolvers)
 }
 
 async function compileCSS(

@@ -18,12 +18,18 @@ import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
+import { createCSSCompiler } from '../../plugins/css'
+
+interface AssetNode {
+  start: number
+  end: number
+  code: string
+}
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
-
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(html, [...preHooks, devHtmlHook, ...postHooks], {
       path: url,
@@ -94,12 +100,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl }
 ) => {
+  // css compile need to emitFile in build mode, and serve mode is not need.
+  const compileCSS = createCSSCompiler(server!.config, null as any)
   const { config, moduleGraph } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   const filePath = cleanUrl(htmlPath)
+  const styleUrl: AssetNode[] = []
 
   const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
     inlineModuleIndex++
@@ -158,6 +167,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     if (node.tag === 'style' && node.children.length) {
+      const children = node.children[0] as TextNode
+      styleUrl.push({
+        start: children.loc.start.offset,
+        end: children.loc.end.offset,
+        code: children.content
+      })
       addInlineModule(node, 'css')
     }
 
@@ -175,6 +190,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
   })
+
+  for (const { start, end, code } of styleUrl) {
+    const compliedCode = await compileCSS(filename + '.css', code)
+    s.overwrite(start, end, compliedCode.code)
+  }
 
   html = s.toString()
 
