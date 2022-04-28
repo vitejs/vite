@@ -1,6 +1,7 @@
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
+import path from 'path'
 import type { Plugin, PluginOption } from 'vite'
 import {
   addRefreshWrapper,
@@ -332,27 +333,40 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  const devEntry = 'react/cjs/react-jsx-dev-runtime.development.js'
-  const prodEntry = 'react/cjs/react-jsx-runtime.production.min.js'
   const devRuntimeId = 'react/jsx-dev-runtime'
   const prodRuntimeId = 'react/jsx-runtime'
   const shimRuntimeId = prodRuntimeId + '.shim.js'
+
+  let devEntry: string
+  let prodEntry: string
 
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
     enforce: 'pre',
-    config() {
-      return {
-        optimizeDeps: {
-          // These must be optimized since they are CommonJS.
-          include: [prodEntry, devEntry]
-        },
-        resolve: {
-          // Ensure these are resolved relative to the project root.
-          dedupe: [prodEntry, devEntry]
-        }
+    async configResolved({ createResolver, logger, optimizeDeps }) {
+      const resolve = createResolver({ asSrc: false })
+      const reactEntry = await resolve('react')
+      if (!reactEntry) {
+        return logger.warn(
+          '[@vitejs/plugin-react] Cannot find where "react" is installed'
+        )
       }
+      const reactPackageRoot = path.dirname(reactEntry)
+      devEntry = path.join(
+        reactPackageRoot,
+        'cjs/react-jsx-dev-runtime.development.js'
+      )
+      prodEntry = path.join(
+        reactPackageRoot,
+        'cjs/react-jsx-runtime.production.min.js'
+      )
+      // These must be optimized since they are CommonJS.
+      optimizeDeps.include = [
+        ...(optimizeDeps.include || []),
+        prodEntry,
+        devEntry
+      ]
     },
     resolveId(id: string) {
       // Prevent applications from using both the dev runtime and prod runtime
