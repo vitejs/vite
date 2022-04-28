@@ -201,6 +201,7 @@ if (!isBuild) {
     await page.goto(viteTestUrl + '/foo/')
     expect(await getBg('.import-image')).toMatch('icon')
     editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    await page.waitForNavigation()
     expect(await getBg('.import-image')).toMatch('')
   })
 
