@@ -361,9 +361,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         reactPackageRoot,
         'cjs/react-jsx-runtime.production.min.js'
       )
-      // These must be optimized since they are CommonJS.
       optimizeDeps.include = [
-        ...(optimizeDeps.include || []),
+        ...(optimizeDeps.include || []).filter(
+          // Disable old workaround so unnecessary work is avoided.
+          (id) => id !== prodRuntimeId && id !== devRuntimeId
+        ),
+        // These must be optimized since they are CommonJS.
         prodEntry,
         devEntry
       ]
