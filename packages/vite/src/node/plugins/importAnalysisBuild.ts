@@ -4,10 +4,12 @@ import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk, SourceMap } from 'rollup'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { transformImportGlob } from '../importGlob'
-import { bareImportRE } from '../utils'
+import { bareImportRE, combineSourcemaps } from '../utils'
+import type { RawSourceMap } from '@ampproject/remapping'
+import { genSourceMapUrl } from '../server/sourcemap'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -20,7 +22,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
-const preloadMarkerRE = new RegExp(`"${preloadMarker}"`, 'g')
+const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -85,8 +87,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
-  const insertPreload = !(ssr || !!config.build.lib)
   const isWorker = config.isWorker
+  const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -121,11 +123,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      if (isWorker) {
-        // preload method use `document` and can't run in the worker
-        return
-      }
-
       await init
 
       let imports: readonly ImportSpecifier[] = []
@@ -157,6 +154,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
         ) {
+          // es worker allow globEager / glob
+          // iife worker just allow globEager
+          if (
+            isWorker &&
+            config.worker.format === 'iife' &&
+            source.slice(end, end + 10) !== '.globEager'
+          ) {
+            this.error(
+              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
+              end
+            )
+          }
           const { importsString, exp, endIndex, isEager } =
             await transformImportGlob(
               source,
@@ -263,8 +272,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             this.error(e, e.idx)
           }
 
+          const s = new MagicString(code)
+          const rewroteMarkerStartPos = new Set() // position of the leading double quote
+
           if (imports.length) {
-            const s = new MagicString(code)
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
               const {
@@ -324,16 +335,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 addDeps(normalizedFile)
               }
 
-              let markPos = code.indexOf(preloadMarker, end)
+              let markerStartPos = code.indexOf(preloadMarkerWithQuote, end)
               // fix issue #3051
-              if (markPos === -1 && imports.length === 1) {
-                markPos = code.indexOf(preloadMarker)
+              if (markerStartPos === -1 && imports.length === 1) {
+                markerStartPos = code.indexOf(preloadMarkerWithQuote)
               }
 
-              if (markPos > 0) {
+              if (markerStartPos > 0) {
                 s.overwrite(
-                  markPos - 1,
-                  markPos + preloadMarker.length + 1,
+                  markerStartPos,
+                  markerStartPos + preloadMarkerWithQuote.length,
                   // the dep list includes the main chunk, so only need to
                   // preload when there are actual other deps.
                   deps.size > 1 ||
@@ -343,15 +354,46 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     : `[]`,
                   { contentOnly: true }
                 )
+                rewroteMarkerStartPos.add(markerStartPos)
               }
             }
-            chunk.code = s.toString()
-            // TODO source map
           }
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          chunk.code = chunk.code.replace(preloadMarkerRE, 'void 0')
+          let markerStartPos = code.indexOf(preloadMarkerWithQuote)
+          while (markerStartPos >= 0) {
+            if (!rewroteMarkerStartPos.has(markerStartPos)) {
+              s.overwrite(
+                markerStartPos,
+                markerStartPos + preloadMarkerWithQuote.length,
+                'void 0',
+                { contentOnly: true }
+              )
+            }
+
+            markerStartPos = code.indexOf(
+              preloadMarkerWithQuote,
+              markerStartPos + preloadMarkerWithQuote.length
+            )
+          }
+
+          if (s.hasChanged()) {
+            chunk.code = s.toString()
+            if (config.build.sourcemap && chunk.map) {
+              const nextMap = s.generateMap({
+                source: chunk.fileName,
+                hires: true
+              })
+              const map = combineSourcemaps(
+                chunk.fileName,
+                [nextMap as RawSourceMap, chunk.map as RawSourceMap],
+                false
+              ) as SourceMap
+              map.toUrl = () => genSourceMapUrl(map)
+              chunk.map = map
+            }
+          }
         }
       }
     }

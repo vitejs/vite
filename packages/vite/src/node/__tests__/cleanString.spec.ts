@@ -1,3 +1,4 @@
+import { assetAttrsConfig } from './../plugins/html'
 import { emptyString } from '../../node/cleanString'
 
 test('comments', () => {
@@ -47,6 +48,16 @@ test('escape character', () => {
     "''1''"
     "'''1'''"
     "''''1''''"
+  `)
+  expect(clean).not.toMatch('1')
+})
+
+test('regexp affect', () => {
+  const clean = emptyString(`
+    /'/
+    '1'
+    /"/
+    "1"
   `)
   expect(clean).not.toMatch('1')
 })

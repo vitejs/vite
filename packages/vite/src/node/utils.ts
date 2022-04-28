@@ -605,7 +605,8 @@ const nullSourceMap: RawSourceMap = {
 }
 export function combineSourcemaps(
   filename: string,
-  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
+  excludeContent = true
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -635,7 +636,7 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, true)
+    map = remapping(sourcemapList, () => null, excludeContent)
   } else {
     map = remapping(
       sourcemapList[0],
@@ -646,7 +647,7 @@ export function combineSourcemaps(
           return null
         }
       },
-      true
+      excludeContent
     )
   }
   if (!map.file) {

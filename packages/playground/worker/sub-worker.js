@@ -1,5 +1,8 @@
 self.onmessage = (event) => {
   if (event.data === 'ping') {
-    self.postMessage(`pong ${import.meta.url}`)
+    self.postMessage(`pong ${self.location.href}`)
   }
 }
+
+// for sourcemap
+console.log('sub-worker.js')

@@ -58,6 +58,14 @@ function emitWorkerAssets(
   )
 }
 
+function emitWorkerSourcemap(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  asset: EmittedFile
+) {
+  return emitWorkerFile(ctx, config, asset, 'assets')
+}
+
 function emitWorkerChunks(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
@@ -138,14 +146,11 @@ function emitSourcemapForWorkerEntry(
       const contentHash = getAssetHash(content)
       const fileName = `${basename}.${contentHash}.js.map`
       const filePath = path.posix.join(config.build.assetsDir, fileName)
-      if (!context.cache.has(contentHash)) {
-        context.cache.set(contentHash, true)
-        context.emitFile({
-          fileName: filePath,
-          type: 'asset',
-          source: data
-        })
-      }
+      emitWorkerSourcemap(context, config, {
+        fileName: filePath,
+        type: 'asset',
+        source: data
+      })
 
       // Emit the comment that tells the JS debugger where it can find the
       // sourcemap file.
@@ -154,7 +159,10 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl = query?.inline != null ? filePath : fileName
+        const sourceMapUrl =
+          query?.inline != null
+            ? path.posix.join(config.base, filePath)
+            : fileName
         code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
@@ -194,7 +202,6 @@ export async function workerFileToUrl(
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
@@ -279,7 +286,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code) {
-      if (isWorker && code.includes('import.meta.url')) {
+      if (config.isWorker && code.includes('import.meta.url')) {
         return code.replace('import.meta.url', 'self.location.href')
       }
     }
