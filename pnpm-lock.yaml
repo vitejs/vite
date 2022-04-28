@@ -661,6 +661,7 @@ importers:
       '@vitejs/plugin-vue': workspace:*
       autoprefixer: ^10.4.0
       tailwindcss: ^2.2.19
+      ts-node: ^10.4.0
       vue: ^3.2.25
       vue-router: ^4.0.0
     dependencies:
@@ -670,6 +671,7 @@ importers:
       vue-router: 4.0.12_vue@3.2.26
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
+      ts-node: 10.4.0_233d9fcfccc8abc8f146a08357d842da
 
   packages/playground/tailwind-sourcemap:
     specifiers:
