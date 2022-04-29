@@ -28,10 +28,12 @@
           }
         },
         "isEntry": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the chunk is an entry."
         },
         "isDynamicEntry": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the chunk is a dynamic entry."
         },
         "imports": {
           "type": "array",
