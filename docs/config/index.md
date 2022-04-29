@@ -803,7 +803,7 @@ export default defineConfig({
 - **Type:** `boolean | 'inline' | 'hidden'`
 - **Default:** `false`
 
-  Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `true` except that the corresponding sourcemap comments in the bundled files are suppressed.
+  Generate production source maps. If `true`, a separate sourcemap file will be created. If `'inline'`, the sourcemap will be appended to the resulting output file as a data URI. `'hidden'` works like `false` except that the corresponding sourcemap comments in the bundled files are suppressed.
 
 ### build.rollupOptions
 
