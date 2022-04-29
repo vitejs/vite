@@ -23,7 +23,8 @@
         "assets": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "description": "An asset filename, relative to the outDir."
           }
         },
         "isEntry": {
