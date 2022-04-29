@@ -553,8 +553,8 @@ export async function processSrcSet(
   const imageCandidates: ImageCandidate[] = srcs
     .split(',')
     .map((s) => {
-      let src = s.replace(escapedSpaceCharacters, ' ').trim()
-      let [url] = imageSetUrlRE.exec(src) || []
+      const src = s.replace(escapedSpaceCharacters, ' ').trim()
+      const [url] = imageSetUrlRE.exec(src) || []
 
       return {
         url,
