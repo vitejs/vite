@@ -1,0 +1,6 @@
+{
+  "main.js": {
+    "file": "test",
+    "customProperty": "custom value"
+  }
+}
