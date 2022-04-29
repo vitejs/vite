@@ -188,17 +188,18 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
   })
 
-  for (let index = 0; index < styleUrl.length; index++) {
-    const { start, end, code } = styleUrl[index]
-    const url = filename + `?html-proxy&${index}.css`
+  await Promise.all(
+    styleUrl.map(async ({ start, end, code }, index) => {
+      const url = filename + `?html-proxy&${index}.css`
 
-    // ensure module in graph after successful load
-    const mod = await moduleGraph.ensureEntryFromUrl(url, false)
-    ensureWatchedFile(watcher, mod.file, config.root)
+      // ensure module in graph after successful load
+      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      ensureWatchedFile(watcher, mod.file, config.root)
 
-    const result = await server!.pluginContainer.transform(code, url)
-    s.overwrite(start, end, result?.code || '')
-  }
+      const result = await server!.pluginContainer.transform(code, url)
+      s.overwrite(start, end, result?.code || '')
+    })
+  )
 
   html = s.toString()
 
