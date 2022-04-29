@@ -10,7 +10,8 @@
           "type": "string"
         },
         "file": {
-          "type": "string"
+          "type": "string",
+          "description": "A JS filename, relative to the outDir."
         },
         "css": {
           "type": "array",
