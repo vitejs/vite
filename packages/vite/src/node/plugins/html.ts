@@ -476,9 +476,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // ignore <link rel="stylesheet"> if its url can't be resolved
-        for (const { start, end, url } of styleUrls) {
-          const resolvedUrl = await this.resolve(url, id)
-          if (resolvedUrl == null) {
+        const resolvedStyleUrls = await Promise.all(
+          styleUrls.map(async (styleUrl) => ({
+            ...styleUrl,
+            resolved: await this.resolve(styleUrl.url, id)
+          }))
+        )
+        for (const { start, end, url, resolved } of resolvedStyleUrls) {
+          if (resolved == null) {
             config.logger.warnOnce(
               `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
