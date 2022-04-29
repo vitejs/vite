@@ -545,7 +545,7 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^([\w\-]+\(.*?\)|'.*?'|".*?")/
+const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
@@ -554,11 +554,11 @@ export async function processSrcSet(
     .split(',')
     .map((s) => {
       let src = s.replace(escapedSpaceCharacters, ' ').trim()
-      let [, url] = imageSetUrlRE.exec(src) || []
+      let [url] = imageSetUrlRE.exec(src) || []
 
       return {
         url,
-        descriptor: src?.slice(url.length)
+        descriptor: src?.slice(url.length).trim()
       }
     })
     .filter(({ url }) => !!url)
