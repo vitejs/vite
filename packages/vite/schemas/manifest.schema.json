@@ -15,7 +15,8 @@
         "css": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "description": "A CSS filename, relative to the outDir."
           }
         },
         "assets": {
