@@ -4,6 +4,11 @@
   "type": "object",
   "patternProperties": {
     "^.+$": {
+      "$ref": "#/$defs/chunk"
+    }
+  },
+  "$defs": {
+    "chunk": {
       "type": "object",
       "properties": {
         "src": {
