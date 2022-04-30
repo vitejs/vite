@@ -42,7 +42,7 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 1. In the sources panel in the right column, click the play button to resume execution and allow the tests to run which will open a Chromium instance.
 
-1. Focusing the Chomium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+1. Focusing the Chromium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
 
 1. To close everything, just stop the test process back in your terminal.
 
