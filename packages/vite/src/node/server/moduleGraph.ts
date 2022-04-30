@@ -33,6 +33,7 @@ export class ModuleNode {
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
 
