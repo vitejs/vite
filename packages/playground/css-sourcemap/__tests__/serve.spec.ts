@@ -17,68 +17,6 @@ if (!isBuild) {
     throw new Error('Not found')
   }
 
-  test('inline css', async () => {
-    const css = await getStyleTagContentIncluding('.inline ')
-    const map = extractSourcemap(css)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
-        "mappings": "AAGO;AACP,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACf,CAAC,CAAC,CAAC;",
-        "sources": Array [
-          "/root/index.html",
-        ],
-        "sourcesContent": Array [
-          "<link rel=\\"stylesheet\\" href=\\"./linked.css\\" />
-      <link rel=\\"stylesheet\\" href=\\"./linked-with-import.css\\" />
-
-      <style>
-        .inline {
-          color: red;
-        }
-      </style>
-
-      <div class=\\"wrapper\\">
-        <h1>CSS Sourcemap</h1>
-
-        <p class=\\"inline\\">&lt;inline&gt;</p>
-
-        <p class=\\"linked\\">&lt;linked&gt;: no import</p>
-        <p class=\\"linked-with-import\\">&lt;linked&gt;: with import</p>
-
-        <p class=\\"imported\\">&lt;imported&gt;: no import</p>
-        <p class=\\"imported-with-import\\">&lt;imported&gt;: with import</p>
-
-        <p class=\\"imported-sass\\">&lt;imported sass&gt;</p>
-        <p class=\\"imported-sass-module\\">&lt;imported sass&gt; with module</p>
-
-        <p class=\\"imported-less\\">&lt;imported less&gt; with string additionalData</p>
-
-        <p class=\\"imported-stylus\\">&lt;imported stylus&gt;</p>
-      </div>
-
-      <script type=\\"module\\">
-        import './imported.css'
-        import './imported-with-import.css'
-
-        import './imported.sass'
-        import sassModule from './imported.module.sass'
-
-        document
-          .querySelector('.imported-sass-module')
-          .classList.add(sassModule['imported-sass-module'])
-
-        import './imported.less'
-
-        import './imported.styl'
-      </script>
-
-      <iframe src=\\"virtual.html\\"></iframe>
-      ",
-        ],
-        "version": 3,
-      }
-    `)
-  })
-
   test('linked css', async () => {
     const res = await page.request.get(
       new URL('./linked.css', page.url()).href,

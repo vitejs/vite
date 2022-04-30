@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import {
   findAssetFile,
   getBg,
@@ -296,6 +295,11 @@ describe('css and assets in css in build watch', () => {
   }
 })
 
+test('inline style test', async () => {
+  expect(await getBg('.inline-style')).toMatch(assetMatch)
+  expect(await getBg('.style-url-assets')).toMatch(assetMatch)
+})
+
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
@@ -304,6 +308,7 @@ if (!isBuild) {
       (code) => code.replace('#0088ff', '#00ff88'),
       true
     )
+    await page.waitForNavigation()
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
   })
 }

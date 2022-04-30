@@ -207,7 +207,10 @@
     background-size: 10px 10px;
   }
 </style>
-<div style="background: url('./nested/asset.png'); background-size: 10px 10px">
+<div
+  class="inline-style"
+  style="background: url('./nested/asset.png'); background-size: 10px 10px"
+>
   inline style
 </div>
 <div class="style-url-assets">use style class</div>
@@ -234,6 +237,21 @@
 <h3 id="foo">import module css</h3>
 
 <h3 class="raw-query"></h3>
+
+<h3>style in svg</h3>
+<svg viewBox="0 0 512 512" width="21" height="21" class="style-insvg">
+  <style>
+    .style-insvg-color {
+      fill: #0088ff;
+    }
+  </style>
+  <g class="style-insvg-color">
+    <rect x="224" y="352" width="64" height="64" />
+    <path
+      d="M128 128v96h64v-96h96v96h-32v32h-32v64h64v-64h64V128h-32V96H160v32h-32z"
+    />
+  </g>
+</svg>
 
 <style>
   @import '/foo.css';

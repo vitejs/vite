@@ -16,14 +16,25 @@ import {
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
-import { cleanUrl, fsPathFromId, normalizePath, injectQuery } from '../../utils'
+import {
+  cleanUrl,
+  fsPathFromId,
+  normalizePath,
+  injectQuery,
+  ensureWatchedFile
+} from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
+
+interface AssetNode {
+  start: number
+  end: number
+  code: string
+}
 
 export function createDevHtmlTransformFn(
   server: ViteDevServer
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
-
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(html, [...preHooks, devHtmlHook, ...postHooks], {
       path: url,
@@ -94,14 +105,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl }
 ) => {
-  const { config, moduleGraph } = server!
+  const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   const filePath = cleanUrl(htmlPath)
+  const styleUrl: AssetNode[] = []
 
-  const addInlineModule = (node: ElementNode, ext: 'js' | 'css') => {
+  const addInlineModule = (node: ElementNode, ext: 'js') => {
     inlineModuleIndex++
 
     const url = filePath.replace(normalizePath(config.root), '')
@@ -128,7 +140,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-
     s.overwrite(
       node.loc.start.offset,
       node.loc.end.offset,
@@ -154,7 +165,12 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     if (node.tag === 'style' && node.children.length) {
-      addInlineModule(node, 'css')
+      const children = node.children[0] as TextNode
+      styleUrl.push({
+        start: children.loc.start.offset,
+        end: children.loc.end.offset,
+        code: children.content
+      })
     }
 
     // elements with [href/src] attrs
@@ -171,6 +187,19 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
   })
+
+  await Promise.all(
+    styleUrl.map(async ({ start, end, code }, index) => {
+      const url = filename + `?html-proxy&${index}.css`
+
+      // ensure module in graph after successful load
+      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      ensureWatchedFile(watcher, mod.file, config.root)
+
+      const result = await server!.pluginContainer.transform(code, url)
+      s.overwrite(start, end, result?.code || '')
+    })
+  )
 
   html = s.toString()
 
