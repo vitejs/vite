@@ -315,14 +315,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (inlined) {
             return `export default ${JSON.stringify(css)}`
           }
-          if (isHTMLProxy) {
-            return css
-          }
+
           let cssContent = css
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
             cssContent = getCodeWithSourcemap('css', css, sourcemap)
+          }
+
+          if (isHTMLProxy) {
+            return cssContent
           }
 
           return [
