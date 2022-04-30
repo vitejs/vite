@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitejs.dev/schemas/v2.0.0/manifest.json",
   "title": "Vite Manifest",
   "type": "object",
   "patternProperties": {
