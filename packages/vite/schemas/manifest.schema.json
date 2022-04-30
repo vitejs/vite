@@ -20,6 +20,7 @@
         },
         "css": {
           "type": "array",
+          "description": "CSS files imported by the chunk.",
           "items": {
             "type": "string",
             "description": "A CSS filename, relative to the outDir."
@@ -27,6 +28,7 @@
         },
         "assets": {
           "type": "array",
+          "description": "Assets imported by the chunk.",
           "items": {
             "type": "string",
             "description": "An asset filename, relative to the outDir."
