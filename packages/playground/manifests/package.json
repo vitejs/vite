@@ -1,8 +1,0 @@
-{
-  "name": "manifests",
-  "private": true,
-  "version": "0.0.0",
-  "devDependencies": {
-    "ajv": "^8.11.0"
-  }
-}
