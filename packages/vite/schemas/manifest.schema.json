@@ -50,7 +50,8 @@
         "dynamicImports": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "description": "A key for an existing JS entry in the manifest."
           }
         }
       },
