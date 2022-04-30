@@ -26,6 +26,11 @@ import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
 
+const INJECT_HELPERS_IIFE_RE =
+  /(.*)(var [^\s]+=function\(.*\){"use strict";)(.*)/
+const INJECT_HELPERS_UMD_RE =
+  /(.*)(\(function\(.*\){.+amd.+function\(.*\){"use strict";)(.*)/
+
 let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
@@ -254,6 +259,26 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
             }
           : undefined)
       })
+
+      if (config.build.lib) {
+        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+        // names are minified potentially causing collision with other globals.
+        // We use a regex to inject the helpers inside the wrappers.
+        // We don't need to create a MagicString here because both the helpers and
+        // the headers don't modify the sourcemap
+        const injectHelpers =
+          opts.format === 'umd'
+            ? INJECT_HELPERS_UMD_RE
+            : opts.format === 'iife'
+            ? INJECT_HELPERS_IIFE_RE
+            : undefined
+        if (injectHelpers) {
+          res.code = res.code.replace(
+            injectHelpers,
+            (_, helpers, header, rest) => header + helpers + rest
+          )
+        }
+      }
       return res
     }
   }
