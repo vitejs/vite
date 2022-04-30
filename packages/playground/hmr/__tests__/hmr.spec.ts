@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')
@@ -193,6 +193,16 @@ if (!isBuild) {
     }
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  test('css in html hmr', async () => {
+    await page.goto(viteTestUrl)
+    expect(await getBg('.import-image')).toMatch('icon')
+    await page.goto(viteTestUrl + '/foo/')
+    expect(await getBg('.import-image')).toMatch('icon')
+    editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    await page.waitForNavigation()
+    expect(await getBg('.import-image')).toMatch('')
   })
 
   test('HTML', async () => {

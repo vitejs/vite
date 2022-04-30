@@ -301,6 +301,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       const modulesCode =
         modules && dataToEsm(modules, { namedExports: true, preferConst: true })
 
@@ -321,6 +322,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const sourcemap = this.getCombinedSourcemap()
             await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
             cssContent = getCodeWithSourcemap('css', css, sourcemap)
+          }
+
+          if (isHTMLProxy) {
+            return cssContent
           }
 
           return [
@@ -347,7 +352,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       const inlineCSS = inlineCSSRE.test(id)
       const query = parseRequest(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
           `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
@@ -718,12 +722,11 @@ async function compileCSS(
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
   if (needInlineImport) {
-    const isHTMLProxy = htmlProxyRE.test(id)
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
-          if (isHTMLProxy && publicFile) {
+          if (publicFile) {
             return publicFile
           }
 
