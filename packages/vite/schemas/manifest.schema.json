@@ -57,6 +57,7 @@
           }
         }
       },
+      "additionalProperties": true,
       "required": ["file"]
     }
   }
