@@ -80,7 +80,7 @@ if (!isBuild) {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       Object {
-        "mappings": ";AAOA;EACE,UAAU;AACZ",
+        "mappings": ";AAQA;EACE,UAAU;AACZ",
         "sources": Array [
           "/root/Css.vue",
         ],
@@ -89,6 +89,7 @@ if (!isBuild) {
         <p class=\\"css\\">&lt;css&gt;</p>
         <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
+        <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
 
       <style>
@@ -106,6 +107,16 @@ if (!isBuild) {
       <style scoped>
       .css-scoped {
         color: red;
+      }
+      </style>
+
+      <style scoped>
+      .css-scoped-nested {
+        color: red;
+        .dummy {
+          color: green;
+        }
+        font-weight: bold;
       }
       </style>
       ",
@@ -120,7 +131,7 @@ if (!isBuild) {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       Object {
-        "mappings": ";AAaA;EACE,UAAU;AACZ",
+        "mappings": ";AAcA;EACE,UAAU;AACZ",
         "sources": Array [
           "/root/Css.vue",
         ],
@@ -129,6 +140,7 @@ if (!isBuild) {
         <p class=\\"css\\">&lt;css&gt;</p>
         <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
+        <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
 
       <style>
@@ -146,6 +158,16 @@ if (!isBuild) {
       <style scoped>
       .css-scoped {
         color: red;
+      }
+      </style>
+
+      <style scoped>
+      .css-scoped-nested {
+        color: red;
+        .dummy {
+          color: green;
+        }
+        font-weight: bold;
       }
       </style>
       ",
@@ -160,7 +182,7 @@ if (!isBuild) {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       Object {
-        "mappings": ";AAmBA;EACE,UAAU;AACZ",
+        "mappings": ";AAoBA;EACE,UAAU;AACZ",
         "sources": Array [
           "/root/Css.vue",
         ],
@@ -169,6 +191,7 @@ if (!isBuild) {
         <p class=\\"css\\">&lt;css&gt;</p>
         <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
+        <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
 
       <style>
@@ -186,6 +209,16 @@ if (!isBuild) {
       <style scoped>
       .css-scoped {
         color: red;
+      }
+      </style>
+
+      <style scoped>
+      .css-scoped-nested {
+        color: red;
+        .dummy {
+          color: green;
+        }
+        font-weight: bold;
       }
       </style>
       ",

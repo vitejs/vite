@@ -877,32 +877,23 @@ export function formatPostcssSourceMap(
 ): ExistingRawSourceMap {
   const inputFileDir = path.dirname(file)
 
-  const sources: string[] = []
-  const sourcesContent: string[] = []
-  for (const [i, source] of rawMap.sources.entries()) {
-    // remove <no source> from sources, to prevent source map to be combined incorrectly
-    if (source === '<no source>') continue
-
+  const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
     // postcss returns virtual files
     if (/^<.+>$/.test(cleanSource)) {
-      sources.push(`\0${cleanSource}`)
-    } else {
-      sources.push(normalizePath(path.resolve(inputFileDir, cleanSource)))
+      return `\0${cleanSource}`
     }
 
-    if (rawMap.sourcesContent) {
-      sourcesContent.push(rawMap.sourcesContent[i])
-    }
-  }
+    return normalizePath(path.resolve(inputFileDir, cleanSource))
+  })
 
   return {
     file,
     mappings: rawMap.mappings,
     names: rawMap.names,
     sources,
-    sourcesContent,
+    sourcesContent: rawMap.sourcesContent,
     version: rawMap.version
   }
 }
