@@ -63,7 +63,7 @@ export const htmlProxyMap = new WeakMap<
 >()
 
 // HTML Proxy Transform result are stored by config
-// `hash(${importer})_${query.index}` -> transformed css code
+// `${hash(importer)}_${query.index}` -> transformed css code
 // PS: key like `hash(/vite/packages/playground/assets/index.html)_1`)
 export const htmlProxyResult = new Map<string, string>()
 
