@@ -730,6 +730,7 @@ importers:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
       less: ^4.1.2
+      postcss-nested: ^5.0.6
       sass: ^1.43.4
       vue: ^3.2.31
     dependencies:
@@ -737,6 +738,7 @@ importers:
     devDependencies:
       '@vitejs/plugin-vue': link:../../plugin-vue
       less: 4.1.2
+      postcss-nested: 5.0.6
       sass: 1.45.1
 
   packages/playground/wasm:
