@@ -3,6 +3,7 @@ import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { createHash } from 'crypto'
 import { pathToFileURL, URL } from 'url'
 import {
   FS_PREFIX,
@@ -734,3 +735,7 @@ export function parseRequest(id: string): Record<string, string> | null {
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+
+export function getHash(text: Buffer | string): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}

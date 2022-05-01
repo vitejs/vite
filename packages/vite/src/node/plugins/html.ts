@@ -11,6 +11,7 @@ import type {
 import {
   cleanUrl,
   generateCodeFrame,
+  getHash,
   isDataUrl,
   isExternalUrl,
   normalizePath,
@@ -23,8 +24,7 @@ import {
   checkPublicFile,
   assetUrlRE,
   urlToBuiltUrl,
-  getAssetFilename,
-  getAssetHash
+  getAssetFilename
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
@@ -374,7 +374,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
@@ -393,7 +393,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               code: styleNode.content
             })
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,

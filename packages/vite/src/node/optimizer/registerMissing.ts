@@ -3,7 +3,6 @@ import _debug from 'debug'
 import {
   runOptimizeDeps,
   getOptimizedDepPath,
-  getHash,
   depsFromOptimizedDepInfo,
   newDepOptimizationProcessing,
   loadCachedDepOptimizationMetadata,
@@ -19,6 +18,7 @@ import type {
   OptimizedDeps
 } from '.'
 import type { ViteDevServer } from '..'
+import { getHash } from '../utils'
 
 const isDebugEnabled = _debug('vite:deps').enabled
 

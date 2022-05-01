@@ -1,4 +1,5 @@
 import {
+  getHash,
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
@@ -96,4 +97,11 @@ test('ts import of file with .js and query param', () => {
     'test-file.js.ts?lee=123',
     'test-file.js.tsx?lee=123'
   ])
+})
+
+describe('getHash', () => {
+  test('8-digit hex', () => {
+    const hash = getHash(Buffer.alloc(0))
+    expect(hash).toMatch(/^[\da-f]{8}$/)
+  })
 })

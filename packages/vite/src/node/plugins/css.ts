@@ -12,7 +12,8 @@ import {
   normalizePath,
   processSrcSet,
   parseRequest,
-  combineSourcemaps
+  combineSourcemaps,
+  getHash
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -33,8 +34,7 @@ import {
   getAssetFilename,
   assetUrlRE,
   fileToUrl,
-  checkPublicFile,
-  getAssetHash
+  checkPublicFile
 } from './asset'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -355,7 +355,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const query = parseRequest(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
-          `${getAssetHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
+          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
           css
         )
         return `export default ''`

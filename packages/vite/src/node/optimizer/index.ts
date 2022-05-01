@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import _debug from 'debug'
 import colors from 'picocolors'
-import { createHash } from 'crypto'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
+  getHash,
   lookupFile,
   normalizePath,
   writeFile,
@@ -824,10 +824,6 @@ function getOptimizedBrowserHash(
   timestamp = ''
 ) {
   return getHash(hash + JSON.stringify(deps) + timestamp)
-}
-
-export function getHash(text: string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
 export function optimizedDepInfoFromId(

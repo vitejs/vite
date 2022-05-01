@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import slash from 'slash'
-import hash from 'hash-sum'
+import { createHash } from 'crypto'
 import type { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
 import type { ResolvedOptions, VueQuery } from '..'
 
@@ -27,7 +27,7 @@ export function createDescriptor(
   // ensure the path is normalized in a way that is consistent inside
   // project (relative to root) and on different systems.
   const normalizedPath = slash(path.normalize(path.relative(root, filename)))
-  descriptor.id = hash(normalizedPath + (isProduction ? source : ''))
+  descriptor.id = getHash(normalizedPath + (isProduction ? source : ''))
 
   cache.set(filename, descriptor)
   return { descriptor, errors }
@@ -76,4 +76,8 @@ export function setSrcDescriptor(filename: string, entry: SFCDescriptor): void {
   // if multiple Vue files use the same src file, they will be overwritten
   // should use other key
   cache.set(`${filename}?src=${entry.id}`, entry)
+}
+
+function getHash(text: string): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
