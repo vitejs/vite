@@ -350,7 +350,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
-          getAssetHash(`${cleanUrl(id)}_${Number.parseInt(query!.index)}`),
+          `${getAssetHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
           css
         )
         return `export default ''`
