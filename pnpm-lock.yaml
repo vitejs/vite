@@ -185,6 +185,12 @@ importers:
     specifiers: {}
 
   packages/playground/dynamic-import:
+    specifiers:
+      pkg: file:./pkg
+    dependencies:
+      pkg: link:pkg
+
+  packages/playground/dynamic-import/pkg:
     specifiers: {}
 
   packages/playground/env:

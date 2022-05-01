@@ -24,6 +24,8 @@ export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 const preloadHelperId = 'vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
+const dynamicImportPrefixRE = /import\s*\(/
+
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
@@ -118,7 +120,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob')
+        !source.includes('import.meta.glob') &&
+        !dynamicImportPrefixRE.test(source)
       ) {
         return
       }
