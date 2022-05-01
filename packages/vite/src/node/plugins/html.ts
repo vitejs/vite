@@ -23,7 +23,8 @@ import {
   checkPublicFile,
   assetUrlRE,
   urlToBuiltUrl,
-  getAssetFilename
+  getAssetFilename,
+  getAssetHash
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
@@ -44,7 +45,7 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
-const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
+const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
@@ -62,8 +63,8 @@ export const htmlProxyMap = new WeakMap<
 >()
 
 // HTML Proxy Transform result are stored by config
-// `${importer}_${query.index}` -> transformed css code
-// PS: key like `/vite/packages/playground/assets/index.html_1`
+// `${hash(importer)}_${query.index}` -> transformed css code
+// PS: key like `hash(/vite/packages/playground/assets/index.html)_1`)
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
@@ -373,12 +374,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-
+            const hash = getAssetHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`,
+              `"__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__"`,
               { contentOnly: true }
             )
           }
@@ -392,12 +393,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               code: styleNode.content
             })
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-
+            const hash = getAssetHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__`,
+              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
               { contentOnly: true }
             )
           }
