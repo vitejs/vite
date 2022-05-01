@@ -7,9 +7,11 @@ import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
-declare const __HMR_PROTOCOL__: string
-declare const __HMR_HOSTNAME__: string
+declare const __HMR_PROTOCOL__: string | null
+declare const __HMR_HOSTNAME__: string | null
 declare const __HMR_PORT__: string
+declare const __HMR_CLIENT_PORT__: string | null
+declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
@@ -18,8 +20,13 @@ console.log('[vite] connecting...')
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
-const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
+const socketHostname = `${__HMR_HOSTNAME__ || location.hostname}`
+const socketPort =
+  __HMR_CLIENT_PORT__ || (location.port === '' ? location.port : __HMR_PORT__)
+const socket = new WebSocket(
+  `${socketProtocol}://${socketHostname}:${socketPort}${__HMR_BASE__}`,
+  'vite-hmr'
+)
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
 
