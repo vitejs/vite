@@ -20,7 +20,6 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey
 } from './ssrTransform'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
   global: typeof globalThis
@@ -35,8 +34,7 @@ export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
-  fixStacktrace?: boolean
+  urlStack: string[] = []
 ): Promise<SSRModule> {
   url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
 
@@ -49,13 +47,7 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(
-    url,
-    server,
-    context,
-    urlStack,
-    fixStacktrace
-  )
+  const modulePromise = instantiateModule(url, server, context, urlStack)
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
@@ -71,8 +63,7 @@ async function instantiateModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
-  fixStacktrace?: boolean
+  urlStack: string[] = []
 ): Promise<SSRModule> {
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
@@ -143,13 +134,7 @@ async function instantiateModule(
       if (pendingDeps.length === 1) {
         pendingImports.set(url, pendingDeps)
       }
-      const mod = await ssrLoadModule(
-        dep,
-        server,
-        context,
-        urlStack,
-        fixStacktrace
-      )
+      const mod = await ssrLoadModule(dep, server, context, urlStack)
       if (pendingDeps.length === 1) {
         pendingImports.delete(url)
       } else {
@@ -206,18 +191,6 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
-    if (e.stack && fixStacktrace !== false) {
-      const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
-      rebindErrorStacktrace(e, stacktrace)
-      server.config.logger.error(
-        `Error when evaluating SSR module ${url}:\n${stacktrace}`,
-        {
-          timestamp: true,
-          clear: server.config.clearScreen,
-          error: e
-        }
-      )
-    }
     throw e
   }
 

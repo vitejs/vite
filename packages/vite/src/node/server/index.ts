@@ -199,10 +199,7 @@ export interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(
-    url: string,
-    opts?: { fixStacktrace?: boolean }
-  ): Promise<Record<string, any>>
+  ssrLoadModule(url: string): Promise<Record<string, any>>
   /**
    * Returns a fixed version of the given stack
    */
@@ -323,7 +320,7 @@ export async function createServer(
       return transformRequest(url, server, options)
     },
     transformIndexHtml: null!, // to be immediately set
-    async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+    async ssrLoadModule(url) {
       if (!server._ssrExternals) {
         let knownImports: string[] = []
         const optimizedDeps = server._optimizedDeps
@@ -336,13 +333,7 @@ export async function createServer(
         }
         server._ssrExternals = resolveSSRExternal(config, knownImports)
       }
-      return ssrLoadModule(
-        url,
-        server,
-        undefined,
-        undefined,
-        opts?.fixStacktrace
-      )
+      return ssrLoadModule(url, server, undefined, undefined)
     },
     ssrFixStacktrace(e) {
       if (e.stack) {

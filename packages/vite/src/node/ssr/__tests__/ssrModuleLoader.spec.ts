@@ -22,9 +22,4 @@ test('always throw error when evaluating an wrong SSR module', async () => {
   expectedErrors.forEach((error) => {
     expect(error?.message).toContain(THROW_MESSAGE)
   })
-  expect(spy).toBeCalledTimes(1)
-  const [firstParameter] = spy.mock.calls[0]
-  expect(firstParameter).toContain('Error when evaluating SSR module')
-  expect(firstParameter).toContain(THROW_MESSAGE)
-  spy.mockClear()
 })
