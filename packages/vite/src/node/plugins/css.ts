@@ -102,7 +102,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
-const varRE = /^var/i
+const varRE = /^var\(/i
 
 const enum PreprocessLang {
   less = 'less',
