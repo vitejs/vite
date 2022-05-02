@@ -1,3 +1,11 @@
+## <small>1.3.2 (2022-05-02)</small>
+
+* fix(plugin-react): React is not defined when component name is lowercase (#6838) ([bf40e5c](https://github.com/vitejs/vite/commit/bf40e5c)), closes [#6838](https://github.com/vitejs/vite/issues/6838)
+* chore(deps): update all non-major dependencies (#7780) ([eba9d05](https://github.com/vitejs/vite/commit/eba9d05)), closes [#7780](https://github.com/vitejs/vite/issues/7780)
+* chore(deps): update all non-major dependencies (#7949) ([b877d30](https://github.com/vitejs/vite/commit/b877d30)), closes [#7949](https://github.com/vitejs/vite/issues/7949)
+
+
+
 ## <small>1.3.1 (2022-04-13)</small>
 
 * fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
