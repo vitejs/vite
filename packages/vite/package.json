@@ -44,7 +44,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.14.27",
-    "postcss": "^8.4.12",
+    "postcss": "^8.4.13",
     "resolve": "^1.22.0",
     "rollup": "^2.59.0"
   },
@@ -52,9 +52,9 @@
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^2.1.2",
-    "@babel/parser": "^7.17.9",
-    "@babel/types": "^7.17.0",
+    "@ampproject/remapping": "^2.2.0",
+    "@babel/parser": "^7.17.10",
+    "@babel/types": "^7.17.10",
     "@jridgewell/trace-mapping": "^0.3.9",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^21.1.0",
@@ -72,12 +72,12 @@
     "@types/micromatch": "^4.0.2",
     "@types/mime": "^2.0.3",
     "@types/node": "^17.0.25",
-    "@types/resolve": "^1.20.1",
+    "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/stylus": "^0.48.37",
     "@types/ws": "^8.5.3",
     "@vue/compiler-dom": "^3.2.33",
-    "acorn": "^8.7.0",
+    "acorn": "^8.7.1",
     "cac": "6.7.9",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
@@ -112,11 +112,11 @@
     "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^6.0.1",
-    "terser": "^5.12.1",
+    "terser": "^5.13.1",
     "tsconfck": "^1.2.2",
-    "tslib": "^2.3.1",
+    "tslib": "^2.4.0",
     "types": "link:./types",
-    "ws": "^8.5.0"
+    "ws": "^8.6.0"
   },
   "peerDependencies": {
     "less": "*",
