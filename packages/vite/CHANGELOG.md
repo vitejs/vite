@@ -1,3 +1,23 @@
+## <small>2.9.7 (2022-05-02)</small>
+
+* chore: update license ([d58c030](https://github.com/vitejs/vite/commit/d58c030))
+* chore(css): catch postcss config error (fix #2793) (#7934) ([7f535ac](https://github.com/vitejs/vite/commit/7f535ac)), closes [#2793](https://github.com/vitejs/vite/issues/2793) [#7934](https://github.com/vitejs/vite/issues/7934)
+* chore(deps): update all non-major dependencies (#7949) ([b877d30](https://github.com/vitejs/vite/commit/b877d30)), closes [#7949](https://github.com/vitejs/vite/issues/7949)
+* fix: inject esbuild helpers in IIFE and UMD wrappers (#7948) ([f7d2d71](https://github.com/vitejs/vite/commit/f7d2d71)), closes [#7948](https://github.com/vitejs/vite/issues/7948)
+* fix: inline css hash (#7974) ([f6ae60d](https://github.com/vitejs/vite/commit/f6ae60d)), closes [#7974](https://github.com/vitejs/vite/issues/7974)
+* fix: inline style hmr, transform style code inplace (#7869) ([a30a548](https://github.com/vitejs/vite/commit/a30a548)), closes [#7869](https://github.com/vitejs/vite/issues/7869)
+* fix: use NODE_ENV in optimizer (#7673) ([50672e4](https://github.com/vitejs/vite/commit/50672e4)), closes [#7673](https://github.com/vitejs/vite/issues/7673)
+* fix(css): clean comments before hoist at rules (#7924) ([e48827f](https://github.com/vitejs/vite/commit/e48827f)), closes [#7924](https://github.com/vitejs/vite/issues/7924)
+* fix(css): dynamic import css in package fetches removed js (fixes #7955, #6823) (#7969) ([025eebf](https://github.com/vitejs/vite/commit/025eebf)), closes [#7955](https://github.com/vitejs/vite/issues/7955) [#6823](https://github.com/vitejs/vite/issues/6823) [#7969](https://github.com/vitejs/vite/issues/7969)
+* fix(css): inline css module when ssr, minify issue (fix #5471) (#7807) ([cf8a48a](https://github.com/vitejs/vite/commit/cf8a48a)), closes [#5471](https://github.com/vitejs/vite/issues/5471) [#7807](https://github.com/vitejs/vite/issues/7807)
+* fix(css): sourcemap crash with postcss (#7982) ([7f9f8f1](https://github.com/vitejs/vite/commit/7f9f8f1)), closes [#7982](https://github.com/vitejs/vite/issues/7982)
+* fix(css): support postcss.config.ts (#7935) ([274c10e](https://github.com/vitejs/vite/commit/274c10e)), closes [#7935](https://github.com/vitejs/vite/issues/7935)
+* fix(ssr): failed ssrLoadModule call throws same error (#7177) ([891e7fc](https://github.com/vitejs/vite/commit/891e7fc)), closes [#7177](https://github.com/vitejs/vite/issues/7177)
+* fix(worker): import.meta.* (#7706) ([b092697](https://github.com/vitejs/vite/commit/b092697)), closes [#7706](https://github.com/vitejs/vite/issues/7706)
+* docs: `server.origin` config trailing slash (fix #6622) (#7865) ([5c1ee5a](https://github.com/vitejs/vite/commit/5c1ee5a)), closes [#6622](https://github.com/vitejs/vite/issues/6622) [#7865](https://github.com/vitejs/vite/issues/7865)
+
+
+
 ## <small>2.9.6 (2022-04-26)</small>
 
 * fix: `apply` condition skipped for nested plugins (#7741) ([1f2ca53](https://github.com/vitejs/vite/commit/1f2ca53)), closes [#7741](https://github.com/vitejs/vite/issues/7741)
