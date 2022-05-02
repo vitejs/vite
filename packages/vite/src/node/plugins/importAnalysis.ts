@@ -53,7 +53,7 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 
-const isDebug = !!process.env.DEBUG
+const isDebug = true
 const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
@@ -167,9 +167,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { moduleGraph } = server
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
+      const importerModule = moduleGraph.getModuleById(importer)
+      if (!importerModule) {
+        return null
+      }
 
       if (!imports.length) {
         importerModule.isSelfAccepting = false
