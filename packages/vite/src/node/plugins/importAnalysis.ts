@@ -53,7 +53,7 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 
-const isDebug = true
+const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
