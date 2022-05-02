@@ -119,6 +119,8 @@ describe('css url() references', () => {
     })
   })
 
+  // not supported in browser now
+  // https://drafts.csswg.org/css-images-4/#image-set-notation
   // test('image-set with multiple descriptor', async () => {
   //   const imageSet = await getBg('.css-image-set-multiple-descriptor')
   //   imageSet.split(', ').forEach((s) => {
