@@ -300,11 +300,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const isHTMLProxy = htmlProxyRE.test(id)
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
+
+      // #6984, #7552
+      // `foo.module.css` => modulesCode
+      // `foo.module.css?inline` => cssContent
       const modulesCode =
-        modules && dataToEsm(modules, { namedExports: true, preferConst: true })
+        modules &&
+        !inlined &&
+        dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
         if (isDirectCSSRequest(id)) {
@@ -366,12 +372,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       let code: string
       if (usedRE.test(id)) {
-        if (inlined) {
-          code = `export default ${JSON.stringify(
-            await minifyCSS(css, config)
-          )}`
+        if (modulesCode) {
+          code = modulesCode
         } else {
-          code = modulesCode || `export default ${JSON.stringify(css)}`
+          let content = css
+          if (config.build.minify) {
+            content = await minifyCSS(content, config)
+          }
+          code = `export default ${JSON.stringify(content)}`
         }
       } else {
         code = `export default ''`
