@@ -342,7 +342,8 @@ async function genStyleCode(
           : '&src=true'
         : ''
       const directQuery = asCustomElement ? `&inline` : ``
-      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
+      const scopedQuery = style.scoped ? `&scoped=${descriptor.id}` : ``
+      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}${scopedQuery}`
       const styleRequest = src + query + attrsQuery
       if (style.module) {
         if (asCustomElement) {
