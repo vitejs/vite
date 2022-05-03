@@ -1,3 +1,4 @@
+import path from 'node:path'
 import JSON5 from 'json5'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rollup'
@@ -8,6 +9,7 @@ import {
   cleanUrl,
   injectQuery,
   parseRequest,
+  slash,
   transformStableResult
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
@@ -113,11 +115,20 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             index + allExp.length
           )
           const url = rawUrl.slice(1, -1)
-          workerResolver ??= config.createResolver({
-            tryIndex: false,
-            preferRelative: true
-          })
-          const file = (await workerResolver(url, id)) ?? url
+          let file: string | undefined
+          if (url.startsWith('.')) {
+            file = path.resolve(path.dirname(id), url)
+          } else {
+            workerResolver ??= config.createResolver({
+              extensions: [],
+              tryIndex: false,
+              preferRelative: true
+            })
+            file = await workerResolver(url, id)
+            file ??= url.startsWith('/')
+              ? slash(path.join(config.publicDir, url))
+              : slash(path.resolve(path.dirname(id), url))
+          }
 
           let builtUrl: string
           if (isBuild) {

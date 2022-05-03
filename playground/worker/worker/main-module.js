@@ -67,7 +67,7 @@ w.addEventListener('message', (ev) =>
 
 // url import worker with alias path
 const wResolve = new Worker(
-  new URL('@/url-worker', import.meta.url),
+  new URL('@/url-worker.js', import.meta.url),
   /* @vite-ignore */ workerOptions
 )
 wResolve.addEventListener('message', (ev) =>

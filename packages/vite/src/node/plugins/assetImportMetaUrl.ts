@@ -1,9 +1,15 @@
+import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
-import { isParentDirectory, normalizePath, transformStableResult } from '../utils'
+import {
+  isParentDirectory,
+  normalizePath,
+  slash,
+  transformStableResult
+} from '../utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 
@@ -18,6 +24,7 @@ import { preloadHelperId } from './importAnalysisBuild'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  const normalizedPublicDir = normalizePath(config.publicDir)
   let assetResolver: ResolveFn
 
   return {
@@ -65,31 +72,45 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           const url = rawUrl.slice(1, -1)
-          assetResolver ??= config.createResolver({
-            root: config.publicDir,
-            extensions: [],
-            mainFields: [],
-            tryIndex: false,
-            preferRelative: true
-          })
-          const resolved = await assetResolver(url, id)
-          if (!resolved) {
+          let file: string | undefined
+          if (url.startsWith('.')) {
+            file = slash(path.resolve(path.dirname(id), url))
+          } else {
+            assetResolver ??= config.createResolver({
+              extensions: [],
+              mainFields: [],
+              tryIndex: false,
+              preferRelative: true
+            })
+            file = await assetResolver(url, id)
+            file ??= url.startsWith('/')
+              ? slash(path.join(config.publicDir, url))
+              : slash(path.resolve(path.dirname(id), url))
+          }
+
+          // Get final asset URL. If the file does not exist,
+          // we fall back to the initial URL and let it resolve in runtime
+          let builtUrl: string | undefined
+          if (file) {
+            try {
+              if (isParentDirectory(normalizedPublicDir, file)) {
+                const publicPath =
+                  '/' + path.posix.relative(normalizedPublicDir, file)
+                builtUrl = await fileToUrl(publicPath, config, this)
+              } else {
+                builtUrl = await fileToUrl(file, config, this)
+              }
+            } catch {
+              // do nothing, we'll log a warning after this
+            }
+          }
+          if (!builtUrl) {
             const rawExp = code.slice(index, index + exp.length)
             config.logger.warnOnce(
               `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
+            builtUrl = url
           }
-          // Get final asset URL. If the file does not exist,
-          // we fall back to the initial URL and let it resolve in runtime
-          const builtUrl = resolved
-            ? await fileToUrl(
-                isParentDirectory(normalizePath(config.publicDir), resolved)
-                  ? url
-                  : resolved,
-                config,
-                this
-              )
-            : url
           s.overwrite(
             index,
             index + exp.length,
