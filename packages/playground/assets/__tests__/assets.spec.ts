@@ -104,6 +104,29 @@ describe('css url() references', () => {
     })
   })
 
+  test('image-set with var', async () => {
+    const imageSet = await getBg('.css-image-set-with-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set with mix', async () => {
+    const imageSet = await getBg('.css-image-set-mix-url-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  // not supported in browser now
+  // https://drafts.csswg.org/css-images-4/#image-set-notation
+  // test('image-set with multiple descriptor', async () => {
+  //   const imageSet = await getBg('.css-image-set-multiple-descriptor')
+  //   imageSet.split(', ').forEach((s) => {
+  //     expect(s).toMatch(assetMatch)
+  //   })
+  // })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })

@@ -46,6 +46,34 @@
     >CSS background with image-set() (relative)</span
   >
 </div>
+<div class="css-image-set-with-var">
+  <span style="background: #fff">
+    CSS background image-set() (relative in var)
+  </span>
+</div>
+<div class="css-image-set-mix-url-var">
+  <span style="background: #fff">
+    CSS background image-set() (mix var and url)
+  </span>
+</div>
+<div class="css-image-set-multiple-descriptor">
+  <span style="background: #fff">
+    CSS background image-set() (with multiple descriptor)
+  </span>
+</div>
+<div
+  style="
+    background-image: -webkit-image-set(
+      './nested/asset.png' type('image/png') 1x,
+      './nested/asset.png' type('image/png') 2x
+    );
+    background-size: 10px;
+  "
+>
+  <span style="background: #fff">
+    CSS background image-set() (with multiple descriptor)
+  </span>
+</div>
 <div class="css-url-relative-at-imported">
   <span style="background: #fff"
     >CSS background (relative from @imported file in different dir)</span

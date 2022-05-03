@@ -104,6 +104,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
+const varRE = /^var\(/i
 
 const enum PreprocessLang {
   less = 'less',
@@ -980,7 +981,7 @@ export const cssUrlRE =
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /image-set\(([^)]+)\)/
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -1001,7 +1002,9 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
             const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
-          const rewriterToUse = isCssUrl ? rewriteCssUrls : rewriteCssImageSet
+          const rewriterToUse = isCssImageSet
+            ? rewriteCssImageSet
+            : rewriteCssUrls
           promises.push(
             rewriterToUse(declaration.value, replacerForDeclaration).then(
               (url) => {
@@ -1054,11 +1057,15 @@ function rewriteCssImageSet(
   replacer: CssUrlReplacer
 ): Promise<string> {
   return asyncReplace(css, cssImageSetRE, async (match) => {
-    const [matched, rawUrl] = match
-    const url = await processSrcSet(rawUrl, ({ url }) =>
-      doUrlReplace(url, matched, replacer)
-    )
-    return `image-set(${url})`
+    const [, rawUrl] = match
+    const url = await processSrcSet(rawUrl, async ({ url }) => {
+      // the url maybe url(...)
+      if (cssUrlRE.test(url)) {
+        return await rewriteCssUrls(url, replacer)
+      }
+      return await doUrlReplace(url, url, replacer)
+    })
+    return url
   })
 }
 async function doUrlReplace(
@@ -1073,7 +1080,13 @@ async function doUrlReplace(
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+
+  if (
+    isExternalUrl(rawUrl) ||
+    isDataUrl(rawUrl) ||
+    rawUrl.startsWith('#') ||
+    varRE.test(rawUrl)
+  ) {
     return matched
   }
 

@@ -26,6 +26,29 @@
   background-size: 10px;
 }
 
+.css-image-set-with-var {
+  --bg-img: url('../nested/asset.png');
+  background-image: -webkit-image-set(var(--bg-img) 1x, var(--bg-img) 2x);
+  background-size: 10px;
+}
+
+.css-image-set-mix-url-var {
+  --bg-img: url('../nested/asset.png');
+  background-image: -webkit-image-set(
+    var(--bg-img) 1x,
+    url('../nested/asset.png') 2x
+  );
+  background-size: 10px;
+}
+
+.css-image-set-multiple-descriptor {
+  background-image: -webkit-image-set(
+    '../nested/asset.png' type('image/png') 1x,
+    '../nested/asset.png' type('image/png') 2x
+  );
+  background-size: 10px;
+}
+
 .css-url-public {
   background: url('/icon.png');
   background-size: 10px;
