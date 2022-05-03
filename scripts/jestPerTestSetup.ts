@@ -243,14 +243,15 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
 export async function notifyRebuildComplete(
   watcher: RollupWatcher
 ): Promise<RollupWatcher> {
-  let callback: (event: RollupWatcherEvent) => void
-  await new Promise<void>((resolve, reject) => {
-    callback = (event) => {
-      if (event.code === 'END') {
-        resolve()
-      }
+  let resolveFn: undefined | (() => void)
+  const callback = (event: RollupWatcherEvent): void => {
+    if (event.code === 'END') {
+      resolveFn?.()
     }
-    watcher.on('event', callback)
+  }
+  watcher.on('event', callback)
+  await new Promise<void>((resolve) => {
+    resolveFn = resolve
   })
   return watcher.removeListener('event', callback)
 }
