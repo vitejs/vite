@@ -216,7 +216,9 @@ export async function transformMain(
     },
     meta: {
       vite: {
-        isTs
+        lang: isTs
+          ? 'ts'
+          : descriptor.scriptSetup?.lang || descriptor.script?.lang || 'js'
       }
     }
   }

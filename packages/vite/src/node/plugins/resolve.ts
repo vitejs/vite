@@ -133,7 +133,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         isFromTsImporter: !importer
           ? false
           : isTsRequest(importer) ||
-            this.getModuleInfo(importer)?.meta?.vite?.isTs
+            this.getModuleInfo(importer)?.meta?.vite?.lang === 'ts'
       }
 
       let res: string | PartialResolvedId | undefined
