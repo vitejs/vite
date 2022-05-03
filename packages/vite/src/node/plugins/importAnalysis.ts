@@ -167,6 +167,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { moduleGraph } = server
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
 
       if (!imports.length) {
