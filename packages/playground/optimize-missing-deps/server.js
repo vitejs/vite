@@ -29,7 +29,7 @@ async function createServer(root = process.cwd()) {
       // this will import "missing" deps that are not yet discovered, but will not optimize them
       const { name } = await vite.ssrLoadModule('./main.js')
 
-      // this will import "missing" deps in such a manner that they will be optimized
+      // loading `main.js` in the client should trigger optimizing the "missing" deps
       const appHtml = `<div id="app">${name}</div>
 <script type='module'>
   import { name } from './main.js'
