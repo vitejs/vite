@@ -3,7 +3,7 @@ import * as babel from '@babel/core'
 
 async function jsx(sourceCode: string) {
   const [ast] = await restoreJSX(babel, sourceCode, 'test.js')
-  if (ast === null) {
+  if (ast == null) {
     return ast
   }
   const { code } = await babel.transformFromAstAsync(ast, null, {
