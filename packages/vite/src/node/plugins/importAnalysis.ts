@@ -167,10 +167,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { moduleGraph } = server
-      const importerModule = moduleGraph.getModuleById(importer)
-      if (!importerModule) {
-        return null
-      }
+      const importerModule = moduleGraph.getModuleById(importer)!
 
       if (!imports.length) {
         importerModule.isSelfAccepting = false

@@ -190,7 +190,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      const url = filename + `?html-proxy&${index}.css`
+      // NOTE: ssr url may be '/' run resolveId to get the real path
+      let url =
+        (await server!.pluginContainer.resolveId(filename))?.id || filename
+      url += `?html-proxy&${index}.css`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
