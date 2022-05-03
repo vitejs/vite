@@ -14,6 +14,14 @@ const DYNAMIC_SCRIPTS = `
   <script type="module" src="/src/app.js"></script>
 `
 
+const DYNAMIC_STYLES = `
+  <style>
+  h1 {
+    background-color: blue;
+  }
+  </style>
+`
+
 async function createServer(
   root = process.cwd(),
   isProd = process.env.NODE_ENV === 'production'
@@ -44,13 +52,18 @@ async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      let [url] = req.originalUrl.split('?')
-      if (url.endsWith('/')) url += 'index.html'
+      const url = req.originalUrl
+      if (url.startsWith('/favicon.ico')) {
+        return res.status(404).end('404')
+      }
+      const htmlLoc = url === '/' ? resolve('index.html') : `${url}.html`
+      let template = fs.readFileSync(htmlLoc, 'utf-8')
 
-      const htmlLoc = resolve(`.${url}`)
-      let html = fs.readFileSync(htmlLoc, 'utf8')
-      html = html.replace('</body>', `${DYNAMIC_SCRIPTS}</body>`)
-      html = await vite.transformIndexHtml(url, html)
+      template = template.replace(
+        '</body>',
+        `${DYNAMIC_SCRIPTS}${DYNAMIC_STYLES}</body>`
+      )
+      const html = await vite.transformIndexHtml(url, template)
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
