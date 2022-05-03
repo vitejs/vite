@@ -52,11 +52,14 @@ async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      const url = req.originalUrl
+      let [url] = req.originalUrl.split('?')
+      if (url.endsWith('/')) url += 'index.html'
+
       if (url.startsWith('/favicon.ico')) {
         return res.status(404).end('404')
       }
-      const htmlLoc = url === '/' ? resolve('index.html') : `${url}.html`
+      const htmlLoc =
+        url === '/index.html' ? resolve('index.html') : `${url}.html`
       let template = fs.readFileSync(htmlLoc, 'utf-8')
 
       template = template.replace(
