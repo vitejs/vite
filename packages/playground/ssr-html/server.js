@@ -58,14 +58,15 @@ async function createServer(
       if (url.startsWith('/favicon.ico')) {
         return res.status(404).end('404')
       }
-      const htmlLoc =
-        url === '/index.html' ? resolve('index.html') : `${url}.html`
+
+      const htmlLoc = resolve(`.${url}`)
       let template = fs.readFileSync(htmlLoc, 'utf-8')
 
       template = template.replace(
         '</body>',
         `${DYNAMIC_SCRIPTS}${DYNAMIC_STYLES}</body>`
       )
+
       const html = await vite.transformIndexHtml(url, template)
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)

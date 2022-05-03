@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
+import type { SourceMapInput } from 'rollup'
 import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
@@ -49,12 +50,8 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
   if (url.startsWith(FS_PREFIX)) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
-    let htmlFileName = url.slice(1)
-    if (!htmlFileName) {
-      htmlFileName = 'index.html'
-    }
     return decodeURIComponent(
-      normalizePath(path.join(server.config.root, htmlFileName))
+      normalizePath(path.join(server.config.root, url.slice(1)))
     )
   }
 }
@@ -112,6 +109,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
 
+  // There are users of vite.transformIndexHtml calling it with url '/'
+  // for SSR integrations #7993
+  const proxyModulePath =
+    config.base +
+    htmlPath.slice(1) +
+    (htmlPath.endsWith('/') ? 'index.html' : '')
+  const proxyModuleUrl = (index: number, ext: string) =>
+    `${proxyModulePath}?html-proxy&index=${index}.${ext}`
+
   const s = new MagicString(html)
   let inlineModuleIndex = -1
   const filePath = cleanUrl(htmlPath)
@@ -125,19 +131,21 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const contentNode = node.children[0] as TextNode
 
     const code = contentNode.content
-    const map = new MagicString(html)
-      .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
-      .generateMap({ hires: true })
-    map.sources = [filename]
-    map.file = filename
+
+    let map: SourceMapInput | undefined
+    if (!htmlPath.endsWith('/')) {
+      map = new MagicString(html)
+        .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
+        .generateMap({ hires: true })
+      map.sources = [filename]
+      map.file = filename
+    }
 
     // add HTML Proxy to Map
     addToHTMLProxyCache(config, url, inlineModuleIndex, { code, map })
 
     // inline js module. convert to src="proxy"
-    const modulePath = `${
-      config.base + htmlPath.slice(1)
-    }?html-proxy&index=${inlineModuleIndex}.${ext}`
+    const modulePath = proxyModuleUrl(inlineModuleIndex, ext)
 
     // invalidate the module so the newly cached contents will be served
     const module = server?.moduleGraph.getModuleById(modulePath)
@@ -194,16 +202,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      if (filename.endsWith('/')) {
-        return
-      }
-      const url = `${filename}?html-proxy&${index}.css`
+      const url = proxyModuleUrl(index, 'css')
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, url)
+      const result = await server!.pluginContainer.transform(code, mod.id!)
       s.overwrite(start, end, result?.code || '')
     })
   )
