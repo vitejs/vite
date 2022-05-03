@@ -50,13 +50,16 @@ async function createServer(
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*', async (req, res, next) => {
     try {
       let [url] = req.originalUrl.split('?')
       if (url.endsWith('/')) url += 'index.html'
 
       if (url.startsWith('/favicon.ico')) {
         return res.status(404).end('404')
+      }
+      if (url.startsWith('/@id/__x00__')) {
+        return next()
       }
 
       const htmlLoc = resolve(`.${url}`)
@@ -67,7 +70,10 @@ async function createServer(
         `${DYNAMIC_SCRIPTS}${DYNAMIC_STYLES}</body>`
       )
 
-      const html = await vite.transformIndexHtml(url, template)
+      // Force calling transformIndexHtml with url === '/', to simulate
+      // usage by ecosystem that was recommended in the SSR documentation
+      // as `const url = req.originalUrl`
+      const html = await vite.transformIndexHtml('/', template)
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {

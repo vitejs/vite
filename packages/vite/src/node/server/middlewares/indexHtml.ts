@@ -16,7 +16,12 @@ import {
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
-import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
+import {
+  CLIENT_PUBLIC_PATH,
+  FS_PREFIX,
+  VALID_ID_PREFIX,
+  NULL_BYTE_PLACEHOLDER
+} from '../../constants'
 import {
   cleanUrl,
   fsPathFromId,
@@ -109,31 +114,41 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
 
-  // There are users of vite.transformIndexHtml calling it with url '/'
-  // for SSR integrations #7993
-  const proxyModulePath =
-    config.base +
-    htmlPath.slice(1) +
-    (htmlPath.endsWith('/') ? 'index.html' : '')
-  const proxyModuleUrl = (index: number, ext: string) =>
-    `${proxyModulePath}?html-proxy&index=${index}.${ext}`
+  let proxyModulePath: string
+  let proxyModuleUrl: string
+
+  const trailingSlash = htmlPath.endsWith('/')
+  if (!trailingSlash && fs.existsSync(filename)) {
+    proxyModulePath = htmlPath
+    proxyModuleUrl = base + htmlPath.slice(1)
+  } else {
+    // There are users of vite.transformIndexHtml calling it with url '/'
+    // for SSR integrations #7993, filename is root for this case
+    // A user may also use a valid name for a virtual html file
+    // Mark the path as virtual in both cases so sourcemaps aren't processed
+    // and ids are properly handled
+    const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
+    proxyModulePath = `\0${validPath}`
+    proxyModuleUrl = `${VALID_ID_PREFIX}${NULL_BYTE_PLACEHOLDER}${validPath}`
+  }
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
-  const filePath = cleanUrl(htmlPath)
+  const proxyCacheUrl = cleanUrl(proxyModulePath).replace(
+    normalizePath(config.root),
+    ''
+  )
   const styleUrl: AssetNode[] = []
 
   const addInlineModule = (node: ElementNode, ext: 'js') => {
     inlineModuleIndex++
-
-    const url = filePath.replace(normalizePath(config.root), '')
 
     const contentNode = node.children[0] as TextNode
 
     const code = contentNode.content
 
     let map: SourceMapInput | undefined
-    if (!htmlPath.endsWith('/')) {
+    if (!proxyModulePath.startsWith('\0')) {
       map = new MagicString(html)
         .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
         .generateMap({ hires: true })
@@ -142,10 +157,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // add HTML Proxy to Map
-    addToHTMLProxyCache(config, url, inlineModuleIndex, { code, map })
+    addToHTMLProxyCache(config, proxyCacheUrl, inlineModuleIndex, { code, map })
 
     // inline js module. convert to src="proxy"
-    const modulePath = proxyModuleUrl(inlineModuleIndex, ext)
+    const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
     const module = server?.moduleGraph.getModuleById(modulePath)
@@ -202,7 +217,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      const url = proxyModuleUrl(index, 'css')
+      const url = `${proxyModulePath}?html-proxy&index=${index}.css`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
