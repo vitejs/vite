@@ -26,7 +26,7 @@ async function createServer(root = process.cwd()) {
       template = await vite.transformIndexHtml(req.originalUrl, template)
 
       // `main.js` imports dependencies that are yet to be discovered and optimized, aka "missing" deps.
-      // loading `main.js` in ssr should not trigger optimizing the "missing" deps
+      // Loading `main.js` in SSR should not trigger optimizing the "missing" deps
       const { name } = await vite.ssrLoadModule('./main.js')
 
       // loading `main.js` in the client should trigger optimizing the "missing" deps
