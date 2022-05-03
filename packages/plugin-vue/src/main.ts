@@ -1,4 +1,3 @@
-import qs from 'querystring'
 import path from 'path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { ResolvedOptions } from '.'
@@ -426,8 +425,8 @@ function attrsToQuery(
   for (const name in attrs) {
     const value = attrs[name]
     if (!ignoreList.includes(name)) {
-      query += `&${qs.escape(name)}${
-        value ? `=${qs.escape(String(value))}` : ``
+      query += `&${encodeURIComponent(name)}${
+        value ? `=${encodeURIComponent(value)}` : ``
       }`
     }
   }
