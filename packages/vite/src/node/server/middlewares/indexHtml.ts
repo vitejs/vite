@@ -194,18 +194,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      // NOTE: ssr url may be '/' run resolveId to get the real path
-      // let resolvedId: string | undefined
-      // try {
-      //   resolvedId = (await server!.pluginContainer.resolveId(filename))?.id
-      // } catch (err) {
-      //   // If fails to resolve filename, try resolving <filename>/index.html
-      //   resolvedId = (
-      //     await server!.pluginContainer.resolveId(
-      //       path.join(filename, 'index.html')
-      //     )
-      //   )?.id
-      // }
+      if (filename.endsWith('/')) {
+        return
+      }
       const url = `${filename}?html-proxy&${index}.css`
 
       // ensure module in graph after successful load
