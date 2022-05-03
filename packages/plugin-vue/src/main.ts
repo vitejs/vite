@@ -192,13 +192,12 @@ export async function transformMain(
   }
 
   // handle TS transpilation
-  const isTs =
+  let resolvedCode = output.join('\n')
+  if (
     (descriptor.script?.lang === 'ts' ||
       descriptor.scriptSetup?.lang === 'ts') &&
     !descriptor.script?.src // only normal script can have src
-
-  let resolvedCode = output.join('\n')
-  if (isTs) {
+  ) {
     const { code, map } = await transformWithEsbuild(
       resolvedCode,
       filename,
@@ -216,9 +215,7 @@ export async function transformMain(
     },
     meta: {
       vite: {
-        lang: isTs
-          ? 'ts'
-          : descriptor.scriptSetup?.lang || descriptor.script?.lang || 'js'
+        lang: descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
       }
     }
   }
