@@ -228,7 +228,7 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isTsRequest = (url: string) => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export function getPotentialTsSrcPaths(filePath: string) {

@@ -128,10 +128,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options: InternalResolveOptions = {
         isRequire,
-
         ...baseOptions,
-        isFromTsImporter: isTsRequest(importer ?? ''),
         scan: resolveOpts?.scan ?? baseOptions.scan
+      }
+
+      if (importer) {
+        if (isTsRequest(importer)) {
+          options.isFromTsImporter = true
+        } else {
+          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
+        }
       }
 
       let res: string | PartialResolvedId | undefined

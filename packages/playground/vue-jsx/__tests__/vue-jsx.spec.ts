@@ -9,6 +9,7 @@ test('should render', async () => {
   expect(await page.textContent('.src-import')).toMatch('5')
   expect(await page.textContent('.jsx-with-query')).toMatch('6')
   expect(await page.textContent('.other-ext')).toMatch('Other Ext')
+  expect(await page.textContent('.ts-import')).toMatch('success')
 })
 
 test('should update', async () => {
