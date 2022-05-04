@@ -296,11 +296,6 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
       // Reset missing deps, let the server rediscover the dependencies
       metadata.discovered = {}
-
-      const isEsbuildError = e.errors && e.warnings
-      if (!isEsbuildError) {
-        fullReload()
-      }
     }
 
     currentlyProcessing = false
