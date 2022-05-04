@@ -296,7 +296,6 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
       // Reset missing deps, let the server rediscover the dependencies
       metadata.discovered = {}
-      fullReload()
     }
 
     currentlyProcessing = false
