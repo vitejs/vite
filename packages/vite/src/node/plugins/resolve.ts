@@ -313,6 +313,12 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
       }
 
+      // injected dependencies
+      const fsPath = path.join(root, fsPathFromId(`/node_modules/${id}`))
+      if ((res = tryFsResolve(fsPath, options))) {
+        return res
+      }
+
       isDebug && debug(`[fallthrough] ${colors.dim(id)}`)
     },
 
