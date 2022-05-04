@@ -23,6 +23,15 @@ describe('main', () => {
       expect(await page.textContent('.safe-fetch-status')).toBe('200')
     })
 
+    test('safe fetch with special characters', async () => {
+      expect(
+        await page.textContent('.safe-fetch-subdir-special-characters')
+      ).toMatch('KEY=safe')
+      expect(
+        await page.textContent('.safe-fetch-subdir-special-characters-status')
+      ).toBe('200')
+    })
+
     test('unsafe fetch', async () => {
       expect(await page.textContent('.unsafe-fetch')).toMatch('403 Restricted')
       expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
@@ -30,6 +39,13 @@ describe('main', () => {
 
     test('safe fs fetch', async () => {
       expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
+      expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
+    })
+
+    test('safe fs fetch with special characters', async () => {
+      expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
+        stringified
+      )
       expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
     })
 

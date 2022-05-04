@@ -21,11 +21,21 @@ module.exports = async () => {
 
   const tempDir = path.resolve(__dirname, '../packages/temp')
   await fs.remove(tempDir)
-  await fs.copy(path.resolve(__dirname, '../packages/playground'), tempDir, {
-    dereference: false,
-    filter(file) {
-      file = file.replace(/\\/g, '/')
-      return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
-    }
-  })
+  await fs
+    .copy(path.resolve(__dirname, '../packages/playground'), tempDir, {
+      dereference: false,
+      filter(file) {
+        file = file.replace(/\\/g, '/')
+        return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
+      }
+    })
+    .catch(async (error) => {
+      if (error.code === 'EPERM' && error.syscall === 'symlink') {
+        throw new Error(
+          'Could not create symlinks. On Windows, consider activating Developer Mode to allow non-admin users to create symlinks by following the instructions at https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development.'
+        )
+      } else {
+        throw error
+      }
+    })
 }

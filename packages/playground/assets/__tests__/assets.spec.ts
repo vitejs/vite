@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import {
   findAssetFile,
   getBg,
@@ -8,7 +7,8 @@ import {
   readManifest,
   readFile,
   editFile,
-  notifyRebuildComplete
+  notifyRebuildComplete,
+  untilUpdated
 } from '../../testUtils'
 
 const assetMatch = isBuild
@@ -37,7 +37,7 @@ describe('injected scripts', () => {
 
   test('html-proxy', async () => {
     const hasHtmlProxy = await page.$(
-      'script[type="module"][src="/foo/index.html?html-proxy&index=0.js"]'
+      'script[type="module"][src^="/foo/index.html?html-proxy"]'
     )
     if (isBuild) {
       expect(hasHtmlProxy).toBeFalsy()
@@ -104,6 +104,29 @@ describe('css url() references', () => {
     })
   })
 
+  test('image-set with var', async () => {
+    const imageSet = await getBg('.css-image-set-with-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set with mix', async () => {
+    const imageSet = await getBg('.css-image-set-mix-url-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  // not supported in browser now
+  // https://drafts.csswg.org/css-images-4/#image-set-notation
+  // test('image-set with multiple descriptor', async () => {
+  //   const imageSet = await getBg('.css-image-set-multiple-descriptor')
+  //   imageSet.split(', ').forEach((s) => {
+  //     expect(s).toMatch(assetMatch)
+  //   })
+  // })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })
@@ -120,6 +143,10 @@ describe('css url() references', () => {
     const match = isBuild ? `data:image/png;base64` : `/foo/nested/icon.png`
     expect(await getBg('.css-url-base64-inline')).toMatch(match)
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
+    const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
+    const el = await page.$(`link.ico`)
+    const herf = await el.getAttribute('href')
+    expect(herf).toMatch(icoMatch)
   })
 
   test('multiple urls on the same line', async () => {
@@ -189,6 +216,16 @@ test('?url import', async () => {
   )
 })
 
+test('?url import on css', async () => {
+  const src = readFile('css/icons.css')
+  const txt = await page.textContent('.url-css')
+  expect(txt).toEqual(
+    isBuild
+      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      : '/foo/css/icons.css'
+  )
+})
+
 describe('unicode url', () => {
   test('from js import', async () => {
     const src = readFile('テスト-測試-white space.js')
@@ -228,6 +265,12 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   )
 })
 
+test('new URL(`non-existent`, import.meta.url)', async () => {
+  expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
+    '/foo/non-existent'
+  )
+})
+
 if (isBuild) {
   test('manifest', async () => {
     const manifest = readManifest('foo')
@@ -242,6 +285,7 @@ if (isBuild) {
     }
   })
 }
+
 describe('css and assets in css in build watch', () => {
   if (isBuild) {
     test('css will not be lost and css does not contain undefined', async () => {
@@ -250,7 +294,51 @@ describe('css and assets in css in build watch', () => {
       const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
       expect(cssFile).not.toBe('')
       expect(cssFile).not.toMatch(/undefined/)
-      watcher?.close()
+    })
+
+    test('import module.css', async () => {
+      expect(await getColor('#foo')).toBe('red')
+      editFile(
+        'css/foo.module.css',
+        (code) => code.replace('red', 'blue'),
+        true
+      )
+      await notifyRebuildComplete(watcher)
+      await page.reload()
+      expect(await getColor('#foo')).toBe('blue')
+    })
+
+    test('import with raw query', async () => {
+      expect(await page.textContent('.raw-query')).toBe('foo')
+      editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'), true)
+      await notifyRebuildComplete(watcher)
+      await page.reload()
+      expect(await page.textContent('.raw-query')).toBe('zoo')
     })
   }
+})
+
+test('inline style test', async () => {
+  expect(await getBg('.inline-style')).toMatch(assetMatch)
+  expect(await getBg('.style-url-assets')).toMatch(assetMatch)
+})
+
+if (!isBuild) {
+  test('@import in html style tag hmr', async () => {
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
+    editFile(
+      './css/import.css',
+      (code) => code.replace('#0088ff', '#00ff88'),
+      true
+    )
+    await page.waitForNavigation()
+    await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
+  })
+}
+
+test('html import word boundary', async () => {
+  expect(await page.textContent('.obj-import-express')).toMatch(
+    'ignore object import prop'
+  )
+  expect(await page.textContent('.string-import-express')).toMatch('no load')
 })

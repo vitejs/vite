@@ -4,6 +4,6 @@ const path = require('path')
 module.exports = async () => {
   await global.__BROWSER_SERVER__.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
-    await fs.remove(path.resolve(__dirname, '../packages/temp'))
+    fs.removeSync(path.resolve(__dirname, '../packages/temp'))
   }
 }

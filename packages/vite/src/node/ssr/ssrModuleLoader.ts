@@ -35,7 +35,8 @@ export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = []
+  urlStack: string[] = [],
+  fixStacktrace?: boolean
 ): Promise<SSRModule> {
   url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
 
@@ -48,7 +49,13 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(url, server, context, urlStack)
+  const modulePromise = instantiateModule(
+    url,
+    server,
+    context,
+    urlStack,
+    fixStacktrace
+  )
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
@@ -64,10 +71,15 @@ async function instantiateModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = []
+  urlStack: string[] = [],
+  fixStacktrace?: boolean
 ): Promise<SSRModule> {
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
+
+  if (mod.ssrError) {
+    throw mod.ssrError
+  }
 
   if (mod.ssrModule) {
     return mod.ssrModule
@@ -132,7 +144,13 @@ async function instantiateModule(
       if (pendingDeps.length === 1) {
         pendingImports.set(url, pendingDeps)
       }
-      const mod = await ssrLoadModule(dep, server, context, urlStack)
+      const mod = await ssrLoadModule(
+        dep,
+        server,
+        context,
+        urlStack,
+        fixStacktrace
+      )
       if (pendingDeps.length === 1) {
         pendingImports.delete(url)
       } else {
@@ -188,7 +206,8 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    if (e.stack) {
+    mod.ssrError = e
+    if (e.stack && fixStacktrace !== false) {
       const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
       rebindErrorStacktrace(e, stacktrace)
       server.config.logger.error(

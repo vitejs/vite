@@ -8,6 +8,7 @@
       "require": "./cjs.js"
     },
     "./deep.js": "./deep.js",
+    "./deep.json": "./deep.json",
     "./dir/": "./dir/",
     "./dir-mapped/*": {
       "import": "./dir/*",

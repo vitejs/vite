@@ -15,6 +15,16 @@ import { createFilter } from '@rollup/pluginutils'
 const debug = createDebugger('vite:ssr-external')
 
 /**
+ * Converts "parent > child" syntax to just "child"
+ */
+export function stripNesting(packages: string[]) {
+  return packages.map((s) => {
+    const arr = s.split('>')
+    return arr[arr.length - 1].trim()
+  })
+}
+
+/**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
  */
@@ -22,6 +32,10 @@ export function resolveSSRExternal(
   config: ResolvedConfig,
   knownImports: string[]
 ): string[] {
+  // strip nesting since knownImports may be passed in from optimizeDeps which
+  // supports a "parent > child" syntax
+  knownImports = stripNesting(knownImports)
+
   const ssrConfig = config.ssr
   if (ssrConfig?.noExternal === true) {
     return []

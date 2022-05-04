@@ -5,10 +5,10 @@
 const path = require('path')
 // eslint-disable-next-line node/no-restricted-require
 const execa = require('execa')
-const { workspaceRoot } = require('../../testUtils')
+const { workspaceRoot, ports } = require('../../testUtils')
 
 const isWindows = process.platform === 'win32'
-const port = (exports.port = 9511) // make sure this port is unique across tests with custom servers
+const port = (exports.port = ports['cli-module'])
 const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
 
 /**
@@ -78,7 +78,7 @@ exports.serve = async function serve(root, isProd) {
       const timeoutError = `server process still alive after 3s`
       try {
         killProcess(serverProcess)
-        await resolvedOrTimeout(serverProcess, 3000, timeoutError)
+        await resolvedOrTimeout(serverProcess, 10000, timeoutError)
       } catch (e) {
         if (e === timeoutError || (!serverProcess.killed && !isWindows)) {
           collectErrorStreams('server', e)

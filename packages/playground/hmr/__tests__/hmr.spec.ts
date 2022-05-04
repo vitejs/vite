@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')
@@ -16,7 +16,7 @@ if (!isBuild) {
   test('self accept', async () => {
     const el = await page.$('.app')
 
-    editFile('hmr.js', (code) => code.replace('const foo = 1', 'const foo = 2'))
+    editFile('hmr.ts', (code) => code.replace('const foo = 1', 'const foo = 2'))
     await untilUpdated(() => el.textContent(), '2')
 
     expect(browserLogs).toMatchObject([
@@ -24,11 +24,11 @@ if (!isBuild) {
       'foo was: 1',
       '(self-accepting 1) foo is now: 2',
       '(self-accepting 2) foo is now: 2',
-      '[vite] hot updated: /hmr.js'
+      '[vite] hot updated: /hmr.ts'
     ])
     browserLogs.length = 0
 
-    editFile('hmr.js', (code) => code.replace('const foo = 2', 'const foo = 3'))
+    editFile('hmr.ts', (code) => code.replace('const foo = 2', 'const foo = 3'))
     await untilUpdated(() => el.textContent(), '3')
 
     expect(browserLogs).toMatchObject([
@@ -36,7 +36,7 @@ if (!isBuild) {
       'foo was: 2',
       '(self-accepting 1) foo is now: 3',
       '(self-accepting 2) foo is now: 3',
-      '[vite] hot updated: /hmr.js'
+      '[vite] hot updated: /hmr.ts'
     ])
     browserLogs.length = 0
   })
@@ -57,7 +57,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 2',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
 
@@ -74,7 +74,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 1',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 1',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
   })
@@ -95,7 +95,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 2',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 2',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
 
@@ -112,7 +112,7 @@ if (!isBuild) {
       '(single dep) nested foo is now: 3',
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 3',
-      '[vite] hot updated: /hmrDep.js via /hmr.js'
+      '[vite] hot updated: /hmrDep.js via /hmr.ts'
     ])
     browserLogs.length = 0
   })
@@ -123,11 +123,16 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'edited')
   })
 
+  test('plugin client-server communication', async () => {
+    const el = await page.$('.custom-communication')
+    await untilUpdated(() => el.textContent(), '3')
+  })
+
   test('full-reload encodeURI path', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    let el = await page.$('#app')
+    const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
     await editFile(
       'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -154,5 +159,61 @@ if (!isBuild) {
     expect(textprev).not.toBe(textpost)
     expect(textprev).not.toMatch('direct')
     expect(textpost).not.toMatch('direct')
+  })
+
+  test('not loaded dynamic import', async () => {
+    await page.goto(viteTestUrl + '/counter/index.html')
+
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // Modifying `index.ts` triggers a page reload, as expected
+    editFile('counter/index.ts', (code) => code)
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+
+    await btn.click()
+    expect(await btn.textContent()).toBe('Counter 1')
+
+    // #7561
+    // `dep.ts` defines `import.module.hot.accept` and has not been loaded.
+    // Therefore, modifying it has no effect (doesn't trigger a page reload).
+    // (Note that, a dynamic import that is never loaded and that does not
+    // define `accept.module.hot.accept` may wrongfully trigger a full page
+    // reload, see discussion at #7561.)
+    editFile('counter/dep.ts', (code) => code)
+    try {
+      await page.waitForNavigation({ timeout: 1000 })
+    } catch (err) {
+      const errMsg = 'page.waitForNavigation: Timeout 1000ms exceeded.'
+      expect(err.message.slice(0, errMsg.length)).toBe(errMsg)
+    }
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  test('css in html hmr', async () => {
+    await page.goto(viteTestUrl)
+    expect(await getBg('.import-image')).toMatch('icon')
+    await page.goto(viteTestUrl + '/foo/')
+    expect(await getBg('.import-image')).toMatch('icon')
+    editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    await page.waitForNavigation()
+    expect(await getBg('.import-image')).toMatch('')
+  })
+
+  test('HTML', async () => {
+    await page.goto(viteTestUrl + '/counter/index.html')
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    editFile('counter/index.html', (code) =>
+      code.replace('Counter', 'Compteur')
+    )
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Compteur 0')
   })
 }

@@ -94,14 +94,6 @@ export async function resolveHttpServer(
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
-  /*
-   * Some Node.js packages are known to be using this undocumented function,
-   * notably "compression" middleware.
-   */
-  app.prototype._implicitHeader = function _implicitHeader() {
-    this.writeHead(this.statusCode)
-  }
-
   if (!httpsOptions) {
     return require('http').createServer(app)
   }
@@ -126,7 +118,7 @@ export async function resolveHttpsConfig(
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
@@ -144,7 +136,7 @@ export async function resolveHttpsConfig(
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }

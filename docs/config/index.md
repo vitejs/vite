@@ -27,13 +27,16 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
-Note that Vite will replace `__filename`, `__dirname`, and `import.meta.url`. Using these as variable names will result in an error:
+::: tip NOTE
+Vite will replace `__filename`, `__dirname`, and `import.meta.url` in config files and its deps. Using these as variable names will result in an error:
 
 ```js
 const __filename = "value"
 // will be transformed to
 const "path/vite.config.js" = "value"
 ```
+
+:::
 
 ### Config Intellisense
 
@@ -91,7 +94,29 @@ If the config needs to call async function, it can export a async function inste
 export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
-    // build specific config
+    // vite config
+  }
+})
+```
+
+### Environment Variables
+
+Environmental Variables can be obtained from `process.env` as usual.
+
+Note that Vite doesn't load `.env` files by default as the files to load can only be determined after evaluating the Vite config, for example, the `root` and `envDir` options affects the loading behaviour. However, you can use the exported `loadEnv` helper to load the specific `.env` file if needed.
+
+```js
+import { defineConfig, loadEnv } from 'vite'
+
+export default defineConfig(({ command, mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    // vite config
+    define: {
+      __APP_ENV__: env.APP_ENV
+    }
   }
 })
 ```
@@ -137,11 +162,15 @@ export default defineConfig(async ({ command, mode }) => {
 
   - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
+  - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
+
   - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
 
+  ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
 
   For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
+  :::
 
   ::: tip NOTE
   For TypeScript users, make sure to add the type declarations in the `env.d.ts` or `vite-env.d.ts` file to get type checks and Intellisense.
@@ -223,6 +252,10 @@ export default defineConfig(async ({ command, mode }) => {
 
   Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
 
+  :::warning Resolving subpath exports
+  Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
+  :::
+
 ### resolve.mainFields
 
 - **Type:** `string[]`
@@ -277,7 +310,11 @@ export default defineConfig(async ({ command, mode }) => {
 
 - **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
 
-  Inline PostCSS config (expects the same format as `postcss.config.js`), or a custom path to search PostCSS config from (default is project root). The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config).
+  Inline PostCSS config or a custom directory to search PostCSS config from (default is project root).
+
+  For inline PostCSS config, it expects the same format as `postcss.config.js`. But for `plugins` property, only [array format](https://github.com/postcss/postcss-load-config/blob/main/README.md#array) can be used.
+
+  The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
 
   Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
@@ -285,7 +322,7 @@ export default defineConfig(async ({ command, mode }) => {
 
 - **Type:** `Record<string, object>`
 
-  Specify options to pass to CSS pre-processors. Example:
+  Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. Example:
 
   ```js
   export default defineConfig({
@@ -293,11 +330,22 @@ export default defineConfig(async ({ command, mode }) => {
       preprocessorOptions: {
         scss: {
           additionalData: `$injectedColor: orange;`
+        },
+        styl: {
+          additionalData: `$injectedColor ?= orange`
         }
       }
     }
   })
   ```
+
+### css.devSourcemap
+
+- **Experimental**
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Whether to enable sourcemaps during dev.
 
 ### json.namedExports
 
@@ -319,7 +367,7 @@ export default defineConfig(async ({ command, mode }) => {
 
 - **Type:** `ESBuildOptions | false`
 
-  `ESBuildOptions` extends [ESbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
+  `ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform-api). The most common use case is customizing JSX:
 
   ```js
   export default defineConfig({
@@ -330,9 +378,9 @@ export default defineConfig(async ({ command, mode }) => {
   })
   ```
 
-  By default, ESBuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, both of which expect type of `string | RegExp | (string | RegExp)[]`.
+  By default, esbuild is applied to `ts`, `jsx` and `tsx` files. You can customize this with `esbuild.include` and `esbuild.exclude`, which can be a regex, a [picomatch](https://github.com/micromatch/picomatch#globbing-features) pattern, or an array of either.
 
-  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by ESBuild:
+  In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by esbuild:
 
   ```js
   export default defineConfig({
@@ -342,14 +390,14 @@ export default defineConfig(async ({ command, mode }) => {
   })
   ```
 
-  Set to `false` to disable ESbuild transforms.
+  Set to `false` to disable esbuild transforms.
 
 ### assetsInclude
 
 - **Type:** `string | RegExp | (string | RegExp)[]`
 - **Related:** [Static Asset Handling](/guide/assets)
 
-  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch) to be treated as static assets so that:
+  Specify additional [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) to be treated as static assets so that:
 
   - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
@@ -499,6 +547,12 @@ export default defineConfig(async ({ command, mode }) => {
 
   Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
 
+### server.headers
+
+- **Type:** `OutgoingHttpHeaders`
+
+  Specify server response headers.
+
 ### server.force
 
 - **Type:** `boolean`
@@ -516,7 +570,7 @@ export default defineConfig(async ({ command, mode }) => {
 
   `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
 
-  When using `server.middlewareMode` or `server.https`, assigning `server.hmr.server` to your HTTP(S) server will process HMR connection requests through your server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+  If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ### server.watch
 
@@ -579,6 +633,12 @@ async function createServer() {
 
 createServer()
 ```
+
+### server.base
+
+- **Type:** `string | undefined`
+
+  Prepend this folder to http requests, for use when proxying vite as a subfolder. Should start and end with the `/` character.
 
 ### server.fs.strict
 
@@ -650,7 +710,7 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080/'
+    origin: 'http://127.0.0.1:8080'
   }
 })
 ```
@@ -772,19 +832,19 @@ export default defineConfig({
 
 ### build.manifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
+  When set to `true`, the build will also generate a `manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssrManifest
 
-- **Type:** `boolean`
+- **Type:** `boolean | string`
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production.
+  When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
 
 ### build.ssr
 
@@ -799,7 +859,7 @@ export default defineConfig({
 - **Type:** `boolean | 'terser' | 'esbuild'`
 - **Default:** `'esbuild'`
 
-  Set to `false` to disable minification, or specify the minifier to use. The default is [Esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
+  Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
   Note the `build.minify` option is not available when using the `'es'` format in lib mode.
 
@@ -923,9 +983,9 @@ export default defineConfig({
 
 - **Type:** `string | string[]`
 
-  By default, Vite will crawl your index.html to detect dependencies that need to be pre-bundled. If build.rollupOptions.input is specified, Vite will crawl those entry points instead.
+  By default, Vite will crawl all your `.html` files to detect dependencies that need to be pre-bundled (ignoring `node_modules`, `build.outDir`, `__tests__` and `coverage`). If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
-  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference.
+  If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitily defined. If other folders needs to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`.
 
 ### optimizeDeps.exclude
 

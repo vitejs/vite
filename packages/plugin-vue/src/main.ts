@@ -1,4 +1,3 @@
-import qs from 'querystring'
 import path from 'path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { ResolvedOptions } from '.'
@@ -27,7 +26,7 @@ export async function transformMain(
   ssr: boolean,
   asCustomElement: boolean
 ) {
-  const { devServer, isProduction } = options
+  const { devServer, isProduction, devToolsEnabled } = options
 
   // prev descriptor is only set and used for hmr
   const prevDescriptor = getPrevDescriptor(filename)
@@ -102,9 +101,12 @@ export async function transformMain(
   if (hasScoped) {
     attachedProps.push([`__scopeId`, JSON.stringify(`data-v-${descriptor.id}`)])
   }
-  if (devServer && !isProduction) {
+  if (devToolsEnabled || (devServer && !isProduction)) {
     // expose filename during serve for devtools to pickup
-    attachedProps.push([`__file`, JSON.stringify(filename)])
+    attachedProps.push([
+      `__file`,
+      JSON.stringify(isProduction ? path.basename(filename) : filename)
+    ])
   }
 
   // HMR
@@ -159,7 +161,7 @@ export async function transformMain(
     const generator = SourceMapGenerator.fromSourceMap(
       new SourceMapConsumer(map)
     )
-    const offset = scriptCode.match(/\r?\n/g)?.length || 1
+    const offset = (scriptCode.match(/\r?\n/g)?.length ?? 0) + 1
     const templateMapConsumer = new SourceMapConsumer(templateMap)
     templateMapConsumer.eachMapping((m) => {
       generator.addMapping({
@@ -209,6 +211,11 @@ export async function transformMain(
     code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
+    },
+    meta: {
+      vite: {
+        lang: descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
+      }
     }
   }
 }
@@ -423,8 +430,8 @@ function attrsToQuery(
   for (const name in attrs) {
     const value = attrs[name]
     if (!ignoreList.includes(name)) {
-      query += `&${qs.escape(name)}${
-        value ? `=${qs.escape(String(value))}` : ``
+      query += `&${encodeURIComponent(name)}${
+        value ? `=${encodeURIComponent(value)}` : ``
       }`
     }
   }

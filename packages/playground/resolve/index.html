@@ -12,6 +12,9 @@
 <h2>Deep import with exports field</h2>
 <p class="exports-deep">fail</p>
 
+<h2>Deep import with query with exports field</h2>
+<p class="exports-deep-query">fail</p>
+
 <h2>Deep import with exports field + exposed directory</h2>
 <p class="exports-deep-exposed-dir">fail</p>
 
@@ -38,11 +41,25 @@
 </h2>
 <p class="ts-extension">fail</p>
 
+<h2>
+  A ts module can import another tsx module using its corresponding jsx file
+  name
+</h2>
+<p class="jsx-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding js file name
+</h2>
+<p class="tsx-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
+
+<h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
+<p class="require-pkg-with-module-field">fail</p>
 
 <h2>CSS Entry</h2>
 <p class="css"></p>
@@ -100,6 +117,10 @@
   import { msg as deepMsg } from 'resolve-exports-path/deep.js'
   text('.exports-deep', deepMsg)
 
+  // deep import w/ exports w/ query
+  import deepPath from 'resolve-exports-path/deep.json?url'
+  text('.exports-deep-query', deepPath)
+
   // deep import w/ exposed dir
   import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
   text('.exports-deep-exposed-dir', exposedDirMsg)
@@ -130,6 +151,12 @@
   import { msg as tsExtensionMsg } from './ts-extension'
   text('.ts-extension', tsExtensionMsg)
 
+  import { msgJsx as tsJsxExtensionMsg } from './ts-extension'
+  text('.jsx-extension', tsJsxExtensionMsg)
+
+  import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
+  text('.tsx-extension', tsTsxExtensionMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
@@ -144,10 +171,11 @@
   import e from 'resolve-browser-field/ext-index/index.js'
   import f from 'resolve-browser-field/ext-index'
   import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
+  import h from 'resolve-browser-field/no-ext?query'
 
   import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, ra, rc, rd, re, rf]
+  const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
   const noSuccess = [b, g, rb, rg]
 
   if (
@@ -156,6 +184,9 @@
   ) {
     text('.browser', main)
   }
+
+  import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
+  text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
 
   import { msg as customExtMsg } from './custom-ext'
   text('.custom-ext', customExtMsg)

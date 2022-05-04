@@ -40,5 +40,8 @@ module.exports = {
         }
       }
     }
-  ]
+  ],
+  optimizeDeps: {
+    include: ['require-pkg-with-module-field']
+  }
 }

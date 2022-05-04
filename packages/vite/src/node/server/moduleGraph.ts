@@ -2,6 +2,7 @@ import { extname } from 'path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
+import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -10,6 +11,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
+import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 
 export class ModuleNode {
   /**
@@ -27,15 +29,23 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
-  isSelfAccepting = false
+  isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
   lastHMRTimestamp = 0
+  lastInvalidationTimestamp = 0
 
   constructor(url: string) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
+    // #7870
+    // The `isSelfAccepting` value is set by importAnalysis, but some
+    // assets don't go through importAnalysis.
+    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
+      this.isSelfAccepting = false
+    }
   }
 }
 
@@ -94,17 +104,26 @@ export class ModuleGraph {
     }
   }
 
-  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
-    mod.info = undefined
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now()
+  ): void {
+    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+    // processing being done for this module
+    mod.lastInvalidationTimestamp = timestamp
+    // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
+    // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
   }
 
   invalidateAll(): void {
+    const timestamp = Date.now()
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {
-      this.invalidateModule(mod, seen)
+      this.invalidateModule(mod, seen, timestamp)
     })
   }
 

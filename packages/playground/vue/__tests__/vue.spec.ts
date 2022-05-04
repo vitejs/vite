@@ -14,6 +14,10 @@ test('template/script latest syntax support', async () => {
   expect(await page.textContent('.syntax')).toBe('baz')
 })
 
+test('import ts with .js extension with lang="ts"', async () => {
+  expect(await page.textContent('.ts-import')).toBe('success')
+})
+
 test('should remove comments in prod', async () => {
   expect(await page.innerHTML('.comments')).toBe(isBuild ? `` : `<!--hello-->`)
 })
@@ -240,5 +244,11 @@ describe('setup import template', () => {
     expect(await page.textContent('.setup-import-template')).toMatch('0')
     await page.click('.setup-import-template')
     expect(await page.textContent('.setup-import-template')).toMatch('1')
+  })
+})
+
+describe('vue worker', () => {
+  test('should work', async () => {
+    expect(await page.textContent('.vue-worker')).toMatch('worker load!')
   })
 })
