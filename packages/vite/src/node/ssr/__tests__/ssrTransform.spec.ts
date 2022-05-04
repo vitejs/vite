@@ -77,7 +77,7 @@ test('export named', async () => {
     (await ssrTransform(`const a = 1, b = 2; export { a, b as c }`, null, null))
       .code
   ).toMatchInlineSnapshot(`
-    "const a = 1, b = 2;
+    "const a = 1, b = 2; 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }});
     Object.defineProperty(__vite_ssr_exports__, \\"c\\", { enumerable: true, configurable: true, get(){ return b }});"
   `)
@@ -370,7 +370,7 @@ test('overwrite bindings', async () => {
           `const a = { inject }\n` +
           `const b = { test: inject }\n` +
           `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
-          `const d = inject \n` +
+          `const d = inject\n` +
           `function f() {  console.log(inject) }\n` +
           `function e() { const { inject } = { inject: true } }\n` +
           `function g() { const f = () => { const inject = true }; console.log(inject) }\n`,
