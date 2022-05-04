@@ -33,10 +33,6 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 [Read the Docs to Learn More](https://vitejs.dev).
 
-## Migrating from 1.x
-
-Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
-
 ## Packages
 
 | Package                                           | Version (click for changelogs)                                                                                                       |
@@ -55,3 +51,11 @@ See [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.m
 ## License
 
 MIT
+
+## Sponsors
+
+<p align="center">
+  <a target="_blank" href="https://github.com/sponsors/yyx990803">
+    <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg">
+  </a>
+</p>

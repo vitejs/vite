@@ -1,4 +1,5 @@
 const path = require('path')
+
 /**
  * @type {import('vite').UserConfig}
  */
@@ -8,7 +9,8 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@': __dirname
+      '@': __dirname,
+      spacefolder: __dirname + '/folder with space'
     }
   },
   css: {

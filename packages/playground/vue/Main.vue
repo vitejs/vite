@@ -15,11 +15,13 @@
     <div class="slotted">this should be red</div>
   </Slotted>
   <ScanDep />
+  <TsImport />
   <Suspense>
     <AsyncComponent />
   </Suspense>
-  <RefTransform />
+  <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
+  <WorkerTest />
 </template>
 
 <script setup lang="ts">
@@ -32,10 +34,11 @@ import CustomBlock from './CustomBlock.vue'
 import SrcImport from './src-import/SrcImport.vue'
 import Slotted from './Slotted.vue'
 import ScanDep from './ScanDep.vue'
+import TsImport from './TsImport.vue'
 import AsyncComponent from './AsyncComponent.vue'
-import RefTransform from './RefTransform.vue'
+import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
-
+import WorkerTest from './worker.vue'
 import { ref } from 'vue'
 
 const time = ref('loading...')

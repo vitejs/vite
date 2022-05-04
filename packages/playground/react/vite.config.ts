@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
+import type { UserConfig } from 'vite'
 
-const config: import('vite').UserConfig = {
+const config: UserConfig = {
   plugins: [react()],
   build: {
     // to make tests faster

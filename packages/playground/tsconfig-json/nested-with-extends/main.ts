@@ -1,4 +1,5 @@
 // @ts-nocheck
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { NestedWithExtendsTypeOnlyClass } from './not-used-type'
 
 class NestedWithExtendsBase {

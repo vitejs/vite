@@ -17,7 +17,14 @@ module.exports = {
       // aliasing an optimized dep
       { find: 'vue', replacement: 'vue/dist/vue.esm-bundler.js' },
       // aliasing one unoptimized dep to an optimized dep
-      { find: 'foo', replacement: 'vue' }
+      { find: 'foo', replacement: 'vue' },
+      {
+        find: 'custom-resolver',
+        replacement: path.resolve(__dirname, 'test.js'),
+        customResolver(id) {
+          return id.replace('test.js', 'customResolver.js')
+        }
+      }
     ]
   },
   build: {

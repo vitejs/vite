@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import {
   createDebugger,
   isDefined,
@@ -8,10 +9,20 @@ import {
   normalizePath,
   resolveFrom
 } from '../utils'
-import { ResolvedConfig } from '..'
+import type { Logger, ResolvedConfig } from '..'
 import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
+
+/**
+ * Converts "parent > child" syntax to just "child"
+ */
+export function stripNesting(packages: string[]) {
+  return packages.map((s) => {
+    const arr = s.split('>')
+    return arr[arr.length - 1].trim()
+  })
+}
 
 /**
  * Heuristics for determining whether a dependency should be externalized for
@@ -21,6 +32,10 @@ export function resolveSSRExternal(
   config: ResolvedConfig,
   knownImports: string[]
 ): string[] {
+  // strip nesting since knownImports may be passed in from optimizeDeps which
+  // supports a "parent > child" syntax
+  knownImports = stripNesting(knownImports)
+
   const ssrConfig = config.ssr
   if (ssrConfig?.noExternal === true) {
     return []
@@ -37,7 +52,8 @@ export function resolveSSRExternal(
     config.root,
     config.resolve.preserveSymlinks,
     ssrExternals,
-    seen
+    seen,
+    config.logger
   )
 
   const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
@@ -63,22 +79,26 @@ export function resolveSSRExternal(
   return externals
 }
 
+const CJS_CONTENT_RE =
+  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
+
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,
   ssrExternals: Set<string>,
-  seen: Set<string>
+  seen: Set<string>,
+  logger: Logger
 ) {
-  const pkgContent = lookupFile(root, ['package.json'])
-  if (!pkgContent) {
+  const rootPkgContent = lookupFile(root, ['package.json'])
+  if (!rootPkgContent) {
     return
   }
 
-  const pkg = JSON.parse(pkgContent)
+  const rootPkg = JSON.parse(rootPkgContent)
   const deps = {
-    ...pkg.devDependencies,
-    ...pkg.dependencies
+    ...rootPkg.devDependencies,
+    ...rootPkg.dependencies
   }
 
   const resolveOptions: InternalResolveOptions = {
@@ -141,20 +161,33 @@ function collectExternals(
     // or are there others like SystemJS / AMD that we'd need to handle?
     // for now, we'll just leave this as is
     else if (/\.m?js$/.test(esmEntry)) {
+      const pkgPath = resolveFrom(`${id}/package.json`, root)
+      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
+
+      if (!pkgContent) {
+        continue
+      }
+      const pkg = JSON.parse(pkgContent)
+
       if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
         ssrExternals.add(id)
         continue
       }
       // check if the entry is cjs
       const content = fs.readFileSync(esmEntry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
+      if (CJS_CONTENT_RE.test(content)) {
         ssrExternals.add(id)
+        continue
       }
+
+      logger.warn(
+        `${id} doesn't appear to be written in CJS, but also doesn't appear to be a valid ES module (i.e. it doesn't have "type": "module" or an .mjs extension for the entry point). Please contact the package author to fix.`
+      )
     }
   }
 
   for (const depRoot of depsToTrace) {
-    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen)
+    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
   }
 }
 

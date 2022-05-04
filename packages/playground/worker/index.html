@@ -1,8 +1,15 @@
+<p>worker template error match:</p>
+<code>
+  const worker = new Worker(new URL('./worker.js', import.meta.url))
+</code>
+
+<h2 class="format-iife">format iife:</h2>
 <div>Expected values: <span class="mode-true"></span></div>
 <button class="ping">Ping</button>
 <div>
   Response from worker: <span class="pong"></span><span class="mode"></span>
 </div>
+<div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
 
 <button class="ping-inline">Ping Inline Worker</button>
 <div>Response from inline worker: <span class="pong-inline"></span></div>
@@ -19,55 +26,94 @@
   <span class="tick-count">0</span>
 </div>
 
-<script type="module">
-  import Worker from './my-worker?worker'
-  import InlineWorker from './my-worker?worker&inline'
-  import SharedWorker from './my-shared-worker?sharedworker&name=shared'
-  import TSOutputWorker from './possible-ts-output-worker?worker'
-  import { mode } from './workerImport'
+<p>
+  new Worker(new URL('./url-worker.js', import.meta.url), { type: 'module' })
+  <span class="classname">.worker-import-meta-url</span>
+</p>
+<code class="worker-import-meta-url"></code>
 
-  document.querySelector('.mode-true').textContent = mode
+<p>
+  new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.shared-worker-import-meta-url</span>
+</p>
+<code class="shared-worker-import-meta-url"></code>
 
-  const worker = new Worker()
-  worker.addEventListener('message', (e) => {
-    text('.pong', e.data.msg)
-    text('.mode', e.data.mode)
-  })
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - import.meta.url
+  <span class="classname">.nested-worker</span>
+</p>
+<code class="nested-worker"></code>
 
-  document.querySelector('.ping').addEventListener('click', () => {
-    worker.postMessage('ping')
-  })
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested module
+  worker
+  <span class="classname">.nested-worker-module</span>
+</p>
+<code class="nested-worker-module"></code>
 
-  const inlineWorker = new InlineWorker()
-  inlineWorker.addEventListener('message', (e) => {
-    text('.pong-inline', e.data.msg)
-  })
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  constructor
+  <span class="classname">.nested-worker-constructor</span>
+</p>
+<code class="nested-worker-constructor"></code>
 
-  document.querySelector('.ping-inline').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
-  })
+<p>
+  new Worker(new URL('./classic-worker.js', import.meta.url))
+  <span class="classname">.classic-worker</span>
+</p>
+<code class="classic-worker"></code>
 
-  const sharedWorker = new SharedWorker()
-  document.querySelector('.tick-shared').addEventListener('click', () => {
-    sharedWorker.port.postMessage('tick')
-  })
+<p>
+  new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
+  type: 'classic' })
+  <span class="classname">.classic-shared-worker</span>
+</p>
+<code class="classic-shared-worker"></code>
 
-  sharedWorker.port.addEventListener('message', (event) => {
-    text('.tick-count', event.data)
-  })
+<p>
+  use import.meta.globEager in iife worker
+  <span class="classname">.importMetaGlobEager-worker</span>
+</p>
+<code class="importMetaGlobEager-worker"></code>
 
-  sharedWorker.port.start()
+<hr />
 
-  const tsOutputWorker = new TSOutputWorker()
-  worker.addEventListener('message', (e) => {
-    text('.pong-ts-output', e.data.msg)
-  })
+<h2 class="format-es"></h2>
 
-  document.querySelector('.ping-ts-output').addEventListener('click', () => {
-    inlineWorker.postMessage('ping')
-  })
+<p>
+  use import.meta.glob in es worker
+  <span class="classname">.importMetaGlob-worker</span>
+</p>
+<code class="importMetaGlob-worker"></code>
 
-  function text(el, text) {
-    document.querySelector(el).textContent = text
+<p>
+  worker emit chunk <br />
+  module and worker:worker in worker file <br />
+  module and worker:module in worker file <br />
+  <span class="classname">.emti-chunk-worker</span>
+</p>
+<code class="emti-chunk-worker"></code>
+
+<p>
+  worker dynamic import to emit chunk
+  <span class="classname">.emti-chunk-dynamic-import-worker</span>
+</p>
+<code class="emti-chunk-dynamic-import-worker"></code>
+
+<p>
+  module and worker:worker in simple file
+  <span class="classname">.module-and-worker-worker</span>
+</p>
+<code class="module-and-worker-worker"></code>
+
+<style>
+  p {
+    background: rgba(0, 0, 0, 0.1);
   }
-</script>
+  .classname {
+    color: green;
+  }
+</style>
+<script type="module" src="./worker/main.js"></script>

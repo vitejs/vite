@@ -1,5 +1,6 @@
 {
   "name": "vite-preact-starter",
+  "private": true,
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
@@ -11,6 +12,6 @@
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.1.5",
-    "vite": "^2.6.13"
+    "vite": "^2.9.7"
   }
 }

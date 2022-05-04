@@ -1,18 +1,13 @@
 import fs from 'fs'
 import path from 'path'
-import { Plugin } from './plugin'
-import { BuildOptions, resolveBuildOptions } from './build'
-import {
-  ResolvedServerOptions,
-  resolveServerOptions,
-  ServerOptions
-} from './server'
-import {
-  ResolvedPreviewOptions,
-  resolvePreviewOptions,
-  PreviewOptions
-} from './preview'
-import { CSSOptions } from './plugins/css'
+import type { Plugin } from './plugin'
+import type { BuildOptions } from './build'
+import { resolveBuildOptions } from './build'
+import type { ResolvedServerOptions, ServerOptions } from './server'
+import { resolveServerOptions } from './server'
+import type { ResolvedPreviewOptions, PreviewOptions } from './preview'
+import { resolvePreviewOptions } from './preview'
+import type { CSSOptions } from './plugins/css'
 import {
   arraify,
   createDebugger,
@@ -23,30 +18,28 @@ import {
   dynamicImport
 } from './utils'
 import { resolvePlugins } from './plugins'
-import chalk from 'chalk'
-import { ESBuildOptions } from './plugins/esbuild'
+import colors from 'picocolors'
+import type { ESBuildOptions } from './plugins/esbuild'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
-import { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'types/alias'
 import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
-import {
-  InternalResolveOptions,
-  ResolveOptions,
-  resolvePlugin
-} from './plugins/resolve'
-import { createLogger, Logger, LogLevel } from './logger'
-import { DepOptimizationOptions } from './optimizer'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import { resolvePlugin } from './plugins/resolve'
+import type { Logger, LogLevel } from './logger'
+import { createLogger } from './logger'
+import type { DepOptimizationOptions } from './optimizer'
 import { createFilter } from '@rollup/pluginutils'
-import { ResolvedBuildOptions } from '.'
-import { parse as parseUrl } from 'url'
-import { JsonOptions } from './plugins/json'
-import {
-  createPluginContainer,
-  PluginContainer
-} from './server/pluginContainer'
+import type { ResolvedBuildOptions } from '.'
+import { parse as parseUrl, pathToFileURL } from 'url'
+import type { JsonOptions } from './plugins/json'
+import type { PluginContainer } from './server/pluginContainer'
+import { createPluginContainer } from './server/pluginContainer'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import { performance } from 'perf_hooks'
+import type { PackageCache } from './packages'
+import type { RollupOptions } from 'rollup'
 
 const debug = createDebugger('vite:config')
 
@@ -70,7 +63,7 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption = Plugin | false | null | undefined
+export type PluginOption = Plugin | false | null | undefined | PluginOption[]
 
 export interface UserConfig {
   /**
@@ -99,6 +92,7 @@ export interface UserConfig {
    * the performance. You can use `--force` flag or manually delete the directory
    * to regenerate the cache files. The value can be either an absolute file
    * system path or a path relative to <root>.
+   * Default to `.vite` when no `package.json` is detected.
    * @default 'node_modules/.vite'
    */
   cacheDir?: string
@@ -115,7 +109,7 @@ export interface UserConfig {
   /**
    * Array of vite plugins to use.
    */
-  plugins?: (PluginOption | PluginOption[])[]
+  plugins?: PluginOption[]
   /**
    * Configure resolver
    */
@@ -193,6 +187,27 @@ export interface UserConfig {
    * @deprecated use `resolve.dedupe` instead
    */
   dedupe?: string[]
+  /**
+   * Worker bundle options
+   */
+  worker?: {
+    /**
+     * Output format for worker bundle
+     * @default 'iife'
+     */
+    format?: 'es' | 'iife'
+    /**
+     * Vite plugins that apply to worker bundle
+     */
+    plugins?: PluginOption[]
+    /**
+     * Rollup options to build worker bundle
+     */
+    rollupOptions?: Omit<
+      RollupOptions,
+      'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
+    >
+  }
 }
 
 export type SSRTarget = 'node' | 'webworker'
@@ -208,6 +223,12 @@ export interface SSROptions {
   target?: SSRTarget
 }
 
+export interface ResolveWorkerOptions {
+  format: 'es' | 'iife'
+  plugins: Plugin[]
+  rollupOptions: RollupOptions
+}
+
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   envFile?: false
@@ -216,7 +237,7 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps'
+    'plugins' | 'alias' | 'dedupe' | 'assetsInclude' | 'optimizeDeps' | 'worker'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -224,8 +245,10 @@ export type ResolvedConfig = Readonly<
     root: string
     base: string
     publicDir: string
+    cacheDir: string
     command: 'build' | 'serve'
     mode: string
+    isWorker: boolean
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -239,6 +262,9 @@ export type ResolvedConfig = Readonly<
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: Omit<DepOptimizationOptions, 'keepNames'>
+    /** @internal */
+    packageCache: PackageCache
+    worker: ResolveWorkerOptions
   }
 >
 
@@ -291,12 +317,12 @@ export async function resolveConfig(
     customLogger: config.customLogger
   })
 
-  // user config may provide an alternative mode. But --mode has a higher prority
+  // user config may provide an alternative mode. But --mode has a higher priority
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
   // resolve plugins
-  const rawUserPlugins = (config.plugins || []).flat().filter((p) => {
+  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -309,6 +335,13 @@ export async function resolveConfig(
   }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
+
+  // resolve worker
+  const resolvedWorkerOptions: ResolveWorkerOptions = {
+    format: config.worker?.format || 'iife',
+    plugins: [],
+    rollupOptions: config.worker?.rollupOptions || {}
+  }
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -332,11 +365,13 @@ export async function resolveConfig(
   ]
 
   // resolve alias with internal client alias
-  const resolvedAlias = mergeAlias(
-    // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
-    // replacement, but its implementation does work with function values.
-    clientAlias,
-    config.resolve?.alias || config.alias || []
+  const resolvedAlias = normalizeAlias(
+    mergeAlias(
+      // @ts-ignore because @rollup/plugin-alias' type doesn't allow function
+      // replacement, but its implementation does work with function values.
+      clientAlias,
+      config.resolve?.alias || config.alias || []
+    )
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
@@ -364,17 +399,15 @@ export async function resolveConfig(
 
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(resolvedRoot, config.build)
+  const resolvedBuildOptions = resolveBuildOptions(config.build)
 
   // resolve cache directory
-  const pkgPath = lookupFile(
-    resolvedRoot,
-    [`package.json`],
-    true /* pathOnly */
-  )
+  const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
   const cacheDir = config.cacheDir
     ? path.resolve(resolvedRoot, config.cacheDir)
-    : pkgPath && path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    : pkgPath
+    ? path.join(path.dirname(pkgPath), `node_modules/.vite`)
+    : path.join(resolvedRoot, `.vite`)
 
   const assetsFilter = config.assetsInclude
     ? createFilter(config.assetsInclude)
@@ -428,12 +461,16 @@ export async function resolveConfig(
         )
       : ''
 
-  const server = resolveServerOptions(resolvedRoot, config.server)
+  const server = resolveServerOptions(resolvedRoot, config.server, logger)
+
+  const optimizeDeps = config.optimizeDeps || {}
 
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
-    configFileDependencies,
+    configFileDependencies: configFileDependencies.map((name) =>
+      normalizePath(path.resolve(name))
+    ),
     inlineConfig,
     root: resolvedRoot,
     base: BASE_URL,
@@ -442,6 +479,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    isWorker: false,
     isProduction,
     plugins: userPlugins,
     server,
@@ -458,17 +496,33 @@ export async function resolveConfig(
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
     logger,
+    packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      ...config.optimizeDeps,
+      ...optimizeDeps,
       esbuildOptions: {
-        keepNames: config.optimizeDeps?.keepNames,
+        keepNames: optimizeDeps.keepNames,
         preserveSymlinks: config.resolve?.preserveSymlinks,
-        ...config.optimizeDeps?.esbuildOptions
+        ...optimizeDeps.esbuildOptions
       }
-    }
+    },
+    worker: resolvedWorkerOptions
   }
 
+  // flat config.worker.plugin
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(config.worker?.plugins as Plugin[])
+  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
+  resolved.worker.plugins = await resolvePlugins(
+    workerResolved,
+    workerPrePlugins,
+    workerNormalPlugins,
+    workerPostPlugins
+  )
+  // call configResolved worker plugins hooks
+  await Promise.all(
+    resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))
+  )
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -494,10 +548,12 @@ export async function resolveConfig(
     error?: Error
   ) => {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) "${deprecatedOption}" option is deprecated. ${hint}${
-          error ? `\n${error.stack}` : ''
-        }`
+      colors.yellow(
+        colors.bold(
+          `(!) "${deprecatedOption}" option is deprecated. ${hint}${
+            error ? `\n${error.stack}` : ''
+          }`
+        )
       )
     )
   }
@@ -551,7 +607,7 @@ export async function resolveConfig(
     }
   })
 
-  if (config.optimizeDeps?.keepNames) {
+  if (optimizeDeps.keepNames) {
     logDeprecationWarning(
       'optimizeDeps.keepNames',
       'Use "optimizeDeps.esbuildOptions.keepNames" instead.'
@@ -595,9 +651,9 @@ export async function resolveConfig(
     )
   }
 
-  if (config.build?.terserOptions && config.build.minify === 'esbuild') {
+  if (config.build?.terserOptions && config.build.minify !== 'terser') {
     logger.warn(
-      chalk.yellow(
+      colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
           `Note Vite now defaults to use esbuild for minification. If you still ` +
           `prefer Terser, set build.minify to "terser".`
@@ -623,9 +679,11 @@ function resolveBaseUrl(
   }
   if (base.startsWith('.')) {
     logger.warn(
-      chalk.yellow.bold(
-        `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
-          `URL, ./, or an empty string.`
+      colors.yellow(
+        colors.bold(
+          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+            `URL, ./, or an empty string.`
+        )
       )
     )
     base = '/'
@@ -642,7 +700,9 @@ function resolveBaseUrl(
     // ensure leading slash
     if (!base.startsWith('/')) {
       logger.warn(
-        chalk.yellow.bold(`(!) "base" option should start with a slash.`)
+        colors.yellow(
+          colors.bold(`(!) "base" option should start with a slash.`)
+        )
       )
       base = '/' + base
     }
@@ -650,7 +710,9 @@ function resolveBaseUrl(
 
   // ensure ending slash
   if (!base.endsWith('/')) {
-    logger.warn(chalk.yellow.bold(`(!) "base" option should end with a slash.`))
+    logger.warn(
+      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+    )
     base += '/'
   }
 
@@ -658,20 +720,42 @@ function resolveBaseUrl(
 }
 
 function mergeConfigRecursively(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   rootPath: string
 ) {
-  const merged: Record<string, any> = { ...a }
-  for (const key in b) {
-    const value = b[key]
+  const merged: Record<string, any> = { ...defaults }
+  for (const key in overrides) {
+    const value = overrides[key]
     if (value == null) {
       continue
     }
 
     const existing = merged[key]
-    if (Array.isArray(existing) && Array.isArray(value)) {
-      merged[key] = [...existing, ...value]
+
+    if (existing == null) {
+      merged[key] = value
+      continue
+    }
+
+    // fields that require special handling
+    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+      merged[key] = mergeAlias(existing, value)
+      continue
+    } else if (key === 'assetsInclude' && rootPath === '') {
+      merged[key] = [].concat(existing, value)
+      continue
+    } else if (
+      key === 'noExternal' &&
+      rootPath === 'ssr' &&
+      (existing === true || value === true)
+    ) {
+      merged[key] = true
+      continue
+    }
+
+    if (Array.isArray(existing) || Array.isArray(value)) {
+      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
       continue
     }
     if (isObject(existing) && isObject(value)) {
@@ -683,37 +767,34 @@ function mergeConfigRecursively(
       continue
     }
 
-    // fields that require special handling
-    if (existing != null) {
-      if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
-        merged[key] = mergeAlias(existing, value)
-        continue
-      } else if (key === 'assetsInclude' && rootPath === '') {
-        merged[key] = [].concat(existing, value)
-        continue
-      } else if (key === 'noExternal' && existing === true) {
-        continue
-      }
-    }
-
     merged[key] = value
   }
   return merged
 }
 
 export function mergeConfig(
-  a: Record<string, any>,
-  b: Record<string, any>,
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
   isRoot = true
 ): Record<string, any> {
-  return mergeConfigRecursively(a, b, isRoot ? '' : '.')
+  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
 }
 
-function mergeAlias(a: AliasOptions = [], b: AliasOptions = []): Alias[] {
-  return [...normalizeAlias(a), ...normalizeAlias(b)]
+function mergeAlias(
+  a?: AliasOptions,
+  b?: AliasOptions
+): AliasOptions | undefined {
+  if (!a) return b
+  if (!b) return a
+  if (isObject(a) && isObject(b)) {
+    return { ...a, ...b }
+  }
+  // the order is flipped because the alias is resolved from top-down,
+  // where the later should have higher priority
+  return [...normalizeAlias(b), ...normalizeAlias(a)]
 }
 
-function normalizeAlias(o: AliasOptions): Alias[] {
+function normalizeAlias(o: AliasOptions = []): Alias[] {
   return Array.isArray(o)
     ? o.map(normalizeSingleAlias)
     : Object.keys(o).map((find) =>
@@ -726,7 +807,11 @@ function normalizeAlias(o: AliasOptions): Alias[] {
 
 // https://github.com/vitejs/vite/issues/1363
 // work around https://github.com/rollup/plugins/issues/759
-function normalizeSingleAlias({ find, replacement }: Alias): Alias {
+function normalizeSingleAlias({
+  find,
+  replacement,
+  customResolver
+}: Alias): Alias {
   if (
     typeof find === 'string' &&
     find.endsWith('/') &&
@@ -735,7 +820,15 @@ function normalizeSingleAlias({ find, replacement }: Alias): Alias {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
   }
-  return { find, replacement }
+
+  const alias: Alias = {
+    find,
+    replacement
+  }
+  if (customResolver) {
+    alias.customResolver = customResolver
+  }
+  return alias
 }
 
 export function sortUserPlugins(
@@ -771,14 +864,14 @@ export async function loadConfigFromFile(
 
   let resolvedPath: string | undefined
   let isTS = false
-  let isMjs = false
+  let isESM = false
   let dependencies: string[] = []
 
   // check package.json for type: "module" and set `isMjs` to true
   try {
     const pkg = lookupFile(configRoot, ['package.json'])
     if (pkg && JSON.parse(pkg).type === 'module') {
-      isMjs = true
+      isESM = true
     }
   } catch (e) {}
 
@@ -788,7 +881,7 @@ export async function loadConfigFromFile(
     isTS = configFile.endsWith('.ts')
 
     if (configFile.endsWith('.mjs')) {
-      isMjs = true
+      isESM = true
     }
   } else {
     // implicit config file loaded from inline root (if present)
@@ -802,7 +895,7 @@ export async function loadConfigFromFile(
       const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
       if (fs.existsSync(mjsconfigFile)) {
         resolvedPath = mjsconfigFile
-        isMjs = true
+        isESM = true
       }
     }
 
@@ -811,6 +904,14 @@ export async function loadConfigFromFile(
       if (fs.existsSync(tsconfigFile)) {
         resolvedPath = tsconfigFile
         isTS = true
+      }
+    }
+
+    if (!resolvedPath) {
+      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
+      if (fs.existsSync(cjsConfigFile)) {
+        resolvedPath = cjsConfigFile
+        isESM = false
       }
     }
   }
@@ -823,15 +924,15 @@ export async function loadConfigFromFile(
   try {
     let userConfig: UserConfigExport | undefined
 
-    if (isMjs) {
+    if (isESM) {
       const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const bundled = await bundleConfigFile(resolvedPath, true)
+      dependencies = bundled.dependencies
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        const bundled = await bundleConfigFile(resolvedPath, true)
-        dependencies = bundled.dependencies
         fs.writeFileSync(resolvedPath + '.js', bundled.code)
         userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
           .default
@@ -846,34 +947,8 @@ export async function loadConfigFromFile(
       }
     }
 
-    if (!userConfig && !isTS && !isMjs) {
-      // 1. try to directly require the module (assuming commonjs)
-      try {
-        // clear cache in case of server restart
-        delete require.cache[require.resolve(resolvedPath)]
-        userConfig = require(resolvedPath)
-        debug(`cjs config loaded in ${getTime()}`)
-      } catch (e) {
-        const ignored = new RegExp(
-          [
-            `Cannot use import statement`,
-            `Must use import to load ES Module`,
-            // #1635, #2050 some Node 12.x versions don't have esm detection
-            // so it throws normal syntax errors when encountering esm syntax
-            `Unexpected token`,
-            `Unexpected identifier`
-          ].join('|')
-        )
-        if (!ignored.test(e.message)) {
-          throw e
-        }
-      }
-    }
-
     if (!userConfig) {
-      // 2. if we reach here, the file is ts or using es import syntax, or
-      // the user has type: "module" in their package.json (#917)
-      // transpile es import syntax to require syntax using esbuild.
+      // Bundle config file and transpile it to cjs using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
       userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
@@ -893,7 +968,7 @@ export async function loadConfigFromFile(
     }
   } catch (e) {
     createLogger(logLevel).error(
-      chalk.red(`failed to load config from ${resolvedPath}`),
+      colors.red(`failed to load config from ${resolvedPath}`),
       { error: e }
     )
     throw e
@@ -902,7 +977,7 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  mjs = false
+  isESM = false
 ): Promise<{ code: string; dependencies: string[] }> {
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -911,7 +986,7 @@ async function bundleConfigFile(
     write: false,
     platform: 'node',
     bundle: true,
-    format: mjs ? 'esm' : 'cjs',
+    format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
     plugins: [
@@ -938,7 +1013,7 @@ async function bundleConfigFile(
               contents: contents
                 .replace(
                   /\bimport\.meta\.url\b/g,
-                  JSON.stringify(`file://${args.path}`)
+                  JSON.stringify(pathToFileURL(args.path).href)
                 )
                 .replace(
                   /\b__dirname\b/g,
@@ -1015,10 +1090,10 @@ export function loadEnv(
   }
 
   for (const file of envFiles) {
-    const path = lookupFile(envDir, [file], true)
+    const path = lookupFile(envDir, [file], { pathOnly: true, rootDir: envDir })
     if (path) {
       const parsed = dotenv.parse(fs.readFileSync(path), {
-        debug: !!process.env.DEBUG || undefined
+        debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
       })
 
       // let environment variables use each other
@@ -1035,7 +1110,10 @@ export function loadEnv(
           env[key] === undefined
         ) {
           env[key] = value
-        } else if (key === 'NODE_ENV') {
+        } else if (
+          key === 'NODE_ENV' &&
+          process.env.VITE_USER_NODE_ENV === undefined
+        ) {
           // NODE_ENV override in .env file
           process.env.VITE_USER_NODE_ENV = value
         }

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import history from 'connect-history-api-fallback'
 import path from 'path'
-import { Connect } from 'types/connect'
+import type { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'
 
 export function spaFallbackMiddleware(
@@ -14,7 +14,9 @@ export function spaFallbackMiddleware(
       {
         from: /\/$/,
         to({ parsedUrl }: any) {
-          const rewritten = parsedUrl.pathname + 'index.html'
+          const rewritten =
+            decodeURIComponent(parsedUrl.pathname) + 'index.html'
+
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
           } else {

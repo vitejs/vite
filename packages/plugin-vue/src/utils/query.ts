@@ -1,8 +1,6 @@
-import qs from 'querystring'
-
 export interface VueQuery {
   vue?: boolean
-  src?: boolean
+  src?: string
   type?: 'script' | 'template' | 'style' | 'custom'
   index?: number
   lang?: string
@@ -14,12 +12,9 @@ export function parseVueRequest(id: string): {
   query: VueQuery
 } {
   const [filename, rawQuery] = id.split(`?`, 2)
-  const query = qs.parse(rawQuery) as VueQuery
+  const query = Object.fromEntries(new URLSearchParams(rawQuery)) as VueQuery
   if (query.vue != null) {
     query.vue = true
-  }
-  if (query.src != null) {
-    query.src = true
   }
   if (query.index != null) {
     query.index = Number(query.index)

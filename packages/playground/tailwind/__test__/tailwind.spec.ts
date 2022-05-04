@@ -5,7 +5,7 @@ test('should render', async () => {
 })
 
 if (!isBuild) {
-  test('regenerate CSS and HMR', async () => {
+  test('regenerate CSS and HMR (glob pattern)', async () => {
     browserLogs.length = 0
     const el = await page.$('#pagetitle')
     const el2 = await page.$('#helloroot')
@@ -33,6 +33,26 @@ if (!isBuild) {
     expect(browserLogs).toMatchObject([
       '[vite] css hot updated: /index.css',
       '[vite] hot updated: /src/components/HelloWorld.vue'
+    ])
+
+    browserLogs.length = 0
+  })
+
+  test('regenerate CSS and HMR (relative path)', async () => {
+    browserLogs.length = 0
+    const el = await page.$('h1')
+
+    expect(await getColor(el)).toBe('black')
+
+    editFile('src/App.vue', (code) =>
+      code.replace('text-black', 'text-[rgb(11,22,33)]')
+    )
+
+    await untilUpdated(() => getColor(el), 'rgb(11, 22, 33)')
+
+    expect(browserLogs).toMatchObject([
+      '[vite] css hot updated: /index.css',
+      '[vite] hot updated: /src/App.vue'
     ])
 
     browserLogs.length = 0

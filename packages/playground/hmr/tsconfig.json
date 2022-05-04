@@ -1,0 +1,15 @@
+{
+  "include": ["."],
+  "exclude": ["**/dist/**"],
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "esnext",
+    "outDir": "dist",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "types": ["vite/client", "jest", "node"]
+  }
+}

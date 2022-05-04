@@ -2,8 +2,9 @@
 // this is automtically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 const path = require('path')
+const { ports } = require('../../../testUtils')
 
-const port = (exports.port = 9527)
+const port = (exports.port = ports['legacy/ssr'])
 
 /**
  * @param {string} root

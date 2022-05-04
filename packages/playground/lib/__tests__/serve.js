@@ -5,8 +5,9 @@
 const path = require('path')
 const http = require('http')
 const sirv = require('sirv')
+const { ports } = require('../../testUtils')
 
-const port = (exports.port = 9527)
+const port = (exports.port = ports.lib)
 
 /**
  * @param {string} root

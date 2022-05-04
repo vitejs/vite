@@ -1,4 +1,4 @@
-import { isBuild, untilUpdated } from '../../testUtils'
+import { getColor, isBuild, untilUpdated } from '../../testUtils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -8,6 +8,10 @@ test('should load literal dynamic import', async () => {
 test('should load full dynamic import from public', async () => {
   await page.click('.qux')
   await untilUpdated(() => page.textContent('.view'), 'Qux view', true)
+  // No warning should be logged as we are using @vite-ignore
+  expect(
+    serverLogs.some((log) => log.includes('cannot be analyzed by vite'))
+  ).toBe(false)
 })
 
 test('should load data URL of `blob:`', async () => {
@@ -54,4 +58,9 @@ test('should load dynamic import with css', async () => {
     'rgb(255, 0, 0)',
     true
   )
+})
+
+test('should load dynamic import with css in package', async () => {
+  await page.click('.pkg-css')
+  await untilUpdated(() => getColor('.pkg-css'), 'blue', true)
 })

@@ -1,5 +1,5 @@
-import { ViteDevServer } from '..'
-import { Plugin } from '../plugin'
+import type { ViteDevServer } from '..'
+import type { Plugin } from '../plugin'
 import { bareImportRE } from '../utils'
 import { tryOptimizedResolve } from './resolve'
 
@@ -13,9 +13,9 @@ export function preAliasPlugin(): Plugin {
     configureServer(_server) {
       server = _server
     },
-    resolveId(id, importer, options) {
-      if (!options?.ssr && bareImportRE.test(id)) {
-        return tryOptimizedResolve(id, server, importer)
+    async resolveId(id, importer, options) {
+      if (!options?.ssr && bareImportRE.test(id) && !options?.scan) {
+        return await tryOptimizedResolve(id, server, importer)
       }
     }
   }

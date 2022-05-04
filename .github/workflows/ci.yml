@@ -11,27 +11,39 @@ on:
       - main
       - release/*
       - feat/*
+      - fix/*
+      - perf/*
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 16, 17]
+        node_version: [12, 14, 16, 17, 18]
         include:
           - os: macos-latest
             node_version: 16
+          - os: macos-latest
+            node_version: 18
           - os: windows-latest
             node_version: 16
+          # Maybe bug with jest on windows and node-v18
+          # - os: windows-latest
+          #   node_version: 18
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -39,7 +51,7 @@ jobs:
           version: 6
 
       - name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
@@ -63,10 +75,11 @@ jobs:
         run: pnpm run test-build -- --runInBand
 
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     name: "Lint: node-16, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -76,7 +89,7 @@ jobs:
           version: 6
 
       - name: Set node version to 16
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: "pnpm"
@@ -91,3 +104,6 @@ jobs:
 
       - name: Lint
         run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm prettier --check .

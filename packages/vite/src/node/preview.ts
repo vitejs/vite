@@ -1,17 +1,14 @@
 import path from 'path'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
-import { Server } from 'http'
-import { resolveConfig, InlineConfig, ResolvedConfig } from '.'
-import { Connect } from 'types/connect'
-import { ResolvedServerOptions } from './server'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart,
-  CommonServerOptions
-} from './http'
+import compression from './server/middlewares/compression'
+import type { Server } from 'http'
+import type { InlineConfig, ResolvedConfig } from '.'
+import { resolveConfig } from '.'
+import type { Connect } from 'types/connect'
+import type { ResolvedServerOptions } from './server'
+import type { CommonServerOptions } from './http'
+import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
 import { openBrowser } from './server/openBrowser'
 import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
@@ -36,7 +33,8 @@ export function resolvePreviewOptions(
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
-    cors: preview?.cors ?? server.cors
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers
   }
 }
 
@@ -57,8 +55,6 @@ export interface PreviewServer {
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param config - the resolved Vite config
- * @param serverOptions - what host and port to use
  * @experimental
  */
 export async function preview(
@@ -80,8 +76,9 @@ export async function preview(
   }
 
   // proxy
-  if (config.preview.proxy) {
-    app.use(proxyMiddleware(httpServer, config))
+  const { proxy } = config.preview
+  if (proxy) {
+    app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   app.use(compression())
@@ -98,7 +95,7 @@ export async function preview(
 
   const options = config.preview
   const hostname = resolveHostname(options.host)
-  const port = options.port ?? 5000
+  const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base

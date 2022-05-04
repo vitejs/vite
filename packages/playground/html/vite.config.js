@@ -11,12 +11,20 @@ module.exports = {
         nested: resolve(__dirname, 'nested/index.html'),
         scriptAsync: resolve(__dirname, 'scriptAsync.html'),
         scriptMixed: resolve(__dirname, 'scriptMixed.html'),
+        emptyAttr: resolve(__dirname, 'emptyAttr.html'),
+        link: resolve(__dirname, 'link.html'),
+        'link/target': resolve(__dirname, 'index.html'),
         zeroJS: resolve(__dirname, 'zeroJS.html'),
         noHead: resolve(__dirname, 'noHead.html'),
         noBody: resolve(__dirname, 'noBody.html'),
+        inlinea: resolve(__dirname, 'inline/shared_a.html'),
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
-        inline3: resolve(__dirname, 'inline/unique.html')
+        inline3: resolve(__dirname, 'inline/unique.html'),
+        unicodePath: resolve(
+          __dirname,
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
+        )
       }
     }
   },
