@@ -189,8 +189,8 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           )
         })
 
-      const commitProcessing = () => {
-        processingResult.commit()
+      const commitProcessing = async () => {
+        await processingResult.commit()
 
         // While optimizeDeps is running, new missing deps may be discovered,
         // in which case they will keep being added to metadata.discovered
@@ -240,7 +240,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
       }
 
       if (!needsReload) {
-        commitProcessing()
+        await commitProcessing()
 
         if (!isDebugEnabled) {
           if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -270,7 +270,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
             }
           )
         } else {
-          commitProcessing()
+          await commitProcessing()
 
           if (!isDebugEnabled) {
             if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
