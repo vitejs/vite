@@ -248,3 +248,9 @@ describe('vue worker', () => {
     expect(await page.textContent('.vue-worker')).toMatch('worker load!')
   })
 })
+
+describe('export default', () => {
+  test(`should support the syntax 'export {default} from' in script block`, async () => {
+    expect(await page.textContent('.export-default')).toMatch('1')
+  })
+})

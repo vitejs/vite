@@ -21,6 +21,7 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <WorkerTest />
+  <ExportDefault />
 </template>
 
 <script setup lang="ts">
@@ -37,6 +38,7 @@ import AsyncComponent from './AsyncComponent.vue'
 import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 import WorkerTest from './worker.vue'
+import ExportDefault from './ExportDefault.vue'
 import { ref } from 'vue'
 
 const time = ref('loading...')
