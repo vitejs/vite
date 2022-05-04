@@ -799,8 +799,8 @@ async function compileCSS(
     .default(postcssPlugins)
     .process(code, {
       ...postcssOptions,
-      to: cleanUrl(id),
-      from: cleanUrl(id),
+      to: id,
+      from: id,
       map: {
         inline: false,
         annotation: false,
