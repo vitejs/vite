@@ -1,5 +1,5 @@
 module.exports = {
-  plugins: [require('postcss-nested'), testDirDep]
+  plugins: [require('postcss-nested'), testDirDep, testSourceInput]
 }
 
 const fs = require('fs')
@@ -35,3 +35,16 @@ function testDirDep() {
   }
 }
 testDirDep.postcss = true
+
+function testSourceInput() {
+  return {
+    postcssPlugin: 'source-input',
+    AtRule(atRule) {
+      if (atRule.name === 'source-input') {
+        atRule.after(`/* ${atRule.source.input.from} */`)
+        atRule.remove()
+      }
+    }
+  }
+}
+testSourceInput.postcss = true
