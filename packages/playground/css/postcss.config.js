@@ -41,7 +41,11 @@ function testSourceInput() {
     postcssPlugin: 'source-input',
     AtRule(atRule) {
       if (atRule.name === 'source-input') {
-        atRule.after(`/* ${atRule.source.input.from} */`)
+        atRule.after(
+          `.source-input::before { content: ${JSON.stringify(
+            atRule.source.input.from
+          )}; }`
+        )
         atRule.remove()
       }
     }
