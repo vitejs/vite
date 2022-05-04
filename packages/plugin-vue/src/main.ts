@@ -444,7 +444,7 @@ async function linkSrcToDescriptor(
 
 // these are built-in query parameters so should be ignored
 // if the user happen to add them as attrs
-const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module']
+const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module', 'scoped']
 
 function attrsToQuery(
   attrs: SFCBlock['attrs'],
