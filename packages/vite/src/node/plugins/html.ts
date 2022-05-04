@@ -341,7 +341,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     // CSS references, convert to import
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
-                      url: importExpression,
+                      url,
                       start: node.loc.start.offset,
                       end: node.loc.end.offset
                     })
@@ -487,7 +487,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             config.logger.warnOnce(
               `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
             )
-            js = js.replace(url, '')
+            const importExpression = `\nimport ${JSON.stringify(url)}`
+            js = js.replace(importExpression, '')
           } else {
             s.remove(start, end)
           }
