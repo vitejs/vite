@@ -17,6 +17,8 @@ import { createRollupError } from './utils/error'
 import { transformWithEsbuild } from 'vite'
 import { EXPORT_HELPER_ID } from './helper'
 
+const exportDefaultRE = /(^|\n|;)\s*export\s*\{\s*default\s*\}\s*from/
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
   code: string,
@@ -267,7 +269,11 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if ((!script.lang || script.lang === 'ts') && !script.src) {
+    if (
+      (!script.lang || script.lang === 'ts') &&
+      !script.src &&
+      !exportDefaultRE.test(script.content)
+    ) {
       scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
