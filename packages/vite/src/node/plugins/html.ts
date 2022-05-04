@@ -247,6 +247,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
+        const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -339,8 +340,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
-                    js += `\nimport ${JSON.stringify(url)}`
-                    shouldRemove = true
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push({
+                      url,
+                      start: node.loc.start.offset,
+                      end: node.loc.end.offset
+                    })
+                    js += importExpression
                   } else {
                     assetUrls.push(p)
                   }
@@ -467,6 +473,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(start, end, config.base + url.slice(1), {
               contentOnly: true
             })
+          }
+        }
+
+        // ignore <link rel="stylesheet"> if its url can't be resolved
+        const resolvedStyleUrls = await Promise.all(
+          styleUrls.map(async (styleUrl) => ({
+            ...styleUrl,
+            resolved: await this.resolve(styleUrl.url, id)
+          }))
+        )
+        for (const { start, end, url, resolved } of resolvedStyleUrls) {
+          if (resolved == null) {
+            config.logger.warnOnce(
+              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            const importExpression = `\nimport ${JSON.stringify(url)}`
+            js = js.replace(importExpression, '')
+          } else {
+            s.remove(start, end)
           }
         }
 
