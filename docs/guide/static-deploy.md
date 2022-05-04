@@ -270,6 +270,12 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
    # set buildpack for static sites
    $ heroku buildpacks:set https://github.com/heroku/heroku-buildpack-static.git
    ```
+   
+7. If you want Heroku to be in charge of the build, add the [nodejs buildpack](https://github.com/heroku/heroku-buildpack-nodejs) to run first:
+
+   ```bash
+   $ heroku buildpacks:add --index 1 heroku/nodejs
+   ```
 
 6. Deploy your site:
 
