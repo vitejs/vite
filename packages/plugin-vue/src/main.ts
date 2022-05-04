@@ -211,6 +211,11 @@ export async function transformMain(
     code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
+    },
+    meta: {
+      vite: {
+        lang: descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
+      }
     }
   }
 }
