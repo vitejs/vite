@@ -17,7 +17,7 @@
     "types"
   ],
   "engines": {
-    "node": ">=12.2.0"
+    "node": ">=14.6.0"
   },
   "repository": {
     "type": "git",
