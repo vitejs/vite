@@ -556,7 +556,6 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
