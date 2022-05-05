@@ -38,6 +38,7 @@ import type { DepOptimizationMetadata } from './optimizer'
 import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 
@@ -563,9 +564,11 @@ function prepareOutDir(
   }
 }
 
-function getPkgName(root: string) {
-  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+function getPkgJson(root: string): PackageData['data'] {
+  return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+}
 
+function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
@@ -578,14 +581,23 @@ export function resolveLibFilename(
     return libOptions.fileName(format)
   }
 
-  const name = libOptions.fileName || getPkgName(root)
+  const packageJson = getPkgJson(root)
+  const name = libOptions.fileName || getPkgName(packageJson.name)
 
   if (!name)
     throw new Error(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  return `${name}.${format}.js`
+  let extension: string
+
+  if (packageJson?.type === 'module') {
+    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
+  } else {
+    extension = format === 'es' ? 'mjs' : 'js'
+  }
+
+  return `${name}.${format}.${extension}`
 }
 
 function resolveBuildOutputs(

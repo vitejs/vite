@@ -2,9 +2,9 @@
   "name": "vite-lit-ts-starter",
   "private": true,
   "version": "0.0.0",
-  "main": "dist/my-element.es.js",
+  "main": "dist/my-element.es.mjs",
   "exports": {
-    ".": "./dist/my-element.es.js"
+    ".": "./dist/my-element.es.mjs"
   },
   "types": "types/my-element.d.ts",
   "files": [

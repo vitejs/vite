@@ -22,6 +22,8 @@ export interface PackageData {
   getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
   data: {
     [field: string]: any
+    name: string
+    type: string
     version: string
     main: string
     module: string
