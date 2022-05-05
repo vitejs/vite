@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules

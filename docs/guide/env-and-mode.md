@@ -81,6 +81,14 @@ interface ImportMeta {
 }
 ```
 
+If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/lib/lib.dom.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/lib/lib.webworker.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
+
+```json
+{
+  "lib": ["WebWorker"]
+}
+```
+
 ## Modes
 
 By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
