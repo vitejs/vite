@@ -7,8 +7,7 @@
     "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
-    "missing-dep": "file:./missing-dep",
-    "multi-entry-dep": "file:./multi-entry-dep"
+    "missing-dep": "file:./missing-dep"
   },
   "devDependencies": {
     "express": "^4.17.1"
