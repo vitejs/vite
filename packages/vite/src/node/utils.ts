@@ -556,12 +556,12 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
 ): Promise<string> {
-  const imageCandidates: ImageCandidate[] = srcs
-    .split(',')
+  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
       const [url] = imageSetUrlRE.exec(src) || []
@@ -587,6 +587,22 @@ export async function processSrcSet(
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
+}
+
+function splitSrcSet(srcs: string) {
+  const parts: string[] = []
+  // There could be a ',' inside of `url(data:...)`
+  const cleanedSrcs = srcs.replace(/url\([^\)]*\)/g, blankReplacer)
+  let startIndex = 0
+  let splitIndex: number
+  do {
+    splitIndex = cleanedSrcs.indexOf(',', startIndex)
+    parts.push(
+      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined)
+    )
+    startIndex = splitIndex + 1
+  } while (splitIndex !== -1)
+  return parts
 }
 
 function escapeToLinuxLikePath(path: string) {

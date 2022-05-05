@@ -10,7 +10,7 @@ const cleanerRE = new RegExp(
   'g'
 )
 
-const blankReplacer = (s: string) => ' '.repeat(s.length)
+export const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
   `${s[0]}${'\0'.repeat(s.length - 2)}${s[0]}`
 
