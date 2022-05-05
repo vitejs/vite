@@ -401,10 +401,8 @@ importers:
     specifiers:
       express: ^4.17.1
       missing-dep: file:./missing-dep
-      multi-entry-dep: file:./multi-entry-dep
     dependencies:
       missing-dep: link:missing-dep
-      multi-entry-dep: link:multi-entry-dep
     devDependencies:
       express: 4.17.2
 
