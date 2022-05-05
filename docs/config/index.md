@@ -164,7 +164,7 @@ export default defineConfig(({ command, mode }) => {
 
   - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
-  - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+  - Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
 
   ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
