@@ -433,13 +433,6 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       }
     },
 
-    acceptDeps() {
-      throw new Error(
-        `hot.acceptDeps() is deprecated. ` +
-          `Use hot.accept() with the same signature instead.`
-      )
-    },
-
     dispose(cb) {
       disposeMap.set(ownerPath, cb)
     },

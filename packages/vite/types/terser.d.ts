@@ -185,8 +185,6 @@ export namespace Terser {
     module?: boolean
     nameCache?: object
     format?: FormatOptions
-    /** @deprecated use format instead */
-    output?: FormatOptions
     parse?: ParseOptions
     safari10?: boolean
     sourceMap?: boolean | SourceMapOptions

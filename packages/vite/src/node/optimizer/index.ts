@@ -72,7 +72,6 @@ export interface DepOptimizationOptions {
    *
    * - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
    * - `plugins` are merged with Vite's dep plugin
-   * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
    *
    * https://esbuild.github.io/api
    */
@@ -89,10 +88,6 @@ export interface DepOptimizationOptions {
     | 'outExtension'
     | 'metafile'
   >
-  /**
-   * @deprecated use `esbuildOptions.keepNames`
-   */
-  keepNames?: boolean
   /**
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.

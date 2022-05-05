@@ -144,16 +144,6 @@ export function createLogger(
   return logger
 }
 
-/**
- * @deprecated Use `server.printUrls()` instead
- */
-export function printHttpServerUrls(
-  server: Server,
-  config: ResolvedConfig
-): void {
-  printCommonServerUrls(server, config.server, config)
-}
-
 export function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,

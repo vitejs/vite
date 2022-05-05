@@ -1022,7 +1022,6 @@ export default defineConfig({
 
   - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
   - `plugins` are merged with Vite's dep plugin
-  - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
 
 ## SSR Options
 

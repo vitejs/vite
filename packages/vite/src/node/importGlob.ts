@@ -17,7 +17,6 @@ import {
 } from './utils'
 import type { RollupError } from 'rollup'
 import type { Logger } from '.'
-import colors from 'picocolors'
 
 interface GlobParams {
   base: string
@@ -28,12 +27,6 @@ interface GlobParams {
 
 interface GlobOptions {
   as?: string
-  /**
-   * @deprecated
-   */
-  assert?: {
-    type: string
-  }
 }
 
 function formatGlobRelativePattern(base: string, pattern: string): GlobParams {
@@ -133,19 +126,9 @@ export async function transformImportGlob(
       ;[importee] = await normalizeUrl(file, pos)
     }
     imports.push(importee)
-    // TODO remove assert syntax for the Vite 3.0 release.
-    const isRawAssert = options?.assert?.type === 'raw'
+
     const isRawType = options?.as === 'raw'
-    if (isRawType || isRawAssert) {
-      if (isRawAssert) {
-        logger.warn(
-          colors.yellow(
-            colors.bold(
-              "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
-            )
-          )
-        )
-      }
+    if (isRawType) {
       entries += ` ${JSON.stringify(file)}: ${JSON.stringify(
         await fsp.readFile(path.join(base, files[i]), 'utf-8')
       )},`
