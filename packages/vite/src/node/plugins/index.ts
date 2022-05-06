@@ -19,6 +19,7 @@ import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
+import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -65,6 +66,7 @@ export async function resolvePlugins(
     wasmPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
+    importGlobPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),

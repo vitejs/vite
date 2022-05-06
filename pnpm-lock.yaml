@@ -225,10 +225,7 @@ importers:
     specifiers: {}
 
   packages/playground/glob-import:
-    specifiers:
-      vite-plugin-glob: ^0.2.9
-    devDependencies:
-      vite-plugin-glob: 0.2.9
+    specifiers: {}
 
   packages/playground/hmr:
     specifiers: {}
@@ -900,6 +897,7 @@ importers:
       tsconfck: ^1.2.2
       tslib: ^2.4.0
       types: link:./types
+      ufo: ^0.8.4
       ws: ^8.6.0
     dependencies:
       esbuild: 0.14.27
@@ -973,6 +971,7 @@ importers:
       tsconfck: 1.2.2_typescript@4.5.4
       tslib: 2.4.0
       types: link:types
+      ufo: 0.8.4
       ws: 8.6.0
 
 packages:
@@ -9581,8 +9580,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /ufo/0.8.3:
-    resolution: {integrity: sha512-AIkk06G21y/P+NCatfU+1qldCmI0XCszZLn8AkuKotffF3eqCvlce0KuwM7ZemLE/my0GSYADOAeM5zDYWMB+A==}
+  /ufo/0.8.4:
+    resolution: {integrity: sha512-/+BmBDe8GvlB2nIflWasLLAInjYG0bC9HRnfEpNi4sw77J2AJNnEVnTDReVrehoh825+Q/evF3THXTAweyam2g==}
     dev: true
 
   /uglify-js/3.15.0:
@@ -9679,16 +9678,6 @@ packages:
   /vary/1.1.2:
     resolution: {integrity: sha1-IpnwLG3tMNSllhsLn3RSShj2NPw=}
     engines: {node: '>= 0.8'}
-    dev: true
-
-  /vite-plugin-glob/0.2.9:
-    resolution: {integrity: sha512-UMO76ZfylNTE+6nCmeA+jYlUOVPxft1+oHGaJpiR+nz+qYZWIlruaSBjf7b13RPvUrc79k6OR7Q5KMRFV8sG8A==}
-    dependencies:
-      acorn: 8.7.1
-      fast-glob: 3.2.11
-      magic-string: 0.26.1
-      micromatch: 4.0.5
-      ufo: 0.8.3
     dev: true
 
   /vitepress/0.22.3:

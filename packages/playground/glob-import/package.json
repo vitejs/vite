@@ -7,8 +7,5 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
     "preview": "vite preview"
-  },
-  "devDependencies": {
-    "vite-plugin-glob": "^0.2.9"
   }
 }
