@@ -210,6 +210,16 @@ Vite improves `@import` resolving for Sass and Less so that Vite aliases are als
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
 
+### Disabling injection into the page
+
+If you want to turn off the automatic injection of CSS contents, you can do via the `?inline` query parameter:
+
+```js
+import styles from './foo.js'; // will be injected into the page
+import otherStyles from './bar.js?inline'; // will not be injected into the page
+```
+
+
 ## Static Assets
 
 Importing a static asset will return the resolved public URL when it is served:
