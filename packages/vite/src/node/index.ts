@@ -73,6 +73,7 @@ export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
+export type { GlobFunction, GlobEagerFunction } from './plugins/importMetaGlob'
 export type {
   WebSocketServer,
   WebSocketClient,

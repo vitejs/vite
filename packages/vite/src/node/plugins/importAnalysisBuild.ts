@@ -6,7 +6,7 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { transformImportGlob } from '../importGlob'
+// import { transformImportGlob } from '../importGlob'
 import { bareImportRE, combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -152,42 +152,42 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        // import.meta.glob
-        if (
-          source.slice(start, end) === 'import.meta' &&
-          source.slice(end, end + 5) === '.glob'
-        ) {
-          // es worker allow globEager / glob
-          // iife worker just allow globEager
-          if (
-            isWorker &&
-            config.worker.format === 'iife' &&
-            source.slice(end, end + 10) !== '.globEager'
-          ) {
-            this.error(
-              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
-              end
-            )
-          }
-          const { importsString, exp, endIndex, isEager } =
-            await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              config.root,
-              config.logger,
-              undefined,
-              resolve,
-              insertPreload
-            )
-          str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-          if (!isEager) {
-            needPreloadHelper = true
-          }
-          continue
-        }
+        // // import.meta.glob
+        // if (
+        //   source.slice(start, end) === 'import.meta' &&
+        //   source.slice(end, end + 5) === '.glob'
+        // ) {
+        //   // es worker allow globEager / glob
+        //   // iife worker just allow globEager
+        //   if (
+        //     isWorker &&
+        //     config.worker.format === 'iife' &&
+        //     source.slice(end, end + 10) !== '.globEager'
+        //   ) {
+        //     this.error(
+        //       '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
+        //       end
+        //     )
+        //   }
+        //   const { importsString, exp, endIndex, isEager } =
+        //     await transformImportGlob(
+        //       source,
+        //       start,
+        //       importer,
+        //       index,
+        //       config.root,
+        //       config.logger,
+        //       undefined,
+        //       resolve,
+        //       insertPreload
+        //     )
+        //   str().prepend(importsString)
+        //   str().overwrite(expStart, endIndex, exp, { contentOnly: true })
+        //   if (!isEager) {
+        //     needPreloadHelper = true
+        //   }
+        //   continue
+        // }
 
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
