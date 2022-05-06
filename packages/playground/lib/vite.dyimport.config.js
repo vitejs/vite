@@ -6,7 +6,6 @@ const path = require('path')
  */
 module.exports = {
   build: {
-    minify: false,
     lib: {
       entry: path.resolve(__dirname, 'src/main2.js'),
       formats: ['es'],
