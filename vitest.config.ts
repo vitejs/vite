@@ -5,7 +5,8 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      './packages/playground/**/*.*'
+      './packages/playground/**/*.*',
+      './packages/temp/**/*.*'
     ]
   }
 })
