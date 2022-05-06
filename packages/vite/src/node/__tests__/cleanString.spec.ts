@@ -1,5 +1,6 @@
 import { assetAttrsConfig } from './../plugins/html'
 import { emptyString } from '../../node/cleanString'
+import { test, expect } from 'vitest'
 
 test('comments', () => {
   expect(

@@ -4,6 +4,7 @@ import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
+import { describe, it, expect, beforeEach } from 'vitest'
 
 let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph
