@@ -18,7 +18,6 @@ import {
 } from './utils'
 import type { RollupError } from 'rollup'
 import type { Logger } from '.'
-import colors from 'picocolors'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import { parse as parseJS } from 'acorn'
 
