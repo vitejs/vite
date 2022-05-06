@@ -36,7 +36,7 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 1. Add a `debugger` statement to the `scripts/jestPerTestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
 
-1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve --runInBand resolve`.
 
 1. Wait for inspector devtools to open in your browser and the debugger to attach.
 
@@ -77,11 +77,11 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
-- `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve -- --runInBand`.
+- `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve --runInBand`.
 
 - `pnpm run test-build` runs tests only under build mode.
 
-- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
+- You can also use `pnpm run test-serve [match]` or `pnpm run test-build [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
@@ -91,7 +91,7 @@ Other than tests under `packages/playground/` for integration tests, packages mi
 
 - `pnpm run test-unit` runs unit tests under each package.
 
-- You can also use `pnpm run test-unit -- [match]` to run related tests.
+- You can also use `pnpm run test-unit [match]` to run related tests.
 
 ### Test Env and Helpers
 
