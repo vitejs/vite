@@ -8,5 +8,8 @@ export default defineConfig({
       './packages/playground/**/*.*',
       './packages/temp/**/*.*'
     ]
+  },
+  build: {
+    target: 'node12'
   }
 })
