@@ -1,4 +1,4 @@
-import { isBuild, untilUpdated } from '../../testUtils'
+import { getColor, isBuild, untilUpdated } from '../../testUtils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -82,4 +82,9 @@ test('should load dynamic import with vars raw', async () => {
     'export function hello()',
     true
   )
+})
+
+test('should load dynamic import with css in package', async () => {
+  await page.click('.pkg-css')
+  await untilUpdated(() => getColor('.pkg-css'), 'blue', true)
 })

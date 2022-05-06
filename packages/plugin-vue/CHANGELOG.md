@@ -1,3 +1,11 @@
+## <small>2.3.2 (2022-05-04)</small>
+
+* feat: import ts with .js in vue (#7998) ([9974094](https://github.com/vitejs/vite/commit/9974094)), closes [#7998](https://github.com/vitejs/vite/issues/7998)
+* refactor(plugin-vue): remove querystring import (#7997) ([f3d15f1](https://github.com/vitejs/vite/commit/f3d15f1)), closes [#7997](https://github.com/vitejs/vite/issues/7997)
+* chore(deps): update all non-major dependencies (#7780) ([eba9d05](https://github.com/vitejs/vite/commit/eba9d05)), closes [#7780](https://github.com/vitejs/vite/issues/7780)
+
+
+
 ## <small>2.3.1 (2022-03-30)</small>
 
 * chore(plugin-vue): revert #7527, lower vite peer dep ([447bbeb](https://github.com/vitejs/vite/commit/447bbeb)), closes [#7527](https://github.com/vitejs/vite/issues/7527)

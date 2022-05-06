@@ -94,7 +94,7 @@ If the config needs to call async function, it can export a async function inste
 export default defineConfig(async ({ command, mode }) => {
   const data = await asyncFunction()
   return {
-    // build specific config
+    // vite config
   }
 })
 ```
@@ -109,10 +109,14 @@ Note that Vite doesn't load `.env` files by default as the files to load can onl
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ command, mode }) => {
-  // Load env file based on `mode` in the current working directory
-  const env = loadEnv(mode, process.cwd())
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
   return {
-    // build specific config
+    // vite config
+    define: {
+      __APP_ENV__: env.APP_ENV
+    }
   }
 })
 ```
@@ -160,7 +164,7 @@ export default defineConfig(({ command, mode }) => {
 
   - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
-  - Replacements are performed only when the match is surrounded by word boundaries (`\b`).
+  - Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
 
   ::: warning
   Because it's implemented as straightforward text replacements without any syntax analysis, we recommend using `define` for CONSTANTS only.
@@ -237,7 +241,7 @@ export default defineConfig(({ command, mode }) => {
   {
     "exports": {
       ".": {
-        "import": "./index.esm.js",
+        "import": "./index.esm.mjs",
         "require": "./index.cjs.js"
       }
     }
@@ -706,7 +710,7 @@ Defines the origin of the generated asset URLs during development.
 ```js
 export default defineConfig({
   server: {
-    origin: 'http://127.0.0.1:8080/'
+    origin: 'http://127.0.0.1:8080'
   }
 })
 ```
@@ -1018,7 +1022,6 @@ export default defineConfig({
 
   - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
   - `plugins` are merged with Vite's dep plugin
-  - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
 
 ## SSR Options
 

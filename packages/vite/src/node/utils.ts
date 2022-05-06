@@ -3,6 +3,7 @@ import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { promisify } from 'util'
 import { pathToFileURL, URL } from 'url'
 import {
   FS_PREFIX,
@@ -228,7 +229,7 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isTsRequest = (url: string) => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export function getPotentialTsSrcPaths(filePath: string) {
@@ -522,6 +523,15 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export function removeDirSync(dir: string) {
+  if (fs.existsSync(dir)) {
+    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+    rmSync(dir, { recursive: true })
+  }
+}
+
+export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
@@ -545,6 +555,7 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
@@ -552,11 +563,13 @@ export async function processSrcSet(
   const imageCandidates: ImageCandidate[] = srcs
     .split(',')
     .map((s) => {
-      const [url, descriptor] = s
-        .replace(escapedSpaceCharacters, ' ')
-        .trim()
-        .split(' ', 2)
-      return { url, descriptor }
+      const src = s.replace(escapedSpaceCharacters, ' ').trim()
+      const [url] = imageSetUrlRE.exec(src) || []
+
+      return {
+        url,
+        descriptor: src?.slice(url.length).trim()
+      }
     })
     .filter(({ url }) => !!url)
 
@@ -605,7 +618,8 @@ const nullSourceMap: RawSourceMap = {
 }
 export function combineSourcemaps(
   filename: string,
-  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
+  excludeContent = true
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -635,7 +649,7 @@ export function combineSourcemaps(
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, true)
+    map = remapping(sourcemapList, () => null, excludeContent)
   } else {
     map = remapping(
       sourcemapList[0],
@@ -646,7 +660,7 @@ export function combineSourcemaps(
           return null
         }
       },
-      true
+      excludeContent
     )
   }
   if (!map.file) {
@@ -733,3 +747,41 @@ export function parseRequest(id: string): Record<string, string> | null {
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+
+// Based on node-graceful-fs
+
+// The ISC License
+// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
+// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+
+// On Windows, A/V software can lock the directory, causing this
+// to fail with an EACCES or EPERM if the directory contains newly
+// created files. The original tried for up to 60 seconds, we only
+// wait for 5 seconds, as a longer time would be seen as an error
+
+const GRACEFUL_RENAME_TIMEOUT = 5000
+function gracefulRename(
+  from: string,
+  to: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rename(from, to, function CB(er) {
+    if (
+      er &&
+      (er.code === 'EACCES' || er.code === 'EPERM') &&
+      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
+    ) {
+      setTimeout(function () {
+        fs.stat(to, function (stater, st) {
+          if (stater && stater.code === 'ENOENT') gracefulRename(from, to, CB)
+          else cb(er)
+        })
+      }, backoff)
+      if (backoff < 100) backoff += 10
+      return
+    }
+    if (cb) cb(er)
+  })
+}

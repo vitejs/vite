@@ -41,9 +41,6 @@ import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
-import type { ESBuildTransformResult } from '../plugins/esbuild'
-import { transformWithEsbuild } from '../plugins/esbuild'
-import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -56,6 +53,7 @@ import type { OptimizedDeps } from '../optimizer'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
@@ -92,6 +90,8 @@ export interface ServerOptions extends CommonServerOptions {
   fs?: FileSystemServeOptions
   /**
    * Origin for the generated asset URLs.
+   *
+   * @example `http://127.0.0.1:8080`
    */
   origin?: string
   /**
@@ -157,10 +157,6 @@ export interface ViteDevServer {
    */
   middlewares: Connect.Server
   /**
-   * @deprecated use `server.middlewares` instead
-   */
-  app: Connect.Server
-  /**
    * native Node http server instance
    * will be null in middleware mode
    */
@@ -199,18 +195,6 @@ export interface ViteDevServer {
     html: string,
     originalUrl?: string
   ): Promise<string>
-  /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   *
-   * @deprecated import `transformWithEsbuild` from `vite` instead
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<ESBuildTransformResult>
   /**
    * Transform module code into SSR format.
    * @experimental
@@ -342,19 +326,12 @@ export async function createServer(
   const server: ViteDevServer = {
     config,
     middlewares,
-    get app() {
-      config.logger.warn(
-        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
-      )
-      return middlewares
-    },
     httpServer,
     watcher,
     pluginContainer: container,
     ws,
     moduleGraph,
     ssrTransform,
-    transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
@@ -701,7 +678,8 @@ function resolvedAllowDir(root: string, dir: string): string {
 
 export function resolveServerOptions(
   root: string,
-  raw?: ServerOptions
+  raw: ServerOptions | undefined,
+  logger: Logger
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
@@ -727,6 +705,18 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
+
+  if (server.origin?.endsWith('/')) {
+    server.origin = server.origin.slice(0, -1)
+    logger.warn(
+      colors.yellow(
+        `${colors.bold('(!)')} server.origin should not end with "/". Using "${
+          server.origin
+        }" instead.`
+      )
+    )
+  }
+
   return server
 }
 

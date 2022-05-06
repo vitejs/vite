@@ -31,12 +31,6 @@ interface GlobParams {
 
 interface GlobOptions {
   as?: string
-  /**
-   * @deprecated
-   */
-  assert?: {
-    type: string
-  }
 }
 
 interface DynamicImportRequest {
@@ -234,19 +228,8 @@ export async function transformImportGlob(
   const [userPattern, options, endIndex] = lexGlobPattern(source, pos)
   const query: DynamicImportRequest = {}
 
-  // TODO remove assert syntax for the Vite 3.0 release.
-  const isRawAssert = options?.assert?.type === 'raw'
   const isRawType = options?.as === 'raw'
-  if (isRawType || isRawAssert) {
-    if (isRawAssert) {
-      logger.warn(
-        colors.yellow(
-          colors.bold(
-            "(!) import.meta.glob('...', { assert: { type: 'raw' }}) is deprecated. Use import.meta.glob('...', { as: 'raw' }) instead."
-          )
-        )
-      )
-    }
+  if (isRawType) {
     query.raw = true
   }
   try {
