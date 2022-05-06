@@ -1,3 +1,4 @@
+import { describe, test, expect } from 'vitest'
 import { definePlugin } from '../../plugins/define'
 import { resolveConfig } from '../../config'
 

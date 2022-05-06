@@ -1,5 +1,6 @@
 import { searchForWorkspaceRoot } from '../searchRoot'
 import { resolve } from 'path'
+import { describe, test, expect } from 'vitest'
 
 describe('searchForWorkspaceRoot', () => {
   test('lerna', () => {

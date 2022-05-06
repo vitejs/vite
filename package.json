@@ -16,10 +16,11 @@
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
     "lint": "eslint packages/*/{src,types}/**",
-    "test": "run-s test-serve test-build",
+    "test": "run-s test-serve test-build test-unit",
     "test-serve": "jest",
-    "debug-serve": "cross-env VITE_DEBUG_SERVE=1 node --inspect-brk ./node_modules/.bin/jest",
     "test-build": "cross-env VITE_TEST_BUILD=1 jest",
+    "test-unit": "vitest run",
+    "debug-serve": "cross-env VITE_DEBUG_SERVE=1 node --inspect-brk ./node_modules/.bin/jest",
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/jest",
     "docs": "vitepress dev docs",
     "build-docs": "vitepress build docs",
@@ -68,7 +69,8 @@
     "ts-node": "^10.4.0",
     "typescript": "~4.5.4",
     "vite": "workspace:*",
-    "vitepress": "^0.22.3"
+    "vitepress": "^0.22.3",
+    "vitest": "^0.10.4"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",

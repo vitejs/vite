@@ -4,6 +4,7 @@ import {
   isWindows,
   resolveHostname
 } from '../utils'
+import { describe, test, expect } from 'vitest'
 
 describe('injectQuery', () => {
   if (isWindows) {
