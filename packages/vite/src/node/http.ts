@@ -97,12 +97,10 @@ export async function resolveHttpServer(
   } else {
     return require('http2').createSecureServer(
       {
-        ...httpsOptions,
-
         // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
         // errors on large numbers of requests
-        maxSessionMemory: (httpsOptions as any).maxSessionMemory ?? 1000,
-
+        maxSessionMemory: 1000,
+        ...httpsOptions,
         allowHTTP1: true
       },
       app
