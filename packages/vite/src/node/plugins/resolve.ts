@@ -59,6 +59,7 @@ export interface ResolveOptions {
   extensions?: string[]
   dedupe?: string[]
   preserveSymlinks?: boolean
+  absoluteUrls?: boolean
 }
 
 export interface InternalResolveOptions extends ResolveOptions {

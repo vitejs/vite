@@ -142,10 +142,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
         cssDevSourcemap: config.css?.devSourcemap ?? false,
-        resolveAbsoluteUrls: !config.server.origin,
         isProduction: config.isProduction,
         devToolsEnabled:
-          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction
+          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction,
+        resolveAbsoluteUrls: config.resolve?.absoluteUrls ?? true
       }
     },
 
