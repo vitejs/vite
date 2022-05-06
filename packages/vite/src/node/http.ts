@@ -126,7 +126,6 @@ export async function resolveHttpsConfig(
   if (!httpsOption.key || !httpsOption.cert) {
     httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
   }
-
   return httpsOption
 }
 
