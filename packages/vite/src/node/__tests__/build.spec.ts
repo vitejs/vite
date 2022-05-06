@@ -1,6 +1,7 @@
 import type { LibraryFormats, LibraryOptions } from '../build'
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
+import { describe, test, expect } from 'vitest'
 
 type FormatsToFileNames = [LibraryFormats, string][]
 const baseLibOptions: LibraryOptions = {

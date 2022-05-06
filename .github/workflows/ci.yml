@@ -47,8 +47,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
-        with:
-          version: 6
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v3
@@ -68,6 +66,9 @@ jobs:
       - name: Build plugin-react
         run: pnpm run build-plugin-react
 
+      - name: Test unit
+        run: pnpm run test-unit
+
       - name: Test serve
         run: pnpm run test-serve -- --runInBand
 
@@ -85,8 +86,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
-        with:
-          version: 6
 
       - name: Set node version to 16
         uses: actions/setup-node@v3

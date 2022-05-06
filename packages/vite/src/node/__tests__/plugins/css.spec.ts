@@ -2,6 +2,7 @@ import { cssUrlRE, cssPlugin, hoistAtRules } from '../../plugins/css'
 import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+import { describe, vi, test, expect } from 'vitest'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -69,7 +70,7 @@ describe('css path resolutions', () => {
 
     await buildStart.call({})
 
-    const mockFs = jest
+    const mockFs = vi
       .spyOn(fs, 'readFile')
       // @ts-ignore jest.spyOn not recognize overrided `fs.readFile` definition.
       .mockImplementationOnce((p, encoding, callback) => {
