@@ -115,5 +115,8 @@ This pattern does not work if you are using Vite for Server-Side Rendering, beca
 :::
 
 ::: warning Esbuild target config is necessary
+
+<!-- mark -->
+
 This pattern needs esbuild target to be set to `es2020` or higher. `vite@2.x` use `es2019` as default target. Set [build-target](https://vitejs.dev/config/#build-target) and [optimizedeps.esbuildoptions.target](https://vitejs.dev/config/#optimizedeps-esbuildoptions) to `es2020` or higher if you intend to use this partten.
 :::

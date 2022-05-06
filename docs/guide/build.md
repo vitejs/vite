@@ -10,7 +10,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 defaults and supports es6-module and supports es6-module-dynamic-import, not opera > 0, not samsung > 0, not and_qq > 0
 ```
 
-You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
+You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`. <!-- mark -->
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
