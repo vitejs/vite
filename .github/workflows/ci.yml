@@ -66,6 +66,9 @@ jobs:
       - name: Build plugin-react
         run: pnpm run build-plugin-react
 
+      - name: Test unit
+        run: pnpm run test-unit
+
       - name: Test serve
         run: pnpm run test-serve -- --runInBand
 
