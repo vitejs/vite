@@ -9,7 +9,7 @@ export default defineConfig({
       './packages/temp/**/*.*'
     ]
   },
-  build: {
-    target: 'node12'
+  esbuild: {
+    target: 'node14'
   }
 })
