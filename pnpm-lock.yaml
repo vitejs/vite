@@ -224,9 +224,9 @@ importers:
 
   packages/playground/glob-import:
     specifiers:
-      vite-plugin-glob: ^0.2.1
+      vite-plugin-glob: ^0.2.7
     devDependencies:
-      vite-plugin-glob: 0.2.1
+      vite-plugin-glob: 0.2.7
 
   packages/playground/hmr:
     specifiers: {}
@@ -9512,8 +9512,8 @@ packages:
     resolution: {integrity: sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==}
     dev: true
 
-  /ufo/0.8.1:
-    resolution: {integrity: sha512-1hqVxwcvBvzwwMRjR8pQEJ0CYOCGo49VF11caCe1hxKGiMGpL5ge/JiRX8ttf+YoIMomoEAim2SbD4jQ4tKbXw==}
+  /ufo/0.8.3:
+    resolution: {integrity: sha512-AIkk06G21y/P+NCatfU+1qldCmI0XCszZLn8AkuKotffF3eqCvlce0KuwM7ZemLE/my0GSYADOAeM5zDYWMB+A==}
     dev: true
 
   /uglify-js/3.15.0:
@@ -9612,13 +9612,14 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vite-plugin-glob/0.2.1:
-    resolution: {integrity: sha512-2I0erHho2M1opNT5vJ28RWZJKSHXZSFQgwpZTajr0Kg9C5ZEadn9EQ3yIu52KX43wSK3q+eewitbrT2x6eAGdg==}
+  /vite-plugin-glob/0.2.7:
+    resolution: {integrity: sha512-eP7lM72q1IbQxhXNbks6WCzU1s81fkiLuTffV4g8H/Ls6NgB7HYSe+pcN7ECTRj+JBTz/4xtm00eeL7dheL8Bg==}
     dependencies:
+      acorn: 8.7.1
       fast-glob: 3.2.11
       magic-string: 0.26.1
       micromatch: 4.0.5
-      ufo: 0.8.1
+      ufo: 0.8.3
     dev: true
 
   /vitepress/0.22.3:
