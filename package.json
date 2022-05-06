@@ -16,7 +16,7 @@
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
     "lint": "eslint packages/*/{src,types}/**",
-    "test": "run-s test-serve test-build test-unit",
+    "test": "run-s test-unit test-serve test-build",
     "test-serve": "jest",
     "test-build": "cross-env VITE_TEST_BUILD=1 jest",
     "test-unit": "vitest run",
