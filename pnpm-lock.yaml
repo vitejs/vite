@@ -226,9 +226,9 @@ importers:
 
   packages/playground/glob-import:
     specifiers:
-      vite-plugin-glob: ^0.2.8
+      vite-plugin-glob: ^0.2.9
     devDependencies:
-      vite-plugin-glob: 0.2.8
+      vite-plugin-glob: 0.2.9
 
   packages/playground/hmr:
     specifiers: {}
@@ -9681,8 +9681,8 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vite-plugin-glob/0.2.8:
-    resolution: {integrity: sha512-Xs9rlEdDW33yfs72Iugu/y3H0AK48DkldM8t5i+LAlXF3GaKA9oFerWZih7qp5cibg4JI99wnMSYHcj/awP7Eg==}
+  /vite-plugin-glob/0.2.9:
+    resolution: {integrity: sha512-UMO76ZfylNTE+6nCmeA+jYlUOVPxft1+oHGaJpiR+nz+qYZWIlruaSBjf7b13RPvUrc79k6OR7Q5KMRFV8sG8A==}
     dependencies:
       acorn: 8.7.1
       fast-glob: 3.2.11
