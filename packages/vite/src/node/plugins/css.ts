@@ -39,7 +39,8 @@ import {
   isObject,
   normalizePath,
   parseRequest,
-  processSrcSet
+  processSrcSet,
+  requireResolveFromRootWithFallback
 } from '../utils'
 import { emptyCssComments } from '../utils'
 import { addToHTMLProxyTransformResult } from './html'
@@ -1237,10 +1238,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return loadedPreprocessors[lang]
   }
   try {
-    // Search for the preprocessor in the root directory first, and fall back
-    // to the default require paths.
-    const fallbackPaths = require.resolve.paths?.(lang) || []
-    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
+    const resolved = requireResolveFromRootWithFallback(root, lang)
     return (loadedPreprocessors[lang] = require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {

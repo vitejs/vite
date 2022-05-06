@@ -149,10 +149,6 @@ const createNodeConfig = (isProduction) => {
       // Shim them with eval() so rollup can skip these calls.
       isProduction &&
         shimDepsPlugin({
-          'plugins/terser.ts': {
-            src: `require.resolve('terser'`,
-            replacement: `require.resolve('vite/dist/node/terser'`
-          },
           // chokidar -> fsevents
           'fsevents-handler.js': {
             src: `require('fsevents')`,
@@ -190,26 +186,6 @@ const createNodeConfig = (isProduction) => {
   }
 
   return nodeConfig
-}
-
-/**
- * Terser needs to be run inside a worker, so it cannot be part of the main
- * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
- * use the production path during build.
- *
- * @type { import('rollup').RollupOptions }
- */
-const terserConfig = {
-  ...sharedNodeOptions,
-  output: {
-    ...sharedNodeOptions.output,
-    exports: 'default',
-    sourcemap: false
-  },
-  input: {
-    terser: require.resolve('terser')
-  },
-  plugins: [nodeResolve(), commonjs()]
 }
 
 /**
@@ -388,10 +364,5 @@ export default (commandLineArgs) => {
   const isDev = commandLineArgs.watch
   const isProduction = !isDev
 
-  return [
-    envConfig,
-    clientConfig,
-    createNodeConfig(isProduction),
-    ...(isProduction ? [terserConfig] : [])
-  ]
+  return [envConfig, clientConfig, createNodeConfig(isProduction)]
 }

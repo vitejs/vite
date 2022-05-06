@@ -261,7 +261,6 @@ importers:
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
       strip-literal: ^0.3.0
-      terser: ^5.13.1
       tsconfck: ^2.0.0
       tslib: ^2.4.0
       types: link:./types
@@ -323,7 +322,6 @@ importers:
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
       strip-literal: 0.3.0
-      terser: 5.13.1
       tsconfck: 2.0.0
       tslib: 2.4.0
       types: link:types
@@ -491,9 +489,11 @@ importers:
     specifiers:
       '@vitejs/plugin-legacy': workspace:*
       express: ^4.18.1
+      terser: ^5.13.1
     devDependencies:
       '@vitejs/plugin-legacy': link:../../packages/plugin-legacy
       express: 4.18.1
+      terser: 5.13.1
 
   playground/lib:
     specifiers: {}
@@ -660,6 +660,7 @@ importers:
   playground/preload:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
+      terser: ^5.13.1
       vue: ^3.2.33
       vue-router: ^4.0.15
     dependencies:
@@ -667,6 +668,7 @@ importers:
       vue-router: 4.0.15_vue@3.2.33
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
+      terser: 5.13.1
 
   playground/preserve-symlinks:
     specifiers:

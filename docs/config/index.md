@@ -880,6 +880,12 @@ export default defineConfig({
 
   Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
+  terser must be installed when it is set to `'terser'`.
+
+  ```sh
+  npm add -D terser
+  ```
+
   Note the `build.minify` option is not available when using the `'es'` format in lib mode.
 
 ### build.terserOptions

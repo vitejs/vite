@@ -774,6 +774,19 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+export const requireResolveFromRootWithFallback = (
+  root: string,
+  id: string
+) => {
+  // Search in the root directory first, and fallback to the default require paths.
+  const fallbackPaths = require.resolve.paths?.(id) || []
+  // eslint-disable-next-line node/no-missing-require
+  const path = require.resolve(id, {
+    paths: [root, ...fallbackPaths]
+  })
+  return path
+}
+
 // Based on node-graceful-fs
 
 // The ISC License
