@@ -24,6 +24,7 @@ declare global {
   const page: Page | undefined
 
   const browserLogs: string[]
+  const browserErrors: Error[]
   const serverLogs: string[]
   const viteTestUrl: string | undefined
   const watcher: RollupWatcher | undefined
@@ -34,6 +35,7 @@ declare const global: {
   page?: Page
 
   browserLogs: string[]
+  browserErrors: Error[]
   serverLogs: string[]
   viteTestUrl?: string
   watcher?: RollupWatcher
@@ -56,6 +58,11 @@ const onConsole = (msg: ConsoleMessage) => {
   logs.push(msg.text())
 }
 
+const errors: Error[] = (global.browserErrors = [])
+const onPageError = (error: Error) => {
+  errors.push(error)
+}
+
 beforeAll(async () => {
   const page = global.page
   if (!page) {
@@ -63,6 +70,7 @@ beforeAll(async () => {
   }
   try {
     page.on('console', onConsole)
+    page.on('pageerror', onPageError)
 
     const testPath = expect.getState().testPath
     const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
@@ -115,6 +123,7 @@ beforeAll(async () => {
           }
         },
         build: {
+          // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
           // skip transpilation during tests to make it faster
           target: 'esnext'
         },
@@ -175,6 +184,7 @@ afterAll(async () => {
   global.serverLogs = []
   await global.page?.close()
   await server?.close()
+  global.watcher?.close()
   const beforeAllErr = getBeforeAllError()
   if (beforeAllErr) {
     throw beforeAllErr
@@ -200,7 +210,7 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'))
+  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
@@ -233,14 +243,15 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
 export async function notifyRebuildComplete(
   watcher: RollupWatcher
 ): Promise<RollupWatcher> {
-  let callback: (event: RollupWatcherEvent) => void
-  await new Promise<void>((resolve, reject) => {
-    callback = (event) => {
-      if (event.code === 'END') {
-        resolve()
-      }
+  let resolveFn: undefined | (() => void)
+  const callback = (event: RollupWatcherEvent): void => {
+    if (event.code === 'END') {
+      resolveFn?.()
     }
-    watcher.on('event', callback)
+  }
+  watcher.on('event', callback)
+  await new Promise<void>((resolve) => {
+    resolveFn = resolve
   })
   return watcher.removeListener('event', callback)
 }

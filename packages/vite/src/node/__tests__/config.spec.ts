@@ -157,51 +157,29 @@ describe('mergeConfig', () => {
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
-})
 
-describe('resolveConfig', () => {
-  beforeAll(() => {
-    // silence deprecation warning
-    jest.spyOn(console, 'warn').mockImplementation(() => {})
-  })
-
-  afterAll(() => {
-    jest.clearAllMocks()
-  })
-
-  test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
-    const config: InlineConfig = {
-      optimizeDeps: {
-        keepNames: false
+  test('handles ssr.noExternal', () => {
+    const baseConfig = {
+      ssr: {
+        noExternal: true
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          keepNames: false
-        }
-      }
-    })
-  })
-
-  test('uses esbuildOptions.keepNames if set', async () => {
-    const config: InlineConfig = {
-      optimizeDeps: {
-        keepNames: true,
-        esbuildOptions: {
-          keepNames: false
-        }
+    const newConfig = {
+      ssr: {
+        noExternal: ['foo']
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          keepNames: false
-        }
+    const mergedConfig = {
+      ssr: {
+        noExternal: true
       }
-    })
+    }
+
+    // merging either ways, `ssr.noExternal: true` should take highest priority
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 })
 

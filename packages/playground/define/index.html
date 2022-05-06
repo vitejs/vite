@@ -9,6 +9,10 @@
 <p>process as property: <code class="process-as-property"></code></p>
 <p>spread object: <code class="spread-object"></code></p>
 <p>spread array: <code class="spread-array"></code></p>
+<p>dollar identifier: <code class="dollar-identifier"></code></p>
+<p>unicode identifier: <code class="unicode-identifier"></code></p>
+<p>no property: <code class="no-property"></code></p>
+<p>no identifier substring: <span class="no-identifier-substring"></span></p>
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 
@@ -28,6 +32,15 @@
     })
   )
   text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
+  text('.dollar-identifier', $DOLLAR)
+  text('.unicode-identifier', ÖUNICODE_LETTERɵ)
+
+  // make sure these kinds of use are NOT replaced:
+  const obj = { [`${'_'}_EXP__`]: true }
+  text('.no-property', obj.__EXP__)
+
+  window[`${'_'}_EXP__SUBSTR__`] = true
+  text('.no-identifier-substring', __EXP__SUBSTR__)
 
   import dataJson from './data.json'
   text('.import-json', dataJson.foo)

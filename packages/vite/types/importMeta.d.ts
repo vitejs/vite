@@ -9,12 +9,6 @@
 // in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
 interface GlobOptions {
   as?: string
-  /**
-   * @deprecated
-   */
-  assert?: {
-    type: string
-  }
 }
 
 interface ImportMeta {
@@ -36,7 +30,7 @@ interface ImportMeta {
 }
 
 interface ImportMetaEnv {
-  [key: string]: string | boolean | undefined
+  [key: string]: any
   BASE_URL: string
   MODE: string
   DEV: boolean

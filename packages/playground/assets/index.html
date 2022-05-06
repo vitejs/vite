@@ -46,6 +46,34 @@
     >CSS background with image-set() (relative)</span
   >
 </div>
+<div class="css-image-set-with-var">
+  <span style="background: #fff">
+    CSS background image-set() (relative in var)
+  </span>
+</div>
+<div class="css-image-set-mix-url-var">
+  <span style="background: #fff">
+    CSS background image-set() (mix var and url)
+  </span>
+</div>
+<div class="css-image-set-multiple-descriptor">
+  <span style="background: #fff">
+    CSS background image-set() (with multiple descriptor)
+  </span>
+</div>
+<div
+  style="
+    background-image: -webkit-image-set(
+      './nested/asset.png' type('image/png') 1x,
+      './nested/asset.png' type('image/png') 2x
+    );
+    background-size: 10px;
+  "
+>
+  <span style="background: #fff">
+    CSS background image-set() (with multiple descriptor)
+  </span>
+</div>
 <div class="css-url-relative-at-imported">
   <span style="background: #fff"
     >CSS background (relative from @imported file in different dir)</span
@@ -176,9 +204,28 @@
 
 <h2>simple script tag import-expression</h2>
 <code class="import-expression"></code>
+<code class="obj-import-express"></code>
+<code class="string-import-express"></code>
 <script>
+  const obj = {
+    import(t) {
+      text('.obj-import-express', t)
+    }
+  }
+  const stringImport = "const t = import('package')"
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
   import('./static/import-expression.js')
   import('/import-expression.js')
+  // import('./static/raw.js')
+  /* import('./static/raw.js') */
+  obj.import('ignore object import prop')
+  try {
+    text('.string-import-express', t)
+  } catch {
+    text('.string-import-express', 'no load')
+  }
 </script>
 <h2>url in style tag</h2>
 <h3>url</h3>
@@ -188,7 +235,10 @@
     background-size: 10px 10px;
   }
 </style>
-<div style="background: url('./nested/asset.png'); background-size: 10px 10px">
+<div
+  class="inline-style"
+  style="background: url('./nested/asset.png'); background-size: 10px 10px"
+>
   inline style
 </div>
 <div class="style-url-assets">use style class</div>
@@ -212,6 +262,25 @@
 <h3 class="foo-public">
   @import CSS from publicDir should load (this should be red)
 </h3>
+<h3 id="foo">import module css</h3>
+
+<h3 class="raw-query"></h3>
+
+<h3>style in svg</h3>
+<svg viewBox="0 0 512 512" width="21" height="21" class="style-insvg">
+  <style>
+    .style-insvg-color {
+      fill: #0088ff;
+    }
+  </style>
+  <g class="style-insvg-color">
+    <rect x="224" y="352" width="64" height="64" />
+    <path
+      d="M128 128v96h64v-96h96v96h-32v32h-32v64h64v-64h64V128h-32V96H160v32h-32z"
+    />
+  </g>
+</svg>
+
 <style>
   @import '/foo.css';
 </style>
@@ -267,6 +336,12 @@
   text('.import-meta-url-comma-nl', metaUrlWithCommaNL)
   document.querySelector('.import-meta-url-img-comma-nl').src =
     metaUrlWithCommaNL
+
+  import classNames from './css/foo.module.css'
+  document.querySelector('#foo').className = classNames['foo-module']
+
+  import someString from './static/foo.txt?raw'
+  document.querySelector('.raw-query').textContent = someString
 
   const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)

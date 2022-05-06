@@ -5,10 +5,10 @@
 const path = require('path')
 // eslint-disable-next-line node/no-restricted-require
 const execa = require('execa')
-const { workspaceRoot } = require('../../testUtils')
+const { workspaceRoot, ports } = require('../../testUtils')
 
 const isWindows = process.platform === 'win32'
-const port = (exports.port = 9511) // make sure this port is unique across tests with custom servers
+const port = (exports.port = ports['cli-module'])
 const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
 
 /**

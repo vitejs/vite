@@ -2,9 +2,9 @@
   "name": "vite-lit-starter",
   "private": true,
   "version": "0.0.0",
-  "main": "dist/my-element.es.js",
+  "main": "dist/my-element.es.mjs",
   "exports": {
-    ".": "./dist/my-element.es.js"
+    ".": "./dist/my-element.es.mjs"
   },
   "files": [
     "dist"
@@ -17,6 +17,6 @@
     "lit": "^2.0.2"
   },
   "devDependencies": {
-    "vite": "^2.9.0"
+    "vite": "^2.9.7"
   }
 }

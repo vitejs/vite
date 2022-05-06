@@ -27,39 +27,66 @@
 </div>
 
 <p>
-  new Worker(new Url('./url-worker.js', import.meta.url), { type: 'module' })
+  new Worker(new URL('./url-worker.js', import.meta.url), { type: 'module' })
   <span class="classname">.worker-import-meta-url</span>
 </p>
 <code class="worker-import-meta-url"></code>
 
 <p>
-  new SharedWorker(new Url('./url-shared-worker.js', import.meta.url), { type:
+  new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:
   'module' })
   <span class="classname">.shared-worker-import-meta-url</span>
 </p>
 <code class="shared-worker-import-meta-url"></code>
 
 <p>
-  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  import NestedWorker from './worker-nested-worker?worker' - import.meta.url
   <span class="classname">.nested-worker</span>
 </p>
 <code class="nested-worker"></code>
 
 <p>
-  new Worker(new Url('./classic-worker.js', import.meta.url))
+  import NestedWorker from './worker-nested-worker?worker' - nested module
+  worker
+  <span class="classname">.nested-worker-module</span>
+</p>
+<code class="nested-worker-module"></code>
+
+<p>
+  import NestedWorker from './worker-nested-worker?worker' - nested worker
+  constructor
+  <span class="classname">.nested-worker-constructor</span>
+</p>
+<code class="nested-worker-constructor"></code>
+
+<p>
+  new Worker(new URL('./classic-worker.js', import.meta.url))
   <span class="classname">.classic-worker</span>
 </p>
 <code class="classic-worker"></code>
 
 <p>
-  new SharedWorker(new Url('./classic-shared-worker.js', import.meta.url), {
+  new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
   type: 'classic' })
   <span class="classname">.classic-shared-worker</span>
 </p>
 <code class="classic-shared-worker"></code>
 
+<p>
+  use import.meta.globEager in iife worker
+  <span class="classname">.importMetaGlobEager-worker</span>
+</p>
+<code class="importMetaGlobEager-worker"></code>
+
 <hr />
+
 <h2 class="format-es"></h2>
+
+<p>
+  use import.meta.glob in es worker
+  <span class="classname">.importMetaGlob-worker</span>
+</p>
+<code class="importMetaGlob-worker"></code>
 
 <p>
   worker emit chunk <br />

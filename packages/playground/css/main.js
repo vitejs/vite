@@ -38,6 +38,12 @@ text(
   JSON.stringify(composesPathResolvingMod, null, 2)
 )
 
+import inlineMod from './inline.module.css?inline'
+text('.modules-inline', inlineMod)
+
+import charset from './charset.css'
+text('.charset-css', charset)
+
 import './dep.css'
 import './glob-dep.css'
 
@@ -81,3 +87,6 @@ Promise.all(Object.keys(glob).map((key) => glob[key]())).then((res) => {
 // globEager
 const globEager = import.meta.globEager('./glob-import/*.css')
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
+
+import postcssSourceInput from './postcss-source-input.css?query=foo'
+text('.postcss-source-input', postcssSourceInput)
