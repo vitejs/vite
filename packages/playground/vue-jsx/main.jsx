@@ -7,6 +7,7 @@ import JsxSrcImport from './SrcImport.vue'
 import JsxSetupSyntax from './setup-syntax-jsx.vue'
 // eslint-disable-next-line
 import JsxWithQuery from './Query.jsx?query=true'
+import TsImport from './TsImport.vue'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <JsxSrcImport />
       <JsxSetupSyntax />
       <JsxWithQuery />
+      <TsImport />
     </>
   )
 }

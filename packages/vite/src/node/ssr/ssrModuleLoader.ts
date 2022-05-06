@@ -77,6 +77,10 @@ async function instantiateModule(
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
 
+  if (mod.ssrError) {
+    throw mod.ssrError
+  }
+
   if (mod.ssrModule) {
     return mod.ssrModule
   }
@@ -202,6 +206,7 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
+    mod.ssrError = e
     if (e.stack && fixStacktrace !== false) {
       const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
       rebindErrorStacktrace(e, stacktrace)

@@ -1,3 +1,10 @@
+## <small>2.9.3 (2022-05-02)</small>
+
+* chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
+* feat(create-vite): scaffold directory with only .git (#7971) ([a5bdb9f](https://github.com/vitejs/vite/commit/a5bdb9f)), closes [#7971](https://github.com/vitejs/vite/issues/7971)
+
+
+
 ## <small>2.9.2 (2022-04-19)</small>
 
 * chore: remove useless code in preact template (#7789) ([e5729be](https://github.com/vitejs/vite/commit/e5729be)), closes [#7789](https://github.com/vitejs/vite/issues/7789)

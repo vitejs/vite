@@ -70,6 +70,11 @@ document.querySelector('.css').addEventListener('click', async () => {
   text('.view', 'dynamic import css')
 })
 
+document.querySelector('.pkg-css').addEventListener('click', async () => {
+  await import('./deps')
+  text('.view', 'dynamic import css in package')
+})
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }

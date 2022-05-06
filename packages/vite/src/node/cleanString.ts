@@ -1,18 +1,26 @@
 import type { RollupError } from 'rollup'
+import { multilineCommentsRE, singlelineCommentsRE } from './utils'
+
 // bank on the non-overlapping nature of regex matches and combine all filters into one giant regex
 // /`([^`\$\{\}]|\$\{(`|\g<1>)*\})*`/g can match nested string template
 // but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
-const cleanerRE =
-  /"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|\/\*(.|[\r\n])*?\*\/|\/\/.*/g
+const stringsRE = /"([^"\r\n]|(?<=\\)")*"|'([^'\r\n]|(?<=\\)')*'/g
+const regexRE = /\/.*?(?<!\\)\/[gimsuy]*/g
+const cleanerRE = new RegExp(
+  `${stringsRE.source}|${multilineCommentsRE.source}|${singlelineCommentsRE.source}`,
+  'g'
+)
 
 const blankReplacer = (s: string) => ' '.repeat(s.length)
 const stringBlankReplacer = (s: string) =>
   `${s[0]}${'\0'.repeat(s.length - 2)}${s[0]}`
 
 export function emptyString(raw: string): string {
-  let res = raw.replace(cleanerRE, (s: string) =>
-    s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
-  )
+  let res = raw
+    .replace(cleanerRE, (s: string) =>
+      s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
+    )
+    .replace(regexRE, (s) => stringBlankReplacer(s))
 
   let lastEnd = 0
   let start = 0
@@ -23,6 +31,10 @@ export function emptyString(raw: string): string {
   }
 
   return res
+}
+
+export function emptyCssComments(raw: string) {
+  return raw.replace(multilineCommentsRE, blankReplacer)
 }
 
 const enum LexerState {

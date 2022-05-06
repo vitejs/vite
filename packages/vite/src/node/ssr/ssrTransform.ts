@@ -37,7 +37,8 @@ export async function ssrTransform(
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
-      locations: true
+      locations: true,
+      allowHashBang: true
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err

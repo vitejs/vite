@@ -24,6 +24,8 @@ export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 const preloadHelperId = 'vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
+const dynamicImportPrefixRE = /import\s*\(/
+
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
  * the async chunk itself.
@@ -87,8 +89,8 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
-  const insertPreload = !(ssr || !!config.build.lib)
   const isWorker = config.isWorker
+  const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -118,13 +120,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob')
+        !source.includes('import.meta.glob') &&
+        !dynamicImportPrefixRE.test(source)
       ) {
-        return
-      }
-
-      if (isWorker) {
-        // preload method use `document` and can't run in the worker
         return
       }
 
@@ -159,6 +157,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           source.slice(start, end) === 'import.meta' &&
           source.slice(end, end + 5) === '.glob'
         ) {
+          // es worker allow globEager / glob
+          // iife worker just allow globEager
+          if (
+            isWorker &&
+            config.worker.format === 'iife' &&
+            source.slice(end, end + 10) !== '.globEager'
+          ) {
+            this.error(
+              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
+              end
+            )
+          }
           const { importsString, exp, endIndex, isEager } =
             await transformImportGlob(
               source,

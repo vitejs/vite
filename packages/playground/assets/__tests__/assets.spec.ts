@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import {
   findAssetFile,
   getBg,
@@ -104,6 +103,29 @@ describe('css url() references', () => {
       expect(s).toMatch(assetMatch)
     })
   })
+
+  test('image-set with var', async () => {
+    const imageSet = await getBg('.css-image-set-with-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  test('image-set with mix', async () => {
+    const imageSet = await getBg('.css-image-set-mix-url-var')
+    imageSet.split(', ').forEach((s) => {
+      expect(s).toMatch(assetMatch)
+    })
+  })
+
+  // not supported in browser now
+  // https://drafts.csswg.org/css-images-4/#image-set-notation
+  // test('image-set with multiple descriptor', async () => {
+  //   const imageSet = await getBg('.css-image-set-multiple-descriptor')
+  //   imageSet.split(', ').forEach((s) => {
+  //     expect(s).toMatch(assetMatch)
+  //   })
+  // })
 
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
@@ -296,6 +318,11 @@ describe('css and assets in css in build watch', () => {
   }
 })
 
+test('inline style test', async () => {
+  expect(await getBg('.inline-style')).toMatch(assetMatch)
+  expect(await getBg('.style-url-assets')).toMatch(assetMatch)
+})
+
 if (!isBuild) {
   test('@import in html style tag hmr', async () => {
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 136, 255)')
@@ -304,6 +331,7 @@ if (!isBuild) {
       (code) => code.replace('#0088ff', '#00ff88'),
       true
     )
+    await page.waitForNavigation()
     await untilUpdated(() => getColor('.import-css'), 'rgb(0, 255, 136)')
   })
 }
