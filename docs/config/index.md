@@ -274,13 +274,6 @@ export default defineConfig(({ command, mode }) => {
 - **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
   ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
 
-### resolve.absoluteUrls
-
-- **Type:** `boolean`
-- **Default:** `true`
-
-  This setting determines whether Vite should force absolute asset URLs into import requests to make them go through the asset plugin.
-
 ### css.modules
 
 - **Type:**

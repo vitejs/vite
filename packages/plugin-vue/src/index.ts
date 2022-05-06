@@ -65,7 +65,6 @@ export interface ResolvedOptions extends Options {
   sourceMap: boolean
   cssDevSourcemap: boolean
   devServer?: ViteDevServer
-  resolveAbsoluteUrls: boolean
   devToolsEnabled?: boolean
 }
 
@@ -101,7 +100,6 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     reactivityTransform,
     root: process.cwd(),
     sourceMap: true,
-    resolveAbsoluteUrls: true,
     cssDevSourcemap: false,
     devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
@@ -144,8 +142,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         cssDevSourcemap: config.css?.devSourcemap ?? false,
         isProduction: config.isProduction,
         devToolsEnabled:
-          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction,
-        resolveAbsoluteUrls: config.resolve?.absoluteUrls ?? true
+          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction
       }
     },
 
