@@ -305,6 +305,28 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   Note `configureServer` is not called when running the production build so your other hooks need to guard against its absence.
 
+### `configurePreviewServer`
+
+- **Type:** `(server: { middlewares: Connect.Server, httpServer: http.Server }) => (() => void) | void | Promise<(() => void) | void>`
+- **Kind:** `async`, `sequential`
+
+  Same as [`configureServer`](/guide/api-plugin.html#configureserver) but for the preview server. It provides the [connect](https://github.com/senchalabs/connect) server and its underlying [http server](https://nodejs.org/api/http.html). Similarly to `configureServer`, the `configurePreviewServer` hook is called before other middlewares are installed. If you want to inject a middleware **after** other middlewares, you can return a function from `configurePreviewServer`, which will be called after internal middlewares are installed:
+
+  ```js
+  const myPlugin = () => ({
+    name: 'configure-preview-server',
+    configurePreviewServer(server) {
+      // return a post hook that is called after other middlewares are
+      // installed
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          // custom handle request...
+        })
+      }
+    }
+  })
+  ```
+
 ### `transformIndexHtml`
 
 - **Type:** `IndexHtmlTransformHook | { enforce?: 'pre' | 'post', transform: IndexHtmlTransformHook }`
