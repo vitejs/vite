@@ -7,7 +7,6 @@ import type { ModuleNode } from './moduleGraph'
 import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import type { RollupError } from 'rollup'
-import { isMatch } from 'micromatch'
 import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
 

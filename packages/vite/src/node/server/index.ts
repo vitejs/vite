@@ -30,7 +30,6 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
 import { isParentDirectory, normalizePath } from '../utils'
