@@ -503,20 +503,25 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
-    middlewares.use(spaFallbackMiddleware(root))
-  }
-
-  // run post config hooks
-  // This is applied before the html middleware so that user middleware can
-  // serve custom content instead of index.html.
+  // We need to apply post server hooks before `spaFallbackMiddleware()`.
+  // (Because `spaFallbackMiddleware()` catches all routes and plugin
+  // middlewares would never run.)
   postHooks.forEach((fn) => fn && fn())
 
-  if (!middlewareMode || middlewareMode === 'html') {
+  const isSSRMidlewareMode = middlewareMode && middlewareMode !== 'html'
+
+  if (config.isSPA && !isSSRMidlewareMode) {
+    // SPA catch-all fallback routing
+    middlewares.use(spaFallbackMiddleware(root))
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
-    // handle 404s
+  }
+
+  // Handle 404s.
+  // We keep 404 handling when `config.isSPA === false` because some SSR tools,
+  // such as vite-plugin-ssr, cannot always render 404 pages. (E.g. if the
+  // vite-plugin-ssr user didn't define a `_error.page.js`.)
+  if (!isSSRMidlewareMode) {
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
       res.statusCode = 404

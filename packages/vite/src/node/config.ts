@@ -204,6 +204,17 @@ export interface UserConfig {
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
+  /**
+   * Whether the app is an SPA.
+   *
+   * This toggles the SPA catch-all routing of the development and preview
+   * server: by default, all URLs are rendered to the same single page (in order
+   * to enable SPA client-side routing). For SSR and MPA apps, this behavior can
+   * be disabled by setting `isSPA` to `false`.
+   *
+   * @default true
+   */
+  isSPA?: boolean
 }
 
 export interface ExperimentalOptions {
@@ -286,6 +297,7 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
+  config.isSPA ??= true
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 

@@ -1,5 +1,6 @@
 import path from 'path'
 import type * as http from 'http'
+import fs from 'fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'
@@ -97,6 +98,15 @@ export async function preview(
 
   app.use(compression())
 
+  const { isSPA } = config
+
+  if (isSPA) {
+    // We need to apply the plugins' server post hooks before `sirv()`. (Because
+    // `sirv(_, { single: true })` catches all routes and plugin middlewares
+    // would never run.)
+    postHooks.forEach((fn) => fn && fn())
+  }
+
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
@@ -104,12 +114,26 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: true
+      single: isSPA
     })
   )
 
-  // apply post server hooks from plugins
-  postHooks.forEach((fn) => fn && fn())
+  if (!isSPA) {
+    // We apply the plugins' server post hooks after `sirv()` so that `sirv()`
+    // can serve pre-rendered pages before any SSR middleware.
+    postHooks.forEach((fn) => fn && fn())
+
+    // 404 handling (this simulates what most static hosts do)
+    app.use(config.base, (_, res, next) => {
+      const file = path.join(distDir, './404.html')
+      if (fs.existsSync(file)) {
+        res.statusCode = 404
+        res.end(fs.readFileSync(file))
+      } else {
+        next()
+      }
+    })
+  }
 
   const options = config.preview
   const hostname = resolveHostname(options.host)
