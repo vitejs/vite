@@ -297,25 +297,9 @@ function esbuildScanPlugin(
                 (loader.startsWith('ts') ? extractImportPaths(content) : '')
 
               const key = `${path}?id=${scriptId++}`
-
-              if (contents.includes('import.meta.glob')) {
-                // scripts[key] = {
-                //   // transformGlob already transforms to js
-                //   loader: 'js',
-                //   contents: await transformGlob(
-                //     contents,
-                //     path,
-                //     config.root,
-                //     loader,
-                //     resolve,
-                //     config.logger
-                //   )
-                // }
-              } else {
-                scripts[key] = {
-                  loader,
-                  contents
-                }
+              scripts[key] = {
+                loader,
+                contents
               }
 
               const virtualModulePath = JSON.stringify(
@@ -463,20 +447,6 @@ function esbuildScanPlugin(
         const loader =
           config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
           (ext as Loader)
-
-        // if (contents.includes('import.meta.glob')) {
-        //   return transformGlob(
-        //     contents,
-        //     id,
-        //     config.root,
-        //     loader,
-        //     resolve,
-        //     config.logger
-        //   ).then((contents) => ({
-        //     loader,
-        //     contents
-        //   }))
-        // }
 
         return {
           loader,

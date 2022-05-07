@@ -347,46 +347,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           } else if (prop === '.env') {
             hasEnv = true
           }
-          //   else if (prop === '.glo' && source[end + 4] === 'b') {
-          //     // transform import.meta.glob()
-          //     // e.g. `import.meta.glob('glob:./dir/*.js')`
-          //     const {
-          //       imports,
-          //       importsString,
-          //       exp,
-          //       endIndex,
-          //       base,
-          //       pattern,
-          //       isEager
-          //     } = await transformImportGlob(
-          //       source,
-          //       start,
-          //       importer,
-          //       index,
-          //       root,
-          //       config.logger,
-          //       normalizeUrl,
-          //       resolve
-          //     )
-          //     str().prepend(importsString)
-          //     str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-          //     imports.forEach((url) => {
-          //       url = url.replace(base, '/')
-          //       importedUrls.add(url)
-          //       if (isEager) staticImportedUrls.add(url)
-          //     })
-          //     if (!(importerModule.file! in server._globImporters)) {
-          //       server._globImporters[importerModule.file!] = {
-          //         module: importerModule,
-          //         importGlobs: []
-          //       }
-          //     }
-          //     server._globImporters[importerModule.file!].importGlobs.push({
-          //       base,
-          //       pattern
-          //     })
-          //   }
-          //   continue
+          continue
         }
 
         const isDynamicImport = dynamicIndex > -1
