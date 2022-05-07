@@ -6,7 +6,6 @@ import { transformWithEsbuild } from '../../../plugins/esbuild'
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
-  const options = { takeover: true }
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
@@ -16,7 +15,7 @@ describe('fixture', async () => {
     const root = process.cwd()
 
     expect(
-      (await transform(code, id, root, resolveId, options))?.s.toString()
+      (await transform(code, id, root, resolveId))?.s.toString()
     ).toMatchSnapshot()
   })
 
@@ -27,9 +26,7 @@ describe('fixture', async () => {
       "import.meta.glob(['/../fixture-b/*.ts'])"
     ].join('\n')
     expect(
-      (
-        await transform(code, 'virtual:module', root, resolveId, options)
-      )?.s.toString()
+      (await transform(code, 'virtual:module', root, resolveId))?.s.toString()
     ).toMatchInlineSnapshot(`
         "{
         \\"/modules/a.ts\\": () => import(\\"/modules/a.ts\\"),
@@ -48,8 +45,7 @@ describe('fixture', async () => {
         "import.meta.glob('./modules/*.ts')",
         'virtual:module',
         root,
-        resolveId,
-        options
+        resolveId
       )
       expect('no error').toBe('should throw an error')
     } catch (err) {
@@ -67,12 +63,7 @@ describe('fixture', async () => {
     const root = process.cwd()
 
     expect(
-      (
-        await transform(code, id, root, resolveId, {
-          ...options,
-          restoreQueryExtension: true
-        })
-      )?.s.toString()
+      (await transform(code, id, root, resolveId, true))?.s.toString()
     ).toMatchSnapshot()
   })
 })

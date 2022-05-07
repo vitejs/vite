@@ -5,7 +5,7 @@ import { multilineCommentsRE, singlelineCommentsRE } from './utils'
 // /`([^`\$\{\}]|\$\{(`|\g<1>)*\})*`/g can match nested string template
 // but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
 const stringsRE = /"([^"\r\n]|(?<=\\)")*"|'([^'\r\n]|(?<=\\)')*'/g
-const regexRE = /\/.*?(?<!\\)\/[gimsuy]*/g
+const regexRE = /\/.*?(?<!\\)\/[gimsuy]*/gm
 const cleanerRE = new RegExp(
   `${stringsRE.source}|${multilineCommentsRE.source}|${singlelineCommentsRE.source}`,
   'g'
@@ -83,8 +83,14 @@ function lexStringTemplateExpression(
   let i = start + 1
   outer: for (; i < code.length; i++) {
     const char = code.charAt(i)
+
     switch (state) {
       case LexerState.inTemplateString:
+        if (char === '\\') {
+          clean += '\0\0'
+          i++
+          continue
+        }
         if (char === '$' && code.charAt(i + 1) === '{') {
           pushStack(LexerState.inInterpolationExpression)
           clean += '${'
