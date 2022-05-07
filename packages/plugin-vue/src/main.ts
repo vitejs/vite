@@ -253,7 +253,7 @@ async function genTemplateCode(
     const srcQuery = template.src
       ? hasScoped
         ? `&src=${descriptor.id}`
-        : '&src'
+        : '&src=true'
       : ''
     const scopedQuery = hasScoped ? `&scoped=true` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
@@ -297,7 +297,7 @@ async function genScriptCode(
       const src = script.src || descriptor.filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
       const attrsQuery = attrsToQuery(script.attrs, langFallback)
-      const srcQuery = script.src ? `&src` : ``
+      const srcQuery = script.src ? `&src=true` : ``
       const query = `?vue&type=script${srcQuery}${attrsQuery}`
       const request = JSON.stringify(src + query)
       scriptCode =
@@ -336,7 +336,7 @@ async function genStyleCode(
       const srcQuery = style.src
         ? style.scoped
           ? `&src=${descriptor.id}`
-          : '&src'
+          : '&src=true'
         : ''
       const directQuery = asCustomElement ? `&inline` : ``
       const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
@@ -411,7 +411,7 @@ async function genCustomBlockCode(
     }
     const src = block.src || descriptor.filename
     const attrsQuery = attrsToQuery(block.attrs, block.type)
-    const srcQuery = block.src ? `&src` : ``
+    const srcQuery = block.src ? `&src=true` : ``
     const query = `?vue&type=${block.type}&index=${index}${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
     code += `import block${index} from ${request}\n`
