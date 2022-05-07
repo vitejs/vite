@@ -69,6 +69,14 @@ export interface CommonServerOptions {
    * Specify server response headers.
    */
   headers?: HttpServerHeaders
+  /**
+   * Disable SPA catch-all routing.
+   *
+   * By default, Vite's dev/preview server redirects all routes to the root
+   * URL `/`. (In order to enable client-side routed SPAs.) For SSR or MPA apps,
+   * this behavior should be disabled and this option allows you to do so.
+   */
+  disableSPACatchAll?: boolean
 }
 
 /**

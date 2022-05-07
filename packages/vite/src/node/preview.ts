@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import compression from './server/middlewares/compression'
@@ -35,7 +36,8 @@ export function resolvePreviewOptions(
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
     cors: preview?.cors ?? server.cors,
-    headers: preview?.headers ?? server.headers
+    headers: preview?.headers ?? server.headers,
+    disableSPACatchAll: preview?.disableSPACatchAll ?? server.disableSPACatchAll
   }
 }
 
@@ -100,18 +102,32 @@ export async function preview(
   app.use(compression())
 
   // static assets
+  const { disableSPACatchAll } = config.preview
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
     config.base,
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: true
+      single: !disableSPACatchAll
     })
   )
 
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
+
+  // 404 handling
+  if (disableSPACatchAll) {
+    app.use(config.base, (_, res, next) => {
+      const file = path.join(distDir, './404.html')
+      if (fs.existsSync(file)) {
+        res.statusCode = 404
+        res.end(fs.readFileSync(file))
+      } else {
+        next()
+      }
+    })
+  }
 
   const options = config.preview
   const hostname = resolveHostname(options.host)

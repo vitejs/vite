@@ -524,7 +524,10 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (
+    !serverConfig.disableSPACatchAll &&
+    (!middlewareMode || middlewareMode === 'html')
+  ) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
