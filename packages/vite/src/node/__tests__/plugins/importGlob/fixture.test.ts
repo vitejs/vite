@@ -27,18 +27,7 @@ describe('fixture', async () => {
     ].join('\n')
     expect(
       (await transform(code, 'virtual:module', root, resolveId))?.s.toString()
-    ).toMatchInlineSnapshot(`
-        "{
-        \\"/modules/a.ts\\": () => import(\\"/modules/a.ts\\"),
-        \\"/modules/b.ts\\": () => import(\\"/modules/b.ts\\"),
-        \\"/modules/index.ts\\": () => import(\\"/modules/index.ts\\")
-        }
-        {
-        \\"/../fixture-b/a.ts\\": () => import(\\"/../fixture-b/a.ts\\"),
-        \\"/../fixture-b/b.ts\\": () => import(\\"/../fixture-b/b.ts\\"),
-        \\"/../fixture-b/index.ts\\": () => import(\\"/../fixture-b/index.ts\\")
-        }"
-      `)
+    ).toMatchSnapshot()
 
     try {
       await transform(
