@@ -42,7 +42,6 @@ import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-// import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
@@ -108,11 +107,6 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
   let server: ViteDevServer
 
   return {

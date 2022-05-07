@@ -5,42 +5,13 @@ import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
-import type { Worker } from 'okie'
 import type { Plugin } from '../plugin'
 import { getShortName, updateModules } from '../server/hmr'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { isCSSRequest } from './css'
-
-export interface GlobOptions<Eager extends boolean, AsType extends string> {
-  /**
-   * Import type for the import url.
-   */
-  as?: AsType
-  /**
-   * Import as static or dynamic
-   *
-   * @default false
-   */
-  eager?: Eager
-  /**
-   * Import only the specific named export. Set to `default` to import the default export.
-   */
-  import?: string
-  /**
-   * Custom queries
-   */
-  query?: string | Record<string, string | number | boolean>
-  /**
-   * Search files also inside `node_modules/` and hidden directories (e.g. `.git/`). This might have impact on performance.
-   *
-   * @default false
-   */
-  exhaustive?: boolean
-}
-
-export type GeneralGlobOptions = GlobOptions<boolean, string>
+import type { GeneralImportGlobOptions } from '../../../types/importGlob'
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray
@@ -48,91 +19,13 @@ export interface ParsedImportGlob {
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
-  options: GeneralGlobOptions
+  options: GeneralImportGlobOptions
   type: string
   start: number
   end: number
 }
 
-export interface KnownAsType {
-  raw: string
-  url: string
-  worker: Worker<any, any>
-}
-
-export interface PluginOptions {
-  /**
-   * Take over the default import.meta.glob in Vite
-   *
-   * @default false
-   */
-  takeover?: boolean
-
-  /**
-   * Append fake `&lang.(ext)` when queries are specified, to preseve the file extension for following plugins to process.
-   *
-   * @experimental
-   * @default false
-   */
-  restoreQueryExtension?: boolean
-}
-
-type isTrue<T> = T extends true ? true : false
-
-export interface GlobFunction {
-  /**
-   * 1. No generic provided, infer the type from `eager` and `as`
-   */
-  <
-    Eager extends boolean,
-    As extends string,
-    T = As extends keyof KnownAsType ? KnownAsType[As] : unknown
-  >(
-    glob: string | string[],
-    options?: GlobOptions<Eager, As>
-  ): isTrue<Eager> extends true
-    ? Record<string, T>
-    : Record<string, () => Promise<T>>
-  /**
-   * 2. Module generic provided, infer the type from `eager: false`
-   */
-  <M>(glob: string | string[], options?: GlobOptions<false, string>): Record<
-    string,
-    () => Promise<M>
-  >
-  /**
-   * 3. Module generic provided, infer the type from `eager: true`
-   */
-  <M>(glob: string | string[], options: GlobOptions<true, string>): Record<
-    string,
-    M
-  >
-}
-
-export interface GlobEagerFunction {
-  /**
-   * 1. No generic provided, infer the type from `as`
-   */
-  <
-    As extends string,
-    T = As extends keyof KnownAsType ? KnownAsType[As] : unknown
-  >(
-    glob: string | string[],
-    options?: Omit<GlobOptions<boolean, As>, 'eager'>
-  ): Record<string, T>
-  /**
-   * 2. Module generic provided
-   */
-  <M>(
-    glob: string | string[],
-    options?: Omit<GlobOptions<boolean, string>, 'eager'>
-  ): Record<string, M>
-}
-
-export function importGlobPlugin(
-  config: ResolvedConfig,
-  options: PluginOptions = {}
-): Plugin {
+export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
   const map = new Map<string, string[][]>()
 
@@ -180,7 +73,7 @@ export function importGlobPlugin(
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
-        options
+        config.experimental?.importGlobRestoreExtension
       )
       if (result) {
         updateMap(id, result.matches)
@@ -273,7 +166,7 @@ export async function parseImportGlob(
     //   throw err('pattern must start with "." or "/" (relative to project root) or alias path')
 
     // arg2
-    const options: GeneralGlobOptions = {}
+    const options: GeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
@@ -287,7 +180,7 @@ export async function parseImportGlob(
         )
           throw err('Could only use literals')
 
-        const name = property.key.name as keyof GeneralGlobOptions
+        const name = property.key.name as keyof GeneralImportGlobOptions
 
         if (name === 'query') {
           if (property.value.type === 'ObjectExpression') {
@@ -376,7 +269,7 @@ export async function transform(
   id: string,
   root: string,
   resolveId: (id: string) => Promise<string> | string,
-  { restoreQueryExtension = false }: PluginOptions = {}
+  restoreQueryExtension = false
 ) {
   id = toPosixPath(id)
   root = toPosixPath(root)
