@@ -36,7 +36,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
-import { emptyString } from '../cleanString'
+import { stripLiteral } from 'strip-literal'
 
 interface ScriptAssetsUrl {
   start: number
@@ -308,7 +308,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const cleanCode = emptyString(scriptNode.content)
+              const cleanCode = stripLiteral(scriptNode.content)
 
               let match: RegExpExecArray | null
               while ((match = inlineImportRE.exec(cleanCode))) {
