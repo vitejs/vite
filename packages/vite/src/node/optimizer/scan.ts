@@ -457,43 +457,6 @@ function esbuildScanPlugin(
   }
 }
 
-// async function transformGlob(
-//   source: string,
-//   importer: string,
-//   root: string,
-//   loader: Loader,
-//   resolve: (url: string, importer?: string) => Promise<string | undefined>,
-//   logger: Logger
-// ) {
-//   // transform the content first since es-module-lexer can't handle non-js
-//   if (loader !== 'js') {
-//     source = (await transform(source, { loader })).code
-//   }
-
-//   await init
-//   const imports = parse(source)[0]
-//   const s = new MagicString(source)
-//   for (let index = 0; index < imports.length; index++) {
-//     const { s: start, e: end, ss: expStart } = imports[index]
-//     const url = source.slice(start, end)
-//     if (url !== 'import.meta') continue
-//     if (source.slice(end, end + 5) !== '.glob') continue
-//     const { importsString, exp, endIndex } = await transformImportGlob(
-//       source,
-//       start,
-//       normalizePath(importer),
-//       index,
-//       root,
-//       logger,
-//       undefined,
-//       resolve
-//     )
-//     s.prepend(importsString)
-//     s.overwrite(expStart, endIndex, exp, { contentOnly: true })
-//   }
-//   return s.toString()
-// }
-
 /**
  * when using TS + (Vue + `<script setup>`) or Svelte, imports may seem
  * unused to esbuild and dropped in the build output, which prevents
