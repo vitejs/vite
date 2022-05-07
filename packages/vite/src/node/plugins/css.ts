@@ -49,7 +49,7 @@ import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { emptyCssComments } from '../cleanString'
+import { emptyCssComments } from '../utils'
 
 // const debug = createDebugger('vite:css')
 
