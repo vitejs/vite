@@ -893,6 +893,7 @@ importers:
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
+      strip-literal: ^0.2.0
       terser: ^5.13.1
       tsconfck: ^1.2.2
       tslib: ^2.4.0
@@ -966,6 +967,7 @@ importers:
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
+      strip-literal: 0.2.0
       terser: 5.13.1
       tsconfck: 1.2.2_typescript@4.5.4
       tslib: 2.4.0
@@ -9014,6 +9016,12 @@ packages:
   /strip-json-comments/3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+    dev: true
+
+  /strip-literal/0.2.0:
+    resolution: {integrity: sha512-pqhiiFRDifA2CRVH0Gmv6MDbd2b27MS0oIqqy7JCqfL5m2sh68223lmEK2eoBXp4vNaq8G1Wzwd9dfQcWszUlg==}
+    dependencies:
+      acorn: 8.7.1
     dev: true
 
   /stylis/4.0.13:
