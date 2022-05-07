@@ -1,5 +1,6 @@
 import path, { posix } from 'path'
 import { isMatch, scan } from 'micromatch'
+import { stripLiteral } from 'strip-literal'
 import type { ArrayExpression, CallExpression, Literal, Node } from 'estree'
 import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
@@ -68,6 +69,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       server.watcher.on('add', handleFileAddUnlink)
     },
     async transform(code, id) {
+      if (!code.includes('import.meta.glob')) return
       const result = await transform(
         code,
         id,
@@ -104,7 +106,8 @@ export async function parseImportGlob(
   root: string,
   resolveId: (id: string) => string | Promise<string>
 ): Promise<ParsedImportGlob[]> {
-  const matchs = Array.from(code.matchAll(importGlobRE))
+  const cleanCode = stripLiteral(code)
+  const matchs = Array.from(cleanCode.matchAll(importGlobRE))
 
   const tasks = matchs.map(async (match, index) => {
     const type = match[1]

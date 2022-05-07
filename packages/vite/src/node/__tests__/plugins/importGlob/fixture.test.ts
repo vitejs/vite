@@ -6,13 +6,13 @@ import { transformWithEsbuild } from '../../../plugins/esbuild'
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
+  const root = resolve(__dirname, '..')
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code
-    const root = process.cwd()
 
     expect(
       (await transform(code, id, root, resolveId))?.s.toString()
@@ -49,7 +49,6 @@ describe('fixture', async () => {
     const code = (
       await transformWithEsbuild(await fs.readFile(id, 'utf-8'), id)
     ).code
-    const root = process.cwd()
 
     expect(
       (await transform(code, id, root, resolveId, true))?.s.toString()
