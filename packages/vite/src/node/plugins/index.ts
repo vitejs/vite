@@ -56,6 +56,7 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
+    importGlobPlugin(config),
     jsonPlugin(
       {
         namedExports: true,
@@ -66,7 +67,6 @@ export async function resolvePlugins(
     wasmPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
-    importGlobPlugin(config),
     ...normalPlugins,
     definePlugin(config),
     cssPostPlugin(config),

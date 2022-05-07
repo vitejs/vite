@@ -4,7 +4,7 @@ import { multilineCommentsRE, singlelineCommentsRE } from './utils'
 // bank on the non-overlapping nature of regex matches and combine all filters into one giant regex
 // /`([^`\$\{\}]|\$\{(`|\g<1>)*\})*`/g can match nested string template
 // but js not support match expression(\g<0>). so clean string template(`...`) in other ways.
-const stringsRE = /"([^"\r\n]|(?<=\\)")*"|'([^'\r\n]|(?<=\\)')*'/g
+const stringsRE = /(['"`])([^\1\r\n]|(?<=\\)\1)*\1/g
 const regexRE = /\/.*?(?<!\\)\/[gimsuy]*/gm
 const cleanerRE = new RegExp(
   `${stringsRE.source}|${multilineCommentsRE.source}|${singlelineCommentsRE.source}`,
@@ -17,8 +17,14 @@ const stringBlankReplacer = (s: string) =>
 
 export function emptyString(raw: string): string {
   let res = raw
-    .replace(cleanerRE, (s: string) =>
-      s[0] === '/' ? blankReplacer(s) : stringBlankReplacer(s)
+    .replace(
+      cleanerRE,
+      (s: string) =>
+        s[0] === '`'
+          ? s // keep template literals as-is of lexer to percessed
+          : s[0] === '/'
+          ? blankReplacer(s) // comments
+          : stringBlankReplacer(s) // single or double quoted strings
     )
     .replace(regexRE, (s) => stringBlankReplacer(s))
 
