@@ -12,6 +12,7 @@ import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
 import type { HmrContext } from './server/hmr'
+import type { PreviewServerHook } from './preview'
 import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
@@ -79,6 +80,15 @@ export interface Plugin extends RollupPlugin {
    * are applied. Hook can be async functions and will be called in series.
    */
   configureServer?: ServerHook
+  /**
+   * Configure the preview server. The hook receives the connect server and
+   * its underlying http server.
+   *
+   * The hooks are called before other middlewares are applied. A hook can
+   * return a post hook that will be called after other middlewares are
+   * applied. Hooks can be async functions and will be called in series.
+   */
+  configurePreviewServer?: PreviewServerHook
   /**
    * Transform index.html.
    * The hook receives the following arguments:
