@@ -80,7 +80,9 @@ text('.inlined-code', inlined)
 
 // glob
 const glob = import.meta.glob('./glob-import/*.css')
-Promise.all(Object.keys(glob).map((key) => glob[key]())).then((res) => {
+Promise.all(
+  Object.keys(glob).map((key) => glob[key]().then((i) => i.default))
+).then((res) => {
   text('.imported-css-glob', JSON.stringify(res, null, 2))
 })
 

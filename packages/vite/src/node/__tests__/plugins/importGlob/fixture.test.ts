@@ -1,7 +1,7 @@
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
 import { describe, expect, it } from 'vitest'
-import { transform } from '../../../plugins/importMetaGlob'
+import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
 
 describe('fixture', async () => {
@@ -15,7 +15,7 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transform(code, id, root, resolveId))?.s.toString()
+      (await transformGlobImport(code, id, root, resolveId))?.s.toString()
     ).toMatchSnapshot()
   })
 
@@ -26,11 +26,13 @@ describe('fixture', async () => {
       "import.meta.glob(['/../fixture-b/*.ts'])"
     ].join('\n')
     expect(
-      (await transform(code, 'virtual:module', root, resolveId))?.s.toString()
+      (
+        await transformGlobImport(code, 'virtual:module', root, resolveId)
+      )?.s.toString()
     ).toMatchSnapshot()
 
     try {
-      await transform(
+      await transformGlobImport(
         "import.meta.glob('./modules/*.ts')",
         'virtual:module',
         root,
@@ -51,7 +53,7 @@ describe('fixture', async () => {
     ).code
 
     expect(
-      (await transform(code, id, root, resolveId, true))?.s.toString()
+      (await transformGlobImport(code, id, root, resolveId, true))?.s.toString()
     ).toMatchSnapshot()
   })
 })
