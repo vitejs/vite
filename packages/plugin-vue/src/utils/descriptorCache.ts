@@ -72,7 +72,6 @@ export function getSrcDescriptor(
   if (query.scoped) {
     return cache.get(`${filename}?src=${query.src}`)!
   }
-  // console.log('get', filename)
   return cache.get(filename)!
 }
 
@@ -87,6 +86,5 @@ export function setSrcDescriptor(
     cache.set(`${filename}?src=${entry.id}`, entry)
     return
   }
-  // console.log('set', filename, entry)
   cache.set(filename, entry)
 }
