@@ -9,6 +9,7 @@ import { name as __vite_glob_3_1 } from \\"./modules/b.ts\\"
 import { name as __vite_glob_3_2 } from \\"./modules/index.ts\\"
 import { default as __vite_glob_5_0 } from \\"./modules/a.ts?raw\\"
 import { default as __vite_glob_5_1 } from \\"./modules/b.ts?raw\\"
+import \\"../../../../../../types/importMeta\\";
 export const basic = {
 \\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
 \\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
@@ -78,6 +79,7 @@ import { name as __vite_glob_3_1 } from \\"./modules/b.ts\\"
 import { name as __vite_glob_3_2 } from \\"./modules/index.ts\\"
 import { default as __vite_glob_5_0 } from \\"./modules/a.ts?raw\\"
 import { default as __vite_glob_5_1 } from \\"./modules/b.ts?raw\\"
+import \\"../../../../../../types/importMeta\\";
 export const basic = {
 \\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
 \\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
