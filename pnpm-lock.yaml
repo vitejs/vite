@@ -893,7 +893,7 @@ importers:
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
-      strip-literal: ^0.2.0
+      strip-literal: ^0.3.0
       terser: ^5.13.1
       tsconfck: ^1.2.2
       tslib: ^2.4.0
@@ -968,7 +968,7 @@ importers:
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
-      strip-literal: 0.2.0
+      strip-literal: 0.3.0
       terser: 5.13.1
       tsconfck: 1.2.2_typescript@4.5.4
       tslib: 2.4.0
@@ -9020,8 +9020,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strip-literal/0.2.0:
-    resolution: {integrity: sha512-pqhiiFRDifA2CRVH0Gmv6MDbd2b27MS0oIqqy7JCqfL5m2sh68223lmEK2eoBXp4vNaq8G1Wzwd9dfQcWszUlg==}
+  /strip-literal/0.3.0:
+    resolution: {integrity: sha512-J+lfm3Pw5nzURj2B8acyvUSBqs3JbjM8WAfrmeH3qcn32+ew6kFwbZFV9+X8k9UOIAkQw9WPSzFZy3083c7l5Q==}
     dependencies:
       acorn: 8.7.1
     dev: true

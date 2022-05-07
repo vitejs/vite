@@ -106,7 +106,13 @@ export async function parseImportGlob(
   root: string,
   resolveId: (id: string) => string | Promise<string>
 ): Promise<ParsedImportGlob[]> {
-  const cleanCode = stripLiteral(code)
+  let cleanCode
+  try {
+    cleanCode = stripLiteral(code)
+  } catch (e) {
+    // skip invalid js code
+    return []
+  }
   const matchs = Array.from(cleanCode.matchAll(importGlobRE))
 
   const tasks = matchs.map(async (match, index) => {
