@@ -893,7 +893,7 @@ importers:
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
       strip-ansi: ^6.0.1
-      strip-literal: ^0.1.0
+      strip-literal: ^0.2.0
       terser: ^5.13.1
       tsconfck: ^1.2.2
       tslib: ^2.4.0
@@ -967,7 +967,7 @@ importers:
       source-map-js: 1.0.2
       source-map-support: 0.5.21
       strip-ansi: 6.0.1
-      strip-literal: 0.1.0
+      strip-literal: 0.2.0
       terser: 5.13.1
       tsconfck: 1.2.2_typescript@4.5.4
       tslib: 2.4.0
@@ -5286,19 +5286,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-
-  /follow-redirects/1.14.6_debug@4.3.4:
-    resolution: {integrity: sha512-fhUl5EwSJbbl8AR+uYL2KQDxLkdSjZGR36xy46AO7cOMTrCMON6Sa28FmAnC2tRTDbd/Uuzz3aJBv7EBN7JH8A==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.4
-    dev: true
 
   /form-data/3.0.1:
     resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
@@ -5703,7 +5690,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.6_debug@4.3.4
+      follow-redirects: 1.14.6
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -9031,8 +9018,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /strip-literal/0.1.0:
-    resolution: {integrity: sha512-wtnZGHZWgmuiHW4FXWX/t6bOkmu8+KcuE6FH92v0S2o3/RIZAcw6/6ZDutaJ4/mTfEZg3FLxDiOeonbGsYn0Zg==}
+  /strip-literal/0.2.0:
+    resolution: {integrity: sha512-pqhiiFRDifA2CRVH0Gmv6MDbd2b27MS0oIqqy7JCqfL5m2sh68223lmEK2eoBXp4vNaq8G1Wzwd9dfQcWszUlg==}
     dependencies:
       acorn: 8.7.1
     dev: true
