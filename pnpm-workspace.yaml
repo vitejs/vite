@@ -1,5 +1,4 @@
 packages:
   - 'packages/*'
   - 'packages/playground/**'
-  - '!packages/temp'
   - '!packages/playground/nested-deps/test-package-*'
