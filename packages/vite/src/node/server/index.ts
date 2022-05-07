@@ -295,7 +295,7 @@ export async function createServer(
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
-    disableGlobbing: true,
+    // disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
 
