@@ -2,13 +2,14 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, normalizePath, unique } from '../utils'
 import type { ModuleNode } from './moduleGraph'
 import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import type { RollupError } from 'rollup'
 import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
+import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -187,10 +188,13 @@ export async function handleFileAddUnlink(
   server: ViteDevServer
 ): Promise<void> {
   const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  modules.push(...getAffectedGlobModules(file, server))
+
   if (modules.length > 0) {
     updateModules(
       getShortName(file, server.config.root),
-      modules,
+      unique(modules),
       Date.now(),
       server
     )

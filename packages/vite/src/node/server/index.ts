@@ -241,6 +241,10 @@ export interface ViteDevServer {
    */
   _optimizedDeps: OptimizedDeps | null
   /**
+   * @internal
+   */
+  _importGlobMap: Map<string, string[][]> | null
+  /**
    * Deps that are externalized
    * @internal
    */
@@ -390,6 +394,7 @@ export async function createServer(
     _optimizedDeps: null,
     _ssrExternals: null,
     _restartPromise: null,
+    _importGlobMap: null,
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }

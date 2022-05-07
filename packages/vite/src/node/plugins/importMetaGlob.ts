@@ -7,7 +7,6 @@ import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { Plugin } from '../plugin'
-import { getShortName, updateModules } from '../server/hmr'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -26,6 +25,18 @@ export interface ParsedImportGlob {
   end: number
 }
 
+export function getAffectedGlobModules(file: string, server: ViteDevServer) {
+  const modules: ModuleNode[] = []
+  for (const [id, allGlobs] of server._importGlobMap!) {
+    if (allGlobs.some((glob) => isMatch(file, glob)))
+      modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
+  }
+  modules.forEach((i) => {
+    if (i?.file) server.moduleGraph.onFileChange(i.file)
+  })
+  return modules
+}
+
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
   const map = new Map<string, string[][]>()
@@ -37,15 +48,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     server?.watcher.add(allGlobs.flatMap((i) => i.filter((i) => i[0] !== '!')))
   }
 
-  function getAffectedModules(file: string) {
-    const modules: ModuleNode[] = []
-    for (const [id, allGlobs] of map) {
-      if (allGlobs.some((glob) => isMatch(file, glob)))
-        modules.push(...(server?.moduleGraph.getModulesByFile(id) || []))
-    }
-    return modules
-  }
-
   return {
     name: 'vite:import-glob',
     buildStart() {
@@ -53,20 +55,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     },
     configureServer(_server) {
       server = _server
-      const handleFileAddUnlink = (file: string) => {
-        const modules = getAffectedModules(file)
-        modules.forEach((i) => {
-          if (i?.file) _server.moduleGraph.onFileChange(i.file)
-        })
-        updateModules(
-          getShortName(file, config.root),
-          modules,
-          Date.now(),
-          _server
-        )
-      }
-      server.watcher.on('unlink', handleFileAddUnlink)
-      server.watcher.on('add', handleFileAddUnlink)
+      server._importGlobMap = server._importGlobMap || map
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return

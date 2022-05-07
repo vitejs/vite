@@ -114,7 +114,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob') &&
         !dynamicImportPrefixRE.test(source)
       ) {
         return
@@ -161,6 +160,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           specifier &&
           isCSSRequest(specifier) &&
           source.slice(expStart, start).includes('from') &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
