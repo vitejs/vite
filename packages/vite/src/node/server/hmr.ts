@@ -185,29 +185,9 @@ export function updateModules(
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer,
-  isUnlink = false
+  server: ViteDevServer
 ): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
-  if (isUnlink && file in server._globImporters) {
-    delete server._globImporters[file]
-  } else {
-    for (const i in server._globImporters) {
-      const { module, importGlobs } = server._globImporters[i]
-      for (const { base, pattern } of importGlobs) {
-        if (
-          isMatch(file, pattern) ||
-          isMatch(path.relative(base, file), pattern)
-        ) {
-          modules.push(module)
-          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
-          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-          server.moduleGraph.onFileChange(module.file!)
-          break
-        }
-      }
-    }
-  }
+  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
   if (modules.length > 0) {
     updateModules(
       getShortName(file, server.config.root),

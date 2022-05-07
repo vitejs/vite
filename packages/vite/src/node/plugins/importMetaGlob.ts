@@ -70,7 +70,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
-      const result = await transform(
+      const result = await transformGlobImport(
         code,
         id,
         config.root,
@@ -267,7 +267,7 @@ const importPrefix = '__vite_glob_'
 
 const { basename, dirname, relative, join } = posix
 
-export async function transform(
+export async function transformGlobImport(
   code: string,
   id: string,
   root: string,
