@@ -280,31 +280,8 @@ importers:
       test-package-d: link:test-package-d
       test-package-e: link:test-package-e
 
-  packages/playground/nested-deps/test-package-a:
-    specifiers: {}
-
-  packages/playground/nested-deps/test-package-b:
-    specifiers: {}
-
-  packages/playground/nested-deps/test-package-c:
-    specifiers: {}
-
-  packages/playground/nested-deps/test-package-d:
-    specifiers:
-      test-package-d-nested: link:./test-package-d-nested
-    dependencies:
-      test-package-d-nested: link:test-package-d-nested
-
   packages/playground/nested-deps/test-package-d/test-package-d-nested:
     specifiers: {}
-
-  packages/playground/nested-deps/test-package-e:
-    specifiers:
-      test-package-e-excluded: link:./test-package-e-excluded
-      test-package-e-included: link:./test-package-e-included
-    dependencies:
-      test-package-e-excluded: link:test-package-e-excluded
-      test-package-e-included: link:test-package-e-included
 
   packages/playground/nested-deps/test-package-e/test-package-e-excluded:
     specifiers: {}
