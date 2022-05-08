@@ -40,8 +40,9 @@
 </script>
 
 <script type="module">
-  const rawModules = import.meta.globEager('/dir/*.json', {
-    as: 'raw'
+  const rawModules = import.meta.glob('/dir/*.json', {
+    as: 'raw',
+    eager: true
   })
   const globraw = {}
   Object.keys(rawModules).forEach((key) => {
@@ -55,12 +56,10 @@
 </script>
 
 <script type="module">
-  const relativeRawModules = import.meta.globEager(
-    '../glob-import/dir/*.json',
-    {
-      as: 'raw'
-    }
-  )
+  const relativeRawModules = import.meta.glob('../glob-import/dir/*.json', {
+    as: 'raw',
+    eager: true
+  })
   const relativeGlobRaw = {}
   Object.keys(relativeRawModules).forEach((key) => {
     relativeGlobRaw[key] = JSON.parse(relativeRawModules[key])
