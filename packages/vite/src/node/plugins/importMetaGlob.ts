@@ -39,23 +39,12 @@ export function getAffectedGlobModules(file: string, server: ViteDevServer) {
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
-  const map = new Map<string, string[][]>()
-
-  function updateMap(id: string, info: ParsedImportGlob[]) {
-    const allGlobs = info.map((i) => i.globsResolved)
-    map.set(id, allGlobs)
-    // add those allGlobs to the watcher
-    server?.watcher.add(allGlobs.flatMap((i) => i.filter((i) => i[0] !== '!')))
-  }
 
   return {
     name: 'vite:import-glob',
-    buildStart() {
-      map.clear()
-    },
     configureServer(_server) {
       server = _server
-      server._importGlobMap = server._importGlobMap || map
+      server._importGlobMap.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -67,7 +56,14 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.experimental?.importGlobRestoreExtension
       )
       if (result) {
-        updateMap(id, result.matches)
+        if (server) {
+          const allGlobs = result.matches.map((i) => i.globsResolved)
+          server._importGlobMap.set(id, allGlobs)
+          result.files.forEach((file) => {
+            // update watcher
+            server!.watcher.add(dirname(file))
+          })
+        }
         return {
           code: result.s.toString(),
           map: result.s.generateMap()
@@ -273,6 +269,7 @@ export async function transformGlobImport(
   root = toPosixPath(root)
   const dir = isVirtualModule(id) ? null : dirname(id)
   const matches = await parseImportGlob(code, dir, root, resolveId)
+  const matchedFiles = new Set<string>()
 
   // TODO: backwards compatibility
   matches.forEach((i) => {
@@ -378,6 +375,8 @@ export async function transformGlobImport(
             }
           })
 
+          files.forEach((i) => matchedFiles.add(i))
+
           const replacement = `{\n${objectProps.join(',\n')}\n}`
           s.overwrite(start, end, replacement)
 
@@ -391,7 +390,8 @@ export async function transformGlobImport(
 
   return {
     s,
-    matches
+    matches,
+    files: matchedFiles
   }
 }
 

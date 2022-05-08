@@ -243,7 +243,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<string, string[][]> | null
+  _importGlobMap: Map<string, string[][]>
   /**
    * Deps that are externalized
    * @internal
@@ -299,6 +299,7 @@ export async function createServer(
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
+    disableGlobbing: true,
     ...watchOptions
   }) as FSWatcher
 
@@ -393,7 +394,7 @@ export async function createServer(
     _optimizedDeps: null,
     _ssrExternals: null,
     _restartPromise: null,
-    _importGlobMap: null,
+    _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }
