@@ -1,4 +1,4 @@
-import path, { isAbsolute, posix } from 'path'
+import { isAbsolute, posix } from 'path'
 import { isMatch, scan } from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type { ArrayExpression, CallExpression, Literal, Node } from 'estree'
@@ -12,7 +12,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { isCSSRequest } from './css'
 import type { GeneralImportGlobOptions } from '../../../types/importGlob'
-import { slash } from '../utils'
+import { normalizePath, slash } from '../utils'
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray
@@ -413,10 +413,12 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('../')) return pre + posix.join(dirname, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const resolved = await resolveId(glob)
+  const resolved = normalizePath(await resolveId(glob))
   if (isAbsolute(resolved)) return pre + resolved
 
-  throw new Error(`Invalid glob: ${glob}. It must starts with '/' or './'`)
+  throw new Error(
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must starts with '/' or './'`
+  )
 }
 
 export function getCommonBase(globsResolved: string[]): null | string {
@@ -425,8 +427,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
     .map((glob) => {
       let { base } = scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
-      if (path.posix.basename(base).includes('.'))
-        base = path.posix.dirname(base)
+      if (posix.basename(base).includes('.')) base = posix.dirname(base)
 
       return base
     })
