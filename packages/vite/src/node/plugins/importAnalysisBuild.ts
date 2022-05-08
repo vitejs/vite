@@ -6,7 +6,6 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { transformImportGlob } from '../importGlob'
 import { bareImportRE, combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -96,11 +95,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
 
   return {
     name: 'vite:build-import-analysis',
@@ -120,7 +114,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob') &&
         !dynamicImportPrefixRE.test(source)
       ) {
         return
@@ -152,43 +145,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        // import.meta.glob
-        if (
-          source.slice(start, end) === 'import.meta' &&
-          source.slice(end, end + 5) === '.glob'
-        ) {
-          // es worker allow globEager / glob
-          // iife worker just allow globEager
-          if (
-            isWorker &&
-            config.worker.format === 'iife' &&
-            source.slice(end, end + 10) !== '.globEager'
-          ) {
-            this.error(
-              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
-              end
-            )
-          }
-          const { importsString, exp, endIndex, isEager } =
-            await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              config.root,
-              config.logger,
-              undefined,
-              resolve,
-              insertPreload
-            )
-          str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-          if (!isEager) {
-            needPreloadHelper = true
-          }
-          continue
-        }
-
         if (dynamicIndex > -1 && insertPreload) {
           needPreloadHelper = true
           const original = source.slice(expStart, expEnd)
@@ -204,6 +160,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           specifier &&
           isCSSRequest(specifier) &&
           source.slice(expStart, start).includes('from') &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {

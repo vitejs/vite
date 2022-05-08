@@ -44,7 +44,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const ast = this.parse(rawUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
-              const pattern = buildGlobPattern(templateLiteral)
+              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
               // window.location or self.location in case it is used in a Web Worker.
@@ -52,9 +52,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 index,
                 index + exp.length,
-                `new URL(import.meta.globEagerDefault(${JSON.stringify(
-                  pattern
-                )})[${rawUrl}], self.location)`,
+                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default' }))[${rawUrl}], self.location)`,
                 { contentOnly: true }
               )
               continue

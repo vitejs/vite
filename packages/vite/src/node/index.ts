@@ -74,6 +74,9 @@ export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
+export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
+import type { ChunkMetadata } from './plugins/metadata'
+
 export type {
   WebSocketServer,
   WebSocketClient,
@@ -88,6 +91,7 @@ export type {
   TransformResult
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+
 export type {
   HMRPayload,
   ConnectedPayload,
@@ -111,9 +115,12 @@ export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
-export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
-
-import type { ChunkMetadata } from './plugins/metadata'
+export type {
+  ImportGlobFunction,
+  ImportGlobEagerFunction,
+  ImportGlobOptions,
+  KnownAsTypeMap
+} from 'types/importGlob'
 
 declare module 'rollup' {
   export interface RenderedChunk {

@@ -85,14 +85,6 @@ declare module 'rollup-plugin-web-worker-loader' {
   export default p
 }
 
-declare module 'micromatch' {
-  export function isMatch(
-    path: string,
-    pattern: string,
-    options?: { matchBase?: boolean }
-  ): boolean
-}
-
 // LESS' types somewhat references this which doesn't make sense in Node,
 // so we have to shim it
 declare interface HTMLLinkElement {}

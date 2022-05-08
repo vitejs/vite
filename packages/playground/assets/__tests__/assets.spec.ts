@@ -145,8 +145,8 @@ describe('css url() references', () => {
     expect(await getBg('.css-url-quotes-base64-inline')).toMatch(match)
     const icoMatch = isBuild ? `data:image/x-icon;base64` : `favicon.ico`
     const el = await page.$(`link.ico`)
-    const herf = await el.getAttribute('href')
-    expect(herf).toMatch(icoMatch)
+    const href = await el.getAttribute('href')
+    expect(href).toMatch(icoMatch)
   })
 
   test('multiple urls on the same line', async () => {

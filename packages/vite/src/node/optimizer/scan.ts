@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import type { ResolvedConfig, Logger } from '..'
+import type { ResolvedConfig } from '..'
 import type { Loader, Plugin, OnLoadResult } from 'esbuild'
-import { build, transform } from 'esbuild'
+import { build } from 'esbuild'
 import {
   KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
@@ -25,11 +25,9 @@ import {
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
-import { init, parse } from 'es-module-lexer'
-import MagicString from 'magic-string'
-import { transformImportGlob } from '../importGlob'
 import { performance } from 'perf_hooks'
 import colors from 'picocolors'
+import { transformGlobImport } from '../plugins/importMetaGlob'
 
 const debug = createDebugger('vite:deps')
 
@@ -300,19 +298,18 @@ function esbuildScanPlugin(
                 (loader.startsWith('ts') ? extractImportPaths(content) : '')
 
               const key = `${path}?id=${scriptId++}`
-
               if (contents.includes('import.meta.glob')) {
                 scripts[key] = {
-                  // transformGlob already transforms to js
                   loader: 'js',
-                  contents: await transformGlob(
-                    contents,
-                    path,
-                    config.root,
-                    loader,
-                    resolve,
-                    config.logger
-                  )
+                  contents:
+                    (
+                      await transformGlobImport(
+                        contents,
+                        path,
+                        config.root,
+                        resolve
+                      )
+                    )?.s.toString() || contents
                 }
               } else {
                 scripts[key] = {
@@ -467,20 +464,6 @@ function esbuildScanPlugin(
           config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
           (ext as Loader)
 
-        if (contents.includes('import.meta.glob')) {
-          return transformGlob(
-            contents,
-            id,
-            config.root,
-            loader,
-            resolve,
-            config.logger
-          ).then((contents) => ({
-            loader,
-            contents
-          }))
-        }
-
         return {
           loader,
           contents
@@ -488,43 +471,6 @@ function esbuildScanPlugin(
       })
     }
   }
-}
-
-async function transformGlob(
-  source: string,
-  importer: string,
-  root: string,
-  loader: Loader,
-  resolve: (url: string, importer?: string) => Promise<string | undefined>,
-  logger: Logger
-) {
-  // transform the content first since es-module-lexer can't handle non-js
-  if (loader !== 'js') {
-    source = (await transform(source, { loader })).code
-  }
-
-  await init
-  const imports = parse(source)[0]
-  const s = new MagicString(source)
-  for (let index = 0; index < imports.length; index++) {
-    const { s: start, e: end, ss: expStart } = imports[index]
-    const url = source.slice(start, end)
-    if (url !== 'import.meta') continue
-    if (source.slice(end, end + 5) !== '.glob') continue
-    const { importsString, exp, endIndex } = await transformImportGlob(
-      source,
-      start,
-      normalizePath(importer),
-      index,
-      root,
-      logger,
-      undefined,
-      resolve
-    )
-    s.prepend(importsString)
-    s.overwrite(expStart, endIndex, exp, { contentOnly: true })
-  }
-  return s.toString()
 }
 
 /**
