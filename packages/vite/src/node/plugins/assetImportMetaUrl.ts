@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import { emptyString } from '../cleanString'
+import { stripLiteral } from 'strip-literal'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -27,7 +27,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
-        const cleanString = emptyString(code)
+        const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {

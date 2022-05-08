@@ -33,6 +33,7 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerHook,
   ResolvedPreviewOptions
 } from './preview'
 export type {
