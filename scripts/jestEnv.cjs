@@ -29,13 +29,13 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
     }))
     this.global.page = await browser.newPage()
 
-    // suppress @vue/ref-transform warning
     const console = this.global.console
     const warn = console.warn
     console.warn = (msg, ...args) => {
-      if (!msg.includes('@vue/ref-transform')) {
-        warn.call(console, msg, ...args)
-      }
+      // suppress @vue/ref-transform warning
+      if (msg.includes('@vue/ref-transform')) return
+      if (msg.includes('Generated an empty chunk')) return
+      warn.call(console, msg, ...args)
     }
   }
 
