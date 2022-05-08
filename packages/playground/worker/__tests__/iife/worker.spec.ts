@@ -105,6 +105,6 @@ test('classic worker', async () => {
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
 })
 
-test('import.meta.globEager in worker', async () => {
+test('import.meta.glob eager in worker', async () => {
   expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
 })

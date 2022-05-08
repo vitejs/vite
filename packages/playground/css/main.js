@@ -87,7 +87,7 @@ Promise.all(
 })
 
 // globEager
-const globEager = import.meta.globEager('./glob-import/*.css')
+const globEager = import.meta.glob('./glob-import/*.css', { eager: true })
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'

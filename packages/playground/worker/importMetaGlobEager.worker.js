@@ -1,4 +1,4 @@
-const modules = import.meta.globEager('./modules/*js')
+const modules = import.meta.glob('./modules/*js', { eager: true })
 
 self.onmessage = function (e) {
   self.postMessage(Object.keys(modules))

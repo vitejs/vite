@@ -76,7 +76,7 @@
 
 <script type="module">
   // test dep detection in globbed files
-  const globbed = import.meta.globEager('./glob/*.js')
+  const globbed = import.meta.glob('./glob/*.js', { eager: true })
 
   import { camelCase } from 'dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))

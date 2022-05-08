@@ -118,6 +118,6 @@ test('import.meta.glob in worker', async () => {
   expect(await page.textContent('.importMetaGlob-worker')).toMatch('["')
 })
 
-test('import.meta.globEager in worker', async () => {
+test('import.meta.glob with eager in worker', async () => {
   expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
 })

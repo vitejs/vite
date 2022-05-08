@@ -12,7 +12,7 @@ import { stripLiteral } from 'strip-literal'
  * ```
  * new URL(`./dir/${name}.png`, import.meta.url)
  * // transformed to
- * import.meta.globEager('./dir/**.png')[`./dir/${name}.png`].default
+ * import.meta.glob('./dir/**.png', { eager: true, import: 'default' })[`./dir/${name}.png`]
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {

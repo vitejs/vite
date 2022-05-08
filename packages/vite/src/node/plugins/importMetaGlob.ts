@@ -157,9 +157,6 @@ export async function parseImportGlob(
       throw err('Could only use literals')
     }
 
-    // if (!globs.every(i => i.match(/^[.\/!]/)))
-    //   throw err('pattern must start with "." or "/" (relative to project root) or alias path')
-
     // arg2
     const options: GeneralImportGlobOptions = {}
     if (arg2) {
