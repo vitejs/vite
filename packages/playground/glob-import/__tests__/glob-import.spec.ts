@@ -42,7 +42,7 @@ const allResult = {
   },
   '/dir/index.js': {
     globWithAlias: {
-      './alias.js': {
+      '/dir/alias.js': {
         default: 'hi'
       }
     },
@@ -67,7 +67,7 @@ const rawResult = {
 }
 
 const relativeRawResult = {
-  '../glob-import/dir/baz.json': {
+  './dir/baz.json': {
     msg: 'baz'
   }
 }
