@@ -40,7 +40,7 @@ yarn create vite my-vue-app --template vue
 # pnpm
 pnpm create vite my-vue-app -- --template vue
 # or windows
-pnpm run create vite my-vue-app -- --template vue
+pnpm create vite my-vue-app "--" "--template" vue
 
 ```
 
