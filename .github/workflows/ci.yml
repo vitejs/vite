@@ -13,6 +13,8 @@ on:
       - feat/*
       - fix/*
       - perf/*
+      - v1
+      - v2
   pull_request:
   workflow_dispatch:
 
