@@ -12,6 +12,7 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { isCSSRequest } from './css'
 import type { GeneralImportGlobOptions } from '../../../types/importGlob'
+import { slash } from '../utils'
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray
@@ -265,8 +266,8 @@ export async function transformGlobImport(
   resolveId: (id: string) => Promise<string> | string,
   restoreQueryExtension = false
 ) {
-  id = toPosixPath(id)
-  root = toPosixPath(root)
+  id = slash(id)
+  root = slash(root)
   const dir = isVirtualModule(id) ? null : dirname(id)
   const matches = await parseImportGlob(code, dir, root, resolveId)
   const matchedFiles = new Set<string>()
@@ -443,10 +444,6 @@ export function getCommonBase(globsResolved: string[]): null | string {
   if (!commonAncestor) commonAncestor = '/'
 
   return commonAncestor
-}
-
-export function toPosixPath(p: string) {
-  return p.split('\\').join('/')
 }
 
 export function isVirtualModule(id: string) {
