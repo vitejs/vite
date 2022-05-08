@@ -282,7 +282,7 @@ for (const path in modules) {
 }
 ```
 
-Matched files are by default lazy loaded via dynamic import and will be split into separate chunks during build. If you'd rather import all the modules directly (e.g. relying on side-effects in these modules to be applied first), you can passing `{ eager: true }` the second argument:
+Matched files are by default lazy-loaded via dynamic import and will be split into separate chunks during build. If you'd rather import all the modules directly (e.g. relying on side-effects in these modules to be applied first), you can pass `{ eager: true }` as the second argument:
 
 ```js
 const modules = import.meta.glob('./dir/*.js', { eager: true })
@@ -302,7 +302,7 @@ const modules = {
 
 ### Glob Import As
 
-`import.meta.glob` also support importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
+`import.meta.glob` also supports importing files as strings (similar to [Importing Asset as String](https://vitejs.dev/guide/assets.html#importing-asset-as-string)) with the [Import Reflection](https://github.com/tc39/proposal-import-reflection) syntax:
 
 ```js
 const modules = import.meta.glob('./dir/*.js', { as: 'raw' })
@@ -359,7 +359,7 @@ const modules = {
 }
 ```
 
-Combining with `eager`, it's even possible to have tree-shaking enable for those modules.
+When combined with `eager` it's even possible to have tree-shaking enabled for those modules.
 
 ```ts
 const modules = import.meta.glob('./dir/*.js', { import: 'setup', eager: true })
