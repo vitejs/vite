@@ -56,7 +56,6 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
-    importGlobPlugin(config),
     jsonPlugin(
       {
         namedExports: true,
@@ -74,6 +73,7 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else

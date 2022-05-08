@@ -102,9 +102,9 @@ export async function parseImportGlob(
     // skip invalid js code
     return []
   }
-  const matchs = Array.from(cleanCode.matchAll(importGlobRE))
+  const matches = Array.from(cleanCode.matchAll(importGlobRE))
 
-  const tasks = matchs.map(async (match, index) => {
+  const tasks = matches.map(async (match, index) => {
     const type = match[1]
     const start = match.index!
 
