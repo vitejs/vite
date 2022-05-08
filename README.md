@@ -35,7 +35,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 ## Packages
 
-> This branch is for upcoming v3.0, if you are looking for current stable releases, check the [`2.x` branch](https://github.com/vitejs/vite/tree/2.x) instead.
+> This branch is for the upcoming v3.0, if you are looking for current stable releases, check the [`v2` branch](https://github.com/vitejs/vite/tree/v2) instead.
 
 | Package                                           | Version (click for changelogs)                                                                                                       |
 | ------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
