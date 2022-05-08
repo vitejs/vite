@@ -88,9 +88,9 @@ const forceDefaultAs = ['raw', 'url']
 
 export async function parseImportGlob(
   code: string,
-  dir: string | null,
+  importer: string | undefined,
   root: string,
-  resolveId: (id: string) => string | Promise<string>
+  resolveId: IdResolver
 ): Promise<ParsedImportGlob[]> {
   let cleanCode
   try {
@@ -235,7 +235,7 @@ export async function parseImportGlob(
     const end = ast.range![1]
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, dir ?? root, resolveId))
+      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId))
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
@@ -263,13 +263,19 @@ export async function transformGlobImport(
   code: string,
   id: string,
   root: string,
-  resolveId: (id: string) => Promise<string> | string,
+  resolveId: IdResolver,
   restoreQueryExtension = false
 ) {
   id = slash(id)
   root = slash(root)
-  const dir = isVirtualModule(id) ? null : dirname(id)
-  const matches = await parseImportGlob(code, dir, root, resolveId)
+  const isVirtual = isVirtualModule(id)
+  const dir = isVirtual ? undefined : dirname(id)
+  const matches = await parseImportGlob(
+    code,
+    isVirtual ? undefined : id,
+    root,
+    resolveId
+  )
   const matchedFiles = new Set<string>()
 
   // TODO: backwards compatibility
@@ -396,11 +402,16 @@ export async function transformGlobImport(
   }
 }
 
+type IdResolver = (
+  id: string,
+  importer?: string
+) => Promise<string | undefined> | string | undefined
+
 export async function toAbsoluteGlob(
   glob: string,
   root: string,
-  dirname: string,
-  resolveId: (id: string) => string | Promise<string>
+  importer: string | undefined,
+  resolveId: IdResolver
 ): Promise<string> {
   let pre = ''
   if (glob.startsWith('!')) {
@@ -408,12 +419,13 @@ export async function toAbsoluteGlob(
     glob = glob.slice(1)
   }
 
+  const dir = importer ? dirname(importer) : root
   if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
-  if (glob.startsWith('./')) return pre + posix.join(dirname, glob.slice(2))
-  if (glob.startsWith('../')) return pre + posix.join(dirname, glob)
+  if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
+  if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const resolved = normalizePath(await resolveId(glob))
+  const resolved = normalizePath((await resolveId(glob, importer)) || glob)
   if (isAbsolute(resolved)) return pre + resolved
 
   throw new Error(

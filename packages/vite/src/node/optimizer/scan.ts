@@ -27,6 +27,7 @@ import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { performance } from 'perf_hooks'
 import colors from 'picocolors'
+import { transformGlobImport } from '../plugins/importMetaGlob'
 
 const debug = createDebugger('vite:deps')
 
@@ -297,9 +298,24 @@ function esbuildScanPlugin(
                 (loader.startsWith('ts') ? extractImportPaths(content) : '')
 
               const key = `${path}?id=${scriptId++}`
-              scripts[key] = {
-                loader,
-                contents
+              if (contents.includes('import.meta.glob')) {
+                scripts[key] = {
+                  loader: 'js',
+                  contents:
+                    (
+                      await transformGlobImport(
+                        contents,
+                        path,
+                        config.root,
+                        resolve
+                      )
+                    )?.s.toString() || contents
+                }
+              } else {
+                scripts[key] = {
+                  loader,
+                  contents
+                }
               }
 
               const virtualModulePath = JSON.stringify(
