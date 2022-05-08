@@ -1,4 +1,4 @@
-import path, { posix } from 'path'
+import path, { isAbsolute, posix } from 'path'
 import { isMatch, scan } from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type { ArrayExpression, CallExpression, Literal, Node } from 'estree'
@@ -414,7 +414,7 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('**')) return pre + glob
 
   const resolved = await resolveId(glob)
-  if (resolved.startsWith('/')) return pre + resolved
+  if (isAbsolute(resolved)) return pre + resolved
 
   throw new Error(`Invalid glob: ${glob}. It must starts with '/' or './'`)
 }
