@@ -129,7 +129,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === dynamicImportHelperId) {
-        return 'export default' + dynamicImportHelper.toString()
+        return 'export default ' + dynamicImportHelper.toString()
       }
     },
 
