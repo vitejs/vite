@@ -67,22 +67,21 @@ export function parseDynamicImportPattern(
   }
 }
 
-export async function transformDynamicImportGlob(
-  source: string,
+export async function transformDynamicImport(
+  importSource: string,
   root: string,
   importer: string,
-  start: number,
-  end: number,
-  resolve: (url: string, importer?: string) => Promise<string | undefined>
+  resolve: (
+    url: string,
+    importer?: string
+  ) => Promise<string | undefined> | string | undefined
 ): Promise<{
   glob: TransformGlobImportResult
   pattern: string
   rawPattern: string
 } | null> {
-  let fileName = source.slice(start, end)
-
-  if (fileName[1] !== '.' && fileName[1] !== '/' && resolve) {
-    const resolvedFileName = await resolve(fileName.slice(1, -1), importer)
+  if (importSource[1] !== '.' && importSource[1] !== '/') {
+    const resolvedFileName = await resolve(importSource.slice(1, -1), importer)
     if (!resolvedFileName) {
       return null
     }
@@ -90,10 +89,11 @@ export async function transformDynamicImportGlob(
       path.dirname(importer),
       resolvedFileName
     )
-    fileName = `\`${relativeFileName}\``
+    importSource =
+      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
   }
 
-  const dynamicImportPattern = parseDynamicImportPattern(fileName)
+  const dynamicImportPattern = parseDynamicImportPattern(importSource)
   if (!dynamicImportPattern) {
     return null
   }
@@ -188,12 +188,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
-          result = await transformDynamicImportGlob(
-            source,
+          result = await transformDynamicImport(
+            source.slice(start, end),
             config.root,
             importer,
-            start,
-            end,
             resolve
           )
         } catch (error) {

@@ -42,7 +42,7 @@ import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-import { transformDynamicImportGlob } from './dynamicImportVars'
+import { transformDynamicImport } from './dynamicImportVars'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
@@ -501,12 +501,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (!isSupportedDynamicImport(url)) {
             let importGlobResult
             try {
-              importGlobResult = await transformDynamicImportGlob(
-                source,
+              importGlobResult = await transformDynamicImport(
+                url,
                 config.root,
                 importer,
-                start,
-                end,
                 resolve
               )
             } catch (e) {
