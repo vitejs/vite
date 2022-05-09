@@ -132,7 +132,9 @@ async function init() {
   let targetDir = argv._[0]
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+  const defaultProjectName = !targetDir
+    ? 'vite-project'
+    : targetDir.trim().replace(/\/+$/g, '')
 
   let result = {}
 
@@ -145,7 +147,8 @@ async function init() {
           message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim() || defaultProjectName)
+            (targetDir =
+              state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
         },
         {
           type: () =>
