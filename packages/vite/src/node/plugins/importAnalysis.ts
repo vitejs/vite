@@ -521,6 +521,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 expEnd,
                 `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
               )
+              if (server) {
+                const allGlobs = glob.matches.map((i) => i.globsResolved)
+                server._importGlobMap.set(importer, allGlobs)
+                glob.files.forEach((file) => {
+                  // update watcher
+                  server!.watcher.add(path.posix.dirname(file))
+                })
+              }
             } else {
               if (!hasViteIgnore) {
                 this.warn(
