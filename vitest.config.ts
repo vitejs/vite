@@ -5,9 +5,10 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      './packages/playground/**/*.*',
-      './packages/temp/**/*.*'
-    ]
+      './playground/**/*.*',
+      './playground-temp/**/*.*'
+    ],
+    testTimeout: 20000
   },
   esbuild: {
     target: 'node14'

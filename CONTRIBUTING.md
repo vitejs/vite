@@ -26,7 +26,7 @@ If you want to use break point and explore code execution you can use the ["Run 
 
 3. Click on the "JavaScript Debug Terminal" button.
 
-4. It will open a terminal, then go to `packages/playground/xxx` and run `pnpm run dev`.
+4. It will open a terminal, then go to `playground/xxx` and run `pnpm run dev`.
 
 5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
 
@@ -69,7 +69,7 @@ And re-run `pnpm install` to link the package.
 
 ### Integration Tests
 
-Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
+Each package under `playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
 
 Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to solve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also you may want to [set git `core.symlinks` to `true` to solve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
 
@@ -87,7 +87,7 @@ Each integration test can be run under either dev server mode or build mode.
 
 ### Unit Tests
 
-Other than tests under `packages/playground/` for integration tests, packages might contains unit tests under their `__tests__` directory. Unit tests are powered by [Vitest](https://vitest.dev/). The detailed config is inside `vitest.config.ts` files.
+Other than tests under `playground/` for integration tests, packages might contains unit tests under their `__tests__` directory. Unit tests are powered by [Vitest](https://vitest.dev/). The detailed config is inside `vitest.config.ts` files.
 
 - `pnpm run test-unit` runs unit tests under each package.
 
@@ -103,20 +103,20 @@ test('should work', async () => {
 })
 ```
 
-Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
+Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `playground/testUtils.ts`.
 
 Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/9c6501d9c363eaa3c1e7708d531fb2a92b633db6/scripts/jestPerTestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/packages/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L121):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/playground/assets/index.html#L121):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L151):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L151):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -131,7 +131,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/main/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {
@@ -148,7 +148,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
+  "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
 }
 ```
 
