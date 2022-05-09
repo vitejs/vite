@@ -8,7 +8,7 @@
     "build-consumer": "vite build --config ./vite.config.consumer.ts"
   },
   "dependencies": {
-    "vue": "^3.2.25"
+    "vue": "^3.2.33"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*"

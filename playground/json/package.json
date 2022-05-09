@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vue": "^3.2.25",
-    "json-module": "file:./json-module"
+    "json-module": "file:./json-module",
+    "vue": "^3.2.33"
   }
 }

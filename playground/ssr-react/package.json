@@ -14,14 +14,14 @@
   "dependencies": {
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-router": "^5.2.1",
-    "react-router-dom": "^5.3.0"
+    "react-router": "^5.3.1",
+    "react-router-dom": "^5.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "workspace:*",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
-    "express": "^4.17.1",
-    "serve-static": "^1.14.1"
+    "express": "^4.18.1",
+    "serve-static": "^1.15.0"
   }
 }
