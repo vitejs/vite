@@ -590,8 +590,11 @@ export async function processSrcSet(
 
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of `url(data:...)`
-  const cleanedSrcs = srcs.replace(/url\([^\)]*\)/g, blankReplacer)
+  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  const cleanedSrcs = srcs.replace(
+    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    blankReplacer
+  )
   let startIndex = 0
   let splitIndex: number
   do {

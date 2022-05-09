@@ -125,8 +125,16 @@ describe('css url() references', () => {
     )
   })
 
-  // not supported in browser now
+  // TODO: not supported in chrome
   // https://drafts.csswg.org/css-images-4/#image-set-notation
+  //
+  // test('image-set with multiple descriptor', async () => {
+  //   const imageSet = await getBg('.css-image-set-gradient')
+  //   expect(imageSet).toMatch(
+  //     `-webkit-image-set(url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA0AgMAAACrwbOMAAADI2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxMzggNzkuMTU5ODI0LCAyMDE2LzA5LzE0LTAxOjA5OjAxICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo1MDI2QjVGQTg3RUIxMUVBQUFDMkQ3NTM0MUZGNzU3RSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo1MDI2QjVGOTg3RUIxMUVBQUFDMkQ3NTM0MUZGNzU3RSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpBNzc3MDZDRjg3QUIxMUUzQjcwREVFMDM3NzA2QzEyMyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpBNzc3MDZEMDg3QUIxMUUzQjcwREVFMDM3NzA2QzEyMyIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqfCcbEAAAAZdEVYdFNvZnR3YXJlAEFkb2JlIEltYWdlUmVhZHlxyWU8AAAADFBMVEVBuoQ0R10/qn8/qX7FyuqbAAAABHRSTlP9/QGEiU0+GwAAAPtJREFUGBkFwbFNXEEUBdDD/QSWmE7YYAogWNeAaMfaEuiD5HfAk9yIAwqYwIGRRvt8zkNdvckrzzcfjqDccdPIYnH1AJ4ywLs7m53Fhkcw0+DLDxZn0PCHQrrg2xWOCpS7m6bFAj/ZDLFY/AJbDDZ/WUzR4B84BRoURBeAo4Si0CBMFvBEGMBmExYbi0loACcBjQKhC3AUQVGaRjBhMxAsFlwQDLYFBA04EaAVEHSBoxAoPmkITBYDAovNhsAAEwINTggAINCFoyCg0CBgYoCAjQsIACCgcYKABhCgHAUClAYCTAMIsF2AAAACtBMIQAEB+jcggE9AAC+A/zyyZDSXstCbAAAAAElFTkSuQmCC") 1x, linear-gradient(#e66465, #9198e5) 2x)`
+  //   )
+  // })
+  //
   // test('image-set with multiple descriptor', async () => {
   //   const imageSet = await getBg('.css-image-set-multiple-descriptor')
   //   imageSet.split(', ').forEach((s) => {
