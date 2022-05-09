@@ -1,5 +1,5 @@
-import { name } from 'multi-entry-dep'
+const { name } = require('multi-entry-dep')
 
-export function sayName() {
+exports.sayName = () => {
   return name
 }

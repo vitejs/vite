@@ -1,3 +1,5 @@
+import 'vite/modulepreload-polyfill'
+
 export const colorClass = 'text-black'
 
 export function colorHeading() {

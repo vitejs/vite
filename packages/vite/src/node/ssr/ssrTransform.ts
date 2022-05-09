@@ -37,7 +37,8 @@ export async function ssrTransform(
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
-      locations: true
+      locations: true,
+      allowHashBang: true
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
@@ -429,7 +430,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // class method name
-  if (parent.type === 'MethodDefinition') {
+  if (parent.type === 'MethodDefinition' && !parent.computed) {
     return false
   }
 

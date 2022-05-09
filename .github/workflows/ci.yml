@@ -13,6 +13,8 @@ on:
       - feat/*
       - fix/*
       - perf/*
+      - v1
+      - v2
   pull_request:
   workflow_dispatch:
 
@@ -27,12 +29,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 16, 17]
+        node_version: [14, 16, 18]
         include:
           - os: macos-latest
             node_version: 16
+          - os: macos-latest
+            node_version: 18
           - os: windows-latest
             node_version: 16
+          # Maybe bug with jest on windows and node-v18
+          # - os: windows-latest
+          #   node_version: 18
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
@@ -42,8 +49,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
-        with:
-          version: 6
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v3
@@ -63,6 +68,9 @@ jobs:
       - name: Build plugin-react
         run: pnpm run build-plugin-react
 
+      - name: Test unit
+        run: pnpm run test-unit
+
       - name: Test serve
         run: pnpm run test-serve -- --runInBand
 
@@ -80,8 +88,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
-        with:
-          version: 6
 
       - name: Set node version to 16
         uses: actions/setup-node@v3

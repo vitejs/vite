@@ -1,9 +1,6 @@
-// @ts-check
+import { defineConfig } from 'vitepress'
 
-/**
- * @type {import('vitepress').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
@@ -61,6 +58,15 @@ module.exports = {
           {
             text: 'Changelog',
             link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+          }
+        ]
+      },
+      {
+        text: 'v3 (next)',
+        items: [
+          {
+            text: 'v2.x (stable)',
+            link: 'https://v2.vitejs.dev'
           }
         ]
       },
@@ -169,4 +175,4 @@ module.exports = {
       ]
     }
   }
-}
+})

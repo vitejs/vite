@@ -38,15 +38,11 @@ import type { DepOptimizationMetadata } from './optimizer'
 import { getDepsCacheDir, findKnownImports } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
+import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 
 export interface BuildOptions {
-  /**
-   * Base public path when served in production.
-   * @deprecated `base` is now a root-level config option.
-   */
-  base?: string
   /**
    * Compatibility transform target. The transform is performed with esbuild
    * and the lowest supported target is es2015/es6. Note this only handles
@@ -70,13 +66,6 @@ export interface BuildOptions {
    * @default true
    */
   polyfillModulePreload?: boolean
-  /**
-   * whether to inject dynamic import polyfill.
-   * Note: does not apply to library mode.
-   * @default false
-   * @deprecated use plugin-legacy for browsers that don't support dynamic import
-   */
-  polyfillDynamicImport?: boolean
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -130,10 +119,6 @@ export interface BuildOptions {
    * https://terser.org/docs/api-reference#minify-options
    */
   terserOptions?: Terser.MinifyOptions
-  /**
-   * @deprecated Vite now uses esbuild for CSS minification.
-   */
-  cleanCssOptions?: any
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/guide/en/#big-list-of-options
@@ -199,12 +184,6 @@ export interface BuildOptions {
    */
   reportCompressedSize?: boolean
   /**
-   * Set to false to disable brotli compressed size reporting for build.
-   * Can slightly improve build speed.
-   * @deprecated use `build.reportCompressedSize` instead.
-   */
-  brotliSize?: boolean
-  /**
    * Adjust chunk size warning limit (in kbs).
    * @default 500
    */
@@ -225,13 +204,7 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<
-  Omit<
-    BuildOptions,
-    // make deprecated options optional
-    'base' | 'cleanCssOptions' | 'polyfillDynamicImport' | 'brotliSize'
-  >
->
+export type ResolvedBuildOptions = Required<BuildOptions>
 
 export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
@@ -253,7 +226,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     ssr: false,
     ssrManifest: false,
     reportCompressedSize: true,
-    // brotliSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
     ...raw,
@@ -451,15 +423,6 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
-      // @ts-ignore
-      if (output.output) {
-        config.logger.warn(
-          `You've set "rollupOptions.output.output" in your config. ` +
-            `This is deprecated and will override all Vite.js default output options. ` +
-            `Please use "rollupOptions.output" instead.`
-        )
-      }
-
       return {
         dir: outDir,
         format: ssr ? 'cjs' : 'es',
@@ -601,9 +564,11 @@ function prepareOutDir(
   }
 }
 
-function getPkgName(root: string) {
-  const { name } = JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+function getPkgJson(root: string): PackageData['data'] {
+  return JSON.parse(lookupFile(root, ['package.json']) || `{}`)
+}
 
+function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
@@ -616,14 +581,23 @@ export function resolveLibFilename(
     return libOptions.fileName(format)
   }
 
-  const name = libOptions.fileName || getPkgName(root)
+  const packageJson = getPkgJson(root)
+  const name = libOptions.fileName || getPkgName(packageJson.name)
 
   if (!name)
     throw new Error(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  return `${name}.${format}.js`
+  let extension: string
+
+  if (packageJson?.type === 'module') {
+    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
+  } else {
+    extension = format === 'es' ? 'mjs' : 'js'
+  }
+
+  return `${name}.${format}.${extension}`
 }
 
 function resolveBuildOutputs(
