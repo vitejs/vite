@@ -1,13 +1,15 @@
-import path from 'path'
+import { posix } from 'path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { parseRequest } from '../utils'
+import { normalizePath, parseRequest } from '../utils'
 import { parse as parseJS } from 'acorn'
 import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+
+export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
 interface DynamicImportRequest {
   as?: 'raw'
@@ -30,9 +32,8 @@ const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
     )
   })
 }
-export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
-export function parseDynamicImportPattern(
+function parseDynamicImportPattern(
   strings: string
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
@@ -77,12 +78,13 @@ export async function transformDynamicImport(
   rawPattern: string
 } | null> {
   if (importSource[1] !== '.' && importSource[1] !== '/') {
-    const resolvedFileName = await resolve(importSource.slice(1, -1), importer)
+    let resolvedFileName = await resolve(importSource.slice(1, -1), importer)
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = path.posix.relative(
-      path.dirname(importer),
+    resolvedFileName = normalizePath(resolvedFileName)
+    const relativeFileName = posix.relative(
+      posix.dirname(importer),
       resolvedFileName
     )
     importSource =
