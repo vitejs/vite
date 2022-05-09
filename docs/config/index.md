@@ -125,6 +125,22 @@ export default defineConfig(({ command, mode }) => {
 
 ## Shared Options
 
+### Example
+```js
+// vite.config.js
+export default {
+  "option":"value"
+}
+```
+
+```js
+// vite.config.js
+export default {
+  "base":"/path/"
+}
+```
+
+
 ### root
 
 - **Type:** `string`
