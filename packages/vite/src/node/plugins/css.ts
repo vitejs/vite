@@ -49,7 +49,7 @@ import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { emptyCssComments } from '../cleanString'
+import { emptyCssComments } from '../utils'
 
 // const debug = createDebugger('vite:css')
 
@@ -443,13 +443,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         })
         // only external @imports and @charset should exist at this point
-        // hoist them to the top of the CSS chunk per spec (#1845 and #6333)
-        if (css.includes('@import') || css.includes('@charset')) {
-          css = await hoistAtRules(css)
-        }
-        if (minify && config.build.minify) {
-          css = await minifyCSS(css, config)
-        }
+        css = await finalizeCss(css, minify, config)
         return css
       }
 
@@ -559,10 +553,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let extractedCss = outputToExtractedCSSMap.get(opts)
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
-        // minify css
-        if (config.build.minify) {
-          extractedCss = await minifyCSS(extractedCss, config)
-        }
+        extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
           name: 'style.css',
           type: 'asset',
@@ -827,19 +818,6 @@ async function compileCSS(
       for (let i = 0; i < files.length; i++) {
         deps.add(files[i])
       }
-      if (server) {
-        // register glob importers so we can trigger updates on file add/remove
-        if (!(id in server._globImporters)) {
-          server._globImporters[id] = {
-            module: server.moduleGraph.getModuleById(id)!,
-            importGlobs: []
-          }
-        }
-        server._globImporters[id].importGlobs.push({
-          base: config.root,
-          pattern
-        })
-      }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`
       if (message.line && message.column) {
@@ -920,6 +898,21 @@ function combineSourcemapsIfExists(
         map2 as RawSourceMap
       ]) as ExistingRawSourceMap)
     : map1
+}
+
+async function finalizeCss(
+  css: string,
+  minify: boolean,
+  config: ResolvedConfig
+) {
+  // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
+  if (css.includes('@import') || css.includes('@charset')) {
+    css = await hoistAtRules(css)
+  }
+  if (minify && config.build.minify) {
+    css = await minifyCSS(css, config)
+  }
+  return css
 }
 
 interface PostCSSConfigResult {

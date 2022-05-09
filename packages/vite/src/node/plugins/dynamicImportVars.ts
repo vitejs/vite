@@ -3,7 +3,6 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { transformDynamicImportGlob } from '../importGlob'
 import { createFilter } from '@rollup/pluginutils'
 
 const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
@@ -18,6 +17,49 @@ const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
   })
 }
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
+
+export async function transformDynamicImportGlob(
+  source: string,
+  importer: string,
+  start: number,
+  end: number,
+  resolve?: (url: string, importer?: string) => Promise<string | undefined>
+): Promise<{
+  exp: string
+  pattern: string
+  rawPattern: string
+} | null> {
+  const err = (msg: string) => {
+    const e = new Error(`Invalid dynamic import syntax: ${msg}`)
+    ;(e as any).pos = start
+    return e
+  }
+  let fileName = source.slice(start, end)
+
+  if (fileName[1] !== '.' && fileName[1] !== '/' && resolve) {
+    const resolvedFileName = await resolve(fileName.slice(1, -1), importer)
+    if (!resolvedFileName) {
+      return null
+    }
+    const relativeFileName = path.posix.relative(
+      path.dirname(importer),
+      resolvedFileName
+    )
+    fileName = `\`${relativeFileName}\``
+  }
+
+  const dynamicImportPattern = parseDynamicImportPattern(fileName)
+  if (!dynamicImportPattern) {
+    return null
+  }
+  const { query, rawPattern, userPattern } = dynamicImportPattern
+
+  return {
+    rawPattern,
+    pattern: userPattern,
+    exp: `import.meta.glob(${JSON.stringify(userPattern)})`
+  }
+}
 
 export function dynamicImportHelperPlugin(): Plugin {
   return {
@@ -88,13 +130,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         try {
           result = await transformDynamicImportGlob(
             source,
-            expStart,
-            expEnd,
             importer,
             start,
             end,
-            config.root,
-            undefined,
             resolve
           )
         } catch (error) {

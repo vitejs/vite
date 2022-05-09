@@ -67,13 +67,15 @@ And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
+### Integration Tests
+
 Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
 
 Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to solve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also you may want to [set git `core.symlinks` to `true` to solve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
 
-Each test can be run under either dev server mode or build mode.
+Each integration test can be run under either dev server mode or build mode.
 
-- `pnpm test` by default runs every test in both serve and build mode.
+- `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
 - `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve -- --runInBand`.
 
@@ -82,6 +84,14 @@ Each test can be run under either dev server mode or build mode.
 - You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
+
+### Unit Tests
+
+Other than tests under `packages/playground/` for integration tests, packages might contains unit tests under their `__tests__` directory. Unit tests are powered by [Vitest](https://vitest.dev/). The detailed config is inside `vitest.config.ts` files.
+
+- `pnpm run test-unit` runs unit tests under each package.
+
+- You can also use `pnpm run test-unit -- [match]` to run related tests.
 
 ### Test Env and Helpers
 

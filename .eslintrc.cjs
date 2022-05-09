@@ -63,7 +63,7 @@ module.exports = defineConfig({
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass']
+        allowModules: ['vite', 'less', 'sass', 'vitest']
       }
     ],
     'node/no-extraneous-require': [
@@ -103,7 +103,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**'],
+      files: ['packages/vite/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }

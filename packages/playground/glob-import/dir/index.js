@@ -1,4 +1,4 @@
-const modules = import.meta.globEager('./*.(js|ts)')
-const globWithAlias = import.meta.globEager('@dir/al*.js')
+const modules = import.meta.glob('./*.(js|ts)', { eager: true })
+const globWithAlias = import.meta.glob('@dir/al*.js', { eager: true })
 
 export { modules, globWithAlias }

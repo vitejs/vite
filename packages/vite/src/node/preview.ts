@@ -14,6 +14,7 @@ import corsMiddleware from 'cors'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
 import { printCommonServerUrls } from './logger'
+import type * as http from 'http'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -53,6 +54,11 @@ export interface PreviewServer {
   printUrls: () => void
 }
 
+export type PreviewServerHook = (server: {
+  middlewares: Connect.Server
+  httpServer: http.Server
+}) => (() => void) | void | Promise<(() => void) | void>
+
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
  * @experimental
@@ -69,6 +75,16 @@ export async function preview(
     await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
 
+  // apply server hooks from plugins
+  const postHooks: ((() => void) | void)[] = []
+  for (const plugin of config.plugins) {
+    if (plugin.configurePreviewServer) {
+      postHooks.push(
+        await plugin.configurePreviewServer({ middlewares: app, httpServer })
+      )
+    }
+  }
+
   // cors
   const { cors } = config.preview
   if (cors !== false) {
@@ -83,6 +99,7 @@ export async function preview(
 
   app.use(compression())
 
+  // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
     config.base,
@@ -92,6 +109,9 @@ export async function preview(
       single: true
     })
   )
+
+  // apply post server hooks from plugins
+  postHooks.forEach((fn) => fn && fn())
 
   const options = config.preview
   const hostname = resolveHostname(options.host)

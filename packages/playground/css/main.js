@@ -80,12 +80,14 @@ text('.inlined-code', inlined)
 
 // glob
 const glob = import.meta.glob('./glob-import/*.css')
-Promise.all(Object.keys(glob).map((key) => glob[key]())).then((res) => {
+Promise.all(
+  Object.keys(glob).map((key) => glob[key]().then((i) => i.default))
+).then((res) => {
   text('.imported-css-glob', JSON.stringify(res, null, 2))
 })
 
 // globEager
-const globEager = import.meta.globEager('./glob-import/*.css')
+const globEager = import.meta.glob('./glob-import/*.css', { eager: true })
 text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'

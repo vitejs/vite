@@ -775,8 +775,8 @@ function gracefulRename(
     ) {
       setTimeout(function () {
         fs.stat(to, function (stater, st) {
-          if (stater && stater.code === 'ENOENT') gracefulRename(from, to, CB)
-          else cb(er)
+          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
+          else CB(er)
         })
       }, backoff)
       if (backoff < 100) backoff += 10
@@ -784,4 +784,8 @@ function gracefulRename(
     }
     if (cb) cb(er)
   })
+}
+
+export function emptyCssComments(raw: string) {
+  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
