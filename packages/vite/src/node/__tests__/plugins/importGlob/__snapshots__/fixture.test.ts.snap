@@ -38,6 +38,10 @@ export const eagerAs = {
 \\"./modules/a.ts\\": __vite_glob_5_0,
 \\"./modules/b.ts\\": __vite_glob_5_1
 };
+export const rawImportModule = {
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts?raw\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts?raw\\")
+};
 export const excludeSelf = {
 \\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
 };
@@ -107,6 +111,10 @@ export const namedDefault = {
 export const eagerAs = {
 \\"./modules/a.ts\\": __vite_glob_5_0,
 \\"./modules/b.ts\\": __vite_glob_5_1
+};
+export const rawImportModule = {
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts?raw\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts?raw\\")
 };
 export const excludeSelf = {
 \\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
