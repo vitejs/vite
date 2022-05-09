@@ -77,7 +77,7 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
-- `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve -- --runInBand`.
+- `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time.
 
 - `pnpm run test-build` runs tests only under build mode.
 
