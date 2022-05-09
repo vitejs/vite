@@ -19,6 +19,7 @@ import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
+import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -72,6 +73,7 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else

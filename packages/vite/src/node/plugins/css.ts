@@ -818,19 +818,6 @@ async function compileCSS(
       for (let i = 0; i < files.length; i++) {
         deps.add(files[i])
       }
-      if (server) {
-        // register glob importers so we can trigger updates on file add/remove
-        if (!(id in server._globImporters)) {
-          server._globImporters[id] = {
-            module: server.moduleGraph.getModuleById(id)!,
-            importGlobs: []
-          }
-        }
-        server._globImporters[id].importGlobs.push({
-          base: config.root,
-          pattern
-        })
-      }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`
       if (message.line && message.column) {

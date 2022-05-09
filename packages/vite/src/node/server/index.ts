@@ -30,7 +30,6 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
 import { isParentDirectory, normalizePath } from '../utils'
@@ -242,23 +241,14 @@ export interface ViteDevServer {
    */
   _optimizedDeps: OptimizedDeps | null
   /**
+   * @internal
+   */
+  _importGlobMap: Map<string, string[][]>
+  /**
    * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
-  /**
-   * @internal
-   */
-  _globImporters: Record<
-    string,
-    {
-      module: ModuleNode
-      importGlobs: {
-        base: string
-        pattern: string
-      }[]
-    }
-  >
   /**
    * @internal
    */
@@ -403,8 +393,8 @@ export async function createServer(
 
     _optimizedDeps: null,
     _ssrExternals: null,
-    _globImporters: Object.create(null),
     _restartPromise: null,
+    _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }
@@ -456,9 +446,8 @@ export async function createServer(
   watcher.on('add', (file) => {
     handleFileAddUnlink(normalizePath(file), server)
   })
-
   watcher.on('unlink', (file) => {
-    handleFileAddUnlink(normalizePath(file), server, true)
+    handleFileAddUnlink(normalizePath(file), server)
   })
 
   if (!middlewareMode && httpServer) {
