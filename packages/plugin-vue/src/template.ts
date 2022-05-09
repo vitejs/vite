@@ -1,17 +1,18 @@
 import path from 'path'
 import slash from 'slash'
-import {
-  compileTemplate,
+import type {
   SFCDescriptor,
-  SFCTemplateCompileOptions
-} from '@vue/compiler-sfc'
-import { PluginContext, TransformPluginContext } from 'rollup'
-import { ResolvedOptions } from '.'
+  SFCTemplateCompileOptions,
+  SFCTemplateCompileResults,
+  CompilerOptions
+} from 'vue/compiler-sfc'
+import type { PluginContext, TransformPluginContext } from 'rollup'
+import type { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function transformTemplateAsModule(
+export async function transformTemplateAsModule(
   code: string,
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
@@ -34,7 +35,7 @@ export function transformTemplateAsModule(
 
   return {
     code: returnCode,
-    map: result.map as any
+    map: result.map
   }
 }
 
@@ -48,7 +49,7 @@ export function transformTemplateInMain(
   options: ResolvedOptions,
   pluginContext: PluginContext,
   ssr: boolean
-) {
+): SFCTemplateCompileResults {
   const result = compile(code, descriptor, options, pluginContext, ssr)
   return {
     ...result,
@@ -68,7 +69,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compileTemplate({
+  const result = options.compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })
@@ -109,10 +110,10 @@ export function resolveTemplateCompilerOptions(
   const { id, filename, cssVars } = descriptor
 
   let transformAssetUrls = options.template?.transformAssetUrls
-  // @vue/compiler-sfc/dist/compiler-sfc.d.ts should export `AssetURLOptions`
+  // compiler-sfc should export `AssetURLOptions`
   let assetUrlOptions //: AssetURLOptions | undefined
   if (options.devServer) {
-    // during dev, inject vite base so that @vue/compiler-sfc can transform
+    // during dev, inject vite base so that compiler-sfc can transform
     // relative paths directly to absolute paths without incurring an extra import
     // request
     if (filename.startsWith(options.root)) {
@@ -132,17 +133,13 @@ export function resolveTemplateCompilerOptions(
 
   if (transformAssetUrls && typeof transformAssetUrls === 'object') {
     // presence of array fields means this is raw tags config
-    if (
-      Object.keys(transformAssetUrls).some((key) =>
-        Array.isArray((transformAssetUrls as any)[key])
-      )
-    ) {
+    if (Object.values(transformAssetUrls).some((val) => Array.isArray(val))) {
       transformAssetUrls = {
         ...assetUrlOptions,
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions
@@ -154,6 +151,14 @@ export function resolveTemplateCompilerOptions(
       doctype: 'html',
       ...preprocessOptions
     }
+  }
+
+  // if using TS, support TS syntax in template expressions
+  const expressionPlugins: CompilerOptions['expressionPlugins'] =
+    options.template?.compilerOptions?.expressionPlugins || []
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+  if (lang && /tsx?$/.test(lang) && !expressionPlugins.includes('typescript')) {
+    expressionPlugins.push('typescript')
   }
 
   return {
@@ -172,7 +177,9 @@ export function resolveTemplateCompilerOptions(
     compilerOptions: {
       ...options.template?.compilerOptions,
       scopeId: hasScoped ? `data-v-${id}` : undefined,
-      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined
+      bindingMetadata: resolvedScript ? resolvedScript.bindings : undefined,
+      expressionPlugins,
+      sourceMap: options.sourceMap
     }
   }
 }

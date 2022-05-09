@@ -45,7 +45,7 @@ function vueJsxPlugin(options = {}) {
   let needSourceMap = true
 
   return {
-    name: 'vue-jsx',
+    name: 'vite:vue-jsx',
 
     config(config) {
       return {
@@ -55,9 +55,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false,
-          ...config.define
+          __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
+          __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         }
       }
     },
@@ -80,7 +79,8 @@ function vueJsxPlugin(options = {}) {
       }
     },
 
-    transform(code, id, ssr) {
+    transform(code, id, opt) {
+      const ssr = typeof opt === 'boolean' ? opt : (opt && opt.ssr) === true
       const {
         include,
         exclude,
@@ -89,10 +89,13 @@ function vueJsxPlugin(options = {}) {
       } = options
 
       const filter = createFilter(include || /\.[jt]sx$/, exclude)
+      const [filepath] = id.split('?')
 
-      if (filter(id)) {
+      // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
+      // use filepath for plain jsx files (e.g. App.jsx)
+      if (filter(id) || filter(filepath)) {
         const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
-        if (id.endsWith('.tsx')) {
+        if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore
@@ -207,7 +210,7 @@ function vueJsxPlugin(options = {}) {
               ) + `\nexport default __default__`
           }
 
-          if (needHmr && !ssr) {
+          if (needHmr && !ssr && !/\?vue&type=script/.test(id)) {
             let code = result.code
             let callbackCode = ``
             for (const { local, exported, id } of hotComponents) {

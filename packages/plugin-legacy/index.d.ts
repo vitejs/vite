@@ -1,4 +1,4 @@
-import { Plugin } from 'vite'
+import type { Plugin } from 'vite'
 
 export interface Options {
   /**
@@ -22,6 +22,10 @@ export interface Options {
    * default: true
    */
   renderLegacyChunks?: boolean
+  /**
+   * default: false
+   */
+  externalSystemJS?: boolean
 }
 
 declare function createPlugin(options?: Options): Plugin

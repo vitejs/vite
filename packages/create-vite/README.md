@@ -3,12 +3,12 @@
 ## Scaffolding Your First Vite Project
 
 > **Compatibility Note:**
-> Vite requires [Node.js](https://nodejs.org/en/) version >=12.0.0.
+> Vite requires [Node.js](https://nodejs.org/en/) version >=14.6.0. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 
 With NPM:
 
 ```bash
-$ npm init vite@latest
+$ npm create vite@latest
 ```
 
 With Yarn:
@@ -20,7 +20,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm create vite
 ```
 
 Then follow the prompts!
@@ -29,16 +29,16 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 6.x
-npm init vite@latest my-vue-app --template vue
+npm create vite@latest my-vue-app --template vue
 
 # npm 7+, extra double-dash is needed:
-npm init vite@latest my-vue-app -- --template vue
+npm create vite@latest my-vue-app -- --template vue
 
 # yarn
 yarn create vite my-vue-app --template vue
 
 # pnpm
-pnpx create-vite my-vue-app --template vue
+pnpm create vite my-vue-app -- --template vue
 ```
 
 Currently supported template presets include:
@@ -51,8 +51,8 @@ Currently supported template presets include:
 - `react-ts`
 - `preact`
 - `preact-ts`
-- `lit-element`
-- `lit-element-ts`
+- `lit`
+- `lit-ts`
 - `svelte`
 - `svelte-ts`
 

@@ -3,7 +3,9 @@
 // @ts-check
 const fs = require('fs')
 const path = require('path')
-const argv = require('minimist')(process.argv.slice(2))
+// Avoids autoconversion to number of the project name by defining that the args
+// non associated with an option ( _ ) needs to be parsed as a string. See #4606
+const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
 // eslint-disable-next-line node/no-restricted-require
 const prompts = require('prompts')
 const {
@@ -13,7 +15,8 @@ const {
   blue,
   magenta,
   lightRed,
-  red
+  red,
+  reset
 } = require('kolorist')
 
 const cwd = process.cwd()
@@ -84,16 +87,16 @@ const FRAMEWORKS = [
     ]
   },
   {
-    name: 'lit-element',
+    name: 'lit',
     color: lightRed,
     variants: [
       {
-        name: 'lit-element',
+        name: 'lit',
         display: 'JavaScript',
         color: yellow
       },
       {
-        name: 'lit-element-ts',
+        name: 'lit-ts',
         display: 'TypeScript',
         color: blue
       }
@@ -139,7 +142,7 @@ async function init() {
         {
           type: targetDir ? null : 'text',
           name: 'projectName',
-          message: 'Project name:',
+          message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
             (targetDir = state.value.trim() || defaultProjectName)
@@ -166,7 +169,7 @@ async function init() {
         {
           type: () => (isValidPackageName(targetDir) ? null : 'text'),
           name: 'packageName',
-          message: 'Package name:',
+          message: reset('Package name:'),
           initial: () => toValidPackageName(targetDir),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name'
@@ -176,8 +179,10 @@ async function init() {
           name: 'framework',
           message:
             typeof template === 'string' && !TEMPLATES.includes(template)
-              ? `"${template}" isn't a valid template. Please choose from below: `
-              : 'Select a framework:',
+              ? reset(
+                  `"${template}" isn't a valid template. Please choose from below: `
+                )
+              : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
@@ -191,7 +196,7 @@ async function init() {
           type: (framework) =>
             framework && framework.variants ? 'select' : null,
           name: 'variant',
-          message: 'Select a variant:',
+          message: reset('Select a variant:'),
           // @ts-ignore
           choices: (framework) =>
             framework.variants.map((variant) => {
@@ -254,14 +259,23 @@ async function init() {
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
-  const pkgManager = /yarn/.test(process.env.npm_execpath) ? 'yarn' : 'npm'
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
     console.log(`  cd ${path.relative(cwd, root)}`)
   }
-  console.log(`  ${pkgManager === 'yarn' ? `yarn` : `npm install`}`)
-  console.log(`  ${pkgManager === 'yarn' ? `yarn dev` : `npm run dev`}`)
+  switch (pkgManager) {
+    case 'yarn':
+      console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} run dev`)
+      break
+  }
   console.log()
 }
 
@@ -299,7 +313,8 @@ function copyDir(srcDir, destDir) {
 }
 
 function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+  const files = fs.readdirSync(path)
+  return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
 function emptyDir(dir) {
@@ -315,6 +330,20 @@ function emptyDir(dir) {
     } else {
       fs.unlinkSync(abs)
     }
+  }
+}
+
+/**
+ * @param {string | undefined} userAgent process.env.npm_config_user_agent
+ * @returns object | undefined
+ */
+function pkgFromUserAgent(userAgent) {
+  if (!userAgent) return undefined
+  const pkgSpec = userAgent.split(' ')[0]
+  const pkgSpecArr = pkgSpec.split('/')
+  return {
+    name: pkgSpecArr[0],
+    version: pkgSpecArr[1]
   }
 }
 

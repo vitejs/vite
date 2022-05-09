@@ -1,15 +1,16 @@
 import path from 'path'
-import { Loader, Plugin, ImportKind } from 'esbuild'
+import type { Plugin, ImportKind } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
-import { ResolvedConfig } from '..'
+import type { ResolvedConfig } from '..'
 import {
   isRunningWithYarnPnp,
   flattenId,
   normalizePath,
-  isExternalUrl
+  isExternalUrl,
+  moduleListContains
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
-import { ExportsData } from '.'
+import type { ExportsData } from '.'
 
 const externalTypes = [
   'css',
@@ -25,6 +26,7 @@ const externalTypes = [
   'vue',
   'svelte',
   'marko',
+  'astro',
   // JSX/TSX may be configured to be compiled differently from how esbuild
   // handles it by default, so exclude them as well
   'jsx',
@@ -35,16 +37,23 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig,
-  ssr?: boolean
+  config: ResolvedConfig
 ): Plugin {
+  // remove optimizable extensions from `externalTypes` list
+  const allExternalTypes = config.optimizeDeps.extensions
+    ? externalTypes.filter(
+        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
+      )
+    : externalTypes
+
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false, scan: true })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
-    isRequire: true
+    isRequire: true,
+    scan: true
   })
 
   const resolve = (
@@ -63,7 +72,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined)
   }
 
   return {
@@ -72,7 +81,7 @@ export function esbuildDepPlugin(
       // externalize assets and commonly known non-js file types
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer, kind }) => {
           const resolved = await resolve(id, importer, kind)
@@ -98,6 +107,13 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
+          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+            return {
+              path: id,
+              external: true
+            }
+          }
+
           // ensure esbuild uses our resolved entries
           let entry: { path: string; namespace: string } | undefined
           // if this is an entry, return entry namespace resolve result
@@ -172,10 +188,8 @@ export function esbuildDepPlugin(
           }
         }
 
-        let ext = path.extname(entryFile).slice(1)
-        if (ext === 'mjs') ext = 'js'
         return {
-          loader: ext as Loader,
+          loader: 'js',
           contents,
           resolveDir: root
         }

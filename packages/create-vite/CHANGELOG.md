@@ -1,3 +1,141 @@
+## <small>2.9.3 (2022-05-02)</small>
+
+* chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
+* feat(create-vite): scaffold directory with only .git (#7971) ([a5bdb9f](https://github.com/vitejs/vite/commit/a5bdb9f)), closes [#7971](https://github.com/vitejs/vite/issues/7971)
+
+
+
+## <small>2.9.2 (2022-04-19)</small>
+
+* chore: remove useless code in preact template (#7789) ([e5729be](https://github.com/vitejs/vite/commit/e5729be)), closes [#7789](https://github.com/vitejs/vite/issues/7789)
+* fix(create-vite): bump `vue-tsc` to `0.34.7` (#7760) ([9a93233](https://github.com/vitejs/vite/commit/9a93233)), closes [#7760](https://github.com/vitejs/vite/issues/7760)
+* fix(create-vite): set skipLibCheck true (#7726) ([54e9cdd](https://github.com/vitejs/vite/commit/54e9cdd)), closes [#7726](https://github.com/vitejs/vite/issues/7726)
+
+
+
+## <small>2.9.1 (2022-04-13)</small>
+
+* chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)
+* chore: update @types/react version (#7655) ([eb57627](https://github.com/vitejs/vite/commit/eb57627)), closes [#7655](https://github.com/vitejs/vite/issues/7655)
+* chore: update vue template setup api doc url (#7628) ([4433df4](https://github.com/vitejs/vite/commit/4433df4)), closes [#7628](https://github.com/vitejs/vite/issues/7628)
+* chore(create-vite-app): upgrade react to 18 (#7597) ([8b21029](https://github.com/vitejs/vite/commit/8b21029)), closes [#7597](https://github.com/vitejs/vite/issues/7597)
+* chore(create-vite): add isolatedModules (#7697) ([8f28350](https://github.com/vitejs/vite/commit/8f28350)), closes [#7697](https://github.com/vitejs/vite/issues/7697)
+
+
+
+## 2.9.0 (2022-03-30)
+
+* chore: add isolatedModules to create-vite > template-vue-ts > tsconfig (#7304) ([21990ea](https://github.com/vitejs/vite/commit/21990ea)), closes [#7304](https://github.com/vitejs/vite/issues/7304)
+* chore(deps): update all non-major dependencies (#7490) ([42c15f6](https://github.com/vitejs/vite/commit/42c15f6)), closes [#7490](https://github.com/vitejs/vite/issues/7490)
+* docs(vue-ts): update note on vue type support in ts (#6165) ([cfc7648](https://github.com/vitejs/vite/commit/cfc7648)), closes [#6165](https://github.com/vitejs/vite/issues/6165)
+* workflow: separate version bumping and publishing on release (#6879) ([fe8ef39](https://github.com/vitejs/vite/commit/fe8ef39)), closes [#6879](https://github.com/vitejs/vite/issues/6879)
+
+
+
+# [2.8.0](https://github.com/vitejs/vite/compare/create-vite@2.7.2...create-vite@2.8.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* **create-vite:** use `reset` for prompts for white bg color shell ([#6131](https://github.com/vitejs/vite/issues/6131)) ([dd3bbb8](https://github.com/vitejs/vite/commit/dd3bbb8e21aff812ec482f760e1abceb6bd67aef))
+
+
+### Features
+
+* **create-vite:** tsconfig support vite.config.ts ([#6324](https://github.com/vitejs/vite/issues/6324)) ([bfbdb22](https://github.com/vitejs/vite/commit/bfbdb2242e57cfba0309a88475a1f9cf2a50413f))
+
+
+
+## [2.7.2](https://github.com/vitejs/vite/compare/create-vite@2.7.1...create-vite@2.7.2) (2021-12-13)
+
+
+
+## [2.7.1](https://github.com/vitejs/vite/compare/create-vite@2.7.0...create-vite@2.7.1) (2021-12-12)
+
+
+
+# [2.7.0](https://github.com/vitejs/vite/compare/create-vite@2.6.6...create-vite@2.7.0) (2021-12-07)
+
+
+### Bug Fixes
+
+* **create-vite:** update vue-tsc for dts flags ([#5453](https://github.com/vitejs/vite/issues/5453)) ([c93bc3d](https://github.com/vitejs/vite/commit/c93bc3df90b5c4e8e25ffd864ae53a3ae7559315))
+
+
+
+## [2.6.6](https://github.com/vitejs/vite/compare/create-vite@2.6.5...create-vite@2.6.6) (2021-10-07)
+
+
+
+## [2.6.5](https://github.com/vitejs/vite/compare/create-vite@2.6.4...create-vite@2.6.5) (2021-09-29)
+
+
+### Features
+
+* **create-vite:** migrate lit-element to lit ([#5012](https://github.com/vitejs/vite/issues/5012)) ([d66ea0f](https://github.com/vitejs/vite/commit/d66ea0f420eb7926d927b64e40ecaf83d9388e63))
+
+
+
+## [2.6.4](https://github.com/vitejs/vite/compare/create-vite@2.6.3...create-vite@2.6.4) (2021-09-22)
+
+
+
+## [2.6.3](https://github.com/vitejs/vite/compare/create-vite@2.6.2...create-vite@2.6.3) (2021-09-21)
+
+
+### Bug Fixes
+
+* pnpm create-vite command documentation ([#4902](https://github.com/vitejs/vite/issues/4902)) ([3392a8a](https://github.com/vitejs/vite/commit/3392a8ad5618cc68b6898a327b6c8959de6f4992))
+
+
+### Features
+
+* **create-vite:** update vue templates ([a2be9c1](https://github.com/vitejs/vite/commit/a2be9c11fccb53ed60a33d72025c2d30635be1a7))
+
+
+
+## [2.6.2](https://github.com/vitejs/vite/compare/create-vite@2.6.1...create-vite@2.6.2) (2021-09-07)
+
+
+
+## [2.6.1](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.1) (2021-08-31)
+
+
+### Bug Fixes
+
+* **create-vite:** project name with only numbers as an argument ([#4606](https://github.com/vitejs/vite/issues/4606)) ([085a621](https://github.com/vitejs/vite/commit/085a6219ceb89052ac0a269e7ccda081e534a800))
+
+
+### Features
+
+* **create-vite:** update vue templates ([87a9a70](https://github.com/vitejs/vite/commit/87a9a70f75991a8afb06a0b84f4eab43ca76fa89))
+* explicit set `useDefineForClassFields` in ts templates ([#4280](https://github.com/vitejs/vite/issues/4280)) ([fe74173](https://github.com/vitejs/vite/commit/fe74173f19b6e341114723a99043440abce27bd6))
+
+
+
+# [2.6.0](https://github.com/vitejs/vite/compare/create-vite@2.5.4...create-vite@2.6.0) (2021-08-25)
+
+
+### Bug Fixes
+
+* **create-vite:** project name with only numbers as an argument ([#4606](https://github.com/vitejs/vite/issues/4606)) ([085a621](https://github.com/vitejs/vite/commit/085a6219ceb89052ac0a269e7ccda081e534a800))
+
+
+### Features
+
+* **create-vite:** update vue templates ([fe9ebe7](https://github.com/vitejs/vite/commit/fe9ebe7bb227979e9420ba295b892a716daaaf69))
+
+
+
+## [2.5.4](https://github.com/vitejs/vite/compare/create-vite@2.5.3...create-vite@2.5.4) (2021-08-03)
+
+
+### Bug Fixes
+
+* **create-vite:** distinguish pnpm pkgManager ([#4220](https://github.com/vitejs/vite/issues/4220)) ([c0a3dbf](https://github.com/vitejs/vite/commit/c0a3dbfa66266378f6f329f1981d5827b781fdbb))
+
+
+
 ## [2.5.3](https://github.com/vitejs/vite/compare/create-vite@2.5.2...create-vite@2.5.3) (2021-07-27)
 
 
@@ -34,7 +172,7 @@ $ yarn create vite
 With PNPM:
 
 ```bash
-$ pnpx create-vite
+$ pnpm dlx create-vite
 ```
 
 

@@ -13,11 +13,11 @@
 
 /// <reference types="node" />
 
-import * as net from 'net'
-import * as http from 'http'
+import type * as net from 'net'
+import type * as http from 'http'
 import * as events from 'events'
-import * as url from 'url'
-import * as stream from 'stream'
+import type * as url from 'url'
+import type * as stream from 'stream'
 
 export namespace HttpProxy {
   export type ProxyTarget = ProxyTargetUrl | ProxyTargetDetailed
@@ -71,12 +71,12 @@ export namespace HttpProxy {
      * @param req - Client request.
      * @param socket - Client socket.
      * @param head - Client head.
-     * @param options - Additionnal options.
+     * @param options - Additional options.
      */
     ws(
       req: http.IncomingMessage,
-      socket: any,
-      head: any,
+      socket: unknown,
+      head: unknown,
       options?: ServerOptions,
       callback?: ErrorCallback
     ): void
