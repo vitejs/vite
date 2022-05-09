@@ -42,7 +42,6 @@ import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-import { transformDynamicImport } from './dynamicImportVars'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
@@ -52,7 +51,6 @@ import {
   getDepsCacheDir,
   optimizedDepNeedsInterop
 } from '../optimizer'
-import { dynamicImportHelperId } from './dynamicImportVars'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -110,11 +108,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   let server: ViteDevServer
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
 
   return {
     name: 'vite:import-analysis',
@@ -185,7 +178,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let isSelfAccepting = false
       let hasEnv = false
       let needQueryInjectHelper = false
-      let needDynamicImportHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
@@ -498,52 +490,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
-          if (!isSupportedDynamicImport(url)) {
-            let importGlobResult
-            try {
-              importGlobResult = await transformDynamicImport(
-                url,
-                config.root,
-                importer,
-                resolve
-              )
-            } catch (e) {
-              this.error(e)
-            }
-
-            if (importGlobResult) {
-              const { glob, rawPattern } = importGlobResult
-              needDynamicImportHelper = true
-              str().overwrite(
-                expStart,
-                expEnd,
-                `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
-              )
-              if (server) {
-                const allGlobs = glob.matches.map((i) => i.globsResolved)
-                server._importGlobMap.set(importer, allGlobs)
-                glob.files.forEach((file) => {
-                  // update watcher
-                  server!.watcher.add(path.posix.dirname(file))
-                })
-              }
-            } else {
-              if (!hasViteIgnore) {
-                this.warn(
-                  `\n` +
-                    colors.cyan(importerModule.file) +
-                    `\n` +
-                    generateCodeFrame(source, start) +
-                    `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                    `See ${colors.blue(
-                      `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                    )} ` +
-                    `for supported dynamic import formats. ` +
-                    `If this is intended to be left as-is, you can use the ` +
-                    `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
-                )
-              }
-            }
+          if (!hasViteIgnore) {
+            this.warn(
+              `\n` +
+                colors.cyan(importerModule.file) +
+                `\n` +
+                generateCodeFrame(source, start) +
+                `\nThe above dynamic import cannot be analyzed by vite.\n` +
+                `See ${colors.blue(
+                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                )} ` +
+                `for supported dynamic import formats. ` +
+                `If this is intended to be left as-is, you can use the ` +
+                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+            )
           }
           if (
             !/^('.*'|".*"|`.*`)$/.test(url) ||
@@ -600,12 +560,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (needQueryInjectHelper) {
         str().prepend(
           `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
-        )
-      }
-
-      if (needDynamicImportHelper) {
-        str().prepend(
-          `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
         )
       }
 
@@ -695,27 +649,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-/**
- * https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
- * This is probably less accurate but is much cheaper than a full AST parse.
- */
-function isSupportedDynamicImport(url: string) {
-  url = url.trim().slice(1, -1)
-  // must be relative
-  if (!url.startsWith('./') && !url.startsWith('../')) {
-    return false
-  }
-  // must have extension
-  if (!path.extname(url)) {
-    return false
-  }
-  // must be more specific if importing from same dir
-  if (url.startsWith('./${') && url.indexOf('/') === url.lastIndexOf('/')) {
-    return false
-  }
-  return true
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

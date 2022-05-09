@@ -19,7 +19,7 @@ import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
-import { dynamicImportHelperPlugin } from './dynamicImportVars'
+import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
@@ -53,7 +53,6 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true
     }),
-    dynamicImportHelperPlugin(),
     isBuild ? null : optimizedDepsPlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
@@ -75,6 +74,7 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    dynamicImportVarsPlugin(config),
     importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,

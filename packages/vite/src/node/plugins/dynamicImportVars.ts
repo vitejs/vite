@@ -1,16 +1,15 @@
-import path from 'path'
+import { posix } from 'path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { parseRequest } from '../utils'
+import { normalizePath, parseRequest } from '../utils'
 import { parse as parseJS } from 'acorn'
 import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { TransformGlobImportResult } from './importMetaGlob'
-import { transformGlobImport } from './importMetaGlob'
-import type { ViteDevServer } from '../server'
+
+export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
 interface DynamicImportRequest {
   as?: 'raw'
@@ -33,9 +32,8 @@ const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
     )
   })
 }
-export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
-export function parseDynamicImportPattern(
+function parseDynamicImportPattern(
   strings: string
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
@@ -69,14 +67,13 @@ export function parseDynamicImportPattern(
 
 export async function transformDynamicImport(
   importSource: string,
-  root: string,
   importer: string,
   resolve: (
     url: string,
     importer?: string
   ) => Promise<string | undefined> | string | undefined
 ): Promise<{
-  glob: TransformGlobImportResult
+  glob: string
   pattern: string
   rawPattern: string
 } | null> {
@@ -85,9 +82,9 @@ export async function transformDynamicImport(
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = path.posix.relative(
-      path.dirname(importer),
-      resolvedFileName
+    const relativeFileName = posix.relative(
+      posix.dirname(normalizePath(importer)),
+      normalizePath(resolvedFileName)
     )
     importSource =
       '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
@@ -101,30 +98,12 @@ export async function transformDynamicImport(
   const params = globParams
     ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
     : ''
-  const exp = `import.meta.glob(${JSON.stringify(userPattern)}${params})`
-  const glob = await transformGlobImport(exp, importer, root, resolve, false)
+  const exp = `(import.meta.glob(${JSON.stringify(userPattern)}${params}))`
 
   return {
     rawPattern,
     pattern: userPattern,
-    glob: glob!
-  }
-}
-
-export function dynamicImportHelperPlugin(): Plugin {
-  return {
-    name: 'vite:dynamic-import-helper',
-    resolveId(id) {
-      if (id === dynamicImportHelperId) {
-        return id
-      }
-    },
-
-    load(id) {
-      if (id === dynamicImportHelperId) {
-        return 'export default' + dynamicImportHelper.toString()
-      }
-    }
+    glob: exp
   }
 }
 
@@ -137,13 +116,20 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const { include, exclude, warnOnError } =
     config.build.dynamicImportVarsOptions
   const filter = createFilter(include, exclude)
-  let server: ViteDevServer
 
   return {
     name: 'vite:dynamic-import-vars',
 
-    configureServer(_server) {
-      server = _server
+    resolveId(id) {
+      if (id === dynamicImportHelperId) {
+        return id
+      }
+    },
+
+    load(id) {
+      if (id === dynamicImportHelperId) {
+        return 'export default' + dynamicImportHelper.toString()
+      }
     },
 
     async transform(source, importer) {
@@ -157,7 +143,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       try {
         imports = parseImports(source)[0]
       } catch (e: any) {
-        this.error(e, e.idx)
+        // ignore as it might not be a JS file, the subsequent plugins will catch the error
+        return null
       }
 
       if (!imports.length) {
@@ -185,7 +172,6 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         try {
           result = await transformDynamicImport(
             source.slice(start, end),
-            config.root,
             importer,
             resolve
           )
@@ -207,16 +193,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
         )
-        if (server) {
-          const allGlobs = glob.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(importer, allGlobs)
-          glob.files.forEach((file) => {
-            // update watcher
-            server!.watcher.add(path.posix.dirname(file))
-          })
-        }
       }
 
       if (s) {
