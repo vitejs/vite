@@ -10,7 +10,7 @@ if (isBuild) {
   test('umd', async () => {
     expect(await page.textContent('.umd')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/my-lib-custom-filename.umd.js'),
+      path.join(testDir(), 'dist/my-lib-custom-filename.umd.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the UMD wrapper
@@ -20,7 +20,7 @@ if (isBuild) {
   test('iife', async () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/my-lib-custom-filename.iife.js'),
+      path.join(testDir(), 'dist/my-lib-custom-filename.iife.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the IIFE wrapper
@@ -30,7 +30,7 @@ if (isBuild) {
   test('Library mode does not include `preload`', async () => {
     expect(await page.textContent('.dynamic-import-message')).toBe('hello vite')
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/lib/dynamic-import-message.js'),
+      path.join(testDir(), 'dist/lib/dynamic-import-message.js'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')

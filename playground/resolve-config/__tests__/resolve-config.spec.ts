@@ -5,7 +5,7 @@ import { isBuild, testDir, workspaceRoot } from '../../testUtils'
 
 const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
 
-const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
+const fromTestDir = (...p: string[]) => path.resolve(testDir(), ...p)
 
 const build = (configName: string) => {
   commandSync(`${viteBin} build`, { cwd: fromTestDir(configName) })

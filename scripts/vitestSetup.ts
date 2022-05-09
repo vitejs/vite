@@ -2,6 +2,9 @@ import fs from 'fs-extra'
 import * as http from 'http'
 import { resolve, dirname } from 'path'
 import sirv from 'sirv'
+import os from 'os'
+import path from 'path'
+import { chromium } from 'playwright-chromium'
 import type {
   ViteDevServer,
   InlineConfig,
@@ -12,6 +15,7 @@ import type {
 import { createServer, build, mergeConfig } from 'vite'
 import type { Page, ConsoleMessage } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
+import { beforeAll, afterAll, File } from 'vitest'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 
@@ -63,16 +67,39 @@ const onPageError = (error: Error) => {
   errors.push(error)
 }
 
-beforeAll(async () => {
-  const page = global.page
-  if (!page) {
+const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
+
+beforeAll(async (s) => {
+  const suite = s as File
+  const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
+  if (!wsEndpoint) {
+    throw new Error('wsEndpoint not found')
+  }
+
+  // skip browser setup for non-playground tests
+  if (!suite.filepath.includes('playground')) {
     return
   }
+
+  const browser = await chromium.connect(wsEndpoint)
+  const page = await browser.newPage()
+  // @ts-expect-error
+  globalThis.page = page
+
+  const globalConsole = globalThis.console
+  const warn = globalConsole.warn
+  globalConsole.warn = (msg, ...args) => {
+    // suppress @vue/ref-transform warning
+    if (msg.includes('@vue/ref-transform')) return
+    if (msg.includes('Generated an empty chunk')) return
+    warn.call(globalConsole, msg, ...args)
+  }
+
   try {
     page.on('console', onConsole)
     page.on('pageerror', onPageError)
 
-    const testPath = expect.getState().testPath
+    const testPath = suite.filepath!
     const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 
     // if this is a test placed under playground/xxx/__tests__
@@ -167,29 +194,30 @@ beforeAll(async () => {
       }
     }
   } catch (e: any) {
-    // jest doesn't exit if our setup has error here
-    // https://github.com/facebook/jest/issues/2713
-    setBeforeAllError(e)
-
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
     // If the page remains open, a command like `await page.click(...)` produces
     // a timeout with an exception that hides the real error in the console.
     await page.close()
+
+    throw e
+  }
+
+  return async () => {
+    page?.off('console', onConsole)
+    global.serverLogs = []
+    await page?.close()
+    await server?.close()
+    global.watcher?.close()
+    const beforeAllErr = getBeforeAllError()
+    if (browser) {
+      await browser.close()
+    }
+    if (beforeAllErr) {
+      throw beforeAllErr
+    }
   }
 }, 30000)
-
-afterAll(async () => {
-  global.page?.off('console', onConsole)
-  global.serverLogs = []
-  await global.page?.close()
-  await server?.close()
-  global.watcher?.close()
-  const beforeAllErr = getBeforeAllError()
-  if (beforeAllErr) {
-    throw beforeAllErr
-  }
-})
 
 function startStaticServer(config?: InlineConfig): Promise<string> {
   if (!config) {

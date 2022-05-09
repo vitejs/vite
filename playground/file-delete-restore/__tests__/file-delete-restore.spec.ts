@@ -6,8 +6,9 @@ import {
   isBuild
 } from '../../testUtils'
 
-if (!isBuild) {
-  test('should hmr when file is deleted and restored', async () => {
+test.runIf(isBuild)(
+  'should hmr when file is deleted and restored',
+  async () => {
     await untilUpdated(() => page.textContent('p'), 'Child state 1')
 
     editFile('Child.jsx', (code) =>
@@ -53,9 +54,5 @@ if (!isBuild) {
     )
 
     await untilUpdated(() => page.textContent('p'), 'Child state 1')
-  })
-} else {
-  test('dummy test to make jest happy', async () => {
-    // Your test suite must contain at least one test.
-  })
-}
+  }
+)

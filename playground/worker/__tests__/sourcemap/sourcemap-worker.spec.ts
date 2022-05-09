@@ -4,7 +4,7 @@ import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import { Page } from 'playwright-chromium'
 
 if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
+  const assetsDir = path.resolve(testDir(), 'dist/iife-sourcemap/assets')
   // assert correct files
   test('sourcemap generation for web workers', async () => {
     const files = fs.readdirSync(assetsDir)

@@ -6,7 +6,8 @@ const path = require('path')
 const fs = require('fs-extra')
 const { testDir } = require('../../testUtils')
 
-const fromTestDir = (/** @type{string[]} */ ...p) => path.resolve(testDir, ...p)
+const fromTestDir = (/** @type{string[]} */ ...p) =>
+  path.resolve(testDir(), ...p)
 
 const configNames = ['js', 'cjs', 'mjs', 'ts']
 

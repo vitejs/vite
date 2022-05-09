@@ -60,7 +60,7 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
 })
 
 if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/iife/assets')
+  const assetsDir = path.resolve(testDir(), 'dist/iife/assets')
   // assert correct files
   test('inlined code generation', async () => {
     const files = fs.readdirSync(assetsDir)
