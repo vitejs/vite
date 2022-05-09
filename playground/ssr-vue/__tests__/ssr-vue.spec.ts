@@ -172,7 +172,7 @@ test('dynamic css file should be preloaded', async () => {
     const filename = re.exec(homeHtml)[1]
     const manifest = require(resolve(
       process.cwd(),
-      './packages/temp/ssr-vue/dist/client/ssr-manifest.json'
+      './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
     ))
     const depFile = manifest[filename]
     for (const file of depFile) {

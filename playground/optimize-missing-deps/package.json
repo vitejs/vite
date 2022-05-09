@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "node server",
-    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
+    "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
   },
   "dependencies": {
     "missing-dep": "file:./missing-dep"

@@ -18,7 +18,7 @@
     "dev:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js dev",
     "build:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js build",
     "preview:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js preview",
-    "debug": "node --inspect-brk ../../vite/bin/vite"
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "workspace:*"
