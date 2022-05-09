@@ -152,6 +152,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
+        const isDynamic = dynamicIndex > -1
+
         // import.meta.glob
         if (
           source.slice(start, end) === 'import.meta' &&
@@ -189,11 +191,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        if (dynamicIndex > -1 && insertPreload) {
+        if (isDynamic && insertPreload) {
           needPreloadHelper = true
-          const original = source.slice(expStart, expEnd)
-          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
+          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          str().appendRight(
+            expEnd,
+            `,${isModernFlag}?"${preloadMarker}":void 0)`
+          )
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -203,12 +207,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (
           specifier &&
           isCSSRequest(specifier) &&
-          source.slice(expStart, start).includes('from') &&
+          // always inject ?used query when it is a dynamic import
+          // because there is no way to check whether the default export is used
+          (source.slice(expStart, start).includes('from') || isDynamic) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+          str().overwrite(start, end, isDynamic ? `'${url}'` : url, {
             contentOnly: true
           })
         }
