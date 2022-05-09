@@ -171,7 +171,7 @@ importers:
       '@babel/types': ^7.17.10
       '@jridgewell/trace-mapping': ^0.3.10
       '@rollup/plugin-alias': ^3.1.9
-      '@rollup/plugin-commonjs': ^21.1.0
+      '@rollup/plugin-commonjs': ^22.0.0
       '@rollup/plugin-dynamic-import-vars': ^1.4.3
       '@rollup/plugin-json': ^4.1.0
       '@rollup/plugin-node-resolve': 13.2.1
@@ -251,7 +251,7 @@ importers:
       '@babel/types': 7.17.10
       '@jridgewell/trace-mapping': 0.3.10
       '@rollup/plugin-alias': 3.1.9_rollup@2.72.1
-      '@rollup/plugin-commonjs': 21.1.0_rollup@2.72.1
+      '@rollup/plugin-commonjs': 22.0.0_rollup@2.72.1
       '@rollup/plugin-dynamic-import-vars': 1.4.3_rollup@2.72.1
       '@rollup/plugin-json': 4.1.0_rollup@2.72.1
       '@rollup/plugin-node-resolve': 13.2.1_rollup@2.72.1
@@ -2069,11 +2069,11 @@ packages:
       slash: 3.0.0
     dev: true
 
-  /@rollup/plugin-commonjs/21.1.0_rollup@2.72.1:
-    resolution: {integrity: sha512-6ZtHx3VHIp2ReNNDxHjuUml6ur+WcQ28N1yHgCQwsbNkQg2suhxGMDQGJOn/KuDxKtd1xuZP5xSTwBA4GQ8hbA==}
-    engines: {node: '>= 8.0.0'}
+  /@rollup/plugin-commonjs/22.0.0_rollup@2.72.1:
+    resolution: {integrity: sha512-Ktvf2j+bAO+30awhbYoCaXpBcyPmJbaEUYClQns/+6SNCYFURbvBiNbWgHITEsIgDDWCDUclWRKEuf8cwZCFoQ==}
+    engines: {node: '>= 12.0.0'}
     peerDependencies:
-      rollup: ^2.38.3
+      rollup: ^2.68.0
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.72.1
       commondir: 1.0.1
