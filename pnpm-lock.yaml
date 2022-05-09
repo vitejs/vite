@@ -11,6 +11,7 @@ importers:
   .:
     specifiers:
       '@microsoft/api-extractor': ^7.23.1
+      '@types/babel__core': ^7.1.19
       '@types/fs-extra': ^9.0.13
       '@types/node': ^17.0.31
       '@types/prompts': ^2.4.0
@@ -45,6 +46,7 @@ importers:
       vitest: ^0.12.0
     devDependencies:
       '@microsoft/api-extractor': 7.23.1
+      '@types/babel__core': 7.1.19
       '@types/fs-extra': 9.0.13
       '@types/node': 17.0.31
       '@types/prompts': 2.4.0
@@ -1907,6 +1909,35 @@ packages:
 
   /@types/asn1js/2.0.2:
     resolution: {integrity: sha512-t4YHCgtD+ERvH0FyxvNlYwJ2ezhqw7t+Ygh4urQ7dJER8i185JPv6oIM3ey5YQmGN6Zp9EMbpohkjZi9t3UxwA==}
+    dev: true
+
+  /@types/babel__core/7.1.19:
+    resolution: {integrity: sha512-WEOTgRsbYkvA/KCsDwVEGkd7WAr1e3g31VHQ8zy5gul/V1qKullU/BU5I68X5v7V3GnB9eotmom4v5a5gjxorw==}
+    dependencies:
+      '@babel/parser': 7.17.10
+      '@babel/types': 7.17.10
+      '@types/babel__generator': 7.6.4
+      '@types/babel__template': 7.4.1
+      '@types/babel__traverse': 7.17.1
+    dev: true
+
+  /@types/babel__generator/7.6.4:
+    resolution: {integrity: sha512-tFkciB9j2K755yrTALxD44McOrk+gfpIpvC3sxHjRawj6PfnQxrse4Clq5y/Rq+G3mrBurMax/lG8Qn2t9mSsg==}
+    dependencies:
+      '@babel/types': 7.17.10
+    dev: true
+
+  /@types/babel__template/7.4.1:
+    resolution: {integrity: sha512-azBFKemX6kMg5Io+/rdGT0dkGreboUVR0Cdm3fz9QJWpaQGJRQXl7C+6hOTCZcMll7KFyEQpgbYI2lHdsS4U7g==}
+    dependencies:
+      '@babel/parser': 7.17.10
+      '@babel/types': 7.17.10
+    dev: true
+
+  /@types/babel__traverse/7.17.1:
+    resolution: {integrity: sha512-kVzjari1s2YVi77D3w1yuvohV2idweYXMCDzqBiVNN63TcDWrIlTVOYpqVrvbbyOE/IyzBoTKF0fdnLPEORFxA==}
+    dependencies:
+      '@babel/types': 7.17.10
     dev: true
 
   /@types/braces/3.0.1:
