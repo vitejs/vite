@@ -5,8 +5,8 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      './packages/playground/**/*.*',
-      './packages/temp/**/*.*'
+      './playground/**/*.*',
+      './playground-temp/**/*.*'
     ]
   },
   esbuild: {

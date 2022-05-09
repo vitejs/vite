@@ -9,14 +9,14 @@ const config: Config.InitialOptions = {
   globalTeardown: './scripts/jestGlobalTeardown.cjs',
   testEnvironment: './scripts/jestEnv.cjs',
   setupFilesAfterEnv: ['./scripts/jestPerTestSetup.ts'],
-  watchPathIgnorePatterns: ['<rootDir>/packages/temp'],
-  modulePathIgnorePatterns: ['<rootDir>/packages/temp'],
+  watchPathIgnorePatterns: ['<rootDir>/playground-temp'],
+  modulePathIgnorePatterns: ['<rootDir>/playground-temp'],
   moduleNameMapper: {
-    testUtils: '<rootDir>/packages/playground/testUtils.ts'
+    testUtils: '<rootDir>/playground/testUtils.ts'
   },
   globals: {
     'ts-jest': {
-      tsconfig: './packages/playground/tsconfig.json'
+      tsconfig: './playground/tsconfig.json'
     }
   }
 }

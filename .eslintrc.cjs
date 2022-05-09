@@ -109,7 +109,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/playground/**'],
+      files: ['playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
         'node/no-extraneous-require': 'off'
