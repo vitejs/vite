@@ -1,9 +1,25 @@
+import path from 'path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import { parseRequest } from '../utils'
+import { parse as parseJS } from 'acorn'
 import { createFilter } from '@rollup/pluginutils'
+import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import type { TransformGlobImportResult } from './importMetaGlob'
+import { transformGlobImport } from './importMetaGlob'
+
+interface DynamicImportRequest {
+  as?: 'raw'
+}
+
+interface DynamicImportPattern {
+  globParams: DynamicImportRequest | null
+  userPattern: string
+  rawPattern: string
+}
 
 const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
   const v = glob[path]
@@ -18,22 +34,50 @@ const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
 }
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
+export function parseDynamicImportPattern(
+  strings: string
+): DynamicImportPattern | null {
+  const filename = strings.slice(1, -1)
+  const rawQuery = parseRequest(filename)
+  let globParams: DynamicImportRequest | null = null
+  const ast = (
+    parseJS(strings, {
+      ecmaVersion: 'latest',
+      sourceType: 'module'
+    }) as any
+  ).body[0].expression
+
+  const userPatternQuery = dynamicImportToGlob(ast, filename)
+  if (!userPatternQuery) {
+    return null
+  }
+
+  const [userPattern] = userPatternQuery.split('?', 2)
+  const [rawPattern] = filename.split('?', 2)
+
+  if (rawQuery?.raw !== undefined) {
+    globParams = { as: 'raw' }
+  }
+
+  return {
+    globParams,
+    userPattern,
+    rawPattern
+  }
+}
+
 export async function transformDynamicImportGlob(
   source: string,
+  root: string,
   importer: string,
   start: number,
   end: number,
-  resolve?: (url: string, importer?: string) => Promise<string | undefined>
+  resolve: (url: string, importer?: string) => Promise<string | undefined>
 ): Promise<{
-  exp: string
+  glob: TransformGlobImportResult
   pattern: string
   rawPattern: string
 } | null> {
-  const err = (msg: string) => {
-    const e = new Error(`Invalid dynamic import syntax: ${msg}`)
-    ;(e as any).pos = start
-    return e
-  }
   let fileName = source.slice(start, end)
 
   if (fileName[1] !== '.' && fileName[1] !== '/' && resolve) {
@@ -52,12 +96,22 @@ export async function transformDynamicImportGlob(
   if (!dynamicImportPattern) {
     return null
   }
-  const { query, rawPattern, userPattern } = dynamicImportPattern
+  const { globParams, rawPattern, userPattern } = dynamicImportPattern
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const exp = `import.meta.glob(${JSON.stringify(userPattern)}${params})`
+  const glob = await transformGlobImport(
+    exp,
+    importer,
+    root,
+    resolve,
+    false,
+    false
+  )
 
   return {
     rawPattern,
     pattern: userPattern,
-    exp: `import.meta.glob(${JSON.stringify(userPattern)})`
+    glob: glob!
   }
 }
 
@@ -130,6 +184,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         try {
           result = await transformDynamicImportGlob(
             source,
+            config.root,
             importer,
             start,
             end,
@@ -147,13 +202,13 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        const { rawPattern, exp } = result
+        const { rawPattern, glob } = result
 
         needDynamicImportHelper = true
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${exp}, \`${rawPattern}\`)`
+          `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
         )
       }
 

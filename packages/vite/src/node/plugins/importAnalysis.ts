@@ -499,10 +499,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
           if (!isSupportedDynamicImport(url)) {
-            let glob
+            let importGlobResult
             try {
-              glob = await transformDynamicImportGlob(
+              importGlobResult = await transformDynamicImportGlob(
                 source,
+                config.root,
                 importer,
                 start,
                 end,
@@ -512,28 +513,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               this.error(e)
             }
 
-            if (glob) {
-              const { exp, imports, rawPattern } = glob
+            if (importGlobResult) {
+              const { glob, rawPattern } = importGlobResult
               needDynamicImportHelper = true
               str().overwrite(
                 expStart,
                 expEnd,
-                `__variableDynamicImportRuntimeHelper(${exp}, \`${rawPattern}\`)`
+                `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
               )
-              imports.forEach((url) => {
-                url = url.replace(base, '/')
-                importedUrls.add(url)
-              })
-              if (!(importerModule.file! in server._globImporters)) {
-                server._globImporters[importerModule.file!] = {
-                  module: importerModule,
-                  importGlobs: []
-                }
-              }
-              server._globImporters[importerModule.file!].importGlobs.push({
-                base,
-                pattern: rawPattern
-              })
             } else {
               if (!hasViteIgnore) {
                 this.warn(
