@@ -16,7 +16,7 @@
   "dependencies": {
     "example-external-component": "file:example-external-component",
     "vue": "^3.2.33",
-    "vue-router": "^4.0.0",
+    "vue-router": "^4.0.15",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
@@ -25,7 +25,7 @@
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
     "dep-import-type": "link:./dep-import-type",
-    "express": "^4.17.1",
-    "serve-static": "^1.14.1"
+    "express": "^4.18.1",
+    "serve-static": "^1.15.0"
   }
 }

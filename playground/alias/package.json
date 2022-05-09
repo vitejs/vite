@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "aliased-module": "file:./dir/module",
-    "vue": "^3.2.25"
+    "vue": "^3.2.33"
   },
   "devDependencies": {
     "resolve-linked": "workspace:*"
