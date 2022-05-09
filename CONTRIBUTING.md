@@ -10,42 +10,88 @@ To develop and test the core `vite` package:
 
 1. Run `pnpm i` in Vite's root folder
 
-2. Go to `packages/vite` and run `pnpm run dev`. This starts `rollup` in watch mode.
+2. Run `pnpm run build` in Vite's root folder.
 
-3. Run `pnpm link --global` in `packages/vite`. This links `vite` globally so that you can:
+3. If you are developing Vite itself, you can go to `packages/vite` and run `pnpm run dev` to automatically rebuild Vite whenever you change its code.
 
-   - Run `pnpm link --global vite` in another Vite project to use the locally built Vite;
-   - Use the `vite` binary anywhere.
+You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
-   If your project has `vite` as a nested dependency, you can customize the dependency resolution instead depending on the package manager used. For pnpm, add this in your project's root `package.json`:
+## Debugging
 
-   ```json
-   {
-     "pnpm": {
-       "overrides": {
-         "vite": "link:../path/to/vite/packages/vite"
-       }
-     }
-   }
-   ```
+If you want to use break point and explore code execution you can use the ["Run and debug"](https://code.visualstudio.com/docs/editor/debugging) feature from vscode.
 
-   And re-run `pnpm install` to link the package.
+1. Add a `debugger` statement where you want to stop the code execution.
+
+2. Click on the "Run and Debug" icon in the activity bar of the editor.
+
+3. Click on the "JavaScript Debug Terminal" button.
+
+4. It will open a terminal, then go to `playground/xxx` and run `pnpm run dev`.
+
+5. The execution will stop and you'll use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
+
+### Debugging errors in Jest tests using Playwright (Chromium)
+
+Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Jest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
+
+1. Add a `debugger` statement to the `scripts/jestPerTestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+
+1. Wait for inspector devtools to open in your browser and the debugger to attach.
+
+1. In the sources panel in the right column, click the play button to resume execution and allow the tests to run which will open a Chromium instance.
+
+1. Focusing the Chromium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+
+1. To close everything, just stop the test process back in your terminal.
+
+## Testing Vite against external packages
+
+You may wish to test your locally-modified copy of Vite against another package that is built with Vite. For pnpm, after building Vite, you can use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides). Please note that `pnpm.overrides` must be specified in the root `package.json` and you must first list the package as a dependency in the root `package.json`:
+
+```json
+{
+  "dependencies": {
+    "vite": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "link:../path/to/vite/packages/vite"
+    }
+  }
+}
+```
+
+And re-run `pnpm install` to link the package.
 
 ## Running Tests
 
-Each package under `packages/playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
+### Integration Tests
 
-Each test can be run under either dev server mode or build mode.
+Each package under `playground/` contains a `__tests__` directory. The tests are run using [Jest](https://jestjs.io/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `jest.config.js` and `scripts/jest*` files.
 
-- `pnpm test` by default runs every test in both serve and build mode.
+Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to solve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also you may want to [set git `core.symlinks` to `true` to solve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
+
+Each integration test can be run under either dev server mode or build mode.
+
+- `pnpm test` by default runs every integration test in both serve and build mode, and also unit tests.
 
 - `pnpm run test-serve` runs tests only under serve mode. This is just calling `jest` so you can pass any Jest flags to this command. Since Jest will attempt to run tests in parallel, if your machine has many cores this may cause flaky test failures with multiple Playwright instances running at the same time. You can force the tests to run in series with `pnpm run test-serve -- --runInBand`.
 
 - `pnpm run test-build` runs tests only under build mode.
 
-- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- css` will run tests for both `playground/css` and `playground/css-codesplit` under serve mode.
+- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
+
+### Unit Tests
+
+Other than tests under `playground/` for integration tests, packages might contains unit tests under their `__tests__` directory. Unit tests are powered by [Vitest](https://vitest.dev/). The detailed config is inside `vitest.config.ts` files.
+
+- `pnpm run test-unit` runs unit tests under each package.
+
+- You can also use `pnpm run test-unit -- [match]` to run related tests.
 
 ### Test Env and Helpers
 
@@ -57,18 +103,20 @@ test('should work', async () => {
 })
 ```
 
-Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `packages/playground/testUtils.ts`.
+Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `playground/testUtils.ts`.
+
+Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/9c6501d9c363eaa3c1e7708d531fb2a92b633db6/scripts/jestPerTestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/packages/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L121):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/playground/assets/index.html#L121):
 
 ```html
 <h2>?raw import</h2>
 <code class="raw"></code>
 ```
 
-This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/index.html#L151):
+This will be modified [with the result of a file import](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L151):
 
 ```js
 import rawSvg from './nested/fragment.svg?raw'
@@ -83,7 +131,7 @@ function text(el, text) {
 }
 ```
 
-In the [spec tests](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/packages/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
+In the [spec tests](https://github.com/vitejs/vite/blob/main/playground/assets/__tests__/assets.spec.ts#L180), the modifications to the DOM listed above are used to test this feature:
 
 ```js
 test('?raw import', async () => {
@@ -100,7 +148,7 @@ To work around this, playground packages that uses the `file:` protocol should a
 ```jsonc
 "scripts": {
   //...
-  "postinstall": "node ../../../scripts/patchFileDeps"
+  "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
 }
 ```
 
@@ -181,3 +229,28 @@ We already have many config options, and we should avoid fixing an issue by addi
 - Whether the problem can be fixed with a smarter default
 - Whether the problem has workaround using existing options
 - Whether the problem can be addressed with a plugin instead
+
+## Docs translation contribution
+
+If you would like to start a translation in your language, you are welcome to contribute! Please join [the #translations channel in Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
+
+The english docs are embedded in the main Vite repo, to allow contributors to work on docs, tests and implementation in the same PR. Translations are done by forking the main repo.
+
+### How to start a translation repo
+
+1. In order to get all doc files, you first need to clone this repo in your personal account.
+2. Keep all the files in `docs/` and remove everything else.
+
+   - You should setup your translation site based on all the files in `docs/` folder as a VitePress project.
+     (that said, `package.json` is need).
+
+   - Refresh git history by removing `.git` and then `git init`
+
+3. Translate the docs.
+
+   - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that, it's very common in translation contribution.
+
+4. Push your commits to your GitHub repo. you can setup a netlify preview as well.
+5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a GitHub Action, automatically track English docs update later.
+
+We recommend talking with others in Vite Land so you find more contributors for your language to share the maintenance work. Once the translation is done, communicate it to the Vite team so the repo can be moved to the official vitejs org in GitHub.

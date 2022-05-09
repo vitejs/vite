@@ -2,9 +2,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
-import { SourceDescription, SourceMap } from 'rollup'
-import { ViteDevServer } from '..'
-import chalk from 'chalk'
+import type { SourceDescription, SourceMap } from 'rollup'
+import type { ViteDevServer } from '..'
+import colors from 'picocolors'
 import {
   createDebugger,
   cleanUrl,
@@ -44,28 +44,86 @@ export function transformRequest(
   options: TransformOptions = {}
 ): Promise<TransformResult | null> {
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
-  let request = server._pendingRequests.get(cacheKey)
-  if (!request) {
-    request = doTransform(url, server, options)
-    server._pendingRequests.set(cacheKey, request)
-    const done = () => server._pendingRequests.delete(cacheKey)
-    request.then(done, done)
+
+  // This module may get invalidated while we are processing it. For example
+  // when a full page reload is needed after the re-processing of pre-bundled
+  // dependencies when a missing dep is discovered. We save the current time
+  // to compare it to the last invalidation performed to know if we should
+  // cache the result of the transformation or we should discard it as stale.
+  //
+  // A module can be invalidated due to:
+  // 1. A full reload because of pre-bundling newly discovered deps
+  // 2. A full reload after a config change
+  // 3. The file that generated the module changed
+  // 4. Invalidation for a virtual module
+  //
+  // For 1 and 2, a new request for this module will be issued after
+  // the invalidation as part of the browser reloading the page. For 3 and 4
+  // there may not be a new request right away because of HMR handling.
+  // In all cases, the next time this module is requested, it should be
+  // re-processed.
+  //
+  // We save the timestamp when we start processing and compare it with the
+  // last time this module is invalidated
+  const timestamp = Date.now()
+
+  const pending = server._pendingRequests.get(cacheKey)
+  if (pending) {
+    return server.moduleGraph
+      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
+      .then((module) => {
+        if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
+          // The pending request is still valid, we can safely reuse its result
+          return pending.request
+        } else {
+          // Request 1 for module A     (pending.timestamp)
+          // Invalidate module A        (module.lastInvalidationTimestamp)
+          // Request 2 for module A     (timestamp)
+
+          // First request has been invalidated, abort it to clear the cache,
+          // then perform a new doTransform.
+          pending.abort()
+          return transformRequest(url, server, options)
+        }
+      })
   }
+
+  const request = doTransform(url, server, options, timestamp)
+
+  // Avoid clearing the cache of future requests if aborted
+  let cleared = false
+  const clearCache = () => {
+    if (!cleared) {
+      server._pendingRequests.delete(cacheKey)
+      cleared = true
+    }
+  }
+
+  // Cache the request and clear it once processing is done
+  server._pendingRequests.set(cacheKey, {
+    request,
+    timestamp,
+    abort: clearCache
+  })
+  request.then(clearCache, clearCache)
+
   return request
 }
 
 async function doTransform(
   url: string,
   server: ViteDevServer,
-  options: TransformOptions
+  options: TransformOptions,
+  timestamp: number
 ) {
   url = removeTimestampQuery(url)
+
   const { config, pluginContainer, moduleGraph, watcher } = server
   const { root, logger } = config
   const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
   const ssr = !!options.ssr
 
-  const module = await server.moduleGraph.getModuleByUrl(url)
+  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
 
   // check if we have a fresh cache
   const cached =
@@ -82,7 +140,8 @@ async function doTransform(
   }
 
   // resolve
-  const id = (await pluginContainer.resolveId(url))?.id || url
+  const id =
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
   const file = cleanUrl(id)
 
   let code: string | null = null
@@ -147,7 +206,7 @@ async function doTransform(
   }
 
   // ensure module in graph after successful load
-  const mod = await moduleGraph.ensureEntryFromUrl(url)
+  const mod = await moduleGraph.ensureEntryFromUrl(url, ssr)
   ensureWatchedFile(watcher, mod.file, root)
 
   // transform
@@ -163,7 +222,7 @@ async function doTransform(
     // no transform applied, keep code as-is
     isDebug &&
       debugTransform(
-        timeFrom(transformStart) + chalk.dim(` [skipped] ${prettyUrl}`)
+        timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`)
       )
   } else {
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
@@ -178,17 +237,20 @@ async function doTransform(
     }
   }
 
-  if (ssr) {
-    return (mod.ssrTransformResult = await ssrTransform(
-      code,
-      map as SourceMap,
-      url
-    ))
-  } else {
-    return (mod.transformResult = {
-      code,
-      map,
-      etag: getEtag(code, { weak: true })
-    } as TransformResult)
+  const result = ssr
+    ? await ssrTransform(code, map as SourceMap, url)
+    : ({
+        code,
+        map,
+        etag: getEtag(code, { weak: true })
+      } as TransformResult)
+
+  // Only cache the result if the module wasn't invalidated while it was
+  // being processed, so it is re-processed next time if it is stale
+  if (timestamp > mod.lastInvalidationTimestamp) {
+    if (ssr) mod.ssrTransformResult = result
+    else mod.transformResult = result
   }
+
+  return result
 }

@@ -1,6 +1,13 @@
+import type { LibraryFormats, LibraryOptions } from '../build'
 import { resolveLibFilename } from '../build'
 import { resolve } from 'path'
-import { resolveConfig } from '..'
+import { describe, test, expect } from 'vitest'
+
+type FormatsToFileNames = [LibraryFormats, string][]
+const baseLibOptions: LibraryOptions = {
+  fileName: 'my-lib',
+  entry: 'mylib.js'
+}
 
 describe('resolveLibFilename', () => {
   test('custom filename function', () => {
@@ -26,7 +33,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('custom-filename.es.js')
+    expect(filename).toBe('custom-filename.es.mjs')
   })
 
   test('package name as filename', () => {
@@ -38,7 +45,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('mylib.es.js')
+    expect(filename).toBe('mylib.es.mjs')
   })
 
   test('custom filename and no package name', () => {
@@ -51,7 +58,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/noname')
     )
 
-    expect(filename).toBe('custom-filename.es.js')
+    expect(filename).toBe('custom-filename.es.mjs')
   })
 
   test('missing filename', () => {
@@ -65,101 +72,42 @@ describe('resolveLibFilename', () => {
       )
     }).toThrow()
   })
-})
 
-describe('resolveBuildOptions', () => {
-  test('resolve build.rollupOptions.input', async () => {
-    const config = await resolveConfig(
-      {
-        build: {
-          rollupOptions: {
-            input: 'index.html'
-          }
-        }
-      },
-      'build',
-      'production'
-    )
+  test('commonjs package extensions', () => {
+    const formatsToFilenames: FormatsToFileNames = [
+      ['es', 'my-lib.es.mjs'],
+      ['umd', 'my-lib.umd.js'],
+      ['cjs', 'my-lib.cjs.js'],
+      ['iife', 'my-lib.iife.js']
+    ]
 
-    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
-  })
-  test('resolve build.rollupOptions.input{}', async () => {
-    const config = await resolveConfig(
-      {
-        build: {
-          rollupOptions: {
-            input: {
-              index: 'index.html'
-            }
-          }
-        }
-      },
-      'build',
-      'production'
-    )
+    for (const [format, expectedFilename] of formatsToFilenames) {
+      const filename = resolveLibFilename(
+        baseLibOptions,
+        format,
+        resolve(__dirname, 'packages/noname')
+      )
 
-    expect(config.build.rollupOptions.input['index']).toBe(
-      resolve('index.html')
-    )
+      expect(filename).toBe(expectedFilename)
+    }
   })
 
-  test('resolve build.rollupOptions.input[]', async () => {
-    const config = await resolveConfig(
-      {
-        build: {
-          rollupOptions: {
-            input: ['index.html']
-          }
-        }
-      },
-      'build',
-      'production'
-    )
+  test('module package extensions', () => {
+    const formatsToFilenames: FormatsToFileNames = [
+      ['es', 'my-lib.es.js'],
+      ['umd', 'my-lib.umd.cjs'],
+      ['cjs', 'my-lib.cjs.cjs'],
+      ['iife', 'my-lib.iife.js']
+    ]
 
-    expect(config.build.rollupOptions.input).toStrictEqual([
-      resolve('index.html')
-    ])
-  })
+    for (const [format, expectedFilename] of formatsToFilenames) {
+      const filename = resolveLibFilename(
+        baseLibOptions,
+        format,
+        resolve(__dirname, 'packages/module')
+      )
 
-  test('resolve index.html', async () => {
-    const config = await resolveConfig({}, 'build', 'production')
-
-    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
-  })
-
-  test('resolve build.outdir', async () => {
-    const config = await resolveConfig(
-      { build: { outDir: 'outDir' } },
-      'build',
-      'production'
-    )
-
-    expect(config.build.outDir).toBe(resolve('outDir'))
-  })
-
-  test('resolve default build.outdir', async () => {
-    const config = await resolveConfig({}, 'build', 'production')
-
-    expect(config.build.outDir).toBe(resolve('dist'))
-  })
-
-  test('resolve build.lib.entry', async () => {
-    const config = await resolveConfig(
-      { build: { lib: { entry: 'index.html' } } },
-      'build',
-      'production'
-    )
-
-    expect(config.build.rollupOptions.input).toBe(resolve('index.html'))
-  })
-
-  test('resolve build.ssr', async () => {
-    const config = await resolveConfig(
-      { build: { ssr: 'ssr.ts' } },
-      'build',
-      'production'
-    )
-
-    expect(config.build.rollupOptions.input).toBe(resolve('ssr.ts'))
+      expect(filename).toBe(expectedFilename)
+    }
   })
 })

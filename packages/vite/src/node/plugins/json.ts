@@ -7,7 +7,7 @@
  */
 
 import { dataToEsm } from '@rollup/pluginutils'
-import { Plugin } from 'rollup'
+import type { Plugin } from 'rollup'
 import { SPECIAL_QUERY_RE } from '../constants'
 
 export interface JsonOptions {

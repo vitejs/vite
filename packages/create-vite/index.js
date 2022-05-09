@@ -15,7 +15,8 @@ const {
   blue,
   magenta,
   lightRed,
-  red
+  red,
+  reset
 } = require('kolorist')
 
 const cwd = process.cwd()
@@ -131,7 +132,9 @@ async function init() {
   let targetDir = argv._[0]
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+  const defaultProjectName = !targetDir
+    ? 'vite-project'
+    : targetDir.trim().replace(/\/+$/g, '')
 
   let result = {}
 
@@ -141,10 +144,11 @@ async function init() {
         {
           type: targetDir ? null : 'text',
           name: 'projectName',
-          message: 'Project name:',
+          message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim() || defaultProjectName)
+            (targetDir =
+              state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
         },
         {
           type: () =>
@@ -168,7 +172,7 @@ async function init() {
         {
           type: () => (isValidPackageName(targetDir) ? null : 'text'),
           name: 'packageName',
-          message: 'Package name:',
+          message: reset('Package name:'),
           initial: () => toValidPackageName(targetDir),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name'
@@ -178,8 +182,10 @@ async function init() {
           name: 'framework',
           message:
             typeof template === 'string' && !TEMPLATES.includes(template)
-              ? `"${template}" isn't a valid template. Please choose from below: `
-              : 'Select a framework:',
+              ? reset(
+                  `"${template}" isn't a valid template. Please choose from below: `
+                )
+              : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
@@ -193,7 +199,7 @@ async function init() {
           type: (framework) =>
             framework && framework.variants ? 'select' : null,
           name: 'variant',
-          message: 'Select a variant:',
+          message: reset('Select a variant:'),
           // @ts-ignore
           choices: (framework) =>
             framework.variants.map((variant) => {
@@ -310,7 +316,8 @@ function copyDir(srcDir, destDir) {
 }
 
 function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+  const files = fs.readdirSync(path)
+  return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
 function emptyDir(dir) {

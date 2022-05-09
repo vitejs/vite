@@ -1,11 +1,11 @@
-import * as http from 'http'
+import type * as http from 'http'
 import { createDebugger, isObject } from '../../utils'
 import httpProxy from 'http-proxy'
 import { HMR_HEADER } from '../ws'
-import { Connect } from 'types/connect'
-import { HttpProxy } from 'types/http-proxy'
-import chalk from 'chalk'
-import { ResolvedConfig } from '../..'
+import type { Connect } from 'types/connect'
+import type { HttpProxy } from 'types/http-proxy'
+import colors from 'picocolors'
+import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -30,10 +30,9 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
+  options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const options = config.server.proxy!
-
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
@@ -45,7 +44,7 @@ export function proxyMiddleware(
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
     proxy.on('error', (err) => {
-      config.logger.error(`${chalk.red(`http proxy error:`)}\n${err.stack}`, {
+      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err
       })

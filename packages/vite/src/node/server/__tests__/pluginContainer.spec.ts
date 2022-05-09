@@ -1,7 +1,10 @@
-import { resolveConfig, UserConfig } from '../../config'
-import { Plugin } from '../../plugin'
+import type { UserConfig } from '../../config'
+import { resolveConfig } from '../../config'
+import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
-import { createPluginContainer, PluginContainer } from '../pluginContainer'
+import type { PluginContainer } from '../pluginContainer'
+import { createPluginContainer } from '../pluginContainer'
+import { describe, it, expect, beforeEach } from 'vitest'
 
 let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph
@@ -53,7 +56,7 @@ describe('plugin container', () => {
         plugins: [plugin]
       })
 
-      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl)
+      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       expect(entryModule.meta).toEqual({ x: 1 })
 
       const loadResult: any = await container.load(entryUrl)
@@ -92,7 +95,7 @@ describe('plugin container', () => {
         plugins: [plugin1, plugin2]
       })
 
-      await moduleGraph.ensureEntryFromUrl(entryUrl)
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
       await container.load(entryUrl)
 
       expect.assertions(1)

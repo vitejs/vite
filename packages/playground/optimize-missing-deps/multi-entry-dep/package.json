@@ -1,8 +1,0 @@
-{
-  "name": "multi-entry-dep",
-  "version": "0.0.0",
-  "main": "index.js",
-  "browser": {
-    "./index.js": "./index.browser.js"
-  }
-}

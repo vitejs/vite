@@ -55,9 +55,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: true,
-          __VUE_PROD_DEVTOOLS__: false,
-          ...config.define
+          __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
+          __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         }
       }
     },
@@ -90,10 +89,13 @@ function vueJsxPlugin(options = {}) {
       } = options
 
       const filter = createFilter(include || /\.[jt]sx$/, exclude)
+      const [filepath] = id.split('?')
 
-      if (filter(id)) {
+      // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
+      // use filepath for plain jsx files (e.g. App.jsx)
+      if (filter(id) || filter(filepath)) {
         const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
-        if (id.endsWith('.tsx')) {
+        if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
             require('@babel/plugin-transform-typescript'),
             // @ts-ignore

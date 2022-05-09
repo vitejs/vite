@@ -1,6 +1,6 @@
 import MagicString from 'magic-string'
-import { ResolvedConfig } from '..'
-import { Plugin } from '../plugin'
+import type { ResolvedConfig } from '..'
+import type { Plugin } from '../plugin'
 import { arraify } from '../utils'
 
 /**
@@ -12,6 +12,7 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
     !config.resolve.dedupe?.length ||
+    config.ssr?.noExternal === true ||
     isBuildOutputEsm(config)
   ) {
     return null
@@ -30,7 +31,8 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
         return {
           code: s.toString(),
           map: s.generateMap({
-            source: id
+            source: id,
+            hires: true
           })
         }
       }
