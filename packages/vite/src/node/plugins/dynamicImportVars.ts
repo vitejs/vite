@@ -66,7 +66,6 @@ export function parseDynamicImportPattern(
 
 export async function transformDynamicImport(
   importSource: string,
-  root: string,
   importer: string,
   resolve: (
     url: string,
@@ -172,7 +171,6 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         try {
           result = await transformDynamicImport(
             source.slice(start, end),
-            config.root,
             importer,
             resolve
           )

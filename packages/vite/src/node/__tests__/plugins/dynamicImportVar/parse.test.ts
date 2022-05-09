@@ -5,11 +5,10 @@ import { resolve } from 'path'
 async function run(input: string) {
   const { glob, rawPattern } = await transformDynamicImport(
     input,
-    resolve(__dirname),
     resolve(__dirname, 'index.js'),
     (id) => id.replace('@', resolve(__dirname, './mods/'))
   )
-  return `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
+  return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
 
 describe('parse positives', () => {

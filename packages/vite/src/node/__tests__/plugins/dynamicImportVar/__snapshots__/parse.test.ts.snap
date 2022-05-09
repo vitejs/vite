@@ -1,29 +1,9 @@
 // Vitest Snapshot v1
 
-exports[`parse positives > alias path 1`] = `
-"__variableDynamicImportRuntimeHelper({
-\\"./mods/hello.js\\": () => import(\\"./mods/hello.js\\"),
-\\"./mods/hi.js\\": () => import(\\"./mods/hi.js\\")
-}, \`./mods/\${base}.js\`)"
-`;
+exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > basic 1`] = `
-"__variableDynamicImportRuntimeHelper({
-\\"./mods/hello.js\\": () => import(\\"./mods/hello.js\\"),
-\\"./mods/hi.js\\": () => import(\\"./mods/hi.js\\")
-}, \`./mods/\${base}.js\`)"
-`;
+exports[`parse positives > basic 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > with query raw 1`] = `
-"__variableDynamicImportRuntimeHelper({
-\\"./mods/hello.js\\": () => import(\\"./mods/hello.js?raw\\"),
-\\"./mods/hi.js\\": () => import(\\"./mods/hi.js?raw\\")
-}, \`./mods/\${base}.js\`)"
-`;
+exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > with query url 1`] = `
-"__variableDynamicImportRuntimeHelper({
-\\"./mods/hello.js\\": () => import(\\"./mods/hello.js\\"),
-\\"./mods/hi.js\\": () => import(\\"./mods/hi.js\\")
-}, \`./mods/\${base}.js\`)"
-`;
+exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
