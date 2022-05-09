@@ -7,7 +7,8 @@ export default defineConfig({
       '**/dist/**',
       './playground/**/*.*',
       './playground-temp/**/*.*'
-    ]
+    ],
+    testTimeout: 20000
   },
   esbuild: {
     target: 'node14'
