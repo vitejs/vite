@@ -10,6 +10,7 @@ import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { TransformGlobImportResult } from './importMetaGlob'
 import { transformGlobImport } from './importMetaGlob'
+import type { ViteDevServer } from '../server'
 
 interface DynamicImportRequest {
   as?: 'raw'
@@ -141,9 +142,14 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const { include, exclude, warnOnError } =
     config.build.dynamicImportVarsOptions
   const filter = createFilter(include, exclude)
+  let server: ViteDevServer
 
   return {
     name: 'vite:dynamic-import-vars',
+
+    configureServer(_server) {
+      server = _server
+    },
 
     async transform(source, importer) {
       if (!filter(importer)) {
@@ -210,6 +216,14 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           expEnd,
           `__variableDynamicImportRuntimeHelper(${glob.s.toString()}, \`${rawPattern}\`)`
         )
+        if (server) {
+          const allGlobs = glob.matches.map((i) => i.globsResolved)
+          server._importGlobMap.set(importer, allGlobs)
+          glob.files.forEach((file) => {
+            // update watcher
+            server!.watcher.add(path.posix.dirname(file))
+          })
+        }
       }
 
       if (s) {
