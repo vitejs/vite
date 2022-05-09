@@ -78,14 +78,13 @@ export async function transformDynamicImport(
   rawPattern: string
 } | null> {
   if (importSource[1] !== '.' && importSource[1] !== '/') {
-    let resolvedFileName = await resolve(importSource.slice(1, -1), importer)
+    const resolvedFileName = await resolve(importSource.slice(1, -1), importer)
     if (!resolvedFileName) {
       return null
     }
-    resolvedFileName = normalizePath(resolvedFileName)
     const relativeFileName = posix.relative(
-      posix.dirname(importer),
-      resolvedFileName
+      posix.dirname(normalizePath(importer)),
+      normalizePath(resolvedFileName)
     )
     importSource =
       '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
