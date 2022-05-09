@@ -313,7 +313,8 @@ function copyDir(srcDir, destDir) {
 }
 
 function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+  const files = fs.readdirSync(path)
+  return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
 function emptyDir(dir) {

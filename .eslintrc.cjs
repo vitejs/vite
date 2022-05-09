@@ -63,7 +63,7 @@ module.exports = defineConfig({
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass']
+        allowModules: ['vite', 'less', 'sass', 'vitest']
       }
     ],
     'node/no-extraneous-require': [
@@ -103,13 +103,13 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**'],
+      files: ['packages/vite/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
     },
     {
-      files: ['packages/playground/**'],
+      files: ['playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
         'node/no-extraneous-require': 'off'

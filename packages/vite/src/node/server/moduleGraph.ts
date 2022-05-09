@@ -2,6 +2,7 @@ import { extname } from 'path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
+import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -10,6 +11,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
+import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 
 export class ModuleNode {
   /**
@@ -27,16 +29,23 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
-  isSelfAccepting = false
+  isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
 
   constructor(url: string) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
+    // #7870
+    // The `isSelfAccepting` value is set by importAnalysis, but some
+    // assets don't go through importAnalysis.
+    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
+      this.isSelfAccepting = false
+    }
   }
 }
 

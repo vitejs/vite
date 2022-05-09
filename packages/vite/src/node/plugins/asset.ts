@@ -337,7 +337,7 @@ async function fileToBuiltUrl(
   return url
 }
 
-export function getAssetHash(content: Buffer): string {
+export function getAssetHash(content: Buffer | string): string {
   return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 

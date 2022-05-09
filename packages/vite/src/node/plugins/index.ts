@@ -17,7 +17,9 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
+import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -26,12 +28,14 @@ export async function resolvePlugins(
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
+  const isWatch = isBuild && !!config.build.watch
 
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
 
   return [
+    isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
     isBuild ? null : preAliasPlugin(),
     aliasPlugin({ entries: config.resolve.alias }),
@@ -69,6 +73,7 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else

@@ -42,7 +42,6 @@ import type { ViteDevServer } from '..'
 import { checkPublicFile } from './asset'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
-import { transformImportGlob } from '../importGlob'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { performance } from 'perf_hooks'
@@ -59,7 +58,8 @@ const debug = createDebugger('vite:import-analysis')
 const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
+export const canSkipImportAnalysis = (id: string) =>
+  skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
@@ -107,11 +107,6 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
   let server: ViteDevServer
 
   return {
@@ -122,10 +117,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer, options) {
+      // In a real app `server` is always defined, but it is undefined when
+      // running src/node/server/__tests__/pluginContainer.spec.ts
+      if (!server) {
+        return null
+      }
+
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
-      if (canSkip(importer)) {
+      if (canSkipImportAnalysis(importer)) {
         isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
@@ -159,7 +160,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const { moduleGraph } = server
+      // since we are already in the transform phase of the importer, it must
+      // have been loaded so its entry is guaranteed in the module graph.
+      const importerModule = moduleGraph.getModuleById(importer)!
+
       if (!imports.length) {
+        importerModule.isSelfAccepting = false
         isDebug &&
           debug(
             `${timeFrom(start)} ${colors.dim(`[no imports] ${prettyImporter}`)}`
@@ -173,11 +180,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needQueryInjectHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
-      // vite-only server context
-      const { moduleGraph } = server
-      // since we are already in the transform phase of the importer, it must
-      // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
       const importedUrls = new Set<string>()
       const staticImportedUrls = new Set<string>()
       const acceptedUrls = new Set<{
@@ -339,44 +341,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           } else if (prop === '.env') {
             hasEnv = true
-          } else if (prop === '.glo' && source[end + 4] === 'b') {
-            // transform import.meta.glob()
-            // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const {
-              imports,
-              importsString,
-              exp,
-              endIndex,
-              base,
-              pattern,
-              isEager
-            } = await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              root,
-              config.logger,
-              normalizeUrl,
-              resolve
-            )
-            str().prepend(importsString)
-            str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-            imports.forEach((url) => {
-              url = url.replace(base, '/')
-              importedUrls.add(url)
-              if (isEager) staticImportedUrls.add(url)
-            })
-            if (!(importerModule.file! in server._globImporters)) {
-              server._globImporters[importerModule.file!] = {
-                module: importerModule,
-                importGlobs: []
-              }
-            }
-            server._globImporters[importerModule.file!].importGlobs.push({
-              base,
-              pattern
-            })
           }
           continue
         }

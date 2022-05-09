@@ -23,7 +23,8 @@ import {
   checkPublicFile,
   assetUrlRE,
   urlToBuiltUrl,
-  getAssetFilename
+  getAssetFilename,
+  getAssetHash
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
@@ -35,6 +36,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
+import { stripLiteral } from 'strip-literal'
 
 interface ScriptAssetsUrl {
   start: number
@@ -43,9 +45,11 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
-const inlineCSSRE = /__VITE_INLINE_CSS__([^_]+_\d+)__/g
+const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
+// Do not allow preceding '.', but do allow preceding '...' for spread operations
+const inlineImportRE =
+  /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
 const htmlLangRE = /\.(html|htm)$/
-const inlineImportRE = /\bimport\s*\(("[^"]*"|'[^']*')\)/g
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -59,8 +63,8 @@ export const htmlProxyMap = new WeakMap<
 >()
 
 // HTML Proxy Transform result are stored by config
-// `${importer}_${query.index}` -> transformed css code
-// PS: key like `/vite/packages/playground/assets/index.html_1`
+// `${hash(importer)}_${query.index}` -> transformed css code
+// PS: key like `hash(/vite/playground/assets/index.html)_1`)
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
@@ -243,6 +247,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
+        const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -303,14 +308,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const code = scriptNode.content
+              const cleanCode = stripLiteral(scriptNode.content)
+
               let match: RegExpExecArray | null
-              while ((match = inlineImportRE.exec(code))) {
-                const { 0: full, 1: url, index } = match
-                const startUrl = full.indexOf(url)
-                const start = scriptNode.loc.start.offset + index + startUrl + 1
+              while ((match = inlineImportRE.exec(cleanCode))) {
+                const { 1: url, index } = match
+                const startUrl = cleanCode.indexOf(url, index)
+                const start = startUrl + 1
                 const end = start + url.length - 2
-                scriptUrls.push({ start, end, url: url.slice(1, -1) })
+                scriptUrls.push({
+                  start: start + scriptNode.loc.start.offset,
+                  end: end + scriptNode.loc.start.offset,
+                  url: scriptNode.content.slice(start, end)
+                })
               }
             }
           }
@@ -330,8 +340,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
-                    js += `\nimport ${JSON.stringify(url)}`
-                    shouldRemove = true
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push({
+                      url,
+                      start: node.loc.start.offset,
+                      end: node.loc.end.offset
+                    })
+                    js += importExpression
                   } else {
                     assetUrls.push(p)
                   }
@@ -365,12 +380,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-
+            const hash = getAssetHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
               styleNode.loc.end.offset,
-              `"__VITE_INLINE_CSS__${cleanUrl(id)}_${inlineModuleIndex}__"`,
+              `"__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__"`,
               { contentOnly: true }
             )
           }
@@ -383,8 +398,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.content
             })
-            js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.css"`
-            shouldRemove = true
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            const hash = getAssetHash(cleanUrl(id))
+            // will transform in `applyHtmlTransforms`
+            s.overwrite(
+              styleNode.loc.start.offset,
+              styleNode.loc.end.offset,
+              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
+              { contentOnly: true }
+            )
           }
 
           if (shouldRemove) {
@@ -451,6 +473,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.overwrite(start, end, config.base + url.slice(1), {
               contentOnly: true
             })
+          }
+        }
+
+        // ignore <link rel="stylesheet"> if its url can't be resolved
+        const resolvedStyleUrls = await Promise.all(
+          styleUrls.map(async (styleUrl) => ({
+            ...styleUrl,
+            resolved: await this.resolve(styleUrl.url, id)
+          }))
+        )
+        for (const { start, end, url, resolved } of resolvedStyleUrls) {
+          if (resolved == null) {
+            config.logger.warnOnce(
+              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            const importExpression = `\nimport ${JSON.stringify(url)}`
+            js = js.replace(importExpression, '')
+          } else {
+            s.remove(start, end)
           }
         }
 
@@ -706,8 +747,6 @@ export function resolveHtmlTransforms(
   return [preHooks, postHooks]
 }
 
-export const maybeVirtualHtmlSet = new Set<string>()
-
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -717,8 +756,6 @@ export async function applyHtmlTransforms(
   const headPrependTags: HtmlTagDescriptor[] = []
   const bodyTags: HtmlTagDescriptor[] = []
   const bodyPrependTags: HtmlTagDescriptor[] = []
-
-  maybeVirtualHtmlSet.add(ctx.filename)
 
   for (const hook of hooks) {
     const res = await hook(html, ctx)
