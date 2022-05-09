@@ -263,7 +263,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             }`,
 
-            // Empty sourcemap to supress Rollup warning
+            // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' }
           }
         } else {
@@ -284,7 +284,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url
         )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
-        map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+        map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
       }
     },
 

@@ -51,7 +51,7 @@ import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { assetFilenameWithBase, publicURLfromAsset } from '../build'
-import { emptyCssComments } from '../cleanString'
+import { emptyCssComments } from '../utils'
 
 // const debug = createDebugger('vite:css')
 
@@ -815,19 +815,6 @@ async function compileCSS(
       })
       for (let i = 0; i < files.length; i++) {
         deps.add(files[i])
-      }
-      if (server) {
-        // register glob importers so we can trigger updates on file add/remove
-        if (!(id in server._globImporters)) {
-          server._globImporters[id] = {
-            module: server.moduleGraph.getModuleById(id)!,
-            importGlobs: []
-          }
-        }
-        server._globImporters[id].importGlobs.push({
-          base: config.root,
-          pattern
-        })
       }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`

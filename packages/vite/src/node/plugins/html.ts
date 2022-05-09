@@ -37,7 +37,7 @@ import type {
   TextNode
 } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
-import { emptyString } from '../cleanString'
+import { stripLiteral } from 'strip-literal'
 
 interface ScriptAssetsUrl {
   start: number
@@ -65,7 +65,7 @@ export const htmlProxyMap = new WeakMap<
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
-// PS: key like `hash(/vite/packages/playground/assets/index.html)_1`)
+// PS: key like `hash(/vite/playground/assets/index.html)_1`)
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
@@ -312,7 +312,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const cleanCode = emptyString(scriptNode.content)
+              const cleanCode = stripLiteral(scriptNode.content)
 
               let match: RegExpExecArray | null
               while ((match = inlineImportRE.exec(cleanCode))) {
