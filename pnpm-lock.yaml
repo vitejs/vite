@@ -952,6 +952,27 @@ importers:
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
 
+  playground/vue-server-origin:
+    specifiers:
+      '@vitejs/plugin-vue': workspace:*
+      js-yaml: ^4.1.0
+      less: ^4.1.2
+      lodash-es: ^4.17.21
+      pug: ^3.0.2
+      sass: ^1.43.4
+      stylus: ^0.55.0
+      vue: ^3.2.25
+    dependencies:
+      lodash-es: 4.17.21
+      vue: 3.2.33
+    devDependencies:
+      '@vitejs/plugin-vue': link:../../packages/plugin-vue
+      js-yaml: 4.1.0
+      less: 4.1.2
+      pug: 3.0.2
+      sass: 1.45.1
+      stylus: 0.55.0
+
   playground/vue-sourcemap:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
