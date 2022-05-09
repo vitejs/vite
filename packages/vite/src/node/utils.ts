@@ -724,7 +724,9 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 
+// @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
+
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
