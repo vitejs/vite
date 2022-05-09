@@ -153,6 +153,14 @@ export interface UserConfig {
    */
   ssr?: SSROptions
   /**
+   * Experimental features
+   *
+   * Features under this field are addressed to be changed that might NOT follow semver.
+   * Please be careful and always pin Vite's version when using them.
+   * @experimental
+   */
+  experimental?: ExperimentalOptions
+  /**
    * Log level.
    * Default: 'info'
    */
@@ -197,6 +205,16 @@ export interface UserConfig {
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
+}
+
+export interface ExperimentalOptions {
+  /**
+   * Append fake `&lang.(ext)` when queries are specified, to preseve the file extension for following plugins to process.
+   *
+   * @experimental
+   * @default false
+   */
+  importGlobRestoreExtension?: boolean
 }
 
 export type SSRTarget = 'node' | 'webworker'
