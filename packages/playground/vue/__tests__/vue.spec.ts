@@ -14,6 +14,10 @@ test('template/script latest syntax support', async () => {
   expect(await page.textContent('.syntax')).toBe('baz')
 })
 
+test('import ts with .js extension with lang="ts"', async () => {
+  expect(await page.textContent('.ts-import')).toBe('success')
+})
+
 test('should remove comments in prod', async () => {
   expect(await page.innerHTML('.comments')).toBe(isBuild ? `` : `<!--hello-->`)
 })

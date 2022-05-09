@@ -20,9 +20,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 const detectModernBrowserVarName = '__vite_is_modern_browser'
-const detectModernBrowserVarInitCode = `var ${detectModernBrowserVarName}=false;`
 const detectModernBrowserCode = `try{import(new URL(import.meta.url).href).catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
-
 const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy build because dynamic import or import.meta.url is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
 const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
@@ -441,12 +439,6 @@ function viteLegacyPlugin(options = {}) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
-          children: detectModernBrowserVarInitCode,
-          injectTo: 'head'
-        })
-        tags.push({
-          tag: 'script',
-          attrs: { type: 'module' },
           children: detectModernBrowserCode,
           injectTo: 'head'
         })
@@ -715,7 +707,6 @@ viteLegacyPlugin.default = viteLegacyPlugin
 viteLegacyPlugin.cspHashes = [
   createHash('sha256').update(safari10NoModuleFix).digest('base64'),
   createHash('sha256').update(systemJSInlineCode).digest('base64'),
-  createHash('sha256').update(detectModernBrowserVarInitCode).digest('base64'),
   createHash('sha256').update(detectModernBrowserCode).digest('base64'),
   createHash('sha256').update(dynamicFallbackInlineCode).digest('base64')
 ]

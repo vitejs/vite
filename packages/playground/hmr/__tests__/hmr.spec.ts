@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')
@@ -162,7 +162,7 @@ if (!isBuild) {
   })
 
   test('not loaded dynamic import', async () => {
-    await page.goto(viteTestUrl + '/dynamic-import/index.html')
+    await page.goto(viteTestUrl + '/counter/index.html')
 
     let btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
@@ -170,7 +170,7 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Counter 1')
 
     // Modifying `index.ts` triggers a page reload, as expected
-    editFile('dynamic-import/index.ts', (code) => code)
+    editFile('counter/index.ts', (code) => code)
     await page.waitForNavigation()
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 0')
@@ -184,7 +184,7 @@ if (!isBuild) {
     // (Note that, a dynamic import that is never loaded and that does not
     // define `accept.module.hot.accept` may wrongfully trigger a full page
     // reload, see discussion at #7561.)
-    editFile('dynamic-import/dep.ts', (code) => code)
+    editFile('counter/dep.ts', (code) => code)
     try {
       await page.waitForNavigation({ timeout: 1000 })
     } catch (err) {
@@ -193,5 +193,27 @@ if (!isBuild) {
     }
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  test('css in html hmr', async () => {
+    await page.goto(viteTestUrl)
+    expect(await getBg('.import-image')).toMatch('icon')
+    await page.goto(viteTestUrl + '/foo/')
+    expect(await getBg('.import-image')).toMatch('icon')
+    editFile('index.html', (code) => code.replace('url("./icon.png")', ''))
+    await page.waitForNavigation()
+    expect(await getBg('.import-image')).toMatch('')
+  })
+
+  test('HTML', async () => {
+    await page.goto(viteTestUrl + '/counter/index.html')
+    let btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Counter 0')
+    editFile('counter/index.html', (code) =>
+      code.replace('Counter', 'Compteur')
+    )
+    await page.waitForNavigation()
+    btn = await page.$('button')
+    expect(await btn.textContent()).toBe('Compteur 0')
   })
 }

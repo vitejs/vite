@@ -17,6 +17,7 @@
     "dep-esbuild-plugin-transform": "file:./dep-esbuild-plugin-transform",
     "dep-linked": "link:./dep-linked",
     "dep-linked-include": "link:./dep-linked-include",
+    "dep-node-env": "file:./dep-node-env",
     "dep-not-js": "file:./dep-not-js",
     "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "lodash-es": "^4.17.21",

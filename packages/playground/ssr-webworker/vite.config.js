@@ -10,9 +10,18 @@ module.exports = {
   },
   ssr: {
     target: 'webworker',
-    noExternal: true
+    noExternal: ['this-should-be-replaced-by-the-boolean']
   },
   plugins: [
+    {
+      config() {
+        return {
+          ssr: {
+            noExternal: true
+          }
+        }
+      }
+    },
     {
       config() {
         return {

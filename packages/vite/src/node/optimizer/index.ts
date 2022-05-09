@@ -13,7 +13,9 @@ import {
   normalizePath,
   writeFile,
   flattenId,
-  normalizeId
+  normalizeId,
+  removeDirSync,
+  renameDir
 } from '../utils'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { init, parse } from 'es-module-lexer'
@@ -70,7 +72,6 @@ export interface DepOptimizationOptions {
    *
    * - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
    * - `plugins` are merged with Vite's dep plugin
-   * - `keepNames` takes precedence over the deprecated `optimizeDeps.keepNames`
    *
    * https://esbuild.github.io/api
    */
@@ -87,10 +88,6 @@ export interface DepOptimizationOptions {
     | 'outExtension'
     | 'metafile'
   >
-  /**
-   * @deprecated use `esbuildOptions.keepNames`
-   */
-  keepNames?: boolean
   /**
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
@@ -116,7 +113,7 @@ export interface DepOptimizationResult {
    * the page reload will be delayed until the next rerun so we need
    * to be able to discard the result
    */
-  commit: () => void
+  commit: () => Promise<void>
   cancel: () => void
 }
 
@@ -194,7 +191,7 @@ export async function optimizeDeps(
 
   const result = await runOptimizeDeps(config, depsInfo)
 
-  result.commit()
+  await result.commit()
 
   return result.metadata
 }
@@ -376,7 +373,7 @@ export async function runOptimizeDeps(
       metadata,
       commit() {
         // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-        commitProcessingDepsCacheSync()
+        return commitProcessingDepsCacheSync()
       },
       cancel
     }
@@ -417,11 +414,12 @@ export async function runOptimizeDeps(
       try {
         exportsData = parse(entryContent) as ExportsData
       } catch {
+        const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
         debug(
-          `Unable to parse dependency: ${id}. Trying again with a JSX transform.`
+          `Unable to parse dependency: ${id}. Trying again with a ${loader} transform.`
         )
         const transformed = await transformWithEsbuild(entryContent, filePath, {
-          loader: 'jsx'
+          loader
         })
         // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
         // This is useful for packages such as Gatsby.
@@ -444,7 +442,7 @@ export async function runOptimizeDeps(
   }
 
   const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(config.mode)
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
   }
   for (const key in config.define) {
     const value = config.define[key]
@@ -528,27 +526,20 @@ export async function runOptimizeDeps(
     metadata,
     commit() {
       // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
-      commitProcessingDepsCacheSync()
+      return commitProcessingDepsCacheSync()
     },
     cancel
   }
 
-  function commitProcessingDepsCacheSync() {
+  async function commitProcessingDepsCacheSync() {
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
     // Rewire the file paths from the temporal processing dir to the final deps cache dir
     removeDirSync(depsCacheDir)
-    fs.renameSync(processingCacheDir, depsCacheDir)
+    await renameDir(processingCacheDir, depsCacheDir)
   }
 
   function cancel() {
     removeDirSync(processingCacheDir)
-  }
-}
-
-function removeDirSync(dir: string) {
-  if (fs.existsSync(dir)) {
-    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-    rmSync(dir, { recursive: true })
   }
 }
 
@@ -789,7 +780,7 @@ export function getDepHash(config: ResolvedConfig): string {
   // only a subset of config options that can affect dep optimization
   content += JSON.stringify(
     {
-      mode: config.mode,
+      mode: process.env.NODE_ENV || config.mode,
       root: config.root,
       define: config.define,
       resolve: config.resolve,

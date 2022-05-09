@@ -9,12 +9,16 @@ const { ports } = require('../../testUtils')
 
 const port = (exports.port = ports.lib)
 
+global.serverLogs = []
+
 /**
  * @param {string} root
  * @param {boolean} isBuildTest
  */
 exports.serve = async function serve(root, isBuildTest) {
   // build first
+
+  setupConsoleWarnCollector()
 
   if (!isBuildTest) {
     const { createServer } = require('vite')
@@ -55,7 +59,7 @@ exports.serve = async function serve(root, isBuildTest) {
 
     await build({
       root,
-      logLevel: 'silent',
+      logLevel: 'warn', // output esbuild warns
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
     })
 
@@ -87,5 +91,13 @@ exports.serve = async function serve(root, isBuildTest) {
         reject(e)
       }
     })
+  }
+}
+
+function setupConsoleWarnCollector() {
+  const warn = console.warn
+  console.warn = (...args) => {
+    global.serverLogs.push(args.join(' '))
+    return warn.call(console, ...args)
   }
 }

@@ -15,7 +15,9 @@ module.exports = {
         }
       }
     },
-    __VAR_NAME__: false,
-    'process.env.SOMEVAR': '"SOMEVAR"'
+    'process.env.SOMEVAR': '"SOMEVAR"',
+    $DOLLAR: 456,
+    ÖUNICODE_LETTERɵ: 789,
+    __VAR_NAME__: false
   }
 }

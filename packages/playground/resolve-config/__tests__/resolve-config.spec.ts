@@ -10,42 +10,45 @@ const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
 const build = (configName: string) => {
   commandSync(`${viteBin} build`, { cwd: fromTestDir(configName) })
 }
-const getDistFile = (configName: string) => {
-  return fs.readFileSync(fromTestDir(`${configName}/dist/index.es.js`), 'utf8')
+const getDistFile = (configName: string, extension: string) => {
+  return fs.readFileSync(
+    fromTestDir(`${configName}/dist/index.es.${extension}`),
+    'utf8'
+  )
 }
 
 if (isBuild) {
   it('loads vite.config.js', () => {
     build('js')
-    expect(getDistFile('js')).toContain('console.log(true)')
+    expect(getDistFile('js', 'mjs')).toContain('console.log(true)')
   })
   it('loads vite.config.js with package#type module', () => {
     build('js-module')
-    expect(getDistFile('js-module')).toContain('console.log(true)')
+    expect(getDistFile('js-module', 'js')).toContain('console.log(true)')
   })
   it('loads vite.config.cjs', () => {
     build('cjs')
-    expect(getDistFile('cjs')).toContain('console.log(true)')
+    expect(getDistFile('cjs', 'mjs')).toContain('console.log(true)')
   })
   it('loads vite.config.cjs with package#type module', () => {
     build('cjs-module')
-    expect(getDistFile('cjs-module')).toContain('console.log(true)')
+    expect(getDistFile('cjs-module', 'js')).toContain('console.log(true)')
   })
   it('loads vite.config.mjs', () => {
     build('mjs')
-    expect(getDistFile('mjs')).toContain('console.log(true)')
+    expect(getDistFile('mjs', 'mjs')).toContain('console.log(true)')
   })
   it('loads vite.config.mjs with package#type module', () => {
     build('mjs-module')
-    expect(getDistFile('mjs-module')).toContain('console.log(true)')
+    expect(getDistFile('mjs-module', 'js')).toContain('console.log(true)')
   })
   it('loads vite.config.ts', () => {
     build('ts')
-    expect(getDistFile('ts')).toContain('console.log(true)')
+    expect(getDistFile('ts', 'mjs')).toContain('console.log(true)')
   })
   it('loads vite.config.ts with package#type module', () => {
     build('ts-module')
-    expect(getDistFile('ts-module')).toContain('console.log(true)')
+    expect(getDistFile('ts-module', 'js')).toContain('console.log(true)')
   })
 } else {
   // this test doesn't support serve mode

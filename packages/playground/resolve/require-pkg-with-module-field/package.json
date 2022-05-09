@@ -1,5 +1,5 @@
 {
-  "name": "require-pkg-with-browser-and-module-field",
+  "name": "require-pkg-with-module-field",
   "private": true,
   "version": "1.0.0",
   "main": "./index.cjs",
