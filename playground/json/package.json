@@ -1,0 +1,15 @@
+{
+  "name": "test-json",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "json-module": "file:./json-module",
+    "vue": "^3.2.33"
+  }
+}

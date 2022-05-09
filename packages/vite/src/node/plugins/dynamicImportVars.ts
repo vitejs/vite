@@ -98,16 +98,11 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const params = globParams
+    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
+    : ''
   const exp = `import.meta.glob(${JSON.stringify(userPattern)}${params})`
-  const glob = await transformGlobImport(
-    exp,
-    importer,
-    root,
-    resolve,
-    false,
-    false
-  )
+  const glob = await transformGlobImport(exp, importer, root, resolve, false)
 
   return {
     rawPattern,

@@ -218,11 +218,15 @@ export async function parseImportGlob(
     }
 
     if (options.as && forceDefaultAs.includes(options.as)) {
-      if (options.import && options.import !== 'default')
+      if (
+        options.import &&
+        options.import !== 'default' &&
+        options.import !== '*'
+      )
         throw err(
-          `Option "export" can only be "default" when "as" is "${options.as}", but got "${options.import}"`
+          `Option "import" can only be "default" or "*" when "as" is "${options.as}", but got "${options.import}"`
         )
-      options.import = 'default'
+      options.import = options.import || 'default'
     }
 
     if (options.as && options.query)
@@ -271,8 +275,7 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
-  restoreQueryExtension = false,
-  optimizeExport = true
+  restoreQueryExtension = false
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -369,10 +372,15 @@ export async function transformGlobImport(
 
             importPath = `${importPath}${importQuery}`
 
+            const importKey =
+              options.import && options.import !== '*'
+                ? options.import
+                : undefined
+
             if (options.eager) {
               const variableName = `${importPrefix}${index}_${i}`
-              const expression = options.import
-                ? `{ ${options.import} as ${variableName} }`
+              const expression = importKey
+                ? `{ ${importKey} as ${variableName} }`
                 : `* as ${variableName}`
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`
@@ -380,10 +388,8 @@ export async function transformGlobImport(
               objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
-              if (options.import && optimizeExport)
-                importStatement += `.then(m => m[${JSON.stringify(
-                  options.import
-                )}])`
+              if (importKey)
+                importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
                 `${JSON.stringify(filePath)}: () => ${importStatement}`
               )
