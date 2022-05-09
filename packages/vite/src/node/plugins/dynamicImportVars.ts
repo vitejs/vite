@@ -83,11 +83,12 @@ export async function transformDynamicImport(
       return null
     }
     const relativeFileName = posix.relative(
-      posix.dirname(normalizePath(importer)),
-      normalizePath(resolvedFileName)
+      posix.dirname(importer),
+      resolvedFileName
     )
-    importSource =
+    importSource = normalizePath(
       '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
+    )
   }
 
   const dynamicImportPattern = parseDynamicImportPattern(importSource)
