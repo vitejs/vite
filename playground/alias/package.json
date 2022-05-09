@@ -1,0 +1,19 @@
+{
+  "name": "test-alias",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview",
+    "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
+  },
+  "dependencies": {
+    "aliased-module": "file:./dir/module",
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "resolve-linked": "workspace:*"
+  }
+}

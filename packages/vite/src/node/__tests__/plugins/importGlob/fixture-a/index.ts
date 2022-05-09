@@ -27,6 +27,11 @@ export const eagerAs = import.meta.glob<ModuleType>(
   { eager: true, as: 'raw' }
 )
 
+export const rawImportModule = import.meta.glob(
+  ['./modules/*.ts', '!**/index.ts'],
+  { as: 'raw', import: '*' }
+)
+
 export const excludeSelf = import.meta.glob(
   './*.ts'
   // for test: annotation contain ")"
