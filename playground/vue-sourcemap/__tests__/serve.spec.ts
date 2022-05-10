@@ -22,20 +22,20 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const js = await res.text()
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
-        "sources": Array [
+        "sources": [
           "/root/Js.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p>&lt;js&gt;</p>
       </template>
-
+      
       <script>
       console.log('script')
       </script>
-
+      
       <script setup>
       console.log('setup')
       </script>
@@ -51,20 +51,20 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const js = await res.text()
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
-        "sources": Array [
+        "sources": [
           "/root/Ts.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p>&lt;ts&gt;</p>
       </template>
-
+      
       <script lang=\\"ts\\">
       console.log('ts script')
       </script>
-
+      
       <script lang=\\"ts\\" setup>
       console.log('ts setup')
       </script>
@@ -79,37 +79,37 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.css ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": ";AAQA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/Css.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p class=\\"css\\">&lt;css&gt;</p>
-        <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
+        <p :class=\\"\$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-
+      
       <style>
       .css {
         color: red;
       }
       </style>
-
+      
       <style module>
       .css-module {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -130,37 +130,37 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('._css-module_')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": ";AAcA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/Css.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p class=\\"css\\">&lt;css&gt;</p>
-        <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
+        <p :class=\\"\$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-
+      
       <style>
       .css {
         color: red;
       }
       </style>
-
+      
       <style module>
       .css-module {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -181,37 +181,37 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.css-scoped[data-v-')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": ";AAoBA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/Css.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p class=\\"css\\">&lt;css&gt;</p>
-        <p :class=\\"$style['css-module']\\">&lt;css&gt; module</p>
+        <p :class=\\"\$style['css-module']\\">&lt;css&gt; module</p>
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-
+      
       <style>
       .css {
         color: red;
       }
       </style>
-
+      
       <style module>
       .css-module {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-
+      
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -232,16 +232,16 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.sass ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAKA;EACE",
-        "sources": Array [
+        "sources": [
           "/root/Sass.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p class=\\"sass\\">&lt;sass&gt;</p>
       </template>
-
+      
       <style lang=\\"sass\\">
       .sass
         color: red
@@ -257,13 +257,13 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.sass-with-import ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA;EACE;;ACOF;EACE",
-        "sources": Array [
+        "sources": [
           "/root/sassWithImportImported.sass",
           "/root/SassWithImport.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".sass-with-import-imported
         color: red
       ",
@@ -271,10 +271,10 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         <p class=\\"sass-with-import\\">&lt;sass&gt; with import</p>
         <p class=\\"sass-with-import-imported\\">&lt;sass&gt; with import (imported)</p>
       </template>
-
+      
       <style lang=\\"sass\\">
       @import './sassWithImportImported'
-
+      
       .sass-with-import
         color: red
       </style>
@@ -289,16 +289,16 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.less ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAKA;EACE",
-        "sources": Array [
+        "sources": [
           "/root/Less.vue",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "<template>
         <p class=\\"less\\">&lt;less&gt; with additionalData</p>
       </template>
-
+      
       <style lang=\\"less\\">
       .less {
         color: @color;
@@ -315,12 +315,12 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.src-import[data-v-')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/src-import/src-import.css",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".src-import {
         color: red;
       }
@@ -335,18 +335,18 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const css = await getStyleTagContentIncluding('.src-import-sass[data-v-')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA;EACE;;ACCF;EACE",
-        "sources": Array [
+        "sources": [
           "/root/src-import/src-import-imported.sass",
           "/root/src-import/src-import.sass",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".src-import-sass-imported
         color: red
       ",
           "@import './src-import-imported'
-
+      
       .src-import-sass
         color: red
       ",

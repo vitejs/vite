@@ -1,4 +1,4 @@
-import { isBuild } from 'testUtils'
+import { isBuild } from '../../testUtils'
 
 if (isBuild) {
   test('should not output sourcemap warning (#4939)', () => {

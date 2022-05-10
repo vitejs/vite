@@ -1,8 +1,8 @@
 // @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 const path = require('path')
-const { ports } = require('../../../testUtils')
+const { ports } = require('../../../ports')
 
 const port = (exports.port = ports['legacy/ssr'])
 

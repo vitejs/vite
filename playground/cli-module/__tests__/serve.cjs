@@ -1,11 +1,11 @@
 // @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 
 const path = require('path')
 // eslint-disable-next-line node/no-restricted-require
 const execa = require('execa')
-const { workspaceRoot, ports } = require('../../testUtils')
+const { workspaceRoot, ports } = require('../../ports')
 
 const isWindows = process.platform === 'win32'
 const port = (exports.port = ports['cli-module'])

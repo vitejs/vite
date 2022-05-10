@@ -1,4 +1,6 @@
-import { port } from './serve'
+import { ports } from '../../ports'
+
+const port = ports['cli-module']
 
 test('cli should work in "type":"module" package', async () => {
   // this test uses a custom serve implementation, so regular helpers for browserLogs and goto don't work

@@ -113,8 +113,11 @@ beforeAll(async (s) => {
       const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
-      const testCustomServe = resolve(dirname(testPath), 'serve.js')
-      if (fs.existsSync(testCustomServe)) {
+      const testCustomServe = [
+        resolve(dirname(testPath), 'serve.cjs'),
+        resolve(dirname(testPath), 'serve.js')
+      ].find((i) => fs.existsSync(i))
+      if (testCustomServe) {
         // test has custom server configuration.
         const { serve, preServe } = require(testCustomServe)
         if (preServe) {

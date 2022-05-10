@@ -1,6 +1,5 @@
 // test utils used in e2e tests for playgrounds.
-// this can be directly imported in any playground tests as 'testUtils', e.g.
-// `import { getColor } from 'testUtils'`
+// `import { getColor } from '../../testUtils'`
 
 import fs from 'fs'
 import path from 'path'
@@ -10,6 +9,8 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
+
+export * from './ports'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')

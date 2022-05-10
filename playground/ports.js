@@ -1,3 +1,6 @@
+// TODO: migrate to ESM
+const path = require('path')
+
 // make sure these ports are unique
 module.exports.ports = {
   cli: 9510,
@@ -14,3 +17,5 @@ module.exports.ports = {
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006
 }
+
+module.exports.workspaceRoot = path.resolve(__dirname, '../')

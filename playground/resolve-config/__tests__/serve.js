@@ -1,13 +1,13 @@
 // @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 
 const path = require('path')
 const fs = require('fs-extra')
-const { testDir } = require('../../testUtils')
+const { workspaceRoot } = require('../../ports')
 
 const fromTestDir = (/** @type{string[]} */ ...p) =>
-  path.resolve(testDir(), ...p)
+  path.resolve(workspaceRoot, 'resolve-config', ...p)
 
 const configNames = ['js', 'cjs', 'mjs', 'ts']
 
