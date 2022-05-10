@@ -28,5 +28,9 @@
     "@rollup/pluginutils": "^4.2.1",
     "@vue/babel-plugin-jsx": "^1.1.1",
     "hash-sum": "^2.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^2.0.0",
+    "vue": "^3.0.0"
   }
 }
