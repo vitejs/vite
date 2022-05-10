@@ -117,7 +117,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const { include, exclude, warnOnError } =
     config.build.dynamicImportVarsOptions
   const filter = createFilter(include, exclude)
-
+  const isBuild = config.command === 'build'
   return {
     name: 'vite:dynamic-import-vars',
 
@@ -206,7 +206,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+          map: isBuild
+            ? config.build.sourcemap
+              ? s.generateMap({ hires: true })
+              : null
+            : s.generateMap({ hires: true })
         }
       }
     }
