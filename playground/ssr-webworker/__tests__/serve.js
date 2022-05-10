@@ -3,12 +3,12 @@
 // the default e2e test serve behavior
 
 const path = require('path')
-const { ports } = require('../../ports')
+const { ports, workspaceRoot } = require('../../ports')
 
 const port = (exports.port = ports['ssr-webworker'])
 
 /**
- * @param {string} root
+ * @param {string} _
  * @param {boolean} isProd
  */
 exports.serve = async function serve(root, isProd) {
