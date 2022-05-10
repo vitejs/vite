@@ -2,20 +2,20 @@
 // this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const http = require('http')
-const sirv = require('sirv')
-const { ports } = require('../../ports')
+import path from 'path'
+import http from 'http'
+import sirv from 'sirv'
+import { ports } from '../../testUtils'
 
-const port = (exports.port = ports.lib)
+export const port = ports.lib
 
-global.serverLogs = []
+serverLogs.length = 0
 
 /**
  * @param {string} root
  * @param {boolean} isBuildTest
  */
-exports.serve = async function serve(root, isBuildTest) {
+export async function serve(root, isBuildTest) {
   // build first
 
   setupConsoleWarnCollector()
@@ -23,7 +23,7 @@ exports.serve = async function serve(root, isBuildTest) {
   if (!isBuildTest) {
     const { createServer } = require('vite')
     process.env.VITE_INLINE = 'inline-serve'
-    let viteServer = await (
+    const viteServer = await (
       await createServer({
         root: root,
         logLevel: 'silent',
@@ -45,7 +45,7 @@ exports.serve = async function serve(root, isBuildTest) {
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
     const url =
-      (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
+      (viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
     await page.goto(url)
 
     return viteServer
@@ -97,7 +97,7 @@ exports.serve = async function serve(root, isBuildTest) {
 function setupConsoleWarnCollector() {
   const warn = console.warn
   console.warn = (...args) => {
-    global.serverLogs.push(args.join(' '))
+    serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

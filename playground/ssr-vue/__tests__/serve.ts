@@ -2,16 +2,12 @@
 // this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../ports')
+import path from 'path'
+import { ports } from '../../testUtils'
 
-const port = (exports.port = ports['ssr-vue'])
+export const port = ports['ssr-vue']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root, isProd) {
   if (isProd) {
     // build first
     const { build } = require('vite')

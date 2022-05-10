@@ -2,11 +2,11 @@
 // the default e2e test serve behavior
 
 import path from 'path'
-import { ports } from '../../ports'
+import { ports } from '../../testUtils'
 
 export const port = ports['ssr-webworker']
 
-exports.serve = async function serve(root: string, isProd: boolean) {
+export async function serve(root: string, isProd: boolean) {
   // we build first, regardless of whether it's prod/build mode
   // because Vite doesn't support the concept of a "webworker server"
   const { build } = require('vite')

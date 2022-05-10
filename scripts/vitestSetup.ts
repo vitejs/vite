@@ -31,7 +31,7 @@ declare global {
   const browserLogs: string[]
   const browserErrors: Error[]
   const serverLogs: string[]
-  const viteTestUrl: string | undefined
+  let viteTestUrl: string | undefined
   const watcher: RollupWatcher | undefined
   let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
 }

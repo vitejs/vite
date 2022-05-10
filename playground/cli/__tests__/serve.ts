@@ -4,7 +4,7 @@
 
 import path from 'path'
 import execa from 'execa'
-import { workspaceRoot, ports } from '../../ports'
+import { workspaceRoot, ports } from '../../testUtils'
 import kill from 'kill-port'
 
 const isWindows = process.platform === 'win32'

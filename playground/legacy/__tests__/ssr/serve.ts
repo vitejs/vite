@@ -2,7 +2,7 @@
 // this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 import path from 'path'
-import { ports } from '../../../ports'
+import { ports } from '../../../testUtils'
 
 export const port = ports['legacy/ssr']
 
