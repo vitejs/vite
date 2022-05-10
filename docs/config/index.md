@@ -186,6 +186,20 @@ export default defineConfig(({ command, mode }) => {
 
   :::
 
+  ::: tip NOTE
+  Since dev and build implement `define` differently, we should avoid some use cases to avoid inconsistency.
+
+  Example:
+
+  ```js
+  const obj = {
+    __NAME__, // Don't define object shorthand property names
+    __KEY__: value // Don't define object key
+  }
+  ```
+
+  :::
+
 ### plugins
 
 - **Type:** `(Plugin | Plugin[])[]`
