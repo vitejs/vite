@@ -272,7 +272,10 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if ((!script.lang || script.lang === 'ts') && !script.src) {
+    if (
+      (!script.lang || (script.lang === 'ts' && options.devServer)) &&
+      !script.src
+    ) {
       scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
