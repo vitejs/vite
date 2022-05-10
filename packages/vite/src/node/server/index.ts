@@ -30,7 +30,6 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import type { Connect } from 'types/connect'
 import { isParentDirectory, normalizePath } from '../utils'
@@ -41,9 +40,6 @@ import { openBrowser } from './openBrowser'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
-import type { ESBuildTransformResult } from '../plugins/esbuild'
-import { transformWithEsbuild } from '../plugins/esbuild'
-import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -56,6 +52,7 @@ import type { OptimizedDeps } from '../optimizer'
 import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { CLIENT_DIR } from '../constants'
+import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
 import { performance } from 'perf_hooks'
 import { invalidatePackageData } from '../packages'
@@ -92,6 +89,8 @@ export interface ServerOptions extends CommonServerOptions {
   fs?: FileSystemServeOptions
   /**
    * Origin for the generated asset URLs.
+   *
+   * @example `http://127.0.0.1:8080`
    */
   origin?: string
   /**
@@ -157,10 +156,6 @@ export interface ViteDevServer {
    */
   middlewares: Connect.Server
   /**
-   * @deprecated use `server.middlewares` instead
-   */
-  app: Connect.Server
-  /**
    * native Node http server instance
    * will be null in middleware mode
    */
@@ -199,18 +194,6 @@ export interface ViteDevServer {
     html: string,
     originalUrl?: string
   ): Promise<string>
-  /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   *
-   * @deprecated import `transformWithEsbuild` from `vite` instead
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<ESBuildTransformResult>
   /**
    * Transform module code into SSR format.
    * @experimental
@@ -258,23 +241,14 @@ export interface ViteDevServer {
    */
   _optimizedDeps: OptimizedDeps | null
   /**
+   * @internal
+   */
+  _importGlobMap: Map<string, string[][]>
+  /**
    * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
-  /**
-   * @internal
-   */
-  _globImporters: Record<
-    string,
-    {
-      module: ModuleNode
-      importGlobs: {
-        base: string
-        pattern: string
-      }[]
-    }
-  >
   /**
    * @internal
    */
@@ -300,8 +274,7 @@ export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
-  const root = config.root
-  const serverConfig = config.server
+  const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(
     config.server.https,
     config.cacheDir
@@ -343,12 +316,6 @@ export async function createServer(
   const server: ViteDevServer = {
     config,
     middlewares,
-    get app() {
-      config.logger.warn(
-        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
-      )
-      return middlewares
-    },
     httpServer,
     watcher,
     pluginContainer: container,
@@ -359,7 +326,6 @@ export async function createServer(
         json: { stringify: server.config.json?.stringify }
       })
     },
-    transformWithEsbuild,
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
@@ -431,8 +397,8 @@ export async function createServer(
 
     _optimizedDeps: null,
     _ssrExternals: null,
-    _globImporters: Object.create(null),
     _restartPromise: null,
+    _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }
@@ -484,9 +450,8 @@ export async function createServer(
   watcher.on('add', (file) => {
     handleFileAddUnlink(normalizePath(file), server)
   })
-
   watcher.on('unlink', (file) => {
-    handleFileAddUnlink(normalizePath(file), server, true)
+    handleFileAddUnlink(normalizePath(file), server)
   })
 
   if (!middlewareMode && httpServer) {
@@ -520,7 +485,7 @@ export async function createServer(
   // proxy
   const { proxy } = serverConfig
   if (proxy) {
-    middlewares.use(proxyMiddleware(httpServer, config))
+    middlewares.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   // base
@@ -575,6 +540,12 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
+  const initOptimizer = () => {
+    if (!config.optimizeDeps.disabled) {
+      server._optimizedDeps = createOptimizedDeps(server)
+    }
+  }
+
   if (!middlewareMode && httpServer) {
     let isOptimized = false
     // overwrite listen to init optimizer before server start
@@ -583,7 +554,7 @@ export async function createServer(
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          server._optimizedDeps = createOptimizedDeps(server)
+          initOptimizer()
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -594,7 +565,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    server._optimizedDeps = createOptimizedDeps(server)
+    initOptimizer()
   }
 
   return server
@@ -700,7 +671,8 @@ function resolvedAllowDir(root: string, dir: string): string {
 
 export function resolveServerOptions(
   root: string,
-  raw?: ServerOptions
+  raw: ServerOptions | undefined,
+  logger: Logger
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
@@ -726,6 +698,18 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
+
+  if (server.origin?.endsWith('/')) {
+    server.origin = server.origin.slice(0, -1)
+    logger.warn(
+      colors.yellow(
+        `${colors.bold('(!)')} server.origin should not end with "/". Using "${
+          server.origin
+        }" instead.`
+      )
+    )
+  }
+
   return server
 }
 

@@ -7,12 +7,6 @@ export interface ViteHotContext {
   accept(cb: (mod: any) => void): void
   accept(dep: string, cb: (mod: any) => void): void
   accept(deps: readonly string[], cb: (mods: any[]) => void): void
-
-  /**
-   * @deprecated
-   */
-  acceptDeps(): never
-
   dispose(cb: (data: any) => void): void
   decline(): void
   invalidate(): void

@@ -171,6 +171,11 @@ const createNodeConfig = (isProduction) => {
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: eval('require'),`
+          },
+          // postcss-load-config calls require after register ts-node
+          'postcss-load-config/src/index.js': {
+            src: `require(configFile)`,
+            replacement: `eval('require')(configFile)`
           }
         }),
       commonjs({

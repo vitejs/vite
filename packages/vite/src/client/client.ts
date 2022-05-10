@@ -106,6 +106,7 @@ async function handleMessage(payload: HMRPayload) {
         const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
+          payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
           location.reload()
@@ -430,13 +431,6 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       } else {
         throw new Error(`invalid hot.accept() usage.`)
       }
-    },
-
-    acceptDeps() {
-      throw new Error(
-        `hot.acceptDeps() is deprecated. ` +
-          `Use hot.accept() with the same signature instead.`
-      )
     },
 
     dispose(cb) {
