@@ -32,8 +32,8 @@ module.exports = class PlaywrightEnvironment extends NodeEnvironment {
     const console = this.global.console
     const warn = console.warn
     console.warn = (msg, ...args) => {
-      // suppress @vue/ref-transform warning
-      if (msg.includes('@vue/ref-transform')) return
+      // suppress @vue/reactivity-transform warning
+      if (msg.includes('@vue/reactivity-transform')) return
       if (msg.includes('Generated an empty chunk')) return
       warn.call(console, msg, ...args)
     }
