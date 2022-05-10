@@ -1,4 +1,3 @@
-// @ts-check
 // this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
@@ -9,14 +8,9 @@ import { ports } from '../../testUtils'
 
 export const port = ports.lib
 
-serverLogs.length = 0
-
-/**
- * @param {string} root
- * @param {boolean} isBuildTest
- */
 export async function serve(root, isBuildTest) {
-  // build first
+  // @ts-expect-error
+  global.serverLogs = []
 
   setupConsoleWarnCollector()
 
@@ -44,8 +38,9 @@ export async function serve(root, isBuildTest) {
     ).listen()
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
+    // @ts-expect-error
     const url =
-      (viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
+      (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
     await page.goto(url)
 
     return viteServer
@@ -97,7 +92,8 @@ export async function serve(root, isBuildTest) {
 function setupConsoleWarnCollector() {
   const warn = console.warn
   console.warn = (...args) => {
-    serverLogs.push(args.join(' '))
+    // @ts-expect-error
+    global.serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }
