@@ -59,10 +59,10 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
 })
 
-if (isBuild) {
-  const assetsDir = path.resolve(testDir(), 'dist/es/assets')
+describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
+    const assetsDir = path.resolve(testDir(), 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
     expect(files.length).toBe(26)
     const index = files.find((f) => f.includes('main-module'))
@@ -92,7 +92,7 @@ if (isBuild) {
       '"type":"constructor"'
     )
   })
-}
+})
 
 test('module worker', async () => {
   expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(

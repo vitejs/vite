@@ -1,9 +1,9 @@
-import { isBuild } from '../../testUtils'
+import { isServe } from '../../testUtils'
 
 const json = require('../safe.json')
 const stringified = JSON.stringify(json)
 
-describe.runIf(isBuild)('main', () => {
+describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
     // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/src/')
