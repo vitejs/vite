@@ -79,7 +79,7 @@ describe('main', () => {
 
 describe('nested', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/')
   })
 
@@ -88,7 +88,7 @@ describe('nested', () => {
 
 describe('nested w/ query', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/index.html?v=1')
   })
 
@@ -98,7 +98,7 @@ describe('nested w/ query', () => {
 if (isBuild) {
   describe('scriptAsync', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptAsync.html')
     })
 
@@ -110,7 +110,7 @@ if (isBuild) {
 
   describe('scriptMixed', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptMixed.html')
     })
 
@@ -124,7 +124,7 @@ if (isBuild) {
     // Ensure that the modulePreload polyfill is discarded in this case
 
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/zeroJS.html')
     })
 
@@ -168,7 +168,7 @@ if (isBuild) {
 
 describe('noHead', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noHead.html')
   })
 
@@ -183,7 +183,7 @@ describe('noHead', () => {
 
 describe('noBody', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noBody.html')
   })
 

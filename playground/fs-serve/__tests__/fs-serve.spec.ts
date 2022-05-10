@@ -5,7 +5,7 @@ const stringified = JSON.stringify(json)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
+    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/src/')
   })
 
