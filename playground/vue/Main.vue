@@ -22,7 +22,8 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <WorkerTest />
-  <img alt="smpte bars" class="logo" src="/img/aaaSMPTE-color-bars.png" />
+  <img :src="noExistImg" alt="noExistImg" />
+  <img alt="noExistImg" src="/img/aaaSMPTE-color-bars.png" />
 </template>
 
 <script setup lang="ts">
@@ -41,6 +42,7 @@ import ReactivityTransform from './ReactivityTransform.vue'
 import SetupImportTemplate from './setup-import-template/SetupImportTemplate.vue'
 import WorkerTest from './worker.vue'
 import { ref } from 'vue'
+import noExistImg from './img/aaaSMPTE-color-bars.png'
 
 const time = ref('loading...')
 
