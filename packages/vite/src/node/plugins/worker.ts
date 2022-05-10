@@ -26,7 +26,7 @@ function saveEmitWorkerAsset(
   asset: EmittedAsset
 ): void {
   const fileName = asset.fileName!
-  const workerMap = workerCache.get(config.rawConfig || config)!
+  const workerMap = workerCache.get(config.mainConfig || config)!
   workerMap.assets.set(fileName, asset)
 }
 
@@ -145,7 +145,7 @@ export async function workerFileToUrl(
   id: string,
   query: Record<string, string> | null
 ): Promise<string> {
-  const workerMap = workerCache.get(config.rawConfig || config)!
+  const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
     const outputChunk = await bundleWorkerEntry(ctx, config, id, query)
