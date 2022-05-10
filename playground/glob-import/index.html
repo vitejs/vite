@@ -2,6 +2,7 @@
 <pre class="result-node_modules"></pre>
 <pre class="globraw"></pre>
 <pre class="relative-glob-raw"></pre>
+<pre class="side-effect-result"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -69,4 +70,12 @@
     null,
     2
   )
+</script>
+
+<script type="module">
+  const neverInvoke = () =>
+    (document.querySelector('.side-effect-result').textContent =
+      "Syntax generated from 'import.meta.glob' must do ASI.")
+  const notInvocation = neverInvoke
+  import.meta.glob('/side-effect/**', { eager: true })
 </script>
