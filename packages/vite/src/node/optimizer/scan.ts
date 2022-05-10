@@ -75,9 +75,7 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
-    (entry) =>
-      (JS_TYPES_RE.test(entry) || htmlTypesRE.test(entry)) &&
-      fs.existsSync(entry)
+    (entry) => isScannable(entry) && fs.existsSync(entry)
   )
 
   if (!entries.length) {
