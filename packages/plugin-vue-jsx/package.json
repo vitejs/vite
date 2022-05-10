@@ -30,6 +30,7 @@
     "hash-sum": "^2.0.0"
   },
   "peerDependencies": {
-    "vite": "^2.0.0"
+    "vite": "^2.0.0",
+    "vue": "^3.0.0"
   }
 }
