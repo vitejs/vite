@@ -723,6 +723,7 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
 export const usingDynamicImport = typeof jest === 'undefined'
 /**

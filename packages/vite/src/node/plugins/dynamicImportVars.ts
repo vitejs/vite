@@ -4,7 +4,7 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, parseRequest } from '../utils'
+import { normalizePath, parseRequest, requestQuerySplitRE } from '../utils'
 import { parse as parseJS } from 'acorn'
 import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
@@ -51,8 +51,8 @@ function parseDynamicImportPattern(
     return null
   }
 
-  const [userPattern] = userPatternQuery.split('?', 2)
-  const [rawPattern] = filename.split('?', 2)
+  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
+  const [rawPattern] = filename.split(requestQuerySplitRE, 2)
 
   if (rawQuery?.raw !== undefined) {
     globParams = { as: 'raw' }
