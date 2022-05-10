@@ -28,3 +28,13 @@
 .DocSearch {
   --docsearch-primary-color: var(--c-brand) !important;
 }
+
+#play-vite-audio {
+  padding: 0;
+  margin-left: 5px;
+  display: inline-flex;
+}
+
+#play-vite-audio img {
+  opacity: 0.8;
+}

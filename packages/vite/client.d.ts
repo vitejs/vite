@@ -1,51 +1,4 @@
-/// <reference lib="dom" />
-
-interface ImportMeta {
-  url: string
-
-  readonly hot?: {
-    readonly data: any
-
-    accept(): void
-    accept(cb: (mod: any) => void): void
-    accept(dep: string, cb: (mod: any) => void): void
-    accept(deps: readonly string[], cb: (mods: any[]) => void): void
-
-    /**
-     * @deprecated
-     */
-    acceptDeps(): never
-
-    dispose(cb: (data: any) => void): void
-    decline(): void
-    invalidate(): void
-
-    on(event: string, cb: (...args: any[]) => void): void
-  }
-
-  readonly env: ImportMetaEnv
-
-  glob(pattern: string): Record<
-    string,
-    () => Promise<{
-      [key: string]: any
-    }>
-  >
-
-  globEager(pattern: string): Record<
-    string,
-    {
-      [key: string]: any
-    }
-  >
-}
-interface ImportMetaEnv {
-  [key: string]: string | boolean | undefined
-  BASE_URL: string
-  MODE: string
-  DEV: boolean
-  PROD: boolean
-}
+/// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
@@ -141,6 +94,10 @@ declare module '*.webp' {
   const src: string
   export default src
 }
+declare module '*.avif' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
@@ -194,6 +151,24 @@ declare module '*.otf' {
   export default src
 }
 
+// other
+declare module '*.wasm' {
+  const initWasm: (options: WebAssembly.Imports) => Promise<WebAssembly.Exports>
+  export default initWasm
+}
+declare module '*.webmanifest' {
+  const src: string
+  export default src
+}
+declare module '*.pdf' {
+  const src: string
+  export default src
+}
+declare module '*.txt' {
+  const src: string
+  export default src
+}
+
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
@@ -222,6 +197,11 @@ declare module '*?raw' {
 }
 
 declare module '*?url' {
+  const src: string
+  export default src
+}
+
+declare module '*?inline' {
   const src: string
   export default src
 }

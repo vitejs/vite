@@ -82,3 +82,38 @@ Note that:
 
 - You should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
 - Assets in `public` cannot be imported from JavaScript.
+
+## new URL(url, import.meta.url)
+
+[import.meta.url](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta) is a native ESM feature that exposes the current module's URL. Combining it with the native [URL constructor](https://developer.mozilla.org/en-US/docs/Web/API/URL), we can obtain the full, resolved URL of a static asset using relative path from a JavaScript module:
+
+```js
+const imgUrl = new URL('./img.png', import.meta.url).href
+
+document.getElementById('hero-img').src = imgUrl
+```
+
+This works natively in modern browsers - in fact, Vite doesn't need to process this code at all during development!
+
+This pattern also supports dynamic URLs via template literals:
+
+```js
+function getImageUrl(name) {
+  return new URL(`./dir/${name}.png`, import.meta.url).href
+}
+```
+
+During the production build, Vite will perform necessary transforms so that the URLs still point to the correct location even after bundling and asset hashing. However, the URL string must be static so it can be analyzed, otherwise the code will be left as is, which can cause runtime errors if `build.target` does not support `import.meta.url`
+
+```js
+// Vite will not transform this
+const imgUrl = new URL(imagePath, import.meta.url).href
+```
+
+::: warning Does not work with SSR
+This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` have different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
+:::
+
+::: warning Esbuild target config is necessary
+This pattern needs esbuild target to be set to `es2020` or higher. `vite@2.x` use `es2019` as default target. Set [build-target](https://vitejs.dev/config/#build-target) and [optimizedeps.esbuildoptions.target](https://vitejs.dev/config/#optimizedeps-esbuildoptions) to `es2020` or higher if you intend to use this partten.
+:::

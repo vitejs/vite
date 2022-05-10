@@ -1,9 +1,0 @@
-.sass-at-import {
-  color: olive;
-  background: url(./icon.png) 10px no-repeat;
-}
-
-.sass-at-import-alias {
-  color: olive;
-  background: url(@/nested/icon.png) 10px no-repeat;
-}

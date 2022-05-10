@@ -1,7 +1,15 @@
 import { searchForWorkspaceRoot } from '../searchRoot'
 import { resolve } from 'path'
+import { describe, test, expect } from 'vitest'
 
 describe('searchForWorkspaceRoot', () => {
+  test('lerna', () => {
+    const resolved = searchForWorkspaceRoot(
+      resolve(__dirname, 'fixtures/lerna/nested')
+    )
+    expect(resolved).toBe(resolve(__dirname, 'fixtures/lerna'))
+  })
+
   test('pnpm', () => {
     const resolved = searchForWorkspaceRoot(
       resolve(__dirname, 'fixtures/pnpm/nested')

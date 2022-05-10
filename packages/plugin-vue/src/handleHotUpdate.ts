@@ -1,25 +1,26 @@
 import _debug from 'debug'
-import { SFCBlock, SFCDescriptor } from '@vue/compiler-sfc'
+import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import {
   createDescriptor,
   getDescriptor,
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import { ModuleNode, HmrContext } from 'vite'
+import type { ModuleNode, HmrContext } from 'vite'
+import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
+
+const directRequestRE = /(\?|&)direct\b/
 
 /**
  * Vite-specific HMR handling
  */
-export async function handleHotUpdate({
-  file,
-  modules,
-  read,
-  server
-}: HmrContext): Promise<ModuleNode[] | void> {
-  const prevDescriptor = getDescriptor(file, false)
+export async function handleHotUpdate(
+  { file, modules, read, server }: HmrContext,
+  options: ResolvedOptions
+): Promise<ModuleNode[] | void> {
+  const prevDescriptor = getDescriptor(file, options, false)
   if (!prevDescriptor) {
     // file hasn't been requested yet (e.g. async component)
     return
@@ -28,12 +29,7 @@ export async function handleHotUpdate({
   setPrevDescriptor(file, prevDescriptor)
 
   const content = await read()
-  const { descriptor } = createDescriptor(
-    file,
-    content,
-    server.config.root,
-    false
-  )
+  const { descriptor } = createDescriptor(file, content, options)
 
   let needRerender = false
   const affectedModules = new Set<ModuleNode | undefined>()
@@ -42,11 +38,20 @@ export async function handleHotUpdate({
   )
   const templateModule = modules.find((m) => /type=template/.test(m.url))
 
-  if (
-    !isEqualBlock(descriptor.script, prevDescriptor.script) ||
-    !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
-  ) {
-    affectedModules.add(mainModule)
+  if (hasScriptChanged(prevDescriptor, descriptor)) {
+    let scriptModule: ModuleNode | undefined
+    if (
+      (descriptor.scriptSetup?.lang && !descriptor.scriptSetup.src) ||
+      (descriptor.script?.lang && !descriptor.script.src)
+    ) {
+      const scriptModuleRE = new RegExp(
+        `type=script.*&lang\.${
+          descriptor.scriptSetup?.lang || descriptor.script?.lang
+        }$`
+      )
+      scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
+    }
+    affectedModules.add(scriptModule || mainModule)
   }
 
   if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
@@ -88,9 +93,17 @@ export async function handleHotUpdate({
     const next = nextStyles[i]
     if (!prev || !isEqualBlock(prev, next)) {
       didUpdateStyle = true
-      const mod = modules.find((m) => m.url.includes(`type=style&index=${i}`))
+      const mod = modules.find(
+        (m) =>
+          m.url.includes(`type=style&index=${i}`) &&
+          m.url.endsWith(`.${next.lang || 'css'}`) &&
+          !directRequestRE.test(m.url)
+      )
       if (mod) {
         affectedModules.add(mod)
+        if (mod.url.includes('&inline')) {
+          affectedModules.add(mainModule)
+        }
       } else {
         // new style block - force reload
         affectedModules.add(mainModule)
@@ -163,11 +176,32 @@ export function isOnlyTemplateChanged(
   next: SFCDescriptor
 ): boolean {
   return (
-    isEqualBlock(prev.script, next.script) &&
-    isEqualBlock(prev.scriptSetup, next.scriptSetup) &&
+    !hasScriptChanged(prev, next) &&
     prev.styles.length === next.styles.length &&
     prev.styles.every((s, i) => isEqualBlock(s, next.styles[i])) &&
     prev.customBlocks.length === next.customBlocks.length &&
     prev.customBlocks.every((s, i) => isEqualBlock(s, next.customBlocks[i]))
   )
+}
+
+function hasScriptChanged(prev: SFCDescriptor, next: SFCDescriptor): boolean {
+  if (!isEqualBlock(prev.script, next.script)) {
+    return true
+  }
+  if (!isEqualBlock(prev.scriptSetup, next.scriptSetup)) {
+    return true
+  }
+
+  // vue core #3176
+  // <script setup lang="ts"> prunes non-unused imports
+  // the imports pruning depends on template, so script may need to re-compile
+  // based on template changes
+  const prevResolvedScript = getResolvedScript(prev, false)
+  // this is only available in vue@^3.2.23
+  const prevImports = prevResolvedScript?.imports
+  if (prevImports) {
+    return next.shouldForceReload(prevImports)
+  }
+
+  return false
 }

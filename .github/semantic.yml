@@ -1,0 +1,17 @@
+titleOnly: true
+types:
+  - feat
+  - fix
+  - docs
+  - dx
+  - refactor
+  - perf
+  - test
+  - workflow
+  - build
+  - ci
+  - chore
+  - types
+  - wip
+  - release
+  - deps

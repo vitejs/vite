@@ -1,13 +1,22 @@
-import os from 'os'
 import path from 'path'
-import sirv, { Options } from 'sirv'
-import { Connect } from 'types/connect'
-import { FileSystemServeOptions } from '..'
-import { normalizePath, ResolvedConfig } from '../..'
+import type { ServerResponse } from 'http'
+import type { Options } from 'sirv'
+import sirv from 'sirv'
+import type { Connect } from 'types/connect'
+import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
-import { Logger } from '../../logger'
-import { cleanUrl, fsPathFromId, isImportRequest } from '../../utils'
-import { AccessRestrictedError } from './error'
+import {
+  cleanUrl,
+  fsPathFromId,
+  fsPathFromUrl,
+  isImportRequest,
+  isInternalRequest,
+  isWindows,
+  slash,
+  isFileReadable,
+  isParentDirectory
+} from '../../utils'
+import { isMatch } from 'micromatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -30,8 +39,8 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
-    // skip import request
-    if (isImportRequest(req.url!)) {
+    // skip import request and internal requests `/@fs/ /@vite-client` etc...
+    if (isImportRequest(req.url!) || isInternalRequest(req.url!)) {
       return next()
     }
     serve(req, res, next)
@@ -40,24 +49,30 @@ export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
 
 export function serveStaticMiddleware(
   dir: string,
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
   const serve = sirv(dir, sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
-    const url = req.url!
-
-    // only serve the file if it's not an html request
+    // only serve the file if it's not an html request or ends with `/`
     // so that html requests can fallthrough to our html middleware for
     // special processing
-    if (path.extname(cleanUrl(url)) === '.html') {
+    // also skip internal requests `/@fs/ /@vite-client` etc...
+    const cleanedUrl = cleanUrl(req.url!)
+    if (
+      cleanedUrl.endsWith('/') ||
+      path.extname(cleanedUrl) === '.html' ||
+      isInternalRequest(req.url!)
+    ) {
       return next()
     }
 
+    const url = decodeURI(req.url!)
+
     // apply aliases to static requests as well
     let redirected: string | undefined
-    for (const { find, replacement } of config.resolve.alias) {
+    for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
         typeof find === 'string' ? url.startsWith(find) : find.test(url)
       if (matches) {
@@ -70,6 +85,18 @@ export function serveStaticMiddleware(
       if (redirected.startsWith(dir)) {
         redirected = redirected.slice(dir.length)
       }
+    }
+
+    const resolvedUrl = redirected || url
+    let fileUrl = path.resolve(dir, resolvedUrl.replace(/^\//, ''))
+    if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
+      fileUrl = fileUrl + '/'
+    }
+    if (!ensureServingAccess(fileUrl, server, res, next)) {
+      return
+    }
+
+    if (redirected) {
       req.url = redirected
     }
 
@@ -78,28 +105,32 @@ export function serveStaticMiddleware(
 }
 
 export function serveRawFsMiddleware(
-  config: ResolvedConfig
+  server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const isWin = os.platform() === 'win32'
   const serveFromRoot = sirv('/', sirvOptions)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    let url = req.url!
+    let url = decodeURI(req.url!)
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.startsWith(FS_PREFIX)) {
-      // restrict files outside of `fsServe.root`
-      ensureServingAccess(
-        path.resolve(fsPathFromId(url)),
-        config.server.fsServe,
-        config.logger
-      )
+      // restrict files outside of `fs.allow`
+      if (
+        !ensureServingAccess(
+          slash(path.resolve(fsPathFromId(url))),
+          server,
+          res,
+          next
+        )
+      ) {
+        return
+      }
 
       url = url.slice(FS_PREFIX.length)
-      if (isWin) url = url.replace(/^[A-Z]:/i, '')
+      if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
       req.url = url
       serveFromRoot(req, res, next)
@@ -109,40 +140,68 @@ export function serveRawFsMiddleware(
   }
 }
 
-export function isFileAccessAllowed(
+const _matchOptions = { matchBase: true }
+
+export function isFileServingAllowed(
   url: string,
-  { root, strict }: Required<FileSystemServeOptions>
+  server: ViteDevServer
 ): boolean {
-  return !strict || normalizePath(url).startsWith(root + path.posix.sep)
+  if (!server.config.server.fs.strict) return true
+
+  const file = fsPathFromUrl(url)
+
+  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
+    return false
+
+  if (server.moduleGraph.safeModulesPath.has(file)) return true
+
+  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
+    return true
+
+  return false
 }
 
-export function ensureServingAccess(
+function ensureServingAccess(
   url: string,
-  serveOptions: Required<FileSystemServeOptions>,
-  logger: Logger
-): void {
-  const { strict, root } = serveOptions
-  // TODO: early return, should remove once we polished the restriction logic
-  if (!strict) return
-
-  if (!isFileAccessAllowed(url, serveOptions)) {
-    const normalizedUrl = normalizePath(url)
-    if (strict) {
-      throw new AccessRestrictedError(
-        `The request url "${normalizedUrl}" is outside of vite dev server root "${root}". 
-        For security concerns, accessing files outside of workspace root is restricted since Vite v2.3.x. 
-        Refer to docs https://vitejs.dev/config/#server-fsserve-root for configurations and more details.`,
-        normalizedUrl,
-        root
-      )
-    } else {
-      // TODO: warn for potential unrestricted access
-      logger.warnOnce(
-        `For security concerns, accessing files outside of workspace root will ` +
-          `be restricted by default in the future version of Vite. ` +
-          `Refer to [] for more`
-      )
-      logger.warnOnce(`Unrestricted file system access to "${normalizedUrl}"`)
-    }
+  server: ViteDevServer,
+  res: ServerResponse,
+  next: Connect.NextFunction
+): boolean {
+  if (isFileServingAllowed(url, server)) {
+    return true
   }
+  if (isFileReadable(cleanUrl(url))) {
+    const urlMessage = `The request url "${url}" is outside of Vite serving allow list.`
+    const hintMessage = `
+${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
+
+Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+
+    server.config.logger.error(urlMessage)
+    server.config.logger.warnOnce(hintMessage + '\n')
+    res.statusCode = 403
+    res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
+    res.end()
+  } else {
+    // if the file doesn't exist, we shouldn't restrict this path as it can
+    // be an API call. Middlewares would issue a 404 if the file isn't handled
+    next()
+  }
+  return false
+}
+
+function renderRestrictedErrorHTML(msg: string): string {
+  // to have syntax highlighting and autocompletion in IDE
+  const html = String.raw
+  return html`
+    <body>
+      <h1>403 Restricted</h1>
+      <p>${msg.replace(/\n/g, '<br/>')}</p>
+      <style>
+        body {
+          padding: 1em 2em;
+        }
+      </style>
+    </body>
+  `
 }
