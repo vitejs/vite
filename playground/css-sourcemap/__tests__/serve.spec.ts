@@ -2,10 +2,10 @@ import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isBuild
+  isServe
 } from '../../testUtils'
 
-if (!isBuild) {
+describe.runIf(isServe)('serve', () => {
   const getStyleTagContentIncluding = async (content: string) => {
     const styles = await page.$$('style')
     for (const style of styles) {
@@ -55,7 +55,7 @@ if (!isBuild) {
       }
       ",
           "@import '@/be-imported.css';
-      
+
       .linked-with-import {
         color: red;
       }
@@ -102,7 +102,7 @@ if (!isBuild) {
       }
       ",
           "@import '@/be-imported.css';
-      
+
       .imported-with-import {
         color: red;
       }
@@ -200,8 +200,4 @@ if (!isBuild) {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
     })
   })
-} else {
-  test('this file only includes test for serve', () => {
-    expect(true).toBe(true)
-  })
-}
+})
