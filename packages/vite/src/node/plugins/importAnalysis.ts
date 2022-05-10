@@ -490,7 +490,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
-          if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
+          if (!hasViteIgnore) {
             this.warn(
               `\n` +
                 colors.cyan(importerModule.file) +
@@ -649,27 +649,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-/**
- * https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
- * This is probably less accurate but is much cheaper than a full AST parse.
- */
-function isSupportedDynamicImport(url: string) {
-  url = url.trim().slice(1, -1)
-  // must be relative
-  if (!url.startsWith('./') && !url.startsWith('../')) {
-    return false
-  }
-  // must have extension
-  if (!path.extname(url)) {
-    return false
-  }
-  // must be more specific if importing from same dir
-  if (url.startsWith('./${') && url.indexOf('/') === url.lastIndexOf('/')) {
-    return false
-  }
-  return true
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

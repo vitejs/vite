@@ -19,7 +19,7 @@ import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import { performance } from 'perf_hooks'
-import { parse as parseUrl, URLSearchParams } from 'url'
+import { URLSearchParams } from 'url'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -741,6 +741,7 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
 export const usingDynamicImport = typeof jest === 'undefined'
 /**
@@ -757,11 +758,11 @@ export const dynamicImport = usingDynamicImport
   : require
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+  return Object.fromEntries(new URLSearchParams(search))
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)

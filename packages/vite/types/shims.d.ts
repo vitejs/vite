@@ -59,6 +59,7 @@ declare module 'postcss-modules' {
 
 declare module '@rollup/plugin-dynamic-import-vars' {
   import type { Plugin } from 'rollup'
+  import type { BaseNode } from 'estree'
 
   interface Options {
     include?: string | RegExp | (string | RegExp)[]
@@ -68,6 +69,10 @@ declare module '@rollup/plugin-dynamic-import-vars' {
 
   const p: (o?: Options) => Plugin
   export default p
+  export function dynamicImportToGlob(
+    ast: BaseNode,
+    source: string
+  ): null | string
 }
 
 declare module 'rollup-plugin-web-worker-loader' {
