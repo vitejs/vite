@@ -740,11 +740,11 @@ export const dynamicImport = usingDynamicImport
   : require
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+  return Object.fromEntries(new URLSearchParams(search))
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)

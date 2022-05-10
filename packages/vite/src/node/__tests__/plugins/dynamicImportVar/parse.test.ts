@@ -27,4 +27,12 @@ describe('parse positives', () => {
   it('with query url', async () => {
     expect(await run('`./mods/${base}.js?url`')).toMatchSnapshot()
   })
+
+  it('? in variables', async () => {
+    expect(await run('`./mods/${base ?? foo}.js?raw`')).toMatchSnapshot()
+  })
+
+  it('? in url', async () => {
+    expect(await run('`./mo?ds/${base ?? foo}.js?raw`')).toMatchSnapshot()
+  })
 })
