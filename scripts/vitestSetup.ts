@@ -90,8 +90,8 @@ beforeAll(async (s) => {
   const globalConsole = globalThis.console
   const warn = globalConsole.warn
   globalConsole.warn = (msg, ...args) => {
-    // suppress @vue/ref-transform warning
-    if (msg.includes('@vue/ref-transform')) return
+    // suppress @vue/reactivity-transform warning
+    if (msg.includes('@vue/reactivity-transform')) return
     if (msg.includes('Generated an empty chunk')) return
     warn.call(globalConsole, msg, ...args)
   }

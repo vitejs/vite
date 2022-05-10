@@ -38,8 +38,8 @@ export async function serve(root, isBuildTest) {
     ).listen()
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
-    // @ts-expect-error
     const url =
+      // @ts-expect-error
       (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
     await page.goto(url)
 
