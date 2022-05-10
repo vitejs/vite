@@ -84,7 +84,6 @@ async function instantiateModule(
   if (mod.ssrModule) {
     return mod.ssrModule
   }
-
   const result =
     mod.ssrTransformResult ||
     (await transformRequest(url, server, { ssr: true }))
