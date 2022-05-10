@@ -148,6 +148,7 @@ test('hydration', async () => {
 
 test('hmr', async () => {
   editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
+  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
 
@@ -156,6 +157,7 @@ test('client navigation', async () => {
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
+  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
   await page.click('a[href="/"]')
   await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
