@@ -121,8 +121,10 @@ type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
 export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request)
 
+// htmlProxyRE is used to check if the request is a html proxy request and it will return css.
 export const isDirectCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request) && directRequestRE.test(request)
+  cssLangRE.test(request) &&
+  (directRequestRE.test(request) || htmlProxyRE.test(request))
 
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
