@@ -1,7 +1,8 @@
 const fs = require('fs')
 const path = require('path')
+const vite = require('vite')
 
-module.exports = {
+module.exports = vite.defineConfig({
   plugins: [
     {
       name: 'copy',
@@ -20,5 +21,10 @@ module.exports = {
         )
       }
     }
-  ]
-}
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'alias')
+    }
+  }
+})

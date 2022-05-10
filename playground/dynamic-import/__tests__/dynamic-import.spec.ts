@@ -60,6 +60,30 @@ test('should load dynamic import with css', async () => {
   )
 })
 
+test('should load dynamic import with vars', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars'),
+    'hello',
+    true
+  )
+})
+
+test('should load dynamic import with vars alias', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-alias'),
+    'hello',
+    true
+  )
+})
+
+test('should load dynamic import with vars raw', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-raw'),
+    'export function hello()',
+    true
+  )
+})
+
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
   await untilUpdated(() => getColor('.pkg-css'), 'blue', true)

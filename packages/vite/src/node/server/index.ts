@@ -321,7 +321,11 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
-    ssrTransform,
+    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
+      return ssrTransform(code, inMap, url, {
+        json: { stringify: server.config.json?.stringify }
+      })
+    },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },

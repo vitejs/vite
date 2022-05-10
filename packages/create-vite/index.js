@@ -230,7 +230,7 @@ async function init() {
   if (overwrite) {
     emptyDir(root)
   } else if (!fs.existsSync(root)) {
-    fs.mkdirSync(root)
+    fs.mkdirSync(root, { recursive: true })
   }
 
   // determine template

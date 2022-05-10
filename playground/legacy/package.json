@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build --debug legacy",
     "build:custom-filename": "vite --config ./vite.config-custom-filename.js build  --debug legacy",
+    "build:dynamic-css": "vite --config ./vite.config-dynamic-css.js build  --debug legacy",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },

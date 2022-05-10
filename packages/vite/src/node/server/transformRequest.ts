@@ -238,7 +238,9 @@ async function doTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url)
+    ? await ssrTransform(code, map as SourceMap, url, {
+        json: { stringify: !!server.config.json?.stringify }
+      })
     : ({
         code,
         map,
