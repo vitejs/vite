@@ -18,7 +18,7 @@
 
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
-  text('.exp', __EXP__)
+  text('.exp', typeof __EXP__) // typeof __EXP__ would be `boolean` instead of `string`
   text('.string', __STRING__)
   text('.number', __NUMBER__)
   text('.boolean', __BOOLEAN__)
