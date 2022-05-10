@@ -11,7 +11,7 @@ import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { isCSSRequest } from './css'
-import type { GeneralImportGlobOptions } from '../../../types/importGlob'
+import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { normalizePath, slash } from '../utils'
 
 export interface ParsedImportGlob {
@@ -168,12 +168,13 @@ export async function parseImportGlob(
       for (const property of arg2.properties) {
         if (
           property.type === 'SpreadElement' ||
-          property.key.type !== 'Identifier'
+          (property.key.type !== 'Identifier' &&
+            property.key.type !== 'Literal')
         )
           throw err('Could only use literals')
 
-        const name = property.key.name as keyof GeneralImportGlobOptions
-
+        const name = ((property.key as any).name ||
+          (property.key as any).value) as keyof GeneralImportGlobOptions
         if (name === 'query') {
           if (property.value.type === 'ObjectExpression') {
             const data: Record<string, string> = {}
@@ -260,13 +261,22 @@ const importPrefix = '__vite_glob_'
 
 const { basename, dirname, relative, join } = posix
 
+export interface TransformGlobImportResult {
+  s: MagicString
+  matches: ParsedImportGlob[]
+  files: Set<string>
+}
+
+/**
+ * @param optimizeExport for dynamicImportVar plugin don't need to optimize export.
+ */
 export async function transformGlobImport(
   code: string,
   id: string,
   root: string,
   resolveId: IdResolver,
   restoreQueryExtension = false
-) {
+): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
   const isVirtual = isVirtualModule(id)
@@ -288,7 +298,7 @@ export async function transformGlobImport(
     }
   })
 
-  if (!matches.length) return
+  if (!matches.length) return null
 
   const s = new MagicString(code)
 

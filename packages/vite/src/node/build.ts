@@ -26,7 +26,6 @@ import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
-import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { Logger } from './logger'
 import type { TransformOptions } from 'esbuild'
@@ -285,7 +284,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
