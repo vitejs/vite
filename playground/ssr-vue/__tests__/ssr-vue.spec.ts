@@ -110,6 +110,7 @@ test('css', async () => {
   } else {
     // During dev, the CSS is loaded from async chunk and we may have to wait
     // when the test runs concurrently.
+    await page.waitForLoadState('networkidle')
     await untilUpdated(() => getColor('h1'), 'green')
     await untilUpdated(() => getColor('.jsx'), 'blue')
   }
@@ -141,6 +142,7 @@ test('nested virtual module', async () => {
 test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
+  await page.waitForLoadState('networkidle')
   expect(await page.textContent('button')).toMatch('1')
 })
 
