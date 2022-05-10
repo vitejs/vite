@@ -48,11 +48,11 @@ if (isBuild) {
     const iife = readFile('dist/my-lib-custom-filename.iife.js')
     const umd = readFile('dist/my-lib-custom-filename.umd.js')
     expect(es).toMatch('process.env.NODE_ENV')
-    expect(es).toMatch('import.meta.env.DEV')
+    expect(es).toMatch('import.meta.env')
     expect(iife).toMatch('process.env.NODE_ENV')
-    expect(iife).toMatch('import.meta.env.DEV')
+    expect(iife).toMatch('import.meta.env')
     expect(umd).toMatch('process.env.NODE_ENV')
-    expect(umd).toMatch('import.meta.env.DEV')
+    expect(umd).toMatch('import.meta.env')
   })
 } else {
   test('dev', async () => {
