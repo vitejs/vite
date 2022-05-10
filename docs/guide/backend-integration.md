@@ -36,7 +36,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <script type="module" src="http://localhost:3000/main.js"></script>
    ```
 
-   Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
+   Also make sure the server is configured to proxy static assets requests to the Vite server, or, you can set [`server.origin`](https://vitejs.dev/config/#server-origin) so that import statements will be resolved to locations on the Vite server, rather than a relative address. Otherwise assets such as images won't be loaded properly.
 
    Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
 
