@@ -132,7 +132,9 @@ async function init() {
   let targetDir = argv._[0]
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+  const defaultProjectName = !targetDir
+    ? 'vite-project'
+    : targetDir.trim().replace(/\/+$/g, '')
 
   let result = {}
 
@@ -145,7 +147,8 @@ async function init() {
           message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
-            (targetDir = state.value.trim() || defaultProjectName)
+            (targetDir =
+              state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
         },
         {
           type: () =>
@@ -313,7 +316,8 @@ function copyDir(srcDir, destDir) {
 }
 
 function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+  const files = fs.readdirSync(path)
+  return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
 function emptyDir(dir) {

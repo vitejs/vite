@@ -1,3 +1,12 @@
+## <small>1.8.2 (2022-05-02)</small>
+
+* chore(deps): update all non-major dependencies (#7780) ([eba9d05](https://github.com/vitejs/vite/commit/eba9d05)), closes [#7780](https://github.com/vitejs/vite/issues/7780)
+* chore(deps): update all non-major dependencies (#7847) ([e29d1d9](https://github.com/vitejs/vite/commit/e29d1d9)), closes [#7847](https://github.com/vitejs/vite/issues/7847)
+* chore(deps): update all non-major dependencies (#7949) ([b877d30](https://github.com/vitejs/vite/commit/b877d30)), closes [#7949](https://github.com/vitejs/vite/issues/7949)
+* refactor(legacy): remove unneeded dynamic import var init code (#7759) ([12a4e7d](https://github.com/vitejs/vite/commit/12a4e7d)), closes [#7759](https://github.com/vitejs/vite/issues/7759)
+
+
+
 ## <small>1.8.1 (2022-04-13)</small>
 
 * fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
