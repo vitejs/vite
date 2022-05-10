@@ -1,4 +1,4 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
+import { isBuild, testDir, readFile } from 'testUtils'
 import path from 'path'
 import fs from 'fs'
 
@@ -41,6 +41,21 @@ if (isBuild) {
       // no warning from esbuild css minifier
       expect(log).not.toMatch('All "@import" rules must come first')
     })
+  })
+
+  test('preserve process.env', () => {
+    const es = readFile('dist/my-lib-custom-filename.es.mjs')
+    const iife = readFile('dist/my-lib-custom-filename.iife.js')
+    const umd = readFile('dist/my-lib-custom-filename.umd.js')
+    expect(es).toMatch('process.env.NODE_ENV')
+    expect(es).toMatch('process.env.PORT')
+    expect(es).toMatch('import.meta.env.DEV')
+    expect(iife).toMatch('process.env.NODE_ENV')
+    expect(iife).toMatch('process.env.PORT')
+    expect(iife).toMatch('import.meta.env.DEV')
+    expect(umd).toMatch('process.env.NODE_ENV')
+    expect(umd).toMatch('process.env.PORT')
+    expect(umd).toMatch('import.meta.env.DEV')
   })
 } else {
   test('dev', async () => {
