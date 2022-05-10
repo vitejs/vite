@@ -22,6 +22,7 @@
   <ReactivityTransform :foo="time" />
   <SetupImportTemplate />
   <WorkerTest />
+  <img alt="smpte bars" class="logo" src="/img/aaaSMPTE-color-bars.png" />
 </template>
 
 <script setup lang="ts">
