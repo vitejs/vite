@@ -7,5 +7,4 @@ export default function myLib(sel) {
 
 // Env vars should not be replaced
 export const processNodeEnv = process.env.NODE_ENV
-export const processPort = process.env.PORT
 export const importMetaEnvDev = import.meta.env.DEV
