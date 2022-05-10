@@ -38,15 +38,10 @@ export interface Options {
    * @default true
    */
   jsxPure?: boolean
-
   /**
    * Babel configuration applied in both dev and prod.
    */
   babel?: BabelOptions
-  /**
-   * @deprecated Use `babel.parserOpts.plugins` instead
-   */
-  parserPlugins?: ParserOptions['plugins']
 }
 
 export type BabelOptions = Omit<
@@ -104,7 +99,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   babelOptions.presets ||= []
   babelOptions.overrides ||= []
   babelOptions.parserOpts ||= {} as any
-  babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
+  babelOptions.parserOpts.plugins ||= []
 
   // Support patterns like:
   // - import * as React from 'react';
@@ -176,7 +171,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await loadPlugin('react-refresh/babel.js'),
+              await loadPlugin('react-refresh/babel'),
               { skipEnvCheck: true }
             ])
           }

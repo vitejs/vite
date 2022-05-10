@@ -13,7 +13,7 @@ const noop = () => {}
 const mimes = /text|javascript|\/json|xml/i
 const threshold = 1024
 const level = -1
-const brotli = false
+let brotli = false
 const gzip = true
 
 const getChunkSize = (chunk, enc) => (chunk ? Buffer.byteLength(chunk, enc) : 0)

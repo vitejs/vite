@@ -33,10 +33,11 @@ import {
   getAssetFilename,
   assetUrlRE,
   fileToUrl,
-  checkPublicFile
+  checkPublicFile,
+  getAssetHash
 } from './asset'
 import MagicString from 'magic-string'
-import type * as Postcss from 'postcss'
+import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 // We need to disable check of extraneous import which is buggy for stylus,
 // and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
@@ -48,6 +49,7 @@ import { transform, formatMessages } from 'esbuild'
 import { addToHTMLProxyTransformResult } from './html'
 import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { emptyCssComments } from '../utils'
 
 // const debug = createDebugger('vite:css')
 
@@ -59,8 +61,8 @@ export interface CSSOptions {
   preprocessorOptions?: Record<string, any>
   postcss?:
     | string
-    | (Postcss.ProcessOptions & {
-        plugins?: Postcss.Plugin[]
+    | (PostCSS.ProcessOptions & {
+        plugins?: PostCSS.Plugin[]
       })
   /**
    * Enables css sourcemaps during dev
@@ -102,6 +104,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
+const varRE = /^var\(/i
 
 const enum PreprocessLang {
   less = 'less',
@@ -298,10 +301,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const isHTMLProxy = htmlProxyRE.test(id)
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
+
+      // #6984, #7552
+      // `foo.module.css` => modulesCode
+      // `foo.module.css?inline` => cssContent
       const modulesCode =
-        modules && dataToEsm(modules, { namedExports: true, preferConst: true })
+        modules &&
+        !inlined &&
+        dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
         if (isDirectCSSRequest(id)) {
@@ -320,6 +330,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const sourcemap = this.getCombinedSourcemap()
             await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
             cssContent = getCodeWithSourcemap('css', css, sourcemap)
+          }
+
+          if (isHTMLProxy) {
+            return cssContent
           }
 
           return [
@@ -346,10 +360,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       const inlineCSS = inlineCSSRE.test(id)
       const query = parseRequest(id)
-      const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
-          `${cleanUrl(id)}_${Number.parseInt(query!.index)}`,
+          `${getAssetHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
           css
         )
         return `export default ''`
@@ -358,14 +371,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         styles.set(id, css)
       }
 
+      let code: string
+      if (usedRE.test(id)) {
+        if (modulesCode) {
+          code = modulesCode
+        } else {
+          let content = css
+          if (config.build.minify) {
+            content = await minifyCSS(content, config)
+          }
+          code = `export default ${JSON.stringify(content)}`
+        }
+      } else {
+        code = `export default ''`
+      }
+
       return {
-        code:
-          modulesCode ||
-          (usedRE.test(id)
-            ? `export default ${JSON.stringify(
-                inlined ? await minifyCSS(css, config) : css
-              )}`
-            : `export default ''`),
+        code,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
@@ -420,14 +442,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             return `./${path.posix.basename(filename)}`
           }
         })
-        // only external @imports should exist at this point - and they need to
-        // be hoisted to the top of the CSS chunk per spec (#1845)
-        if (css.includes('@import')) {
-          css = await hoistAtImports(css)
-        }
-        if (minify && config.build.minify) {
-          css = await minifyCSS(css, config)
-        }
+        // only external @imports and @charset should exist at this point
+        css = await finalizeCss(css, minify, config)
         return css
       }
 
@@ -436,7 +452,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (
+          opts.format === 'es' ||
+          opts.format === 'cjs' ||
+          opts.format === 'system'
+        ) {
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: false,
             minify: true
@@ -497,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es'
+          opts.format === 'es' || opts.format === 'system'
             ? `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`
             : `\\brequire\\(\\s*"[^"]*(?:${emptyChunkFiles})"\\);\n?`,
           'g'
@@ -537,10 +557,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let extractedCss = outputToExtractedCSSMap.get(opts)
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
-        // minify css
-        if (config.build.minify) {
-          extractedCss = await minifyCSS(extractedCss, config)
-        }
+        extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
           name: 'style.css',
           type: 'asset',
@@ -617,7 +634,7 @@ async function compileCSS(
 ): Promise<{
   code: string
   map?: SourceMapInput
-  ast?: Postcss.Result
+  ast?: PostCSS.Result
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
@@ -710,12 +727,11 @@ async function compileCSS(
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
   if (needInlineImport) {
-    const isHTMLProxy = htmlProxyRE.test(id)
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
         async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
-          if (isHTMLProxy && publicFile) {
+          if (publicFile) {
             return publicFile
           }
 
@@ -735,7 +751,7 @@ async function compileCSS(
   postcssPlugins.push(
     UrlRewritePostcssPlugin({
       replacer: urlReplacer
-    }) as Postcss.Plugin
+    }) as PostCSS.Plugin
   )
 
   if (isModule) {
@@ -778,8 +794,8 @@ async function compileCSS(
     .default(postcssPlugins)
     .process(code, {
       ...postcssOptions,
-      to: cleanUrl(id),
-      from: cleanUrl(id),
+      to: id,
+      from: id,
       map: {
         inline: false,
         annotation: false,
@@ -805,19 +821,6 @@ async function compileCSS(
       })
       for (let i = 0; i < files.length; i++) {
         deps.add(files[i])
-      }
-      if (server) {
-        // register glob importers so we can trigger updates on file add/remove
-        if (!(id in server._globImporters)) {
-          server._globImporters[id] = {
-            module: server.moduleGraph.getModuleById(id)!,
-            importGlobs: []
-          }
-        }
-        server._globImporters[id].importGlobs.push({
-          base: config.root,
-          pattern
-        })
       }
     } else if (message.type === 'warning') {
       let msg = `[vite:css] ${message.text}`
@@ -865,32 +868,23 @@ export function formatPostcssSourceMap(
 ): ExistingRawSourceMap {
   const inputFileDir = path.dirname(file)
 
-  const sources: string[] = []
-  const sourcesContent: string[] = []
-  for (const [i, source] of rawMap.sources.entries()) {
-    // remove <no source> from sources, to prevent source map to be combined incorrectly
-    if (source === '<no source>') continue
-
+  const sources = rawMap.sources.map((source) => {
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
     // postcss returns virtual files
     if (/^<.+>$/.test(cleanSource)) {
-      sources.push(`\0${cleanSource}`)
-    } else {
-      sources.push(normalizePath(path.resolve(inputFileDir, cleanSource)))
+      return `\0${cleanSource}`
     }
 
-    if (rawMap.sourcesContent) {
-      sourcesContent.push(rawMap.sourcesContent[i])
-    }
-  }
+    return normalizePath(path.resolve(inputFileDir, cleanSource))
+  })
 
   return {
     file,
     mappings: rawMap.mappings,
     names: rawMap.names,
     sources,
-    sourcesContent,
+    sourcesContent: rawMap.sourcesContent,
     version: rawMap.version
   }
 }
@@ -910,9 +904,24 @@ function combineSourcemapsIfExists(
     : map1
 }
 
+async function finalizeCss(
+  css: string,
+  minify: boolean,
+  config: ResolvedConfig
+) {
+  // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
+  if (css.includes('@import') || css.includes('@charset')) {
+    css = await hoistAtRules(css)
+  }
+  if (minify && config.build.minify) {
+    css = await minifyCSS(css, config)
+  }
+  return css
+}
+
 interface PostCSSConfigResult {
-  options: Postcss.ProcessOptions
-  plugins: Postcss.Plugin[]
+  options: PostCSS.ProcessOptions
+  plugins: PostCSS.Plugin[]
 }
 
 async function resolvePostcssConfig(
@@ -934,14 +943,22 @@ async function resolvePostcssConfig(
       plugins: inlineOptions.plugins || []
     }
   } else {
+    const searchPath =
+      typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      const searchPath =
-        typeof inlineOptions === 'string' ? inlineOptions : config.root
       // @ts-ignore
       result = await postcssrc({}, searchPath)
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {
-        throw e
+        if (e instanceof Error) {
+          const { name, message, stack } = e
+          e.name = 'Failed to load PostCSS config'
+          e.message = `Failed to load PostCSS config (searchPath: ${searchPath}): [${name}] ${message}\n${stack}`
+          e.stack = '' // add stack to message to retain stack
+          throw e
+        } else {
+          throw new Error(`Failed to load PostCSS config: ${e}`)
+        }
       }
       result = null
     }
@@ -958,10 +975,12 @@ type CssUrlReplacer = (
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
   /(?<=^|[^\w\-\u0080-\uffff])url\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
+export const cssDataUriRE =
+  /(?<=^|[^\w\-\u0080-\uffff])data-uri\(\s*('[^']+'|"[^"]+"|[^'")]+)\s*\)/
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
-const cssImageSetRE = /image-set\(([^)]+)\)/
+const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
 
-const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
+const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
 }> = (opts) => {
   if (!opts) {
@@ -980,7 +999,9 @@ const UrlRewritePostcssPlugin: Postcss.PluginCreator<{
             const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
-          const rewriterToUse = isCssUrl ? rewriteCssUrls : rewriteCssImageSet
+          const rewriterToUse = isCssImageSet
+            ? rewriteCssImageSet
+            : rewriteCssUrls
           promises.push(
             rewriterToUse(declaration.value, replacerForDeclaration).then(
               (url) => {
@@ -1008,6 +1029,16 @@ function rewriteCssUrls(
   })
 }
 
+function rewriteCssDataUris(
+  css: string,
+  replacer: CssUrlReplacer
+): Promise<string> {
+  return asyncReplace(css, cssDataUriRE, async (match) => {
+    const [matched, rawUrl] = match
+    return await doUrlReplace(rawUrl, matched, replacer, 'data-uri')
+  })
+}
+
 function rewriteImportCss(
   css: string,
   replacer: CssUrlReplacer
@@ -1018,22 +1049,35 @@ function rewriteImportCss(
   })
 }
 
-function rewriteCssImageSet(
+// TODO: image and cross-fade could contain a "url" that needs to be processed
+// https://drafts.csswg.org/css-images-4/#image-notation
+// https://drafts.csswg.org/css-images-4/#cross-fade-function
+const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+
+async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer
 ): Promise<string> {
-  return asyncReplace(css, cssImageSetRE, async (match) => {
-    const [matched, rawUrl] = match
-    const url = await processSrcSet(rawUrl, ({ url }) =>
-      doUrlReplace(url, matched, replacer)
-    )
-    return `image-set(${url})`
+  return await asyncReplace(css, cssImageSetRE, async (match) => {
+    const [, rawUrl] = match
+    const url = await processSrcSet(rawUrl, async ({ url }) => {
+      // the url maybe url(...)
+      if (cssUrlRE.test(url)) {
+        return await rewriteCssUrls(url, replacer)
+      }
+      if (!cssNotProcessedRE.test(url)) {
+        return await doUrlReplace(url, url, replacer)
+      }
+      return url
+    })
+    return url
   })
 }
 async function doUrlReplace(
   rawUrl: string,
   matched: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
+  funcName: string = 'url'
 ) {
   let wrap = ''
   const first = rawUrl[0]
@@ -1041,7 +1085,13 @@ async function doUrlReplace(
     wrap = first
     rawUrl = rawUrl.slice(1, -1)
   }
-  if (isExternalUrl(rawUrl) || isDataUrl(rawUrl) || rawUrl.startsWith('#')) {
+
+  if (
+    isExternalUrl(rawUrl) ||
+    isDataUrl(rawUrl) ||
+    rawUrl.startsWith('#') ||
+    varRE.test(rawUrl)
+  ) {
     return matched
   }
 
@@ -1050,7 +1100,7 @@ async function doUrlReplace(
     // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
     wrap = "'"
   }
-  return `url(${wrap}${newUrl}${wrap})`
+  return `${funcName}(${wrap}${newUrl}${wrap})`
 }
 
 async function doImportCSSReplace(
@@ -1072,44 +1122,61 @@ async function doImportCSSReplace(
 }
 
 async function minifyCSS(css: string, config: ResolvedConfig) {
-  const { code, warnings } = await transform(css, {
-    loader: 'css',
-    minify: true,
-    target: config.build.cssTarget || undefined
-  })
-  if (warnings.length) {
-    const msgs = await formatMessages(warnings, { kind: 'warning' })
-    config.logger.warn(
-      colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
-    )
+  try {
+    const { code, warnings } = await transform(css, {
+      loader: 'css',
+      minify: true,
+      target: config.build.cssTarget || undefined
+    })
+    if (warnings.length) {
+      const msgs = await formatMessages(warnings, { kind: 'warning' })
+      config.logger.warn(
+        colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`)
+      )
+    }
+    return code
+  } catch (e) {
+    if (e.errors) {
+      const msgs = await formatMessages(e.errors, { kind: 'error' })
+      e.frame = '\n' + msgs.join('\n')
+      e.loc = e.errors[0].location
+    }
+    throw e
   }
-  return code
 }
 
-// #1845
-// CSS @import can only appear at top of the file. We need to hoist all @import
-// to top when multiple files are concatenated.
-async function hoistAtImports(css: string) {
-  const postcss = await import('postcss')
-  return (await postcss.default([AtImportHoistPlugin]).process(css)).css
-}
+export async function hoistAtRules(css: string) {
+  const s = new MagicString(css)
+  const cleanCss = emptyCssComments(css)
+  let match: RegExpExecArray | null
 
-const AtImportHoistPlugin: Postcss.PluginCreator<any> = () => {
-  return {
-    postcssPlugin: 'vite-hoist-at-imports',
-    Once(root) {
-      const imports: Postcss.AtRule[] = []
-      root.walkAtRules((rule) => {
-        if (rule.name === 'import') {
-          // record in reverse so that can simply prepend to preserve order
-          imports.unshift(rule)
-        }
-      })
-      imports.forEach((i) => root.prepend(i))
+  // #1845
+  // CSS @import can only appear at top of the file. We need to hoist all @import
+  // to top when multiple files are concatenated.
+  // match until semicolon that's not in quotes
+  const atImportRE =
+    /@import\s*(?:url\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+  while ((match = atImportRE.exec(cleanCss))) {
+    s.remove(match.index, match.index + match[0].length)
+    // Use `appendLeft` instead of `prepend` to preserve original @import order
+    s.appendLeft(0, match[0])
+  }
+
+  // #6333
+  // CSS @charset must be the top-first in the file, hoist the first to top
+  const atCharsetRE =
+    /@charset\s*(?:"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|[^;]*).*?;/gm
+  let foundCharset = false
+  while ((match = atCharsetRE.exec(cleanCss))) {
+    s.remove(match.index, match.index + match[0].length)
+    if (!foundCharset) {
+      s.prepend(match[0])
+      foundCharset = true
     }
   }
+
+  return s.toString()
 }
-AtImportHoistPlugin.postcss = true
 
 // Preprocessor support. This logic is largely replicated from @vue/compiler-sfc
 
@@ -1300,10 +1367,12 @@ async function rebaseUrls(
   const content = fs.readFileSync(file, 'utf-8')
   // no url()
   const hasUrls = cssUrlRE.test(content)
+  // data-uri() calls
+  const hasDataUris = cssDataUriRE.test(content)
   // no @import xxx.css
   const hasImportCss = importCssRE.test(content)
 
-  if (!hasUrls && !hasImportCss) {
+  if (!hasUrls && !hasDataUris && !hasImportCss) {
     return { file }
   }
 
@@ -1330,6 +1399,10 @@ async function rebaseUrls(
 
   if (hasUrls) {
     rebased = await rewriteCssUrls(rebased || content, rebaseFn)
+  }
+
+  if (hasDataUris) {
+    rebased = await rewriteCssDataUris(rebased || content, rebaseFn)
   }
 
   return {

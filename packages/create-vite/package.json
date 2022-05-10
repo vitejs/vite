@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "2.8.0",
+  "version": "2.9.3",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -13,7 +13,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.6.0"
   },
   "repository": {
     "type": "git",

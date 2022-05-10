@@ -2,14 +2,14 @@ import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, normalizePath, unique } from '../utils'
 import type { ModuleNode } from './moduleGraph'
 import type { Update } from 'types/hmrPayload'
 import { CLIENT_DIR } from '../constants'
 import type { RollupError } from 'rollup'
-import { isMatch } from 'micromatch'
 import type { Server } from 'http'
 import { isCSSRequest } from '../plugins/css'
+import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -34,7 +34,7 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
-function getShortName(file: string, root: string) {
+export function getShortName(file: string, root: string) {
   return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
 }
 
@@ -44,6 +44,7 @@ export async function handleHMRUpdate(
 ): Promise<any> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
+  const fileName = path.basename(file)
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
@@ -51,7 +52,7 @@ export async function handleHMRUpdate(
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (file === '.env' || file.startsWith('.env.'))
+    (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
@@ -124,7 +125,7 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-function updateModules(
+export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
@@ -184,33 +185,16 @@ function updateModules(
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer,
-  isUnlink = false
+  server: ViteDevServer
 ): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
-  if (isUnlink && file in server._globImporters) {
-    delete server._globImporters[file]
-  } else {
-    for (const i in server._globImporters) {
-      const { module, importGlobs } = server._globImporters[i]
-      for (const { base, pattern } of importGlobs) {
-        if (
-          isMatch(file, pattern) ||
-          isMatch(path.relative(base, file), pattern)
-        ) {
-          modules.push(module)
-          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
-          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-          server.moduleGraph.onFileChange(module.file!)
-          break
-        }
-      }
-    }
-  }
+  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  modules.push(...getAffectedGlobModules(file, server))
+
   if (modules.length > 0) {
     updateModules(
       getShortName(file, server.config.root),
-      modules,
+      unique(modules),
       Date.now(),
       server
     )
@@ -225,6 +209,13 @@ function propagateUpdate(
   }>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  // #7561
+  // if the imports of `node` have not been analyzed, then `node` has not
+  // been loaded in the browser and we should stop propagation.
+  if (node.id && node.isSelfAccepting === undefined) {
+    return false
+  }
+
   if (node.isSelfAccepting) {
     boundaries.add({
       boundary: node,
@@ -286,6 +277,7 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
   mod.ssrModule = null
+  mod.ssrError = null
   mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {

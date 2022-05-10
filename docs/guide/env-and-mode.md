@@ -42,7 +42,7 @@ In addition, environment variables that already exist when Vite is executed have
 `.env` files are loaded at the start of Vite. Restart the server after making changes.
 :::
 
-Loaded env variables are also exposed to your client source code via `import.meta.env`.
+Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
 
@@ -78,6 +78,14 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
+}
+```
+
+If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/lib/lib.dom.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/lib/lib.webworker.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
+
+```json
+{
+  "lib": ["WebWorker"]
 }
 ```
 
