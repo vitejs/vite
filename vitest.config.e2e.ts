@@ -7,7 +7,10 @@ export default defineConfig({
     globalSetup: ['./scripts/vitestGlobalSetup.ts'],
     testTimeout: process.env.CI ? 50000 : 20000,
     globals: true,
-    reporters: 'dot'
+    reporters: 'dot',
+    onConsoleLog(log, type) {
+      if (log.match(/experimental|jit engine|emitted file/i)) return false
+    }
   },
   esbuild: {
     target: 'node14'

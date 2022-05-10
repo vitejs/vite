@@ -17,8 +17,8 @@
     "format": "prettier --write .",
     "lint": "eslint packages/*/{src,types}/**",
     "test": "run-s test-unit test-serve test-build",
-    "test-serve": "vitest -c vitest.config.e2e.ts",
-    "test-build": "cross-env VITE_TEST_BUILD=1 vitest -c vitest.config.e2e.ts",
+    "test-serve": "vitest run -c vitest.config.e2e.ts",
+    "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
     "test-unit": "vitest run",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 node --inspect-brk ./node_modules/.bin/vitest -- -c vitest.e2e.config.ts",
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 node --inspect-brk ./node_modules/.bin/vitest -- -c vitest.e2e.config.ts",
@@ -69,7 +69,7 @@
     "typescript": "^4.6.4",
     "vite": "workspace:*",
     "vitepress": "^0.22.4",
-    "vitest": "^0.12.3"
+    "vitest": "^0.12.4"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
