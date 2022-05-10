@@ -2,16 +2,12 @@
 // this is automatically detected by scripts/jestPerTestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../ports')
+import path from 'path'
+import { ports } from '../../ports'
 
-const port = (exports.port = ports['ssr-react'])
+export const port = ports['ssr-react']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root: string, isProd: boolean) {
   if (isProd) {
     // build first
     const { build } = require('vite')
