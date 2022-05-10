@@ -68,7 +68,7 @@
     "typescript": "^4.6.4",
     "vite": "workspace:*",
     "vitepress": "^0.22.4",
-    "vitest": "^0.12.1"
+    "vitest": "^0.12.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",

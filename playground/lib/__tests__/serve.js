@@ -5,7 +5,7 @@
 const path = require('path')
 const http = require('http')
 const sirv = require('sirv')
-const { ports } = require('../../testUtils')
+const { ports } = require('../../ports')
 
 const port = (exports.port = ports.lib)
 

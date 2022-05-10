@@ -3,7 +3,7 @@ import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isBuild
-} from 'testUtils'
+} from '../../testUtils'
 
 if (!isBuild) {
   const getStyleTagContentIncluding = async (content: string) => {
@@ -43,19 +43,19 @@ if (!isBuild) {
     const css = await res.text()
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/be-imported.css",
           "/root/linked-with-import.css",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".be-imported {
         color: red;
       }
       ",
           "@import '@/be-imported.css';
-
+      
       .linked-with-import {
         color: red;
       }
@@ -70,12 +70,12 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
-        "sources": Array [
+        "sources": [
           "/root/imported.css",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".imported {
         color: red;
       }
@@ -90,19 +90,19 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('.imported-with-import ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
-        "sources": Array [
+        "sources": [
           "/root/be-imported.css",
           "/root/imported-with-import.css",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".be-imported {
         color: red;
       }
       ",
           "@import '@/be-imported.css';
-
+      
       .imported-with-import {
         color: red;
       }
@@ -117,12 +117,12 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AACE;EACE",
-        "sources": Array [
+        "sources": [
           "/root/imported.sass",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".imported
         &-sass
           color: red
@@ -137,12 +137,12 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('._imported-sass-module_')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AACE;EACE",
-        "sources": Array [
+        "sources": [
           "/root/imported.module.sass",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".imported
         &-sass-module
           color: red
@@ -157,12 +157,12 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('.imported-less ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AACE;EACE",
-        "sources": Array [
+        "sources": [
           "/root/imported.less",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".imported {
         &-less {
           color: @color;
@@ -179,12 +179,12 @@ if (!isBuild) {
     const css = await getStyleTagContentIncluding('.imported-stylus ')
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AACE;EACE,cAAM",
-        "sources": Array [
+        "sources": [
           "/root/imported.styl",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".imported
         &-stylus
           color blue-red-mixed

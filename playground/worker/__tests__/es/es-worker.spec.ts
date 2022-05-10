@@ -44,7 +44,7 @@ const waitSharedWorkerTick = (
   }
 )(0)
 
-test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
+test.each([[true], [false]])('shared worker', async (doTick) => {
   if (doTick) {
     await page.click('.tick-shared')
   }

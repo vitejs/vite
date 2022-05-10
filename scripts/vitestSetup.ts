@@ -15,7 +15,8 @@ import type {
 import { createServer, build, mergeConfig } from 'vite'
 import type { Page, ConsoleMessage } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import { beforeAll, afterAll, File } from 'vitest'
+import type { File } from 'vitest'
+import { beforeAll } from 'vitest'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
 

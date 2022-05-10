@@ -1,4 +1,4 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
+import { isBuild, findAssetFile, testDir } from '../../testUtils'
 import path from 'path'
 import fs from 'fs'
 

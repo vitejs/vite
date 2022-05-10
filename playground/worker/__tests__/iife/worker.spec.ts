@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
+import { test } from 'vitest'
 
 test('normal', async () => {
   await page.click('.ping')
@@ -44,7 +45,7 @@ const waitSharedWorkerTick = (
   }
 )(0)
 
-test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
+test.each([[true], [false]])('shared worker', async (doTick) => {
   if (doTick) {
     await page.click('.tick-shared')
   }

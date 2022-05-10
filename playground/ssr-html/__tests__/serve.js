@@ -3,7 +3,7 @@
 // the default e2e test serve behavior
 
 const path = require('path')
-const { ports } = require('../../testUtils')
+const { ports } = require('../../ports')
 
 const port = (exports.port = ports['ssr-html'])
 

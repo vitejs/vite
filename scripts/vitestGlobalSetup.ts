@@ -22,6 +22,7 @@ export async function setup() {
 
   const tempDir = path.resolve(__dirname, '../playground-temp')
   await fs.ensureDir(tempDir)
+  await fs.emptyDir(tempDir)
   await fs
     .copy(path.resolve(__dirname, '../playground'), tempDir, {
       dereference: false,

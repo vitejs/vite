@@ -1,11 +1,11 @@
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isBuild
-} from 'testUtils'
+  isServe
+} from '../../testUtils'
 import { URL } from 'url'
 
-if (!isBuild) {
+describe.runIf(isServe)('serve:vue-sourcemap', () => {
   const getStyleTagContentIncluding = async (content: string) => {
     const styles = await page.$$('style')
     for (const style of styles) {
@@ -355,8 +355,4 @@ if (!isBuild) {
       }
     `)
   })
-} else {
-  test('this file only includes test for serve', () => {
-    expect(true).toBe(true)
-  })
-}
+})

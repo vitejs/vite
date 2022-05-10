@@ -43,7 +43,7 @@ importers:
       typescript: ^4.6.4
       vite: workspace:*
       vitepress: ^0.22.4
-      vitest: ^0.12.1
+      vitest: ^0.12.3
     devDependencies:
       '@microsoft/api-extractor': 7.23.1
       '@types/babel__core': 7.1.19
@@ -78,7 +78,7 @@ importers:
       typescript: 4.6.4
       vite: link:packages/vite
       vitepress: 0.22.4
-      vitest: 0.12.1
+      vitest: 0.12.3
 
   packages/create-vite:
     specifiers:
@@ -7716,8 +7716,8 @@ packages:
       - react-dom
     dev: true
 
-  /vitest/0.12.1:
-    resolution: {integrity: sha512-ltTPYmxv4JxZ+2mxnAQ6TnDNRI03oS7qPNFFy9PbQiABkN2ha/a7i7FCrYg3cNmbwD/4cyP7vHnTBv+/or492A==}
+  /vitest/0.12.3:
+    resolution: {integrity: sha512-Dc4uJAcnUampdJ6+C8IasrmL+Px+oDhS9gxeHlL9uwUzoM0ae2WydAK9UF2THxHszfZogLGT37atQwOkj1Lqvg==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
     peerDependencies:
