@@ -239,17 +239,13 @@ describe('unicode url', () => {
   })
 })
 
-describe('encodeURI', () => {
-  if (isBuild) {
-    test('img src with encodeURI', async () => {
-      const img = await page.$('.encodeURI')
-      expect(
-        await (
-          await img.getAttribute('src')
-        ).startsWith('data:image/png;base64')
-      ).toBe(true)
-    })
-  }
+describe.runIf(isBuild)('encodeURI', () => {
+  test('img src with encodeURI', async () => {
+    const img = await page.$('.encodeURI')
+    expect(
+      await (await img.getAttribute('src')).startsWith('data:image/png;base64')
+    ).toBe(true)
+  })
 })
 
 test('new URL(..., import.meta.url)', async () => {
@@ -286,36 +282,30 @@ if (isBuild) {
   })
 }
 
-describe('css and assets in css in build watch', () => {
-  if (isBuild) {
-    test('css will not be lost and css does not contain undefined', async () => {
-      editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
-      await notifyRebuildComplete(watcher)
-      const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
-      expect(cssFile).not.toBe('')
-      expect(cssFile).not.toMatch(/undefined/)
-    })
+describe.runIf(isBuild)('css and assets in css in build watch', () => {
+  test('css will not be lost and css does not contain undefined', async () => {
+    editFile('index.html', (code) => code.replace('Assets', 'assets'), true)
+    await notifyRebuildComplete(watcher)
+    const cssFile = findAssetFile(/index\.\w+\.css$/, 'foo')
+    expect(cssFile).not.toBe('')
+    expect(cssFile).not.toMatch(/undefined/)
+  })
 
-    test('import module.css', async () => {
-      expect(await getColor('#foo')).toBe('red')
-      editFile(
-        'css/foo.module.css',
-        (code) => code.replace('red', 'blue'),
-        true
-      )
-      await notifyRebuildComplete(watcher)
-      await page.reload()
-      expect(await getColor('#foo')).toBe('blue')
-    })
+  test('import module.css', async () => {
+    expect(await getColor('#foo')).toBe('red')
+    editFile('css/foo.module.css', (code) => code.replace('red', 'blue'), true)
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    expect(await getColor('#foo')).toBe('blue')
+  })
 
-    test('import with raw query', async () => {
-      expect(await page.textContent('.raw-query')).toBe('foo')
-      editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'), true)
-      await notifyRebuildComplete(watcher)
-      await page.reload()
-      expect(await page.textContent('.raw-query')).toBe('zoo')
-    })
-  }
+  test('import with raw query', async () => {
+    expect(await page.textContent('.raw-query')).toBe('foo')
+    editFile('static/foo.txt', (code) => code.replace('foo', 'zoo'), true)
+    await notifyRebuildComplete(watcher)
+    await page.reload()
+    expect(await page.textContent('.raw-query')).toBe('zoo')
+  })
 })
 
 test('inline style test', async () => {
