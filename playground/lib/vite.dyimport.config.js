@@ -8,9 +8,9 @@ module.exports = {
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/main2.js'),
-      formats: ['es'],
+      formats: ['es', 'iife'],
       name: 'message',
-      fileName: () => 'dynamic-import-message.js'
+      fileName: (format) => `dynamic-import-message.${format}.js`
     },
     outDir: 'dist/lib'
   }
