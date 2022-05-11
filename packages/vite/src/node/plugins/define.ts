@@ -38,7 +38,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   // during dev, import.meta properties are handled by importAnalysis plugin.
   // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
-  if (isBuild && !isBuildLib) {
+  if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
       SSR: !!config.build.ssr
