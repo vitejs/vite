@@ -1,3 +1,8 @@
+## <small>2.9.4 (2022-05-11)</small>
+
+
+
+
 ## <small>2.9.3 (2022-05-02)</small>
 
 * chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
