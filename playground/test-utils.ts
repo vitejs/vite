@@ -11,6 +11,9 @@ import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
 import { page } from '../scripts/vitestSetup'
 
+// TODO: explicitly import APIs and remove this
+import 'vitest/globals'
+
 export * from '../scripts/vitestSetup'
 
 export const workspaceRoot = path.resolve(__dirname, '../')
