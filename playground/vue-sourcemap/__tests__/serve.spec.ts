@@ -1,4 +1,9 @@
-import { extractSourcemap, formatSourcemapForSnapshot, isServe } from '~utils'
+import {
+  extractSourcemap,
+  formatSourcemapForSnapshot,
+  isServe,
+  page
+} from '~utils'
 import { URL } from 'url'
 
 describe.runIf(isServe)('serve:vue-sourcemap', () => {

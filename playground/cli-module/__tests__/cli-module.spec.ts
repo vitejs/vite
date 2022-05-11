@@ -1,3 +1,4 @@
+import { page } from '~utils'
 import { port } from './serve'
 
 test('cli should work in "type":"module" package', async () => {

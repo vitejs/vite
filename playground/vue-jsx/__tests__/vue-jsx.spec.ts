@@ -1,4 +1,4 @@
-import { editFile, isServe, untilUpdated } from '~utils'
+import { editFile, isServe, page, untilUpdated } from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('.named')).toMatch('0')

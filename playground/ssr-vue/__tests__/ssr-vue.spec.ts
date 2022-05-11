@@ -1,4 +1,11 @@
-import { editFile, getColor, isBuild, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  getColor,
+  isBuild,
+  page,
+  untilUpdated
+} from '~utils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 import { resolve } from 'path'

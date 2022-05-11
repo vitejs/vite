@@ -4,7 +4,7 @@ import { resolve, dirname } from 'path'
 import sirv from 'sirv'
 import os from 'os'
 import path from 'path'
-import { chromium } from 'playwright-chromium'
+import { Browser, chromium } from 'playwright-chromium'
 import type {
   ViteDevServer,
   InlineConfig,
@@ -24,48 +24,61 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-// injected by the test env
-declare global {
-  const page: Page | undefined
+// // injected by the test env
+// declare global {
+//   const page: Page | undefined
 
-  const browserLogs: string[]
-  const browserErrors: Error[]
-  const serverLogs: string[]
-  let viteTestUrl: string | undefined
-  const watcher: RollupWatcher | undefined
-  let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
-}
+//   const browserLogs: string[]
+//   const browserErrors: Error[]
+//   const serverLogs: string[]
+//   let viteTestUrl: string | undefined
+//   const watcher: RollupWatcher | undefined
+//   let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
+// }
 
-declare const global: {
-  page?: Page
+// declare const global: {
+//   page?: Page
 
-  browserLogs: string[]
-  browserErrors: Error[]
-  serverLogs: string[]
-  viteTestUrl?: string
-  watcher?: RollupWatcher
-  beforeAllError: Error | null
-}
+//   browserLogs: string[]
+//   browserErrors: Error[]
+//   serverLogs: string[]
+//   viteTestUrl?: string
+//   watcher?: RollupWatcher
+//   beforeAllError: Error | null
+// }
 
 let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
 
-const setBeforeAllError = (err: Error | null) => {
-  global.beforeAllError = err
-}
-const getBeforeAllError = () => global.beforeAllError
-//init with null so old errors don't carry over
-setBeforeAllError(null)
+export const serverLogs: string[] = []
+export const browserLogs: string[] = []
+export const browserErrors: Error[] = []
 
-const logs: string[] = (global.browserLogs = [])
+/**
+ * Error caught in beforeAll, useful if you want to test error scenarios on build
+ */
+export let beforeAllError: Error | null = null
+
+export let page: Page = undefined!
+export let browser: Browser = undefined!
+export let viteTestUrl: string = ''
+export let watcher: RollupWatcher | undefined = undefined
+
+export function clearBeforeAllError() {
+  beforeAllError = null
+}
+
+export function setViteUrl(url: string) {
+  viteTestUrl = url
+}
+
 const onConsole = (msg: ConsoleMessage) => {
-  logs.push(msg.text())
+  browserLogs.push(msg.text())
 }
 
-const errors: Error[] = (global.browserErrors = [])
 const onPageError = (error: Error) => {
-  errors.push(error)
+  browserErrors.push(error)
 }
 
 const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
@@ -82,10 +95,8 @@ beforeAll(async (s) => {
     return
   }
 
-  const browser = await chromium.connect(wsEndpoint)
-  const page = await browser.newPage()
-  // @ts-expect-error
-  globalThis.page = page
+  browser = await chromium.connect(wsEndpoint)
+  page = await browser.newPage()
 
   const globalConsole = globalThis.console
   const warn = globalConsole.warn
@@ -138,8 +149,6 @@ beforeAll(async (s) => {
         config = require(testCustomConfig)
       }
 
-      const serverLogs: string[] = []
-
       const options: InlineConfig = {
         root: rootDir,
         logLevel: 'silent',
@@ -165,8 +174,6 @@ beforeAll(async (s) => {
 
       setupConsoleWarnCollector(serverLogs)
 
-      global.serverLogs = serverLogs
-
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
         server = await (
@@ -174,9 +181,8 @@ beforeAll(async (s) => {
         ).listen()
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base
-        const url =
-          (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
-        await page.goto(url)
+        viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+        await page.goto(viteTestUrl)
       } else {
         process.env.VITE_INLINE = 'inline-build'
         // determine build watch
@@ -192,11 +198,11 @@ beforeAll(async (s) => {
         const isWatch = !!resolvedConfig!.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
-          global.watcher = rollupOutput as RollupWatcher
-          await notifyRebuildComplete(global.watcher)
+          watcher = rollupOutput as RollupWatcher
+          await notifyRebuildComplete(watcher)
         }
-        const url = (global.viteTestUrl = await startStaticServer(config))
-        await page.goto(url)
+        viteTestUrl = await startStaticServer(config)
+        await page.goto(viteTestUrl)
       }
     }
   } catch (e: any) {
@@ -211,16 +217,15 @@ beforeAll(async (s) => {
 
   return async () => {
     page?.off('console', onConsole)
-    global.serverLogs = []
+    serverLogs.length = 0
     await page?.close()
     await server?.close()
-    global.watcher?.close()
-    const beforeAllErr = getBeforeAllError()
+    watcher?.close()
     if (browser) {
       await browser.close()
     }
-    if (beforeAllErr) {
-      throw beforeAllErr
+    if (beforeAllError) {
+      throw beforeAllError
     }
   }
 }, 30000)

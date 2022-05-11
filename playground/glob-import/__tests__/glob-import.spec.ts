@@ -1,4 +1,11 @@
-import { addFile, editFile, isBuild, removeFile, untilUpdated } from '~utils'
+import {
+  addFile,
+  editFile,
+  isBuild,
+  page,
+  removeFile,
+  untilUpdated
+} from '~utils'
 
 const filteredResult = {
   './alias.js': {

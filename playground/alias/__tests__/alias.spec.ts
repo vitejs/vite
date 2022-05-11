@@ -1,4 +1,5 @@
-import { editFile, getColor, untilUpdated } from '~utils'
+import { editFile, getColor, page, untilUpdated } from '~utils'
+import { test, expect } from 'vitest'
 
 test('fs', async () => {
   expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')

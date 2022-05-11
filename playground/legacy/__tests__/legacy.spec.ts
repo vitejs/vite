@@ -4,7 +4,8 @@ import {
   isBuild,
   readManifest,
   untilUpdated,
-  getColor
+  getColor,
+  page
 } from '~utils'
 
 test('should work', async () => {

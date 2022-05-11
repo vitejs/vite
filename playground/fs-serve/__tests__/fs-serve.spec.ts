@@ -1,4 +1,4 @@
-import { isServe } from '~utils'
+import { isServe, page, viteTestUrl } from '~utils'
 
 const json = require('../safe.json')
 const stringified = JSON.stringify(json)

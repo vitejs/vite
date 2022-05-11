@@ -1,4 +1,13 @@
-import { editFile, getBg, getColor, isBuild, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  getBg,
+  getColor,
+  isBuild,
+  page,
+  serverLogs,
+  untilUpdated
+} from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Vue SFCs')

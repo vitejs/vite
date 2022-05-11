@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '~utils'
+import { untilUpdated, isBuild, testDir, page } from '~utils'
 import type { Page } from 'playwright-chromium'
 
 test('normal', async () => {

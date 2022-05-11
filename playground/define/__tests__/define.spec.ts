@@ -1,3 +1,4 @@
+import { page } from '~utils'
 import viteConfig from '../vite.config'
 
 test('string', async () => {

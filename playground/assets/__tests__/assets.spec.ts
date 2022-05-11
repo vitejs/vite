@@ -8,8 +8,12 @@ import {
   readFile,
   editFile,
   notifyRebuildComplete,
-  untilUpdated
+  untilUpdated,
+  browserLogs,
+  page,
+  watcher
 } from '~utils'
+import { test, expect, describe } from 'vitest'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/

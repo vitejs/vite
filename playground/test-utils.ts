@@ -9,11 +9,9 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
+import { page } from '../scripts/vitestSetup'
 
-/**
- * Send the rebuild complete message in build watch
- */
-export { notifyRebuildComplete } from '../scripts/vitestSetup'
+export * from '../scripts/vitestSetup'
 
 export const workspaceRoot = path.resolve(__dirname, '../')
 

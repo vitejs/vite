@@ -1,4 +1,11 @@
-import { isBuild, editFile, untilUpdated, getColor } from '~utils'
+import {
+  isBuild,
+  editFile,
+  untilUpdated,
+  getColor,
+  browserLogs,
+  page
+} from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('#pagetitle')).toBe('|Page title|')
