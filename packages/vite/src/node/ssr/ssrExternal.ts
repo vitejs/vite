@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { createFilter } from '@rollup/pluginutils'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
@@ -10,7 +11,6 @@ import {
   resolveFrom
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
-import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
 

@@ -1,10 +1,10 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
-import { describe, it, expect, beforeEach } from 'vitest'
 
 let resolveId: (id: string) => any
 let moduleGraph: ModuleGraph

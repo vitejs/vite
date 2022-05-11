@@ -1,56 +1,56 @@
 import fs from 'fs'
 import path from 'path'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
+import { performance } from 'perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { parse as parseJS } from 'acorn'
+import type { Node } from 'estree'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
+import type { ViteDevServer } from '..'
 import {
-  isBuiltin,
-  cleanUrl,
-  createDebugger,
-  generateCodeFrame,
-  injectQuery,
-  isDataUrl,
-  isExternalUrl,
-  isJSRequest,
-  prettifyUrl,
-  timeFrom,
-  normalizePath,
-  removeImportQuery,
-  unwrapId,
-  moduleListContains,
-  fsPathFromUrl
-} from '../utils'
+  CLIENT_DIR,
+  CLIENT_PUBLIC_PATH,
+  DEP_VERSION_RE,
+  FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
+} from '../constants'
 import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps
 } from '../server/hmr'
 import {
-  FS_PREFIX,
-  CLIENT_DIR,
-  CLIENT_PUBLIC_PATH,
-  DEP_VERSION_RE,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
-} from '../constants'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
-import type { ViteDevServer } from '..'
-import { checkPublicFile } from './asset'
-import { parse as parseJS } from 'acorn'
-import type { Node } from 'estree'
-import { makeLegalIdentifier } from '@rollup/pluginutils'
+  cleanUrl,
+  createDebugger,
+  fsPathFromUrl,
+  generateCodeFrame,
+  injectQuery,
+  isBuiltin,
+  isDataUrl,
+  isExternalUrl,
+  isJSRequest,
+  moduleListContains,
+  normalizePath,
+  prettifyUrl,
+  removeImportQuery,
+  timeFrom,
+  unwrapId
+} from '../utils'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
 import {
-  isOptimizedDepFile,
   getDepsCacheDir,
+  isOptimizedDepFile,
   optimizedDepNeedsInterop
 } from '../optimizer'
+import { checkPublicFile } from './asset'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')

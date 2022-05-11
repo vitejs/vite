@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
-import type { Plugin } from '../plugin'
 import colors from 'picocolors'
+import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'

@@ -1,10 +1,10 @@
 import type * as http from 'http'
-import { createDebugger, isObject } from '../../utils'
 import httpProxy from 'http-proxy'
-import { HMR_HEADER } from '../ws'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
 import colors from 'picocolors'
+import { HMR_HEADER } from '../ws'
+import { createDebugger, isObject } from '../../utils'
 import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')

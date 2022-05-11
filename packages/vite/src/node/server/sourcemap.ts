@@ -1,8 +1,8 @@
 import path from 'path'
 import { promises as fs } from 'fs'
+import type { SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
-import type { SourceMap } from 'rollup'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {

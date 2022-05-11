@@ -9,10 +9,10 @@
  */
 
 import path from 'path'
+import { execSync } from 'child_process'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
-import { execSync } from 'child_process'
 import type { Logger } from '../logger'
 
 // https://github.com/sindresorhus/open#app

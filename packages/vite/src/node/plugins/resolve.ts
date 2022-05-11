@@ -1,34 +1,36 @@
 import fs from 'fs'
 import path from 'path'
-import type { Plugin } from '../plugin'
 import colors from 'picocolors'
+import type { PartialResolvedId } from 'rollup'
+import { resolve as _resolveExports } from 'resolve.exports'
+import type { Plugin } from '../plugin'
 import {
-  FS_PREFIX,
-  SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
+  DEP_VERSION_RE,
+  FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
-  DEP_VERSION_RE
+  SPECIAL_QUERY_RE
 } from '../constants'
 import {
-  isBuiltin,
   bareImportRE,
-  createDebugger,
-  injectQuery,
-  isExternalUrl,
-  isObject,
-  normalizePath,
-  fsPathFromId,
-  ensureVolumeInPath,
-  resolveFrom,
-  isDataUrl,
   cleanUrl,
-  slash,
-  nestedResolveFrom,
+  createDebugger,
+  ensureVolumeInPath,
+  fsPathFromId,
+  getPotentialTsSrcPaths,
+  injectQuery,
+  isBuiltin,
+  isDataUrl,
+  isExternalUrl,
   isFileReadable,
-  isTsRequest,
+  isObject,
   isPossibleTsOutput,
-  getPotentialTsSrcPaths
+  isTsRequest,
+  nestedResolveFrom,
+  normalizePath,
+  resolveFrom,
+  slash
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
@@ -37,9 +39,7 @@ import {
   optimizedDepInfoFromId
 } from '../optimizer'
 import type { OptimizedDepInfo } from '../optimizer'
-import type { ViteDevServer, SSROptions } from '..'
-import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import type { SSROptions, ViteDevServer } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
 

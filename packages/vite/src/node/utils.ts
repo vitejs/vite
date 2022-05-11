@@ -1,25 +1,25 @@
-import debug from 'debug'
-import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { promisify } from 'util'
-import { pathToFileURL, URL } from 'url'
-import {
-  FS_PREFIX,
-  DEFAULT_EXTENSIONS,
-  VALID_ID_PREFIX,
-  CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH,
-  CLIENT_ENTRY
-} from './constants'
-import resolve from 'resolve'
+import { URL, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
+import { performance } from 'perf_hooks'
+import { URLSearchParams } from 'url'
+import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
-import { performance } from 'perf_hooks'
-import { URLSearchParams } from 'url'
+import colors from 'picocolors'
+import debug from 'debug'
+import {
+  CLIENT_ENTRY,
+  CLIENT_PUBLIC_PATH,
+  DEFAULT_EXTENSIONS,
+  ENV_PUBLIC_PATH,
+  FS_PREFIX,
+  VALID_ID_PREFIX
+} from './constants'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')

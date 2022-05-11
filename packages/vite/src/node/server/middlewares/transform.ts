@@ -1,10 +1,13 @@
 import { promises as fs } from 'fs'
 import path from 'path'
-import type { ViteDevServer } from '..'
 import type { Connect } from 'types/connect'
+import colors from 'picocolors'
+import type { ViteDevServer } from '..'
 import {
   cleanUrl,
   createDebugger,
+  ensureVolumeInPath,
+  fsPathFromId,
   injectQuery,
   isImportRequest,
   isJSRequest,
@@ -12,18 +15,15 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId,
-  fsPathFromId,
-  ensureVolumeInPath
+  unwrapId
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import colors from 'picocolors'
 import {
   DEP_VERSION_RE,
-  NULL_BYTE_PLACEHOLDER,
-  FS_PREFIX
+  FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER
 } from '../../constants'
 import {
   isCSSRequest,

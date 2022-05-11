@@ -1,6 +1,6 @@
-import type { Plugin } from '../plugin'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 
 export function terserPlugin(config: ResolvedConfig): Plugin {

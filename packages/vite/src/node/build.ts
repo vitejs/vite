@@ -1,40 +1,40 @@
 import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
-import type { InlineConfig, ResolvedConfig } from './config'
-import { resolveConfig } from './config'
 import type {
+  ExternalOption,
+  ModuleFormat,
+  OutputOptions,
   Plugin,
   RollupBuild,
-  RollupOptions,
-  RollupWarning,
-  WarningHandler,
-  OutputOptions,
-  RollupOutput,
-  ExternalOption,
-  WatcherOptions,
-  RollupWatcher,
   RollupError,
-  ModuleFormat
+  RollupOptions,
+  RollupOutput,
+  RollupWarning,
+  RollupWatcher,
+  WarningHandler,
+  WatcherOptions
 } from 'rollup'
 import type Rollup from 'rollup'
-import { buildReporterPlugin } from './plugins/reporter'
-import { buildEsbuildPlugin } from './plugins/esbuild'
-import { terserPlugin } from './plugins/terser'
 import type { Terser } from 'types/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
-import { manifestPlugin } from './plugins/manifest'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-import type { Logger } from './logger'
 import type { TransformOptions } from 'esbuild'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
+import { buildReporterPlugin } from './plugins/reporter'
+import { buildEsbuildPlugin } from './plugins/esbuild'
+import { terserPlugin } from './plugins/terser'
+import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import { manifestPlugin } from './plugins/manifest'
+import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
-import { getDepsCacheDir, findKnownImports } from './optimizer'
+import { findKnownImports, getDepsCacheDir } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'

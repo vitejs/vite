@@ -20,9 +20,9 @@ import type {
   Agent,
   ClientRequest,
   ClientRequestArgs,
+  Server as HTTPServer,
   IncomingMessage,
-  OutgoingHttpHeaders,
-  Server as HTTPServer
+  OutgoingHttpHeaders
 } from 'http'
 import type { Server as HTTPSServer } from 'https'
 import type { Duplex, DuplexOptions } from 'stream'

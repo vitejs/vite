@@ -1,7 +1,7 @@
 import path from 'path'
-import colors from 'picocolors'
 import { gzip } from 'zlib'
 import { promisify } from 'util'
+import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import { normalizePath } from '../utils'

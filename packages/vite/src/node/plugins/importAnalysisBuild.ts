@@ -1,14 +1,14 @@
 import path from 'path'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { bareImportRE, combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { bareImportRE, combineSourcemaps } from '../utils'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output

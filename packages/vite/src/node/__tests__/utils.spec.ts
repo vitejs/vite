@@ -1,10 +1,10 @@
+import { describe, expect, test } from 'vitest'
 import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
   resolveHostname
 } from '../utils'
-import { describe, test, expect } from 'vitest'
 
 describe('injectQuery', () => {
   if (isWindows) {

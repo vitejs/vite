@@ -19,15 +19,15 @@ import { send } from '../send'
 import {
   CLIENT_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
 } from '../../constants'
 import {
   cleanUrl,
+  ensureWatchedFile,
   fsPathFromId,
-  normalizePath,
   injectQuery,
-  ensureWatchedFile
+  normalizePath
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 

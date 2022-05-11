@@ -1,9 +1,9 @@
-import type { Plugin } from '../plugin'
-import MagicString from 'magic-string'
 import path from 'path'
-import { fileToUrl } from './asset'
-import type { ResolvedConfig } from '../config'
+import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import { fileToUrl } from './asset'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL

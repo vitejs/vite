@@ -1,6 +1,6 @@
+import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import aliasPlugin from '@rollup/plugin-alias'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'

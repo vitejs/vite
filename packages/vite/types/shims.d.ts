@@ -28,7 +28,7 @@ declare module 'launch-editor-middleware' {
 }
 
 declare module 'postcss-load-config' {
-  import type { ProcessOptions, Plugin } from 'postcss'
+  import type { Plugin, ProcessOptions } from 'postcss'
   function load(
     inline: any,
     root: string

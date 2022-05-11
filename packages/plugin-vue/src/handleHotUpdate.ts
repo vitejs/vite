@@ -1,12 +1,12 @@
 import _debug from 'debug'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
+import type { HmrContext, ModuleNode } from 'vite'
 import {
   createDescriptor,
   getDescriptor,
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import type { ModuleNode, HmrContext } from 'vite'
 import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')

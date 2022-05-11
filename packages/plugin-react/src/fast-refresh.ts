@@ -1,6 +1,6 @@
-import type { types as t } from '@babel/core'
 import fs from 'fs'
 import path from 'path'
+import type { types as t } from '@babel/core'
 
 export const runtimePublicPath = '/@react-refresh'
 

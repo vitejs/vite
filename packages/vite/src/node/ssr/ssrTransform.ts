@@ -1,19 +1,19 @@
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
-import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import type {
-  Identifier,
-  Node as _Node,
-  Property,
   Function as FunctionNode,
-  Pattern
+  Identifier,
+  Pattern,
+  Property,
+  Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
 import { combineSourcemaps } from '../utils'
 import { isJSONRequest } from '../plugins/json'
-import type { RawSourceMap } from '@ampproject/remapping'
 
 type Node = _Node & {
   start: number

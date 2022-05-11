@@ -1,5 +1,5 @@
 import type * as babelCore from '@babel/core'
-import type { types as t, Visitor } from '@babel/core'
+import type { Visitor, types as t } from '@babel/core'
 
 /**
  * Replace this:

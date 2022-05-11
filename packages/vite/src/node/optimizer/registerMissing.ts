@@ -1,24 +1,24 @@
 import colors from 'picocolors'
 import _debug from 'debug'
+import type { ViteDevServer } from '..'
 import {
-  runOptimizeDeps,
-  getOptimizedDepPath,
-  getHash,
-  depsFromOptimizedDepInfo,
-  newDepOptimizationProcessing,
-  loadCachedDepOptimizationMetadata,
-  createOptimizedDepsMetadata,
   addOptimizedDepInfo,
-  discoverProjectDependencies,
+  createOptimizedDepsMetadata,
+  debuggerViteDeps as debug,
+  depsFromOptimizedDepInfo,
   depsLogString,
-  debuggerViteDeps as debug
+  discoverProjectDependencies,
+  getHash,
+  getOptimizedDepPath,
+  loadCachedDepOptimizationMetadata,
+  newDepOptimizationProcessing,
+  runOptimizeDeps
 } from '.'
 import type {
   DepOptimizationProcessing,
   OptimizedDepInfo,
   OptimizedDeps
 } from '.'
-import type { ViteDevServer } from '..'
 
 const isDebugEnabled = _debug('vite:deps').enabled
 

@@ -1,13 +1,13 @@
 import path from 'path'
-import type { Plugin, ImportKind } from 'esbuild'
+import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'
 import {
-  isRunningWithYarnPnp,
   flattenId,
-  normalizePath,
   isExternalUrl,
-  moduleListContains
+  isRunningWithYarnPnp,
+  moduleListContains,
+  normalizePath
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import type { ExportsData } from '.'

@@ -1,6 +1,4 @@
 import path from 'path'
-import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import type {
   OutputAsset,
   OutputBundle,
@@ -8,6 +6,18 @@ import type {
   RollupError,
   SourceMapInput
 } from 'rollup'
+import MagicString from 'magic-string'
+import type {
+  AttributeNode,
+  CompilerError,
+  ElementNode,
+  NodeTransform,
+  TextNode
+} from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import { stripLiteral } from 'strip-literal'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
 import {
   cleanUrl,
   generateCodeFrame,
@@ -18,25 +28,15 @@ import {
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import MagicString from 'magic-string'
 import {
-  checkPublicFile,
   assetUrlRE,
-  urlToBuiltUrl,
+  checkPublicFile,
   getAssetFilename,
-  getAssetHash
+  getAssetHash,
+  urlToBuiltUrl
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import type {
-  AttributeNode,
-  NodeTransform,
-  ElementNode,
-  CompilerError,
-  TextNode
-} from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
-import { stripLiteral } from 'strip-literal'
 
 interface ScriptAssetsUrl {
   start: number

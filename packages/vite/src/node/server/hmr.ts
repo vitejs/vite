@@ -1,15 +1,15 @@
 import fs from 'fs'
 import path from 'path'
-import colors from 'picocolors'
-import type { ViteDevServer } from '..'
-import { createDebugger, normalizePath, unique } from '../utils'
-import type { ModuleNode } from './moduleGraph'
-import type { Update } from 'types/hmrPayload'
-import { CLIENT_DIR } from '../constants'
-import type { RollupError } from 'rollup'
 import type { Server } from 'http'
+import colors from 'picocolors'
+import type { Update } from 'types/hmrPayload'
+import type { RollupError } from 'rollup'
+import { CLIENT_DIR } from '../constants'
+import { createDebugger, normalizePath, unique } from '../utils'
+import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
 

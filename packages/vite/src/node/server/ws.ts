@@ -1,8 +1,9 @@
-import colors from 'picocolors'
 import type { Server } from 'http'
 import { STATUS_CODES } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
 import { createServer as createHttpsServer } from 'https'
+import type { Socket } from 'net'
+import colors from 'picocolors'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'types/ws'
@@ -10,7 +11,6 @@ import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { Socket } from 'net'
 
 export const HMR_HEADER = 'vite-hmr'
 
