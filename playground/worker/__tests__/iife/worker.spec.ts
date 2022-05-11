@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
+import { test } from 'vitest'
 
 test('normal', async () => {
   await page.click('.ping')
@@ -44,7 +45,7 @@ const waitSharedWorkerTick = (
   }
 )(0)
 
-test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
+test.each([[true], [false]])('shared worker', async (doTick) => {
   if (doTick) {
     await page.click('.tick-shared')
   }
@@ -59,10 +60,10 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
 })
 
-if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/iife/assets')
+describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
+    const assetsDir = path.resolve(testDir(), 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
     expect(files.length).toBe(13)
     const index = files.find((f) => f.includes('main-module'))
@@ -92,7 +93,7 @@ if (isBuild) {
       '"type":"constructor"'
     )
   })
-}
+})
 
 test('module worker', async () => {
   expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(

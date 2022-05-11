@@ -72,10 +72,10 @@ jobs:
         run: pnpm run test-unit
 
       - name: Test serve
-        run: pnpm run test-serve -- --runInBand
+        run: pnpm run test-serve
 
       - name: Test build
-        run: pnpm run test-build -- --runInBand
+        run: pnpm run test-build
 
   lint:
     timeout-minutes: 10

@@ -1,8 +1,8 @@
-import { isBuild, findAssetFile, testDir, untilUpdated } from 'testUtils'
+import { isBuild, findAssetFile, testDir, untilUpdated } from '../../testUtils'
 import path from 'path'
 import fs from 'fs'
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('es', async () => {
     expect(await page.textContent('.es')).toBe('It works')
   })
@@ -10,7 +10,7 @@ if (isBuild) {
   test('umd', async () => {
     expect(await page.textContent('.umd')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/my-lib-custom-filename.umd.js'),
+      path.join(testDir(), 'dist/my-lib-custom-filename.umd.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the UMD wrapper
@@ -20,7 +20,7 @@ if (isBuild) {
   test('iife', async () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/my-lib-custom-filename.iife.js'),
+      path.join(testDir(), 'dist/my-lib-custom-filename.iife.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the IIFE wrapper
@@ -33,7 +33,7 @@ if (isBuild) {
       'hello vite'
     )
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/lib/dynamic-import-message.js'),
+      path.join(testDir(), 'dist/lib/dynamic-import-message.js'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
@@ -45,8 +45,8 @@ if (isBuild) {
       expect(log).not.toMatch('All "@import" rules must come first')
     })
   })
-} else {
-  test('dev', async () => {
-    expect(await page.textContent('.demo')).toBe('It works')
-  })
-}
+})
+
+test.runIf(isServe)('dev', async () => {
+  expect(await page.textContent('.demo')).toBe('It works')
+})
