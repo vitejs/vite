@@ -5,6 +5,7 @@ export interface VueQuery {
   index?: number
   lang?: string
   raw?: boolean
+  scoped?: boolean
 }
 
 export function parseVueRequest(id: string): {
@@ -21,6 +22,9 @@ export function parseVueRequest(id: string): {
   }
   if (query.raw != null) {
     query.raw = true
+  }
+  if (query.scoped != null) {
+    query.scoped = true
   }
   return {
     filename,
