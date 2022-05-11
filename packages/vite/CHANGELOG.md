@@ -1,3 +1,14 @@
+## <small>2.9.9 (2022-05-11)</small>
+
+* fix: add direct query to html-proxy css (fixes #8091) (#8094) ([a24b5e3](https://github.com/vitejs/vite/commit/a24b5e3)), closes [#8091](https://github.com/vitejs/vite/issues/8091) [#8094](https://github.com/vitejs/vite/issues/8094)
+* fix: graceful rename in windows (#8036) ([84496f8](https://github.com/vitejs/vite/commit/84496f8)), closes [#8036](https://github.com/vitejs/vite/issues/8036)
+* fix: image-set with base64 images (fix #8028) (#8035) ([992aee2](https://github.com/vitejs/vite/commit/992aee2)), closes [#8028](https://github.com/vitejs/vite/issues/8028) [#8035](https://github.com/vitejs/vite/issues/8035)
+* fix: invalidate ssrError when HMR update occurs (#8052) ([22fa882](https://github.com/vitejs/vite/commit/22fa882)), closes [#8052](https://github.com/vitejs/vite/issues/8052)
+* fix: use `strip-literal` to strip string lterals (#8054) ([b6fc3cd](https://github.com/vitejs/vite/commit/b6fc3cd)), closes [#8054](https://github.com/vitejs/vite/issues/8054)
+* perf(lib): reduce backtrack when injecting esbuild helpers (#8110) ([e5556ab](https://github.com/vitejs/vite/commit/e5556ab)), closes [#8110](https://github.com/vitejs/vite/issues/8110)
+
+
+
 ## <small>2.9.8 (2022-05-04)</small>
 
 * fix: inline js and css paths for virtual html (#7993) ([d49e3fb](https://github.com/vitejs/vite/commit/d49e3fb)), closes [#7993](https://github.com/vitejs/vite/issues/7993)
