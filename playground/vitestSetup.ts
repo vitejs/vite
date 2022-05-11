@@ -184,7 +184,6 @@ beforeAll(async (s) => {
     // If the page remains open, a command like `await page.click(...)` produces
     // a timeout with an exception that hides the real error in the console.
     await page.close()
-
     beforeAllError = e
   }
 
