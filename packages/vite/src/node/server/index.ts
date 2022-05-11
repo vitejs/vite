@@ -499,6 +499,7 @@ export async function createServer(
   // hmr reconnect ping
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
+    res.statusCode = 200
     res.end('pong')
   })
 
