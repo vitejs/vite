@@ -29,12 +29,12 @@ describe.runIf(isServe)('serve', () => {
     const css = await res.text()
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACT,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
-        "sources": Array [
+        "sources": [
           "/root/linked.css",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           ".linked {
         color: red;
       }
