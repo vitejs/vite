@@ -1,11 +1,11 @@
-import type { UserConfig } from '../../node'
-import type { Plugin } from '../plugin'
 import type {
-  OutputOptions,
   GetManualChunk,
   GetManualChunkApi,
-  GetModuleInfo
+  GetModuleInfo,
+  OutputOptions
 } from 'rollup'
+import type { UserConfig } from '../../node'
+import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7

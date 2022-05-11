@@ -6,13 +6,13 @@ import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
+import type { GeneralImportGlobOptions } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { isCSSRequest } from './css'
-import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { normalizePath, slash } from '../utils'
+import { isCSSRequest } from './css'
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray

@@ -15,7 +15,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types}/**",
+    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/** scripts/**",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
     "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
@@ -27,6 +27,7 @@
     "serve-docs": "vitepress serve docs",
     "release": "ts-node scripts/release.ts",
     "ci-publish": "ts-node scripts/publishCI.ts",
+    "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "build": "run-s build-vite build-plugin-vue build-plugin-react",
     "build-vite": "cd packages/vite && npm run build",
     "build-plugin-vue": "cd packages/plugin-vue && npm run build",
@@ -61,6 +62,7 @@
     "esbuild": "^0.14.38",
     "eslint": "^8.15.0",
     "eslint-define-config": "^1.4.0",
+    "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^5.1.1",
     "fs-extra": "^10.1.0",
@@ -93,10 +95,13 @@
       "prettier --write --ignore-unknown"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --ext .ts"
+      "eslint --fix"
     ],
     "packages/**/*.d.ts": [
-      "eslint --ext .ts"
+      "eslint --fix"
+    ],
+    "playground/**/__tests__/**/*.ts": [
+      "eslint --fix"
     ]
   },
   "packageManager": "pnpm@7.0.1",

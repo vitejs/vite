@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference */
 // test utils used in e2e tests for playgrounds.
-// `import { getColor } from '../../testUtils'`
+// `import { getColor } from '~utils'`
+
+// TODO: explicitly import APIs and remove this
+/// <reference types="vitest/globals"/>
 
 import fs from 'fs'
 import path from 'path'
@@ -9,6 +13,23 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
+import { page } from './vitestSetup'
+
+export * from './vitestSetup'
+
+export const workspaceRoot = path.resolve(__dirname, '../')
+
+export const isBuild = !!process.env.VITE_TEST_BUILD
+export const isServe = !isBuild
+
+export const isWindows = process.platform === 'win32'
+export const viteBinPath = path.join(
+  workspaceRoot,
+  'packages',
+  'vite',
+  'bin',
+  'vite.js'
+)
 
 // make sure these ports are unique
 export const ports = {
@@ -31,15 +52,11 @@ export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
 
-export const isBuild = !!process.env.VITE_TEST_BUILD
-export const isServe = !isBuild
-
 export const testDir = () => {
   const testPath = expect.getState().testPath
   const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
   return path.resolve(__dirname, '../playground-temp', testName)
 }
-export const workspaceRoot = path.resolve(__dirname, '../')
 
 const hexToNameMap: Record<string, string> = {}
 Object.keys(colors).forEach((color) => {
@@ -158,11 +175,6 @@ export async function untilUpdated(
     }
   }
 }
-
-/**
- * Send the rebuild complete message in build watch
- */
-export { notifyRebuildComplete } from '../scripts/vitestSetup'
 
 export const extractSourcemap = (content: string) => {
   const lines = content.trim().split('\n')

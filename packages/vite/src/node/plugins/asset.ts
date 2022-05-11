@@ -1,14 +1,14 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
+import { createHash } from 'crypto'
 import * as mrmime from 'mrmime'
+import type { OutputOptions, PluginContext } from 'rollup'
+import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import type { OutputOptions, PluginContext } from 'rollup'
-import MagicString from 'magic-string'
-import { createHash } from 'crypto'
 import { normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
