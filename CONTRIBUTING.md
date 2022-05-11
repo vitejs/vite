@@ -36,7 +36,7 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 1. Add a `debugger` statement to the `scripts/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
 
-1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve --runInBand resolve`.
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve resolve`.
 
 1. Wait for inspector devtools to open in your browser and the debugger to attach.
 
