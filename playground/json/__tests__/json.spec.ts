@@ -1,7 +1,7 @@
-import { isBuild } from '../../testUtils'
+import { isBuild, page } from '~utils'
 
-const json = require('../test.json')
 const deepJson = require('vue/package.json')
+const json = require('../test.json')
 const stringified = JSON.stringify(json)
 const deepStringified = JSON.stringify(deepJson)
 

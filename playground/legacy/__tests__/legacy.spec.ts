@@ -1,11 +1,12 @@
 import {
-  listAssets,
   findAssetFile,
+  getColor,
   isBuild,
+  listAssets,
+  page,
   readManifest,
-  untilUpdated,
-  getColor
-} from '../../testUtils'
+  untilUpdated
+} from '~utils'
 
 test('should work', async () => {
   expect(await page.textContent('#app')).toMatch('Hello')

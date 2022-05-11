@@ -95,15 +95,17 @@ Other than tests under `playground/` for integration tests, packages might conta
 
 ### Test Env and Helpers
 
-Inside playground tests, a global `page` object is automatically available, which is a Playwright [`Page`](https://playwright.dev/docs/api/class-page) instance that has already navigated to the served page of the current playground. So writing a test is as simple as:
+Inside playground tests, you can import the `page` object from `~utils`, which is a Playwright [`Page`](https://playwright.dev/docs/api/class-page) instance that has already navigated to the served page of the current playground. So writing a test is as simple as:
 
 ```js
+import { page } from '~utils'
+
 test('should work', async () => {
   expect(await page.textContent('.foo')).toMatch('foo')
 })
 ```
 
-Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `playground/testUtils.ts`.
+Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are also available in the utils. Source code is located at `playground/test-utils.ts`.
 
 Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/9c6501d9c363eaa3c1e7708d531fb2a92b633db6/scripts/vitestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 

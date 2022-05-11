@@ -1,6 +1,6 @@
 import { port } from './serve'
 import fetch from 'node-fetch'
-import { untilUpdated } from '../../testUtils'
+import { page, untilUpdated } from '~utils'
 import { platform } from 'os'
 
 const url = `http://localhost:${port}/`

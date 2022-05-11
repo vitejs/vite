@@ -1,10 +1,11 @@
 import {
-  editFile,
-  untilUpdated,
-  removeFile,
   addFile,
-  isBuild
-} from '../../testUtils'
+  editFile,
+  isBuild,
+  page,
+  removeFile,
+  untilUpdated
+} from '~utils'
 
 test.runIf(isBuild)(
   'should hmr when file is deleted and restored',

@@ -1,6 +1,12 @@
+import { resolve } from 'path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '~utils': resolve(__dirname, './playground/test-utils')
+    }
+  },
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
     setupFiles: ['./scripts/vitestSetup.ts'],
