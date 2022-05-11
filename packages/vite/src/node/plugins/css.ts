@@ -223,7 +223,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules && !inlineRE.test(id)
+          const isSelfAccepting =
+            !modules && !inlineRE.test(id) && !htmlProxyRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
