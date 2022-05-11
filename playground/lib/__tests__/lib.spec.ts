@@ -1,4 +1,4 @@
-import { isBuild, iseServe, testDir, untilUpdated } from '../../testUtils'
+import { isBuild, isServe, testDir, untilUpdated } from '../../testUtils'
 import path from 'path'
 import fs from 'fs'
 
