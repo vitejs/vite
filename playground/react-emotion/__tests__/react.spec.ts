@@ -1,4 +1,4 @@
-import { editFile, untilUpdated } from '../../testUtils'
+import { editFile, page, untilUpdated } from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch(
@@ -28,7 +28,7 @@ test('should update button style', async () => {
     })
   }
 
-  const styles = await page.evaluate(() => {
+  await page.evaluate(() => {
     return document.querySelector('button').style
   })
 

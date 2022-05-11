@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import { transformWithEsbuild } from 'vite'
+import { browserLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
   // main side effect should be called (because of `"importsNotUsedAsValues": "preserve"`)

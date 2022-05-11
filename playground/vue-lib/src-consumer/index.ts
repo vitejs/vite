@@ -1,4 +1,3 @@
-// @ts-ignore
 /* eslint-disable node/no-missing-import */
 import { CompA } from '../dist/lib/my-vue-lib'
 import '../dist/lib/style.css'

@@ -1,8 +1,8 @@
 import type { SFCDescriptor } from 'vue/compiler-sfc'
 import type { ExistingRawSourceMap, TransformPluginContext } from 'rollup'
-import type { ResolvedOptions } from '.'
 import type { RawSourceMap } from 'source-map'
 import { formatPostcssSourceMap } from 'vite'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformStyle(

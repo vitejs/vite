@@ -1,94 +1,111 @@
-import fs from 'fs-extra'
 import * as http from 'http'
-import { resolve, dirname } from 'path'
+import { dirname, resolve } from 'path'
+import os from 'os'
+import path from 'path'
 import sirv from 'sirv'
+import fs from 'fs-extra'
+import { chromium } from 'playwright-chromium'
 import type {
-  ViteDevServer,
   InlineConfig,
+  Logger,
   PluginOption,
   ResolvedConfig,
-  Logger
+  ViteDevServer
 } from 'vite'
-import { createServer, build, mergeConfig } from 'vite'
-import type { Page, ConsoleMessage } from 'playwright-chromium'
+import { build, createServer, mergeConfig } from 'vite'
+import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
+import type { File } from 'vitest'
+import { beforeAll } from 'vitest'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
-}
-
-// injected by the test env
-declare global {
-  const page: Page | undefined
-
-  const browserLogs: string[]
-  const browserErrors: Error[]
-  const serverLogs: string[]
-  const viteTestUrl: string | undefined
-  const watcher: RollupWatcher | undefined
-  let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
-}
-
-declare const global: {
-  page?: Page
-
-  browserLogs: string[]
-  browserErrors: Error[]
-  serverLogs: string[]
-  viteTestUrl?: string
-  watcher?: RollupWatcher
-  beforeAllError: Error | null
-}
 
 let server: ViteDevServer | http.Server
 let tempDir: string
 let rootDir: string
 
-const setBeforeAllError = (err: Error | null) => {
-  global.beforeAllError = err
-}
-const getBeforeAllError = () => global.beforeAllError
-//init with null so old errors don't carry over
-setBeforeAllError(null)
+export const serverLogs: string[] = []
+export const browserLogs: string[] = []
+export const browserErrors: Error[] = []
 
-const logs: string[] = (global.browserLogs = [])
-const onConsole = (msg: ConsoleMessage) => {
-  logs.push(msg.text())
+/**
+ * Error caught in beforeAll, useful if you want to test error scenarios on build
+ */
+export let beforeAllError: Error | null = null
+
+export let page: Page = undefined!
+export let browser: Browser = undefined!
+export let viteTestUrl: string = ''
+export let watcher: RollupWatcher | undefined = undefined
+
+export function clearBeforeAllError() {
+  beforeAllError = null
 }
 
-const errors: Error[] = (global.browserErrors = [])
-const onPageError = (error: Error) => {
-  errors.push(error)
+export function setViteUrl(url: string) {
+  viteTestUrl = url
 }
 
-beforeAll(async () => {
-  const page = global.page
-  if (!page) {
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
+}
+
+const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
+
+beforeAll(async (s) => {
+  const suite = s as File
+  const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
+  if (!wsEndpoint) {
+    throw new Error('wsEndpoint not found')
+  }
+
+  // skip browser setup for non-playground tests
+  if (!suite.filepath.includes('playground')) {
     return
   }
-  try {
-    page.on('console', onConsole)
-    page.on('pageerror', onPageError)
 
-    const testPath = expect.getState().testPath
+  browser = await chromium.connect(wsEndpoint)
+  page = await browser.newPage()
+
+  const globalConsole = globalThis.console
+  const warn = globalConsole.warn
+  globalConsole.warn = (msg, ...args) => {
+    // suppress @vue/reactivity-transform warning
+    if (msg.includes('@vue/reactivity-transform')) return
+    if (msg.includes('Generated an empty chunk')) return
+    warn.call(globalConsole, msg, ...args)
+  }
+
+  try {
+    page.on('console', (msg) => {
+      browserLogs.push(msg.text())
+    })
+    page.on('pageerror', (error) => {
+      browserErrors.push(error)
+    })
+
+    const testPath = suite.filepath!
     const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      const playgroundRoot = resolve(__dirname, '../playground')
       tempDir = resolve(__dirname, '../playground-temp/', testName)
 
       // when `root` dir is present, use it as vite's root
       const testCustomRoot = resolve(tempDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
 
-      const testCustomServe = resolve(dirname(testPath), 'serve.js')
-      if (fs.existsSync(testCustomServe)) {
+      const testCustomServe = [
+        resolve(dirname(testPath), 'serve.ts'),
+        resolve(dirname(testPath), 'serve.cjs'),
+        resolve(dirname(testPath), 'serve.js')
+      ].find((i) => fs.existsSync(i))
+      if (testCustomServe) {
         // test has custom server configuration.
-        const { serve, preServe } = require(testCustomServe)
+        const mod = await import(testCustomServe)
+        const serve = mod.serve || mod.default?.serve
+        const preServe = mod.preServe || mod.default?.preServe
         if (preServe) {
           await preServe(rootDir, isBuildTest)
         }
@@ -104,8 +121,6 @@ beforeAll(async () => {
         // test has custom server configuration.
         config = require(testCustomConfig)
       }
-
-      const serverLogs: string[] = []
 
       const options: InlineConfig = {
         root: rootDir,
@@ -132,8 +147,6 @@ beforeAll(async () => {
 
       setupConsoleWarnCollector(serverLogs)
 
-      global.serverLogs = serverLogs
-
       if (!isBuildTest) {
         process.env.VITE_INLINE = 'inline-serve'
         server = await (
@@ -141,9 +154,8 @@ beforeAll(async () => {
         ).listen()
         // use resolved port/base from server
         const base = server.config.base === '/' ? '' : server.config.base
-        const url =
-          (global.viteTestUrl = `http://localhost:${server.config.server.port}${base}`)
-        await page.goto(url)
+        viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+        await page.goto(viteTestUrl)
       } else {
         process.env.VITE_INLINE = 'inline-build'
         // determine build watch
@@ -159,37 +171,36 @@ beforeAll(async () => {
         const isWatch = !!resolvedConfig!.build.watch
         // in build watch,call startStaticServer after the build is complete
         if (isWatch) {
-          global.watcher = rollupOutput as RollupWatcher
-          await notifyRebuildComplete(global.watcher)
+          watcher = rollupOutput as RollupWatcher
+          await notifyRebuildComplete(watcher)
         }
-        const url = (global.viteTestUrl = await startStaticServer(config))
-        await page.goto(url)
+        viteTestUrl = await startStaticServer(config)
+        await page.goto(viteTestUrl)
       }
     }
   } catch (e: any) {
-    // jest doesn't exit if our setup has error here
-    // https://github.com/facebook/jest/issues/2713
-    setBeforeAllError(e)
-
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
     // If the page remains open, a command like `await page.click(...)` produces
     // a timeout with an exception that hides the real error in the console.
     await page.close()
+
+    beforeAllError = e
+  }
+
+  return async () => {
+    serverLogs.length = 0
+    await page?.close()
+    await server?.close()
+    watcher?.close()
+    if (browser) {
+      await browser.close()
+    }
+    if (beforeAllError) {
+      throw beforeAllError
+    }
   }
 }, 30000)
-
-afterAll(async () => {
-  global.page?.off('console', onConsole)
-  global.serverLogs = []
-  await global.page?.close()
-  await server?.close()
-  global.watcher?.close()
-  const beforeAllErr = getBeforeAllError()
-  if (beforeAllErr) {
-    throw beforeAllErr
-  }
-})
 
 function startStaticServer(config?: InlineConfig): Promise<string> {
   if (!config) {
