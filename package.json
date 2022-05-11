@@ -35,7 +35,6 @@
     "ci-docs": "run-s build-vite build-plugin-vue build-docs"
   },
   "devDependencies": {
-    "@jest/types": "^28.1.0",
     "@microsoft/api-extractor": "^7.23.1",
     "@types/babel__core": "^7.1.19",
     "@types/convert-source-map": "^1.5.2",
@@ -44,7 +43,6 @@
     "@types/estree": "^0.0.51",
     "@types/etag": "^1.8.1",
     "@types/hash-sum": "^1.0.0",
-    "@types/jest": "^27.5.0",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
     "@types/mime": "^2.0.3",
