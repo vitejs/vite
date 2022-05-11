@@ -30,48 +30,48 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, join } from 'path'
-import type { Plugin } from '../plugin'
+import { join, resolve } from 'path'
+import { performance } from 'perf_hooks'
 import type {
+  EmittedFile,
   InputOptions,
+  LoadResult,
   MinimalPluginContext,
-  OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
+  OutputOptions,
   PartialResolvedId,
   ResolvedId,
-  PluginContext as RollupPluginContext,
-  LoadResult,
-  SourceDescription,
-  EmittedFile,
-  SourceMap,
   RollupError,
+  PluginContext as RollupPluginContext,
+  SourceDescription,
+  SourceMap,
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { cleanUrl, combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
+import colors from 'picocolors'
+import type * as postcss from 'postcss'
+import type { Plugin } from '../plugin'
+import { cleanUrl, combineSourcemaps } from '../utils'
 import {
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
-  isObject,
   isExternalUrl,
+  isObject,
   normalizePath,
   numberToPos,
   prettifyUrl,
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
-import { performance } from 'perf_hooks'
-import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string

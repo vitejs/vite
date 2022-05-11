@@ -9,12 +9,6 @@
 // in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
 interface GlobOptions {
   as?: string
-  /**
-   * @deprecated
-   */
-  assert?: {
-    type: string
-  }
 }
 
 interface ImportMeta {
@@ -24,15 +18,11 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob<Module = { [key: string]: any }>(
-    pattern: string,
-    options?: GlobOptions
-  ): Record<string, () => Promise<Module>>
-
-  globEager<Module = { [key: string]: any }>(
-    pattern: string,
-    options?: GlobOptions
-  ): Record<string, Module>
+  glob: import('./importGlob').ImportGlobFunction
+  /**
+   * @deprecated Use `import.meta.glob('*', { eager: true })` instead
+   */
+  globEager: import('./importGlob').ImportGlobEagerFunction
 }
 
 interface ImportMetaEnv {

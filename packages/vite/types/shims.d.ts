@@ -28,7 +28,7 @@ declare module 'launch-editor-middleware' {
 }
 
 declare module 'postcss-load-config' {
-  import type { ProcessOptions, Plugin } from 'postcss'
+  import type { Plugin, ProcessOptions } from 'postcss'
   function load(
     inline: any,
     root: string
@@ -59,6 +59,7 @@ declare module 'postcss-modules' {
 
 declare module '@rollup/plugin-dynamic-import-vars' {
   import type { Plugin } from 'rollup'
+  import type { BaseNode } from 'estree'
 
   interface Options {
     include?: string | RegExp | (string | RegExp)[]
@@ -68,6 +69,10 @@ declare module '@rollup/plugin-dynamic-import-vars' {
 
   const p: (o?: Options) => Plugin
   export default p
+  export function dynamicImportToGlob(
+    ast: BaseNode,
+    source: string
+  ): null | string
 }
 
 declare module 'rollup-plugin-web-worker-loader' {
@@ -83,14 +88,6 @@ declare module 'rollup-plugin-web-worker-loader' {
 
   const p: (o?: Options) => Plugin
   export default p
-}
-
-declare module 'micromatch' {
-  export function isMatch(
-    path: string,
-    pattern: string,
-    options?: { matchBase?: boolean }
-  ): boolean
 }
 
 // LESS' types somewhat references this which doesn't make sense in Node,

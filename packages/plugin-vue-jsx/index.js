@@ -3,7 +3,7 @@ const babel = require('@babel/core')
 const jsx = require('@vue/babel-plugin-jsx')
 const importMeta = require('@babel/plugin-syntax-import-meta')
 const { createFilter, normalizePath } = require('@rollup/pluginutils')
-const hash = require('hash-sum')
+const { createHash } = require('crypto')
 const path = require('path')
 
 const ssrRegisterHelperId = '/__vue-jsx-ssr-register-helper'
@@ -48,12 +48,6 @@ function vueJsxPlugin(options = {}) {
     name: 'vite:vue-jsx',
 
     config(config) {
-      const optionsApi = config.define
-        ? config.define.__VUE_OPTIONS_API__
-        : undefined
-      const devTools = config.define
-        ? config.define.__VUE_PROD_DEVTOOLS__
-        : undefined
       return {
         // only apply esbuild to ts files
         // since we are handling jsx and tsx now
@@ -61,8 +55,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: optionsApi != null ? optionsApi : true,
-          __VUE_PROD_DEVTOOLS__: devTools != null ? devTools : false
+          __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
+          __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         }
       }
     },
@@ -158,7 +152,7 @@ function vueJsxPlugin(options = {}) {
                   ({ name }) => ({
                     local: name,
                     exported: name,
-                    id: hash(id + name)
+                    id: getHash(id + name)
                   })
                 )
               )
@@ -175,7 +169,7 @@ function vueJsxPlugin(options = {}) {
                     hotComponents.push({
                       local: spec.local.name,
                       exported: spec.exported.name,
-                      id: hash(id + spec.exported.name)
+                      id: getHash(id + spec.exported.name)
                     })
                   }
                 }
@@ -193,7 +187,7 @@ function vueJsxPlugin(options = {}) {
                 hotComponents.push({
                   local: node.declaration.name,
                   exported: 'default',
-                  id: hash(id + 'default')
+                  id: getHash(id + 'default')
                 })
               }
             } else if (isDefineComponentCall(node.declaration)) {
@@ -201,7 +195,7 @@ function vueJsxPlugin(options = {}) {
               hotComponents.push({
                 local: '__default__',
                 exported: 'default',
-                id: hash(id + 'default')
+                id: getHash(id + 'default')
               })
             }
           }
@@ -280,6 +274,14 @@ function isDefineComponentCall(node) {
     node.callee.type === 'Identifier' &&
     node.callee.name === 'defineComponent'
   )
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+function getHash(text) {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
 module.exports = vueJsxPlugin
