@@ -546,6 +546,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
+          crossorigin: true,
           href: toPublicPath(chunk.fileName, config)
         }
       })

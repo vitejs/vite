@@ -84,7 +84,6 @@ async function instantiateModule(
   if (mod.ssrModule) {
     return mod.ssrModule
   }
-
   const result =
     mod.ssrTransformResult ||
     (await transformRequest(url, server, { ssr: true }))
@@ -287,6 +286,7 @@ async function nodeImport(
       importer,
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
+      // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions

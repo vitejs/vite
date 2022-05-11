@@ -452,7 +452,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (
+          opts.format === 'es' ||
+          opts.format === 'cjs' ||
+          opts.format === 'system'
+        ) {
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: false,
             minify: true
@@ -513,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es'
+          opts.format === 'es' || opts.format === 'system'
             ? `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`
             : `\\brequire\\(\\s*"[^"]*(?:${emptyChunkFiles})"\\);\n?`,
           'g'
@@ -1045,18 +1049,26 @@ function rewriteImportCss(
   })
 }
 
-function rewriteCssImageSet(
+// TODO: image and cross-fade could contain a "url" that needs to be processed
+// https://drafts.csswg.org/css-images-4/#image-notation
+// https://drafts.csswg.org/css-images-4/#cross-fade-function
+const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+
+async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer
 ): Promise<string> {
-  return asyncReplace(css, cssImageSetRE, async (match) => {
+  return await asyncReplace(css, cssImageSetRE, async (match) => {
     const [, rawUrl] = match
     const url = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {
         return await rewriteCssUrls(url, replacer)
       }
-      return await doUrlReplace(url, url, replacer)
+      if (!cssNotProcessedRE.test(url)) {
+        return await doUrlReplace(url, url, replacer)
+      }
+      return url
     })
     return url
   })

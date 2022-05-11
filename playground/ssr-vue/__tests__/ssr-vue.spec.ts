@@ -110,6 +110,7 @@ test('css', async () => {
   } else {
     // During dev, the CSS is loaded from async chunk and we may have to wait
     // when the test runs concurrently.
+    await page.waitForLoadState('networkidle')
     await untilUpdated(() => getColor('h1'), 'green')
     await untilUpdated(() => getColor('.jsx'), 'blue')
   }
@@ -141,11 +142,13 @@ test('nested virtual module', async () => {
 test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
+  await page.waitForLoadState('networkidle')
   expect(await page.textContent('button')).toMatch('1')
 })
 
 test('hmr', async () => {
   editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
+  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
 
@@ -154,6 +157,7 @@ test('client navigation', async () => {
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
+  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
   await page.click('a[href="/"]')
   await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
@@ -164,19 +168,17 @@ test('import.meta.url', async () => {
   expect(await page.textContent('.protocol')).toEqual('file:')
 })
 
-test('dynamic css file should be preloaded', async () => {
-  if (isBuild) {
-    await page.goto(url)
-    const homeHtml = await (await fetch(url)).text()
-    const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
-    const filename = re.exec(homeHtml)[1]
-    const manifest = require(resolve(
-      process.cwd(),
-      './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
-    ))
-    const depFile = manifest[filename]
-    for (const file of depFile) {
-      expect(homeHtml).toMatch(file)
-    }
+test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
+  await page.goto(url)
+  const homeHtml = await (await fetch(url)).text()
+  const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
+  const filename = re.exec(homeHtml)[1]
+  const manifest = require(resolve(
+    process.cwd(),
+    './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
+  ))
+  const depFile = manifest[filename]
+  for (const file of depFile) {
+    expect(homeHtml).toMatch(file)
   }
 })

@@ -1,18 +1,15 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const fs = require('fs-extra')
-const { testDir } = require('../../testUtils')
-
-const fromTestDir = (/** @type{string[]} */ ...p) => path.resolve(testDir, ...p)
+import path from 'path'
+import fs from 'fs-extra'
 
 const configNames = ['js', 'cjs', 'mjs', 'ts']
 
-/** @param {string} root @param {boolean} isProd */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root: string, isProd: boolean) {
   if (!isProd) return
+
+  const fromTestDir = (...p: string[]) => path.resolve(root, '..', ...p)
 
   // create separate directories for all config types:
   // ./{js,cjs,mjs,ts} and ./{js,cjs,mjs,ts}-module (with package#type)
