@@ -8,9 +8,11 @@ export default defineConfig({
     testTimeout: process.env.CI ? 50000 : 20000,
     globals: true,
     reporters: 'dot',
-    onConsoleLog(log, type) {
+    onConsoleLog(log) {
       if (log.match(/experimental|jit engine|emitted file/i)) return false
-    }
+    },
+    maxThreads: process.env.CI ? 2 : undefined,
+    minThreads: process.env.CI ? 1 : undefined
   },
   esbuild: {
     target: 'node14'
