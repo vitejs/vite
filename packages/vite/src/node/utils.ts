@@ -164,6 +164,14 @@ export function normalizePath(id: string): string {
   return path.posix.normalize(isWindows ? slash(id) : id)
 }
 
+export function normalizeHtmlAssetPath(id: string): string {
+  return isExternalUrl(id)
+    ? id
+    : id[0] === '/' || id[0] === '.'
+    ? id
+    : './' + id
+}
+
 export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
