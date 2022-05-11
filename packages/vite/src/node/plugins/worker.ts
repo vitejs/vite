@@ -3,10 +3,10 @@ import type Rollup from 'rollup'
 import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
 import { onRollupWarning } from '../build'
-import { fileToUrl, getAssetHash } from './asset'
+import { fileToUrl } from './asset'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -143,7 +143,7 @@ function emitSourcemapForWorkerEntry(
       const basename = path.parse(cleanUrl(id)).name
       const data = sourcemap.toString()
       const content = Buffer.from(data)
-      const contentHash = getAssetHash(content)
+      const contentHash = getHash(content)
       const fileName = `${basename}.${contentHash}.js.map`
       const filePath = path.posix.join(config.build.assetsDir, fileName)
       emitWorkerSourcemap(context, config, {
@@ -186,7 +186,7 @@ export async function workerFileToUrl(
   }
   const code = await bundleWorkerEntry(ctx, config, id, query)
   const basename = path.parse(cleanUrl(id)).name
-  const contentHash = getAssetHash(code)
+  const contentHash = getHash(code)
   const fileName = path.posix.join(
     config.build.assetsDir,
     `${basename}.${contentHash}.js`

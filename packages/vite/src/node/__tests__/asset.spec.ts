@@ -1,13 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { assetFileNamesToFileName, getAssetHash } from '../plugins/asset'
-
-describe('getAssetHash', () => {
-  test('8-digit hex', () => {
-    const hash = getAssetHash(Buffer.alloc(0))
-
-    expect(hash).toMatch(/^[\da-f]{8}$/)
-  })
-})
+import { assetFileNamesToFileName } from '../plugins/asset'
 
 describe('assetFileNamesToFileName', () => {
   // on Windows, both forward slashes and backslashes may appear in the input

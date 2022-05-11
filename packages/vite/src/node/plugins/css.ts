@@ -33,6 +33,7 @@ import {
   cleanUrl,
   combineSourcemaps,
   generateCodeFrame,
+  getHash,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -46,8 +47,7 @@ import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename,
-  getAssetHash
+  getAssetFilename
 } from './asset'
 
 // const debug = createDebugger('vite:css')
@@ -360,7 +360,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const query = parseRequest(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
-          `${getAssetHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
+          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
           css
         )
         return `export default ''`

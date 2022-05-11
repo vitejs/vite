@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import { createHash } from 'crypto'
 import { performance } from 'perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
@@ -12,6 +11,7 @@ import {
   createDebugger,
   emptyDir,
   flattenId,
+  getHash,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -814,10 +814,6 @@ function getOptimizedBrowserHash(
   timestamp = ''
 ) {
   return getHash(hash + JSON.stringify(deps) + timestamp)
-}
-
-export function getHash(text: string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
 export function optimizedDepInfoFromId(
