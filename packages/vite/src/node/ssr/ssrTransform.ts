@@ -1,22 +1,29 @@
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
-import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import type {
-  Identifier,
-  Node as _Node,
-  Property,
   Function as FunctionNode,
-  Pattern
+  Identifier,
+  Pattern,
+  Property,
+  Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
 import { combineSourcemaps } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
   start: number
   end: number
+}
+
+interface TransformOptions {
+  json?: {
+    stringify?: boolean
+  }
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -28,6 +35,30 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
+  url: string,
+  options?: TransformOptions
+): Promise<TransformResult | null> {
+  if (options?.json?.stringify && isJSONRequest(url)) {
+    return ssrTransformJSON(code, inMap)
+  }
+  return ssrTransformScript(code, inMap, url)
+}
+
+async function ssrTransformJSON(
+  code: string,
+  inMap: SourceMap | null
+): Promise<TransformResult> {
+  return {
+    code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
+    map: inMap,
+    deps: [],
+    dynamicDeps: []
+  }
+}
+
+async function ssrTransformScript(
+  code: string,
+  inMap: SourceMap | null,
   url: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
@@ -37,7 +68,8 @@ export async function ssrTransform(
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
-      locations: true
+      locations: true,
+      allowHashBang: true
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
@@ -66,7 +98,7 @@ export async function ssrTransform(
   }
 
   function defineExport(position: number, name: string, local = name) {
-    s.appendRight(
+    s.appendLeft(
       position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`
@@ -143,7 +175,12 @@ export async function ssrTransform(
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      if ('id' in node.declaration && node.declaration.id) {
+      const expressionTypes = ['FunctionExpression', 'ClassExpression']
+      if (
+        'id' in node.declaration &&
+        node.declaration.id &&
+        !expressionTypes.includes(node.declaration.type)
+      ) {
         // named hoistable/class exports
         // export default function foo() {}
         // export default class A {}
@@ -158,7 +195,8 @@ export async function ssrTransform(
         s.overwrite(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
+          { contentOnly: true }
         )
       }
     }
@@ -207,14 +245,16 @@ export async function ssrTransform(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding)
+        s.overwrite(id.start, id.end, binding, { contentOnly: true })
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
+      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+        contentOnly: true
+      })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
@@ -421,7 +461,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // class method name
-  if (parent.type === 'MethodDefinition') {
+  if (parent.type === 'MethodDefinition' && !parent.computed) {
     return false
   }
 

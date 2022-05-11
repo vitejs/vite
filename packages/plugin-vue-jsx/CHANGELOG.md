@@ -1,3 +1,42 @@
+## <small>1.3.10 (2022-04-13)</small>
+
+* fix(deps): update all non-major dependencies (#7668) ([485263c](https://github.com/vitejs/vite/commit/485263c)), closes [#7668](https://github.com/vitejs/vite/issues/7668)
+
+
+
+## <small>1.3.9 (2022-03-30)</small>
+
+* fix(deps): update all non-major dependencies (#7392) ([b63fc3b](https://github.com/vitejs/vite/commit/b63fc3b)), closes [#7392](https://github.com/vitejs/vite/issues/7392)
+* chore(deps): update all non-major dependencies (#6905) ([839665c](https://github.com/vitejs/vite/commit/839665c)), closes [#6905](https://github.com/vitejs/vite/issues/6905)
+
+
+
+## [1.3.8](https://github.com/vitejs/vite/compare/plugin-vue@2.2.4...plugin-vue@1.3.8) (2022-02-28)
+
+
+
+## [1.3.7](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@1.3.7) (2022-02-14)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+## [1.3.6](https://github.com/vitejs/vite/compare/plugin-vue@2.2.0...plugin-vue@1.3.6) (2022-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#6782](https://github.com/vitejs/vite/issues/6782)) ([e38be3e](https://github.com/vitejs/vite/commit/e38be3e6ca7bf79319d5d7188e1d347b1d6091ef))
+
+
+
+## [1.3.5](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.4...plugin-vue-jsx@1.3.5) (2022-02-12)
+
+
+
 ## [1.3.4](https://github.com/vitejs/vite/compare/plugin-vue-jsx@1.3.3...plugin-vue-jsx@1.3.4) (2022-02-09)
 
 
