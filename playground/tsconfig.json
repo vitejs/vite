@@ -3,12 +3,15 @@
   "exclude": ["**/dist/**"],
   "compilerOptions": {
     "target": "es2019",
+    "module": "esnext",
     "outDir": "dist",
+    "baseUrl": ".",
     "allowJs": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
     "jsx": "preserve",
     "types": ["vite/client", "vitest/globals", "node"],
     "paths": {

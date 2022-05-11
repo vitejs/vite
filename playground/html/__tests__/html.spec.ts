@@ -220,7 +220,7 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should reload when fixed', async () => {
-    const response = await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
       return content.replace('<div Bad', '<div> Good')
     })

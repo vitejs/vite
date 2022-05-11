@@ -1,13 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "include": ["."],
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node",
     "target": "es2019",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["node", "vitest/globals"]
+    "noUnusedLocals": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
