@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { assetFileNamesToFileName } from '../plugins/asset'
 
 describe('assetFileNamesToFileName', () => {

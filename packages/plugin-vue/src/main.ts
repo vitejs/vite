@@ -1,22 +1,21 @@
-import qs from 'querystring'
 import path from 'path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
-import type { ResolvedOptions } from '.'
+import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import { normalizePath } from '@rollup/pluginutils'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import { transformWithEsbuild } from 'vite'
 import {
   createDescriptor,
   getPrevDescriptor,
   setSrcDescriptor
 } from './utils/descriptorCache'
-import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
-import { normalizePath } from '@rollup/pluginutils'
-import { resolveScript, isUseInlineTemplate } from './script'
+import { isUseInlineTemplate, resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
-import type { RawSourceMap } from 'source-map'
-import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import { isEqualBlock, isOnlyTemplateChanged } from './handleHotUpdate'
 import { createRollupError } from './utils/error'
-import { transformWithEsbuild } from 'vite'
 import { EXPORT_HELPER_ID } from './helper'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
@@ -212,6 +211,11 @@ export async function transformMain(
     code: resolvedCode,
     map: resolvedMap || {
       mappings: ''
+    },
+    meta: {
+      vite: {
+        lang: descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
+      }
     }
   }
 }
@@ -223,6 +227,7 @@ async function genTemplateCode(
   ssr: boolean
 ) {
   const template = descriptor.template!
+  const hasScoped = descriptor.styles.some((style) => style.scoped)
 
   // If the template is not using pre-processor AND is not using external src,
   // compile and inline it directly in the main module. When served in vite this
@@ -237,12 +242,22 @@ async function genTemplateCode(
     )
   } else {
     if (template.src) {
-      await linkSrcToDescriptor(template.src, descriptor, pluginContext)
+      await linkSrcToDescriptor(
+        template.src,
+        descriptor,
+        pluginContext,
+        hasScoped
+      )
     }
     const src = template.src || descriptor.filename
-    const srcQuery = template.src ? `&src=${descriptor.id}` : ``
+    const srcQuery = template.src
+      ? hasScoped
+        ? `&src=${descriptor.id}`
+        : '&src=true'
+      : ''
+    const scopedQuery = hasScoped ? `&scoped=true` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
-    const query = `?vue&type=template${srcQuery}${attrsQuery}`
+    const query = `?vue&type=template${srcQuery}${scopedQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
     const renderFnName = ssr ? 'ssrRender' : 'render'
     return {
@@ -268,7 +283,10 @@ async function genScriptCode(
   if (script) {
     // If the script is js/ts and has no external src, it can be directly placed
     // in the main module.
-    if ((!script.lang || script.lang === 'ts') && !script.src) {
+    if (
+      (!script.lang || (script.lang === 'ts' && options.devServer)) &&
+      !script.src
+    ) {
       scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
@@ -277,12 +295,12 @@ async function genScriptCode(
       map = script.map
     } else {
       if (script.src) {
-        await linkSrcToDescriptor(script.src, descriptor, pluginContext)
+        await linkSrcToDescriptor(script.src, descriptor, pluginContext, false)
       }
       const src = script.src || descriptor.filename
       const langFallback = (script.src && path.extname(src).slice(1)) || 'js'
       const attrsQuery = attrsToQuery(script.attrs, langFallback)
-      const srcQuery = script.src ? `&src=${descriptor.id}` : ``
+      const srcQuery = script.src ? `&src=true` : ``
       const query = `?vue&type=script${srcQuery}${attrsQuery}`
       const request = JSON.stringify(src + query)
       scriptCode =
@@ -307,13 +325,22 @@ async function genStyleCode(
     for (let i = 0; i < descriptor.styles.length; i++) {
       const style = descriptor.styles[i]
       if (style.src) {
-        await linkSrcToDescriptor(style.src, descriptor, pluginContext)
+        await linkSrcToDescriptor(
+          style.src,
+          descriptor,
+          pluginContext,
+          style.scoped
+        )
       }
       const src = style.src || descriptor.filename
       // do not include module in default query, since we use it to indicate
       // that the module needs to export the modules json
       const attrsQuery = attrsToQuery(style.attrs, 'css')
-      const srcQuery = style.src ? `&src=${descriptor.id}` : ``
+      const srcQuery = style.src
+        ? style.scoped
+          ? `&src=${descriptor.id}`
+          : '&src=true'
+        : ''
       const directQuery = asCustomElement ? `&inline` : ``
       const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
       const styleRequest = src + query + attrsQuery
@@ -383,11 +410,11 @@ async function genCustomBlockCode(
   for (let index = 0; index < descriptor.customBlocks.length; index++) {
     const block = descriptor.customBlocks[index]
     if (block.src) {
-      await linkSrcToDescriptor(block.src, descriptor, pluginContext)
+      await linkSrcToDescriptor(block.src, descriptor, pluginContext, false)
     }
     const src = block.src || descriptor.filename
     const attrsQuery = attrsToQuery(block.attrs, block.type)
-    const srcQuery = block.src ? `&src` : ``
+    const srcQuery = block.src ? `&src=true` : ``
     const query = `?vue&type=${block.type}&index=${index}${srcQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
     code += `import block${index} from ${request}\n`
@@ -404,13 +431,14 @@ async function genCustomBlockCode(
 async function linkSrcToDescriptor(
   src: string,
   descriptor: SFCDescriptor,
-  pluginContext: PluginContext
+  pluginContext: PluginContext,
+  scoped?: boolean
 ) {
   const srcFile =
     (await pluginContext.resolve(src, descriptor.filename))?.id || src
   // #1812 if the src points to a dep file, the resolved id may contain a
   // version query.
-  setSrcDescriptor(srcFile.replace(/\?.*$/, ''), descriptor)
+  setSrcDescriptor(srcFile.replace(/\?.*$/, ''), descriptor, scoped)
 }
 
 // these are built-in query parameters so should be ignored
@@ -426,8 +454,8 @@ function attrsToQuery(
   for (const name in attrs) {
     const value = attrs[name]
     if (!ignoreList.includes(name)) {
-      query += `&${qs.escape(name)}${
-        value ? `=${qs.escape(String(value))}` : ``
+      query += `&${encodeURIComponent(name)}${
+        value ? `=${encodeURIComponent(value)}` : ``
       }`
     }
   }

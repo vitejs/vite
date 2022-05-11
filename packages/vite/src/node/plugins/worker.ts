@@ -1,12 +1,12 @@
+import path from 'path'
+import type Rollup from 'rollup'
+import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl } from './asset'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
-import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedFile } from 'rollup'
+import { fileToUrl } from './asset'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -260,7 +260,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             }`,
 
-            // Empty sourcemap to supress Rollup warning
+            // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' }
           }
         } else {
@@ -281,7 +281,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url
         )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
-        map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+        map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
       }
     },
 

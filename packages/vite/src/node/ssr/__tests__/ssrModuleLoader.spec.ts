@@ -1,4 +1,5 @@
 import { resolve } from 'path'
+import { expect, test, vi } from 'vitest'
 import { createServer } from '../../index'
 
 const badjs = resolve(__dirname, './fixtures/ssrModuleLoader-bad.js')
@@ -6,7 +7,7 @@ const THROW_MESSAGE = 'it is an expected error'
 
 test('always throw error when evaluating an wrong SSR module', async () => {
   const viteServer = await createServer()
-  const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+  const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
   const expectedErrors = []
   for (const i of [0, 1]) {
     try {

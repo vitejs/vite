@@ -1,15 +1,14 @@
 import path from 'path'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { transformImportGlob } from '../importGlob'
-import { bareImportRE, combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { bareImportRE, combineSourcemaps } from '../utils'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -23,6 +22,8 @@ export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 const preloadHelperId = 'vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
+
+const dynamicImportPrefixRE = /import\s*\(/
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -94,11 +95,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
 
   return {
     name: 'vite:build-import-analysis',
@@ -118,7 +114,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob')
+        !dynamicImportPrefixRE.test(source)
       ) {
         return
       }
@@ -149,48 +145,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        // import.meta.glob
-        if (
-          source.slice(start, end) === 'import.meta' &&
-          source.slice(end, end + 5) === '.glob'
-        ) {
-          // es worker allow globEager / glob
-          // iife worker just allow globEager
-          if (
-            isWorker &&
-            config.worker.format === 'iife' &&
-            source.slice(end, end + 10) !== '.globEager'
-          ) {
-            this.error(
-              '`import.meta.glob` is not supported in workers with `iife` format, use `import.meta.globEager` instead.',
-              end
-            )
-          }
-          const { importsString, exp, endIndex, isEager } =
-            await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              config.root,
-              config.logger,
-              undefined,
-              resolve,
-              insertPreload
-            )
-          str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-          if (!isEager) {
-            needPreloadHelper = true
-          }
-          continue
-        }
+        const isDynamic = dynamicIndex > -1
 
-        if (dynamicIndex > -1 && insertPreload) {
+        if (isDynamic && insertPreload) {
           needPreloadHelper = true
-          const original = source.slice(expStart, expEnd)
-          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
+          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          str().appendRight(
+            expEnd,
+            `,${isModernFlag}?"${preloadMarker}":void 0)`
+          )
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -200,12 +163,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (
           specifier &&
           isCSSRequest(specifier) &&
-          source.slice(expStart, start).includes('from') &&
+          // always inject ?used query when it is a dynamic import
+          // because there is no way to check whether the default export is used
+          (source.slice(expStart, start).includes('from') || isDynamic) &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+          str().overwrite(start, end, isDynamic ? `'${url}'` : url, {
             contentOnly: true
           })
         }

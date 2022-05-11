@@ -1,24 +1,24 @@
 import colors from 'picocolors'
 import _debug from 'debug'
+import { getHash } from '../utils'
+import type { ViteDevServer } from '..'
 import {
-  runOptimizeDeps,
-  getOptimizedDepPath,
-  depsFromOptimizedDepInfo,
-  newDepOptimizationProcessing,
-  loadCachedDepOptimizationMetadata,
-  createOptimizedDepsMetadata,
   addOptimizedDepInfo,
-  discoverProjectDependencies,
+  createOptimizedDepsMetadata,
+  debuggerViteDeps as debug,
+  depsFromOptimizedDepInfo,
   depsLogString,
-  debuggerViteDeps as debug
+  discoverProjectDependencies,
+  getOptimizedDepPath,
+  loadCachedDepOptimizationMetadata,
+  newDepOptimizationProcessing,
+  runOptimizeDeps
 } from '.'
 import type {
   DepOptimizationProcessing,
   OptimizedDepInfo,
   OptimizedDeps
 } from '.'
-import type { ViteDevServer } from '..'
-import { getHash } from '../utils'
 
 const isDebugEnabled = _debug('vite:deps').enabled
 
@@ -189,8 +189,8 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           )
         })
 
-      const commitProcessing = () => {
-        processingResult.commit()
+      const commitProcessing = async () => {
+        await processingResult.commit()
 
         // While optimizeDeps is running, new missing deps may be discovered,
         // in which case they will keep being added to metadata.discovered
@@ -240,7 +240,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
       }
 
       if (!needsReload) {
-        commitProcessing()
+        await commitProcessing()
 
         if (!isDebugEnabled) {
           if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -270,7 +270,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
             }
           )
         } else {
-          commitProcessing()
+          await commitProcessing()
 
           if (!isDebugEnabled) {
             if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -296,7 +296,6 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
       // Reset missing deps, let the server rediscover the dependencies
       metadata.discovered = {}
-      fullReload()
     }
 
     currentlyProcessing = false

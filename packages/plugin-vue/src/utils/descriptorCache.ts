@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import slash from 'slash'
 import { createHash } from 'crypto'
+import slash from 'slash'
 import type { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
 import type { ResolvedOptions, VueQuery } from '..'
 
@@ -69,13 +69,24 @@ export function getSrcDescriptor(
   filename: string,
   query: VueQuery
 ): SFCDescriptor {
-  return cache.get(`${filename}?src=${query.src}`)!
+  if (query.scoped) {
+    return cache.get(`${filename}?src=${query.src}`)!
+  }
+  return cache.get(filename)!
 }
 
-export function setSrcDescriptor(filename: string, entry: SFCDescriptor): void {
-  // if multiple Vue files use the same src file, they will be overwritten
-  // should use other key
-  cache.set(`${filename}?src=${entry.id}`, entry)
+export function setSrcDescriptor(
+  filename: string,
+  entry: SFCDescriptor,
+  scoped?: boolean
+): void {
+  if (scoped) {
+    // if multiple Vue files use the same src file, they will be overwritten
+    // should use other key
+    cache.set(`${filename}?src=${entry.id}`, entry)
+    return
+  }
+  cache.set(filename, entry)
 }
 
 function getHash(text: string): string {

@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '..'
 
 describe('resolveBuildOptions in dev', () => {

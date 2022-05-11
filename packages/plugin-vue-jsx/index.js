@@ -48,12 +48,6 @@ function vueJsxPlugin(options = {}) {
     name: 'vite:vue-jsx',
 
     config(config) {
-      const optionsApi = config.define
-        ? config.define.__VUE_OPTIONS_API__
-        : undefined
-      const devTools = config.define
-        ? config.define.__VUE_PROD_DEVTOOLS__
-        : undefined
       return {
         // only apply esbuild to ts files
         // since we are handling jsx and tsx now
@@ -61,8 +55,8 @@ function vueJsxPlugin(options = {}) {
           include: /\.ts$/
         },
         define: {
-          __VUE_OPTIONS_API__: optionsApi != null ? optionsApi : true,
-          __VUE_PROD_DEVTOOLS__: devTools != null ? devTools : false
+          __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
+          __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         }
       }
     },

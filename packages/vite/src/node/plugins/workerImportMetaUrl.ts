@@ -1,16 +1,16 @@
+import path from 'path'
 import JSON5 from 'json5'
+import MagicString from 'magic-string'
+import type { RollupError } from 'rollup'
+import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl } from './asset'
 import { cleanUrl, injectQuery } from '../utils'
-import path from 'path'
-import { workerFileToUrl } from './worker'
 import { parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
-import type { RollupError } from 'rollup'
-import { emptyString } from '../cleanString'
+import { workerFileToUrl } from './worker'
+import { fileToUrl } from './asset'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
@@ -110,7 +110,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
-        const cleanString = emptyString(code)
+        const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 

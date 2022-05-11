@@ -27,22 +27,6 @@ export default {
 }
 ```
 
-When targeting IE11, you also need `regenerator-runtime`:
-
-```js
-// vite.config.js
-import legacy from '@vitejs/plugin-legacy'
-
-export default {
-  plugins: [
-    legacy({
-      targets: ['ie >= 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime']
-    })
-  ]
-}
-```
-
 ## Options
 
 ### `targets`
