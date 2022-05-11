@@ -29,7 +29,7 @@ module.exports = defineConfig({
     'node/no-missing-import': [
       'error',
       {
-        allowModules: ['types', 'estree', 'less', 'sass', 'stylus', '~utils'],
+        allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -105,7 +105,8 @@ module.exports = defineConfig({
       files: ['playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
-        'node/no-extraneous-require': 'off'
+        'node/no-extraneous-require': 'off',
+        'node/no-missing-import': 'off'
       }
     },
     {
