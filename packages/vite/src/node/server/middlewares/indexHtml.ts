@@ -217,7 +217,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&index=${index}.css`
+      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
