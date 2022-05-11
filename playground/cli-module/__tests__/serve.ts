@@ -1,14 +1,11 @@
 // this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import path from 'path'
 import execa from 'execa'
-import { workspaceRoot, ports } from '../../testUtils'
 import kill from 'kill-port'
+import { isWindows, ports, viteBinPath } from '~utils'
 
-const isWindows = process.platform === 'win32'
 export const port = ports['cli-module']
-const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
 
 export async function serve(root: string, isProd: boolean) {
   // collect stdout and stderr streams from child processes here to avoid interfering with regular jest output
@@ -39,7 +36,7 @@ export async function serve(root: string, isProd: boolean) {
 
   // only run `vite build` when needed
   if (isProd) {
-    const buildCommand = `${viteBin} build`
+    const buildCommand = `${viteBinPath} build`
     try {
       const buildProcess = execa.command(buildCommand, {
         cwd: root,
@@ -62,7 +59,7 @@ export async function serve(root: string, isProd: boolean) {
   if (isProd) {
     viteServerArgs.unshift('preview')
   }
-  const serverCommand = `${viteBin} ${viteServerArgs.join(' ')}`
+  const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
   const serverProcess = execa.command(serverCommand, {
     cwd: root,
     stdio: 'pipe'

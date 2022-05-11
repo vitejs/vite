@@ -1,5 +1,5 @@
-import { build } from 'vite'
 import path from 'path'
+import { build } from 'vite'
 import type { OutputChunk, RollupOutput } from 'rollup'
 
 describe('vue component library', () => {

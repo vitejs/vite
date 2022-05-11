@@ -3,8 +3,8 @@
 // This script is called from postinstall hooks in playground packages that
 // uses the file: protocol, and copies the file: deps into node_modules.
 
-import { copySync, removeSync } from 'fs-extra'
 import { join, resolve } from 'path'
+import { copySync, removeSync } from 'fs-extra'
 
 const root = process.cwd()
 const pkg = require(join(root, 'package.json'))

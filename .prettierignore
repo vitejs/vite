@@ -4,6 +4,7 @@ packages/vite/temp/
 packages/plugin-react/dist/
 packages/plugin-vue/dist/
 packages/*/CHANGELOG.md
+playground-temp/
 LICENSE.md
 .prettierignore
 pnpm-lock.yaml

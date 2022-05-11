@@ -1,10 +1,14 @@
 import {
+  beforeAllError,
+  browserLogs,
+  clearBeforeAllError,
   editFile,
   isBuild,
   isServe,
+  page,
   readFile,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
@@ -13,7 +17,7 @@ describe.runIf(isBuild)('build', () => {
     expect(buildError.message).toMatch(
       /^parsing .* failed: SyntaxError: Unexpected token } in JSON at position \d+$/
     )
-    beforeAllError = null // got expected error, null it here so testsuite does not fail from rethrow in afterAll
+    clearBeforeAllError() // got expected error, null it here so testsuite does not fail from rethrow in afterAll
   })
 
   test('should not output files to dist', () => {

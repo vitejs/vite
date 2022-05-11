@@ -1,4 +1,4 @@
-import { isBuild } from '../../testUtils'
+import { isBuild, serverLogs } from '~utils'
 
 test.runIf(isBuild)('should not output missing source file warning', () => {
   serverLogs.forEach((log) => {

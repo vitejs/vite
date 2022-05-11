@@ -1,4 +1,4 @@
-import { getColor, isBuild, untilUpdated } from '../../testUtils'
+import { getColor, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')

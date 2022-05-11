@@ -1,4 +1,5 @@
-import { getColor, isBuild, editFile, isServe } from '../../testUtils'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -79,7 +80,6 @@ describe('main', () => {
 
 describe('nested', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/')
   })
 
@@ -88,7 +88,6 @@ describe('nested', () => {
 
 describe('nested w/ query', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/index.html?v=1')
   })
 
@@ -98,7 +97,6 @@ describe('nested w/ query', () => {
 describe.runIf(isBuild)('build', () => {
   describe('scriptAsync', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptAsync.html')
     })
 
@@ -110,7 +108,6 @@ describe.runIf(isBuild)('build', () => {
 
   describe('scriptMixed', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptMixed.html')
     })
 
@@ -124,7 +121,6 @@ describe.runIf(isBuild)('build', () => {
     // Ensure that the modulePreload polyfill is discarded in this case
 
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/zeroJS.html')
     })
 
@@ -168,7 +164,6 @@ describe.runIf(isBuild)('build', () => {
 
 describe('noHead', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noHead.html')
   })
 
@@ -183,7 +178,6 @@ describe('noHead', () => {
 
 describe('noBody', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noBody.html')
   })
 

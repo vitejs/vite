@@ -1,11 +1,14 @@
 import {
+  browserErrors,
+  browserLogs,
   editFile,
   getColor,
   isBuild,
   isServe,
+  page,
   readManifest,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 const outerAssetMatch = isBuild
   ? /\/dev\/assets\/logo\.\w{8}\.png/

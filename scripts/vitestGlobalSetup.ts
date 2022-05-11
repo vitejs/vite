@@ -1,6 +1,6 @@
 import os from 'os'
-import fs from 'fs-extra'
 import path from 'path'
+import fs from 'fs-extra'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
 

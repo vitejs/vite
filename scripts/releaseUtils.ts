@@ -1,11 +1,11 @@
 /**
  * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs'
+import path from 'path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions } from 'execa'
 import execa from 'execa'
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs'
-import path from 'path'
 import type { ReleaseType } from 'semver'
 import semver from 'semver'
 

@@ -1,6 +1,13 @@
-import { isBuild, isServe, testDir, untilUpdated } from '../../testUtils'
 import path from 'path'
 import fs from 'fs'
+import {
+  isBuild,
+  isServe,
+  page,
+  serverLogs,
+  testDir,
+  untilUpdated
+} from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   test('es', async () => {

@@ -1,4 +1,4 @@
-import { isBuild } from '../../testUtils'
+import { browserLogs, isBuild, page, viteTestUrl } from '~utils'
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {

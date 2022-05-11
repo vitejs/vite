@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { isBuild, testDir } from '../../../testUtils'
+import { isBuild, testDir } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files

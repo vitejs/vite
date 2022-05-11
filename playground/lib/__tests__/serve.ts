@@ -4,14 +4,11 @@
 import path from 'path'
 import http from 'http'
 import sirv from 'sirv'
-import { ports } from '../../testUtils'
+import { page, ports, serverLogs, setViteUrl, viteTestUrl } from '~utils'
 
 export const port = ports.lib
 
 export async function serve(root, isBuildTest) {
-  // @ts-expect-error
-  global.serverLogs = []
-
   setupConsoleWarnCollector()
 
   if (!isBuildTest) {
@@ -38,10 +35,8 @@ export async function serve(root, isBuildTest) {
     ).listen()
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
-    const url =
-      // @ts-expect-error
-      (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
-    await page.goto(url)
+    setViteUrl(`http://localhost:${viteServer.config.server.port}${base}`)
+    await page.goto(viteTestUrl)
 
     return viteServer
   } else {
@@ -92,8 +87,7 @@ export async function serve(root, isBuildTest) {
 function setupConsoleWarnCollector() {
   const warn = console.warn
   console.warn = (...args) => {
-    // @ts-expect-error
-    global.serverLogs.push(args.join(' '))
+    serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

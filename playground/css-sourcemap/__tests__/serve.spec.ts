@@ -2,8 +2,10 @@ import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isServe
-} from '../../testUtils'
+  isServe,
+  page,
+  serverLogs
+} from '~utils'
 
 describe.runIf(isServe)('serve', () => {
   const getStyleTagContentIncluding = async (content: string) => {

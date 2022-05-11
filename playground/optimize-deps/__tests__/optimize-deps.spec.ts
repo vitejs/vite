@@ -1,4 +1,4 @@
-import { getColor, isBuild } from '../../testUtils'
+import { getColor, isBuild, page } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
   expect(await page.textContent('.cjs button')).toBe('count is 0')

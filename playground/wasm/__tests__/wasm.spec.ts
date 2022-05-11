@@ -1,4 +1,4 @@
-import { untilUpdated } from '../../testUtils'
+import { page, untilUpdated } from '~utils'
 
 test('should work when inlined', async () => {
   await page.click('.inline-wasm .run')

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { Page } from 'playwright-chromium'
-import { isBuild, testDir, untilUpdated } from '../../../testUtils'
+import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await page.click('.ping')

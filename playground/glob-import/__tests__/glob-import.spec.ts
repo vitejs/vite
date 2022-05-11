@@ -2,9 +2,10 @@ import {
   addFile,
   editFile,
   isBuild,
+  page,
   removeFile,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 const filteredResult = {
   './alias.js': {

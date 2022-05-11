@@ -2,8 +2,10 @@ import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isBuild
-} from '../../testUtils'
+  isBuild,
+  page,
+  serverLogs
+} from '~utils'
 
 if (!isBuild) {
   test('js', async () => {

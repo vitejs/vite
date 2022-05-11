@@ -2,7 +2,7 @@
 // the default e2e test serve behavior
 
 import path from 'path'
-import { ports } from '../../testUtils'
+import { ports } from '~utils'
 
 export const port = ports['ssr-react']
 
