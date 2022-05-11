@@ -9,6 +9,9 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "jsx": "preserve",
-    "types": ["vite/client", "vitest/globals", "node"]
+    "types": ["vite/client", "vitest/globals", "node"],
+    "paths": {
+      "~utils": ["./test-utils.ts"]
+    }
   }
 }

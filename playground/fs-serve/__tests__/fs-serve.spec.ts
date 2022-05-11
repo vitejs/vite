@@ -1,4 +1,4 @@
-import { isServe } from '../../testUtils'
+import { isServe } from '~utils'
 
 const json = require('../safe.json')
 const stringified = JSON.stringify(json)

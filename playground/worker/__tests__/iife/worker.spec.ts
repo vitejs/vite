@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../../testUtils'
+import { untilUpdated, isBuild, testDir } from '~utils'
 import type { Page } from 'playwright-chromium'
 import { test } from 'vitest'
 

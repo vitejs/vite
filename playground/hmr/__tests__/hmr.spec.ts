@@ -1,4 +1,4 @@
-import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
+import { isBuild, editFile, untilUpdated, getBg } from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')

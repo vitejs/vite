@@ -1,4 +1,4 @@
-import { getColor, isBuild, editFile, isServe } from '../../testUtils'
+import { getColor, isBuild, editFile, isServe } from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {

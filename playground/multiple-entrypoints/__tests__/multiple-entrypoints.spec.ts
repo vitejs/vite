@@ -1,4 +1,4 @@
-import { getColor, untilUpdated } from '../../testUtils'
+import { getColor, untilUpdated } from '~utils'
 
 test('should have css applied on second dynamic import', async () => {
   await untilUpdated(() => page.textContent('.content'), 'Initial', true)

@@ -5,7 +5,7 @@ import {
   isServe,
   readManifest,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 const outerAssetMatch = isBuild
   ? /\/dev\/assets\/logo\.\w{8}\.png/

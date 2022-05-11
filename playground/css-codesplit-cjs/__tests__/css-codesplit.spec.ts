@@ -1,4 +1,4 @@
-import { findAssetFile, getColor, isBuild, readManifest } from '../../testUtils'
+import { findAssetFile, getColor, isBuild, readManifest } from '~utils'
 
 test('should load both stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')

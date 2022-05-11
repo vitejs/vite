@@ -103,7 +103,7 @@ test('should work', async () => {
 })
 ```
 
-Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `playground/testUtils.ts`.
+Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are available in `playground/test-utils.ts` that you can import them with `import { } from '~utils'`.
 
 Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/9c6501d9c363eaa3c1e7708d531fb2a92b633db6/scripts/vitestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 

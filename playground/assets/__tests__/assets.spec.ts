@@ -9,7 +9,7 @@ import {
   editFile,
   notifyRebuildComplete,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/

@@ -5,7 +5,7 @@ import {
   readManifest,
   untilUpdated,
   getColor
-} from '../../testUtils'
+} from '~utils'
 
 test('should work', async () => {
   expect(await page.textContent('#app')).toMatch('Hello')

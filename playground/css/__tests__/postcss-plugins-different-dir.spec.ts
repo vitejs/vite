@@ -1,4 +1,4 @@
-import { getColor, getBgColor, ports } from '../../testUtils'
+import { getColor, getBgColor, ports } from '~utils'
 import { createServer } from 'vite'
 import path from 'path'
 

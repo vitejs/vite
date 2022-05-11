@@ -4,7 +4,7 @@
 import path from 'path'
 import http from 'http'
 import sirv from 'sirv'
-import { ports } from '../../testUtils'
+import { ports } from '~utils'
 
 export const port = ports.lib
 

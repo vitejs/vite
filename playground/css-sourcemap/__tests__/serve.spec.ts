@@ -1,9 +1,5 @@
 import { URL } from 'url'
-import {
-  extractSourcemap,
-  formatSourcemapForSnapshot,
-  isServe
-} from '../../testUtils'
+import { extractSourcemap, formatSourcemapForSnapshot, isServe } from '~utils'
 
 describe.runIf(isServe)('serve', () => {
   const getStyleTagContentIncluding = async (content: string) => {

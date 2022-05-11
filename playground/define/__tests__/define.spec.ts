@@ -1,5 +1,7 @@
+import viteConfig from '../vite.config'
+
 test('string', async () => {
-  const defines = require('../vite.config.js').define
+  const defines = viteConfig.define
 
   expect(await page.textContent('.exp')).toBe(
     String(typeof eval(defines.__EXP__))

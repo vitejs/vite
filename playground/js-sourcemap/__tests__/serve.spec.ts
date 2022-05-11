@@ -1,9 +1,5 @@
 import { URL } from 'url'
-import {
-  extractSourcemap,
-  formatSourcemapForSnapshot,
-  isBuild
-} from '../../testUtils'
+import { extractSourcemap, formatSourcemapForSnapshot, isBuild } from '~utils'
 
 if (!isBuild) {
   test('js', async () => {

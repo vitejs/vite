@@ -1,10 +1,4 @@
-import {
-  editFile,
-  isBuild,
-  isServe,
-  readFile,
-  untilUpdated
-} from '../../testUtils'
+import { editFile, isBuild, isServe, readFile, untilUpdated } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {

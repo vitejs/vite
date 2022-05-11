@@ -1,4 +1,4 @@
-import { editFile, untilUpdated } from '../../testUtils'
+import { editFile, untilUpdated } from '~utils'
 import { port } from './serve'
 import fetch from 'node-fetch'
 

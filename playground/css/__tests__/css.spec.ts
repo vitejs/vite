@@ -9,7 +9,7 @@ import {
   removeFile,
   testDir,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page

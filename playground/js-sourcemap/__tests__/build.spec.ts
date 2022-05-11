@@ -1,4 +1,4 @@
-import { isBuild } from '../../testUtils'
+import { isBuild } from '~utils'
 
 test.runIf(isBuild)('should not output sourcemap warning (#4939)', () => {
   serverLogs.forEach((log) => {

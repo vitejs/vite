@@ -1,4 +1,4 @@
-import { editFile, getColor, untilUpdated } from '../../testUtils'
+import { editFile, getColor, untilUpdated } from '~utils'
 
 test('fs', async () => {
   expect(await page.textContent('.fs')).toMatch('[success] alias to fs path')

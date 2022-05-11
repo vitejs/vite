@@ -1,4 +1,4 @@
-import { isBuild } from '../../testUtils'
+import { isBuild } from '~utils'
 
 const json = require('../test.json')
 const deepJson = require('vue/package.json')
