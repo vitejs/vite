@@ -58,6 +58,8 @@ jobs:
 
       - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: "0"
 
       - name: Build vite
         run: pnpm run ci-build-vite
@@ -97,6 +99,8 @@ jobs:
 
       - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Prepare
         run: |
