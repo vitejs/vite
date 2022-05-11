@@ -34,7 +34,7 @@ If you want to use break point and explore code execution you can use the ["Run 
 
 Some errors are masked and hidden away because of the layers of abstraction and sandboxed nature added by Vitest, Playwright, and Chromium. In order to see what's actually going wrong and the contents of the devtools console in those instances, follow this setup:
 
-1. Add a `debugger` statement to the `scripts/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
+1. Add a `debugger` statement to the `playground/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
 
 1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
 
@@ -69,7 +69,7 @@ And re-run `pnpm install` to link the package.
 
 ### Integration Tests
 
-Each package under `playground/` contains a `__tests__` directory. The tests are run using [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `vitest.config.e2e.js` and `scripts/vitest*` files.
+Each package under `playground/` contains a `__tests__` directory. The tests are run using [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) with custom integrations to make writing tests simple. The detailed setup is inside `vitest.config.e2e.js` and `playground/vitest*` files.
 
 Before running the tests, make sure that [Vite has been built](#repo-setup). On Windows, you may want to [activate Developer Mode](https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) to solve [issues with symlink creation for non-admins](https://github.com/vitejs/vite/issues/7390). Also you may want to [set git `core.symlinks` to `true` to solve issues with symlinks in git](https://github.com/vitejs/vite/issues/5242).
 
@@ -107,11 +107,11 @@ test('should work', async () => {
 
 Some common test helpers, e.g. `testDir`, `isBuild` or `editFile` are also available in the utils. Source code is located at `playground/test-utils.ts`.
 
-Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/9c6501d9c363eaa3c1e7708d531fb2a92b633db6/scripts/vitestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
+Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/main/playground/vitestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
 ### Extending the Test Suite
 
-To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/71215533ac60e8ff566dc3467feabfc2c71a01e2/playground/assets/index.html#L121):
+To add new tests, you should find a related playground to the fix or feature (or create a new one). As an example, static assets loading are tested in the [assets playground](https://github.com/vitejs/vite/tree/main/playground/assets). In this Vite App, there is a test for `?raw` imports, with [a section is defined in the `index.html` for it](https://github.com/vitejs/vite/blob/main/playground/assets/index.html#L121):
 
 ```html
 <h2>?raw import</h2>

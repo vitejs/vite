@@ -1,4 +1,4 @@
-// this is automatically detected by scripts/vitestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 import path from 'path'
 import { ports } from '~utils'
