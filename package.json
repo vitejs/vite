@@ -27,6 +27,7 @@
     "serve-docs": "vitepress serve docs",
     "release": "ts-node scripts/release.ts",
     "ci-publish": "ts-node scripts/publishCI.ts",
+    "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "build": "run-s build-vite build-plugin-vue build-plugin-react",
     "build-vite": "cd packages/vite && npm run build",
     "build-plugin-vue": "cd packages/plugin-vue && npm run build",

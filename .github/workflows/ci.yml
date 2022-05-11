@@ -102,9 +102,13 @@ jobs:
         run: |
           pnpm run ci-build-vite
           pnpm run build-plugin-vue
+          pnpm run build-plugin-react
 
       - name: Lint
         run: pnpm run lint
 
       - name: Check formatting
         run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck

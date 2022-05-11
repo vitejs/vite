@@ -1,6 +1,7 @@
 let count = 0
 const ports = new Set()
 
+// @ts-expect-error
 onconnect = (event) => {
   const port = event.ports[0]
   ports.add(port)
@@ -8,7 +9,7 @@ onconnect = (event) => {
   port.onmessage = (message) => {
     if (message.data === 'tick') {
       count++
-      ports.forEach((p) => {
+      ports.forEach((p: any) => {
         p.postMessage(count)
       })
     }
@@ -17,3 +18,5 @@ onconnect = (event) => {
 
 // for sourcemap
 console.log('my-shared-worker.js')
+
+export {}

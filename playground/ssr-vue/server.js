@@ -63,6 +63,7 @@ async function createServer(
         render = (await vite.ssrLoadModule('/src/entry-server.js')).render
       } else {
         template = indexProd
+        // @ts-ignore
         render = require('./dist/server/entry-server.js').render
       }
 

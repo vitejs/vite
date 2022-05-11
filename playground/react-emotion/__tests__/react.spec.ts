@@ -28,7 +28,7 @@ test('should update button style', async () => {
     })
   }
 
-  const styles = await page.evaluate(() => {
+  await page.evaluate(() => {
     return document.querySelector('button').style
   })
 

@@ -9,8 +9,8 @@ export default defineConfig({
   },
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
-    setupFiles: ['./scripts/vitestSetup.ts'],
-    globalSetup: ['./scripts/vitestGlobalSetup.ts'],
+    setupFiles: ['./playground/vitestSetup.ts'],
+    globalSetup: ['./playground/vitestGlobalSetup.ts'],
     testTimeout: process.env.CI ? 50000 : 20000,
     globals: true,
     reporters: 'dot',
