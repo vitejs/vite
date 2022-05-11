@@ -1,3 +1,9 @@
+## <small>2.3.3 (2022-05-11)</small>
+
+* fix(plugin-vue): allow overwriting template.transformAssetUrls.includeAbsolute (fix #4836) (#6779) ([443acf9](https://github.com/vitejs/vite/commit/443acf9)), closes [#4836](https://github.com/vitejs/vite/issues/4836) [#6779](https://github.com/vitejs/vite/issues/6779)
+
+
+
 ## <small>2.3.2 (2022-05-04)</small>
 
 * feat: import ts with .js in vue (#7998) ([9974094](https://github.com/vitejs/vite/commit/9974094)), closes [#7998](https://github.com/vitejs/vite/issues/7998)
