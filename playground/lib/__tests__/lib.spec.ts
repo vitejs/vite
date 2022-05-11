@@ -1,8 +1,8 @@
-import { isBuild, findAssetFile, testDir } from '../../testUtils'
+import { isBuild, testDir, isServe } from '../../testUtils'
 import path from 'path'
 import fs from 'fs'
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('es', async () => {
     expect(await page.textContent('.es')).toBe('It works')
   })
@@ -42,8 +42,8 @@ if (isBuild) {
       expect(log).not.toMatch('All "@import" rules must come first')
     })
   })
-} else {
-  test('dev', async () => {
-    expect(await page.textContent('.demo')).toBe('It works')
-  })
-}
+})
+
+test.runIf(isServe)('dev', async () => {
+  expect(await page.textContent('.demo')).toBe('It works')
+})

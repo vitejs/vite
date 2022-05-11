@@ -175,11 +175,9 @@ describe('css url() references', () => {
     expect(bg).toMatch(assetMatch)
   })
 
-  if (isBuild) {
-    test('preserve postfix query/hash', () => {
-      expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
-    })
-  }
+  test.runIf(isBuild)('preserve postfix query/hash', () => {
+    expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
+  })
 })
 
 describe('image', () => {
@@ -282,20 +280,18 @@ test('new URL(`non-existent`, import.meta.url)', async () => {
   )
 })
 
-if (isBuild) {
-  test('manifest', async () => {
-    const manifest = readManifest('foo')
-    const entry = manifest['index.html']
+test.runIf(isBuild)('manifest', async () => {
+  const manifest = readManifest('foo')
+  const entry = manifest['index.html']
 
-    for (const file of listAssets('foo')) {
-      if (file.endsWith('.css')) {
-        expect(entry.css).toContain(`assets/${file}`)
-      } else if (!file.endsWith('.js')) {
-        expect(entry.assets).toContain(`assets/${file}`)
-      }
+  for (const file of listAssets('foo')) {
+    if (file.endsWith('.css')) {
+      expect(entry.css).toContain(`assets/${file}`)
+    } else if (!file.endsWith('.js')) {
+      expect(entry.assets).toContain(`assets/${file}`)
     }
-  })
-}
+  }
+})
 
 describe.runIf(isBuild)('css and assets in css in build watch', () => {
   test('css will not be lost and css does not contain undefined', async () => {

@@ -1,4 +1,4 @@
-import { getColor, isBuild, editFile } from '../../testUtils'
+import { getColor, isBuild, editFile, isServe } from '../../testUtils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -95,7 +95,7 @@ describe('nested w/ query', () => {
   testPage(true)
 })
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   describe('scriptAsync', () => {
     beforeAll(async () => {
       // viteTestUrl is globally injected in scripts/vitestSetup.ts
@@ -164,7 +164,7 @@ if (isBuild) {
       )
     })
   })
-}
+})
 
 describe('noHead', () => {
   beforeAll(async () => {
@@ -211,28 +211,26 @@ describe('unicode path', () => {
   })
 })
 
-if (!isBuild) {
-  describe('invalid', () => {
-    test('should be 500 with overlay', async () => {
-      const response = await page.goto(viteTestUrl + '/invalid.html')
-      expect(response.status()).toBe(500)
+describe.runIf(isServe)('invalid', () => {
+  test('should be 500 with overlay', async () => {
+    const response = await page.goto(viteTestUrl + '/invalid.html')
+    expect(response.status()).toBe(500)
 
-      const errorOverlay = await page.waitForSelector('vite-error-overlay')
-      expect(errorOverlay).toBeTruthy()
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
 
-      const message = await errorOverlay.$$eval('.message-body', (m) => {
-        return m[0].innerHTML
-      })
-      expect(message).toMatch(/^Unable to parse HTML/)
+    const message = await errorOverlay.$$eval('.message-body', (m) => {
+      return m[0].innerHTML
     })
-
-    test('should reload when fixed', async () => {
-      const response = await page.goto(viteTestUrl + '/invalid.html')
-      await editFile('invalid.html', (content) => {
-        return content.replace('<div Bad', '<div> Good')
-      })
-      const content = await page.waitForSelector('text=Good HTML')
-      expect(content).toBeTruthy()
-    })
+    expect(message).toMatch(/^Unable to parse HTML/)
   })
-}
+
+  test('should reload when fixed', async () => {
+    const response = await page.goto(viteTestUrl + '/invalid.html')
+    await editFile('invalid.html', (content) => {
+      return content.replace('<div Bad', '<div> Good')
+    })
+    const content = await page.waitForSelector('text=Good HTML')
+    expect(content).toBeTruthy()
+  })
+})

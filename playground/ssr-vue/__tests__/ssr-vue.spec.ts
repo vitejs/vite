@@ -168,19 +168,17 @@ test('import.meta.url', async () => {
   expect(await page.textContent('.protocol')).toEqual('file:')
 })
 
-test('dynamic css file should be preloaded', async () => {
-  if (isBuild) {
-    await page.goto(url)
-    const homeHtml = await (await fetch(url)).text()
-    const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
-    const filename = re.exec(homeHtml)[1]
-    const manifest = require(resolve(
-      process.cwd(),
-      './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
-    ))
-    const depFile = manifest[filename]
-    for (const file of depFile) {
-      expect(homeHtml).toMatch(file)
-    }
+test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
+  await page.goto(url)
+  const homeHtml = await (await fetch(url)).text()
+  const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
+  const filename = re.exec(homeHtml)[1]
+  const manifest = require(resolve(
+    process.cwd(),
+    './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
+  ))
+  const depFile = manifest[filename]
+  for (const file of depFile) {
+    expect(homeHtml).toMatch(file)
   }
 })

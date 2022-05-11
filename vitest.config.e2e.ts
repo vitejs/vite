@@ -9,7 +9,8 @@ export default defineConfig({
     globals: true,
     reporters: 'dot',
     onConsoleLog(log) {
-      if (log.match(/experimental|jit engine|emitted file/i)) return false
+      if (log.match(/experimental|jit engine|emitted file|tailwind/i))
+        return false
     },
     maxThreads: process.env.CI ? 1 : undefined,
     minThreads: process.env.CI ? 1 : undefined
