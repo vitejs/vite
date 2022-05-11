@@ -3,4 +3,4 @@
   NPM_FLAGS = "--version" # prevent Netlify npm install
 [build]
   publish = "docs/.vitepress/dist"
-  command = "npx pnpm@6 i --store=node_modules/.pnpm-store --frozen-lockfile && npx pnpm@6 run ci-docs"
+  command = "npx pnpm i --store=node_modules/.pnpm-store --frozen-lockfile && npm run ci-docs"
