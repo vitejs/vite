@@ -40,7 +40,7 @@ test.runIf(isBuild)(
       (code) =>
         `import { useState } from 'react'
       import Child from './Child'
-      
+
       function App() {
         return (
           <div className="App">
@@ -48,7 +48,7 @@ test.runIf(isBuild)(
           </div>
         )
       }
-      
+
       export default App
       `
     )

@@ -31,11 +31,11 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
           "<template>
         <p>&lt;js&gt;</p>
       </template>
-      
+
       <script>
       console.log('script')
       </script>
-      
+
       <script setup>
       console.log('setup')
       </script>
@@ -60,11 +60,11 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
           "<template>
         <p>&lt;ts&gt;</p>
       </template>
-      
+
       <script lang=\\"ts\\">
       console.log('ts script')
       </script>
-      
+
       <script lang=\\"ts\\" setup>
       console.log('ts setup')
       </script>
@@ -91,25 +91,25 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-      
+
       <style>
       .css {
         color: red;
       }
       </style>
-      
+
       <style module>
       .css-module {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -142,25 +142,25 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-      
+
       <style>
       .css {
         color: red;
       }
       </style>
-      
+
       <style module>
       .css-module {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -193,25 +193,25 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         <p class=\\"css-scoped\\">&lt;css&gt; scoped</p>
         <p class=\\"css-scoped-nested\\">&lt;css&gt; scoped with nested</p>
       </template>
-      
+
       <style>
       .css {
         color: red;
       }
       </style>
-      
+
       <style module>
       .css-module {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped {
         color: red;
       }
       </style>
-      
+
       <style scoped>
       .css-scoped-nested {
         color: red;
@@ -241,7 +241,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
           "<template>
         <p class=\\"sass\\">&lt;sass&gt;</p>
       </template>
-      
+
       <style lang=\\"sass\\">
       .sass
         color: red
@@ -271,10 +271,10 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         <p class=\\"sass-with-import\\">&lt;sass&gt; with import</p>
         <p class=\\"sass-with-import-imported\\">&lt;sass&gt; with import (imported)</p>
       </template>
-      
+
       <style lang=\\"sass\\">
       @import './sassWithImportImported'
-      
+
       .sass-with-import
         color: red
       </style>
@@ -298,7 +298,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
           "<template>
         <p class=\\"less\\">&lt;less&gt; with additionalData</p>
       </template>
-      
+
       <style lang=\\"less\\">
       .less {
         color: @color;
@@ -346,7 +346,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         color: red
       ",
           "@import './src-import-imported'
-      
+
       .src-import-sass
         color: red
       ",

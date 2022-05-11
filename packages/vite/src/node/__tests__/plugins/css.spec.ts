@@ -197,12 +197,12 @@ describe('hoist @ rules', () => {
       /*
         @import "bla";
       */
-      
+
       /*
         @charset "utf-8";
         @import "bar";
       */
-      
+
     `
     )
   })
