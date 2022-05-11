@@ -838,6 +838,7 @@ export default defineConfig({
 ### build.dynamicImportVarsOptions
 
 - **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+- **Related:** [Dynamic Import](/guide/features#dynamic-import)
 
   Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
 
