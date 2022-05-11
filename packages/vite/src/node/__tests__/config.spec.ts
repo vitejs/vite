@@ -1,5 +1,5 @@
 import type { InlineConfig } from '..'
-import type { UserConfigExport, UserConfig } from '../config'
+import type { UserConfig, UserConfigExport } from '../config'
 import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
 
 describe('mergeConfig', () => {

@@ -2,22 +2,22 @@ import path from 'path'
 import { promises as fsp } from 'fs'
 import glob from 'fast-glob'
 import JSON5 from 'json5'
+import type { RollupError } from 'rollup'
+import colors from 'picocolors'
 import {
   isModernFlag,
-  preloadMethod,
-  preloadMarker
+  preloadMarker,
+  preloadMethod
 } from './plugins/importAnalysisBuild'
 import { isCSSRequest } from './plugins/css'
 import {
-  cleanUrl,
-  singlelineCommentsRE,
-  multilineCommentsRE,
   blankReplacer,
-  normalizePath
+  cleanUrl,
+  multilineCommentsRE,
+  normalizePath,
+  singlelineCommentsRE
 } from './utils'
-import type { RollupError } from 'rollup'
 import type { Logger } from '.'
-import colors from 'picocolors'
 
 interface GlobParams {
   base: string

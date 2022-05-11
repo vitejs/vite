@@ -1,14 +1,14 @@
 /* eslint no-console: 0 */
 
-import colors from 'picocolors'
 import type { AddressInfo, Server } from 'net'
 import os from 'os'
 import readline from 'readline'
+import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { ResolvedConfig } from '.'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'

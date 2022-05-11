@@ -1,7 +1,7 @@
-import { cssUrlRE, cssPlugin, hoistAtRules } from '../../plugins/css'
-import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
+import { resolveConfig } from '../../config'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {

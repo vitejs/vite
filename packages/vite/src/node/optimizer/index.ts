@@ -1,27 +1,27 @@
 import fs from 'fs'
 import path from 'path'
+import { createHash } from 'crypto'
+import { performance } from 'perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
-import { createHash } from 'crypto'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
+import { init, parse } from 'es-module-lexer'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
   emptyDir,
-  lookupFile,
-  normalizePath,
-  writeFile,
   flattenId,
+  lookupFile,
   normalizeId,
+  normalizePath,
   removeDirSync,
-  renameDir
+  renameDir,
+  writeFile
 } from '../utils'
-import { esbuildDepPlugin } from './esbuildDepPlugin'
-import { init, parse } from 'es-module-lexer'
-import { scanImports } from './scan'
 import { transformWithEsbuild } from '../plugins/esbuild'
-import { performance } from 'perf_hooks'
+import { esbuildDepPlugin } from './esbuildDepPlugin'
+import { scanImports } from './scan'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps

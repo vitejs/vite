@@ -1,21 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import {
-  // createDebugger,
-  isExternalUrl,
-  asyncReplace,
-  cleanUrl,
-  generateCodeFrame,
-  isDataUrl,
-  isObject,
-  normalizePath,
-  processSrcSet,
-  parseRequest,
-  combineSourcemaps
-} from '../utils'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -27,15 +12,6 @@ import type {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
-import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
-import type { ResolveFn, ViteDevServer } from '../'
-import {
-  getAssetFilename,
-  assetUrlRE,
-  fileToUrl,
-  checkPublicFile,
-  getAssetHash
-} from './asset'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
@@ -44,12 +20,35 @@ import type Sass from 'sass'
 import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import type { Alias } from 'types/alias'
-import type { ModuleNode } from '../server/moduleGraph'
-import { transform, formatMessages } from 'esbuild'
-import { addToHTMLProxyTransformResult } from './html'
-import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
+import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import type { ModuleNode } from '../server/moduleGraph'
+import type { ResolveFn, ViteDevServer } from '../'
+import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import {
+  asyncReplace,
+  cleanUrl,
+  combineSourcemaps,
+  generateCodeFrame,
+  isDataUrl,
+  isExternalUrl,
+  isObject,
+  normalizePath,
+  parseRequest,
+  processSrcSet
+} from '../utils'
 import { emptyCssComments } from '../utils'
+import { addToHTMLProxyTransformResult } from './html'
+import {
+  assetUrlRE,
+  checkPublicFile,
+  fileToUrl,
+  getAssetFilename,
+  getAssetHash
+} from './asset'
 
 // const debug = createDebugger('vite:css')
 

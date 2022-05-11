@@ -1,5 +1,5 @@
-import { searchForWorkspaceRoot } from '../searchRoot'
 import { resolve } from 'path'
+import { searchForWorkspaceRoot } from '../searchRoot'
 
 describe('searchForWorkspaceRoot', () => {
   test('lerna', () => {

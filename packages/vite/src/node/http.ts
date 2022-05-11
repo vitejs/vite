@@ -1,13 +1,13 @@
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
 import type {
-  OutgoingHttpHeaders as HttpServerHeaders,
-  Server as HttpServer
+  Server as HttpServer,
+  OutgoingHttpHeaders as HttpServerHeaders
 } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
+import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
-import type { Connect } from 'types/connect'
 import type { Logger } from './logger'
 
 export interface CommonServerOptions {

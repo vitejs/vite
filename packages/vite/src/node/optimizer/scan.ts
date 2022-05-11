@@ -1,35 +1,35 @@
 import fs from 'fs'
 import path from 'path'
+import { performance } from 'perf_hooks'
 import glob from 'fast-glob'
-import type { ResolvedConfig, Logger } from '..'
-import type { Loader, Plugin, OnLoadResult } from 'esbuild'
+import type { Loader, OnLoadResult, Plugin } from 'esbuild'
 import { build, transform } from 'esbuild'
+import { init, parse } from 'es-module-lexer'
+import MagicString from 'magic-string'
+import colors from 'picocolors'
+import type { Logger, ResolvedConfig } from '..'
 import {
-  KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
-  SPECIAL_QUERY_RE,
-  OPTIMIZABLE_ENTRY_RE
+  KNOWN_ASSET_TYPES,
+  OPTIMIZABLE_ENTRY_RE,
+  SPECIAL_QUERY_RE
 } from '../constants'
 import {
-  createDebugger,
-  normalizePath,
-  isObject,
   cleanUrl,
-  moduleListContains,
-  externalRE,
+  createDebugger,
   dataUrlRE,
+  externalRE,
+  isObject,
+  moduleListContains,
   multilineCommentsRE,
+  normalizePath,
   singlelineCommentsRE,
-  virtualModuleRE,
-  virtualModulePrefix
+  virtualModulePrefix,
+  virtualModuleRE
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
-import { init, parse } from 'es-module-lexer'
-import MagicString from 'magic-string'
 import { transformImportGlob } from '../importGlob'
-import { performance } from 'perf_hooks'
-import colors from 'picocolors'
 
 const debug = createDebugger('vite:deps')
 
