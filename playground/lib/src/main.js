@@ -3,7 +3,7 @@ export default function myLib(sel) {
   console.log({ ...'foo' })
 
   document.querySelector(sel).textContent = 'It works'
-}
 
-// Env vars should not be replaced
-export const processNodeEnv = process.env.NODE_ENV
+  // Env vars should not be replaced
+  console.log(process.env.NODE_ENV)
+}
