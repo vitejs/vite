@@ -1,4 +1,4 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
+import { isBuild, findAssetFile, testDir, untilUpdated } from 'testUtils'
 import path from 'path'
 import fs from 'fs'
 
@@ -28,7 +28,10 @@ if (isBuild) {
   })
 
   test('Library mode does not include `preload`', async () => {
-    expect(await page.textContent('.dynamic-import-message')).toBe('hello vite')
+    await untilUpdated(
+      () => page.textContent('.dynamic-import-message'),
+      'hello vite'
+    )
     const code = fs.readFileSync(
       path.join(testDir, 'dist/lib/dynamic-import-message.js'),
       'utf-8'
