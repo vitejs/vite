@@ -137,7 +137,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               importer
             )} file format, or if it's an asset, add "**/*${path.extname(
               importer
-            )}" to \`assetsInclude\` in your configuration.`;
+            )}" to \`assetsInclude\` in your configuration.`
 
         this.error(
           `Failed to parse source for import analysis because the content ` +
