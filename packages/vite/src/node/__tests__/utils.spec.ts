@@ -34,13 +34,13 @@ describe('injectQuery', () => {
     )
   })
 
-  test('path with unicode', () => {
+  test('path with Unicode', () => {
     expect(injectQuery('/usr/vite/東京', 'direct')).toEqual(
       '/usr/vite/東京?direct'
     )
   })
 
-  test('path with unicode, space, and %', () => {
+  test('path with Unicode, space, and %', () => {
     expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
       '/usr/vite/東京 %20 hello?direct'
     )
