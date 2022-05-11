@@ -1,10 +1,10 @@
+import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
   isServe,
   page
 } from '~utils'
-import { URL } from 'url'
 
 describe.runIf(isServe)('serve:vue-sourcemap', () => {
   const getStyleTagContentIncluding = async (content: string) => {

@@ -1,7 +1,7 @@
+import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
-import type { UserConfigExport, UserConfig } from '../config'
+import type { UserConfig, UserConfigExport } from '../config'
 import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
-import { describe, test, expect } from 'vitest'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {

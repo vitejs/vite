@@ -1,10 +1,10 @@
 import {
-  editFile,
-  untilUpdated,
-  removeFile,
   addFile,
+  editFile,
   isBuild,
-  page
+  page,
+  removeFile,
+  untilUpdated
 } from '~utils'
 
 test.runIf(isBuild)(

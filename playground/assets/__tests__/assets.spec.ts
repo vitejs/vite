@@ -1,19 +1,19 @@
+import { describe, expect, test } from 'vitest'
 import {
+  browserLogs,
+  editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
   listAssets,
-  readManifest,
-  readFile,
-  editFile,
   notifyRebuildComplete,
-  untilUpdated,
-  browserLogs,
   page,
+  readFile,
+  readManifest,
+  untilUpdated,
   watcher
 } from '~utils'
-import { test, expect, describe } from 'vitest'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/

@@ -1,6 +1,6 @@
 import { resolve } from 'path'
+import { expect, test, vi } from 'vitest'
 import { createServer } from '../../index'
-import { test, vi, expect } from 'vitest'
 
 const badjs = resolve(__dirname, './fixtures/ssrModuleLoader-bad.js')
 const THROW_MESSAGE = 'it is an expected error'

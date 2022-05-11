@@ -1,3 +1,6 @@
+import { resolve } from 'path'
+import fetch from 'node-fetch'
+import { port } from './serve'
 import {
   browserLogs,
   editFile,
@@ -6,9 +9,6 @@ import {
   page,
   untilUpdated
 } from '~utils'
-import { port } from './serve'
-import fetch from 'node-fetch'
-import { resolve } from 'path'
 
 const url = `http://localhost:${port}`
 

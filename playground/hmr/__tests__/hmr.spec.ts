@@ -1,10 +1,10 @@
 import {
-  isBuild,
-  editFile,
-  untilUpdated,
-  getBg,
-  page,
   browserLogs,
+  editFile,
+  getBg,
+  isBuild,
+  page,
+  untilUpdated,
   viteTestUrl
 } from '~utils'
 

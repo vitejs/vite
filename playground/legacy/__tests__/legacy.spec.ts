@@ -1,11 +1,11 @@
 import {
-  listAssets,
   findAssetFile,
-  isBuild,
-  readManifest,
-  untilUpdated,
   getColor,
-  page
+  isBuild,
+  listAssets,
+  page,
+  readManifest,
+  untilUpdated
 } from '~utils'
 
 test('should work', async () => {

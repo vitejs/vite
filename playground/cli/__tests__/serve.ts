@@ -2,8 +2,8 @@
 // the default e2e test serve behavior
 
 import execa from 'execa'
-import { ports, isWindows, viteBinPath } from '~utils'
 import kill from 'kill-port'
+import { isWindows, ports, viteBinPath } from '~utils'
 
 export const port = ports.cli
 

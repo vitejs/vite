@@ -3,7 +3,7 @@
 
 import execa from 'execa'
 import kill from 'kill-port'
-import { isWindows, viteBinPath, ports } from '~utils'
+import { isWindows, ports, viteBinPath } from '~utils'
 
 export const port = ports['cli-module']
 

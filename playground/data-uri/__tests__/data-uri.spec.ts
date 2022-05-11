@@ -1,4 +1,4 @@
-import { isBuild, findAssetFile, page } from '~utils'
+import { findAssetFile, isBuild, page } from '~utils'
 
 test('plain', async () => {
   expect(await page.textContent('.plain')).toBe('hi')

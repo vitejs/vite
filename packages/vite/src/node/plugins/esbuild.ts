@@ -1,13 +1,19 @@
 import path from 'path'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
 import type {
-  Message,
   Loader,
+  Message,
   TransformOptions,
   TransformResult
 } from 'esbuild'
 import { transform } from 'esbuild'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { SourceMap } from 'rollup'
+import { createFilter } from '@rollup/pluginutils'
+import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import { TSConfckParseError, findAll, parse } from 'tsconfck'
+import { combineSourcemaps } from '../utils'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   cleanUrl,
   createDebugger,
@@ -15,13 +21,7 @@ import {
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
-import type { ResolvedConfig, ViteDevServer } from '..'
-import { createFilter } from '@rollup/pluginutils'
-import { combineSourcemaps } from '../utils'
-import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
-import { parse, findAll, TSConfckParseError } from 'tsconfck'
+import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')

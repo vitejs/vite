@@ -1,5 +1,5 @@
-import { isBuild, page } from '~utils'
 import { port } from './serve'
+import { isBuild, page } from '~utils'
 
 const url = `http://localhost:${port}`
 

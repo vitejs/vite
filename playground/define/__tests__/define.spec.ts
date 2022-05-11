@@ -1,5 +1,5 @@
-import { page } from '~utils'
 import viteConfig from '../vite.config'
+import { page } from '~utils'
 
 test('string', async () => {
   const defines = viteConfig.define
