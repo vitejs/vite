@@ -1,17 +1,12 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by scripts/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../testUtils')
+import path from 'path'
+import { ports } from '../../testUtils'
 
-const port = (exports.port = ports['ssr-pug'])
+export const port = ports['ssr-pug']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root, isProd) {
   const { createServer } = require(path.resolve(root, 'server.js'))
   const { app, vite } = await createServer(root, isProd)
 

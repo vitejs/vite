@@ -1,26 +1,27 @@
-// @ts-check
-const os = require('os')
-const fs = require('fs-extra')
-const path = require('path')
-const { chromium } = require('playwright-chromium')
+import os from 'os'
+import fs from 'fs-extra'
+import path from 'path'
+import type { BrowserServer } from 'playwright-chromium'
+import { chromium } from 'playwright-chromium'
 
-const DIR = path.join(os.tmpdir(), 'jest_playwright_global_setup')
+const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 
-module.exports = async () => {
-  const browserServer = await chromium.launchServer({
+let browserServer: BrowserServer | undefined
+
+export async function setup() {
+  browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
       ? ['--no-sandbox', '--disable-setuid-sandbox']
       : undefined
   })
 
-  global.__BROWSER_SERVER__ = browserServer
-
   await fs.mkdirp(DIR)
   await fs.writeFile(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
 
   const tempDir = path.resolve(__dirname, '../playground-temp')
-  await fs.remove(tempDir)
+  await fs.ensureDir(tempDir)
+  await fs.emptyDir(tempDir)
   await fs
     .copy(path.resolve(__dirname, '../playground'), tempDir, {
       dereference: false,
@@ -38,4 +39,11 @@ module.exports = async () => {
         throw error
       }
     })
+}
+
+export async function teardown() {
+  browserServer?.close()
+  if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
+    fs.removeSync(path.resolve(__dirname, '../playground-temp'))
+  }
 }

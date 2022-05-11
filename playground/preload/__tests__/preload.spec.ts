@@ -6,7 +6,7 @@ test('should have no 404s', () => {
   })
 })
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('dynamic import', async () => {
     const appHtml = await page.content()
     expect(appHtml).toMatch('This is <b>home</b> page.')
@@ -22,4 +22,4 @@ if (isBuild) {
       /link rel="stylesheet".*?href="\/assets\/Hello\.\w{8}\.css"/
     )
   })
-}
+})

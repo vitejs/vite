@@ -409,7 +409,7 @@ export async function createServer(
     try {
       await server.close()
     } finally {
-      process.exit(0)
+      process.exit()
     }
   }
 
