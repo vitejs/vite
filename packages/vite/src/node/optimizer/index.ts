@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import { createHash } from 'crypto'
 import { performance } from 'perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
