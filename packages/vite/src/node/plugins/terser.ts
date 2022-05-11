@@ -6,7 +6,7 @@ import type { ResolvedConfig } from '..'
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
     new Worker(
-      (basedir: string, code: string, options: Terser.MinifyOptions) => {
+      async (basedir: string, code: string, options: Terser.MinifyOptions) => {
         // when vite is linked, the worker thread won't share the same resolve
         // root with vite itself, so we have to pass in the basedir and resolve
         // terser first.
@@ -14,7 +14,9 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         const terserPath = require.resolve('terser', {
           paths: [basedir]
         })
-        return require(terserPath).minify(code, options) as Terser.MinifyOutput
+        const terser = await import(terserPath)
+        const minify = terser.minify || terser.default?.minify
+        return minify(code, options) as Terser.MinifyOutput
       }
     )
 

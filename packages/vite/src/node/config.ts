@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { parse as parseUrl, pathToFileURL } from 'url'
 import { performance } from 'perf_hooks'
+import { pathToFileURL } from 'url'
 import colors from 'picocolors'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
@@ -816,7 +817,7 @@ export async function loadConfigFromFile(
     let userConfig: UserConfigExport | undefined
 
     if (isESM) {
-      const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
       if (isTS) {

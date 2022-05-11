@@ -1,7 +1,7 @@
+import testJSON from '../safe.json'
 import { isServe, page, viteTestUrl } from '~utils'
 
-const json = require('../safe.json')
-const stringified = JSON.stringify(json)
+const stringified = JSON.stringify(testJSON)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
