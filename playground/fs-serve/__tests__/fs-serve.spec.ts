@@ -13,7 +13,7 @@ describe.runIf(isServe)('main', () => {
   })
 
   test('named import', async () => {
-    expect(await page.textContent('.named')).toBe(json.msg)
+    expect(await page.textContent('.named')).toBe(testJSON.msg)
   })
 
   test('safe fetch', async () => {
