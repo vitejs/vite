@@ -1,6 +1,9 @@
 // test utils used in e2e tests for playgrounds.
 // `import { getColor } from '~utils'`
 
+// TODO: explicitly import APIs and remove this
+/// <reference types="vitest/globals"/>
+
 import fs from 'fs'
 import path from 'path'
 import colors from 'css-color-names'
@@ -10,9 +13,6 @@ import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
 import { page } from '../scripts/vitestSetup'
-
-// TODO: explicitly import APIs and remove this
-import 'vitest/globals'
 
 export * from '../scripts/vitestSetup'
 
