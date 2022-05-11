@@ -2,6 +2,7 @@
 // the default e2e test serve behavior
 
 import path from 'path'
+import kill from 'kill-port'
 import { ports } from '~utils'
 
 export const port = ports['ssr-vue']
@@ -33,7 +34,9 @@ export async function serve(root, isProd) {
     })
   }
 
-  const { createServer } = require(path.resolve(root, 'server.js'))
+  await kill(port)
+
+  const { createServer } = await import(path.resolve(root, 'server.js'))
   const { app, vite } = await createServer(root, isProd)
 
   return new Promise((resolve, reject) => {
