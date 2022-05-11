@@ -31,6 +31,12 @@ const json = isBuild
       msg: 'baz'
     }
 
+const globWithAlias = {
+  '/dir/alias.js': {
+    default: 'hi'
+  }
+}
+
 const allResult = {
   // JSON file should be properly transformed
   '/dir/alias.js': {
@@ -40,14 +46,15 @@ const allResult = {
   '/dir/foo.js': {
     msg: 'foo'
   },
-  '/dir/index.js': {
-    globWithAlias: {
-      '/dir/alias.js': {
-        default: 'hi'
+  '/dir/index.js': isBuild
+    ? {
+        modules: filteredResult,
+        globWithAlias
       }
-    },
-    modules: filteredResult
-  },
+    : {
+        globWithAlias,
+        modules: filteredResult
+      },
   '/dir/nested/bar.js': {
     modules: {
       '../baz.json': json
@@ -90,6 +97,12 @@ test('import glob raw', async () => {
 test('import relative glob raw', async () => {
   expect(await page.textContent('.relative-glob-raw')).toBe(
     JSON.stringify(relativeRawResult, null, 2)
+  )
+})
+
+test('unassigned import processes', async () => {
+  expect(await page.textContent('.side-effect-result')).toBe(
+    'Hello from side effect'
   )
 })
 

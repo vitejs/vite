@@ -1,4 +1,4 @@
-import { isBuild } from 'testUtils'
+import { isBuild } from '../../testUtils'
 
 const mode = isBuild ? `production` : `development`
 

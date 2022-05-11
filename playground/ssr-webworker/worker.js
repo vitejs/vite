@@ -2,11 +2,11 @@
 const path = require('path')
 const { Miniflare } = require('miniflare')
 
-const isDev = process.env.DEV
+const isTest = !!process.env.TEST
 
-async function createServer(root = process.cwd()) {
+async function createServer() {
   const mf = new Miniflare({
-    scriptPath: path.resolve(root, 'dist/worker/entry-worker.js')
+    scriptPath: path.resolve(__dirname, 'dist/worker/entry-worker.js')
   })
 
   const app = mf.createServer()
@@ -14,7 +14,7 @@ async function createServer(root = process.cwd()) {
   return { app }
 }
 
-if (isDev) {
+if (!isTest) {
   createServer().then(({ app }) =>
     app.listen(3000, () => {
       console.log('http://localhost:3000')
