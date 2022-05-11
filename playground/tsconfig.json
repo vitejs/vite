@@ -15,7 +15,10 @@
     "jsx": "preserve",
     "types": ["vite/client", "vitest/globals", "node"],
     "paths": {
-      "~utils": ["./test-utils.ts"]
+      "~utils": ["./test-utils.ts"],
+      "vite": ["../packages/vite/src/index.ts"],
+      "@vitejs/plugin-react": ["../packages/plugin-react/src/index.ts"],
+      "@vitejs/plugin-vue": ["../packages/plugin-vue/src/index.ts"]
     }
   }
 }
