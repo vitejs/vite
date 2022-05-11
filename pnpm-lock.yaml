@@ -59,6 +59,7 @@ importers:
       vite: workspace:*
       vitepress: ^0.22.4
       vitest: ^0.12.4
+      vue: ^3.2.33
     devDependencies:
       '@microsoft/api-extractor': 7.23.2
       '@types/babel__core': 7.1.19
@@ -109,6 +110,7 @@ importers:
       vite: link:packages/vite
       vitepress: 0.22.4
       vitest: 0.12.4
+      vue: 3.2.33
 
   packages/create-vite:
     specifiers:
