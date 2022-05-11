@@ -3,8 +3,8 @@
 // and plugin-react. For the moment, we can remove the extra exports code added in 0.14.4 to
 // continue using it.
 
-import { bold, red } from 'picocolors'
 import { readFileSync, writeFileSync } from 'fs'
+import { bold, red } from 'picocolors'
 
 const indexPath = process.argv[2]
 const varName = process.argv[3]

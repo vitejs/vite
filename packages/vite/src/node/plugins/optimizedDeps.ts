@@ -1,10 +1,9 @@
 import { promises as fs } from 'fs'
-import type { Plugin } from '../plugin'
 import colors from 'picocolors'
+import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import { isOptimizedDepFile } from '../optimizer'
-import type { DepOptimizationMetadata, OptimizedDepInfo } from '../optimizer'
+import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
 import type { ViteDevServer } from '..'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
@@ -26,14 +25,16 @@ export function optimizedDepsPlugin(): Plugin {
 
     async load(id) {
       if (server && isOptimizedDepFile(id, server.config)) {
-        const metadata = server?._optimizeDepsMetadata
+        const metadata = server?._optimizedDeps?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
           const browserHash = versionMatch
             ? versionMatch[1].split('=')[1]
             : undefined
-          const info = optimizeDepInfoFromFile(metadata, file)
+
+          // Search in both the currently optimized and newly discovered deps
+          const info = optimizedDepInfoFromFile(metadata, file)
           if (info) {
             if (browserHash && info.browserHash !== browserHash) {
               throwOutdatedRequest(id)
@@ -48,9 +49,9 @@ export function optimizedDepsPlugin(): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = server._optimizeDepsMetadata
+            const newMetadata = server._optimizedDeps?.metadata
             if (metadata !== newMetadata) {
-              const currentInfo = optimizeDepInfoFromFile(newMetadata!, file)
+              const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
                 throwOutdatedRequest(id)
               }
@@ -92,26 +93,4 @@ function throwOutdatedRequest(id: string) {
   // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
   throw err
-}
-
-function optimizeDepInfoFromFile(
-  metadata: DepOptimizationMetadata,
-  file: string
-): OptimizedDepInfo | undefined {
-  return (
-    findFileInfo(metadata.optimized, file) ||
-    findFileInfo(metadata.discovered, file)
-  )
-}
-
-function findFileInfo(
-  dependenciesInfo: Record<string, OptimizedDepInfo>,
-  file: string
-): OptimizedDepInfo | undefined {
-  for (const o of Object.keys(dependenciesInfo)) {
-    const info = dependenciesInfo[o]
-    if (info.file === file) {
-      return info
-    }
-  }
 }

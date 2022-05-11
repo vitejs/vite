@@ -4,7 +4,8 @@ export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { send } from './server/send'
-export { createLogger, printHttpServerUrls } from './logger'
+export { createLogger } from './logger'
+export { formatPostcssSourceMap } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export {
@@ -32,6 +33,7 @@ export type {
 export type {
   PreviewOptions,
   PreviewServer,
+  PreviewServerHook,
   ResolvedPreviewOptions
 } from './preview'
 export type {
@@ -39,7 +41,8 @@ export type {
   DepOptimizationOptions,
   DepOptimizationResult,
   DepOptimizationProcessing,
-  OptimizedDepInfo
+  OptimizedDepInfo,
+  OptimizedDeps
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'
@@ -71,7 +74,14 @@ export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
 export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
-export type { WebSocketServer } from './server/ws'
+export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
+import type { ChunkMetadata } from './plugins/metadata'
+
+export type {
+  WebSocketServer,
+  WebSocketClient,
+  WebSocketCustomListener
+} from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
 export type { SendOptions } from './server/send'
@@ -81,6 +91,7 @@ export type {
   TransformResult
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+
 export type {
   HMRPayload,
   ConnectedPayload,
@@ -102,10 +113,14 @@ export type {
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
-export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
-
-import type { ChunkMetadata } from './plugins/metadata'
+export type {
+  ImportGlobFunction,
+  ImportGlobEagerFunction,
+  ImportGlobOptions,
+  KnownAsTypeMap
+} from 'types/importGlob'
 
 declare module 'rollup' {
   export interface RenderedChunk {

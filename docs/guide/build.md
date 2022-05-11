@@ -45,7 +45,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.manualChunks` (see [Rollup docs](https://rollupjs.org/guide/en/#outputmanualchunks)). Until Vite 2.7, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.8, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/guide/en/#outputmanualchunks)). Until Vite 2.8, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.9, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
 
 ```js
 // vite.config.js
@@ -127,7 +127,8 @@ module.exports = defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
-      fileName: (format) => `my-lib.${format}.js`
+      // the proper extensions will be added
+      fileName: 'my-lib'
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
@@ -145,12 +146,21 @@ module.exports = defineConfig({
 })
 ```
 
+The entry file would contain exports that can be imported by users of your package:
+
+```js
+// lib/main.js
+import Foo from './Foo.vue'
+import Bar from './Bar.vue'
+export { Foo, Bar }
+```
+
 Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
 
 ```
 $ vite build
 building for production...
-[write] my-lib.es.js 0.08kb, brotli: 0.07kb
+[write] my-lib.es.mjs 0.08kb, brotli: 0.07kb
 [write] my-lib.umd.js 0.30kb, brotli: 0.16kb
 ```
 
@@ -161,10 +171,10 @@ Recommended `package.json` for your lib:
   "name": "my-lib",
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.es.js",
+  "module": "./dist/my-lib.es.mjs",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.es.js",
+      "import": "./dist/my-lib.es.mjs",
       "require": "./dist/my-lib.umd.js"
     }
   }

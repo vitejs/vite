@@ -1,0 +1,234 @@
+<h1>Resolve</h1>
+
+<h2>Utf8-bom import</h2>
+<p class="utf8-bom">fail</p>
+
+<h2>Deep import</h2>
+<p>Should show [2,4]:<span class="pre deep-import">fail</span></p>
+
+<h2>Entry resolving with exports field</h2>
+<p class="exports-entry">fail</p>
+
+<h2>Deep import with exports field</h2>
+<p class="exports-deep">fail</p>
+
+<h2>Deep import with query with exports field</h2>
+<p class="exports-deep-query">fail</p>
+
+<h2>Deep import with exports field + exposed directory</h2>
+<p class="exports-deep-exposed-dir">fail</p>
+
+<h2>Deep import with exports field + mapped directory</h2>
+<p class="exports-deep-mapped-dir">fail</p>
+
+<h2>Exports field env priority</h2>
+<p class="exports-env">fail</p>
+
+<h2>Resolve /index.*</h2>
+<p class="index">fail</p>
+
+<h2>Resolve dir and file of the same name (should prioritize file)</h2>
+<p class="dir-vs-file">fail</p>
+
+<h2>Resolve to non-duplicated file extension</h2>
+<p class="exact-extension">fail</p>
+
+<h2>Don't add extensions to directory names</h2>
+<p class="dir-with-ext">fail</p>
+
+<h2>
+  A ts module can import another ts module using its corresponding js file name
+</h2>
+<p class="ts-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding jsx file
+  name
+</h2>
+<p class="jsx-extension">fail</p>
+
+<h2>
+  A ts module can import another tsx module using its corresponding js file name
+</h2>
+<p class="tsx-extension">fail</p>
+
+<h2>Resolve file name containing dot</h2>
+<p class="dot">fail</p>
+
+<h2>Browser Field</h2>
+<p class="browser">fail</p>
+
+<h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
+<p class="require-pkg-with-module-field">fail</p>
+
+<h2>CSS Entry</h2>
+<p class="css"></p>
+
+<h2>Monorepo linked dep</h2>
+<p class="monorepo"></p>
+
+<h2>Plugin resolved virtual file</h2>
+<p class="virtual"></p>
+
+<h2>Plugin resolved custom virtual file</h2>
+<p class="custom-virtual"></p>
+
+<h2>Inline package</h2>
+<p class="inline-pkg"></p>
+
+<h2>resolve.extensions</h2>
+<p class="custom-ext"></p>
+
+<h2>resolve.mainFields</h2>
+<p class="custom-main-fields"></p>
+
+<h2>resolve.conditions</h2>
+<p class="custom-condition"></p>
+
+<h2>resolve package that contains # in path</h2>
+<p class="path-contains-sharp-symbol"></p>
+
+<script type="module">
+  function text(selector, text) {
+    document.querySelector(selector).textContent = text
+  }
+
+  // import from a utf-8 bom file
+  import { msg as bomMsg } from './utf8-bom/main.js'
+  text('.utf8-bom', bomMsg)
+
+  // deep import
+  import slicedToArray from '@babel/runtime/helpers/esm/slicedToArray'
+
+  const iterable = (function* () {
+    yield 2
+    yield 4
+    yield 6
+    yield 8
+  })()
+
+  text('.deep-import', JSON.stringify(slicedToArray(iterable, 2)))
+
+  // exports field
+  import { msg } from 'resolve-exports-path'
+  text('.exports-entry', msg)
+
+  // deep import w/ exports
+  import { msg as deepMsg } from 'resolve-exports-path/deep.js'
+  text('.exports-deep', deepMsg)
+
+  // deep import w/ exports w/ query
+  import deepPath from 'resolve-exports-path/deep.json?url'
+  text('.exports-deep-query', deepPath)
+
+  // deep import w/ exposed dir
+  import { msg as exposedDirMsg } from 'resolve-exports-path/dir/dir'
+  text('.exports-deep-exposed-dir', exposedDirMsg)
+
+  // deep import w/ mapped dir
+  import { msg as mappedDirMsg } from 'resolve-exports-path/dir-mapped/dir'
+  text('.exports-deep-mapped-dir', mappedDirMsg)
+
+  import { msg as exportsEnvMsg } from 'resolve-exports-env'
+  text('.exports-env', exportsEnvMsg)
+
+  // implicit index resolving
+  import { foo } from './util'
+  text('.index', foo())
+
+  // implicit dir index vs. file
+  import { file } from './dir'
+  text('.dir-vs-file', file)
+
+  // // exact extension vs. duplicated (.js.js)
+  import { file as exactExtMsg } from './exact-extension/file.js'
+  text('.exact-extension', exactExtMsg)
+
+  // don't add extensions to dir name (./dir-with-ext.js/index.js)
+  import { file as dirWithExtMsg } from './dir-with-ext'
+  text('.dir-with-ext', dirWithExtMsg)
+
+  import { msg as tsExtensionMsg } from './ts-extension'
+  text('.ts-extension', tsExtensionMsg)
+
+  import { msgJsx as tsJsxExtensionMsg } from './ts-extension'
+  text('.jsx-extension', tsJsxExtensionMsg)
+
+  import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
+  text('.tsx-extension', tsTsxExtensionMsg)
+
+  // filename with dot
+  import { bar } from './util/bar.util'
+  text('.dot', bar())
+
+  // browser field
+  import main from 'resolve-browser-field'
+
+  import a from 'resolve-browser-field/no-ext'
+  import b from 'resolve-browser-field/no-ext.js' // no substitution
+  import c from 'resolve-browser-field/ext'
+  import d from 'resolve-browser-field/ext.js'
+  import e from 'resolve-browser-field/ext-index/index.js'
+  import f from 'resolve-browser-field/ext-index'
+  import g from 'resolve-browser-field/no-ext-index/index.js' // no substitution
+  import h from 'resolve-browser-field/no-ext?query'
+
+  import { ra, rb, rc, rd, re, rf, rg } from 'resolve-browser-field/relative'
+
+  const success = [main, a, c, d, e, f, h, ra, rc, rd, re, rf]
+  const noSuccess = [b, g, rb, rg]
+
+  if (
+    [...success, ...noSuccess].filter((text) => text.includes('[success]'))
+      .length === success.length
+  ) {
+    text('.browser', main)
+  }
+
+  import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
+  text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
+
+  import { msg as customExtMsg } from './custom-ext'
+  text('.custom-ext', customExtMsg)
+
+  import { msg as customMainMsg } from 'resolve-custom-main-field'
+  text('.custom-main-fields', customMainMsg)
+
+  import { msg as customConditionMsg } from 'resolve-custom-condition'
+  text('.custom-condition', customConditionMsg)
+
+  // should be ok to import a file marked with browser: false
+  import 'resolve-browser-field/not-browser'
+  import 'resolve-browser-field/multiple.dot.path'
+
+  // css entry
+  import css from 'normalize.css'
+  if (typeof css === 'string') {
+    text('.css', '[success] resolve package with css entry file')
+  }
+
+  // monorepo linked dep w/ upper directory import
+  import { msg as linkedMsg } from 'resolve-linked'
+  text('.monorepo', linkedMsg)
+
+  import { msg as virtualMsg } from '@virtual-file'
+  text('.virtual', virtualMsg)
+
+  import { msg as customVirtualMsg } from '@custom-virtual-file'
+  text('.custom-virtual', customVirtualMsg)
+
+  import { msg as inlineMsg } from './inline-package'
+  text('.inline-pkg', inlineMsg)
+
+  import es5Ext from 'es5-ext'
+  text('.path-contains-sharp-symbol', '[success]')
+</script>
+
+<style>
+  .pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+  }
+</style>

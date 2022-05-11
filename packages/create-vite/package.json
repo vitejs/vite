@@ -1,6 +1,6 @@
 {
   "name": "create-vite",
-  "version": "2.8.0",
+  "version": "2.9.3",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
@@ -13,7 +13,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.6.0"
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,7 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "dependencies": {
     "kolorist": "^1.5.1",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "prompts": "^2.4.2"
   }
 }

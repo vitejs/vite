@@ -1,10 +1,10 @@
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { ViteDevServer } from '../..'
 import type { Connect } from 'types/connect'
-import { pad } from '../../utils'
 import strip from 'strip-ansi'
 import type { ErrorPayload } from 'types/hmrPayload'
+import { pad } from '../../utils'
+import type { ViteDevServer } from '../..'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // only copy the information we need and avoid serializing unnecessary

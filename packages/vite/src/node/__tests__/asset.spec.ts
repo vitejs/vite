@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { assetFileNamesToFileName, getAssetHash } from '../plugins/asset'
 
 describe('getAssetHash', () => {
