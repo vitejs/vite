@@ -36,7 +36,7 @@ export async function serve(root, isProd) {
 
   await kill(port)
 
-  const { createServer } = await import(path.resolve(root, 'server.js'))
+  const { createServer } = require(path.resolve(root, 'server.js'))
   const { app, vite } = await createServer(root, isProd)
 
   return new Promise((resolve, reject) => {

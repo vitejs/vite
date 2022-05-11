@@ -123,7 +123,7 @@ export function resolveTemplateCompilerOptions(
           slash(path.relative(options.root, path.dirname(filename)))
       }
     }
-  } else {
+  } else if (transformAssetUrls !== false) {
     // build: force all asset urls into import requests so that they go through
     // the assets plugin for asset registration
     assetUrlOptions = {
