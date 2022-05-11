@@ -1,0 +1,162 @@
+// Vitest Snapshot v1
+
+exports[`fixture > transform 1`] = `
+"import * as __vite_glob_1_0 from \\"./modules/a.ts\\"
+import * as __vite_glob_1_1 from \\"./modules/b.ts\\"
+import * as __vite_glob_1_2 from \\"./modules/index.ts\\"
+import { name as __vite_glob_3_0 } from \\"./modules/a.ts\\"
+import { name as __vite_glob_3_1 } from \\"./modules/b.ts\\"
+import { name as __vite_glob_3_2 } from \\"./modules/index.ts\\"
+import { default as __vite_glob_5_0 } from \\"./modules/a.ts?raw\\"
+import { default as __vite_glob_5_1 } from \\"./modules/b.ts?raw\\"
+import \\"../../../../../../types/importMeta\\";
+export const basic = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
+\\"./modules/index.ts\\": () => import(\\"./modules/index.ts\\")
+});
+export const basicEager = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_1_0,
+\\"./modules/b.ts\\": __vite_glob_1_1,
+\\"./modules/index.ts\\": __vite_glob_1_2
+});
+export const ignore = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\")
+});
+export const namedEager = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_3_0,
+\\"./modules/b.ts\\": __vite_glob_3_1,
+\\"./modules/index.ts\\": __vite_glob_3_2
+});
+export const namedDefault = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\").then(m => m[\\"default\\"]),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\").then(m => m[\\"default\\"]),
+\\"./modules/index.ts\\": () => import(\\"./modules/index.ts\\").then(m => m[\\"default\\"])
+});
+export const eagerAs = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_5_0,
+\\"./modules/b.ts\\": __vite_glob_5_1
+});
+export const rawImportModule = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts?raw\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts?raw\\")
+});
+export const excludeSelf = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
+});
+export const customQueryString = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts?custom\\")
+});
+export const customQueryObject = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts?foo=bar&raw=true\\")
+});
+export const parent = Object.assign({
+
+});
+export const rootMixedRelative = Object.assign({
+\\"/css.spec.ts\\": () => import(\\"../../css.spec.ts?url\\").then(m => m[\\"default\\"]),
+\\"/define.spec.ts\\": () => import(\\"../../define.spec.ts?url\\").then(m => m[\\"default\\"]),
+\\"/import.spec.ts\\": () => import(\\"../../import.spec.ts?url\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/a.ts\\": () => import(\\"../fixture-b/a.ts?url\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/b.ts\\": () => import(\\"../fixture-b/b.ts?url\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/index.ts\\": () => import(\\"../fixture-b/index.ts?url\\").then(m => m[\\"default\\"])
+});
+export const cleverCwd1 = Object.assign({
+\\"./node_modules/framework/pages/hello.page.js\\": () => import(\\"./node_modules/framework/pages/hello.page.js\\")
+});
+export const cleverCwd2 = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
+\\"../fixture-b/a.ts\\": () => import(\\"../fixture-b/a.ts\\"),
+\\"../fixture-b/b.ts\\": () => import(\\"../fixture-b/b.ts\\")
+});
+"
+`;
+
+exports[`fixture > transform with restoreQueryExtension 1`] = `
+"import * as __vite_glob_1_0 from \\"./modules/a.ts\\"
+import * as __vite_glob_1_1 from \\"./modules/b.ts\\"
+import * as __vite_glob_1_2 from \\"./modules/index.ts\\"
+import { name as __vite_glob_3_0 } from \\"./modules/a.ts\\"
+import { name as __vite_glob_3_1 } from \\"./modules/b.ts\\"
+import { name as __vite_glob_3_2 } from \\"./modules/index.ts\\"
+import { default as __vite_glob_5_0 } from \\"./modules/a.ts?raw\\"
+import { default as __vite_glob_5_1 } from \\"./modules/b.ts?raw\\"
+import \\"../../../../../../types/importMeta\\";
+export const basic = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
+\\"./modules/index.ts\\": () => import(\\"./modules/index.ts\\")
+});
+export const basicEager = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_1_0,
+\\"./modules/b.ts\\": __vite_glob_1_1,
+\\"./modules/index.ts\\": __vite_glob_1_2
+});
+export const ignore = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\")
+});
+export const namedEager = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_3_0,
+\\"./modules/b.ts\\": __vite_glob_3_1,
+\\"./modules/index.ts\\": __vite_glob_3_2
+});
+export const namedDefault = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\").then(m => m[\\"default\\"]),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\").then(m => m[\\"default\\"]),
+\\"./modules/index.ts\\": () => import(\\"./modules/index.ts\\").then(m => m[\\"default\\"])
+});
+export const eagerAs = Object.assign({
+\\"./modules/a.ts\\": __vite_glob_5_0,
+\\"./modules/b.ts\\": __vite_glob_5_1
+});
+export const rawImportModule = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts?raw\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts?raw\\")
+});
+export const excludeSelf = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts\\")
+});
+export const customQueryString = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts?custom&lang.ts\\")
+});
+export const customQueryObject = Object.assign({
+\\"./sibling.ts\\": () => import(\\"./sibling.ts?foo=bar&raw=true&lang.ts\\")
+});
+export const parent = Object.assign({
+
+});
+export const rootMixedRelative = Object.assign({
+\\"/css.spec.ts\\": () => import(\\"../../css.spec.ts?url&lang.ts\\").then(m => m[\\"default\\"]),
+\\"/define.spec.ts\\": () => import(\\"../../define.spec.ts?url&lang.ts\\").then(m => m[\\"default\\"]),
+\\"/import.spec.ts\\": () => import(\\"../../import.spec.ts?url&lang.ts\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/a.ts\\": () => import(\\"../fixture-b/a.ts?url&lang.ts\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/b.ts\\": () => import(\\"../fixture-b/b.ts?url&lang.ts\\").then(m => m[\\"default\\"]),
+\\"/importGlob/fixture-b/index.ts\\": () => import(\\"../fixture-b/index.ts?url&lang.ts\\").then(m => m[\\"default\\"])
+});
+export const cleverCwd1 = Object.assign({
+\\"./node_modules/framework/pages/hello.page.js\\": () => import(\\"./node_modules/framework/pages/hello.page.js\\")
+});
+export const cleverCwd2 = Object.assign({
+\\"./modules/a.ts\\": () => import(\\"./modules/a.ts\\"),
+\\"./modules/b.ts\\": () => import(\\"./modules/b.ts\\"),
+\\"../fixture-b/a.ts\\": () => import(\\"../fixture-b/a.ts\\"),
+\\"../fixture-b/b.ts\\": () => import(\\"../fixture-b/b.ts\\")
+});
+"
+`;
+
+exports[`fixture > virtual modules 1`] = `
+"Object.assign({
+\\"/modules/a.ts\\": () => import(\\"/modules/a.ts\\"),
+\\"/modules/b.ts\\": () => import(\\"/modules/b.ts\\"),
+\\"/modules/index.ts\\": () => import(\\"/modules/index.ts\\")
+})
+Object.assign({
+\\"/../fixture-b/a.ts\\": () => import(\\"/../fixture-b/a.ts\\"),
+\\"/../fixture-b/b.ts\\": () => import(\\"/../fixture-b/b.ts\\"),
+\\"/../fixture-b/index.ts\\": () => import(\\"/../fixture-b/index.ts\\")
+})"
+`;

@@ -75,7 +75,7 @@ react({
 })
 ```
 
-This option does not enable _code transformation_. That is handled by ESBuild.
+This option does not enable _code transformation_. That is handled by esbuild.
 
 **Note:** TypeScript syntax is handled automatically.
 

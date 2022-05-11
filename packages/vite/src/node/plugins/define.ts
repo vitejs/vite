@@ -3,6 +3,10 @@ import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -64,16 +68,18 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     const replacementsKeys = Object.keys(replacements)
     const pattern = replacementsKeys.length
       ? new RegExp(
-          // Do not allow preceding '.', but do allow preceding '...' for spread operations
-          '(?<!(?<!\\.\\.)\\.)\\b(' +
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
             replacementsKeys
               .map((str) => {
                 return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
               })
               .join('|') +
-            // prevent trailing assignments
-            ')\\b(?!\\s*?=[^=])',
-          'g'
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
+          'gu'
         )
       : null
 
@@ -85,6 +91,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:define',
+
     transform(code, id, options) {
       const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
@@ -94,8 +101,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
@@ -123,7 +132,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.overwrite(start, end, replacement, { contentOnly: true })
       }
 
       if (!hasReplaced) {

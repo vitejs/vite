@@ -1,15 +1,15 @@
 import path from 'path'
 import slash from 'slash'
 import type {
+  CompilerOptions,
   SFCDescriptor,
   SFCTemplateCompileOptions,
-  SFCTemplateCompileResults,
-  CompilerOptions
+  SFCTemplateCompileResults
 } from 'vue/compiler-sfc'
 import type { PluginContext, TransformPluginContext } from 'rollup'
-import type { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -139,7 +139,7 @@ export function resolveTemplateCompilerOptions(
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions

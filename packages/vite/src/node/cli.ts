@@ -1,6 +1,6 @@
+import { performance } from 'perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
-import { performance } from 'perf_hooks'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
@@ -130,7 +130,7 @@ cli
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
-    `[string] directory under outDir to place assets in (default: _assets)`
+    `[string] directory under outDir to place assets in (default: assets)`
   )
   .option(
     '--assetsInlineLimit <number>',
