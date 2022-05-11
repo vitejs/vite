@@ -72,10 +72,10 @@ jobs:
         run: pnpm run test-unit
 
       - name: Test serve
-        run: pnpm run test-serve -- --runInBand
+        run: pnpm run test-serve
 
       - name: Test build
-        run: pnpm run test-build -- --runInBand
+        run: pnpm run test-build
 
   lint:
     timeout-minutes: 10
@@ -102,9 +102,13 @@ jobs:
         run: |
           pnpm run ci-build-vite
           pnpm run build-plugin-vue
+          pnpm run build-plugin-react
 
       - name: Lint
         run: pnpm run lint
 
       - name: Check formatting
         run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck

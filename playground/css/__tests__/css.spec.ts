@@ -1,15 +1,14 @@
-import fs from 'fs'
-import path from 'path'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
+  page,
   removeFile,
-  testDir,
+  serverLogs,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
@@ -251,14 +250,12 @@ test('inline css modules', async () => {
   expect(css).toMatch(/\.inline-module__apply-color-inline___[\w-]{5}/)
 })
 
-if (isBuild) {
-  test('@charset hoist', async () => {
-    serverLogs.forEach((log) => {
-      // no warning from esbuild css minifier
-      expect(log).not.toMatch('"@charset" must be the first rule in the file')
-    })
+test.runIf(isBuild)('@charset hoist', async () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('"@charset" must be the first rule in the file')
   })
-}
+})
 
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')

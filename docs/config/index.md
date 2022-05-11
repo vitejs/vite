@@ -28,12 +28,14 @@ vite --config my-config.js
 ```
 
 ::: tip NOTE
-Vite will replace `__filename`, `__dirname`, and `import.meta.url` in config files and its deps. Using these as variable names will result in an error:
+Vite will replace `__filename`, `__dirname`, and `import.meta.url` in config files and its deps. Using these as variable names or passing as a parameter to a function with string double quote (example `console.log`) will result in an error:
 
 ```js
 const __filename = "value"
 // will be transformed to
 const "path/vite.config.js" = "value"
+
+console.log("import.meta.url") // break error on build
 ```
 
 :::
@@ -180,6 +182,20 @@ export default defineConfig(({ command, mode }) => {
   ```ts
   // vite-env.d.ts
   declare const __APP_VERSION__: string
+  ```
+
+  :::
+
+  ::: tip NOTE
+  Since dev and build implement `define` differently, we should avoid some use cases to avoid inconsistency.
+
+  Example:
+
+  ```js
+  const obj = {
+    __NAME__, // Don't define object shorthand property names
+    __KEY__: value // Don't define object key
+  }
   ```
 
   :::
@@ -502,6 +518,8 @@ export default defineConfig(({ command, mode }) => {
   Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
   Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
+
+  In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
   **Example:**
 

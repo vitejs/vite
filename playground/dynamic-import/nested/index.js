@@ -78,3 +78,17 @@ document.querySelector('.pkg-css').addEventListener('click', async () => {
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
+
+const base = 'hello'
+
+import(`../alias/${base}.js`).then((mod) => {
+  text('.dynamic-import-with-vars', mod.hello())
+})
+
+import(`@/${base}.js`).then((mod) => {
+  text('.dynamic-import-with-vars-alias', mod.hello())
+})
+
+import(`../alias/${base}.js?raw`).then((mod) => {
+  text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
+})
