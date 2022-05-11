@@ -7,6 +7,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     "baseUrl": ".",
     "jsx": "preserve",
     "types": ["vite/client", "vitest/globals", "node"],
