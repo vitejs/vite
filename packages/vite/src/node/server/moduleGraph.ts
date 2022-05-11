@@ -55,6 +55,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   }
   seen.add(mod)
   mod.ssrModule = null
+  mod.ssrError = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
 
