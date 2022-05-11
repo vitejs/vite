@@ -63,6 +63,9 @@ jobs:
       - name: Install deps
         run: pnpm install
 
+      - name: Install Playwright
+        run: pnpm playwright install
+
       - name: Build vite
         run: pnpm run ci-build-vite
 
