@@ -1,4 +1,4 @@
-import { editFile, isBuild, untilUpdated } from 'testUtils'
+import { editFile, isServe, untilUpdated } from '../../testUtils'
 
 test('should render', async () => {
   expect(await page.textContent('.named')).toMatch('0')
@@ -29,7 +29,7 @@ test('should update', async () => {
   expect(await page.textContent('.jsx-with-query')).toMatch('7')
 })
 
-if (!isBuild) {
+describe.runIf(isServe)('vue-jsx server', () => {
   test('hmr: named export', async () => {
     editFile('Comps.jsx', (code) =>
       code.replace('named {count', 'named updated {count')
@@ -113,4 +113,4 @@ if (!isBuild) {
     )
     await untilUpdated(() => page.textContent('.setup-jsx'), '1000')
   })
-}
+})

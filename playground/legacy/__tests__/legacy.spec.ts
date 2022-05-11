@@ -67,7 +67,7 @@ test('should load dynamic import with css', async () => {
   )
 })
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
     expect(manifest['../../vite/legacy-polyfills']).toBeDefined()
@@ -98,4 +98,4 @@ if (isBuild) {
   test('includes structuredClone polyfill which is supported after core-js v3', () => {
     expect(findAssetFile(/polyfills-legacy/)).toMatch('"structuredClone"')
   })
-}
+})

@@ -1,9 +1,7 @@
-const vuePlugin = require('@vitejs/plugin-vue')
+import vuePlugin from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   css: {
     devSourcemap: true,
     preprocessorOptions: {
@@ -16,4 +14,4 @@ module.exports = {
   build: {
     sourcemap: true
   }
-}
+})

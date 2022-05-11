@@ -1,12 +1,15 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../../testUtils'
-import { Page } from 'playwright-chromium'
+import { isBuild, testDir } from '../../../testUtils'
 
-if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap-inline/assets')
+describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('sourcemap generation for web workers', async () => {
+    const assetsDir = path.resolve(
+      testDir(),
+      'dist/iife-sourcemap-inline/assets'
+    )
+
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
     expect(files.length).toBe(13)
@@ -93,13 +96,7 @@ if (isBuild) {
       `new Worker("/iife-sourcemap-inline/assets/sub-worker`
     )
   })
-} else {
-  // Workaround so that testing serve does not emit
-  // "Your test suite must contain at least one test"
-  test('true', () => {
-    expect(true).toBe(true)
-  })
-}
+})
 
 function getSourceMapUrl(code: string): string {
   const regex = /\/\/[#@]\s(?:source(?:Mapping)?URL)=\s*(\S+)/g

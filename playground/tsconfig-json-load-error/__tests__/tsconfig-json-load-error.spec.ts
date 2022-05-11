@@ -1,6 +1,12 @@
-import { editFile, isBuild, readFile, untilUpdated } from '../../testUtils'
+import {
+  editFile,
+  isBuild,
+  isServe,
+  readFile,
+  untilUpdated
+} from '../../testUtils'
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
     const buildError = beforeAllError
     expect(buildError).toBeTruthy()
@@ -20,7 +26,9 @@ if (isBuild) {
     expect(err).toBeTruthy()
     expect(err.code).toBe('ENOENT')
   })
-} else {
+})
+
+describe.runIf(isServe)('server', () => {
   test('should log 500 error in browser for malformed tsconfig', () => {
     // don't test for actual complete message as this might be locale dependant. chrome does log 500 consistently though
     expect(browserLogs.find((x) => x.includes('500'))).toBeTruthy()
@@ -47,4 +55,4 @@ if (isBuild) {
       return browserLogs.find((x) => x === 'tsconfig error fixed, file loaded')
     }, 'tsconfig error fixed, file loaded')
   })
-}
+})

@@ -179,31 +179,29 @@ describe('hoist @ rules', () => {
 
   test('dont hoist @import and @charset in comments', async () => {
     const css = `
-      .foo{color:red;}
-      /*
-        @import "bla";
-      */
-      @charset "utf-8";
-      /*
-        @charset "utf-8";
-        @import "bar";
-      */
-      @import "baz";
-    `
+.foo{color:red;}
+/*
+  @import "bla";
+*/
+@charset "utf-8";
+/*
+  @charset "utf-8";
+  @import "bar";
+*/
+@import "baz";`
     const result = await hoistAtRules(css)
-    expect(result).toBe(
-      `@charset "utf-8";@import "baz";
+    expect(result).toMatchInlineSnapshot(`
+      "@charset \\"utf-8\\";@import \\"baz\\";
       .foo{color:red;}
       /*
-        @import "bla";
+        @import \\"bla\\";
       */
-      
+
       /*
-        @charset "utf-8";
-        @import "bar";
+        @charset \\"utf-8\\";
+        @import \\"bar\\";
       */
-      
-    `
-    )
+      "
+    `)
   })
 })
