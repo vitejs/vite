@@ -1,21 +1,21 @@
 import path from 'path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
-import type { ResolvedOptions } from '.'
+import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import { normalizePath } from '@rollup/pluginutils'
+import type { RawSourceMap } from 'source-map'
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import { transformWithEsbuild } from 'vite'
 import {
   createDescriptor,
   getPrevDescriptor,
   setSrcDescriptor
 } from './utils/descriptorCache'
-import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
-import { normalizePath } from '@rollup/pluginutils'
-import { resolveScript, isUseInlineTemplate } from './script'
+import { isUseInlineTemplate, resolveScript } from './script'
 import { transformTemplateInMain } from './template'
-import { isOnlyTemplateChanged, isEqualBlock } from './handleHotUpdate'
-import type { RawSourceMap } from 'source-map'
-import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import { isEqualBlock, isOnlyTemplateChanged } from './handleHotUpdate'
 import { createRollupError } from './utils/error'
-import { transformWithEsbuild } from 'vite'
 import { EXPORT_HELPER_ID } from './helper'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformMain(
