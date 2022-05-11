@@ -184,7 +184,7 @@ export class ModuleGraph {
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       this.idToModuleMap.set(resolvedId, mod)
-      if (url !== resolvedId && !resolvedId.includes('\0')) {
+      if (!resolvedId.includes('\0')) {
         const file = cleanUrl(resolvedId)
         if (isAbsolute(file) && fs.existsSync(file)) {
           let fileMappedModules = this.fileToModulesMap.get(file)
