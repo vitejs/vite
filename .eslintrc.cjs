@@ -8,6 +8,7 @@ module.exports = defineConfig({
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended'
   ],
+  plugins: ['import'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -86,6 +87,18 @@ module.exports = defineConfig({
     '@typescript-eslint/consistent-type-imports': [
       'error',
       { prefer: 'type-imports' }
+    ],
+
+    'import/order': 'error',
+    'sort-imports': [
+      'error',
+      {
+        ignoreCase: false,
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        allowSeparatedGroups: false
+      }
     ]
   },
   overrides: [
