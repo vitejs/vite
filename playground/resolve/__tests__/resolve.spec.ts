@@ -1,4 +1,4 @@
-import { isBuild } from '../../testUtils'
+import { isBuild, page } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')

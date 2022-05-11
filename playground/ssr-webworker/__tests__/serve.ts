@@ -1,17 +1,15 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../testUtils')
+import path from 'path'
+import kill from 'kill-port'
+import { ports } from '~utils'
 
-const port = (exports.port = ports['ssr-webworker'])
+export const port = ports['ssr-webworker']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root: string, isProd: boolean) {
+  await kill(port)
+
   // we build first, regardless of whether it's prod/build mode
   // because Vite doesn't support the concept of a "webworker server"
   const { build } = require('vite')

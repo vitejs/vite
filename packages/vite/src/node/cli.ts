@@ -1,6 +1,6 @@
+import { performance } from 'perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
-import { performance } from 'perf_hooks'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'

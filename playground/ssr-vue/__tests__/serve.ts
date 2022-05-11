@@ -1,24 +1,20 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../testUtils')
+import path from 'path'
+import kill from 'kill-port'
+import { ports } from '~utils'
 
-const port = (exports.port = ports['ssr-react'])
+export const port = ports['ssr-vue']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
+export async function serve(root, isProd) {
   if (isProd) {
     // build first
     const { build } = require('vite')
     // client build
     await build({
       root,
-      logLevel: 'silent', // exceptions are logged by Jest
+      logLevel: 'silent', // exceptions are logged by Vitest
       build: {
         target: 'esnext',
         minify: false,
@@ -32,11 +28,13 @@ exports.serve = async function serve(root, isProd) {
       logLevel: 'silent',
       build: {
         target: 'esnext',
-        ssr: 'src/entry-server.jsx',
+        ssr: 'src/entry-server.js',
         outDir: 'dist/server'
       }
     })
   }
+
+  await kill(port)
 
   const { createServer } = require(path.resolve(root, 'server.js'))
   const { app, vite } = await createServer(root, isProd)
