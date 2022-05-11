@@ -773,6 +773,7 @@ export const blankReplacer = (match: string) => ' '.repeat(match.length)
 export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
+
 // Based on node-graceful-fs
 
 // The ISC License
