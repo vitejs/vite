@@ -223,7 +223,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules && !inlineRE.test(id)
+          const isSelfAccepting =
+            !modules && !inlineRE.test(id) && !htmlProxyRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
@@ -301,7 +302,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const isHTMLProxy = htmlProxyRE.test(id)
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
 
@@ -314,43 +314,41 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
-        if (isDirectCSSRequest(id)) {
-          return css
-        } else {
-          // server only
-          if (options?.ssr) {
-            return modulesCode || `export default ${JSON.stringify(css)}`
-          }
-          if (inlined) {
-            return `export default ${JSON.stringify(css)}`
-          }
-
-          let cssContent = css
+        const getContentWithSourcemap = async (content: string) => {
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-            cssContent = getCodeWithSourcemap('css', css, sourcemap)
+            return getCodeWithSourcemap('css', content, sourcemap)
           }
-
-          if (isHTMLProxy) {
-            return cssContent
-          }
-
-          return [
-            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-              path.posix.join(config.base, CLIENT_PUBLIC_PATH)
-            )}`,
-            `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = ${JSON.stringify(cssContent)}`,
-            `__vite__updateStyle(__vite__id, __vite__css)`,
-            // css modules exports change on edit so it can't self accept
-            `${
-              modulesCode ||
-              `import.meta.hot.accept()\nexport default __vite__css`
-            }`,
-            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
-          ].join('\n')
+          return content
         }
+
+        if (isDirectCSSRequest(id)) {
+          return await getContentWithSourcemap(css)
+        }
+        // server only
+        if (options?.ssr) {
+          return modulesCode || `export default ${JSON.stringify(css)}`
+        }
+        if (inlined) {
+          return `export default ${JSON.stringify(css)}`
+        }
+
+        const cssContent = await getContentWithSourcemap(css)
+        return [
+          `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
+          )}`,
+          `const __vite__id = ${JSON.stringify(id)}`,
+          `const __vite__css = ${JSON.stringify(cssContent)}`,
+          `__vite__updateStyle(__vite__id, __vite__css)`,
+          // css modules exports change on edit so it can't self accept
+          `${
+            modulesCode ||
+            `import.meta.hot.accept()\nexport default __vite__css`
+          }`,
+          `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
+        ].join('\n')
       }
 
       // build CSS handling ----------------------------------------------------
@@ -359,6 +357,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // cache css compile result to map
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       const inlineCSS = inlineCSSRE.test(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       const query = parseRequest(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
