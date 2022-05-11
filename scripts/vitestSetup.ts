@@ -1,51 +1,24 @@
-import fs from 'fs-extra'
 import * as http from 'http'
-import { resolve, dirname } from 'path'
-import sirv from 'sirv'
+import { dirname, resolve } from 'path'
 import os from 'os'
 import path from 'path'
-import { Browser, chromium } from 'playwright-chromium'
+import sirv from 'sirv'
+import fs from 'fs-extra'
+import { chromium } from 'playwright-chromium'
 import type {
-  ViteDevServer,
   InlineConfig,
+  Logger,
   PluginOption,
   ResolvedConfig,
-  Logger
+  ViteDevServer
 } from 'vite'
-import { createServer, build, mergeConfig } from 'vite'
-import type { Page, ConsoleMessage } from 'playwright-chromium'
+import { build, createServer, mergeConfig } from 'vite'
+import type { Browser, ConsoleMessage, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
 import { beforeAll } from 'vitest'
 
 const isBuildTest = !!process.env.VITE_TEST_BUILD
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
-}
-
-// // injected by the test env
-// declare global {
-//   const page: Page | undefined
-
-//   const browserLogs: string[]
-//   const browserErrors: Error[]
-//   const serverLogs: string[]
-//   let viteTestUrl: string | undefined
-//   const watcher: RollupWatcher | undefined
-//   let beforeAllError: Error | null // error caught in beforeAll, useful if you want to test error scenarios on build
-// }
-
-// declare const global: {
-//   page?: Page
-
-//   browserLogs: string[]
-//   browserErrors: Error[]
-//   serverLogs: string[]
-//   viteTestUrl?: string
-//   watcher?: RollupWatcher
-//   beforeAllError: Error | null
-// }
 
 let server: ViteDevServer | http.Server
 let tempDir: string
@@ -73,12 +46,8 @@ export function setViteUrl(url: string) {
   viteTestUrl = url
 }
 
-const onConsole = (msg: ConsoleMessage) => {
-  browserLogs.push(msg.text())
-}
-
-const onPageError = (error: Error) => {
-  browserErrors.push(error)
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
 }
 
 const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
@@ -108,8 +77,12 @@ beforeAll(async (s) => {
   }
 
   try {
-    page.on('console', onConsole)
-    page.on('pageerror', onPageError)
+    page.on('console', (msg) => {
+      browserLogs.push(msg.text())
+    })
+    page.on('pageerror', (error) => {
+      browserErrors.push(error)
+    })
 
     const testPath = suite.filepath!
     const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
@@ -216,7 +189,6 @@ beforeAll(async (s) => {
   }
 
   return async () => {
-    page?.off('console', onConsole)
     serverLogs.length = 0
     await page?.close()
     await server?.close()

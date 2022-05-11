@@ -1,7 +1,7 @@
 // Invoked on the commit-msg git hook by simple-git-hooks.
 
-import colors from 'picocolors'
 import { readFileSync } from 'fs'
+import colors from 'picocolors'
 
 // get $1 from commit-msg script
 const msgPath = process.argv[2]
