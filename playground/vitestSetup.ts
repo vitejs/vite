@@ -200,7 +200,7 @@ beforeAll(async (s) => {
       throw beforeAllError
     }
   }
-}, 30000)
+})
 
 function startStaticServer(config?: InlineConfig): Promise<string> {
   if (!config) {
