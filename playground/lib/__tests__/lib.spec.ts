@@ -40,7 +40,7 @@ describe.runIf(isBuild)('build', () => {
       'hello vite'
     )
     const code = fs.readFileSync(
-      path.join(testDir(), 'dist/lib/dynamic-import-message.js'),
+      path.join(testDir(), 'dist/lib/dynamic-import-message.es.js'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
