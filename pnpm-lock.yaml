@@ -160,7 +160,6 @@ importers:
     specifiers:
       '@rollup/pluginutils': ^4.2.1
       debug: ^4.3.4
-      hash-sum: ^2.0.0
       rollup: ^2.72.1
       slash: ^4.0.0
       source-map: ^0.6.1
@@ -168,7 +167,6 @@ importers:
     devDependencies:
       '@rollup/pluginutils': 4.2.1
       debug: 4.3.4
-      hash-sum: 2.0.0
       rollup: 2.72.1
       slash: 4.0.0
       source-map: 0.6.1
@@ -181,14 +179,12 @@ importers:
       '@babel/plugin-transform-typescript': ^7.16.8
       '@rollup/pluginutils': ^4.2.1
       '@vue/babel-plugin-jsx': ^1.1.1
-      hash-sum: ^2.0.0
     dependencies:
       '@babel/core': 7.17.10
       '@babel/plugin-syntax-import-meta': 7.10.4_@babel+core@7.17.10
       '@babel/plugin-transform-typescript': 7.16.8_@babel+core@7.17.10
       '@rollup/pluginutils': 4.2.1
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.17.10
-      hash-sum: 2.0.0
 
   packages/vite:
     specifiers:
@@ -4636,9 +4632,6 @@ packages:
     engines: {node: '>= 0.4.0'}
     dependencies:
       function-bind: 1.1.1
-
-  /hash-sum/2.0.0:
-    resolution: {integrity: sha512-WdZTbAByD+pHfl/g9QSsBIIwy8IT+EsPiKDs0KNX+zSHhdDLFKdZu0BQHljvO+0QI/BasbMSUa8wYNCZTvhslg==}
 
   /helpertypes/0.0.2:
     resolution: {integrity: sha512-PKVtWnJ+dcvPeUJRiqtbraN/Hr2rNEnS14T/IxDBb0KgHkAL5w4YwVxMEPowA9vyoMP0DrwO0TxJ+KH3UF/6YA==}
