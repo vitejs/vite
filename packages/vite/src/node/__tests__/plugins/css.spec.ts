@@ -72,7 +72,7 @@ describe('css path resolutions', () => {
 
     const mockFs = vi
       .spyOn(fs, 'readFile')
-      // @ts-ignore jest.spyOn not recognize overrided `fs.readFile` definition.
+      // @ts-ignore vi.spyOn not recognize override `fs.readFile` definition.
       .mockImplementationOnce((p, encoding, callback) => {
         expect(p).toBe(path.join(mockedProjectPath, mockedBarCssRelativePath))
         expect(encoding).toBe('utf-8')

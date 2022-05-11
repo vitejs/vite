@@ -36,7 +36,6 @@
   },
   "devDependencies": {
     "@rollup/pluginutils": "^4.2.1",
-    "@types/hash-sum": "^1.0.0",
     "debug": "^4.3.4",
     "hash-sum": "^2.0.0",
     "rollup": "^2.72.1",

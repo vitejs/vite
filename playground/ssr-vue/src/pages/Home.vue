@@ -33,8 +33,8 @@ function load(file) {
 }
 const url = import.meta.env.SSR
   ? import.meta.url
-  : document.querySelector('.import-meta-url').textContent
-const protocol = new URL(url).protocol
+  : document.querySelector('.import-meta-url')?.textContent
+const protocol = url ? new URL(url).protocol : undefined
 
 const state = reactive({
   count: 0,

@@ -11,7 +11,7 @@ export default {
   async setup() {
     const url = import.meta.env.SSR
       ? import.meta.url
-      : document.querySelector('.import-meta-url').textContent
+      : document.querySelector('.import-meta-url')?.textContent
     return {
       msg: 'About',
       url

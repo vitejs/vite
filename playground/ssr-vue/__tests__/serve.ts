@@ -14,7 +14,7 @@ export async function serve(root, isProd) {
     // client build
     await build({
       root,
-      logLevel: 'silent', // exceptions are logged by Jest
+      logLevel: 'silent', // exceptions are logged by Vitest
       build: {
         target: 'esnext',
         minify: false,

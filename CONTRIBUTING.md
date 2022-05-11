@@ -16,6 +16,8 @@ To develop and test the core `vite` package:
 
 You can alternatively use [Vite.js Docker Dev](https://github.com/nystudio107/vitejs-docker-dev) for a containerized Docker setup for Vite.js development.
 
+> Vite uses pnpm v7. If you are working on multiple projects with different versions of pnpm, it's recommend to enable [Corepack](https://github.com/nodejs/corepack) by running `corepack enable`.
+
 ## Debugging
 
 If you want to use break point and explore code execution you can use the ["Run and debug"](https://code.visualstudio.com/docs/editor/debugging) feature from vscode.
@@ -36,7 +38,7 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 1. Add a `debugger` statement to the `playground/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
 
-1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve -- --runInBand resolve`.
+1. Run the tests with the `debug-serve` script command which will enable remote debugging: `pnpm run debug-serve resolve`.
 
 1. Wait for inspector devtools to open in your browser and the debugger to attach.
 
@@ -81,7 +83,7 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
-- You can also use `pnpm run test-serve -- [match]` or `pnpm run test-build -- [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve -- asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
+- You can also use `pnpm run test-serve [match]` or `pnpm run test-build [match]` to run tests in a specific playground package, e.g. `pnpm run test-serve asset` will run tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode and `vite/src/node/__tests__/**/*` just run in serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
@@ -91,7 +93,7 @@ Other than tests under `playground/` for integration tests, packages might conta
 
 - `pnpm run test-unit` runs unit tests under each package.
 
-- You can also use `pnpm run test-unit -- [match]` to run related tests.
+- You can also use `pnpm run test-unit [match]` to run related tests.
 
 ### Test Env and Helpers
 

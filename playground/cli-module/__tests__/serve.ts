@@ -8,7 +8,7 @@ import { isWindows, ports, viteBinPath } from '~utils'
 export const port = ports['cli-module']
 
 export async function serve(root: string, isProd: boolean) {
-  // collect stdout and stderr streams from child processes here to avoid interfering with regular jest output
+  // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
   const streams = {
     build: { out: [], err: [] },
     server: { out: [], err: [] }
