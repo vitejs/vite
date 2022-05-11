@@ -38,10 +38,23 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.23.1",
     "@types/babel__core": "^7.1.19",
+    "@types/convert-source-map": "^1.5.2",
+    "@types/cross-spawn": "^6.0.2",
+    "@types/debug": "^4.1.7",
+    "@types/estree": "^0.0.51",
+    "@types/etag": "^1.8.1",
     "@types/fs-extra": "^9.0.13",
+    "@types/hash-sum": "^1.0.0",
+    "@types/less": "^3.0.3",
+    "@types/micromatch": "^4.0.2",
+    "@types/mime": "^2.0.3",
     "@types/node": "^17.0.31",
     "@types/prompts": "^2.4.0",
+    "@types/resolve": "^1.20.2",
+    "@types/sass": "~1.43.1",
     "@types/semver": "^7.3.9",
+    "@types/stylus": "^0.48.37",
+    "@types/ws": "^8.5.3",
     "@typescript-eslint/eslint-plugin": "^5.22.0",
     "@typescript-eslint/parser": "^5.22.0",
     "conventional-changelog-cli": "^2.2.2",
@@ -71,7 +84,8 @@
     "typescript": "^4.6.4",
     "vite": "workspace:*",
     "vitepress": "^0.22.4",
-    "vitest": "^0.12.4"
+    "vitest": "^0.12.4",
+    "vue": "^3.2.33"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
@@ -91,7 +105,7 @@
       "eslint --fix"
     ]
   },
-  "packageManager": "pnpm@6.32.11",
+  "packageManager": "pnpm@7.0.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
