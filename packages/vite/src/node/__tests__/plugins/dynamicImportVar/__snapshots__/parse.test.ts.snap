@@ -1,0 +1,13 @@
+// Vitest Snapshot v1
+
+exports[`parse positives > ? in url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mo?ds/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mo?ds/\${base ?? foo}.js\`)"`;
+
+exports[`parse positives > ? in variables 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base ?? foo}.js\`)"`;
+
+exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
+
+exports[`parse positives > basic 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
+
+exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
+
+exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;

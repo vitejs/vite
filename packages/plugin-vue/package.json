@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "2.2.2",
+  "version": "2.3.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -19,7 +19,7 @@
     "prepublishOnly": "(cd ../vite && npm run build) && npm run build"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.6.0"
   },
   "repository": {
     "type": "git",
@@ -35,13 +35,11 @@
     "vue": "^3.2.25"
   },
   "devDependencies": {
-    "@rollup/pluginutils": "^4.1.2",
-    "@types/hash-sum": "^1.0.0",
-    "debug": "^4.3.3",
-    "hash-sum": "^2.0.0",
-    "rollup": "^2.59.0",
+    "@rollup/pluginutils": "^4.2.1",
+    "debug": "^4.3.4",
+    "rollup": "^2.72.1",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.30"
+    "vue": "^3.2.33"
   }
 }

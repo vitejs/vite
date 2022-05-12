@@ -15,7 +15,7 @@ jobs:
     environment: Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -23,7 +23,7 @@ jobs:
           version: 6
 
       - name: Set node version to 16.x
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16.x
           registry-url: https://registry.npmjs.org/
@@ -31,16 +31,10 @@ jobs:
 
       - name: Install deps
         run: pnpm install
-
-      - name: Creating .npmrc
-        run: |
-          cat << EOF > "$HOME/.npmrc"
-            //registry.npmjs.org/:_authToken=$NPM_TOKEN
-          EOF
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Publish package
-        run: pnpm run ci-publish -- ${{ github.ref_name }}
+        run: pnpm run ci-publish ${{ github.ref_name }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
