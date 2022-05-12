@@ -342,7 +342,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     // CSS references, convert to import
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
-                      url: url,
+                      url,
                       start: node.loc.start.offset,
                       end: node.loc.end.offset
                     })
