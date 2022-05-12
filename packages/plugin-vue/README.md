@@ -22,7 +22,7 @@ export interface Options {
   isProduction?: boolean
 
   /**
-   * Transform Vue SFCs into custom elements (requires Vue >= 3.2.0)
+   * Transform Vue SFCs into custom elements (requires vue@^3.2.0)
    * - `true` -> all `*.vue` imports are converted into custom elements
    * - `string | RegExp` -> matched files are converted into custom elements
    *
@@ -31,10 +31,8 @@ export interface Options {
   customElement?: boolean | string | RegExp | (string | RegExp)[]
 
   /**
-   * Enable Vue ref transform (experimental).
-   * https://github.com/vuejs/vue-next/tree/master/packages/ref-transform
-   *
-   * **requires Vue \>= 3.2.5**
+   * Enable Vue reactivity transform (experimental, requires vue@^3.2.25).
+   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
    *
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
@@ -44,7 +42,7 @@ export interface Options {
    *
    * @default false
    */
-  refTransform?: boolean | string | RegExp | (string | RegExp)[]
+  reactivityTransform?: boolean | string | RegExp | (string | RegExp)[]
 
   // options to pass on to vue/compiler-sfc
   script?: Partial<SFCScriptCompileOptions>
@@ -53,7 +51,7 @@ export interface Options {
 }
 ```
 
-## Example for passing options to `@vue/compiler-dom`:
+## Example for passing options to `vue/compiler-sfc`:
 
 ```ts
 import vue from '@vitejs/plugin-vue'
@@ -64,6 +62,16 @@ export default {
       template: {
         compilerOptions: {
           // ...
+        },
+        transformAssetUrls: {
+          // default tags
+          tags: {
+            video: ['src', 'poster'],
+            source: ['src'],
+            img: ['src'],
+            image: ['xlink:href', 'href'],
+            use: ['xlink:href', 'href']
+          }
         }
       }
     })
@@ -83,7 +91,7 @@ const vueI18nPlugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+      code = JSON.stringify(require('js-yaml').load(code.trim()))
     }
     return `export default Comp => {
       Comp.i18n = ${code}

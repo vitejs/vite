@@ -1,71 +1,127 @@
 import fs from 'fs'
 import path from 'path'
-import { tryNodeResolve, InternalResolveOptions } from '../plugins/resolve'
+import { createFilter } from '@rollup/pluginutils'
+import type { InternalResolveOptions } from '../plugins/resolve'
+import { tryNodeResolve } from '../plugins/resolve'
 import {
   createDebugger,
   isDefined,
   lookupFile,
   normalizePath,
-  resolveFrom,
-  unique
+  resolveFrom
 } from '../utils'
-import { ResolvedConfig } from '..'
-import { createFilter } from '@rollup/pluginutils'
+import type { Logger, ResolvedConfig } from '..'
 
 const debug = createDebugger('vite:ssr-external')
 
 /**
+ * Converts "parent > child" syntax to just "child"
+ */
+export function stripNesting(packages: string[]) {
+  return packages.map((s) => {
+    const arr = s.split('>')
+    return arr[arr.length - 1].trim()
+  })
+}
+
+/**
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
- *
- * TODO right now externals are imported using require(), we probably need to
- * rework this when more libraries ship native ESM distributions for Node.
  */
 export function resolveSSRExternal(
   config: ResolvedConfig,
-  knownImports: string[],
-  ssrExternals: Set<string> = new Set(),
-  seen: Set<string> = new Set()
+  knownImports: string[]
 ): string[] {
-  if (config.ssr?.noExternal === true) {
+  // strip nesting since knownImports may be passed in from optimizeDeps which
+  // supports a "parent > child" syntax
+  knownImports = stripNesting(knownImports)
+
+  const ssrConfig = config.ssr
+  if (ssrConfig?.noExternal === true) {
     return []
   }
 
-  const { root } = config
-  const pkgContent = lookupFile(root, ['package.json'])
-  if (!pkgContent) {
-    return []
-  }
-  const pkg = JSON.parse(pkgContent)
+  const ssrExternals: Set<string> = new Set()
+  const seen: Set<string> = new Set()
+  ssrConfig?.external?.forEach((id) => {
+    ssrExternals.add(id)
+    seen.add(id)
+  })
+
+  collectExternals(
+    config.root,
+    config.resolve.preserveSymlinks,
+    ssrExternals,
+    seen,
+    config.logger
+  )
+
   const importedDeps = knownImports.map(getNpmPackageName).filter(isDefined)
-  const deps = unique([
-    ...importedDeps,
-    ...Object.keys(pkg.devDependencies || {}),
-    ...Object.keys(pkg.dependencies || {})
-  ])
+  for (const dep of importedDeps) {
+    // Assume external if not yet seen
+    // At this point, the project root and any linked packages have had their dependencies checked,
+    // so we can safely mark any knownImports not yet seen as external. They are guaranteed to be
+    // dependencies of packages in node_modules.
+    if (!seen.has(dep)) {
+      ssrExternals.add(dep)
+    }
+  }
+
+  // ensure `vite/dynamic-import-polyfill` is bundled (issue #1865)
+  ssrExternals.delete('vite')
+
+  let externals = [...ssrExternals]
+  if (ssrConfig?.noExternal) {
+    externals = externals.filter(
+      createFilter(undefined, ssrConfig.noExternal, { resolve: false })
+    )
+  }
+  return externals
+}
+
+const CJS_CONTENT_RE =
+  /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
+
+// do we need to do this ahead of time or could we do it lazily?
+function collectExternals(
+  root: string,
+  preserveSymlinks: boolean | undefined,
+  ssrExternals: Set<string>,
+  seen: Set<string>,
+  logger: Logger
+) {
+  const rootPkgContent = lookupFile(root, ['package.json'])
+  if (!rootPkgContent) {
+    return
+  }
+
+  const rootPkg = JSON.parse(rootPkgContent)
+  const deps = {
+    ...rootPkg.devDependencies,
+    ...rootPkg.dependencies
+  }
 
   const resolveOptions: InternalResolveOptions = {
     root,
+    preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
 
   const depsToTrace = new Set<string>()
 
-  for (const id of deps) {
-    if (seen.has(id)) {
-      continue
-    }
+  for (const id in deps) {
+    if (seen.has(id)) continue
     seen.add(id)
 
-    let entry: string | undefined
+    let esmEntry: string | undefined
     let requireEntry: string
     try {
-      entry = tryNodeResolve(
+      esmEntry = tryNodeResolve(
         id,
         undefined,
         resolveOptions,
-        true,
+        true, // we set `targetWeb` to `true` to get the ESM entry
         undefined,
         true
       )?.id
@@ -73,64 +129,66 @@ export function resolveSSRExternal(
       // which returns with '/', require.resolve returns with '\\'
       requireEntry = normalizePath(require.resolve(id, { paths: [root] }))
     } catch (e) {
+      try {
+        // no main entry, but deep imports may be allowed
+        const pkgPath = resolveFrom(`${id}/package.json`, root)
+        if (pkgPath.includes('node_modules')) {
+          ssrExternals.add(id)
+        } else {
+          depsToTrace.add(path.dirname(pkgPath))
+        }
+        continue
+      } catch {}
+
       // resolve failed, assume include
       debug(`Failed to resolve entries for package "${id}"\n`, e)
       continue
     }
-    if (!entry) {
-      // no esm entry but has require entry (is this even possible?)
+    // no esm entry but has require entry
+    if (!esmEntry) {
       ssrExternals.add(id)
-      continue
     }
-    if (!entry.includes('node_modules')) {
-      // entry is not a node dep, possibly linked - don't externalize
-      // instead, trace its dependencies.
-      depsToTrace.add(id)
-      continue
+    // trace the dependencies of linked packages
+    else if (!esmEntry.includes('node_modules')) {
+      const pkgPath = resolveFrom(`${id}/package.json`, root)
+      depsToTrace.add(path.dirname(pkgPath))
     }
-    if (entry !== requireEntry) {
-      // has separate esm/require entry, assume require entry is cjs
+    // has separate esm/require entry, assume require entry is cjs
+    else if (esmEntry !== requireEntry) {
       ssrExternals.add(id)
-    } else {
-      // node resolve and esm resolve resolves to the same file.
-      if (!/\.m?js$/.test(entry)) {
-        // entry is not js, cannot externalize
+    }
+    // if we're externalizing ESM and CJS should basically just always do it?
+    // or are there others like SystemJS / AMD that we'd need to handle?
+    // for now, we'll just leave this as is
+    else if (/\.m?js$/.test(esmEntry)) {
+      const pkgPath = resolveFrom(`${id}/package.json`, root)
+      const pkgContent = fs.readFileSync(pkgPath, 'utf-8')
+
+      if (!pkgContent) {
+        continue
+      }
+      const pkg = JSON.parse(pkgContent)
+
+      if (pkg.type === 'module' || esmEntry.endsWith('.mjs')) {
+        ssrExternals.add(id)
         continue
       }
       // check if the entry is cjs
-      const content = fs.readFileSync(entry, 'utf-8')
-      if (/\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(/.test(content)) {
+      const content = fs.readFileSync(esmEntry, 'utf-8')
+      if (CJS_CONTENT_RE.test(content)) {
         ssrExternals.add(id)
+        continue
       }
+
+      logger.warn(
+        `${id} doesn't appear to be written in CJS, but also doesn't appear to be a valid ES module (i.e. it doesn't have "type": "module" or an .mjs extension for the entry point). Please contact the package author to fix.`
+      )
     }
   }
 
-  for (const id of depsToTrace) {
-    const depRoot = path.dirname(
-      resolveFrom(`${id}/package.json`, root, !!config.resolve.preserveSymlinks)
-    )
-    resolveSSRExternal(
-      {
-        ...config,
-        root: depRoot
-      },
-      knownImports,
-      ssrExternals,
-      seen
-    )
+  for (const depRoot of depsToTrace) {
+    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
   }
-
-  if (config.ssr?.external) {
-    config.ssr.external.forEach((id) => ssrExternals.add(id))
-  }
-  let externals = [...ssrExternals]
-  if (config.ssr?.noExternal) {
-    const filter = createFilter(undefined, config.ssr.noExternal, {
-      resolve: false
-    })
-    externals = externals.filter((id) => filter(id))
-  }
-  return externals.filter((id) => id !== 'vite')
 }
 
 export function shouldExternalizeForSSR(

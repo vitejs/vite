@@ -1,18 +1,19 @@
-import { UserConfig } from './config'
-import {
+import type {
   CustomPluginOptions,
   LoadResult,
-  Plugin as RollupPlugin,
   PluginContext,
   ResolveIdResult,
+  Plugin as RollupPlugin,
   TransformPluginContext,
   TransformResult
 } from 'rollup'
-import { ServerHook } from './server'
-import { IndexHtmlTransform } from './plugins/html'
-import { ModuleNode } from './server/moduleGraph'
-import { ConfigEnv, ResolvedConfig } from './'
-import { HmrContext } from './server/hmr'
+import type { UserConfig } from './config'
+import type { ServerHook } from './server'
+import type { IndexHtmlTransform } from './plugins/html'
+import type { ModuleNode } from './server/moduleGraph'
+import type { HmrContext } from './server/hmr'
+import type { PreviewServerHook } from './preview'
+import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -80,6 +81,15 @@ export interface Plugin extends RollupPlugin {
    */
   configureServer?: ServerHook
   /**
+   * Configure the preview server. The hook receives the connect server and
+   * its underlying http server.
+   *
+   * The hooks are called before other middlewares are applied. A hook can
+   * return a post hook that will be called after other middlewares are
+   * applied. Hooks can be async functions and will be called in series.
+   */
+  configurePreviewServer?: PreviewServerHook
+  /**
    * Transform index.html.
    * The hook receives the following arguments:
    *
@@ -121,18 +131,24 @@ export interface Plugin extends RollupPlugin {
     this: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: CustomPluginOptions },
-    ssr?: boolean
+    options: {
+      custom?: CustomPluginOptions
+      ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
+    }
   ): Promise<ResolveIdResult> | ResolveIdResult
   load?(
     this: PluginContext,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<LoadResult> | LoadResult
   transform?(
     this: TransformPluginContext,
     code: string,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<TransformResult> | TransformResult
 }

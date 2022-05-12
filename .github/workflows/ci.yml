@@ -11,41 +11,60 @@ on:
       - main
       - release/*
       - feat/*
+      - fix/*
+      - perf/*
+      - v1
+      - v2
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 16]
+        node_version: [14, 16, 18]
         include:
           - os: macos-latest
-            node_version: 14
+            node_version: 16
+          - os: macos-latest
+            node_version: 18
           - os: windows-latest
-            node_version: 14
+            node_version: 16
+          # Maybe bug with jest on windows and node-v18
+          # - os: windows-latest
+          #   node_version: 18
       fail-fast: false
+
+    env:
+      # Install playwright's binray under node_modules so it will be cached together
+      PLAYWRIGHT_BROWSERS_PATH: "0"
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
-        with:
-          version: 6.15.1
+        uses: pnpm/action-setup@v2
 
       - name: Set node version to ${{ matrix.node_version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
 
       - name: Install deps
         run: pnpm install
+
+      - name: Install Playwright
+        run: pnpm playwright install
 
       - name: Build vite
         run: pnpm run ci-build-vite
@@ -56,38 +75,49 @@ jobs:
       - name: Build plugin-react
         run: pnpm run build-plugin-react
 
+      - name: Test unit
+        run: pnpm run test-unit
+
       - name: Test serve
-        run: pnpm run test-serve -- --runInBand
+        run: pnpm run test-serve
 
       - name: Test build
-        run: pnpm run test-build -- --runInBand
+        run: pnpm run test-build
 
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-14, ubuntu-latest"
+    name: "Lint: node-16, ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
-        with:
-          version: 6.15.1
+        uses: pnpm/action-setup@v2
 
-      - name: Set node version to 14
-        uses: actions/setup-node@v2
+      - name: Set node version to 16
+        uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: 16
           cache: "pnpm"
 
       - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Prepare
         run: |
           pnpm run ci-build-vite
           pnpm run build-plugin-vue
+          pnpm run build-plugin-react
 
       - name: Lint
         run: pnpm run lint
+
+      - name: Check formatting
+        run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck

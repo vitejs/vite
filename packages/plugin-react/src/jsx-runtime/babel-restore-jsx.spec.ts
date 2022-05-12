@@ -1,5 +1,6 @@
-import babelRestoreJSX from './babel-restore-jsx'
 import * as babel from '@babel/core'
+import { describe, expect, it } from 'vitest'
+import babelRestoreJSX from './babel-restore-jsx'
 
 function jsx(code: string) {
   return babel.transform(code, {
@@ -107,5 +108,11 @@ describe('babel-restore-jsx', () => {
         'React.createElement("h1", null, foo ? React.createElement("p") : null)'
       )
     ).toMatchInlineSnapshot(`"<h1>{foo ? <p /> : null}</h1>;"`)
+  })
+
+  it('should handle lowercase component names', () => {
+    expect(jsx('React.createElement(aaa)')).toMatchInlineSnapshot(
+      `"React.createElement(aaa);"`
+    )
   })
 })

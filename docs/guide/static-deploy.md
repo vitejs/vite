@@ -10,7 +10,7 @@ The following guides are based on some shared assumptions:
 {
   "scripts": {
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview"
   }
 }
 ```
@@ -33,30 +33,26 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 
 ### Testing The App Locally
 
-Once you've built the app, you may test it locally by running `npm run serve` command.
+Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
 $ npm run build
-$ npm run serve
+$ npm run preview
 ```
 
-The `vite preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
 
-You may configure the port of the server py passing `--port` flag as an argument.
+You may configure the port of the server by passing `--port` flag as an argument.
 
 ```json
 {
   "scripts": {
-    "serve": "vite preview --port 8080"
+    "preview": "vite preview --port 8080"
   }
 }
 ```
 
-Now the `preview` method will launch the server at http://localhost:8080.
-
-::: tip NOTE
-If you change the script name from `serve` to `preview`, you may run into issues with some package managers due to the way they handle [Pre & Post scripts](https://docs.npmjs.com/cli/v7/using-npm/scripts#pre--post-scripts).
-:::
+Now the `preview` method will launch the server at `http://localhost:8080`.
 
 ## GitHub Pages
 
@@ -84,14 +80,15 @@ If you change the script name from `serve` to `preview`, you may run into issues
    # echo 'www.example.com' > CNAME
 
    git init
+   git checkout -b main
    git add -A
    git commit -m 'deploy'
 
    # if you are deploying to https://<USERNAME>.github.io
-   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git master
+   # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
 
    # if you are deploying to https://<USERNAME>.github.io/<REPO>
-   # git push -f git@github.com:<USERNAME>/<REPO>.git master:gh-pages
+   # git push -f git@github.com:<USERNAME>/<REPO>.git main:gh-pages
 
    cd -
    ```
@@ -131,7 +128,7 @@ You can also run the above script in your CI setup to enable automatic deploymen
      github_token: $GITHUB_TOKEN
      keep_history: true
      on:
-       branch: master
+       branch: main
    ```
 
 ## GitLab Pages and GitLab CI
@@ -163,17 +160,32 @@ You can also run the above script in your CI setup to enable automatic deploymen
        paths:
          - public
      rules:
-       - $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
 
-1. On [Netlify](https://netlify.com), setup up a new project from GitHub with the following settings:
+1. Install the [Netlify CLI](https://cli.netlify.com/).
+2. Create a new site using `ntl init`.
+3. Deploy using `ntl deploy`.
 
-   - **Build Command:** `vite build` or `npm run build`
-   - **Publish directory:** `dist`
+```bash
+# Install the Netlify CLI
+$ npm install -g netlify-cli
 
-2. Hit the deploy button.
+# Create a new site in Netlify
+$ ntl init
+
+# Deploy to a unique preview URL
+$ ntl deploy
+```
+
+The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
+
+```bash
+# Deploy the site into production
+$ ntl deploy --prod
+```
 
 ## Google Firebase
 
@@ -187,7 +199,13 @@ You can also run the above script in your CI setup to enable automatic deploymen
    {
      "hosting": {
        "public": "dist",
-       "ignore": []
+       "ignore": [],
+       "rewrites": [
+         {
+           "source": "**",
+           "destination": "/index.html"
+         }
+       ]
      }
    }
    ```
@@ -257,7 +275,7 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
    ```bash
    # publish site
-   $ git push heroku master
+   $ git push heroku main
 
    # opens a browser to view the Dashboard version of Heroku CI
    $ heroku open
@@ -265,15 +283,30 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
 ## Vercel
 
-To deploy your Vite app with a [Vercel for Git](https://vercel.com/docs/git), make sure it has been pushed to a Git repository.
+### Vercel CLI
 
-Go to https://vercel.com/import/git and import the project into Vercel using your Git of choice (GitHub, GitLab or BitBucket). Follow the wizard to select the project root with the project's `package.json` and override the build step using `npm run build` and the output dir to be `./dist`
+1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
+2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
-![Override Vercel Configuration](../images/vercel-configuration.png)
+```bash
+$ npm i -g vercel
+$ vercel init vite
+Vercel CLI
+> Success! Initialized "vite" example in ~/your-folder.
+- To deploy, `cd vite` and run `vercel`.
+```
 
-After your project has been imported, all subsequent pushes to branches will generate Preview Deployments, and all changes made to the Production Branch (commonly "main") will result in a Production Deployment.
+### Vercel for Git
 
-Once deployed, you will get a URL to see your app live, such as the following: https://vite.vercel.app
+1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
+2. [Import your Vite project](https://vercel.com/new) into Vercel.
+3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
+
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
+
+Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
 ## Azure Static Web Apps
 

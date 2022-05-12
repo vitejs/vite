@@ -1,50 +1,104 @@
 import path from 'path'
+import type { Server } from 'http'
+import type * as http from 'http'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from 'compression'
-import { Server } from 'http'
-import { ResolvedConfig, ServerOptions } from '.'
-import { Connect } from 'types/connect'
-import {
-  resolveHttpsConfig,
-  resolveHttpServer,
-  httpServerStart
-} from './server/http'
-import { openBrowser } from './server/openBrowser'
+import type { Connect } from 'types/connect'
 import corsMiddleware from 'cors'
+import type { ResolvedServerOptions } from './server'
+import type { CommonServerOptions } from './http'
+import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from './http'
+import { openBrowser } from './server/openBrowser'
+import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
+import { printCommonServerUrls } from './logger'
+import { resolveConfig } from '.'
+import type { InlineConfig, ResolvedConfig } from '.'
+
+export interface PreviewOptions extends CommonServerOptions {}
+
+export interface ResolvedPreviewOptions extends PreviewOptions {}
+
+export function resolvePreviewOptions(
+  preview: PreviewOptions | undefined,
+  server: ResolvedServerOptions
+): ResolvedPreviewOptions {
+  // The preview server inherits every CommonServerOption from the `server` config
+  // except for the port to enable having both the dev and preview servers running
+  // at the same time without extra configuration
+  return {
+    port: preview?.port,
+    strictPort: preview?.strictPort ?? server.strictPort,
+    host: preview?.host ?? server.host,
+    https: preview?.https ?? server.https,
+    open: preview?.open ?? server.open,
+    proxy: preview?.proxy ?? server.proxy,
+    cors: preview?.cors ?? server.cors,
+    headers: preview?.headers ?? server.headers
+  }
+}
+
+export interface PreviewServer {
+  /**
+   * The resolved vite config object
+   */
+  config: ResolvedConfig
+  /**
+   * native Node http server instance
+   */
+  httpServer: Server
+  /**
+   * Print server urls
+   */
+  printUrls: () => void
+}
+
+export type PreviewServerHook = (server: {
+  middlewares: Connect.Server
+  httpServer: http.Server
+}) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @param config - the resolved Vite config
- * @param serverOptions - what host and port to use
- * @experimental
  */
 export async function preview(
-  config: ResolvedConfig,
-  serverOptions: Pick<ServerOptions, 'port' | 'host'>
-): Promise<Server> {
+  inlineConfig: InlineConfig = {}
+): Promise<PreviewServer> {
+  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
-    config.server,
+    config.preview,
     app,
-    await resolveHttpsConfig(config)
+    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
 
+  // apply server hooks from plugins
+  const postHooks: ((() => void) | void)[] = []
+  for (const plugin of config.plugins) {
+    if (plugin.configurePreviewServer) {
+      postHooks.push(
+        await plugin.configurePreviewServer({ middlewares: app, httpServer })
+      )
+    }
+  }
+
   // cors
-  const { cors } = config.server
+  const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
   // proxy
-  if (config.server.proxy) {
-    app.use(proxyMiddleware(httpServer, config))
+  const { proxy } = config.preview
+  if (proxy) {
+    app.use(proxyMiddleware(httpServer, proxy, config))
   }
 
   app.use(compression())
 
+  // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
     config.base,
@@ -55,9 +109,12 @@ export async function preview(
     })
   )
 
-  const options = config.server
-  const hostname = resolveHostname(serverOptions.host ?? options.host)
-  const port = serverOptions.port ?? 5000
+  // apply post server hooks from plugins
+  postHooks.forEach((fn) => fn && fn())
+
+  const options = config.preview
+  const hostname = resolveHostname(options.host)
+  const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
   const base = config.base
@@ -80,5 +137,11 @@ export async function preview(
     )
   }
 
-  return httpServer
+  return {
+    config,
+    httpServer,
+    printUrls() {
+      printCommonServerUrls(httpServer, config.preview, config)
+    }
+  }
 }

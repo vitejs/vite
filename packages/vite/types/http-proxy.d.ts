@@ -13,11 +13,11 @@
 
 /// <reference types="node" />
 
-import * as net from 'net'
-import * as http from 'http'
+import type * as net from 'net'
+import type * as http from 'http'
 import * as events from 'events'
-import * as url from 'url'
-import * as stream from 'stream'
+import type * as url from 'url'
+import type * as stream from 'stream'
 
 export namespace HttpProxy {
   export type ProxyTarget = ProxyTargetUrl | ProxyTargetDetailed

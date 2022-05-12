@@ -1,0 +1,8 @@
+{
+  "name": "css-dep",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "style": "index.css",
+  "sass": "index.scss"
+}

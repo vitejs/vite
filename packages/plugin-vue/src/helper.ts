@@ -2,9 +2,10 @@ export const EXPORT_HELPER_ID = 'plugin-vue:export-helper'
 
 export const helperCode = `
 export default (sfc, props) => {
+  const target = sfc.__vccOpts || sfc;
   for (const [key, val] of props) {
-    sfc[key] = val
+    target[key] = val;
   }
-  return sfc
+  return target;
 }
 `

@@ -1,4 +1,3 @@
-/// <reference lib="dom" />
 /// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules
@@ -162,6 +161,10 @@ declare module '*.webmanifest' {
   export default src
 }
 declare module '*.pdf' {
+  const src: string
+  export default src
+}
+declare module '*.txt' {
   const src: string
   export default src
 }

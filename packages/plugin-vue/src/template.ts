@@ -1,16 +1,15 @@
 import path from 'path'
 import slash from 'slash'
-import {
+import type {
+  CompilerOptions,
   SFCDescriptor,
   SFCTemplateCompileOptions,
-  SFCTemplateCompileResults,
-  CompilerOptions
+  SFCTemplateCompileResults
 } from 'vue/compiler-sfc'
-import { PluginContext, TransformPluginContext } from 'rollup'
-import { ResolvedOptions } from '.'
+import type { PluginContext, TransformPluginContext } from 'rollup'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
-import { compiler } from './compiler'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -70,7 +69,7 @@ export function compile(
   ssr: boolean
 ) {
   const filename = descriptor.filename
-  const result = compiler.compileTemplate({
+  const result = options.compiler.compileTemplate({
     ...resolveTemplateCompilerOptions(descriptor, options, ssr)!,
     source: code
   })
@@ -111,10 +110,10 @@ export function resolveTemplateCompilerOptions(
   const { id, filename, cssVars } = descriptor
 
   let transformAssetUrls = options.template?.transformAssetUrls
-  // @vue/compiler-sfc/dist/compiler-sfc.d.ts should export `AssetURLOptions`
+  // compiler-sfc should export `AssetURLOptions`
   let assetUrlOptions //: AssetURLOptions | undefined
   if (options.devServer) {
-    // during dev, inject vite base so that @vue/compiler-sfc can transform
+    // during dev, inject vite base so that compiler-sfc can transform
     // relative paths directly to absolute paths without incurring an extra import
     // request
     if (filename.startsWith(options.root)) {
@@ -124,7 +123,7 @@ export function resolveTemplateCompilerOptions(
           slash(path.relative(options.root, path.dirname(filename)))
       }
     }
-  } else {
+  } else if (transformAssetUrls !== false) {
     // build: force all asset urls into import requests so that they go through
     // the assets plugin for asset registration
     assetUrlOptions = {
@@ -134,17 +133,13 @@ export function resolveTemplateCompilerOptions(
 
   if (transformAssetUrls && typeof transformAssetUrls === 'object') {
     // presence of array fields means this is raw tags config
-    if (
-      Object.keys(transformAssetUrls).some((key) =>
-        Array.isArray((transformAssetUrls as any)[key])
-      )
-    ) {
+    if (Object.values(transformAssetUrls).some((val) => Array.isArray(val))) {
       transformAssetUrls = {
         ...assetUrlOptions,
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions

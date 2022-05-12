@@ -27,7 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-import { PluginHooks } from 'rollup'
+import type { PluginHooks } from 'rollup'
 
 export interface Alias {
   find: string | RegExp
