@@ -31,14 +31,8 @@ jobs:
 
       - name: Install deps
         run: pnpm install
-
-      - name: Creating .npmrc
-        run: |
-          cat << EOF > "$HOME/.npmrc"
-            //registry.npmjs.org/:_authToken=$NPM_TOKEN
-          EOF
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Publish package
         run: pnpm run ci-publish -- ${{ github.ref_name }}

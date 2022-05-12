@@ -1,13 +1,13 @@
+import path from 'path'
+import type Rollup from 'rollup'
+import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl, getAssetHash } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import type Rollup from 'rollup'
-import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedFile } from 'rollup'
 import type { ViteDevServer } from '../server'
+import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { fileToUrl, getAssetHash } from './asset'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -287,7 +287,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             }`,
 
-            // Empty sourcemap to supress Rollup warning
+            // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' }
           }
         } else {

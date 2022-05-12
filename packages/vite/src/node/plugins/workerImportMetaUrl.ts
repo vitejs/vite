@@ -1,15 +1,15 @@
-import JSON5 from 'json5'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
-import { fileToUrl } from './asset'
-import { cleanUrl, injectQuery } from '../utils'
 import path from 'path'
-import type { WorkerType } from './worker'
-import { workerFileToUrl, WORKER_FILE_ID } from './worker'
-import { parseRequest } from '../utils'
+import JSON5 from 'json5'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rollup'
-import { emptyString } from '../cleanString'
+import { stripLiteral } from 'strip-literal'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import { cleanUrl, injectQuery } from '../utils'
+import { parseRequest } from '../utils'
+import type { WorkerType } from './worker'
+import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import { fileToUrl } from './asset'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -77,7 +77,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
-        const cleanString = emptyString(code)
+        const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
 

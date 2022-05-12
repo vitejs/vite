@@ -1,24 +1,25 @@
-import debug from 'debug'
-import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { pathToFileURL, URL } from 'url'
-import {
-  FS_PREFIX,
-  DEFAULT_EXTENSIONS,
-  VALID_ID_PREFIX,
-  CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH,
-  CLIENT_ENTRY
-} from './constants'
-import resolve from 'resolve'
+import { promisify } from 'util'
+import { URL, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
+import { performance } from 'perf_hooks'
+import { URLSearchParams } from 'url'
+import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
-import { performance } from 'perf_hooks'
-import { parse as parseUrl, URLSearchParams } from 'url'
+import colors from 'picocolors'
+import debug from 'debug'
+import {
+  CLIENT_ENTRY,
+  CLIENT_PUBLIC_PATH,
+  DEFAULT_EXTENSIONS,
+  ENV_PUBLIC_PATH,
+  FS_PREFIX,
+  VALID_ID_PREFIX
+} from './constants'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -228,7 +229,7 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
+export const isTsRequest = (url: string) => knownTsRE.test(url)
 export const isPossibleTsOutput = (url: string) =>
   knownTsOutputRE.test(cleanUrl(url))
 export function getPotentialTsSrcPaths(filePath: string) {
@@ -522,6 +523,15 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export function removeDirSync(dir: string) {
+  if (fs.existsSync(dir)) {
+    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+    rmSync(dir, { recursive: true })
+  }
+}
+
+export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
+
 export function ensureWatchedFile(
   watcher: FSWatcher,
   file: string | null,
@@ -545,18 +555,20 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
 ): Promise<string> {
-  const imageCandidates: ImageCandidate[] = srcs
-    .split(',')
+  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
     .map((s) => {
-      const [url, descriptor] = s
-        .replace(escapedSpaceCharacters, ' ')
-        .trim()
-        .split(' ', 2)
-      return { url, descriptor }
+      const src = s.replace(escapedSpaceCharacters, ' ').trim()
+      const [url] = imageSetUrlRE.exec(src) || []
+
+      return {
+        url,
+        descriptor: src?.slice(url.length).trim()
+      }
     })
     .filter(({ url }) => !!url)
 
@@ -574,6 +586,25 @@ export async function processSrcSet(
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
+}
+
+function splitSrcSet(srcs: string) {
+  const parts: string[] = []
+  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  const cleanedSrcs = srcs.replace(
+    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    blankReplacer
+  )
+  let startIndex = 0
+  let splitIndex: number
+  do {
+    splitIndex = cleanedSrcs.indexOf(',', startIndex)
+    parts.push(
+      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined)
+    )
+    startIndex = splitIndex + 1
+  } while (splitIndex !== -1)
+  return parts
 }
 
 function escapeToLinuxLikePath(path: string) {
@@ -710,8 +741,11 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
+// @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
+
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
@@ -726,11 +760,53 @@ export const dynamicImport = usingDynamicImport
   : require
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+  return Object.fromEntries(new URLSearchParams(search))
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+
+// Based on node-graceful-fs
+
+// The ISC License
+// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
+// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+
+// On Windows, A/V software can lock the directory, causing this
+// to fail with an EACCES or EPERM if the directory contains newly
+// created files. The original tried for up to 60 seconds, we only
+// wait for 5 seconds, as a longer time would be seen as an error
+
+const GRACEFUL_RENAME_TIMEOUT = 5000
+function gracefulRename(
+  from: string,
+  to: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rename(from, to, function CB(er) {
+    if (
+      er &&
+      (er.code === 'EACCES' || er.code === 'EPERM') &&
+      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
+    ) {
+      setTimeout(function () {
+        fs.stat(to, function (stater, st) {
+          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
+          else CB(er)
+        })
+      }, backoff)
+      if (backoff < 100) backoff += 10
+      return
+    }
+    if (cb) cb(er)
+  })
+}
+
+export function emptyCssComments(raw: string) {
+  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+}

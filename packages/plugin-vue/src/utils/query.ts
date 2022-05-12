@@ -1,5 +1,3 @@
-import qs from 'querystring'
-
 export interface VueQuery {
   vue?: boolean
   src?: string
@@ -7,6 +5,7 @@ export interface VueQuery {
   index?: number
   lang?: string
   raw?: boolean
+  scoped?: boolean
 }
 
 export function parseVueRequest(id: string): {
@@ -14,7 +13,7 @@ export function parseVueRequest(id: string): {
   query: VueQuery
 } {
   const [filename, rawQuery] = id.split(`?`, 2)
-  const query = qs.parse(rawQuery) as VueQuery
+  const query = Object.fromEntries(new URLSearchParams(rawQuery)) as VueQuery
   if (query.vue != null) {
     query.vue = true
   }
@@ -23,6 +22,9 @@ export function parseVueRequest(id: string): {
   }
   if (query.raw != null) {
     query.raw = true
+  }
+  if (query.scoped != null) {
+    query.scoped = true
   }
   return {
     filename,

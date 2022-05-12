@@ -2,18 +2,37 @@ import fs from 'fs'
 import path from 'path'
 import type * as net from 'net'
 import type * as http from 'http'
+import type { AddressInfo } from 'net'
+import { performance } from 'perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
-import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
+import type { FSWatcher, WatchOptions } from 'types/chokidar'
+import type { Connect } from 'types/connect'
+import launchEditorMiddleware from 'launch-editor-middleware'
+import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
-import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
+import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { mergeConfig, resolveConfig } from '../config'
+import { isParentDirectory, normalizePath } from '../utils'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
+import { resolveSSRExternal } from '../ssr/ssrExternal'
+import {
+  rebindErrorStacktrace,
+  ssrRewriteStacktrace
+} from '../ssr/ssrStacktrace'
+import { ssrTransform } from '../ssr/ssrTransform'
+import { createOptimizedDeps } from '../optimizer/registerMissing'
+import type { OptimizedDeps } from '../optimizer'
+import { resolveHostname } from '../utils'
+import { CLIENT_DIR } from '../constants'
+import type { Logger } from '../logger'
+import { printCommonServerUrls } from '../logger'
+import { invalidatePackageData } from '../packages'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
-import type { FSWatcher, WatchOptions } from 'types/chokidar'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -25,41 +44,19 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import {
-  serveRawFsMiddleware,
   servePublicMiddleware,
+  serveRawFsMiddleware,
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
-import type { Connect } from 'types/connect'
-import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
-import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
+import { handleFileAddUnlink, handleHMRUpdate } from './hmr'
 import { openBrowser } from './openBrowser'
-import launchEditorMiddleware from 'launch-editor-middleware'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
-import type { ESBuildTransformResult } from '../plugins/esbuild'
-import { transformWithEsbuild } from '../plugins/esbuild'
-import type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-import { ssrLoadModule } from '../ssr/ssrModuleLoader'
-import { resolveSSRExternal } from '../ssr/ssrExternal'
-import {
-  rebindErrorStacktrace,
-  ssrRewriteStacktrace
-} from '../ssr/ssrStacktrace'
-import { ssrTransform } from '../ssr/ssrTransform'
-import { createOptimizedDeps } from '../optimizer/registerMissing'
-import type { OptimizedDeps } from '../optimizer'
-import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
-import { CLIENT_DIR } from '../constants'
-import { printCommonServerUrls } from '../logger'
-import { performance } from 'perf_hooks'
-import { invalidatePackageData } from '../packages'
-import type { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -92,6 +89,8 @@ export interface ServerOptions extends CommonServerOptions {
   fs?: FileSystemServeOptions
   /**
    * Origin for the generated asset URLs.
+   *
+   * @example `http://127.0.0.1:8080`
    */
   origin?: string
   /**
@@ -157,10 +156,6 @@ export interface ViteDevServer {
    */
   middlewares: Connect.Server
   /**
-   * @deprecated use `server.middlewares` instead
-   */
-  app: Connect.Server
-  /**
    * native Node http server instance
    * will be null in middleware mode
    */
@@ -199,18 +194,6 @@ export interface ViteDevServer {
     html: string,
     originalUrl?: string
   ): Promise<string>
-  /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   *
-   * @deprecated import `transformWithEsbuild` from `vite` instead
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<ESBuildTransformResult>
   /**
    * Transform module code into SSR format.
    * @experimental
@@ -258,23 +241,14 @@ export interface ViteDevServer {
    */
   _optimizedDeps: OptimizedDeps | null
   /**
+   * @internal
+   */
+  _importGlobMap: Map<string, string[][]>
+  /**
    * Deps that are externalized
    * @internal
    */
   _ssrExternals: string[] | null
-  /**
-   * @internal
-   */
-  _globImporters: Record<
-    string,
-    {
-      module: ModuleNode
-      importGlobs: {
-        base: string
-        pattern: string
-      }[]
-    }
-  >
   /**
    * @internal
    */
@@ -342,19 +316,16 @@ export async function createServer(
   const server: ViteDevServer = {
     config,
     middlewares,
-    get app() {
-      config.logger.warn(
-        `ViteDevServer.app is deprecated. Use ViteDevServer.middlewares instead.`
-      )
-      return middlewares
-    },
     httpServer,
     watcher,
     pluginContainer: container,
     ws,
     moduleGraph,
-    ssrTransform,
-    transformWithEsbuild,
+    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
+      return ssrTransform(code, inMap, url, {
+        json: { stringify: server.config.json?.stringify }
+      })
+    },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
     },
@@ -426,8 +397,8 @@ export async function createServer(
 
     _optimizedDeps: null,
     _ssrExternals: null,
-    _globImporters: Object.create(null),
     _restartPromise: null,
+    _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }
@@ -438,7 +409,7 @@ export async function createServer(
     try {
       await server.close()
     } finally {
-      process.exit(0)
+      process.exit()
     }
   }
 
@@ -479,9 +450,8 @@ export async function createServer(
   watcher.on('add', (file) => {
     handleFileAddUnlink(normalizePath(file), server)
   })
-
   watcher.on('unlink', (file) => {
-    handleFileAddUnlink(normalizePath(file), server, true)
+    handleFileAddUnlink(normalizePath(file), server)
   })
 
   if (!middlewareMode && httpServer) {
@@ -701,7 +671,8 @@ function resolvedAllowDir(root: string, dir: string): string {
 
 export function resolveServerOptions(
   root: string,
-  raw?: ServerOptions
+  raw: ServerOptions | undefined,
+  logger: Logger
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
@@ -727,6 +698,18 @@ export function resolveServerOptions(
     allow: allowDirs,
     deny
   }
+
+  if (server.origin?.endsWith('/')) {
+    server.origin = server.origin.slice(0, -1)
+    logger.warn(
+      colors.yellow(
+        `${colors.bold('(!)')} server.origin should not end with "/". Using "${
+          server.origin
+        }" instead.`
+      )
+    )
+  }
+
   return server
 }
 
