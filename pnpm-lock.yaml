@@ -614,11 +614,11 @@ importers:
 
   playground/optimize-deps/nested-exclude:
     specifiers:
-      nested-include: link:./nested-include
+      nested-include: file:../nested-include
     dependencies:
-      nested-include: link:nested-include
+      nested-include: file:playground/optimize-deps/nested-include
 
-  playground/optimize-deps/nested-exclude/nested-include:
+  playground/optimize-deps/nested-include:
     specifiers: {}
 
   playground/optimize-missing-deps:
@@ -779,7 +779,10 @@ importers:
     specifiers: {}
 
   playground/ssr-deps/forwarded-export:
-    specifiers: {}
+    specifiers:
+      object-assigned-exports: file:../object-assigned-exports
+    dependencies:
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
 
   playground/ssr-deps/object-assigned-exports:
     specifiers: {}
@@ -8295,7 +8298,13 @@ packages:
     name: nested-exclude
     version: 1.0.0
     dependencies:
-      nested-include: link:nested-include
+      nested-include: file:playground/optimize-deps/nested-include
+    dev: false
+
+  file:playground/optimize-deps/nested-include:
+    resolution: {directory: playground/optimize-deps/nested-include, type: directory}
+    name: nested-include
+    version: 1.0.0
     dev: false
 
   file:playground/optimize-missing-deps/missing-dep:
@@ -8328,6 +8337,8 @@ packages:
     resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
     name: forwarded-export
     version: 0.0.0
+    dependencies:
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
     dev: false
 
   file:playground/ssr-deps/object-assigned-exports:

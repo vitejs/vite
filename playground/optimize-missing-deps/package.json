@@ -3,8 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "node server",
-    "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
+    "dev": "node server"
   },
   "dependencies": {
     "missing-dep": "file:./missing-dep"
