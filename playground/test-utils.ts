@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/triple-slash-reference */
 // test utils used in e2e tests for playgrounds.
-// this can be directly imported in any playground tests as 'testUtils', e.g.
-// `import { getColor } from 'testUtils'`
+// `import { getColor } from '~utils'`
+
+// TODO: explicitly import APIs and remove this
+/// <reference types="vitest/globals"/>
 
 import fs from 'fs'
 import path from 'path'
@@ -9,6 +12,11 @@ import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import { expect } from 'vitest'
+import type { ExecaChildProcess } from 'execa'
+import { isBuild, isWindows, page, testDir } from './vitestSetup'
+
+export * from './vitestSetup'
 
 // make sure these ports are unique
 export const ports = {
@@ -26,17 +34,6 @@ export const ports = {
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006
 }
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
-}
-
-export const isBuild = !!process.env.VITE_TEST_BUILD
-
-const testPath = expect.getState().testPath
-const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-export const testDir = path.resolve(__dirname, '../playground-temp', testName)
-export const workspaceRoot = path.resolve(__dirname, '../')
 
 const hexToNameMap: Record<string, string> = {}
 Object.keys(colors).forEach((color) => {
@@ -153,11 +150,6 @@ export async function untilUpdated(
   }
 }
 
-/**
- * Send the rebuild complete message in build watch
- */
-export { notifyRebuildComplete } from '../scripts/jestPerTestSetup'
-
 export const extractSourcemap = (content: string) => {
   const lines = content.trim().split('\n')
   return fromComment(lines[lines.length - 1]).toObject()
@@ -170,4 +162,20 @@ export const formatSourcemapForSnapshot = (map: any) => {
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   return m
+}
+
+// helper function to kill process, uses taskkill on windows to ensure child process is killed too
+export async function killProcess(
+  serverProcess: ExecaChildProcess
+): Promise<void> {
+  if (isWindows) {
+    try {
+      const { default: execa } = await import('execa')
+      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+    } catch (e) {
+      console.error('failed to taskkill:', e)
+    }
+  } else {
+    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+  }
 }

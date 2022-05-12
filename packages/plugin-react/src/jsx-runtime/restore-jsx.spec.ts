@@ -1,6 +1,6 @@
-import { restoreJSX } from './restore-jsx'
 import * as babel from '@babel/core'
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import { restoreJSX } from './restore-jsx'
 
 async function jsx(sourceCode: string) {
   const [ast] = await restoreJSX(babel, sourceCode, 'test.js')

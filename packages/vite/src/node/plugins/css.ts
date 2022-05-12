@@ -1,21 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import glob from 'fast-glob'
-import {
-  // createDebugger,
-  isExternalUrl,
-  asyncReplace,
-  cleanUrl,
-  generateCodeFrame,
-  isDataUrl,
-  isObject,
-  normalizePath,
-  processSrcSet,
-  parseRequest,
-  combineSourcemaps
-} from '../utils'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -27,15 +12,6 @@ import type {
 } from 'rollup'
 import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
-import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
-import type { ResolveFn, ViteDevServer } from '../'
-import {
-  getAssetFilename,
-  assetUrlRE,
-  fileToUrl,
-  checkPublicFile,
-  getAssetHash
-} from './asset'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
@@ -44,13 +20,36 @@ import type Sass from 'sass'
 import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
 import type Less from 'less'
 import type { Alias } from 'types/alias'
-import type { ModuleNode } from '../server/moduleGraph'
-import { transform, formatMessages } from 'esbuild'
-import { addToHTMLProxyTransformResult } from './html'
-import { injectSourcesContent, getCodeWithSourcemap } from '../server/sourcemap'
+import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { assetFilenameWithBase, publicURLfromAsset } from '../build'
+import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
+import type { ModuleNode } from '../server/moduleGraph'
+import type { ResolveFn, ViteDevServer } from '../'
+import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
+import {
+  asyncReplace,
+  cleanUrl,
+  combineSourcemaps,
+  generateCodeFrame,
+  getHash,
+  isDataUrl,
+  isExternalUrl,
+  isObject,
+  normalizePath,
+  parseRequest,
+  processSrcSet
+} from '../utils'
 import { emptyCssComments } from '../utils'
+import { assetFilenameWithBase, publicURLfromAsset } from '../build'
+import { addToHTMLProxyTransformResult } from './html'
+import {
+  assetUrlRE,
+  checkPublicFile,
+  fileToUrl,
+  getAssetFilename
+} from './asset'
 
 // const debug = createDebugger('vite:css')
 
@@ -224,7 +223,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         const thisModule = moduleGraph.getModuleById(id)
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
-          const isSelfAccepting = !modules && !inlineRE.test(id)
+          const isSelfAccepting =
+            !modules && !inlineRE.test(id) && !htmlProxyRE.test(id)
           if (deps) {
             // record deps in the module graph so edits to @import css can trigger
             // main import to hot update
@@ -302,7 +302,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const isHTMLProxy = htmlProxyRE.test(id)
       const inlined = inlineRE.test(id)
       const modules = cssModulesCache.get(config)!.get(id)
 
@@ -315,43 +314,41 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         dataToEsm(modules, { namedExports: true, preferConst: true })
 
       if (config.command === 'serve') {
-        if (isDirectCSSRequest(id)) {
-          return css
-        } else {
-          // server only
-          if (options?.ssr) {
-            return modulesCode || `export default ${JSON.stringify(css)}`
-          }
-          if (inlined) {
-            return `export default ${JSON.stringify(css)}`
-          }
-
-          let cssContent = css
+        const getContentWithSourcemap = async (content: string) => {
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
-            cssContent = getCodeWithSourcemap('css', css, sourcemap)
+            return getCodeWithSourcemap('css', content, sourcemap)
           }
-
-          if (isHTMLProxy) {
-            return cssContent
-          }
-
-          return [
-            `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-              path.posix.join(config.base, CLIENT_PUBLIC_PATH)
-            )}`,
-            `const __vite__id = ${JSON.stringify(id)}`,
-            `const __vite__css = ${JSON.stringify(cssContent)}`,
-            `__vite__updateStyle(__vite__id, __vite__css)`,
-            // css modules exports change on edit so it can't self accept
-            `${
-              modulesCode ||
-              `import.meta.hot.accept()\nexport default __vite__css`
-            }`,
-            `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
-          ].join('\n')
+          return content
         }
+
+        if (isDirectCSSRequest(id)) {
+          return await getContentWithSourcemap(css)
+        }
+        // server only
+        if (options?.ssr) {
+          return modulesCode || `export default ${JSON.stringify(css)}`
+        }
+        if (inlined) {
+          return `export default ${JSON.stringify(css)}`
+        }
+
+        const cssContent = await getContentWithSourcemap(css)
+        return [
+          `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
+            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
+          )}`,
+          `const __vite__id = ${JSON.stringify(id)}`,
+          `const __vite__css = ${JSON.stringify(cssContent)}`,
+          `__vite__updateStyle(__vite__id, __vite__css)`,
+          // css modules exports change on edit so it can't self accept
+          `${
+            modulesCode ||
+            `import.meta.hot.accept()\nexport default __vite__css`
+          }`,
+          `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
+        ].join('\n')
       }
 
       // build CSS handling ----------------------------------------------------
@@ -360,10 +357,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // cache css compile result to map
       // and then use the cache replace inline-style-flag when `generateBundle` in vite:build-html plugin
       const inlineCSS = inlineCSSRE.test(id)
+      const isHTMLProxy = htmlProxyRE.test(id)
       const query = parseRequest(id)
       if (inlineCSS && isHTMLProxy) {
         addToHTMLProxyTransformResult(
-          `${getAssetHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
+          `${getHash(cleanUrl(id))}_${Number.parseInt(query!.index)}`,
           css
         )
         return `export default ''`
@@ -449,7 +447,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (
+          opts.format === 'es' ||
+          opts.format === 'cjs' ||
+          opts.format === 'system'
+        ) {
           chunkCSS = await processChunkCSS(chunkCSS, {
             inlined: false,
             minify: true
@@ -510,7 +512,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es'
+          opts.format === 'es' || opts.format === 'system'
             ? `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`
             : `\\brequire\\(\\s*"[^"]*(?:${emptyChunkFiles})"\\);\n?`,
           'g'
@@ -1042,18 +1044,26 @@ function rewriteImportCss(
   })
 }
 
-function rewriteCssImageSet(
+// TODO: image and cross-fade could contain a "url" that needs to be processed
+// https://drafts.csswg.org/css-images-4/#image-notation
+// https://drafts.csswg.org/css-images-4/#cross-fade-function
+const cssNotProcessedRE = /(gradient|element|cross-fade|image)\(/
+
+async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer
 ): Promise<string> {
-  return asyncReplace(css, cssImageSetRE, async (match) => {
+  return await asyncReplace(css, cssImageSetRE, async (match) => {
     const [, rawUrl] = match
     const url = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {
         return await rewriteCssUrls(url, replacer)
       }
-      return await doUrlReplace(url, url, replacer)
+      if (!cssNotProcessedRE.test(url)) {
+        return await doUrlReplace(url, url, replacer)
+      }
+      return url
     })
     return url
   })

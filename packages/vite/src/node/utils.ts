@@ -1,25 +1,26 @@
-import debug from 'debug'
-import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { createHash } from 'crypto'
 import { promisify } from 'util'
-import { pathToFileURL, URL } from 'url'
-import {
-  FS_PREFIX,
-  DEFAULT_EXTENSIONS,
-  VALID_ID_PREFIX,
-  CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH,
-  CLIENT_ENTRY
-} from './constants'
-import resolve from 'resolve'
+import { URL, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
+import { performance } from 'perf_hooks'
+import { URLSearchParams } from 'url'
+import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
-import { performance } from 'perf_hooks'
-import { parse as parseUrl, URLSearchParams } from 'url'
+import colors from 'picocolors'
+import debug from 'debug'
+import {
+  CLIENT_ENTRY,
+  CLIENT_PUBLIC_PATH,
+  DEFAULT_EXTENSIONS,
+  ENV_PUBLIC_PATH,
+  FS_PREFIX,
+  VALID_ID_PREFIX
+} from './constants'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -560,8 +561,7 @@ export async function processSrcSet(
   srcs: string,
   replacer: (arg: ImageCandidate) => Promise<string>
 ): Promise<string> {
-  const imageCandidates: ImageCandidate[] = srcs
-    .split(',')
+  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
       const [url] = imageSetUrlRE.exec(src) || []
@@ -587,6 +587,25 @@ export async function processSrcSet(
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
+}
+
+function splitSrcSet(srcs: string) {
+  const parts: string[] = []
+  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  const cleanedSrcs = srcs.replace(
+    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    blankReplacer
+  )
+  let startIndex = 0
+  let splitIndex: number
+  do {
+    splitIndex = cleanedSrcs.indexOf(',', startIndex)
+    parts.push(
+      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined)
+    )
+    startIndex = splitIndex + 1
+  } while (splitIndex !== -1)
+  return parts
 }
 
 function escapeToLinuxLikePath(path: string) {
@@ -723,8 +742,11 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
+// @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
+
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
@@ -739,14 +761,18 @@ export const dynamicImport = usingDynamicImport
   : require
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+  return Object.fromEntries(new URLSearchParams(search))
 }
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
+
+export function getHash(text: Buffer | string): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}
 
 // Based on node-graceful-fs
 

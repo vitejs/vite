@@ -19,15 +19,15 @@ import { send } from '../send'
 import {
   CLIENT_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
 } from '../../constants'
 import {
   cleanUrl,
+  ensureWatchedFile,
   fsPathFromId,
-  normalizePath,
   injectQuery,
-  ensureWatchedFile
+  normalizePath
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -217,7 +217,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&index=${index}.css`
+      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)

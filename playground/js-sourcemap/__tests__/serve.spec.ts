@@ -2,8 +2,10 @@ import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isBuild
-} from 'testUtils'
+  isBuild,
+  page,
+  serverLogs
+} from '~utils'
 
 if (!isBuild) {
   test('js', async () => {
@@ -18,12 +20,12 @@ if (!isBuild) {
     const js = await res.text()
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      Object {
+      {
         "mappings": "AAAO,aAAM,MAAM;",
-        "sources": Array [
+        "sources": [
           "/root/bar.ts",
         ],
-        "sourcesContent": Array [
+        "sourcesContent": [
           "export const bar = 'bar'
       ",
         ],

@@ -1,4 +1,12 @@
-import { isBuild, editFile, untilUpdated, getBg } from '../../testUtils'
+import {
+  browserLogs,
+  editFile,
+  getBg,
+  isBuild,
+  page,
+  untilUpdated,
+  viteTestUrl
+} from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('.app')).toBe('1')

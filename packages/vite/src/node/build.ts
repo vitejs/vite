@@ -1,41 +1,40 @@
 import fs from 'fs'
 import path from 'path'
 import colors from 'picocolors'
-import type { InlineConfig, ResolvedConfig } from './config'
-import { resolveConfig } from './config'
 import type {
+  ExternalOption,
+  ModuleFormat,
+  OutputOptions,
   Plugin,
   RollupBuild,
-  RollupOptions,
-  RollupWarning,
-  WarningHandler,
-  OutputOptions,
-  RollupOutput,
-  ExternalOption,
-  WatcherOptions,
-  RollupWatcher,
   RollupError,
-  ModuleFormat
+  RollupOptions,
+  RollupOutput,
+  RollupWarning,
+  RollupWatcher,
+  WarningHandler,
+  WatcherOptions
 } from 'rollup'
 import type Rollup from 'rollup'
+import type { Terser } from 'types/terser'
+import commonjsPlugin from '@rollup/plugin-commonjs'
+import type { RollupCommonJSOptions } from 'types/commonjs'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { TransformOptions } from 'esbuild'
+import type { InlineConfig, ResolvedConfig } from './config'
+import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import type { Terser } from 'types/terser'
 import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
-import commonjsPlugin from '@rollup/plugin-commonjs'
-import type { RollupCommonJSOptions } from 'types/commonjs'
-import dynamicImportVars from '@rollup/plugin-dynamic-import-vars'
-import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { Logger } from './logger'
-import type { TransformOptions } from 'esbuild'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
-import { getDepsCacheDir, findKnownImports } from './optimizer'
+import { findKnownImports, getDepsCacheDir } from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
@@ -285,7 +284,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       commonjsPlugin(options.commonjsOptions),
       dataURIPlugin(),
-      dynamicImportVars(options.dynamicImportVarsOptions),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
@@ -391,7 +389,6 @@ async function doBuild(
     )
   }
 
-  const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
     context: 'globalThis',
@@ -435,7 +432,7 @@ async function doBuild(
           ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
-          ? `[name].js`
+          ? `[name].[hash].js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         assetFileNames: libOptions
           ? `[name].[ext]`
@@ -443,7 +440,10 @@ async function doBuild(
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
-        inlineDynamicImports: ssr && typeof input === 'string',
+        inlineDynamicImports:
+          output.format === 'umd' ||
+          output.format === 'iife' ||
+          (ssr && typeof input === 'string'),
         ...output
       }
     }
@@ -469,7 +469,8 @@ async function doBuild(
       }
 
       const watcherOptions = config.build.watch
-      const watcher = rollup.watch({
+      const { watch } = await import('rollup')
+      const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
@@ -501,14 +502,12 @@ async function doBuild(
         }
       })
 
-      // stop watching
-      watcher.close()
-
       return watcher
     }
 
     // write or generate files with rollup
-    const bundle = await rollup.rollup(rollupOptions)
+    const { rollup } = await import('rollup')
+    const bundle = await rollup(rollupOptions)
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {

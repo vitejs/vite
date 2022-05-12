@@ -1,12 +1,12 @@
+import path from 'path'
+import type Rollup from 'rollup'
+import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import type Rollup from 'rollup'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
-import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedFile } from 'rollup'
+import { fileToUrl } from './asset'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -81,9 +81,9 @@ export async function bundleWorkerEntry(
   query: Record<string, string> | null
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
-  const rollup = require('rollup') as typeof Rollup
+  const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const bundle = await rollup.rollup({
+  const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,
@@ -143,7 +143,7 @@ function emitSourcemapForWorkerEntry(
       const basename = path.parse(cleanUrl(id)).name
       const data = sourcemap.toString()
       const content = Buffer.from(data)
-      const contentHash = getAssetHash(content)
+      const contentHash = getHash(content)
       const fileName = `${basename}.${contentHash}.js.map`
       const filePath = path.posix.join(config.build.assetsDir, fileName)
       emitWorkerSourcemap(context, config, {
@@ -183,7 +183,7 @@ export async function workerFileToUrl(
   if (!hash) {
     const code = await bundleWorkerEntry(ctx, config, id, query)
     const basename = path.parse(cleanUrl(id)).name
-    const contentHash = getAssetHash(code)
+    const contentHash = getHash(code)
     const fileName = path.posix.join(
       config.build.assetsDir,
       `${basename}.${contentHash}.js`

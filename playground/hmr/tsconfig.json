@@ -1,6 +1,7 @@
 {
+  "extends": "../tsconfig.json",
   "include": ["."],
-  "exclude": ["**/dist/**"],
+  "exclude": ["**/dist/**", "**/__tests__/**"],
   "compilerOptions": {
     "target": "es2019",
     "module": "esnext",
@@ -10,6 +11,6 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "jsx": "preserve",
-    "types": ["vite/client", "jest", "node"]
+    "types": ["vite/client", "node"]
   }
 }

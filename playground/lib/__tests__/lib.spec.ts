@@ -1,8 +1,15 @@
-import { isBuild, findAssetFile, testDir } from 'testUtils'
 import path from 'path'
 import fs from 'fs'
+import {
+  isBuild,
+  isServe,
+  page,
+  serverLogs,
+  testDir,
+  untilUpdated
+} from '~utils'
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   test('es', async () => {
     expect(await page.textContent('.es')).toBe('It works')
   })
@@ -28,12 +35,18 @@ if (isBuild) {
   })
 
   test('Library mode does not include `preload`', async () => {
-    expect(await page.textContent('.dynamic-import-message')).toBe('hello vite')
+    await untilUpdated(
+      () => page.textContent('.dynamic-import-message'),
+      'hello vite'
+    )
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/lib/dynamic-import-message.js'),
+      path.join(testDir, 'dist/lib/dynamic-import-message.es.js'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
+
+    // Test that library chunks are hashed
+    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.js"\)/)
   })
 
   test('@import hoist', async () => {
@@ -42,8 +55,8 @@ if (isBuild) {
       expect(log).not.toMatch('All "@import" rules must come first')
     })
   })
-} else {
-  test('dev', async () => {
-    expect(await page.textContent('.demo')).toBe('It works')
-  })
-}
+})
+
+test.runIf(isServe)('dev', async () => {
+  expect(await page.textContent('.demo')).toBe('It works')
+})

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
+import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await page.click('.ping')
@@ -44,7 +44,7 @@ const waitSharedWorkerTick = (
   }
 )(0)
 
-test.concurrent.each([[true], [false]])('shared worker', async (doTick) => {
+test.each([[true], [false]])('shared worker', async (doTick) => {
   if (doTick) {
     await page.click('.tick-shared')
   }
@@ -59,10 +59,10 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   )
 })
 
-if (isBuild) {
-  const assetsDir = path.resolve(testDir, 'dist/es/assets')
+describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
+    const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
     expect(files.length).toBe(26)
     const index = files.find((f) => f.includes('main-module'))
@@ -92,7 +92,7 @@ if (isBuild) {
       '"type":"constructor"'
     )
   })
-}
+})
 
 test('module worker', async () => {
   expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
@@ -106,10 +106,10 @@ test('classic worker', async () => {
 })
 
 test('emit chunk', async () => {
-  expect(await page.textContent('.emti-chunk-worker')).toMatch(
+  expect(await page.textContent('.emit-chunk-worker')).toMatch(
     '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]'
   )
-  expect(await page.textContent('.emti-chunk-dynamic-import-worker')).toMatch(
+  expect(await page.textContent('.emit-chunk-dynamic-import-worker')).toMatch(
     '"A string/es/"'
   )
 })
