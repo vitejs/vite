@@ -228,3 +228,8 @@ describe.runIf(isServe)('invalid', () => {
     expect(content).toBeTruthy()
   })
 })
+
+test('relative path in html asset', async () => {
+  expect(await page.textContent('.relative-js')).toMatch('hello')
+  expect(await getColor('.relative-css')).toMatch('red')
+})
