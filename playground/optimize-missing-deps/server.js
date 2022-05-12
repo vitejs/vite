@@ -51,8 +51,8 @@ async function createServer(root = process.cwd()) {
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(3000, () => {
-      console.log('http://localhost:3000')
+    app.listen(5173, () => {
+      console.log('http://localhost:5173')
     })
   )
 }
