@@ -4,8 +4,7 @@
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

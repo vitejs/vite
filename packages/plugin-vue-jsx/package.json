@@ -4,11 +4,23 @@
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "unbuild --stub",
+    "build": "unbuild",
+    "prepublishOnly": "npm -C ../vite run build && npm run build"
+  },
   "engines": {
     "node": ">=14.6.0"
   },
