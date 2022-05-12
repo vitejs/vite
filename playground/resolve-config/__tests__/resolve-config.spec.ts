@@ -3,7 +3,7 @@ import path from 'path'
 import { commandSync } from 'execa'
 import { isBuild, testDir, viteBinPath } from '~utils'
 
-const fromTestDir = (...p: string[]) => path.resolve(testDir(), ...p)
+const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
 
 const build = (configName: string) => {
   commandSync(`${viteBinPath} build`, { cwd: fromTestDir(configName) })

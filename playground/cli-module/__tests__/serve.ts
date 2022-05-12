@@ -3,11 +3,18 @@
 
 import execa from 'execa'
 import kill from 'kill-port'
-import { isWindows, ports, viteBinPath } from '~utils'
+import {
+  isBuild,
+  isWindows,
+  killProcess,
+  ports,
+  rootDir,
+  viteBinPath
+} from '~utils'
 
 export const port = ports['cli-module']
 
-export async function serve(root: string, isProd: boolean) {
+export async function serve() {
   // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
   const streams = {
     build: { out: [], err: [] },
@@ -35,11 +42,11 @@ export async function serve(root: string, isProd: boolean) {
   }
 
   // only run `vite build` when needed
-  if (isProd) {
+  if (isBuild) {
     const buildCommand = `${viteBinPath} build`
     try {
       const buildProcess = execa.command(buildCommand, {
-        cwd: root,
+        cwd: rootDir,
         stdio: 'pipe'
       })
       collectStreams('build', buildProcess)
@@ -56,12 +63,12 @@ export async function serve(root: string, isProd: boolean) {
 
   // run `vite --port x` or `vite preview --port x` to start server
   const viteServerArgs = ['--port', `${port}`, '--strict-port']
-  if (isProd) {
+  if (isBuild) {
     viteServerArgs.unshift('preview')
   }
   const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
   const serverProcess = execa.command(serverCommand, {
-    cwd: root,
+    cwd: rootDir,
     stdio: 'pipe'
   })
   collectStreams('server', serverProcess)
@@ -71,7 +78,7 @@ export async function serve(root: string, isProd: boolean) {
     if (serverProcess) {
       const timeoutError = `server process still alive after 3s`
       try {
-        killProcess(serverProcess)
+        await killProcess(serverProcess)
         await resolvedOrTimeout(serverProcess, 10000, timeoutError)
       } catch (e) {
         if (e === timeoutError || (!serverProcess.killed && !isWindows)) {
@@ -130,19 +137,6 @@ async function startedOnPort(serverProcess, port, timeout) {
     timeout,
     `failed to start within ${timeout}ms`
   ).finally(() => serverProcess.stdout.off('data', checkPort))
-}
-
-// helper function to kill process, uses taskkill on windows to ensure child process is killed too
-function killProcess(serverProcess) {
-  if (isWindows) {
-    try {
-      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
-    } catch (e) {
-      console.error('failed to taskkill:', e)
-    }
-  } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
-  }
 }
 
 // helper function that rejects with errorMessage if promise isn't settled within ms

@@ -3,17 +3,17 @@
 
 import path from 'path'
 import kill from 'kill-port'
-import { ports } from '~utils'
+import { isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-vue']
 
-export async function serve(root, isProd) {
-  if (isProd) {
+export async function serve() {
+  if (isBuild) {
     // build first
     const { build } = await import('vite')
     // client build
     await build({
-      root,
+      root: rootDir,
       logLevel: 'silent', // exceptions are logged by Vitest
       build: {
         target: 'esnext',
@@ -24,7 +24,7 @@ export async function serve(root, isProd) {
     })
     // server build
     await build({
-      root,
+      root: rootDir,
       logLevel: 'silent',
       build: {
         target: 'esnext',
@@ -36,8 +36,8 @@ export async function serve(root, isProd) {
 
   await kill(port)
 
-  const { createServer } = require(path.resolve(root, 'server.js'))
-  const { app, vite } = await createServer(root, isProd)
+  const { createServer } = require(path.resolve(rootDir, 'server.js'))
+  const { app, vite } = await createServer(rootDir, isBuild)
 
   return new Promise((resolve, reject) => {
     try {

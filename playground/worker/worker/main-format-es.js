@@ -13,7 +13,7 @@ const dataList = []
 nestedWorker.addEventListener('message', (ev) => {
   dataList.push(ev.data)
   text(
-    '.emti-chunk-worker',
+    '.emit-chunk-worker',
     JSON.stringify(
       dataList.sort(
         (a, b) => JSON.stringify(a).length - JSON.stringify(b).length
@@ -29,7 +29,7 @@ const dynamicImportWorker = new Worker(
   }
 )
 dynamicImportWorker.addEventListener('message', (ev) => {
-  text('.emti-chunk-dynamic-import-worker', JSON.stringify(ev.data))
+  text('.emit-chunk-dynamic-import-worker', JSON.stringify(ev.data))
 })
 
 const moduleWorker = new Worker(
