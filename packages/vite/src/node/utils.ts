@@ -557,10 +557,11 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-export async function processSrcSet(
+function replaceSrcSet(
   srcs: string,
-  replacer: (arg: ImageCandidate) => Promise<string>
-): Promise<string> {
+  replacer: (arg: ImageCandidate) => Promise<string> | string,
+  isSync: boolean
+): Promise<string> | string {
   const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
@@ -573,50 +574,42 @@ export async function processSrcSet(
     })
     .filter(({ url }) => !!url)
 
-  const ret = await Promise.all(
-    imageCandidates.map(async ({ url, descriptor }) => {
-      return {
-        url: await replacer({ url, descriptor }),
-        descriptor
-      }
-    })
-  )
+  const formatSrcset = (ret: { url: string; descriptor: string }[]) =>
+    ret.reduce((prev, { url, descriptor }, index) => {
+      descriptor ??= ''
+      return (prev +=
+        url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+    }, '')
 
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
+  if (isSync) {
+    return formatSrcset(
+      imageCandidates.map(({ url, descriptor }) => ({
+        url: replacer({ url, descriptor }) as string,
+        descriptor
+      }))
+    )
+  }
+
+  return Promise.all(
+    imageCandidates.map(async ({ url, descriptor }) => ({
+      url: await replacer({ url, descriptor }),
+      descriptor
+    }))
+  ).then((ret) => formatSrcset(ret))
+}
+
+export async function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => string
+): Promise<string> {
+  return await replaceSrcSet(srcs, replacer, false)
 }
 
 export function processSrcSetSync(
   srcs: string,
   replacer: (arg: ImageCandidate) => string
 ): string {
-  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
-    .map((s) => {
-      const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const [url] = imageSetUrlRE.exec(src) || []
-
-      return {
-        url,
-        descriptor: src?.slice(url.length).trim()
-      }
-    })
-    .filter(({ url }) => !!url)
-
-  const ret = imageCandidates.map(({ url, descriptor }) => {
-    return {
-      url: replacer({ url, descriptor }),
-      descriptor
-    }
-  })
-
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
+  return replaceSrcSet(srcs, replacer, true) as string
 }
 
 function splitSrcSet(srcs: string) {
