@@ -17,7 +17,7 @@ describe.runIf(isBuild)('build', () => {
   test('umd', async () => {
     expect(await page.textContent('.umd')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir(), 'dist/my-lib-custom-filename.umd.js'),
+      path.join(testDir, 'dist/my-lib-custom-filename.umd.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the UMD wrapper
@@ -27,7 +27,7 @@ describe.runIf(isBuild)('build', () => {
   test('iife', async () => {
     expect(await page.textContent('.iife')).toBe('It works')
     const code = fs.readFileSync(
-      path.join(testDir(), 'dist/my-lib-custom-filename.iife.js'),
+      path.join(testDir, 'dist/my-lib-custom-filename.iife.js'),
       'utf-8'
     )
     // esbuild helpers are injected inside of the IIFE wrapper
@@ -40,10 +40,13 @@ describe.runIf(isBuild)('build', () => {
       'hello vite'
     )
     const code = fs.readFileSync(
-      path.join(testDir(), 'dist/lib/dynamic-import-message.js'),
+      path.join(testDir, 'dist/lib/dynamic-import-message.es.js'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
+
+    // Test that library chunks are hashed
+    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.js"\)/)
   })
 
   test('@import hoist', async () => {

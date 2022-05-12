@@ -1,5 +1,6 @@
 import colors from 'picocolors'
 import _debug from 'debug'
+import { getHash } from '../utils'
 import type { ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
@@ -9,7 +10,6 @@ import {
   depsLogString,
   discoverProjectDependencies,
   extractExportsData,
-  getHash,
   getOptimizedDepPath,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,

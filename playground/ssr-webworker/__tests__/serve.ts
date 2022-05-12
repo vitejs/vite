@@ -3,20 +3,20 @@
 
 import path from 'path'
 import kill from 'kill-port'
-import { ports } from '~utils'
+import { isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-webworker']
 
-export async function serve(root: string, isProd: boolean) {
+export async function serve() {
   await kill(port)
 
   // we build first, regardless of whether it's prod/build mode
   // because Vite doesn't support the concept of a "webworker server"
-  const { build } = require('vite')
+  const { build } = await import('vite')
 
   // worker build
   await build({
-    root,
+    root: rootDir,
     logLevel: 'silent',
     build: {
       target: 'esnext',
@@ -25,8 +25,8 @@ export async function serve(root: string, isProd: boolean) {
     }
   })
 
-  const { createServer } = require(path.resolve(root, 'worker.js'))
-  const { app } = await createServer(root, isProd)
+  const { createServer } = require(path.resolve(rootDir, 'worker.js'))
+  const { app } = await createServer(rootDir, isBuild)
 
   return new Promise((resolve, reject) => {
     try {
