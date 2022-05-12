@@ -99,7 +99,11 @@ const processNodeUrl = (
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${url}"`
+      `"${path.posix.join(
+        config.base,
+        path.posix.relative(originalUrl, '/'),
+        url.slice(1)
+      )}"`
     )
   }
 }
