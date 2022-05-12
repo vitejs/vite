@@ -496,12 +496,6 @@ export async function createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
-  // hmr reconnect ping
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
-    res.end('pong')
-  })
-
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
