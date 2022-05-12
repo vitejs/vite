@@ -66,6 +66,13 @@ function testPage(isNested: boolean) {
     expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
     expect(await getColor('p')).toBe('grey')
   })
+
+  if (isNested) {
+    test('relative path in html asset', async () => {
+      expect(await page.textContent('.relative-js')).toMatch('hello')
+      expect(await getColor('.relative-css')).toMatch('red')
+    })
+  }
 }
 
 describe('main', () => {
@@ -227,9 +234,4 @@ describe.runIf(isServe)('invalid', () => {
     const content = await page.waitForSelector('text=Good HTML')
     expect(content).toBeTruthy()
   })
-})
-
-test('relative path in html asset', async () => {
-  expect(await page.textContent('.relative-js')).toMatch('hello')
-  expect(await getColor('.relative-css')).toMatch('red')
 })
