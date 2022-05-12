@@ -2,9 +2,9 @@ import { startDefaultServe } from '~utils'
 
 export let serveError: Error | undefined
 
-export async function serve(root: string, isBuild: boolean) {
+export async function serve() {
   try {
-    await startDefaultServe(root, isBuild)
+    await startDefaultServe()
   } catch (e) {
     serveError = e
   }

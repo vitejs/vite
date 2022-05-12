@@ -18,11 +18,32 @@ import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
 import { beforeAll } from 'vitest'
 
-const isBuildTest = !!process.env.VITE_TEST_BUILD
+// #region env
+
+export const workspaceRoot = path.resolve(__dirname, '../')
+
+export const isBuild = !!process.env.VITE_TEST_BUILD
+export const isServe = !isBuild
+
+export const isWindows = process.platform === 'win32'
+export const viteBinPath = path.join(
+  workspaceRoot,
+  'packages',
+  'vite',
+  'bin',
+  'vite.js'
+)
+
+// #endregion
+
+// #region context
 
 let server: ViteDevServer | http.Server
 let tempDir: string
-let rootDir: string
+
+export let rootDir: string
+export let testPath: string
+export let testName: string
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -40,6 +61,8 @@ export function setViteUrl(url: string) {
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
 }
+
+// #endregion
 
 const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 
@@ -75,8 +98,8 @@ beforeAll(async (s) => {
       browserErrors.push(error)
     })
 
-    const testPath = suite.filepath!
-    const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
+    testPath = suite.filepath!
+    testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
 
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
@@ -98,14 +121,14 @@ beforeAll(async (s) => {
         const serve = mod.serve || mod.default?.serve
         const preServe = mod.preServe || mod.default?.preServe
         if (preServe) {
-          await preServe(rootDir, isBuildTest)
+          await preServe()
         }
         if (serve) {
-          server = await serve(rootDir, isBuildTest)
+          server = await serve()
           return
         }
       } else {
-        await startDefaultServe(rootDir, isBuildTest)
+        await startDefaultServe()
       }
     }
   } catch (e) {
@@ -129,8 +152,8 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe(rootDir: string, isBuildTest: boolean) {
-  const testCustomConfig = resolve(dirname(rootDir), 'vite.config.js')
+export async function startDefaultServe() {
+  const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
   let config: InlineConfig | undefined
   if (fs.existsSync(testCustomConfig)) {
     // test has custom server configuration.
@@ -149,7 +172,7 @@ export async function startDefaultServe(rootDir: string, isBuildTest: boolean) {
       },
       host: true,
       fs: {
-        strict: !isBuildTest
+        strict: !isBuild
       }
     },
     build: {
@@ -162,7 +185,7 @@ export async function startDefaultServe(rootDir: string, isBuildTest: boolean) {
 
   setupConsoleWarnCollector(serverLogs)
 
-  if (!isBuildTest) {
+  if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
     server = await (
       await createServer(mergeConfig(options, config || {}))

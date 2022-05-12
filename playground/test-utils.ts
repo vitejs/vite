@@ -13,23 +13,11 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
-import { page } from './vitestSetup'
+import type { ExecaChildProcess } from 'execa'
+import execa from 'execa'
+import { isBuild, isWindows, page, slash } from './vitestSetup'
 
 export * from './vitestSetup'
-
-export const workspaceRoot = path.resolve(__dirname, '../')
-
-export const isBuild = !!process.env.VITE_TEST_BUILD
-export const isServe = !isBuild
-
-export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(
-  workspaceRoot,
-  'packages',
-  'vite',
-  'bin',
-  'vite.js'
-)
 
 // make sure these ports are unique
 export const ports = {
@@ -46,10 +34,6 @@ export const ports = {
   'ssr-webworker': 9605,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006
-}
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
 }
 
 export const testDir = () => {
@@ -188,4 +172,17 @@ export const formatSourcemapForSnapshot = (map: any) => {
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   return m
+}
+
+// helper function to kill process, uses taskkill on windows to ensure child process is killed too
+export function killProcess(serverProcess: ExecaChildProcess) {
+  if (isWindows) {
+    try {
+      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+    } catch (e) {
+      console.error('failed to taskkill:', e)
+    }
+  } else {
+    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+  }
 }
