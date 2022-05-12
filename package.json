@@ -34,6 +34,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "^7.23.1",
     "@types/babel__core": "^7.1.19",
+    "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^1.5.2",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",

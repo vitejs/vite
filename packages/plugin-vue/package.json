@@ -17,9 +17,9 @@
     }
   },
   "scripts": {
-    "dev": "unbuild --watch",
-    "build": "unbuild && pnpm run patch-dist",
-    "patch-dist": "ts-node ../../scripts/patchUnbuildDist.ts dist/index.cjs vuePlugin",
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
     "prepublishOnly": "npm -C ../vite run build && npm run build"
   },
   "engines": {

@@ -7,8 +7,22 @@
     "index.js",
     "index.d.ts"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
+    "prepublishOnly": "npm -C ../vite run build && npm run build"
+  },
   "engines": {
     "node": ">=14.6.0"
   },
@@ -30,5 +44,9 @@
   },
   "peerDependencies": {
     "vite": "^2.8.0"
+  },
+  "devDependencies": {
+    "vite": "workspace:*",
+    "@babel/core": "^7.17.10"
   }
 }

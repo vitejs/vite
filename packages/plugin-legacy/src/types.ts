@@ -1,5 +1,3 @@
-import type { Plugin } from 'vite'
-
 export interface Options {
   /**
    * default: 'defaults'
@@ -27,9 +25,3 @@ export interface Options {
    */
   externalSystemJS?: boolean
 }
-
-declare function createPlugin(options?: Options): Plugin
-
-export default createPlugin
-
-export const cspHashes: string[]

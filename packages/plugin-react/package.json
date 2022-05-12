@@ -21,7 +21,7 @@
     }
   },
   "scripts": {
-    "dev": "unbuild --watch",
+    "dev": "unbuild --stub",
     "build": "unbuild",
     "prepublishOnly": "npm -C ../vite run build && npm run build"
   },
