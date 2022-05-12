@@ -185,7 +185,6 @@ beforeAll(async (s) => {
     // a timeout with an exception that hides the real error in the console.
     await page.close()
     beforeAllError = e
-    throw e
   }
 
   return async () => {
