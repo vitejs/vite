@@ -67,7 +67,7 @@ beforeAll(async (s) => {
   browser = await chromium.connect(wsEndpoint)
   page = await browser.newPage()
 
-  const globalConsole = globalThis.console
+  const globalConsole = global.console
   const warn = globalConsole.warn
   globalConsole.warn = (msg, ...args) => {
     // suppress @vue/reactivity-transform warning

@@ -22,6 +22,7 @@ importers:
       '@types/less': ^3.0.3
       '@types/micromatch': ^4.0.2
       '@types/mime': ^2.0.3
+      '@types/minimist': ^1.2.2
       '@types/node': ^17.0.31
       '@types/prompts': ^2.4.0
       '@types/resolve': ^1.20.2
@@ -73,6 +74,7 @@ importers:
       '@types/less': 3.0.3
       '@types/micromatch': 4.0.2
       '@types/mime': 2.0.3
+      '@types/minimist': 1.2.2
       '@types/node': 17.0.32
       '@types/prompts': 2.4.0
       '@types/resolve': 1.20.2

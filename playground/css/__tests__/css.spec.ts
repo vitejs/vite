@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs'
 import {
   editFile,
   findAssetFile,
@@ -394,7 +395,7 @@ test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
-    require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+    readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
   )
 })
 

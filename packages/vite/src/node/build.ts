@@ -389,7 +389,6 @@ async function doBuild(
     )
   }
 
-  const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
     context: 'globalThis',
@@ -470,7 +469,8 @@ async function doBuild(
       }
 
       const watcherOptions = config.build.watch
-      const watcher = rollup.watch({
+      const { watch } = await import('rollup')
+      const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
@@ -506,7 +506,8 @@ async function doBuild(
     }
 
     // write or generate files with rollup
-    const bundle = await rollup.rollup(rollupOptions)
+    const { rollup } = await import('rollup')
+    const bundle = await rollup(rollupOptions)
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {

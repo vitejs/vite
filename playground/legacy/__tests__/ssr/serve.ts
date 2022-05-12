@@ -6,7 +6,7 @@ import { ports } from '~utils'
 export const port = ports['legacy/ssr']
 
 export async function serve(root: string, _isProd: boolean) {
-  const { build } = require('vite')
+  const { build } = await import('vite')
   await build({
     root,
     logLevel: 'silent',
@@ -17,14 +17,13 @@ export async function serve(root: string, _isProd: boolean) {
     }
   })
 
-  const express = require('express')
+  const { default: express } = await import('express')
   const app = express()
 
   app.use('/', async (_req, res) => {
-    const { render } = require(path.resolve(
-      root,
-      './dist/server/entry-server.js'
-    ))
+    const { render } = await import(
+      path.resolve(root, './dist/server/entry-server.js')
+    )
     const html = await render()
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   })

@@ -1,8 +1,9 @@
+import { readFileSync } from 'fs'
+import testJson from '../test.json'
 import { isBuild, page } from '~utils'
 
 const deepJson = require('vue/package.json')
-const json = require('../test.json')
-const stringified = JSON.stringify(json)
+const stringified = JSON.stringify(testJson)
 const deepStringified = JSON.stringify(deepJson)
 
 test('default import', async () => {
@@ -10,7 +11,7 @@ test('default import', async () => {
 })
 
 test('named import', async () => {
-  expect(await page.textContent('.named')).toBe(json.hello)
+  expect(await page.textContent('.named')).toBe(testJson.hello)
 })
 
 test('deep import', async () => {
@@ -26,7 +27,7 @@ test('dynamic import', async () => {
 })
 
 test('dynamic import, named', async () => {
-  expect(await page.textContent('.dynamic-named')).toBe(json.hello)
+  expect(await page.textContent('.dynamic-named')).toBe(testJson.hello)
 })
 
 test('fetch', async () => {
@@ -41,6 +42,6 @@ test('?url', async () => {
 
 test('?raw', async () => {
   expect(await page.textContent('.raw')).toBe(
-    require('fs').readFileSync(require.resolve('../test.json'), 'utf-8')
+    readFileSync(require.resolve('../test.json'), 'utf-8')
   )
 })
