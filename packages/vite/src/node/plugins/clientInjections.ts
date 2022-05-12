@@ -2,7 +2,7 @@ import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { normalizePath, isObject } from '../utils'
+import { isObject, normalizePath } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)

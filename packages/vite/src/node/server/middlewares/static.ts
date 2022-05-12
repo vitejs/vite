@@ -3,20 +3,20 @@ import type { ServerResponse } from 'http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
+import { isMatch } from 'micromatch'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
+  isFileReadable,
   isImportRequest,
   isInternalRequest,
+  isParentDirectory,
   isWindows,
-  slash,
-  isFileReadable,
-  isParentDirectory
+  slash
 } from '../../utils'
-import { isMatch } from 'micromatch'
 
 const sirvOptions: Options = {
   dev: true,

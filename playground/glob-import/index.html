@@ -1,0 +1,81 @@
+<pre class="result"></pre>
+<pre class="result-node_modules"></pre>
+<pre class="globraw"></pre>
+<pre class="relative-glob-raw"></pre>
+<pre class="side-effect-result"></pre>
+
+<script type="module" src="./dir/index.js"></script>
+<script type="module">
+  function useImports(modules, selector) {
+    for (const path in modules) {
+      modules[path]().then((mod) => {
+        console.log(path, mod)
+      })
+    }
+
+    const keys = Object.keys(modules)
+    Promise.all(keys.map((key) => modules[key]())).then((mods) => {
+      const res = {}
+      mods.forEach((m, i) => {
+        res[keys[i]] = m
+      })
+      document.querySelector(selector).textContent = JSON.stringify(
+        res,
+        null,
+        2
+      )
+    })
+  }
+
+  const modules = import.meta.glob(
+    '/dir/**'
+    // for test: annotation contain ")"
+    /*
+     * for test: annotation contain ")"
+     * */
+  )
+  useImports(modules, '.result')
+
+  const nodeModules = import.meta.glob('/dir/node_modules/**')
+  useImports(nodeModules, '.result-node_modules')
+</script>
+
+<script type="module">
+  const rawModules = import.meta.glob('/dir/*.json', {
+    as: 'raw',
+    eager: true
+  })
+  const globraw = {}
+  Object.keys(rawModules).forEach((key) => {
+    globraw[key] = JSON.parse(rawModules[key])
+  })
+  document.querySelector('.globraw').textContent = JSON.stringify(
+    globraw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  const relativeRawModules = import.meta.glob('../glob-import/dir/*.json', {
+    as: 'raw',
+    eager: true
+  })
+  const relativeGlobRaw = {}
+  Object.keys(relativeRawModules).forEach((key) => {
+    relativeGlobRaw[key] = JSON.parse(relativeRawModules[key])
+  })
+  document.querySelector('.relative-glob-raw').textContent = JSON.stringify(
+    relativeGlobRaw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  const neverInvoke = () =>
+    (document.querySelector('.side-effect-result').textContent =
+      "Syntax generated from 'import.meta.glob' must do ASI.")
+  const notInvocation = neverInvoke
+  import.meta.glob('/side-effect/**', { eager: true })
+</script>

@@ -1,6 +1,6 @@
+import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import aliasPlugin from '@rollup/plugin-alias'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -19,6 +19,8 @@ import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
+import { dynamicImportVarsPlugin } from './dynamicImportVars'
+import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -72,6 +74,8 @@ export async function resolvePlugins(
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    dynamicImportVarsPlugin(config),
+    importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else

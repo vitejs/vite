@@ -1,12 +1,12 @@
+import path from 'path'
+import type Rollup from 'rollup'
+import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl, getAssetHash } from './asset'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import type Rollup from 'rollup'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import { ENV_PUBLIC_PATH } from '../constants'
-import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedFile } from 'rollup'
+import { fileToUrl } from './asset'
 
 interface WorkerCache {
   // save worker bundle emitted files avoid overwrites the same file.
@@ -58,6 +58,14 @@ function emitWorkerAssets(
   )
 }
 
+function emitWorkerSourcemap(
+  ctx: Rollup.TransformPluginContext,
+  config: ResolvedConfig,
+  asset: EmittedFile
+) {
+  return emitWorkerFile(ctx, config, asset, 'assets')
+}
+
 function emitWorkerChunks(
   ctx: Rollup.TransformPluginContext,
   config: ResolvedConfig,
@@ -73,9 +81,9 @@ export async function bundleWorkerEntry(
   query: Record<string, string> | null
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
-  const rollup = require('rollup') as typeof Rollup
+  const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const bundle = await rollup.rollup({
+  const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,
@@ -135,17 +143,14 @@ function emitSourcemapForWorkerEntry(
       const basename = path.parse(cleanUrl(id)).name
       const data = sourcemap.toString()
       const content = Buffer.from(data)
-      const contentHash = getAssetHash(content)
+      const contentHash = getHash(content)
       const fileName = `${basename}.${contentHash}.js.map`
       const filePath = path.posix.join(config.build.assetsDir, fileName)
-      if (!context.cache.has(contentHash)) {
-        context.cache.set(contentHash, true)
-        context.emitFile({
-          fileName: filePath,
-          type: 'asset',
-          source: data
-        })
-      }
+      emitWorkerSourcemap(context, config, {
+        fileName: filePath,
+        type: 'asset',
+        source: data
+      })
 
       // Emit the comment that tells the JS debugger where it can find the
       // sourcemap file.
@@ -154,7 +159,10 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl = query?.inline != null ? filePath : fileName
+        const sourceMapUrl =
+          query?.inline != null
+            ? path.posix.join(config.base, filePath)
+            : fileName
         code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
@@ -178,7 +186,7 @@ export async function workerFileToUrl(
   }
   const code = await bundleWorkerEntry(ctx, config, id, query)
   const basename = path.parse(cleanUrl(id)).name
-  const contentHash = getAssetHash(code)
+  const contentHash = getHash(code)
   const fileName = path.posix.join(
     config.build.assetsDir,
     `${basename}.${contentHash}.js`
@@ -194,7 +202,6 @@ export async function workerFileToUrl(
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
@@ -253,7 +260,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             }`,
 
-            // Empty sourcemap to supress Rollup warning
+            // Empty sourcemap to suppress Rollup warning
             map: { mappings: '' }
           }
         } else {
@@ -274,12 +281,12 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           url
         )}, ${JSON.stringify(workerOptions, null, 2)})
         }`,
-        map: { mappings: '' } // Empty sourcemap to supress Rolup warning
+        map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
       }
     },
 
     renderChunk(code) {
-      if (isWorker && code.includes('import.meta.url')) {
+      if (config.isWorker && code.includes('import.meta.url')) {
         return code.replace('import.meta.url', 'self.location.href')
       }
     }
