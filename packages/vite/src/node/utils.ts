@@ -600,7 +600,7 @@ function replaceSrcSet(
 
 export async function processSrcSet(
   srcs: string,
-  replacer: (arg: ImageCandidate) => string
+  replacer: (arg: ImageCandidate) => Promise<string>
 ): Promise<string> {
   return await replaceSrcSet(srcs, replacer, false)
 }
