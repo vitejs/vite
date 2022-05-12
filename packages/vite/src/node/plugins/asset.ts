@@ -1,7 +1,6 @@
 import path from 'path'
 import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
-import { createHash } from 'crypto'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
@@ -9,7 +8,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { normalizePath } from '../utils'
+import { getHash, normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -195,7 +194,7 @@ export function getAssetFilename(
  * const fileName = assetFileNamesToFileName(
  *   'assets/[name].[hash][extname]',
  *   '/path/to/file.txt',
- *   getAssetHash(content),
+ *   getHash(content),
  *   content
  * )
  * // fileName: 'assets/file.982d9e3e.txt'
@@ -300,7 +299,7 @@ async function fileToBuiltUrl(
     // https://bundlers.tooling.report/hashing/asset-cascade/
     // https://github.com/rollup/rollup/issues/3415
     const map = assetHashToFilenameMap.get(config)!
-    const contentHash = getAssetHash(content)
+    const contentHash = getHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
     const output = config.build?.rollupOptions?.output
@@ -335,10 +334,6 @@ async function fileToBuiltUrl(
 
   cache.set(id, url)
   return url
-}
-
-export function getAssetHash(content: Buffer | string): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 8)
 }
 
 export async function urlToBuiltUrl(

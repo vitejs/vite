@@ -20,7 +20,7 @@ export async function serve() {
   setupConsoleWarnCollector()
 
   if (!isBuild) {
-    const { createServer } = require('vite')
+    const { createServer } = await import('vite')
     process.env.VITE_INLINE = 'inline-serve'
     const viteServer = await (
       await createServer({
@@ -48,7 +48,7 @@ export async function serve() {
 
     return viteServer
   } else {
-    const { build } = require('vite')
+    const { build } = await import('vite')
     await build({
       root: rootDir,
       logLevel: 'silent',

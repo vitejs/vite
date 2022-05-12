@@ -1,7 +1,7 @@
+import testJSON from '../safe.json'
 import { isServe, page, viteTestUrl } from '~utils'
 
-const json = require('../safe.json')
-const stringified = JSON.stringify(json)
+const stringified = JSON.stringify(testJSON)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
@@ -13,7 +13,7 @@ describe.runIf(isServe)('main', () => {
   })
 
   test('named import', async () => {
-    expect(await page.textContent('.named')).toBe(json.msg)
+    expect(await page.textContent('.named')).toBe(testJSON.msg)
   })
 
   test('safe fetch', async () => {

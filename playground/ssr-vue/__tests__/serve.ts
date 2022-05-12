@@ -10,7 +10,7 @@ export const port = ports['ssr-vue']
 export async function serve() {
   if (isBuild) {
     // build first
-    const { build } = require('vite')
+    const { build } = await import('vite')
     // client build
     await build({
       root: rootDir,

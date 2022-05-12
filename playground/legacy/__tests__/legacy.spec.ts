@@ -81,15 +81,15 @@ describe.runIf(isBuild)('build', () => {
     // This is a ghetto heuristic, but terser output seems to reliably start
     // with one of the following, and non-terser output (including unminified or
     // ebuild-minified) does not!
-    const terserPatt = /^(?:!function|System.register)/
+    const terserPattern = /^(?:!function|System.register)/
 
-    expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPatt)
-    expect(findAssetFile(/chunk-async\./)).not.toMatch(terserPatt)
-    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPatt)
-    expect(findAssetFile(/immutable-chunk\./)).not.toMatch(terserPatt)
-    expect(findAssetFile(/index-legacy/)).toMatch(terserPatt)
-    expect(findAssetFile(/index\./)).not.toMatch(terserPatt)
-    expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPatt)
+    expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/chunk-async\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/index-legacy/)).toMatch(terserPattern)
+    expect(findAssetFile(/index\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
   })
 
   test('should emit css file', async () => {

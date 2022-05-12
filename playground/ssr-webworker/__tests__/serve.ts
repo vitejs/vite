@@ -12,7 +12,7 @@ export async function serve() {
 
   // we build first, regardless of whether it's prod/build mode
   // because Vite doesn't support the concept of a "webworker server"
-  const { build } = require('vite')
+  const { build } = await import('vite')
 
   // worker build
   await build({

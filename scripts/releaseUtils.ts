@@ -1,15 +1,17 @@
 /**
  * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs'
+import { existsSync, readdirSync, writeFileSync } from 'fs'
 import path from 'path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions } from 'execa'
 import execa from 'execa'
 import type { ReleaseType } from 'semver'
 import semver from 'semver'
+import fs from 'fs-extra'
+import minimist from 'minimist'
 
-export const args = require('minimist')(process.argv.slice(2))
+export const args = minimist(process.argv.slice(2))
 
 export const isDryRun = !!args.dry
 
@@ -136,7 +138,7 @@ export function getVersionChoices(currentVersion: string) {
 }
 
 export function updateVersion(pkgPath: string, version: string): void {
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+  const pkg = fs.readJSONSync(pkgPath)
   pkg.version = version
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
@@ -195,7 +197,8 @@ export async function logRecentCommits(pkgName: string) {
 }
 
 export async function updateTemplateVersions() {
-  const viteVersion = require('../packages/vite/package.json').version
+  const viteVersion = (await fs.readJSON('../packages/vite/package.json'))
+    .version
   if (/beta|alpha|rc/.test(viteVersion)) return
 
   const dir = path.resolve(__dirname, '../packages/create-vite')
@@ -209,7 +212,7 @@ export async function updateTemplateVersions() {
     pkg.devDependencies.vite = `^` + viteVersion
     if (template.startsWith('template-vue')) {
       pkg.devDependencies['@vitejs/plugin-vue'] =
-        `^` + require('../packages/plugin-vue/package.json').version
+        `^` + (await fs.readJSON('../packages/plugin-vue/package.json')).version
     }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }
