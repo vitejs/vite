@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
-    "prepublishOnly": "npm -C ../vite run build && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=14.6.0"
