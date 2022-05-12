@@ -21,10 +21,9 @@ export async function serve(root: string, _isProd: boolean) {
   const app = express()
 
   app.use('/', async (_req, res) => {
-    const { render } = require(path.resolve(
-      root,
-      './dist/server/entry-server.js'
-    ))
+    const { render } = await import(
+      path.resolve(root, './dist/server/entry-server.js')
+    )
     const html = await render()
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   })

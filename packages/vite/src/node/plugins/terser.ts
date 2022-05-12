@@ -14,9 +14,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         const terserPath = require.resolve('terser', {
           paths: [basedir]
         })
-        const terser = await import(terserPath)
-        const minify = terser.minify || terser.default?.minify
-        return minify(code, options) as Terser.MinifyOutput
+        return require(terserPath).minify(code, options) as Terser.MinifyOutput
       }
     )
 
