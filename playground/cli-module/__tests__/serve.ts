@@ -94,7 +94,7 @@ export async function serve() {
   }
 
   try {
-    await startedOnPort(serverProcess, port, 3000)
+    await startedOnPort(serverProcess, port, 5173)
     return { close }
   } catch (e) {
     collectErrorStreams('server', e)
