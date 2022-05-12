@@ -589,6 +589,36 @@ export async function processSrcSet(
   }, '')
 }
 
+export function processSrcSetSync(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => string
+): string {
+  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
+    .map((s) => {
+      const src = s.replace(escapedSpaceCharacters, ' ').trim()
+      const [url] = imageSetUrlRE.exec(src) || []
+
+      return {
+        url,
+        descriptor: src?.slice(url.length).trim()
+      }
+    })
+    .filter(({ url }) => !!url)
+
+  const ret = imageCandidates.map(({ url, descriptor }) => {
+    return {
+      url: replacer({ url, descriptor }),
+      descriptor
+    }
+  })
+
+  return ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor ??= ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+}
+
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."

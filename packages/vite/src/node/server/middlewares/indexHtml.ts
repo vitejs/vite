@@ -27,7 +27,8 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
-  normalizePath
+  normalizePath,
+  processSrcSetSync
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -92,6 +93,13 @@ const processNodeUrl = (
     originalUrl !== '/' &&
     htmlPath === '/index.html'
   ) {
+    const replacer = (url: string) =>
+      path.posix.join(
+        config.base,
+        path.posix.relative(originalUrl, config.base),
+        url.slice(1)
+      )
+
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
     // rewrite before `./index.js` -> `localhost:3000/a/index.js`.
@@ -99,11 +107,9 @@ const processNodeUrl = (
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${path.posix.join(
-        config.base,
-        path.posix.relative(originalUrl, config.base),
-        url.slice(1)
-      )}"`
+      node.name === 'srcset'
+        ? `"${processSrcSetSync(url, ({ url }) => replacer(url))}"`
+        : `"${replacer(url)}"`
     )
   }
 }
