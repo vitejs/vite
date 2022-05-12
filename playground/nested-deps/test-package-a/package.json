@@ -1,0 +1,6 @@
+{
+  "name": "test-package-a",
+  "private": true,
+  "version": "2.0.0",
+  "main": "index.js"
+}

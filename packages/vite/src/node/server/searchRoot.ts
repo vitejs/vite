@@ -8,14 +8,17 @@ const ROOT_FILES = [
   // '.git',
 
   // https://pnpm.js.org/workspaces/
-  'pnpm-workspace.yaml'
+  'pnpm-workspace.yaml',
 
   // https://rushjs.io/pages/advanced/config_files/
   // 'rush.json',
 
   // https://nx.dev/latest/react/getting-started/nx-setup
   // 'workspace.json',
-  // 'nx.json'
+  // 'nx.json',
+
+  // https://github.com/lerna/lerna#lernajson
+  'lerna.json'
 ]
 
 // npm: https://docs.npmjs.com/cli/v7/using-npm/workspaces#installing-workspaces

@@ -1,22 +1,29 @@
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
-import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import type {
-  Identifier,
-  Node as _Node,
-  Property,
   Function as FunctionNode,
-  Pattern
+  Identifier,
+  Pattern,
+  Property,
+  Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
 import { combineSourcemaps } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
+import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
   start: number
   end: number
+}
+
+interface TransformOptions {
+  json?: {
+    stringify?: boolean
+  }
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -28,6 +35,30 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
+  url: string,
+  options?: TransformOptions
+): Promise<TransformResult | null> {
+  if (options?.json?.stringify && isJSONRequest(url)) {
+    return ssrTransformJSON(code, inMap)
+  }
+  return ssrTransformScript(code, inMap, url)
+}
+
+async function ssrTransformJSON(
+  code: string,
+  inMap: SourceMap | null
+): Promise<TransformResult> {
+  return {
+    code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
+    map: inMap,
+    deps: [],
+    dynamicDeps: []
+  }
+}
+
+async function ssrTransformScript(
+  code: string,
+  inMap: SourceMap | null,
   url: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
@@ -37,7 +68,8 @@ export async function ssrTransform(
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
-      locations: true
+      locations: true,
+      allowHashBang: true
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
@@ -66,7 +98,7 @@ export async function ssrTransform(
   }
 
   function defineExport(position: number, name: string, local = name) {
-    s.appendRight(
+    s.appendLeft(
       position,
       `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`
@@ -143,7 +175,12 @@ export async function ssrTransform(
 
     // default export
     if (node.type === 'ExportDefaultDeclaration') {
-      if ('id' in node.declaration && node.declaration.id) {
+      const expressionTypes = ['FunctionExpression', 'ClassExpression']
+      if (
+        'id' in node.declaration &&
+        node.declaration.id &&
+        !expressionTypes.includes(node.declaration.type)
+      ) {
         // named hoistable/class exports
         // export default function foo() {}
         // export default class A {}
@@ -158,7 +195,8 @@ export async function ssrTransform(
         s.overwrite(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`
+          `${ssrModuleExportsKey}.default =`,
+          { contentOnly: true }
         )
       }
     }
@@ -190,7 +228,7 @@ export async function ssrTransform(
         // { foo } -> { foo: __import_x__.foo }
         // skip for destructuring patterns
         if (
-          !(parent as any).inPattern ||
+          !isNodeInPatternWeakMap.get(parent) ||
           isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
@@ -207,14 +245,16 @@ export async function ssrTransform(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding)
+        s.overwrite(id.start, id.end, binding, { contentOnly: true })
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey)
+      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey)
+      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+        contentOnly: true
+      })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
@@ -257,6 +297,8 @@ interface Visitors {
   onDynamicImport: (node: Node) => void
 }
 
+const isNodeInPatternWeakMap = new WeakMap<_Node, boolean>()
+
 /**
  * Same logic from \@vue/compiler-core & \@vue/compiler-sfc
  * Except this is using acorn AST
@@ -283,6 +325,31 @@ function walk(
 
   function isInScope(name: string, parents: Node[]) {
     return parents.some((node) => node && scopeMap.get(node)?.has(name))
+  }
+  function handlePattern(p: Pattern, parentFunction: FunctionNode) {
+    if (p.type === 'Identifier') {
+      setScope(parentFunction, p.name)
+    } else if (p.type === 'RestElement') {
+      handlePattern(p.argument, parentFunction)
+    } else if (p.type === 'ObjectPattern') {
+      p.properties.forEach((property) => {
+        if (property.type === 'RestElement') {
+          setScope(parentFunction, (property.argument as Identifier).name)
+        } else {
+          handlePattern(property.value, parentFunction)
+        }
+      })
+    } else if (p.type === 'ArrayPattern') {
+      p.elements.forEach((element) => {
+        if (element) {
+          handlePattern(element, parentFunction)
+        }
+      })
+    } else if (p.type === 'AssignmentPattern') {
+      handlePattern(p.left, parentFunction)
+    } else {
+      setScope(parentFunction, (p as any).name)
+    }
   }
 
   ;(eswalk as any)(root, {
@@ -318,17 +385,26 @@ function walk(
         }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
-        node.params.forEach((p) =>
-          (eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
+        node.params.forEach((p) => {
+          if (p.type === 'ObjectPattern' || p.type === 'ArrayPattern') {
+            handlePattern(p, node)
+            return
+          }
+          ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
             enter(child: Node, parent: Node) {
+              // skip params default value of destructure
+              if (
+                parent?.type === 'AssignmentPattern' &&
+                parent?.right === child
+              ) {
+                return this.skip()
+              }
               if (child.type !== 'Identifier') return
               // do not record as scope variable if is a destructuring keyword
               if (isStaticPropertyKey(child, parent)) return
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
-                (parent?.type === 'AssignmentPattern' &&
-                  parent?.right === child) ||
                 (parent?.type === 'TemplateLiteral' &&
                   parent?.expressions.includes(child)) ||
                 (parent?.type === 'CallExpression' && parent?.callee === child)
@@ -338,38 +414,14 @@ function walk(
               setScope(node, child.name)
             }
           })
-        )
+        })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
-        ;(node as any).inPattern = true
+        isNodeInPatternWeakMap.set(node, true)
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
-          const handlePattern = (p: Pattern) => {
-            if (p.type === 'Identifier') {
-              setScope(parentFunction, p.name)
-            } else if (p.type === 'RestElement') {
-              handlePattern(p.argument)
-            } else if (p.type === 'ObjectPattern') {
-              p.properties.forEach((property) => {
-                if (property.type === 'RestElement') {
-                  setScope(
-                    parentFunction,
-                    (property.argument as Identifier).name
-                  )
-                } else handlePattern(property.value)
-              })
-            } else if (p.type === 'ArrayPattern') {
-              p.elements.forEach((element) => {
-                if (element) handlePattern(element)
-              })
-            } else if (p.type === 'AssignmentPattern') {
-              handlePattern(p.left)
-            } else {
-              setScope(parentFunction, (p as any).name)
-            }
-          }
-          handlePattern(node.id)
+          handlePattern(node.id, parentFunction)
         }
       }
     },
@@ -409,13 +461,13 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // class method name
-  if (parent.type === 'MethodDefinition') {
+  if (parent.type === 'MethodDefinition' && !parent.computed) {
     return false
   }
 
   // property key
   // this also covers object destructuring pattern
-  if (isStaticPropertyKey(id, parent) || (parent as any).inPattern) {
+  if (isStaticPropertyKey(id, parent) || isNodeInPatternWeakMap.get(parent)) {
     return false
   }
 

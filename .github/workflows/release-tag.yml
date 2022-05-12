@@ -1,4 +1,4 @@
-name: release
+name: Add GitHub Release Tag
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Get pkgName for tag
         id: tag

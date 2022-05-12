@@ -40,7 +40,7 @@ $ npm run build
 $ npm run preview
 ```
 
-The `vite preview` command will boot up local static web server that serves the files from `dist` at http://localhost:5000. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
 
 You may configure the port of the server py passing `--port` flag as an argument.
 
@@ -52,7 +52,7 @@ You may configure the port of the server py passing `--port` flag as an argument
 }
 ```
 
-Now the `preview` method will launch the server at http://localhost:8080.
+Now the `preview` method will launch the server at `http://localhost:8080`.
 
 ## GitHub Pages
 
@@ -80,6 +80,7 @@ Now the `preview` method will launch the server at http://localhost:8080.
    # echo 'www.example.com' > CNAME
 
    git init
+   git checkout -b main
    git add -A
    git commit -m 'deploy'
 
@@ -164,12 +165,27 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 ## Netlify
 
-1. On [Netlify](https://netlify.com), setup up a new project from GitHub with the following settings:
+1. Install the [Netlify CLI](https://cli.netlify.com/).
+2. Create a new site using `ntl init`.
+3. Deploy using `ntl deploy`.
 
-   - **Build Command:** `vite build` or `npm run build`
-   - **Publish directory:** `dist`
+```bash
+# Install the Netlify CLI
+$ npm install -g netlify-cli
 
-2. Hit the deploy button.
+# Create a new site in Netlify
+$ ntl init
+
+# Deploy to a unique preview URL
+$ ntl deploy
+```
+
+The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
+
+```bash
+# Deploy the site into production
+$ ntl deploy --prod
+```
 
 ## Google Firebase
 
@@ -267,15 +283,30 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
 ## Vercel
 
-To deploy your Vite app with a [Vercel for Git](https://vercel.com/docs/git), make sure it has been pushed to a Git repository.
+### Vercel CLI
 
-Go to https://vercel.com/import/git and import the project into Vercel using your Git of choice (GitHub, GitLab or BitBucket). Follow the wizard to select the project root with the project's `package.json` and override the build step using `npm run build` and the output dir to be `./dist`
+1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
+2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
-![Override Vercel Configuration](../images/vercel-configuration.png)
+```bash
+$ npm i -g vercel
+$ vercel init vite
+Vercel CLI
+> Success! Initialized "vite" example in ~/your-folder.
+- To deploy, `cd vite` and run `vercel`.
+```
 
-After your project has been imported, all subsequent pushes to branches will generate Preview Deployments, and all changes made to the Production Branch (commonly "main") will result in a Production Deployment.
+### Vercel for Git
 
-Once deployed, you will get a URL to see your app live, such as the following: https://vite.vercel.app
+1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
+2. [Import your Vite project](https://vercel.com/new) into Vercel.
+3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
+
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
+
+Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
 ## Azure Static Web Apps
 

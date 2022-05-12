@@ -2,8 +2,6 @@ import path from 'path'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { chunkToEmittedCssFileMap } from './css'
-import { chunkToEmittedAssetsMap } from './asset'
 import { normalizePath } from '../utils'
 
 export type Manifest = Record<string, ManifestChunk>
@@ -90,13 +88,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          manifestChunk.css = [...cssFiles]
+        if (chunk.viteMetadata.importedCss.size) {
+          manifestChunk.css = [...chunk.viteMetadata.importedCss]
         }
-
-        const assets = chunkToEmittedAssetsMap.get(chunk)
-        if (assets) [(manifestChunk.assets = [...assets])]
+        if (chunk.viteMetadata.importedAssets.size) {
+          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
+        }
 
         return manifestChunk
       }
@@ -113,7 +110,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       const outputLength = Array.isArray(output) ? output.length : 1
       if (outputCount >= outputLength) {
         this.emitFile({
-          fileName: `manifest.json`,
+          fileName:
+            typeof config.build.manifest === 'string'
+              ? config.build.manifest
+              : 'manifest.json',
           type: 'asset',
           source: JSON.stringify(manifest, null, 2)
         })

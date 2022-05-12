@@ -1,5 +1,6 @@
+import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
-import type { UserConfigExport, UserConfig } from '../config'
+import type { UserConfig, UserConfigExport } from '../config'
 import { mergeConfig, resolveConfig, resolveEnvPrefix } from '../config'
 
 describe('mergeConfig', () => {
@@ -28,19 +29,67 @@ describe('mergeConfig', () => {
       resolve: {
         alias: [
           {
-            find: 'foo',
-            replacement: 'foo-value'
-          },
-          {
             find: 'bar',
             replacement: 'bar-value'
           },
           {
             find: 'baz',
             replacement: 'baz-value'
+          },
+          {
+            find: 'foo',
+            replacement: 'foo-value'
           }
         ]
       }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('keep object alias schema', () => {
+    const baseConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value',
+          baz: 'baz-value'
+        }
+      }
+    }
+
+    const newConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    const mergedConfig = {
+      resolve: {
+        alias: {
+          bar: 'bar-value-2',
+          baz: 'baz-value',
+          foo: 'foo-value'
+        }
+      }
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
+
+  test('handles arrays', () => {
+    const baseConfig: UserConfigExport = {
+      envPrefix: 'string1'
+    }
+
+    const newConfig: UserConfigExport = {
+      envPrefix: ['string2', 'string3']
+    }
+
+    const mergedConfig: UserConfigExport = {
+      envPrefix: ['string1', 'string2', 'string3']
     }
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
@@ -93,51 +142,45 @@ describe('mergeConfig', () => {
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
-})
 
-describe('resolveConfig', () => {
-  beforeAll(() => {
-    // silence deprecation warning
-    jest.spyOn(console, 'warn').mockImplementation(() => {})
+  test('merge array correctly', () => {
+    const baseConfig = {
+      foo: null
+    }
+
+    const newConfig = {
+      foo: ['bar']
+    }
+
+    const mergedConfig = {
+      foo: ['bar']
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
 
-  afterAll(() => {
-    jest.clearAllMocks()
-  })
-
-  test('copies optimizeDeps.keepNames to esbuildOptions.keepNames', async () => {
-    const config: InlineConfig = {
-      optimizeDeps: {
-        keepNames: false
+  test('handles ssr.noExternal', () => {
+    const baseConfig = {
+      ssr: {
+        noExternal: true
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          keepNames: false
-        }
-      }
-    })
-  })
-
-  test('uses esbuildOptions.keepNames if set', async () => {
-    const config: InlineConfig = {
-      optimizeDeps: {
-        keepNames: true,
-        esbuildOptions: {
-          keepNames: false
-        }
+    const newConfig = {
+      ssr: {
+        noExternal: ['foo']
       }
     }
 
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
-      optimizeDeps: {
-        esbuildOptions: {
-          keepNames: false
-        }
+    const mergedConfig = {
+      ssr: {
+        noExternal: true
       }
-    })
+    }
+
+    // merging either ways, `ssr.noExternal: true` should take highest priority
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+    expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 })
 

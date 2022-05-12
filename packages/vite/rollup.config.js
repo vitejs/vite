@@ -71,8 +71,7 @@ const sharedNodeOptions = {
     exports: 'named',
     format: 'cjs',
     externalLiveBindings: false,
-    freeze: false,
-    sourcemap: true
+    freeze: false
   },
   onwarn(warning, warn) {
     // node-resolve complains a lot about this but seems to still work?
@@ -105,6 +104,10 @@ const createNodeConfig = (isProduction) => {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts')
     },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction
+    },
     external: [
       'fsevents',
       ...Object.keys(require('./package.json').dependencies),
@@ -132,7 +135,10 @@ const createNodeConfig = (isProduction) => {
         // in production we use api-extractor for dts generation
         // in development we need to rely on the rollup ts plugin
         ...(isProduction
-          ? {}
+          ? {
+              declaration: false,
+              sourceMap: false
+            }
           : {
               declaration: true,
               declarationDir: path.resolve(__dirname, 'dist/node')
@@ -162,13 +168,14 @@ const createNodeConfig = (isProduction) => {
             src: 'require("sugarss")',
             replacement: `eval('require')('sugarss')`
           },
-          'import-from/index.js': {
-            pattern: /require\(resolveFrom/g,
-            replacement: `eval('require')(resolveFrom`
-          },
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: eval('require'),`
+          },
+          // postcss-load-config calls require after register ts-node
+          'postcss-load-config/src/index.js': {
+            src: `require(configFile)`,
+            replacement: `eval('require')(configFile)`
           }
         }),
       commonjs({

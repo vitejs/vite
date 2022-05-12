@@ -8,6 +8,7 @@ module.exports = defineConfig({
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended'
   ],
+  plugins: ['import'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -29,14 +30,7 @@ module.exports = defineConfig({
     'node/no-missing-import': [
       'error',
       {
-        allowModules: [
-          'types',
-          'estree',
-          'testUtils',
-          'less',
-          'sass',
-          'stylus'
-        ],
+        allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -63,7 +57,7 @@ module.exports = defineConfig({
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass']
+        allowModules: ['vite', 'less', 'sass', 'vitest']
       }
     ],
     'node/no-extraneous-require': [
@@ -93,6 +87,18 @@ module.exports = defineConfig({
     '@typescript-eslint/consistent-type-imports': [
       'error',
       { prefer: 'type-imports' }
+    ],
+
+    'import/order': 'error',
+    'sort-imports': [
+      'error',
+      {
+        ignoreCase: false,
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        allowSeparatedGroups: false
+      }
     ]
   },
   overrides: [
@@ -103,16 +109,19 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**'],
+      files: ['packages/vite/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
     },
     {
-      files: ['packages/playground/**'],
+      files: ['playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
-        'node/no-extraneous-require': 'off'
+        'node/no-extraneous-require': 'off',
+        'node/no-missing-import': 'off',
+        'node/no-missing-require': 'off',
+        'no-undef': 'off'
       }
     },
     {

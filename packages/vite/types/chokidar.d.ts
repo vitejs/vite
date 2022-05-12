@@ -29,27 +29,28 @@ THE SOFTWARE.
 /// <reference types="node" />
 
 import type * as fs from 'fs'
+import { EventEmitter } from 'events'
 import type { Matcher } from './anymatch'
 
-export interface FSWatcher extends fs.FSWatcher {
+export class FSWatcher extends EventEmitter implements fs.FSWatcher {
   options: WatchOptions
 
   /**
    * Constructs a new FSWatcher instance with optional WatchOptions parameter.
    */
-  (options?: WatchOptions): void
+  constructor(options?: WatchOptions)
 
   /**
    * Add files, directories, or glob patterns for tracking. Takes an array of strings or just one
    * string.
    */
-  add(paths: string | ReadonlyArray<string>): void
+  add(paths: string | ReadonlyArray<string>): this
 
   /**
    * Stop watching files, directories, or glob patterns. Takes an array of strings or just one
    * string.
    */
-  unwatch(paths: string | ReadonlyArray<string>): void
+  unwatch(paths: string | ReadonlyArray<string>): this
 
   /**
    * Returns an object representing all the paths on the file system being watched by this
@@ -139,8 +140,10 @@ export interface WatchOptions {
   cwd?: string
 
   /**
-   *  If set to true then the strings passed to .watch() and .add() are treated as literal path
-   *  names, even if they look like globs. Default: false.
+   * If set to true then the strings passed to .watch() and .add() are treated as literal path
+   * names, even if they look like globs.
+   *
+   * @default false
    */
   disableGlobbing?: boolean
 
@@ -155,7 +158,7 @@ export interface WatchOptions {
 
   /**
    * Whether to use the `fsevents` watching interface if available. When set to `true` explicitly
-   * and `fsevents` is available this supersedes the `usePolling` setting. When set to `false` on
+   * and `fsevents` is available this supercedes the `usePolling` setting. When set to `false` on
    * OS X, `usePolling: true` becomes the default.
    */
   useFsEvents?: boolean
@@ -202,17 +205,25 @@ export interface WatchOptions {
   /**
    * can be set to an object in order to adjust timing params:
    */
-  awaitWriteFinish?:
-    | {
-        /**
-         * Amount of time in milliseconds for a file size to remain constant before emitting its event.
-         */
-        stabilityThreshold?: number
-
-        /**
-         * File size polling interval.
-         */
-        pollInterval?: number
-      }
-    | boolean
+  awaitWriteFinish?: AwaitWriteFinishOptions | boolean
 }
+
+export interface AwaitWriteFinishOptions {
+  /**
+   * Amount of time in milliseconds for a file size to remain constant before emitting its event.
+   */
+  stabilityThreshold?: number
+
+  /**
+   * File size polling interval.
+   */
+  pollInterval?: number
+}
+
+/**
+ * produces an instance of `FSWatcher`.
+ */
+export function watch(
+  paths: string | ReadonlyArray<string>,
+  options?: WatchOptions
+): FSWatcher
