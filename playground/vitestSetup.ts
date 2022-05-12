@@ -28,19 +28,10 @@ export const serverLogs: string[] = []
 export const browserLogs: string[] = []
 export const browserErrors: Error[] = []
 
-/**
- * Error caught in beforeAll, useful if you want to test error scenarios on build
- */
-export let beforeAllError: Error | null = null
-
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
-
-export function clearBeforeAllError() {
-  beforeAllError = null
-}
 
 export function setViteUrl(url: string) {
   viteTestUrl = url
@@ -54,20 +45,20 @@ const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 
 beforeAll(async (s) => {
   const suite = s as File
-  const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
-  if (!wsEndpoint) {
-    throw new Error('wsEndpoint not found')
-  }
-
   // skip browser setup for non-playground tests
   if (!suite.filepath.includes('playground')) {
     return
   }
 
+  const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
+  if (!wsEndpoint) {
+    throw new Error('wsEndpoint not found')
+  }
+
   browser = await chromium.connect(wsEndpoint)
   page = await browser.newPage()
 
-  const globalConsole = globalThis.console
+  const globalConsole = global.console
   const warn = globalConsole.warn
   globalConsole.warn = (msg, ...args) => {
     // suppress @vue/reactivity-transform warning
@@ -98,9 +89,9 @@ beforeAll(async (s) => {
 
       const testCustomServe = [
         resolve(dirname(testPath), 'serve.ts'),
-        resolve(dirname(testPath), 'serve.cjs'),
         resolve(dirname(testPath), 'serve.js')
       ].find((i) => fs.existsSync(i))
+
       if (testCustomServe) {
         // test has custom server configuration.
         const mod = await import(testCustomServe)
@@ -113,78 +104,18 @@ beforeAll(async (s) => {
           server = await serve(rootDir, isBuildTest)
           return
         }
-      }
-
-      const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
-      let config: InlineConfig | undefined
-      if (fs.existsSync(testCustomConfig)) {
-        // test has custom server configuration.
-        config = require(testCustomConfig)
-      }
-
-      const options: InlineConfig = {
-        root: rootDir,
-        logLevel: 'silent',
-        server: {
-          watch: {
-            // During tests we edit the files too fast and sometimes chokidar
-            // misses change events, so enforce polling for consistency
-            usePolling: true,
-            interval: 100
-          },
-          host: true,
-          fs: {
-            strict: !isBuildTest
-          }
-        },
-        build: {
-          // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
-          // skip transpilation during tests to make it faster
-          target: 'esnext'
-        },
-        customLogger: createInMemoryLogger(serverLogs)
-      }
-
-      setupConsoleWarnCollector(serverLogs)
-
-      if (!isBuildTest) {
-        process.env.VITE_INLINE = 'inline-serve'
-        server = await (
-          await createServer(mergeConfig(options, config || {}))
-        ).listen()
-        // use resolved port/base from server
-        const base = server.config.base === '/' ? '' : server.config.base
-        viteTestUrl = `http://localhost:${server.config.server.port}${base}`
-        await page.goto(viteTestUrl)
       } else {
-        process.env.VITE_INLINE = 'inline-build'
-        // determine build watch
-        let resolvedConfig: ResolvedConfig
-        const resolvedPlugin: () => PluginOption = () => ({
-          name: 'vite-plugin-watcher',
-          configResolved(config) {
-            resolvedConfig = config
-          }
-        })
-        options.plugins = [resolvedPlugin()]
-        const rollupOutput = await build(mergeConfig(options, config || {}))
-        const isWatch = !!resolvedConfig!.build.watch
-        // in build watch,call startStaticServer after the build is complete
-        if (isWatch) {
-          watcher = rollupOutput as RollupWatcher
-          await notifyRebuildComplete(watcher)
-        }
-        viteTestUrl = await startStaticServer(config)
-        await page.goto(viteTestUrl)
+        await startDefaultServe(rootDir, isBuildTest)
       }
     }
-  } catch (e: any) {
+  } catch (e) {
     // Closing the page since an error in the setup, for example a runtime error
     // when building the playground should skip further tests.
     // If the page remains open, a command like `await page.click(...)` produces
     // a timeout with an exception that hides the real error in the console.
     await page.close()
-    beforeAllError = e
+    await server?.close()
+    throw e
   }
 
   return async () => {
@@ -195,11 +126,73 @@ beforeAll(async (s) => {
     if (browser) {
       await browser.close()
     }
-    if (beforeAllError) {
-      throw beforeAllError
-    }
   }
 })
+
+export async function startDefaultServe(rootDir: string, isBuildTest: boolean) {
+  const testCustomConfig = resolve(dirname(rootDir), 'vite.config.js')
+  let config: InlineConfig | undefined
+  if (fs.existsSync(testCustomConfig)) {
+    // test has custom server configuration.
+    config = require(testCustomConfig)
+  }
+
+  const options: InlineConfig = {
+    root: rootDir,
+    logLevel: 'silent',
+    server: {
+      watch: {
+        // During tests we edit the files too fast and sometimes chokidar
+        // misses change events, so enforce polling for consistency
+        usePolling: true,
+        interval: 100
+      },
+      host: true,
+      fs: {
+        strict: !isBuildTest
+      }
+    },
+    build: {
+      // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
+      // skip transpilation during tests to make it faster
+      target: 'esnext'
+    },
+    customLogger: createInMemoryLogger(serverLogs)
+  }
+
+  setupConsoleWarnCollector(serverLogs)
+
+  if (!isBuildTest) {
+    process.env.VITE_INLINE = 'inline-serve'
+    server = await (
+      await createServer(mergeConfig(options, config || {}))
+    ).listen()
+    // use resolved port/base from server
+    const base = server.config.base === '/' ? '' : server.config.base
+    viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+    await page.goto(viteTestUrl)
+  } else {
+    process.env.VITE_INLINE = 'inline-build'
+    // determine build watch
+    let resolvedConfig: ResolvedConfig
+    const resolvedPlugin: () => PluginOption = () => ({
+      name: 'vite-plugin-watcher',
+      configResolved(config) {
+        resolvedConfig = config
+      }
+    })
+    options.plugins = [resolvedPlugin()]
+    const rollupOutput = await build(mergeConfig(options, config || {}))
+    const isWatch = !!resolvedConfig!.build.watch
+    // in build watch,call startStaticServer after the build is complete
+    if (isWatch) {
+      watcher = rollupOutput as RollupWatcher
+      await notifyRebuildComplete(watcher)
+    }
+    viteTestUrl = await startStaticServer(config)
+    await page.goto(viteTestUrl)
+  }
+}
 
 function startStaticServer(config?: InlineConfig): Promise<string> {
   if (!config) {
