@@ -1,6 +1,6 @@
+import { resolve } from 'path'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
-import { resolve } from 'path'
 
 async function run(input: string) {
   const { glob, rawPattern } = await transformDynamicImport(

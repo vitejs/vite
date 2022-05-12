@@ -1,22 +1,29 @@
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
-import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import type {
-  Identifier,
-  Node as _Node,
-  Property,
   Function as FunctionNode,
-  Pattern
+  Identifier,
+  Pattern,
+  Property,
+  Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
-import { combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
+import type { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
+import { combineSourcemaps } from '../utils'
+import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
   start: number
   end: number
+}
+
+interface TransformOptions {
+  json?: {
+    stringify?: boolean
+  }
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -26,6 +33,30 @@ export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 export async function ssrTransform(
+  code: string,
+  inMap: SourceMap | null,
+  url: string,
+  options?: TransformOptions
+): Promise<TransformResult | null> {
+  if (options?.json?.stringify && isJSONRequest(url)) {
+    return ssrTransformJSON(code, inMap)
+  }
+  return ssrTransformScript(code, inMap, url)
+}
+
+async function ssrTransformJSON(
+  code: string,
+  inMap: SourceMap | null
+): Promise<TransformResult> {
+  return {
+    code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
+    map: inMap,
+    deps: [],
+    dynamicDeps: []
+  }
+}
+
+async function ssrTransformScript(
   code: string,
   inMap: SourceMap | null,
   url: string

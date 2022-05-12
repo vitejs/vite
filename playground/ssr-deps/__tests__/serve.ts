@@ -1,19 +1,17 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const { ports } = require('../../testUtils')
+import path from 'path'
+import kill from 'kill-port'
+import { isBuild, ports, rootDir } from '~utils'
 
-const port = (exports.port = ports['ssr-html'])
+export const port = ports['ssr-deps']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
-  const { createServer } = require(path.resolve(root, 'server.js'))
-  const { app, vite } = await createServer(root, isProd)
+export async function serve() {
+  await kill(port)
+
+  const { createServer } = require(path.resolve(rootDir, 'server.js'))
+  const { app, vite } = await createServer(rootDir, isBuild)
 
   return new Promise((resolve, reject) => {
     try {

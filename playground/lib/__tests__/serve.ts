@@ -1,31 +1,30 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-const http = require('http')
-const sirv = require('sirv')
-const { ports } = require('../../testUtils')
+import path from 'path'
+import http from 'http'
+import sirv from 'sirv'
+import {
+  isBuild,
+  page,
+  ports,
+  rootDir,
+  serverLogs,
+  setViteUrl,
+  viteTestUrl
+} from '~utils'
 
-const port = (exports.port = ports.lib)
+export const port = ports.lib
 
-global.serverLogs = []
-
-/**
- * @param {string} root
- * @param {boolean} isBuildTest
- */
-exports.serve = async function serve(root, isBuildTest) {
-  // build first
-
+export async function serve() {
   setupConsoleWarnCollector()
 
-  if (!isBuildTest) {
-    const { createServer } = require('vite')
+  if (!isBuild) {
+    const { createServer } = await import('vite')
     process.env.VITE_INLINE = 'inline-serve'
-    let viteServer = await (
+    const viteServer = await (
       await createServer({
-        root: root,
+        root: rootDir,
         logLevel: 'silent',
         server: {
           watch: {
@@ -34,7 +33,7 @@ exports.serve = async function serve(root, isBuildTest) {
           },
           host: true,
           fs: {
-            strict: !isBuildTest
+            strict: !isBuild
           }
         },
         build: {
@@ -44,27 +43,26 @@ exports.serve = async function serve(root, isBuildTest) {
     ).listen()
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
-    const url =
-      (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
-    await page.goto(url)
+    setViteUrl(`http://localhost:${viteServer.config.server.port}${base}`)
+    await page.goto(viteTestUrl)
 
     return viteServer
   } else {
-    const { build } = require('vite')
+    const { build } = await import('vite')
     await build({
-      root,
+      root: rootDir,
       logLevel: 'silent',
       configFile: path.resolve(__dirname, '../vite.config.js')
     })
 
     await build({
-      root,
+      root: rootDir,
       logLevel: 'warn', // output esbuild warns
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
     })
 
     // start static file server
-    const serve = sirv(path.resolve(root, 'dist'))
+    const serve = sirv(path.resolve(rootDir, 'dist'))
     const httpServer = http.createServer((req, res) => {
       if (req.url === '/ping') {
         res.statusCode = 200
@@ -97,7 +95,7 @@ exports.serve = async function serve(root, isBuildTest) {
 function setupConsoleWarnCollector() {
   const warn = console.warn
   console.warn = (...args) => {
-    global.serverLogs.push(args.join(' '))
+    serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

@@ -1,4 +1,5 @@
-import { getColor, isBuild, editFile } from '../../testUtils'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -79,7 +80,6 @@ describe('main', () => {
 
 describe('nested', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/nested/')
   })
 
@@ -88,17 +88,15 @@ describe('nested', () => {
 
 describe('nested w/ query', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/nested/index.html?v=1')
   })
 
   testPage(true)
 })
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   describe('scriptAsync', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
       await page.goto(viteTestUrl + '/scriptAsync.html')
     })
 
@@ -110,7 +108,6 @@ if (isBuild) {
 
   describe('scriptMixed', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
       await page.goto(viteTestUrl + '/scriptMixed.html')
     })
 
@@ -124,7 +121,6 @@ if (isBuild) {
     // Ensure that the modulePreload polyfill is discarded in this case
 
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
       await page.goto(viteTestUrl + '/zeroJS.html')
     })
 
@@ -164,11 +160,10 @@ if (isBuild) {
       )
     })
   })
-}
+})
 
 describe('noHead', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/noHead.html')
   })
 
@@ -183,7 +178,6 @@ describe('noHead', () => {
 
 describe('noBody', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/jestPerTestSetup.ts
     await page.goto(viteTestUrl + '/noBody.html')
   })
 
@@ -197,42 +191,40 @@ describe('noBody', () => {
   })
 })
 
-describe('unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    expect(await page.textContent('h1')).toBe('unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 
   test('spa fallback', async () => {
     await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
-    expect(await page.textContent('h1')).toBe('unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 })
 
-if (!isBuild) {
-  describe('invalid', () => {
-    test('should be 500 with overlay', async () => {
-      const response = await page.goto(viteTestUrl + '/invalid.html')
-      expect(response.status()).toBe(500)
+describe.runIf(isServe)('invalid', () => {
+  test('should be 500 with overlay', async () => {
+    const response = await page.goto(viteTestUrl + '/invalid.html')
+    expect(response.status()).toBe(500)
 
-      const errorOverlay = await page.waitForSelector('vite-error-overlay')
-      expect(errorOverlay).toBeTruthy()
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    expect(errorOverlay).toBeTruthy()
 
-      const message = await errorOverlay.$$eval('.message-body', (m) => {
-        return m[0].innerHTML
-      })
-      expect(message).toMatch(/^Unable to parse HTML/)
+    const message = await errorOverlay.$$eval('.message-body', (m) => {
+      return m[0].innerHTML
     })
-
-    test('should reload when fixed', async () => {
-      const response = await page.goto(viteTestUrl + '/invalid.html')
-      await editFile('invalid.html', (content) => {
-        return content.replace('<div Bad', '<div> Good')
-      })
-      const content = await page.waitForSelector('text=Good HTML')
-      expect(content).toBeTruthy()
-    })
+    expect(message).toMatch(/^Unable to parse HTML/)
   })
-}
+
+  test('should reload when fixed', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    await editFile('invalid.html', (content) => {
+      return content.replace('<div Bad', '<div> Good')
+    })
+    const content = await page.waitForSelector('text=Good HTML')
+    expect(content).toBeTruthy()
+  })
+})

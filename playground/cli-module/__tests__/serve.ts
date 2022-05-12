@@ -1,22 +1,21 @@
-// @ts-check
-// this is automtically detected by scripts/jestPerTestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-const path = require('path')
-// eslint-disable-next-line node/no-restricted-require
-const execa = require('execa')
-const { workspaceRoot, ports } = require('../../testUtils')
+import execa from 'execa'
+import kill from 'kill-port'
+import {
+  isBuild,
+  isWindows,
+  killProcess,
+  ports,
+  rootDir,
+  viteBinPath
+} from '~utils'
 
-const isWindows = process.platform === 'win32'
-const port = (exports.port = ports['cli-module'])
-const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
+export const port = ports['cli-module']
 
-/**
- * @param {string} root
- * @param {boolean} isProd
- */
-exports.serve = async function serve(root, isProd) {
-  // collect stdout and stderr streams from child processes here to avoid interfering with regular jest output
+export async function serve() {
+  // collect stdout and stderr streams from child processes here to avoid interfering with regular vitest output
   const streams = {
     build: { out: [], err: [] },
     server: { out: [], err: [] }
@@ -43,11 +42,11 @@ exports.serve = async function serve(root, isProd) {
   }
 
   // only run `vite build` when needed
-  if (isProd) {
-    const buildCommand = `${viteBin} build`
+  if (isBuild) {
+    const buildCommand = `${viteBinPath} build`
     try {
       const buildProcess = execa.command(buildCommand, {
-        cwd: root,
+        cwd: rootDir,
         stdio: 'pipe'
       })
       collectStreams('build', buildProcess)
@@ -60,14 +59,16 @@ exports.serve = async function serve(root, isProd) {
     }
   }
 
+  await kill(port)
+
   // run `vite --port x` or `vite preview --port x` to start server
   const viteServerArgs = ['--port', `${port}`, '--strict-port']
-  if (isProd) {
+  if (isBuild) {
     viteServerArgs.unshift('preview')
   }
-  const serverCommand = `${viteBin} ${viteServerArgs.join(' ')}`
+  const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
   const serverProcess = execa.command(serverCommand, {
-    cwd: root,
+    cwd: rootDir,
     stdio: 'pipe'
   })
   collectStreams('server', serverProcess)
@@ -77,7 +78,7 @@ exports.serve = async function serve(root, isProd) {
     if (serverProcess) {
       const timeoutError = `server process still alive after 3s`
       try {
-        killProcess(serverProcess)
+        await killProcess(serverProcess)
         await resolvedOrTimeout(serverProcess, 10000, timeoutError)
       } catch (e) {
         if (e === timeoutError || (!serverProcess.killed && !isWindows)) {
@@ -113,7 +114,7 @@ exports.serve = async function serve(root, isProd) {
 // helper to validate that server was started on the correct port
 async function startedOnPort(serverProcess, port, timeout) {
   let checkPort
-  const startedPromise = new Promise((resolve, reject) => {
+  const startedPromise = new Promise<void>((resolve, reject) => {
     checkPort = (data) => {
       const str = data.toString()
       // hack, console output may contain color code gibberish
@@ -136,19 +137,6 @@ async function startedOnPort(serverProcess, port, timeout) {
     timeout,
     `failed to start within ${timeout}ms`
   ).finally(() => serverProcess.stdout.off('data', checkPort))
-}
-
-// helper function to kill process, uses taskkill on windows to ensure child process is killed too
-function killProcess(serverProcess) {
-  if (isWindows) {
-    try {
-      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
-    } catch (e) {
-      console.error('failed to taskkill:', e)
-    }
-  } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
-  }
 }
 
 // helper function that rejects with errorMessage if promise isn't settled within ms

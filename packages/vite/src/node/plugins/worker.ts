@@ -1,12 +1,11 @@
+import path from 'path'
+import type { EmittedAsset, OutputChunk, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { fileToUrl } from './asset'
 import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import type Rollup from 'rollup'
 import { ENV_PUBLIC_PATH } from '../constants'
-import path from 'path'
 import { onRollupWarning } from '../build'
-import type { TransformPluginContext, EmittedAsset } from 'rollup'
+import { fileToUrl } from './asset'
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
@@ -35,11 +34,11 @@ export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
-): Promise<Rollup.OutputChunk> {
+): Promise<OutputChunk> {
   // bundle the file as entry to support imports
-  const rollup = require('rollup') as typeof Rollup
+  const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const bundle = await rollup.rollup({
+  const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,
@@ -48,7 +47,7 @@ export async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false
   })
-  let chunk: Rollup.OutputChunk
+  let chunk: OutputChunk
   try {
     const workerOutputConfig = config.worker.rollupOptions.output
     const workerConfig = workerOutputConfig
@@ -97,8 +96,8 @@ function emitSourcemapForWorkerEntry(
   ctx: TransformPluginContext,
   config: ResolvedConfig,
   query: Record<string, string> | null,
-  chunk: Rollup.OutputChunk
-): Rollup.OutputChunk {
+  chunk: OutputChunk
+): OutputChunk {
   const { map: sourcemap } = chunk
 
   if (sourcemap) {
@@ -140,7 +139,7 @@ function emitSourcemapForWorkerEntry(
 }
 
 export async function workerFileToUrl(
-  ctx: Rollup.TransformPluginContext,
+  ctx: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null

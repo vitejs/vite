@@ -1,15 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import { commandSync } from 'execa'
-import { isBuild, testDir, workspaceRoot } from '../../testUtils'
-
-const viteBin = path.join(workspaceRoot, 'packages', 'vite', 'bin', 'vite.js')
+import { isBuild, testDir, viteBinPath } from '~utils'
 
 const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
 
 const build = (configName: string) => {
-  commandSync(`${viteBin} build`, { cwd: fromTestDir(configName) })
+  commandSync(`${viteBinPath} build`, { cwd: fromTestDir(configName) })
 }
+
 const getDistFile = (configName: string, extension: string) => {
   return fs.readFileSync(
     fromTestDir(`${configName}/dist/index.es.${extension}`),
@@ -17,7 +16,7 @@ const getDistFile = (configName: string, extension: string) => {
   )
 }
 
-if (isBuild) {
+describe.runIf(isBuild)('build', () => {
   it('loads vite.config.js', () => {
     build('js')
     expect(getDistFile('js', 'mjs')).toContain('console.log(true)')
@@ -50,8 +49,4 @@ if (isBuild) {
     build('ts-module')
     expect(getDistFile('ts-module', 'js')).toContain('console.log(true)')
   })
-} else {
-  // this test doesn't support serve mode
-  // must contain at least one test
-  test('should work', () => void 0)
-}
+})
