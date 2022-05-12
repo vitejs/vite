@@ -101,7 +101,7 @@ const processNodeUrl = (
       node.value!.loc.end.offset,
       `"${path.posix.join(
         config.base,
-        path.posix.relative(originalUrl, '/'),
+        path.posix.relative(originalUrl, config.base),
         url.slice(1)
       )}"`
     )
