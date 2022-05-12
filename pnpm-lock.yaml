@@ -136,6 +136,7 @@ importers:
       magic-string: ^0.26.1
       regenerator-runtime: ^0.13.9
       systemjs: ^6.12.1
+      vite: workspace:*
     dependencies:
       '@babel/standalone': 7.17.11
       core-js: 3.22.5
@@ -144,6 +145,7 @@ importers:
       systemjs: 6.12.1
     devDependencies:
       '@babel/core': 7.17.10
+      vite: link:../vite
 
   packages/plugin-react:
     specifiers:
