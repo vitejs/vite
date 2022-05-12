@@ -101,7 +101,7 @@ export async function resolveHttpServer(
 
   // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    const { createServer } = await import('http')
+    const { createServer } = await import('https')
     return createServer(httpsOptions, app)
   } else {
     const { createSecureServer } = await import('http2')
