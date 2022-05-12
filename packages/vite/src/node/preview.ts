@@ -61,10 +61,9 @@ export type PreviewServerHook = (server: {
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @experimental
  */
 export async function preview(
-  inlineConfig: InlineConfig
+  inlineConfig: InlineConfig = {}
 ): Promise<PreviewServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'production')
 
