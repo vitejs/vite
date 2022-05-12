@@ -11,7 +11,7 @@ const build = (configName: string) => {
 
 const getDistFile = (configName: string, extension: string) => {
   return fs.readFileSync(
-    fromTestDir(`${configName}/dist/index.es.${extension}`),
+    fromTestDir(`${configName}/dist/index.${extension}`),
     'utf8'
   )
 }
