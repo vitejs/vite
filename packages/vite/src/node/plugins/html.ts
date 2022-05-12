@@ -23,7 +23,6 @@ import {
   generateCodeFrame,
   isDataUrl,
   isExternalUrl,
-  normalizeHtmlAssetPath,
   normalizePath,
   processSrcSet,
   slash
@@ -283,7 +282,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               if (url && !isExcludedUrl(url)) {
                 // <script type="module" src="..."/>
                 // add it as an import
-                js += `\nimport ${JSON.stringify(normalizeHtmlAssetPath(url))}`
+                js += `\nimport ${JSON.stringify(url)}`
                 shouldRemove = true
               } else if (node.children.length) {
                 const contents = node.children
@@ -340,13 +339,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 const url = decodeURI(p.value.content)
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
-                    const normalizeURL = normalizeHtmlAssetPath(url)
                     // CSS references, convert to import
-                    const importExpression = `\nimport ${JSON.stringify(
-                      normalizeURL
-                    )}`
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
-                      url: normalizeURL,
+                      url: url,
                       start: node.loc.start.offset,
                       end: node.loc.end.offset
                     })

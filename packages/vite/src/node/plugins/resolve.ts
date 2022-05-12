@@ -174,7 +174,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // relative
-      if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
+      if (
+        id.startsWith('.') ||
+        (preferRelative && /^\w/.test(id)) ||
+        importer?.endsWith('.html')
+      ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
