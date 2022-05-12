@@ -596,6 +596,10 @@ export function resolveLibFilename(
     extension = format === 'es' ? 'mjs' : 'js'
   }
 
+  if (format === 'cjs' || format === 'es') {
+    return `${name}.${extension}`
+  }
+
   return `${name}.${format}.${extension}`
 }
 
