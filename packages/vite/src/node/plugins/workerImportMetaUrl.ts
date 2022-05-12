@@ -2,7 +2,7 @@ import JSON5 from 'json5'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
-import { cleanUrl, injectQuery, stringifyAsTemplateLiteral } from '../utils'
+import { cleanUrl, injectQuery } from '../utils'
 import path from 'path'
 import { workerFileToUrl } from './worker'
 import { parseRequest, normalizePath } from '../utils'
@@ -155,14 +155,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             url = injectQuery(url, WORKER_FILE_ID)
             url = injectQuery(url, `type=${workerType}`)
           }
-          s.overwrite(
-            urlIndex,
-            urlIndex + exp.length,
-            stringifyAsTemplateLiteral(url),
-            {
-              contentOnly: true
-            }
-          )
+          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
+            contentOnly: true
+          })
         }
 
         if (s) {

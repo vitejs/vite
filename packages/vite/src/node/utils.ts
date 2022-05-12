@@ -748,10 +748,6 @@ export function parseRequest(id: string): Record<string, string> | null {
 
 export const blankReplacer = (match: string) => ' '.repeat(match.length)
 
-export function stringifyAsTemplateLiteral(s: string) {
-  return `\`${s.replace(/`|\\|\$\{/g, '\\$&')}\``
-}
-
 // Based on node-graceful-fs
 
 // The ISC License

@@ -12,8 +12,7 @@ import {
   normalizePath,
   processSrcSet,
   parseRequest,
-  combineSourcemaps,
-  stringifyAsTemplateLiteral
+  combineSourcemaps
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -382,7 +381,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (config.build.minify) {
             content = await minifyCSS(content, config)
           }
-          code = `export default ${stringifyAsTemplateLiteral(content)}`
+          code = `export default ${JSON.stringify(content)}`
         }
       } else {
         code = `export default ''`
@@ -471,7 +470,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${stringifyAsTemplateLiteral(chunkCSS)};` +
+            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
             const s = new MagicString(code)

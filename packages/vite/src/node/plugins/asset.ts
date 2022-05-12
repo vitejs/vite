@@ -4,7 +4,7 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, normalizePath, stringifyAsTemplateLiteral } from '../utils'
+import { cleanUrl, normalizePath } from '../utils'
 import {
   assetFilenameWithBase,
   isRelativeBase,
@@ -81,8 +81,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
       const url = await fileToUrl(id, config, this)
-      // Return a template string so we can use interpolation when replacing __VITE_ASSET__
-      return `export default ${stringifyAsTemplateLiteral(url)}`
+      return `export default ${JSON.stringify(url)}`
     },
 
     renderChunk(code, chunk) {
@@ -109,7 +108,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.base
         )
         const replacement = isRelativeBase(config.base)
-          ? `\${new URL(${JSON.stringify(outputFilepath)},import.meta.url)}`
+          ? `" + new URL(${JSON.stringify(
+              outputFilepath
+            )}, import.meta.url) + "`
           : outputFilepath
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true

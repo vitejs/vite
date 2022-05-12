@@ -3,7 +3,6 @@ import MagicString from 'magic-string'
 import path from 'path'
 import { fileToUrl } from './asset'
 import type { ResolvedConfig } from '../config'
-import { stringifyAsTemplateLiteral } from '../utils'
 import { preloadHelperId } from './importAnalysisBuild'
 import { stripLiteral } from 'strip-literal'
 
@@ -76,7 +75,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${stringifyAsTemplateLiteral(builtUrl)}, self.location)`,
+            `" + new URL(${JSON.stringify(builtUrl)}, self.location) + "`,
             { contentOnly: true }
           )
         }
