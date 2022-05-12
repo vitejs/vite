@@ -143,7 +143,7 @@ export async function handleHotUpdate(
       affectedModules.add(mainModule)
     } else if (mainModule && !affectedModules.has(mainModule)) {
       const styleImporters = [...mainModule.importers].filter((m) =>
-        /\.css/.test(m.url)
+        /\.css($|\?)/.test(m.url)
       )
       styleImporters.forEach((m) => affectedModules.add(m))
     }
