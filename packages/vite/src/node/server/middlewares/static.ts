@@ -3,20 +3,20 @@ import type { ServerResponse } from 'http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
+import { isMatch } from 'micromatch'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
+  isFileReadable,
   isImportRequest,
   isInternalRequest,
+  isParentDirectory,
   isWindows,
-  slash,
-  isFileReadable,
-  isParentDirectory
+  slash
 } from '../../utils'
-import { isMatch } from 'micromatch'
 
 const sirvOptions: Options = {
   dev: true,
@@ -111,7 +111,7 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    let url = req.url!
+    let url = decodeURI(req.url!)
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
