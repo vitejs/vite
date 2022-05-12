@@ -255,7 +255,7 @@ async function genTemplateCode(
         ? `&src=${descriptor.id}`
         : '&src=true'
       : ''
-    const scopedQuery = hasScoped ? `&scoped=true` : ``
+    const scopedQuery = hasScoped ? `&scoped=${descriptor.id}` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${scopedQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
