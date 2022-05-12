@@ -13,23 +13,10 @@ import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import { expect } from 'vitest'
-import { page } from './vitestSetup'
+import type { ExecaChildProcess } from 'execa'
+import { isBuild, isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
-
-export const workspaceRoot = path.resolve(__dirname, '../')
-
-export const isBuild = !!process.env.VITE_TEST_BUILD
-export const isServe = !isBuild
-
-export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(
-  workspaceRoot,
-  'packages',
-  'vite',
-  'bin',
-  'vite.js'
-)
 
 // make sure these ports are unique
 export const ports = {
@@ -46,16 +33,6 @@ export const ports = {
   'ssr-webworker': 9605,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006
-}
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
-}
-
-export const testDir = () => {
-  const testPath = expect.getState().testPath
-  const testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-  return path.resolve(__dirname, '../playground-temp', testName)
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -109,7 +86,7 @@ export async function getBgColor(el: string | ElementHandle): Promise<string> {
 }
 
 export function readFile(filename: string): string {
-  return fs.readFileSync(path.resolve(testDir(), filename), 'utf-8')
+  return fs.readFileSync(path.resolve(testDir, filename), 'utf-8')
 }
 
 export function editFile(
@@ -118,27 +95,27 @@ export function editFile(
   runInBuild: boolean = false
 ): void {
   if (isBuild && !runInBuild) return
-  filename = path.resolve(testDir(), filename)
+  filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
   fs.writeFileSync(filename, modified)
 }
 
 export function addFile(filename: string, content: string): void {
-  fs.writeFileSync(path.resolve(testDir(), filename), content)
+  fs.writeFileSync(path.resolve(testDir, filename), content)
 }
 
 export function removeFile(filename: string): void {
-  fs.unlinkSync(path.resolve(testDir(), filename))
+  fs.unlinkSync(path.resolve(testDir, filename))
 }
 
 export function listAssets(base = ''): string[] {
-  const assetsDir = path.join(testDir(), 'dist', base, 'assets')
+  const assetsDir = path.join(testDir, 'dist', base, 'assets')
   return fs.readdirSync(assetsDir)
 }
 
 export function findAssetFile(match: string | RegExp, base = ''): string {
-  const assetsDir = path.join(testDir(), 'dist', base, 'assets')
+  const assetsDir = path.join(testDir, 'dist', base, 'assets')
   const files = fs.readdirSync(assetsDir)
   const file = files.find((file) => {
     return file.match(match)
@@ -148,10 +125,7 @@ export function findAssetFile(match: string | RegExp, base = ''): string {
 
 export function readManifest(base = ''): Manifest {
   return JSON.parse(
-    fs.readFileSync(
-      path.join(testDir(), 'dist', base, 'manifest.json'),
-      'utf-8'
-    )
+    fs.readFileSync(path.join(testDir, 'dist', base, 'manifest.json'), 'utf-8')
   )
 }
 
@@ -182,10 +156,26 @@ export const extractSourcemap = (content: string) => {
 }
 
 export const formatSourcemapForSnapshot = (map: any) => {
-  const root = normalizePath(testDir())
+  const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
   delete m.names
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   return m
+}
+
+// helper function to kill process, uses taskkill on windows to ensure child process is killed too
+export async function killProcess(
+  serverProcess: ExecaChildProcess
+): Promise<void> {
+  if (isWindows) {
+    try {
+      const { default: execa } = await import('execa')
+      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+    } catch (e) {
+      console.error('failed to taskkill:', e)
+    }
+  } else {
+    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+  }
 }

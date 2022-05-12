@@ -5,7 +5,7 @@ import { isBuild, testDir } from '~utils'
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('sourcemap generation for web workers', async () => {
-    const assetsDir = path.resolve(testDir(), 'dist/iife-sourcemap/assets')
+    const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
     expect(files.length).toBe(26)

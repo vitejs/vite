@@ -4,19 +4,27 @@
 import path from 'path'
 import http from 'http'
 import sirv from 'sirv'
-import { page, ports, serverLogs, setViteUrl, viteTestUrl } from '~utils'
+import {
+  isBuild,
+  page,
+  ports,
+  rootDir,
+  serverLogs,
+  setViteUrl,
+  viteTestUrl
+} from '~utils'
 
 export const port = ports.lib
 
-export async function serve(root, isBuildTest) {
+export async function serve() {
   setupConsoleWarnCollector()
 
-  if (!isBuildTest) {
+  if (!isBuild) {
     const { createServer } = await import('vite')
     process.env.VITE_INLINE = 'inline-serve'
     const viteServer = await (
       await createServer({
-        root: root,
+        root: rootDir,
         logLevel: 'silent',
         server: {
           watch: {
@@ -25,7 +33,7 @@ export async function serve(root, isBuildTest) {
           },
           host: true,
           fs: {
-            strict: !isBuildTest
+            strict: !isBuild
           }
         },
         build: {
@@ -42,19 +50,19 @@ export async function serve(root, isBuildTest) {
   } else {
     const { build } = await import('vite')
     await build({
-      root,
+      root: rootDir,
       logLevel: 'silent',
       configFile: path.resolve(__dirname, '../vite.config.js')
     })
 
     await build({
-      root,
+      root: rootDir,
       logLevel: 'warn', // output esbuild warns
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
     })
 
     // start static file server
-    const serve = sirv(path.resolve(root, 'dist'))
+    const serve = sirv(path.resolve(rootDir, 'dist'))
     const httpServer = http.createServer((req, res) => {
       if (req.url === '/ping') {
         res.statusCode = 200
