@@ -95,14 +95,17 @@ export async function resolveHttpServer(
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
   if (!httpsOptions) {
-    return require('http').createServer(app)
+    const { createServer } = await import('http')
+    return createServer(app)
   }
 
+  // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(httpsOptions, app)
+    const { createServer } = await import('http')
+    return createServer(httpsOptions, app)
   } else {
-    return require('http2').createSecureServer(
+    const { createSecureServer } = await import('http2')
+    return createSecureServer(
       {
         // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
         // errors on large numbers of requests
@@ -110,8 +113,9 @@ export async function resolveHttpServer(
         ...httpsOptions,
         allowHTTP1: true
       },
+      // @ts-expect-error TODO: is this correct?
       app
-    )
+    ) as unknown as HttpServer
   }
 }
 

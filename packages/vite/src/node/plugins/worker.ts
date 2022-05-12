@@ -81,9 +81,9 @@ export async function bundleWorkerEntry(
   query: Record<string, string> | null
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
-  const rollup = require('rollup') as typeof Rollup
+  const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const bundle = await rollup.rollup({
+  const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,

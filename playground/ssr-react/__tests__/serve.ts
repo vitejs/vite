@@ -10,7 +10,7 @@ export const port = ports['ssr-react']
 export async function serve(root: string, isProd: boolean) {
   if (isProd) {
     // build first
-    const { build } = require('vite')
+    const { build } = await import('vite')
     // client build
     await build({
       root,
