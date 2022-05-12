@@ -78,7 +78,7 @@ export async function serve() {
     if (serverProcess) {
       const timeoutError = `server process still alive after 3s`
       try {
-        killProcess(serverProcess)
+        await killProcess(serverProcess)
         await resolvedOrTimeout(serverProcess, 10000, timeoutError)
       } catch (e) {
         if (e === timeoutError || (!serverProcess.killed && !isWindows)) {

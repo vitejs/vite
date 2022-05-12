@@ -24,25 +24,30 @@ export const workspaceRoot = path.resolve(__dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
-
 export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(
-  workspaceRoot,
-  'packages',
-  'vite',
-  'bin',
-  'vite.js'
-)
+export const viteBinPath = path.join(workspaceRoot, 'packages/vite/bin/vite.js')
 
 // #endregion
 
 // #region context
 
 let server: ViteDevServer | http.Server
-let tempDir: string
 
+/**
+ * Root of the Vite fixture
+ */
 export let rootDir: string
+/**
+ * Path to the current test file
+ */
 export let testPath: string
+/**
+ * Path to the test folder
+ */
+export let testDir: string
+/**
+ * Test folder name
+ */
 export let testName: string
 
 export const serverLogs: string[] = []
@@ -56,10 +61,6 @@ export let watcher: RollupWatcher | undefined = undefined
 
 export function setViteUrl(url: string) {
   viteTestUrl = url
-}
-
-export function slash(p: string): string {
-  return p.replace(/\\/g, '/')
 }
 
 // #endregion
@@ -100,15 +101,16 @@ beforeAll(async (s) => {
 
     testPath = suite.filepath!
     testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
+    testDir = dirname(testPath)
 
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      tempDir = resolve(__dirname, '../playground-temp/', testName)
+      testDir = resolve(workspaceRoot, 'playground-temp', testName)
 
       // when `root` dir is present, use it as vite's root
-      const testCustomRoot = resolve(tempDir, 'root')
-      rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : tempDir
+      const testCustomRoot = resolve(testDir, 'root')
+      rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
 
       const testCustomServe = [
         resolve(dirname(testPath), 'serve.ts'),
@@ -320,4 +322,8 @@ function setupConsoleWarnCollector(logs: string[]) {
     serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
+}
+
+export function slash(p: string): string {
+  return p.replace(/\\/g, '/')
 }
