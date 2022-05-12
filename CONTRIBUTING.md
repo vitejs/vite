@@ -145,18 +145,7 @@ test('?raw import', async () => {
 
 ## Note on Test Dependencies
 
-In many test cases we need to mock dependencies using `link:` and `file:` protocols (which are supported by package managers like `yarn` and `pnpm`). However, `pnpm` treats `link:` and `file:` the same way and always use symlinks. This can be undesirable in cases where we want the dependency to be actually copied into `node_modules`.
-
-To work around this, playground packages that uses the `file:` protocol should also include the following `postinstall` script:
-
-```jsonc
-"scripts": {
-  //...
-  "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
-}
-```
-
-This script patches the dependencies using `file:` protocol to match the copying behavior instead of linking.
+In many test cases we need to mock dependencies using `link:` and `file:` protocols. `pnpm` treats `link:` as symlinks and `file:` as hardlinks. To test dependencies as if they are copied into `node_modules`, use the `file:` protocol, other cases should use the `link:` protocol.
 
 ## Debug Logging
 
