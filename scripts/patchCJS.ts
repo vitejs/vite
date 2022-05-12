@@ -1,5 +1,4 @@
 /**
-This patch is needed when the package exports both a default and named export.
 
 It converts
 
@@ -21,12 +20,11 @@ import { readFileSync, writeFileSync } from 'fs'
 import { bold, red } from 'picocolors'
 
 const indexPath = 'dist/index.cjs'
-const code = readFileSync(indexPath, 'utf-8')
+let code = readFileSync(indexPath, 'utf-8')
 
-const match = code.match(/\nexports\["default"\] = (\w+);/)
-
-if (match) {
-  const name = match[1]
+const matchMixed = code.match(/\nexports\["default"\] = (\w+);/)
+if (matchMixed) {
+  const name = matchMixed[1]
 
   const lines = code.trimEnd().split('\n')
 
@@ -43,6 +41,17 @@ if (match) {
   writeFileSync(indexPath, lines.join('\n'))
 
   console.log(bold(`${indexPath} CJS patched`))
-} else {
-  console.error(red(`${indexPath} CJS patch failed`))
+  process.exit()
 }
+
+const matchDefault = code.match(/\nmodule.exports = (\w+);/)
+
+if (matchDefault) {
+  code += `module.exports["default"] = ${matchDefault[1]};\n`
+  writeFileSync(indexPath, code)
+  console.log(bold(`${indexPath} CJS patched`))
+  process.exit()
+}
+
+console.error(red(`${indexPath} CJS patch failed`))
+process.exit(1)
