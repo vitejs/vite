@@ -3,7 +3,7 @@ const babel = require('@babel/core')
 const jsx = require('@vue/babel-plugin-jsx')
 const importMeta = require('@babel/plugin-syntax-import-meta')
 const { createFilter, normalizePath } = require('@rollup/pluginutils')
-const hash = require('hash-sum')
+const { createHash } = require('crypto')
 const path = require('path')
 
 const ssrRegisterHelperId = '/__vue-jsx-ssr-register-helper'
@@ -152,7 +152,7 @@ function vueJsxPlugin(options = {}) {
                   ({ name }) => ({
                     local: name,
                     exported: name,
-                    id: hash(id + name)
+                    id: getHash(id + name)
                   })
                 )
               )
@@ -169,7 +169,7 @@ function vueJsxPlugin(options = {}) {
                     hotComponents.push({
                       local: spec.local.name,
                       exported: spec.exported.name,
-                      id: hash(id + spec.exported.name)
+                      id: getHash(id + spec.exported.name)
                     })
                   }
                 }
@@ -187,7 +187,7 @@ function vueJsxPlugin(options = {}) {
                 hotComponents.push({
                   local: node.declaration.name,
                   exported: 'default',
-                  id: hash(id + 'default')
+                  id: getHash(id + 'default')
                 })
               }
             } else if (isDefineComponentCall(node.declaration)) {
@@ -195,7 +195,7 @@ function vueJsxPlugin(options = {}) {
               hotComponents.push({
                 local: '__default__',
                 exported: 'default',
-                id: hash(id + 'default')
+                id: getHash(id + 'default')
               })
             }
           }
@@ -274,6 +274,14 @@ function isDefineComponentCall(node) {
     node.callee.type === 'Identifier' &&
     node.callee.name === 'defineComponent'
   )
+}
+
+/**
+ * @param {string} text
+ * @returns {string}
+ */
+function getHash(text) {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
 module.exports = vueJsxPlugin

@@ -1,14 +1,14 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 import path from 'path'
-import { ports } from '~utils'
+import { ports, rootDir } from '~utils'
 
 export const port = ports['legacy/ssr']
 
-export async function serve(root: string, _isProd: boolean) {
-  const { build } = require('vite')
+export async function serve() {
+  const { build } = await import('vite')
   await build({
-    root,
+    root: rootDir,
     logLevel: 'silent',
     build: {
       target: 'esnext',
@@ -17,14 +17,13 @@ export async function serve(root: string, _isProd: boolean) {
     }
   })
 
-  const express = require('express')
+  const { default: express } = await import('express')
   const app = express()
 
   app.use('/', async (_req, res) => {
-    const { render } = require(path.resolve(
-      root,
-      './dist/server/entry-server.js'
-    ))
+    const { render } = await import(
+      path.resolve(rootDir, './dist/server/entry-server.js')
+    )
     const html = await render()
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   })

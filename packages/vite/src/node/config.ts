@@ -149,7 +149,6 @@ export interface UserConfig {
   optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
-   * @alpha
    */
   ssr?: SSROptions
   /**
@@ -816,7 +815,7 @@ export async function loadConfigFromFile(
     let userConfig: UserConfigExport | undefined
 
     if (isESM) {
-      const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
       if (isTS) {

@@ -3,10 +3,10 @@ import type Rollup from 'rollup'
 import type { EmittedFile, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning } from '../build'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { cleanUrl, injectQuery, parseRequest } from '../utils'
+import { onRollupWarning } from '../build'
 import { fileToUrl, getAssetHash } from './asset'
 
 interface WorkerCache {
@@ -84,9 +84,9 @@ export async function bundleWorkerEntry(
   query: Record<string, string> | null
 ): Promise<Buffer> {
   // bundle the file as entry to support imports
-  const rollup = require('rollup') as typeof Rollup
+  const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const bundle = await rollup.rollup({
+  const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
     plugins,

@@ -95,8 +95,6 @@ export interface ServerOptions extends CommonServerOptions {
   origin?: string
   /**
    * Pre-transform known direct imports
-   *
-   * @experimental this option is experimental and might be changed in the future
    * @default true
    */
   preTransformRequests?: boolean
@@ -131,8 +129,6 @@ export interface FileSystemServeOptions {
    * Glob patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
-   *
-   * @experimental
    */
   deny?: string[]
 }
@@ -196,7 +192,6 @@ export interface ViteDevServer {
   ): Promise<string>
   /**
    * Transform module code into SSR format.
-   * @experimental
    */
   ssrTransform(
     code: string,
@@ -495,12 +490,6 @@ export async function createServer(
 
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
-
-  // hmr reconnect ping
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
-    res.end('pong')
-  })
 
   // serve static files under /public
   // this applies before the transform middleware so that these files are served

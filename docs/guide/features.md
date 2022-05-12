@@ -423,6 +423,16 @@ Note that:
 - The glob matching is done via [`fast-glob`](https://github.com/mrmlnc/fast-glob) - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
 - You should also be aware that all the arguments in the `import.meta.glob` must be **passed as literals**. You can NOT use variables or expressions in them.
 
+## Dynamic Import
+
+Similar to [glob import](#glob-import), Vite also supports dynamic import with variables.
+
+```ts
+const module = await import(`./dir/${file}.js`)
+```
+
+Note that variables only represent file names one level deep. If `file` is `'foo/bar'`, the import would fail. For more advanced usage, you can use the [glob import](#glob-import) feature.
+
 ## WebAssembly
 
 Pre-compiled `.wasm` files can be directly imported - the default export will be an initialization function that returns a Promise of the exports object of the wasm instance:

@@ -389,7 +389,6 @@ async function doBuild(
     )
   }
 
-  const rollup = require('rollup') as typeof Rollup
   const rollupOptions: RollupOptions = {
     input,
     context: 'globalThis',
@@ -433,7 +432,7 @@ async function doBuild(
           ? resolveLibFilename(libOptions, output.format || 'es', config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
-          ? `[name].js`
+          ? `[name].[hash].js`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         assetFileNames: libOptions
           ? `[name].[ext]`
@@ -441,7 +440,10 @@ async function doBuild(
         // #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // #1048 add `Symbol.toStringTag` for module default export
         namespaceToStringTag: true,
-        inlineDynamicImports: ssr && typeof input === 'string',
+        inlineDynamicImports:
+          output.format === 'umd' ||
+          output.format === 'iife' ||
+          (ssr && typeof input === 'string'),
         ...output
       }
     }
@@ -467,7 +469,8 @@ async function doBuild(
       }
 
       const watcherOptions = config.build.watch
-      const watcher = rollup.watch({
+      const { watch } = await import('rollup')
+      const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
@@ -503,7 +506,8 @@ async function doBuild(
     }
 
     // write or generate files with rollup
-    const bundle = await rollup.rollup(rollupOptions)
+    const { rollup } = await import('rollup')
+    const bundle = await rollup(rollupOptions)
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
