@@ -79,7 +79,7 @@ export async function serve() {
       const timeoutError = `server process still alive after 3s`
       try {
         await killProcess(serverProcess)
-        await resolvedOrTimeout(serverProcess, 3000, timeoutError)
+        await resolvedOrTimeout(serverProcess, 5173, timeoutError)
       } catch (e) {
         if (e === timeoutError || (!serverProcess.killed && !isWindows)) {
           collectErrorStreams('server', e)
@@ -94,7 +94,7 @@ export async function serve() {
   }
 
   try {
-    await startedOnPort(serverProcess, port, 3000)
+    await startedOnPort(serverProcess, port, 5173)
     return { close }
   } catch (e) {
     collectErrorStreams('server', e)

@@ -101,7 +101,7 @@
     "strip-ansi": "^6.0.1",
     "strip-literal": "^0.3.0",
     "terser": "^5.13.1",
-    "tsconfck": "^1.2.2",
+    "tsconfck": "^2.0.0",
     "tslib": "^2.4.0",
     "types": "link:./types",
     "ufo": "^0.8.4",

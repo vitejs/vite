@@ -244,7 +244,7 @@ importers:
       strip-ansi: ^6.0.1
       strip-literal: ^0.3.0
       terser: ^5.13.1
-      tsconfck: ^1.2.2
+      tsconfck: ^2.0.0
       tslib: ^2.4.0
       types: link:./types
       ufo: ^0.8.4
@@ -306,7 +306,7 @@ importers:
       strip-ansi: 6.0.1
       strip-literal: 0.3.0
       terser: 5.13.1
-      tsconfck: 1.2.2
+      tsconfck: 2.0.0
       tslib: 2.4.0
       types: link:types
       ufo: 0.8.4
@@ -7718,9 +7718,9 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.2.2:
-    resolution: {integrity: sha512-x5YpjOqjJnMs1EsJvQBQbrysrY32eGoZRRr5YvbN1hwlrXKc7jiphCOUrT7xbFdOWk8sh+EtMYbGPbTO8rDmcw==}
-    engines: {node: ^12.20 || ^14.13.1 || >= 16}
+  /tsconfck/2.0.0:
+    resolution: {integrity: sha512-GVDTXF4MdNBBxKfUfjs/wkb7LHd8Ho8WLavESCddTFQFG9AUZOZEm6kODBGmQopQ9OG+EHpkT6dBaIIGhYVt+Q==}
+    engines: {node: ^14.13.1 || ^16 || >=18, pnpm: ^7.0.1}
     hasBin: true
     peerDependencies:
       typescript: ^4.3.5
