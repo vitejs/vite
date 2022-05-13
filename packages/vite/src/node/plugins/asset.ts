@@ -7,11 +7,7 @@ import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
-import {
-  assetFilenameWithBase,
-  isRelativeBase,
-  publicURLfromAsset
-} from '../build'
+import { filenameToUrlCode, publicURLfromAsset } from '../build'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -102,15 +98,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // fallback to this.getFileName for that.
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const outputFilepath = assetFilenameWithBase(
-          file + postfix,
-          config.base
-        )
-        const replacement = isRelativeBase(config.base)
-          ? `" + new URL(${JSON.stringify(
-              outputFilepath
-            )}, import.meta.url) + "`
-          : outputFilepath
+        // Convert to stringified url or `new URL(...)`
+        const urlCode = filenameToUrlCode(file + postfix, config.base)
+        const replacement =
+          urlCode[0] === '"' ? urlCode.slice(1, -1) : `" + ${urlCode} + "`
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
         })

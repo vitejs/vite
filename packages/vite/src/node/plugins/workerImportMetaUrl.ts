@@ -8,7 +8,7 @@ import type { Plugin } from '../plugin'
 import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import type { ViteDevServer } from '..'
-import { workerFileToUrl } from './worker'
+import { workerFileToUrlCode } from './worker'
 import { fileToUrl } from './asset'
 
 type WorkerType = 'classic' | 'module' | 'ignore'
@@ -146,15 +146,16 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = normalizePath(
             path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           )
-          let url: string
+          let urlCode: string
           if (isBuild) {
-            url = await workerFileToUrl(this, config, file, query)
+            urlCode = await workerFileToUrlCode(this, config, file, query)
           } else {
-            url = await fileToUrl(cleanUrl(file), config, this)
+            let url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
             url = injectQuery(url, `type=${workerType}`)
+            urlCode = JSON.stringify(url)
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
+          s.overwrite(urlIndex, urlIndex + exp.length, urlCode, {
             contentOnly: true
           })
         }

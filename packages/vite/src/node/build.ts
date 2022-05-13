@@ -772,6 +772,15 @@ export function assetFilenameWithBase(filename: string, base: string): string {
   }
 }
 
+export function filenameToUrlCode(filename: string, base: string): string {
+  const outputFilepath = assetFilenameWithBase(filename, base)
+  if (isRelativeBase(base)) {
+    return `new URL(${JSON.stringify(outputFilepath)}, import.meta.url)`
+  } else {
+    return JSON.stringify(outputFilepath)
+  }
+}
+
 export function publicURLfromAsset(
   url: string,
   config: ResolvedConfig
