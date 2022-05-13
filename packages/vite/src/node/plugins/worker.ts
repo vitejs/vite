@@ -240,7 +240,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       return {
         code: `export default function WorkerWrapper() {
-          return new ${workerConstructor}(${urlCode})}, ${JSON.stringify(
+          return new ${workerConstructor}(${urlCode}, ${JSON.stringify(
           workerOptions,
           null,
           2
