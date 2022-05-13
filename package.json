@@ -28,8 +28,8 @@
     "docs-serve": "vitepress serve docs",
     "build": "pnpm -r --filter=./packages/* run build",
     "dev": "pnpm -r --parallel --filter=./packages/* run dev",
-    "release": "ts-node scripts/release.ts",
-    "ci-publish": "ts-node scripts/publishCI.ts",
+    "release": "esno scripts/release.ts",
+    "ci-publish": "esno scripts/publishCI.ts",
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
@@ -63,6 +63,7 @@
     "eslint-define-config": "^1.4.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
+    "esno": "^0.15.0",
     "execa": "^5.1.1",
     "fs-extra": "^10.1.0",
     "kill-port": "^1.6.1",
@@ -79,7 +80,6 @@
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",
-    "ts-node": "^10.7.0",
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
@@ -89,7 +89,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
-    "commit-msg": "pnpm exec ts-node scripts/verifyCommit.ts $1"
+    "commit-msg": "pnpm exec esno scripts/verifyCommit.ts $1"
   },
   "lint-staged": {
     "*": [
