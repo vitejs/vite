@@ -1,5 +1,5 @@
 import { port } from './serve'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch-native'
 import { page, untilUpdated } from '~utils'
 import { platform } from 'os'
 
