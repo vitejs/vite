@@ -831,10 +831,10 @@ export function resolvePackageEntry(
         return resolvedEntryPoint
       }
     }
-    packageEntryFailure(id)
   } catch (e) {
     packageEntryFailure(id, e.message)
   }
+  packageEntryFailure(id)
 }
 
 function packageEntryFailure(id: string, details?: string) {
