@@ -66,14 +66,8 @@ jobs:
       - name: Install Playwright
         run: pnpm playwright install
 
-      - name: Build vite
-        run: pnpm run ci-build-vite
-
-      - name: Build plugin-vue
-        run: pnpm run build-plugin-vue
-
-      - name: Build plugin-react
-        run: pnpm run build-plugin-react
+      - name: Build
+        run: pnpm run build
 
       - name: Test unit
         run: pnpm run test-unit
@@ -107,11 +101,8 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
-      - name: Prepare
-        run: |
-          pnpm run ci-build-vite
-          pnpm run build-plugin-vue
-          pnpm run build-plugin-react
+      - name: Build
+        run: pnpm run build
 
       - name: Lint
         run: pnpm run lint
