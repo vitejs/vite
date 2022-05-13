@@ -39,12 +39,14 @@
     "vue": "^3.2.25"
   },
   "devDependencies": {
-    "@rollup/pluginutils": "^4.2.1",
     "debug": "^4.3.4",
     "rollup": "^2.72.1",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.33",
-    "vite": "workspace:*"
+    "vite": "workspace:*",
+    "vue": "^3.2.33"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^4.2.1"
   }
 }
