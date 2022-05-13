@@ -91,18 +91,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
-  const rollupOptionsOutput = config.build?.rollupOptions?.output
-  const hasCustomAssetFileNames =
-    rollupOptionsOutput &&
-    !Array.isArray(rollupOptionsOutput) &&
-    !!rollupOptionsOutput.assetFileNames
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const assetsURL = hasCustomAssetFileNames
-    ? JSON.stringify(config.base)
-    : isRelativeBase(config.base)
+  const assetsURL = isRelativeBase(config.base)
     ? `new URL('./',import.meta.url).pathname`
     : JSON.stringify(path.posix.join(config.base, config.build.assetsDir, '/'))
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
@@ -330,11 +323,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps]
-                        .map((d) =>
-                          JSON.stringify(
-                            hasCustomAssetFileNames ? d : path.basename(d)
-                          )
-                        )
+                        .map((d) => JSON.stringify(path.basename(d)))
                         .join(',')}]`
                     : `[]`,
                   { contentOnly: true }
