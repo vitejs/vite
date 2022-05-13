@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
-    "vite": "^2.5.10",
+    "vite": "^3.0.0-alpha",
     "vue": "^3.2.25"
   },
   "devDependencies": {
