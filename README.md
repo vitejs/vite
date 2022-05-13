@@ -46,7 +46,6 @@ We will start drafting release notes and migration guide after beta releases. Be
 
 ## Packages
 
-> 
 
 | Package                                           | Version (click for changelogs)                                                                                                       |
 | ------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
