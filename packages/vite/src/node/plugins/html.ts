@@ -1,6 +1,4 @@
 import path from 'path'
-import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import type {
   OutputAsset,
   OutputBundle,
@@ -8,9 +6,22 @@ import type {
   RollupError,
   SourceMapInput
 } from 'rollup'
+import MagicString from 'magic-string'
+import type {
+  AttributeNode,
+  CompilerError,
+  ElementNode,
+  NodeTransform,
+  TextNode
+} from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import { stripLiteral } from 'strip-literal'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
 import {
   cleanUrl,
   generateCodeFrame,
+  getHash,
   isDataUrl,
   isExternalUrl,
   normalizePath,
@@ -18,25 +29,14 @@ import {
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import MagicString from 'magic-string'
 import {
-  checkPublicFile,
   assetUrlRE,
-  urlToBuiltUrl,
+  checkPublicFile,
   getAssetFilename,
-  getAssetHash
+  urlToBuiltUrl
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import type {
-  AttributeNode,
-  NodeTransform,
-  ElementNode,
-  CompilerError,
-  TextNode
-} from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
-import { stripLiteral } from 'strip-literal'
 
 interface ScriptAssetsUrl {
   start: number
@@ -380,7 +380,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
@@ -399,7 +399,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               code: styleNode.content
             })
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
@@ -546,6 +546,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
+          crossorigin: true,
           href: toPublicPath(chunk.fileName, config)
         }
       })

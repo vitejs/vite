@@ -1,45 +1,45 @@
 import fs from 'fs'
 import path from 'path'
+import { parse as parseUrl, pathToFileURL } from 'url'
+import { performance } from 'perf_hooks'
+import colors from 'picocolors'
+import dotenv from 'dotenv'
+import dotenvExpand from 'dotenv-expand'
+import type { Alias, AliasOptions } from 'types/alias'
+import { createFilter } from '@rollup/pluginutils'
+import aliasPlugin from '@rollup/plugin-alias'
+import { build } from 'esbuild'
+import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type { BuildOptions } from './build'
 import { resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
-import type { ResolvedPreviewOptions, PreviewOptions } from './preview'
+import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
   arraify,
   createDebugger,
+  dynamicImport,
   isExternalUrl,
   isObject,
   lookupFile,
-  normalizePath,
-  dynamicImport
+  normalizePath
 } from './utils'
 import { resolvePlugins } from './plugins'
-import colors from 'picocolors'
 import type { ESBuildOptions } from './plugins/esbuild'
-import dotenv from 'dotenv'
-import dotenvExpand from 'dotenv-expand'
-import type { Alias, AliasOptions } from 'types/alias'
-import { CLIENT_ENTRY, ENV_ENTRY, DEFAULT_ASSETS_RE } from './constants'
+import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
-import type { Logger, LogLevel } from './logger'
+import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
-import { createFilter } from '@rollup/pluginutils'
-import type { ResolvedBuildOptions } from '.'
-import { parse as parseUrl, pathToFileURL } from 'url'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
-import aliasPlugin from '@rollup/plugin-alias'
-import { build } from 'esbuild'
-import { performance } from 'perf_hooks'
 import type { PackageCache } from './packages'
-import type { RollupOptions } from 'rollup'
+import type { ResolvedBuildOptions } from '.'
 
 const debug = createDebugger('vite:config')
 
@@ -149,7 +149,6 @@ export interface UserConfig {
   optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
-   * @alpha
    */
   ssr?: SSROptions
   /**
@@ -253,6 +252,8 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    /** @internal */
+    mainConfig: ResolvedConfig | null
     isProduction: boolean
     env: Record<string, any>
     resolve: ResolveOptions & {
@@ -483,6 +484,7 @@ export async function resolveConfig(
     command,
     mode,
     isWorker: false,
+    mainConfig: null,
     isProduction,
     plugins: userPlugins,
     server,
@@ -514,7 +516,11 @@ export async function resolveConfig(
   // flat config.worker.plugin
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved: ResolvedConfig = { ...resolved, isWorker: true }
+  const workerResolved: ResolvedConfig = {
+    ...resolved,
+    isWorker: true,
+    mainConfig: resolved
+  }
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
@@ -816,7 +822,7 @@ export async function loadConfigFromFile(
     let userConfig: UserConfigExport | undefined
 
     if (isESM) {
-      const fileUrl = require('url').pathToFileURL(resolvedPath)
+      const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
       if (isTS) {
@@ -933,9 +939,10 @@ async function loadConfigFromBundledFile(
   bundledCode: string
 ): Promise<UserConfig> {
   const extension = path.extname(fileName)
+  const realFileName = fs.realpathSync(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
-    if (filename === fileName) {
+    if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)

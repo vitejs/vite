@@ -63,6 +63,7 @@ async function createServer(
         render = (await vite.ssrLoadModule('/src/entry-server.js')).render
       } else {
         template = indexProd
+        // @ts-ignore
         render = require('./dist/server/entry-server.js').render
       }
 
@@ -85,8 +86,8 @@ async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(3000, () => {
-      console.log('http://localhost:3000')
+    app.listen(5173, () => {
+      console.log('http://localhost:5173')
     })
   )
 }

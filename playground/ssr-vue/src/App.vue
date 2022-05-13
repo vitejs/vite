@@ -4,7 +4,9 @@
     <router-link to="/about">About</router-link>
     <router-view v-slot="{ Component }">
       <Suspense>
-        <component :is="Component" />
+        <div>
+          <component :is="Component" />
+        </div>
       </Suspense>
     </router-view>
   </div>

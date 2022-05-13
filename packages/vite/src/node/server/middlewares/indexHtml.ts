@@ -19,15 +19,15 @@ import { send } from '../send'
 import {
   CLIENT_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
 } from '../../constants'
 import {
   cleanUrl,
+  ensureWatchedFile,
   fsPathFromId,
-  normalizePath,
   injectQuery,
-  ensureWatchedFile
+  normalizePath
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -92,10 +92,10 @@ const processNodeUrl = (
     originalUrl !== '/' &&
     htmlPath === '/index.html'
   ) {
-    // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
+    // #3230 if some request url (localhost:5173/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
-    // rewrite before `./index.js` -> `localhost:3000/a/index.js`.
-    // rewrite after `../index.js` -> `localhost:3000/index.js`.
+    // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
+    // rewrite after `../index.js` -> `localhost:5173/index.js`.
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
@@ -217,7 +217,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
   await Promise.all(
     styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&index=${index}.css`
+      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)

@@ -186,6 +186,20 @@ export default defineConfig(({ command, mode }) => {
 
   :::
 
+  ::: tip NOTE
+  Since dev and build implement `define` differently, we should avoid some use cases to avoid inconsistency.
+
+  Example:
+
+  ```js
+  const obj = {
+    __NAME__, // Don't define object shorthand property names
+    __KEY__: value // Don't define object key
+  }
+  ```
+
+  :::
+
 ### plugins
 
 - **Type:** `(Plugin | Plugin[])[]`
@@ -463,7 +477,7 @@ export default defineConfig(({ command, mode }) => {
 ### server.port
 
 - **Type:** `number`
-- **Default:** `3000`
+- **Default:** `5173`
 
   Specify server port. Note if the port is already being used, Vite will automatically try the next available port so this may not be the actual port the server ends up listening on.
 
@@ -505,6 +519,8 @@ export default defineConfig(({ command, mode }) => {
 
   Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
+  In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
+
   **Example:**
 
   ```js
@@ -535,7 +551,7 @@ export default defineConfig(({ command, mode }) => {
         },
         // Proxying websockets or socket.io
         '/socket.io': {
-          target: 'ws://localhost:3000',
+          target: 'ws://localhost:5173',
           ws: true
         }
       }
@@ -822,6 +838,7 @@ export default defineConfig({
 ### build.dynamicImportVarsOptions
 
 - **Type:** [`RollupDynamicImportVarsOptions`](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#options)
+- **Related:** [Dynamic Import](/guide/features#dynamic-import)
 
   Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars).
 

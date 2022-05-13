@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
-import type { UserConfig } from 'vite'
+import { defineConfig } from 'vite'
 
-const config: UserConfig = {
+export default defineConfig({
   plugins: [
     react({
       jsxImportSource: '@emotion/react',
@@ -15,6 +15,4 @@ const config: UserConfig = {
     // to make tests faster
     minify: false
   }
-}
-
-export default config
+})

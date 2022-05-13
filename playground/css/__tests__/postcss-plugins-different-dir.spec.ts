@@ -1,6 +1,6 @@
-import { getColor, getBgColor, ports } from '../../testUtils'
-import { createServer } from 'vite'
 import path from 'path'
+import { createServer } from 'vite'
+import { getBgColor, getColor, page, ports } from '~utils'
 
 // Regression test for https://github.com/vitejs/vite/issues/4000
 test('postcss plugins in different dir', async () => {

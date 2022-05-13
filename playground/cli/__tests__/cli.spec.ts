@@ -1,4 +1,5 @@
 import { port } from './serve'
+import { page } from '~utils'
 
 test('cli should work', async () => {
   // this test uses a custom serve implementation, so regular helpers for browserLogs and goto don't work
