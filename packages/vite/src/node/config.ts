@@ -1031,9 +1031,10 @@ async function loadConfigFromBundledFile(
   bundledCode: string
 ): Promise<UserConfig> {
   const extension = path.extname(fileName)
+  const realFileName = fs.realpathSync(fileName)
   const defaultLoader = require.extensions[extension]!
   require.extensions[extension] = (module: NodeModule, filename: string) => {
-    if (filename === fs.realpathSync(fileName)) {
+    if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
       defaultLoader(module, filename)
