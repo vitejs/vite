@@ -42,7 +42,7 @@
     "systemjs": "^6.12.1"
   },
   "peerDependencies": {
-    "vite": "^2.8.0"
+    "vite": "^3.0.0-alpha"
   },
   "devDependencies": {
     "vite": "workspace:*",

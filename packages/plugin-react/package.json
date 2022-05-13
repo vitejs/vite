@@ -49,7 +49,7 @@
     "resolve": "^1.22.0"
   },
   "peerDependencies": {
-    "vite": "^2.0.0"
+    "vite": "^3.0.0-alpha"
   },
   "devDependencies": {
     "vite": "workspace:*"
