@@ -4,11 +4,24 @@
   "license": "MIT",
   "author": "Evan You",
   "files": [
-    "index.js",
-    "index.d.ts"
+    "dist"
   ],
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
+    "prepublishOnly": "npm run build"
+  },
   "engines": {
     "node": ">=14.6.0"
   },
@@ -27,6 +40,9 @@
     "@babel/plugin-transform-typescript": "^7.16.8",
     "@rollup/pluginutils": "^4.2.1",
     "@vue/babel-plugin-jsx": "^1.1.1"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   },
   "peerDependencies": {
     "vite": "^2.0.0",
