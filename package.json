@@ -82,6 +82,7 @@
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",
+    "ts-node": "^10.7.0",
     "typescript": "^4.6.4",
     "vite": "workspace:*",
     "vitepress": "^0.22.4",
