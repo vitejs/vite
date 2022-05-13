@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-react",
-  "version": "1.3.2",
+  "version": "2.0.0-alpha.0",
   "license": "MIT",
   "author": "Evan You",
   "contributors": [

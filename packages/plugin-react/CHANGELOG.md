@@ -1,3 +1,18 @@
+## 2.0.0-alpha.0 (2022-05-13)
+
+* chore: restore-jsx.spec.ts lint (#8004) ([f1af941](https://github.com/vitejs/vite/commit/f1af941)), closes [#8004](https://github.com/vitejs/vite/issues/8004)
+* chore: revert vitejs/vite#8152 (#8161) ([85b8b55](https://github.com/vitejs/vite/commit/85b8b55)), closes [vitejs/vite#8152](https://github.com/vitejs/vite/issues/8152) [#8161](https://github.com/vitejs/vite/issues/8161)
+* chore: update plugins peer deps ([d57c23c](https://github.com/vitejs/vite/commit/d57c23c))
+* chore: use `unbuild` to bundle plugins (#8139) ([638b168](https://github.com/vitejs/vite/commit/638b168)), closes [#8139](https://github.com/vitejs/vite/issues/8139)
+* chore(deps): use `esno` to replace `ts-node` (#8152) ([2363bd3](https://github.com/vitejs/vite/commit/2363bd3)), closes [#8152](https://github.com/vitejs/vite/issues/8152)
+* chore(lint): sort for imports (#8113) ([43a58dd](https://github.com/vitejs/vite/commit/43a58dd)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
+* chore(plugin-react): add vite peer dep (#8083) ([2d978f7](https://github.com/vitejs/vite/commit/2d978f7)), closes [#8083](https://github.com/vitejs/vite/issues/8083)
+* fix: use Vitest for unit testing, clean regex bug (#8040) ([63cd53d](https://github.com/vitejs/vite/commit/63cd53d)), closes [#8040](https://github.com/vitejs/vite/issues/8040)
+* refactor: remove deprecated api for 3.0 (#5868) ([b5c3709](https://github.com/vitejs/vite/commit/b5c3709)), closes [#5868](https://github.com/vitejs/vite/issues/5868)
+* build!: remove node v12 support (#7833) ([eeac2d2](https://github.com/vitejs/vite/commit/eeac2d2)), closes [#7833](https://github.com/vitejs/vite/issues/7833)
+
+
+
 ## <small>1.3.2 (2022-05-02)</small>
 
 * fix(plugin-react): React is not defined when component name is lowercase (#6838) ([bf40e5c](https://github.com/vitejs/vite/commit/bf40e5c)), closes [#6838](https://github.com/vitejs/vite/issues/6838)
