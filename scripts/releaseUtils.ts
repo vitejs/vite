@@ -171,7 +171,6 @@ export async function publishPackage(
     publicArgs.push(`--tag`, tag)
   }
   await runIfNotDry('npm', publicArgs, {
-    stdio: 'pipe',
     cwd: pkdDir
   })
 }
