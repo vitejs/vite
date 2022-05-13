@@ -172,7 +172,7 @@ const createNodeConfig = (isProduction) => {
             pattern: /: require,/g,
             replacement: `: eval('require'),`
           },
-          // postcss-load-config calls require after register ts-node
+          // postcss-load-config calls require after register esno
           'postcss-load-config/src/index.js': {
             src: `require(configFile)`,
             replacement: `eval('require')(configFile)`

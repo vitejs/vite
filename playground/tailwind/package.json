@@ -15,7 +15,6 @@
     "vue-router": "^4.0.15"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "workspace:*",
-    "ts-node": "^10.7.0"
+    "@vitejs/plugin-vue": "workspace:*"
   }
 }
