@@ -172,6 +172,8 @@ importers:
 
   packages/plugin-vue:
     specifiers:
+      '@jridgewell/gen-mapping': ^0.3.1
+      '@jridgewell/trace-mapping': ^0.3.10
       '@rollup/pluginutils': ^4.2.1
       debug: ^4.3.4
       rollup: ^2.72.1
@@ -182,6 +184,8 @@ importers:
     dependencies:
       '@rollup/pluginutils': 4.2.1
     devDependencies:
+      '@jridgewell/gen-mapping': 0.3.1
+      '@jridgewell/trace-mapping': 0.3.11
       debug: 4.3.4
       rollup: 2.72.1
       slash: 4.0.0
@@ -1640,6 +1644,15 @@ packages:
     dependencies:
       '@jridgewell/set-array': 1.1.1
       '@jridgewell/sourcemap-codec': 1.4.13
+
+  /@jridgewell/gen-mapping/0.3.1:
+    resolution: {integrity: sha512-GcHwniMlA2z+WFPWuY8lp3fsza0I8xPFMWL5+n8LYyP6PSvPrXf4+n8stDHZY2DM0zy9sVkRDy1jDI4XGzYVqg==}
+    engines: {node: '>=6.0.0'}
+    dependencies:
+      '@jridgewell/set-array': 1.1.1
+      '@jridgewell/sourcemap-codec': 1.4.13
+      '@jridgewell/trace-mapping': 0.3.11
+    dev: true
 
   /@jridgewell/resolve-uri/3.0.7:
     resolution: {integrity: sha512-8cXDaBBHOr2pQ7j77Y6Vp5VDT2sIqWyWQ56TjEq4ih/a4iST3dItRe8Q9fp0rrIl9DoKhWQtUQz/YpOxLkXbNA==}
