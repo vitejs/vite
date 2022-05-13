@@ -4,7 +4,7 @@
 // continue using it.
 
 import { readFileSync, writeFileSync } from 'fs'
-import { bold, red } from 'picocolors'
+import colors from 'picocolors'
 
 const indexPath = process.argv[2]
 const varName = process.argv[3]
@@ -24,8 +24,8 @@ ${varName}['default'] = ${varName};`
   writeFileSync(indexPath, code)
 
   console.log(
-    bold(`${indexPath} patched with overwrite for cjs require('...')()`)
+    colors.bold(`${indexPath} patched with overwrite for cjs require('...')()`)
   )
 } else {
-  console.error(red(`${indexPath} post-esbuild bundling patch failed`))
+  console.error(colors.red(`${indexPath} post-esbuild bundling patch failed`))
 }
