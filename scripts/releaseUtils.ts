@@ -133,6 +133,13 @@ export function getVersionChoices(currentVersion: string) {
             value: inc('major')
           }
         ]
+      : currentAlpha
+      ? [
+          {
+            title: 'beta',
+            value: inc('patch') + '-beta.1'
+          },
+        ]
       : [
           {
             title: 'stable',
