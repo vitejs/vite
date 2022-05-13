@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "node server",
     "serve": "cross-env NODE_ENV=production node server",
-    "debug": "node --inspect-brk server",
-    "postinstall": "ts-node ../../scripts/patchFileDeps.ts"
+    "debug": "node --inspect-brk server"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",

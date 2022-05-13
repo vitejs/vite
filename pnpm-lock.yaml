@@ -261,7 +261,7 @@ importers:
       strip-ansi: ^6.0.1
       strip-literal: ^0.3.0
       terser: ^5.13.1
-      tsconfck: ^1.2.2
+      tsconfck: ^2.0.0
       tslib: ^2.4.0
       types: link:./types
       ufo: ^0.8.4
@@ -323,7 +323,7 @@ importers:
       strip-ansi: 6.0.1
       strip-literal: 0.3.0
       terser: 5.13.1
-      tsconfck: 1.2.2
+      tsconfck: 2.0.0
       tslib: 2.4.0
       types: link:types
       ufo: 0.8.4
@@ -631,11 +631,11 @@ importers:
 
   playground/optimize-deps/nested-exclude:
     specifiers:
-      nested-include: link:./nested-include
+      nested-include: file:../nested-include
     dependencies:
-      nested-include: link:nested-include
+      nested-include: file:playground/optimize-deps/nested-include
 
-  playground/optimize-deps/nested-exclude/nested-include:
+  playground/optimize-deps/nested-include:
     specifiers: {}
 
   playground/optimize-missing-deps:
@@ -796,7 +796,10 @@ importers:
     specifiers: {}
 
   playground/ssr-deps/forwarded-export:
-    specifiers: {}
+    specifiers:
+      object-assigned-exports: file:../object-assigned-exports
+    dependencies:
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
 
   playground/ssr-deps/object-assigned-exports:
     specifiers: {}
@@ -8016,9 +8019,9 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/1.2.2:
-    resolution: {integrity: sha512-x5YpjOqjJnMs1EsJvQBQbrysrY32eGoZRRr5YvbN1hwlrXKc7jiphCOUrT7xbFdOWk8sh+EtMYbGPbTO8rDmcw==}
-    engines: {node: ^12.20 || ^14.13.1 || >= 16}
+  /tsconfck/2.0.0:
+    resolution: {integrity: sha512-GVDTXF4MdNBBxKfUfjs/wkb7LHd8Ho8WLavESCddTFQFG9AUZOZEm6kODBGmQopQ9OG+EHpkT6dBaIIGhYVt+Q==}
+    engines: {node: ^14.13.1 || ^16 || >=18, pnpm: ^7.0.1}
     hasBin: true
     peerDependencies:
       typescript: ^4.3.5
@@ -8642,7 +8645,13 @@ packages:
     name: nested-exclude
     version: 1.0.0
     dependencies:
-      nested-include: link:nested-include
+      nested-include: file:playground/optimize-deps/nested-include
+    dev: false
+
+  file:playground/optimize-deps/nested-include:
+    resolution: {directory: playground/optimize-deps/nested-include, type: directory}
+    name: nested-include
+    version: 1.0.0
     dev: false
 
   file:playground/optimize-missing-deps/missing-dep:
@@ -8675,6 +8684,8 @@ packages:
     resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
     name: forwarded-export
     version: 0.0.0
+    dependencies:
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
     dev: false
 
   file:playground/ssr-deps/object-assigned-exports:
