@@ -101,53 +101,54 @@ export function getVersionChoices(currentVersion: string) {
     return semver.inc(currentVersion, i, tag)!
   }
 
-  const versionChoices = [
+  let versionChoices = [
     {
       title: 'next',
       value: inc(isStable ? 'patch' : 'prerelease')
-    },
-    ...(isStable
-      ? [
-          {
-            title: 'beta-minor',
-            value: inc('preminor')
-          },
-          {
-            title: 'beta-major',
-            value: inc('premajor')
-          },
-          {
-            title: 'alpha-minor',
-            value: inc('preminor', 'alpha')
-          },
-          {
-            title: 'alpha-major',
-            value: inc('premajor', 'alpha')
-          },
-          {
-            title: 'minor',
-            value: inc('minor')
-          },
-          {
-            title: 'major',
-            value: inc('major')
-          }
-        ]
-      : currentAlpha
-      ? [
-          {
-            title: 'beta',
-            value: inc('patch') + '-beta.1'
-          },
-        ]
-      : [
-          {
-            title: 'stable',
-            value: inc('patch')
-          }
-        ]),
-    { value: 'custom', title: 'custom' }
-  ].map((i) => {
+    }
+  ]
+
+  if (isStable) {
+    versionChoices.push(
+      {
+        title: 'beta-minor',
+        value: inc('preminor')
+      },
+      {
+        title: 'beta-major',
+        value: inc('premajor')
+      },
+      {
+        title: 'alpha-minor',
+        value: inc('preminor', 'alpha')
+      },
+      {
+        title: 'alpha-major',
+        value: inc('premajor', 'alpha')
+      },
+      {
+        title: 'minor',
+        value: inc('minor')
+      },
+      {
+        title: 'major',
+        value: inc('major')
+      }
+    )
+  } else if (currentAlpha) {
+    versionChoices.push({
+      title: 'beta',
+      value: inc('patch') + '-beta.1'
+    })
+  } else {
+    versionChoices.push({
+      title: 'stable',
+      value: inc('patch')
+    })
+  }
+  versionChoices.push({ value: 'custom', title: 'custom' })
+
+  versionChoices = versionChoices.map((i) => {
     i.title = `${i.title} (${i.value})`
     return i
   })
