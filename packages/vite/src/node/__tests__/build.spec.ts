@@ -33,7 +33,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('custom-filename.es.mjs')
+    expect(filename).toBe('custom-filename.mjs')
   })
 
   test('package name as filename', () => {
@@ -45,7 +45,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/name')
     )
 
-    expect(filename).toBe('mylib.es.mjs')
+    expect(filename).toBe('mylib.mjs')
   })
 
   test('custom filename and no package name', () => {
@@ -58,7 +58,7 @@ describe('resolveLibFilename', () => {
       resolve(__dirname, 'packages/noname')
     )
 
-    expect(filename).toBe('custom-filename.es.mjs')
+    expect(filename).toBe('custom-filename.mjs')
   })
 
   test('missing filename', () => {
@@ -75,9 +75,9 @@ describe('resolveLibFilename', () => {
 
   test('commonjs package extensions', () => {
     const formatsToFilenames: FormatsToFileNames = [
-      ['es', 'my-lib.es.mjs'],
+      ['es', 'my-lib.mjs'],
       ['umd', 'my-lib.umd.js'],
-      ['cjs', 'my-lib.cjs.js'],
+      ['cjs', 'my-lib.js'],
       ['iife', 'my-lib.iife.js']
     ]
 
@@ -94,9 +94,9 @@ describe('resolveLibFilename', () => {
 
   test('module package extensions', () => {
     const formatsToFilenames: FormatsToFileNames = [
-      ['es', 'my-lib.es.js'],
+      ['es', 'my-lib.js'],
       ['umd', 'my-lib.umd.cjs'],
-      ['cjs', 'my-lib.cjs.cjs'],
+      ['cjs', 'my-lib.cjs'],
       ['iife', 'my-lib.iife.js']
     ]
 
@@ -107,7 +107,7 @@ describe('resolveLibFilename', () => {
         resolve(__dirname, 'packages/module')
       )
 
-      expect(filename).toBe(expectedFilename)
+      expect(expectedFilename).toBe(filename)
     }
   })
 })

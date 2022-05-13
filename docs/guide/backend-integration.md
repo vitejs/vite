@@ -29,11 +29,11 @@ If you need a custom integration, you can follow the steps in this guide to conf
    import 'vite/modulepreload-polyfill'
    ```
 
-2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <!-- if development -->
-   <script type="module" src="http://localhost:3000/main.js"></script>
+   <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
    In order to properly serve assets, you have two options:
@@ -47,7 +47,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```html
    <script type="module">
-     import RefreshRuntime from 'http://localhost:3000/@react-refresh'
+     import RefreshRuntime from 'http://localhost:5173/@react-refresh'
      RefreshRuntime.injectIntoGlobalHook(window)
      window.$RefreshReg$ = () => {}
      window.$RefreshSig$ = () => (type) => type
