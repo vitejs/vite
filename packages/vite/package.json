@@ -34,7 +34,7 @@
     "build-bundle": "rollup -c",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
-    "patch-types": "ts-node scripts/patchTypes.ts",
+    "patch-types": "esno scripts/patchTypes.ts",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
