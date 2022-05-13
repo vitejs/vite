@@ -1,12 +1,8 @@
-docs/.vitepress/dist/
-packages/vite/dist/
-packages/vite/temp/
-packages/plugin-react/dist/
-packages/plugin-vue/dist/
 packages/*/CHANGELOG.md
 playground-temp/
+dist/
+temp/
 LICENSE.md
-.prettierignore
 pnpm-lock.yaml
 pnpm-workspace.yaml
 playground/tsconfig-json-load-error/has-error/tsconfig.json

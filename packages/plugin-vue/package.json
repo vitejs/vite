@@ -6,17 +6,21 @@
   "files": [
     "dist"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "dev": "rimraf dist && run-p dev-types dev-watch",
-    "dev-types": "tsc -p . -w --incremental --emitDeclarationOnly",
-    "dev-watch": "esbuild src/index.ts --watch --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --external:vue/compiler-sfc --external:vite --outfile=dist/index.js",
-    "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@vue/compiler-sfc --external:vue/compiler-sfc --external:vite --outfile=dist/index.js & npm run patch-dist",
-    "patch-dist": "ts-node ../../scripts/patchEsbuildDist.ts dist/index.js vuePlugin",
-    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
-    "prepublishOnly": "(cd ../vite && npm run build) && npm run build"
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=14.6.0"
@@ -40,6 +44,7 @@
     "rollup": "^2.72.1",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
-    "vue": "^3.2.33"
+    "vue": "^3.2.33",
+    "vite": "workspace:*"
   }
 }

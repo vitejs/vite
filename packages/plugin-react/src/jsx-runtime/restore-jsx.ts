@@ -7,6 +7,18 @@ let babelRestoreJSX: Promise<PluginItem> | undefined
 
 const jsxNotFound: RestoredJSX = [null, false]
 
+async function getBabelRestoreJSX() {
+  if (!babelRestoreJSX)
+    babelRestoreJSX = import('./babel-restore-jsx').then((r) => {
+      const fn = r.default
+      if ('default' in fn)
+        // @ts-expect-error
+        return fn.default
+      return fn
+    })
+  return babelRestoreJSX
+}
+
 /** Restore JSX from `React.createElement` calls */
 export async function restoreJSX(
   babel: typeof babelCore,
@@ -56,8 +68,6 @@ export async function restoreJSX(
     return jsxNotFound
   }
 
-  babelRestoreJSX ||= import('./babel-restore-jsx')
-
   const result = await babel.transformAsync(code, {
     babelrc: false,
     configFile: false,
@@ -67,8 +77,7 @@ export async function restoreJSX(
     parserOpts: {
       plugins: ['jsx']
     },
-    // @ts-ignore
-    plugins: [(await babelRestoreJSX).default]
+    plugins: [await getBabelRestoreJSX()]
   })
 
   return [result?.ast, isCommonJS]

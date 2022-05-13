@@ -14,9 +14,8 @@
     "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
-      // vite typings uses custom paths that is patched into relative paths during build
-      // this is a shim that makes even dev-time vite typings work for plugin-vue
-      "types/*": ["../vite/types/*"]
+      "types/*": ["../vite/types/*"],
+      "vite": ["../vite/src/node/index.js"]
     }
   }
 }

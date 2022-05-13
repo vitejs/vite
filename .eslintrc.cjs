@@ -125,7 +125,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/create-vite/template-*/**'],
+      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
         'node/no-missing-import': 'off'
       }

@@ -1,10 +1,16 @@
-// @ts-check
-const babel = require('@babel/core')
-const jsx = require('@vue/babel-plugin-jsx')
-const importMeta = require('@babel/plugin-syntax-import-meta')
-const { createFilter, normalizePath } = require('@rollup/pluginutils')
-const { createHash } = require('crypto')
-const path = require('path')
+import { createHash } from 'crypto'
+import path from 'path'
+import type { types } from '@babel/core'
+import babel from '@babel/core'
+import jsx from '@vue/babel-plugin-jsx'
+// @ts-expect-error missing type
+import importMeta from '@babel/plugin-syntax-import-meta'
+import { createFilter, normalizePath } from '@rollup/pluginutils'
+import type { ComponentOptions } from 'vue'
+import type { Plugin } from 'vite'
+import type { Options } from './types'
+
+export * from './types'
 
 const ssrRegisterHelperId = '/__vue-jsx-ssr-register-helper'
 const ssrRegisterHelperCode =
@@ -14,10 +20,8 @@ const ssrRegisterHelperCode =
 /**
  * This function is serialized with toString() and evaluated as a virtual
  * module during SSR
- * @param {import('vue').ComponentOptions} comp
- * @param {string} filename
  */
-function ssrRegisterHelper(comp, filename) {
+function ssrRegisterHelper(comp: ComponentOptions, filename: string) {
   const setup = comp.setup
   comp.setup = (props, ctx) => {
     // @ts-ignore
@@ -29,17 +33,7 @@ function ssrRegisterHelper(comp, filename) {
   }
 }
 
-/**
- * @typedef { import('@rollup/pluginutils').FilterPattern} FilterPattern
- * @typedef { { include?: FilterPattern, exclude?: FilterPattern, babelPlugins?: any[] } } CommonOptions
- */
-
-/**
- *
- * @param {import('@vue/babel-plugin-jsx').VueJSXPluginOptions & CommonOptions} options
- * @returns {import('vite').Plugin}
- */
-function vueJsxPlugin(options = {}) {
+function vueJsxPlugin(options: Options = {}): Plugin {
   let root = ''
   let needHmr = false
   let needSourceMap = true
@@ -110,31 +104,28 @@ function vueJsxPlugin(options = {}) {
           sourceMaps: needSourceMap,
           sourceFileName: id,
           configFile: false
-        })
+        })!
 
         if (!ssr && !needHmr) {
+          if (!result.code) return
           return {
             code: result.code,
             map: result.map
           }
         }
 
+        interface HotComponent {
+          local: string
+          exported: string
+          id: string
+        }
+
         // check for hmr injection
-        /**
-         * @type {{ name: string }[]}
-         */
-        const declaredComponents = []
-        /**
-         * @type {{
-         *  local: string,
-         *  exported: string,
-         *  id: string,
-         * }[]}
-         */
-        const hotComponents = []
+        const declaredComponents: { name: string }[] = []
+        const hotComponents: HotComponent[] = []
         let hasDefault = false
 
-        for (const node of result.ast.program.body) {
+        for (const node of result.ast!.program.body) {
           if (node.type === 'VariableDeclaration') {
             const names = parseComponentDecls(node, code)
             if (names.length) {
@@ -204,7 +195,7 @@ function vueJsxPlugin(options = {}) {
         if (hotComponents.length) {
           if (hasDefault && (needHmr || ssr)) {
             result.code =
-              result.code.replace(
+              result.code!.replace(
                 /export default defineComponent/g,
                 `const __default__ = defineComponent`
               ) + `\nexport default __default__`
@@ -239,6 +230,7 @@ function vueJsxPlugin(options = {}) {
           }
         }
 
+        if (!result.code) return
         return {
           code: result.code,
           map: result.map
@@ -248,11 +240,7 @@ function vueJsxPlugin(options = {}) {
   }
 }
 
-/**
- * @param {import('@babel/core').types.VariableDeclaration} node
- * @param {string} source
- */
-function parseComponentDecls(node, source) {
+function parseComponentDecls(node: types.VariableDeclaration, source: string) {
   const names = []
   for (const decl of node.declarations) {
     if (decl.id.type === 'Identifier' && isDefineComponentCall(decl.init)) {
@@ -264,10 +252,7 @@ function parseComponentDecls(node, source) {
   return names
 }
 
-/**
- * @param {import('@babel/core').types.Node} node
- */
-function isDefineComponentCall(node) {
+function isDefineComponentCall(node?: types.Node | null) {
   return (
     node &&
     node.type === 'CallExpression' &&
@@ -276,13 +261,8 @@ function isDefineComponentCall(node) {
   )
 }
 
-/**
- * @param {string} text
- * @returns {string}
- */
-function getHash(text) {
+function getHash(text: string) {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
-module.exports = vueJsxPlugin
-vueJsxPlugin.default = vueJsxPlugin
+export default vueJsxPlugin
