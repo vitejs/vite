@@ -40,7 +40,6 @@ importers:
       eslint-define-config: ^1.4.0
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
-      esno: ^0.15.0
       execa: ^5.1.1
       fs-extra: ^10.1.0
       kill-port: ^1.6.1
@@ -57,6 +56,7 @@ importers:
       semver: ^7.3.7
       simple-git-hooks: ^2.7.0
       sirv: ^2.0.2
+      ts-node: ^10.7.0
       typescript: ^4.6.4
       unbuild: ^0.7.4
       vite: workspace:*
@@ -94,7 +94,6 @@ importers:
       eslint-define-config: 1.4.0
       eslint-plugin-import: 2.26.0_doddzorl55y6dbr5ij3nshfl64
       eslint-plugin-node: 11.1.0_eslint@8.15.0
-      esno: 0.15.0
       execa: 5.1.1
       fs-extra: 10.1.0
       kill-port: 1.6.1
@@ -111,6 +110,7 @@ importers:
       semver: 7.3.7
       simple-git-hooks: 2.7.0
       sirv: 2.0.2
+      ts-node: 10.7.0_sm5zkxj4s52nbddwl76qwfh6ya
       typescript: 4.6.4
       unbuild: 0.7.4
       vite: link:packages/vite
@@ -1592,27 +1592,6 @@ packages:
   /@emotion/weak-memoize/0.2.5:
     resolution: {integrity: sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==}
     dev: false
-
-  /@esbuild-kit/cjs-loader/1.0.0:
-    resolution: {integrity: sha512-6oPhu5QcuTsU5nO3hBCd6OdfeaGsheU6OZrQSAzBsXOiZQ+lB2Zy1bAeAPKqzVGz16kBbheW+OuL54gLD79HdA==}
-    dependencies:
-      '@esbuild-kit/core-utils': 1.0.0
-      get-tsconfig: 3.0.1
-    dev: true
-
-  /@esbuild-kit/core-utils/1.0.0:
-    resolution: {integrity: sha512-OpBaYYkCxIFnTjk46dYaZplHrLXkYZvw0FporqTEPEWNJV8k2/+LTIZ1U49NdEBB33A3Ke/78KG78EoDnLENcg==}
-    dependencies:
-      esbuild: 0.14.38
-    dev: true
-
-  /@esbuild-kit/esm-loader/1.0.0:
-    resolution: {integrity: sha512-fZtvhHmO0fKNHszwb9GtBr4eaBA4ZAPxDpV/oWLh0R45IgMNz7lDIGeqsDHFTwQ4LeFgOMjzRIH0JapX8FUQmQ==}
-    dependencies:
-      '@esbuild-kit/core-utils': 1.0.0
-      es-module-lexer: 0.10.5
-      get-tsconfig: 3.0.1
-    dev: true
 
   /@eslint/eslintrc/1.2.3:
     resolution: {integrity: sha512-uGo44hIwoLGNyduRpjdEpovcbMdd+Nv7amtmJxnKmI8xj6yd5LncmSwDa5NgX/41lIFJtkjD6YdVfgEzPfJ5UA==}
@@ -4309,13 +4288,6 @@ packages:
       - supports-color
     dev: true
 
-  /esno/0.15.0:
-    resolution: {integrity: sha512-Wws1YgB/PBUtc/Pq755Crv2r5XIcSZyqC/9qyiczzQoDNNIUdxQ75uSd6gaMJFJ+pieljcH3f9JawmrHk0vLXw==}
-    hasBin: true
-    dependencies:
-      tsx: 2.0.1
-    dev: true
-
   /espree/9.3.2:
     resolution: {integrity: sha512-D211tC7ZwouTIuY5x9XnS0E9sWNChB7IYKX/Xp5eQj3nFXhqmiUDB9q27y76oFl8jTg3pXcQx/bpxMfs3CIZbA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -4715,10 +4687,6 @@ packages:
 
   /get-them-args/1.3.2:
     resolution: {integrity: sha1-dKILqKSr7OWuGZrQPyvMaP38m6U=}
-    dev: true
-
-  /get-tsconfig/3.0.1:
-    resolution: {integrity: sha512-+m30eQjbcf3xMNdnacXH5IDAKUMbI7Mhbf3e1BHif1FzBlUhBzBlmOVc7kL4+kB035l8OCyBdI3dNXZ3of9HqA==}
     dev: true
 
   /git-raw-commits/2.0.11:
@@ -8021,6 +7989,37 @@ packages:
       yn: 3.1.1
     dev: true
 
+  /ts-node/10.7.0_sm5zkxj4s52nbddwl76qwfh6ya:
+    resolution: {integrity: sha512-TbIGS4xgJoX2i3do417KSaep1uRAW/Lu+WAL2doDHC0D6ummjirVOXU5/7aiZotbQ5p1Zp9tP7U6cYhA0O7M8A==}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': '>=1.2.50'
+      '@swc/wasm': '>=1.2.50'
+      '@types/node': '*'
+      typescript: '>=2.7'
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
+      '@swc/wasm':
+        optional: true
+    dependencies:
+      '@cspotcode/source-map-support': 0.7.0
+      '@tsconfig/node10': 1.0.8
+      '@tsconfig/node12': 1.0.9
+      '@tsconfig/node14': 1.0.1
+      '@tsconfig/node16': 1.0.2
+      '@types/node': 17.0.32
+      acorn: 8.7.1
+      acorn-walk: 8.2.0
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 4.6.4
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    dev: true
+
   /tsconfck/2.0.0:
     resolution: {integrity: sha512-GVDTXF4MdNBBxKfUfjs/wkb7LHd8Ho8WLavESCddTFQFG9AUZOZEm6kODBGmQopQ9OG+EHpkT6dBaIIGhYVt+Q==}
     engines: {node: ^14.13.1 || ^16 || >=18, pnpm: ^7.0.1}
@@ -8057,16 +8056,6 @@ packages:
     dependencies:
       tslib: 1.14.1
       typescript: 4.6.4
-    dev: true
-
-  /tsx/2.0.1:
-    resolution: {integrity: sha512-qOzBwD5DkUodG7PjIUTPmRdAknYHC4jh7cOchnUScJCyayI8Cy8WqoD1rc7+zhM6x5a4YDoE5CJ+t3a92K4j2w==}
-    hasBin: true
-    dependencies:
-      '@esbuild-kit/cjs-loader': 1.0.0
-      '@esbuild-kit/esm-loader': 1.0.0
-    optionalDependencies:
-      fsevents: 2.3.2
     dev: true
 
   /type-check/0.4.0:

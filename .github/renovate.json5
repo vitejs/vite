@@ -16,6 +16,7 @@
     "esbuild",
     "rollup",
     "node",
+    "ts-node",
     "typescript",
 
     // breaking changes

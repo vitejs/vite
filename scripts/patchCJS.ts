@@ -17,7 +17,7 @@ module.exports.parseVueRequest = parseVueRequest;
 */
 
 import { readFileSync, writeFileSync } from 'fs'
-import colors from 'picocolors'
+import { bold, red } from 'picocolors'
 
 const indexPath = 'dist/index.cjs'
 let code = readFileSync(indexPath, 'utf-8')
@@ -40,7 +40,7 @@ if (matchMixed) {
 
   writeFileSync(indexPath, lines.join('\n'))
 
-  console.log(colors.bold(`${indexPath} CJS patched`))
+  console.log(bold(`${indexPath} CJS patched`))
   process.exit()
 }
 
@@ -49,9 +49,9 @@ const matchDefault = code.match(/\nmodule.exports = (\w+);/)
 if (matchDefault) {
   code += `module.exports["default"] = ${matchDefault[1]};\n`
   writeFileSync(indexPath, code)
-  console.log(colors.bold(`${indexPath} CJS patched`))
+  console.log(bold(`${indexPath} CJS patched`))
   process.exit()
 }
 
-console.error(colors.red(`${indexPath} CJS patch failed`))
+console.error(red(`${indexPath} CJS patch failed`))
 process.exit(1)
