@@ -50,6 +50,15 @@ module.exports = {
           res.end('pong')
         })
       }
+    },
+    {
+      name: 'test-astro',
+      transform(code, id) {
+        if (id.endsWith('.astro')) {
+          code = `export default {}`
+          return { code }
+        }
+      }
     }
   ]
 }
