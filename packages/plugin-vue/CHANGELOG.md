@@ -1,3 +1,24 @@
+## 3.0.0-alpha.0 (2022-05-13)
+
+* chore: bump minors and rebuild lock (#8074) ([aeb5b74](https://github.com/vitejs/vite/commit/aeb5b74)), closes [#8074](https://github.com/vitejs/vite/issues/8074)
+* chore: revert vitejs/vite#8152 (#8161) ([85b8b55](https://github.com/vitejs/vite/commit/85b8b55)), closes [vitejs/vite#8152](https://github.com/vitejs/vite/issues/8152) [#8161](https://github.com/vitejs/vite/issues/8161)
+* chore: update plugins peer deps ([d57c23c](https://github.com/vitejs/vite/commit/d57c23c))
+* chore: upgrade to pnpm v7 (#8041) ([50f8f3b](https://github.com/vitejs/vite/commit/50f8f3b)), closes [#8041](https://github.com/vitejs/vite/issues/8041)
+* chore: use `unbuild` to bundle plugins (#8139) ([638b168](https://github.com/vitejs/vite/commit/638b168)), closes [#8139](https://github.com/vitejs/vite/issues/8139)
+* chore(deps): use `esno` to replace `ts-node` (#8152) ([2363bd3](https://github.com/vitejs/vite/commit/2363bd3)), closes [#8152](https://github.com/vitejs/vite/issues/8152)
+* chore(lint): sort for imports (#8113) ([43a58dd](https://github.com/vitejs/vite/commit/43a58dd)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
+* chore(plugin-vue): change @rollup/pluginutils to dep from devDep (#8154) ([dcc8ea4](https://github.com/vitejs/vite/commit/dcc8ea4)), closes [#8154](https://github.com/vitejs/vite/issues/8154)
+* chore(plugin-vue): replace source-map with gen/trace-mapping (#8155) ([79a8c85](https://github.com/vitejs/vite/commit/79a8c85)), closes [#8155](https://github.com/vitejs/vite/issues/8155)
+* fix(plugin-vue): allow overwriting template.transformAssetUrls.includeAbsolute (fix #4836) (#6779) ([e0fe200](https://github.com/vitejs/vite/commit/e0fe200)), closes [#4836](https://github.com/vitejs/vite/issues/4836) [#6779](https://github.com/vitejs/vite/issues/6779)
+* fix(plugin-vue): don't inline ts scripts during build (#7909) ([ba6cae9](https://github.com/vitejs/vite/commit/ba6cae9)), closes [#7909](https://github.com/vitejs/vite/issues/7909)
+* fix(plugin-vue): trigger css hmr on custom template languages (#6987) ([2289d04](https://github.com/vitejs/vite/commit/2289d04)), closes [#6987](https://github.com/vitejs/vite/issues/6987)
+* fix(plugin-vue): user defined transformAssetUrls ignored in production build (#7171) ([bfab569](https://github.com/vitejs/vite/commit/bfab569)), closes [#7171](https://github.com/vitejs/vite/issues/7171)
+* fix(vue): same src file request same key (#8059) ([4c54800](https://github.com/vitejs/vite/commit/4c54800)), closes [#8059](https://github.com/vitejs/vite/issues/8059)
+* refactor: use node hash (#7975) ([5ce7c74](https://github.com/vitejs/vite/commit/5ce7c74)), closes [#7975](https://github.com/vitejs/vite/issues/7975)
+* build!: remove node v12 support (#7833) ([eeac2d2](https://github.com/vitejs/vite/commit/eeac2d2)), closes [#7833](https://github.com/vitejs/vite/issues/7833)
+
+
+
 ## <small>2.3.2 (2022-05-04)</small>
 
 * feat: import ts with .js in vue (#7998) ([9974094](https://github.com/vitejs/vite/commit/9974094)), closes [#7998](https://github.com/vitejs/vite/issues/7998)
