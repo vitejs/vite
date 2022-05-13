@@ -31,7 +31,7 @@ describe.runIf(isBuild)('build', () => {
       'utf-8'
     )
     // esbuild helpers are injected inside of the IIFE wrapper
-    expect(code).toMatch(/^var MyLib=function\(\){"use strict";/)
+    expect(code).toMatch(/^const MyLib=function\(\){"use strict";/)
   })
 
   test('Library mode does not include `preload`', async () => {
