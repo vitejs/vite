@@ -138,7 +138,7 @@ export function getVersionChoices(currentVersion: string) {
   } else if (currentAlpha) {
     versionChoices.push({
       title: 'beta',
-      value: inc('patch') + '-beta.1'
+      value: inc('patch') + '-beta.0'
     })
   } else {
     versionChoices.push({
