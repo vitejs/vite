@@ -94,23 +94,20 @@ export function step(msg: string) {
 
 export function getVersionChoices(currentVersion: string) {
   const currentBeta = currentVersion.includes('beta')
+  const currentAlpha = currentVersion.includes('alpha')
+  const isStable = !currentBeta && !currentAlpha
 
-  const inc: (i: ReleaseType) => string = (i) =>
-    semver.inc(currentVersion, i, 'beta')!
+  function inc(i: ReleaseType, tag = currentAlpha ? 'alpha' : 'beta') {
+    return semver.inc(currentVersion, i, tag)!
+  }
 
   const versionChoices = [
     {
       title: 'next',
-      value: inc(currentBeta ? 'prerelease' : 'patch')
+      value: inc(isStable ? 'patch' : 'prerelease')
     },
-    ...(currentBeta
+    ...(isStable
       ? [
-          {
-            title: 'stable',
-            value: inc('patch')
-          }
-        ]
-      : [
           {
             title: 'beta-minor',
             value: inc('preminor')
@@ -120,12 +117,26 @@ export function getVersionChoices(currentVersion: string) {
             value: inc('premajor')
           },
           {
+            title: 'alpha-minor',
+            value: inc('preminor', 'alpha')
+          },
+          {
+            title: 'alpha-major',
+            value: inc('premajor', 'alpha')
+          },
+          {
             title: 'minor',
             value: inc('minor')
           },
           {
             title: 'major',
             value: inc('major')
+          }
+        ]
+      : [
+          {
+            title: 'stable',
+            value: inc('patch')
           }
         ]),
     { value: 'custom', title: 'custom' }
