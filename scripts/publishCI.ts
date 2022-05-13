@@ -22,7 +22,12 @@ async function main() {
     )
 
   step('Publishing package...')
-  await publishPackage(pkgDir, version.includes('beta') ? 'beta' : undefined)
+  const releaseTag = version.includes('beta')
+    ? 'beta'
+    : version.includes('alpha')
+    ? 'alpha'
+    : undefined
+  await publishPackage(pkgDir, releaseTag)
 }
 
 main().catch((err) => {
