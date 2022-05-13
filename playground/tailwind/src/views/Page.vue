@@ -8,15 +8,17 @@
       Tailwind style
     </div>
     <HelloWorld />
+    <PugTemplate />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import HelloWorld from '../components/HelloWorld.vue'
+import PugTemplate from '../components/PugTemplate.vue'
 
 export default defineComponent({
-  components: { HelloWorld },
+  components: { HelloWorld, PugTemplate },
   setup() {
     const val = ref(0)
 

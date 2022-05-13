@@ -3,6 +3,7 @@ import {
   editFile,
   untilUpdated,
   getColor,
+  getBgColor,
   browserLogs,
   page
 } from '~utils'
@@ -60,6 +61,26 @@ if (!isBuild) {
     expect(browserLogs).toMatchObject([
       '[vite] css hot updated: /index.css',
       '[vite] hot updated: /src/App.vue'
+    ])
+
+    browserLogs.length = 0
+  })
+
+  test('regenerate CSS and HMR (pug template)', async () => {
+    browserLogs.length = 0
+    const el = await page.$('.pug')
+
+    expect(await getBgColor(el)).toBe('rgb(248, 113, 113)')
+
+    editFile('src/components/PugTemplate.vue', (code) =>
+      code.replace('bg-red-400', 'bg-red-600')
+    )
+
+    await untilUpdated(() => getBgColor(el), 'rgb(220, 38, 38)')
+
+    expect(browserLogs).toMatchObject([
+      '[vite] css hot updated: /index.css',
+      '[vite] hot updated: /src/components/PugTemplate.vue?vue&type=template&lang.js'
     ])
 
     browserLogs.length = 0

@@ -146,6 +146,11 @@ export async function handleHotUpdate(
     // template is inlined into main, add main module instead
     if (!templateModule) {
       affectedModules.add(mainModule)
+    } else if (mainModule && !affectedModules.has(mainModule)) {
+      const styleImporters = [...mainModule.importers].filter((m) =>
+        /\.css($|\?)/.test(m.url)
+      )
+      styleImporters.forEach((m) => affectedModules.add(m))
     }
   }
   if (didUpdateStyle) {
