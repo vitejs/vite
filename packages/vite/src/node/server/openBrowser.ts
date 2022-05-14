@@ -10,7 +10,6 @@
 
 import { join } from 'path'
 import { execSync } from 'child_process'
-import { createRequire } from 'module'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'

@@ -18,6 +18,7 @@ import { sync as resolve } from 'resolve'
 const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
 // @ts-ignore
 const require = createRequire(import.meta.url)
+const pkg = require('./package.json')
 
 /**
  * @type { import('rollup').RollupOptions }
@@ -110,7 +111,8 @@ const createNodeConfig = (isProduction) => {
     ...sharedNodeOptions,
     input: {
       index: path.resolve(__dirname, 'src/node/index.ts'),
-      cli: path.resolve(__dirname, 'src/node/cli.ts')
+      cli: path.resolve(__dirname, 'src/node/cli.ts'),
+      constants: path.resolve(__dirname, 'src/node/constants.ts')
     },
     output: {
       ...sharedNodeOptions.output,
@@ -118,10 +120,10 @@ const createNodeConfig = (isProduction) => {
     },
     external: [
       'fsevents',
-      ...Object.keys(require('./package.json').dependencies),
+      ...Object.keys(pkg.dependencies),
       ...(isProduction
         ? []
-        : Object.keys(require('./package.json').devDependencies))
+        : Object.keys(pkg.devDependencies))
     ],
     plugins: [
       alias({
@@ -175,16 +177,24 @@ const createNodeConfig = (isProduction) => {
           // postcss-import -> sugarss
           'process-content.js': {
             src: 'require("sugarss")',
-            replacement: `eval('require')('sugarss')`
+            replacement: `__require('sugarss')`,
+            injectRequire: 'cjs',
           },
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
-            replacement: `: eval('require'),`
+            replacement: `: __require,`,
+            injectRequire: 'cjs',
           },
           // postcss-load-config calls require after register ts-node
           'postcss-load-config/src/index.js': {
             src: `require(configFile)`,
-            replacement: `eval('require')(configFile)`
+            replacement: `__require(configFile)`,
+            injectRequire: 'cjs',
+          },
+          // @rollup/plugin-commonjs uses incorrect esm
+          '@rollup/plugin-commonjs/dist/index.es.js': {
+            src: `import { sync } from 'resolve';`,
+            replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
           }
         }),
       commonjs({
@@ -222,7 +232,7 @@ const terserConfig = {
 }
 
 /**
- * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp }>) => import('rollup').Plugin }
+ * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp, injectRequire?: 'cjs' | 'esm' }>) => import('rollup').Plugin }
  */
 function shimDepsPlugin(deps) {
   const transformed = {}
@@ -232,7 +242,7 @@ function shimDepsPlugin(deps) {
     transform(code, id) {
       for (const file in deps) {
         if (id.replace(/\\/g, '/').endsWith(file)) {
-          const { src, replacement, pattern } = deps[file]
+          const { src, replacement, pattern, injectRequire } = deps[file]
 
           const magicString = new MagicString(code)
           if (src) {
@@ -254,6 +264,12 @@ function shimDepsPlugin(deps) {
               const start = match.index
               const end = start + match[0].length
               magicString.overwrite(start, end, replacement)
+            }
+            if (injectRequire === 'esm') {
+              magicString.prepend(`import { createRequire } from 'module';const __require = createRequire(import.meta.url);`)
+            }
+            else if (injectRequire === 'cjs') {
+              magicString.prepend(`const { createRequire } = require('module');const __require = createRequire(import.meta.url);`)
             }
             if (!transformed[file]) {
               this.error(
