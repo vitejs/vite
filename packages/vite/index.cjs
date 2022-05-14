@@ -13,9 +13,11 @@ module.exports.preview = (...args) =>
 module.exports.transformWithEsbuild = (...args) =>
   import('./dist/node/index.js').then((i) => i.transformWithEsbuild(...args))
 
-  module.exports.formatPostcssSourceMap = (...args) =>
+module.exports.formatPostcssSourceMap = (...args) =>
   import('./dist/node/index.js').then((i) => i.formatPostcssSourceMap(...args))
 
+module.exports.splitVendorChunkPlugin = (...args) =>
+  require('./dist/node-cjs/splitVendorChunk.cjs').splitVendorChunkPlugin(...args)
 
 module.exports.defineConfig = (config) => config
 
@@ -27,6 +29,6 @@ function slash(p) {
   return p.replace(/\\/g, '/')
 }
 
-module.exports.normalizePath = (id) =>  {
+module.exports.normalizePath = (id) => {
   return path.posix.normalize(isWindows ? slash(id) : id)
 }

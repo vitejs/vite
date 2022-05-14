@@ -101,9 +101,96 @@ const sharedNodeOptions = {
 /**
  *
  * @param {boolean} isProduction
+ * @returns {import('rollup').Plugin[]}
+ */
+function createNodePlugins(isProduction) {
+  return [
+    alias({
+      // packages with "module" field that doesn't play well with cjs bundles
+      entries: {
+        '@vue/compiler-dom': require.resolve(
+          '@vue/compiler-dom/dist/compiler-dom.cjs.js'
+        )
+      }
+    }),
+    nodeResolve({ preferBuiltins: true }),
+    typescript({
+      tsconfig: 'src/node/tsconfig.json',
+      module: 'esnext',
+      target: 'es2019',
+      include: ['src/**/*.ts', 'types/**'],
+      exclude: ['src/**/__tests__/**'],
+      esModuleInterop: true,
+      // in production we use api-extractor for dts generation
+      // in development we need to rely on the rollup ts plugin
+      ...(isProduction
+        ? {
+            declaration: false,
+            sourceMap: false
+          }
+        : {
+            declaration: true,
+            declarationDir: path.resolve(__dirname, 'dist/node')
+          })
+    }),
+
+    // Some deps have try...catch require of optional deps, but rollup will
+    // generate code that force require them upfront for side effects.
+    // Shim them with eval() so rollup can skip these calls.
+    isProduction &&
+      shimDepsPlugin({
+        'plugins/terser.ts': {
+          src: `require.resolve('terser'`,
+          replacement: `__require.resolve('vite/dist/node/terser'`
+        },
+        // chokidar -> fsevents
+        'fsevents-handler.js': {
+          src: `require('fsevents')`,
+          replacement: `__require('fsevents')`
+        },
+        // cac re-assigns module.exports even in its mjs dist
+        'cac/dist/index.mjs': {
+          src: `if (typeof module !== "undefined") {`,
+          replacement: `if (false) {`
+        },
+        // postcss-import -> sugarss
+        'process-content.js': {
+          src: 'require("sugarss")',
+          replacement: `__require('sugarss')`
+        },
+        'lilconfig/dist/index.js': {
+          pattern: /: require,/g,
+          replacement: `: __require,`
+        },
+        // postcss-load-config calls require after register ts-node
+        'postcss-load-config/src/index.js': {
+          src: `require(configFile)`,
+          replacement: `__require(configFile)`
+        },
+        // @rollup/plugin-commonjs uses incorrect esm
+        '@rollup/plugin-commonjs/dist/index.es.js': {
+          src: `import { sync } from 'resolve';`,
+          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
+        }
+      }),
+    commonjs({
+      extensions: ['.js'],
+      // Optional peer deps of ws. Native deps that are mostly for performance.
+      // Since ws is not that perf critical for us, just ignore these deps.
+      ignore: ['bufferutil', 'utf-8-validate']
+    }),
+    json(),
+    isProduction && licensePlugin(),
+    cjsPatchPlugin()
+  ]
+}
+
+/**
+ *
+ * @param {boolean} isProduction
  * @returns {import('rollup').RollupOptions}
  */
-const createNodeConfig = (isProduction) => {
+function createNodeConfig(isProduction) {
   /**
    * @type { import('rollup').RollupOptions }
    */
@@ -123,86 +210,7 @@ const createNodeConfig = (isProduction) => {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: [
-      alias({
-        // packages with "module" field that doesn't play well with cjs bundles
-        entries: {
-          '@vue/compiler-dom': require.resolve(
-            '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-          )
-        }
-      }),
-      nodeResolve({ preferBuiltins: true }),
-      typescript({
-        tsconfig: 'src/node/tsconfig.json',
-        module: 'esnext',
-        target: 'es2019',
-        include: ['src/**/*.ts', 'types/**'],
-        exclude: ['src/**/__tests__/**'],
-        esModuleInterop: true,
-        // in production we use api-extractor for dts generation
-        // in development we need to rely on the rollup ts plugin
-        ...(isProduction
-          ? {
-              declaration: false,
-              sourceMap: false
-            }
-          : {
-              declaration: true,
-              declarationDir: path.resolve(__dirname, 'dist/node')
-            })
-      }),
-
-      // Some deps have try...catch require of optional deps, but rollup will
-      // generate code that force require them upfront for side effects.
-      // Shim them with eval() so rollup can skip these calls.
-      isProduction &&
-        shimDepsPlugin({
-          'plugins/terser.ts': {
-            src: `require.resolve('terser'`,
-            replacement: `__require.resolve('vite/dist/node/terser'`
-          },
-          // chokidar -> fsevents
-          'fsevents-handler.js': {
-            src: `require('fsevents')`,
-            replacement: `__require('fsevents')`
-          },
-          // cac re-assigns module.exports even in its mjs dist
-          'cac/dist/index.mjs': {
-            src: `if (typeof module !== "undefined") {`,
-            replacement: `if (false) {`
-          },
-          // postcss-import -> sugarss
-          'process-content.js': {
-            src: 'require("sugarss")',
-            replacement: `__require('sugarss')`,
-            injectRequire: 'cjs'
-          },
-          'lilconfig/dist/index.js': {
-            pattern: /: require,/g,
-            replacement: `: __require,`,
-          },
-          // postcss-load-config calls require after register ts-node
-          'postcss-load-config/src/index.js': {
-            src: `require(configFile)`,
-            replacement: `__require(configFile)`,
-          },
-          // @rollup/plugin-commonjs uses incorrect esm
-          '@rollup/plugin-commonjs/dist/index.es.js': {
-            src: `import { sync } from 'resolve';`,
-            replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
-          }
-        }),
-      commonjs({
-        extensions: ['.js'],
-        // Optional peer deps of ws. Native deps that are mostly for performance.
-        // Since ws is not that perf critical for us, just ignore these deps.
-        ignore: ['bufferutil', 'utf-8-validate']
-      }),
-      json(),
-      isProduction && licensePlugin(),
-      cjsPatchPlugin()
-    ]
+    plugins: createNodePlugins(isProduction)
   }
 
   return nodeConfig
@@ -227,6 +235,59 @@ const terserConfig = {
   },
   plugins: [nodeResolve(), commonjs()]
 }
+
+/**
+ *
+ * @param {boolean} isProduction
+ * @returns {import('rollup').RollupOptions}
+ */
+function createCjsConfig(isProduction) {
+  /**
+   * @type { import('rollup').RollupOptions }
+   */
+  const nodeConfig = {
+    ...sharedNodeOptions,
+    input: {
+      splitVendorChunk: path.resolve(
+        __dirname,
+        'src/node/plugins/splitVendorChunk.ts'
+      )
+    },
+    output: {
+      dir: path.resolve(__dirname, 'dist'),
+      entryFileNames: `node-cjs/[name].cjs`,
+      chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
+      exports: 'named',
+      format: 'cjs',
+      externalLiveBindings: false,
+      freeze: false,
+      sourcemap: false
+    },
+    external: [
+      'fsevents',
+      ...Object.keys(pkg.dependencies),
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
+    ],
+    plugins: createNodePlugins(false)
+  }
+
+  return nodeConfig
+}
+
+export default (commandLineArgs) => {
+  const isDev = commandLineArgs.watch
+  const isProduction = !isDev
+
+  return [
+    envConfig,
+    clientConfig,
+    createNodeConfig(isProduction),
+    createCjsConfig(isProduction),
+    ...(isProduction ? [terserConfig] : [])
+  ]
+}
+
+// #region ======== Plugins ========
 
 /**
  * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp }>) => import('rollup').Plugin }
@@ -400,18 +461,6 @@ function licensePlugin() {
   })
 }
 
-export default (commandLineArgs) => {
-  const isDev = commandLineArgs.watch
-  const isProduction = !isDev
-
-  return [
-    envConfig,
-    clientConfig,
-    createNodeConfig(isProduction),
-    ...(isProduction ? [terserConfig] : [])
-  ]
-}
-
 // inject cjs context for each chunk
 const cjsPatch = `
 import { fileURLToPath as __cjs_fileURLToPath } from 'url';
@@ -447,3 +496,5 @@ function cjsPatchPlugin() {
     }
   }
 }
+
+// #endregion
