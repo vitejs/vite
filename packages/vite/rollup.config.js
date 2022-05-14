@@ -28,7 +28,7 @@ const envConfig = {
   plugins: [
     typescript({
       target: 'es2018',
-      module: "esnext",
+      module: 'esnext',
       include: ['src/client/env.ts'],
       baseUrl: path.resolve(__dirname, 'src/env'),
       paths: {
@@ -121,9 +121,7 @@ const createNodeConfig = (isProduction) => {
     external: [
       'fsevents',
       ...Object.keys(pkg.dependencies),
-      ...(isProduction
-        ? []
-        : Object.keys(pkg.devDependencies))
+      ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
     plugins: [
       alias({
@@ -154,7 +152,7 @@ const createNodeConfig = (isProduction) => {
               declarationDir: path.resolve(__dirname, 'dist/node')
             })
       }),
-     
+
       // Some deps have try...catch require of optional deps, but rollup will
       // generate code that force require them upfront for side effects.
       // Shim them with eval() so rollup can skip these calls.
@@ -178,18 +176,18 @@ const createNodeConfig = (isProduction) => {
           'process-content.js': {
             src: 'require("sugarss")',
             replacement: `__require('sugarss')`,
-            injectRequire: 'cjs',
+            injectRequire: 'cjs'
           },
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: __require,`,
-            injectRequire: 'cjs',
+            injectRequire: 'cjs'
           },
           // postcss-load-config calls require after register ts-node
           'postcss-load-config/src/index.js': {
             src: `require(configFile)`,
             replacement: `__require(configFile)`,
-            injectRequire: 'cjs',
+            injectRequire: 'cjs'
           },
           // @rollup/plugin-commonjs uses incorrect esm
           '@rollup/plugin-commonjs/dist/index.es.js': {
@@ -204,7 +202,8 @@ const createNodeConfig = (isProduction) => {
         ignore: ['bufferutil', 'utf-8-validate']
       }),
       json(),
-      isProduction && licensePlugin()
+      isProduction && licensePlugin(),
+      cjsPatchPlugin()
     ]
   }
 
@@ -266,10 +265,13 @@ function shimDepsPlugin(deps) {
               magicString.overwrite(start, end, replacement)
             }
             if (injectRequire === 'esm') {
-              magicString.prepend(`import { createRequire } from 'module';const __require = createRequire(import.meta.url);`)
-            }
-            else if (injectRequire === 'cjs') {
-              magicString.prepend(`const { createRequire } = require('module');const __require = createRequire(import.meta.url);`)
+              magicString.prepend(
+                `import { createRequire } from 'module';const __require = createRequire(import.meta.url);`
+              )
+            } else if (injectRequire === 'cjs') {
+              magicString.prepend(
+                `const { createRequire } = require('module');const __require = createRequire(import.meta.url);`
+              )
             }
             if (!transformed[file]) {
               this.error(
@@ -419,4 +421,43 @@ export default (commandLineArgs) => {
     createNodeConfig(isProduction),
     ...(isProduction ? [terserConfig] : [])
   ]
+}
+
+// inject cjs context for each chunk
+const cjsPatch = `
+import { fileURLToPath as __cjs_fileURLToPath } from 'url';
+import { dirname as __cjs_dirname } from 'path';
+import { createRequire as __cjs_createRequire } from 'module';
+
+const __filename = __cjs_fileURLToPath(import.meta.url);
+const __dirname = __cjs_dirname(__filename);
+const require = __cjs_createRequire(import.meta.url);
+`.trimStart()
+
+/**
+ * @type { () => import('rollup').Plugin }
+ */
+function cjsPatchPlugin() {
+  return {
+    name: 'cjs-chunk-patch',
+    renderChunk(code, chunk) {
+      if (!chunk.fileName.includes('chunks/dep-')) 
+      return
+
+      if (!code.match(/\b(require|__dirname|__filename)/))
+      return
+
+      const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
+      const index = match ? match.index + match[0].length : 0
+      const s = new MagicString(code)
+      // inject after the last `import`
+      s.appendRight(index, cjsPatch)
+      console.log('patched cjs context: ' + chunk.fileName)
+
+      return {
+        code: s.toString(),
+        map: s.generateMap()
+      }
+    }
+  }
 }
