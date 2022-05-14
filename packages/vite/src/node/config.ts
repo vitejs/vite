@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { parse as parseUrl, pathToFileURL } from 'url'
 import { performance } from 'perf_hooks'
+import { createRequire } from 'module'
 import colors from 'picocolors'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
@@ -934,14 +935,15 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
+const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
 ): Promise<UserConfig> {
   const extension = path.extname(fileName)
   const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = require.extensions[extension]!
-  require.extensions[extension] = (module: NodeModule, filename: string) => {
+  const defaultLoader = _require.extensions[extension]!
+  _require.extensions[extension] = (module: NodeModule, filename: string) => {
     if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
@@ -949,10 +951,10 @@ async function loadConfigFromBundledFile(
     }
   }
   // clear cache in case of server restart
-  delete require.cache[require.resolve(fileName)]
-  const raw = require(fileName)
+  delete _require.cache[_require.resolve(fileName)]
+  const raw = _require(fileName)
   const config = raw.__esModule ? raw.default : raw
-  require.extensions[extension] = defaultLoader
+  _require.extensions[extension] = defaultLoader
   return config
 }
 

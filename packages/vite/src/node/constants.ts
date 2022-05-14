@@ -1,4 +1,6 @@
-import path from 'path'
+import path, { resolve } from 'path'
+
+export { version as VERSION } from '../../package.json'
 
 export const DEFAULT_MAIN_FIELDS = [
   'module',
@@ -46,10 +48,10 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-// eslint-disable-next-line node/no-missing-require
-export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.mjs')
-// eslint-disable-next-line node/no-missing-require
-export const ENV_ENTRY = require.resolve('vite/dist/client/env.mjs')
+export const VITE_PACKAGE_DIR = resolve(import.meta.url, '../..')
+
+export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
+export const ENV_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/env.mjs')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
 // ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.

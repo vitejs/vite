@@ -1,6 +1,8 @@
 // @ts-check
 import fs from 'fs'
 import path from 'path'
+import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -12,6 +14,11 @@ import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
+// // @ts-ignore
+// const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
+// // @ts-ignore
+// const require = createRequire(import.meta.url)
+
 /**
  * @type { import('rollup').RollupOptions }
  */
@@ -20,6 +27,7 @@ const envConfig = {
   plugins: [
     typescript({
       target: 'es2018',
+      module: "esnext",
       include: ['src/client/env.ts'],
       baseUrl: path.resolve(__dirname, 'src/env'),
       paths: {
@@ -144,6 +152,7 @@ const createNodeConfig = (isProduction) => {
               declarationDir: path.resolve(__dirname, 'dist/node')
             })
       }),
+     
       // Some deps have try...catch require of optional deps, but rollup will
       // generate code that force require them upfront for side effects.
       // Shim them with eval() so rollup can skip these calls.

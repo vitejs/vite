@@ -1,7 +1,14 @@
+import { createRequire } from 'module'
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
+
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+  const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
@@ -11,11 +18,11 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         // root with vite itself, so we have to pass in the basedir and resolve
         // terser first.
         // eslint-disable-next-line node/no-restricted-require
-        const terserPath = require.resolve('terser', {
+        const terserPath = _require.resolve('terser', {
           paths: [basedir]
         })
-        return require(terserPath).minify(code, options) as Terser.MinifyOutput
-      }
+        return _require(terserPath).minify(code, options) as Terser.MinifyOutput
+      },
     )
 
   let worker: ReturnType<typeof makeWorker>

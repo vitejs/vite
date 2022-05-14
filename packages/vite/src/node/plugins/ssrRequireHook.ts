@@ -1,3 +1,4 @@
+import { createRequire } from 'module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
@@ -47,9 +48,12 @@ type NodeResolveFilename = (
   options?: Record<string, any>
 ) => string
 
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+
 /** Respect the `resolve.dedupe` option in production SSR. */
 function dedupeRequire(dedupe: string[]) {
-  const Module = require('module') as { _resolveFilename: NodeResolveFilename }
+  const Module = _require('module') as { _resolveFilename: NodeResolveFilename }
   const resolveFilename = Module._resolveFilename
   Module._resolveFilename = function (request, parent, isMain, options) {
     if (request[0] !== '.' && request[0] !== '/') {
@@ -67,7 +71,7 @@ function dedupeRequire(dedupe: string[]) {
 export function hookNodeResolve(
   getResolver: (resolveFilename: NodeResolveFilename) => NodeResolveFilename
 ): () => void {
-  const Module = require('module') as { _resolveFilename: NodeResolveFilename }
+  const Module = _require('module') as { _resolveFilename: NodeResolveFilename }
   const prevResolver = Module._resolveFilename
   Module._resolveFilename = getResolver(prevResolver)
   return () => {

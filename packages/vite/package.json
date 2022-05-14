@@ -1,18 +1,28 @@
 {
   "name": "vite",
   "version": "3.0.0-alpha.0",
+  "type": "module",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "main": "dist/node/index.js",
-  "types": "dist/node/index.d.ts",
+  "main": "./dist/node/index.js",
+  "module": "./dist/node/index.js",
+  "types": "./dist/node/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js",
+      "require": "./index.cjs"
+    }
+  },
   "files": [
     "bin",
     "dist",
     "client.d.ts",
+    "index.cjs",
     "src/client",
     "types"
   ],

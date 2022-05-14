@@ -4,7 +4,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { promisify } from 'util'
 import { URL, pathToFileURL } from 'url'
-import { builtinModules } from 'module'
+import { builtinModules, createRequire } from 'module'
 import { performance } from 'perf_hooks'
 import { URLSearchParams } from 'url'
 import resolve from 'resolve'
@@ -71,8 +71,12 @@ export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 export let isRunningWithYarnPnp: boolean
+
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+
 try {
-  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
 } catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
@@ -758,7 +762,7 @@ export const usingDynamicImport = typeof jest === 'undefined'
  */
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
-  : require
+  : _require
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)

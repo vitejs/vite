@@ -5,10 +5,11 @@
   "compilerOptions": {
     // compile away optional-chaining-operator
     // node support table: https://node.green/#ES2020-features-optional-chaining-operator-----
-    "target": "ES2019",
+    "target": "ES2020",
+    "module": "esnext",
     "outDir": "../../dist/node",
-    "module": "commonjs",
     "lib": ["ESNext", "DOM"],
-    "sourceMap": true
+    "sourceMap": true,
+    "resolveJsonModule": true
   }
 }
