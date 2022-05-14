@@ -24,11 +24,11 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isRelativeBase,
   normalizePath,
   processSrcSet,
   slash
 } from '../utils'
-import { isRelativeBase } from '../build'
 import type { ResolvedConfig } from '../config'
 import {
   assetUrlRE,

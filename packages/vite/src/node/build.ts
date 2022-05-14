@@ -26,7 +26,13 @@ import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  isRelativeBase,
+  lookupFile,
+  normalizePath
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -757,28 +763,6 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
-}
-
-export function isRelativeBase(base: string): boolean {
-  return base === '' || base.startsWith('.')
-}
-
-export function assetFilenameWithBase(filename: string, base: string): string {
-  if (isRelativeBase(base)) {
-    // relative base - asset file will be in the same dir
-    return `./${path.posix.basename(filename)}`
-  } else {
-    return base + filename
-  }
-}
-
-export function filenameToUrlCode(filename: string, base: string): string {
-  const outputFilepath = assetFilenameWithBase(filename, base)
-  if (isRelativeBase(base)) {
-    return `new URL(${JSON.stringify(outputFilepath)}, import.meta.url)`
-  } else {
-    return JSON.stringify(outputFilepath)
-  }
 }
 
 export function publicURLfromAsset(

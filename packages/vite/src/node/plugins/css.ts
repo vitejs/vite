@@ -37,12 +37,13 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
+  isRelativeBase,
   normalizePath,
   parseRequest,
   processSrcSet
 } from '../utils'
 import { emptyCssComments } from '../utils'
-import { assetFilenameWithBase, publicURLfromAsset } from '../build'
+import { publicURLfromAsset } from '../build'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -428,14 +429,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       ) => {
         // replace asset url references with resolved url.
+        const relativeBase = isRelativeBase(config.base)
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (inlined) {
-            // inlined (injected as style tag into index.html) use the base as-is
+          // TODO: inlined with relative base, should it use import.meta.url?
+          if (inlined || !relativeBase) {
+            // absolute base or relative base but inlined (injected as style tag into
+            // index.html) use the base as-is
             return config.base + filename
           }
-          return assetFilenameWithBase(filename, config.base)
+          // relative base + extracted CSS - asset file will be in the same dir
+          return `./${path.posix.basename(filename)}`
         })
         // only external @imports and @charset should exist at this point
         css = await finalizeCss(css, minify, config)

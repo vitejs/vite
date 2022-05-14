@@ -6,8 +6,8 @@ import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, normalizePath } from '../utils'
-import { filenameToUrlCode, publicURLfromAsset } from '../build'
+import { cleanUrl, getHash, isRelativeBase, normalizePath } from '../utils'
+import { publicURLfromAsset } from '../build'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -30,6 +30,7 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+  const relativeBase = isRelativeBase(config.base)
 
   // add own dictionary entry by directly assigning mrmine
   // https://github.com/lukeed/mrmime/issues/3
@@ -95,13 +96,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
-        // fallback to this.getFileName for that.
+        // fallback to this.getFileName for that. TODO: remove, not needed
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        // Convert to stringified url or `new URL(...)`
-        const urlCode = filenameToUrlCode(file + postfix, config.base)
-        const replacement =
-          urlCode[0] === '"' ? urlCode.slice(1, -1) : `" + ${urlCode} + "`
+        const filename = file + postfix
+        const outputFilepath = relativeBase
+          ? path.relative(path.dirname(chunk.fileName), filename)
+          : config.base + filename
+        const replacement = JSON.stringify(outputFilepath).slice(1, -1)
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
         })

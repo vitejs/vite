@@ -4,11 +4,10 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { bareImportRE, combineSourcemaps } from '../utils'
+import { bareImportRE, combineSourcemaps, isRelativeBase } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { isRelativeBase } from '../build'
 import { isCSSRequest, removedPureCssFilesCache } from './css'
 
 /**
