@@ -1,4 +1,4 @@
-import {createRequire}from 'module'
+import { createRequire } from 'module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
@@ -47,7 +47,6 @@ type NodeResolveFilename = (
   isMain: boolean,
   options?: Record<string, any>
 ) => string
-
 
 /** Respect the `resolve.dedupe` option in production SSR. */
 function dedupeRequire(dedupe: string[]) {

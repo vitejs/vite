@@ -141,7 +141,7 @@ function createNodePlugins(isProduction) {
       shimDepsPlugin({
         'plugins/terser.ts': {
           src: `require.resolve('terser'`,
-          replacement: `require.resolve('vite/dist/node/terser'`
+          replacement: `require.resolve('vite/dist/node-cjs/terser.cjs'`
         },
         // chokidar -> fsevents
         'fsevents-handler.js': {
@@ -227,7 +227,9 @@ const terserConfig = {
   ...sharedNodeOptions,
   output: {
     ...sharedNodeOptions.output,
+    entryFileNames: `node-cjs/[name].cjs`,
     exports: 'default',
+    format: 'cjs',
     sourcemap: false
   },
   input: {
