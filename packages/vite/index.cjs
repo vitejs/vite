@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 // Proxy ESM to be used in CJS
 
 module.exports.build = (...args) =>
@@ -11,3 +12,17 @@ module.exports.preview = (...args) =>
 
 module.exports.transformWithEsbuild = (...args) =>
   import('./dist/node/index.js').then((i) => i.transformWithEsbuild(...args))
+
+module.exports.defineConfig = (config) => config
+
+const os = require('os')
+const path = require('path')
+const isWindows = os.platform() === 'win32'
+
+function slash(p) {
+  return p.replace(/\\/g, '/')
+}
+
+module.exports.normalizePath = (id) =>  {
+  return path.posix.normalize(isWindows ? slash(id) : id)
+}

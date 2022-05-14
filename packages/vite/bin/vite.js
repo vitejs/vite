@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { performance } from 'perf_hooks'
 
-if (!__dirname.includes('node_modules')) {
+if (!import.meta.url.includes('node_modules')) {
   try {
     // only available as dev dependency
     await import('source-map-support').then(r=>r.default.install())
@@ -41,7 +41,7 @@ if (debugIndex > 0) {
 }
 
 function start() {
-  return import('../dist/node/cli')
+  return import('../dist/node/cli.js')
 }
 
 if (profileIndex > 0) {
