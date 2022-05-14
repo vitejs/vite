@@ -41,7 +41,11 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
-function preload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(
+  baseModule: () => Promise<{}>,
+  deps?: string[],
+  importerUrl?: string
+) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
@@ -50,7 +54,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${assetsURL}${dep}`
+      dep = assetsURL(dep, importerUrl)
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -92,12 +96,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
+  const relativeBase = isRelativeBase(config.base)
+
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const assetsURL = isRelativeBase(config.base)
-    ? `new URL('./',import.meta.url).pathname`
-    : JSON.stringify(path.posix.join(config.base, config.build.assetsDir, '/'))
+  const assetsURL = relativeBase
+    ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
+    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -323,8 +329,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
                     ? `[${[...deps]
-                        .map((d) => JSON.stringify(path.basename(d)))
-                        .join(',')}]`
+                        .map((d) =>
+                          JSON.stringify(
+                            relativeBase
+                              ? path.relative(path.dirname(file), d)
+                              : d
+                          )
+                        )
+                        .join(',')}]` + (relativeBase ? ',import.meta.url' : '')
                     : `[]`,
                   { contentOnly: true }
                 )
