@@ -51,7 +51,10 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-export const VITE_PACKAGE_DIR = resolve(fileURLToPath(import.meta.url), '../../..')
+export const VITE_PACKAGE_DIR = resolve(
+  fileURLToPath(import.meta.url),
+  '../../..'
+)
 
 export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
 export const ENV_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/env.mjs')

@@ -48,8 +48,8 @@ type NodeResolveFilename = (
   options?: Record<string, any>
 ) => string
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
+// TODO: use import()
+const _require = createRequire(import.meta.url)
 
 /** Respect the `resolve.dedupe` option in production SSR. */
 function dedupeRequire(dedupe: string[]) {

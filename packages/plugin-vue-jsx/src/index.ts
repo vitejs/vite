@@ -73,7 +73,7 @@ function vueJsxPlugin(options: Options = {}): Plugin {
       }
     },
 
-   async transform(code, id, opt) {
+    async transform(code, id, opt) {
       const ssr = typeof opt === 'boolean' ? opt : (opt && opt.ssr) === true
       const {
         include,
@@ -92,7 +92,9 @@ function vueJsxPlugin(options: Options = {}): Plugin {
         if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
             // @ts-ignore missing type
-            await import('@babel/plugin-transform-typescript').then(r=>r.default),
+            await import('@babel/plugin-transform-typescript').then(
+              (r) => r.default
+            ),
             // @ts-ignore
             { isTSX: true, allowExtensions: true }
           ])

@@ -17,7 +17,9 @@ module.exports.formatPostcssSourceMap = (...args) =>
   import('./dist/node/index.js').then((i) => i.formatPostcssSourceMap(...args))
 
 module.exports.splitVendorChunkPlugin = (...args) =>
-  require('./dist/node-cjs/splitVendorChunk.cjs').splitVendorChunkPlugin(...args)
+  require('./dist/node-cjs/splitVendorChunk.cjs').splitVendorChunkPlugin(
+    ...args
+  )
 
 module.exports.defineConfig = (config) => config
 

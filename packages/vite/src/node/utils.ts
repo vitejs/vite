@@ -72,8 +72,8 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 export let isRunningWithYarnPnp: boolean
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
+// TODO: use import()
+const _require = createRequire(import.meta.url)
 
 try {
   isRunningWithYarnPnp = Boolean(_require('pnpapi'))

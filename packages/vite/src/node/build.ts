@@ -40,7 +40,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
-import {VERSION} from './constants'
+import { VERSION } from './constants'
 
 export interface BuildOptions {
   /**

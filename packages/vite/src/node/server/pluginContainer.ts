@@ -129,8 +129,6 @@ type PluginContext = Omit<
   | 'load'
 >
 
-
-
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
@@ -153,11 +151,14 @@ export async function createPluginContainer(
 
   const watchFiles = new Set<string>()
 
-    // TODO: use import()
-    const _require = createRequire(import.meta.url)
-    
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+
   // get rollup version
-  const rollupPkgPath = resolve(_require.resolve('rollup'), '../../package.json')
+  const rollupPkgPath = resolve(
+    _require.resolve('rollup'),
+    '../../package.json'
+  )
   const minimalContext: MinimalPluginContext = {
     meta: {
       rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))

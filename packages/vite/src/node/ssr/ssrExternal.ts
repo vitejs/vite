@@ -83,9 +83,9 @@ export function resolveSSRExternal(
 const CJS_CONTENT_RE =
   /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
-  
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
@@ -120,7 +120,7 @@ function collectExternals(
 
     let esmEntry: string | undefined
     let requireEntry: string
-    
+
     try {
       esmEntry = tryNodeResolve(
         id,

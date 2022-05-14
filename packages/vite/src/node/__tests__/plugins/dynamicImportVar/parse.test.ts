@@ -6,11 +6,10 @@ import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 async function run(input: string) {
-  const { glob, rawPattern } = await transformDynamicImport(
-    input,
-    resolve(__dirname, 'index.js'),
-    (id) => id.replace('@', resolve(__dirname, './mods/'))
-  ) || {}
+  const { glob, rawPattern } =
+    (await transformDynamicImport(input, resolve(__dirname, 'index.js'), (id) =>
+      id.replace('@', resolve(__dirname, './mods/'))
+    )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
 

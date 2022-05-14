@@ -159,7 +159,7 @@ export async function startDefaultServe() {
   let config: InlineConfig | undefined
   if (fs.existsSync(testCustomConfig)) {
     // test has custom server configuration.
-    config = await import(testCustomConfig).then(r=>r.default)
+    config = await import(testCustomConfig).then((r) => r.default)
   }
 
   const options: InlineConfig = {

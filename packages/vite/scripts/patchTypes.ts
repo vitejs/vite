@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs'
 import { dirname, relative, resolve } from 'path'
-import {fileURLToPath} from 'url'
+import { fileURLToPath } from 'url'
 import type { ParseResult } from '@babel/parser'
 import { parse } from '@babel/parser'
 import type { File } from '@babel/types'
