@@ -160,12 +160,12 @@ const createNodeConfig = (isProduction) => {
         shimDepsPlugin({
           'plugins/terser.ts': {
             src: `require.resolve('terser'`,
-            replacement: `require.resolve('vite/dist/node/terser'`
+            replacement: `__require.resolve('vite/dist/node/terser'`
           },
           // chokidar -> fsevents
           'fsevents-handler.js': {
             src: `require('fsevents')`,
-            replacement: `eval('require')('fsevents')`
+            replacement: `__require('fsevents')`
           },
           // cac re-assigns module.exports even in its mjs dist
           'cac/dist/index.mjs': {
@@ -181,13 +181,11 @@ const createNodeConfig = (isProduction) => {
           'lilconfig/dist/index.js': {
             pattern: /: require,/g,
             replacement: `: __require,`,
-            injectRequire: 'cjs'
           },
           // postcss-load-config calls require after register ts-node
           'postcss-load-config/src/index.js': {
             src: `require(configFile)`,
             replacement: `__require(configFile)`,
-            injectRequire: 'cjs'
           },
           // @rollup/plugin-commonjs uses incorrect esm
           '@rollup/plugin-commonjs/dist/index.es.js': {
@@ -231,7 +229,7 @@ const terserConfig = {
 }
 
 /**
- * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp, injectRequire?: 'cjs' | 'esm' }>) => import('rollup').Plugin }
+ * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp }>) => import('rollup').Plugin }
  */
 function shimDepsPlugin(deps) {
   const transformed = {}
@@ -241,7 +239,7 @@ function shimDepsPlugin(deps) {
     transform(code, id) {
       for (const file in deps) {
         if (id.replace(/\\/g, '/').endsWith(file)) {
-          const { src, replacement, pattern, injectRequire } = deps[file]
+          const { src, replacement, pattern } = deps[file]
 
           const magicString = new MagicString(code)
           if (src) {
@@ -263,15 +261,6 @@ function shimDepsPlugin(deps) {
               const start = match.index
               const end = start + match[0].length
               magicString.overwrite(start, end, replacement)
-            }
-            if (injectRequire === 'esm') {
-              magicString.prepend(
-                `import { createRequire } from 'module';const __require = createRequire(import.meta.url);`
-              )
-            } else if (injectRequire === 'cjs') {
-              magicString.prepend(
-                `const { createRequire } = require('module');const __require = createRequire(import.meta.url);`
-              )
             }
             if (!transformed[file]) {
               this.error(
@@ -432,6 +421,7 @@ import { createRequire as __cjs_createRequire } from 'module';
 const __filename = __cjs_fileURLToPath(import.meta.url);
 const __dirname = __cjs_dirname(__filename);
 const require = __cjs_createRequire(import.meta.url);
+const __require = require;
 `.trimStart()
 
 /**
@@ -441,8 +431,7 @@ function cjsPatchPlugin() {
   return {
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
-      if (!chunk.fileName.includes('chunks/dep-')) 
-      return
+      if (!chunk.fileName.includes('chunks/dep-')) return
 
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index + match[0].length : 0

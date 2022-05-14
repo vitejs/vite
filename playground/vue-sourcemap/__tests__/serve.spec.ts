@@ -15,7 +15,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         return text
       }
     }
-    throw new Error('Not found')
+    throw new Error('Style not found: ' + content)
   }
 
   test('js', async () => {

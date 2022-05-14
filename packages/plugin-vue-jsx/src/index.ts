@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import path from 'path'
 import type { types } from '@babel/core'
-import babel from '@babel/core'
+import * as babel from '@babel/core'
 import jsx from '@vue/babel-plugin-jsx'
 // @ts-expect-error missing type
 import importMeta from '@babel/plugin-syntax-import-meta'

@@ -6,9 +6,9 @@ import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
-  const __dirname = dirname(fileURLToPath(import.meta.url))
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+const _dirname = dirname(fileURLToPath(import.meta.url))
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
@@ -22,7 +22,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           paths: [basedir]
         })
         return _require(terserPath).minify(code, options) as Terser.MinifyOutput
-      },
+      }
     )
 
   let worker: ReturnType<typeof makeWorker>
@@ -51,7 +51,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const res = await worker.run(__dirname, code, {
+      const res = await worker.run(_dirname, code, {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,

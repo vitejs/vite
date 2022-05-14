@@ -13,6 +13,10 @@ module.exports.preview = (...args) =>
 module.exports.transformWithEsbuild = (...args) =>
   import('./dist/node/index.js').then((i) => i.transformWithEsbuild(...args))
 
+  module.exports.formatPostcssSourceMap = (...args) =>
+  import('./dist/node/index.js').then((i) => i.formatPostcssSourceMap(...args))
+
+
 module.exports.defineConfig = (config) => config
 
 const os = require('os')

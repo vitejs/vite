@@ -845,7 +845,7 @@ async function compileCSS(
 
   const rawPostcssMap = postcssResult.map.toJSON()
 
-  const postcssMap = formatPostcssSourceMap(
+  const postcssMap = await formatPostcssSourceMap(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
@@ -861,10 +861,10 @@ async function compileCSS(
   }
 }
 
-export function formatPostcssSourceMap(
+export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string
-): ExistingRawSourceMap {
+): Promise<ExistingRawSourceMap> {
   const inputFileDir = path.dirname(file)
 
   const sources = rawMap.sources.map((source) => {
