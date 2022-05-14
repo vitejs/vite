@@ -1,4 +1,3 @@
-import { createRequire } from 'module'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { Worker } from 'okie'
@@ -7,7 +6,6 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 
 // TODO: use import()
-const _require = createRequire(import.meta.url)
 const _dirname = dirname(fileURLToPath(import.meta.url))
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
@@ -17,11 +15,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         // when vite is linked, the worker thread won't share the same resolve
         // root with vite itself, so we have to pass in the basedir and resolve
         // terser first.
-        // eslint-disable-next-line node/no-restricted-require
-        const terserPath = _require.resolve('terser', {
+        // eslint-disable-next-line node/no-restricted-require, no-restricted-globals
+        const terserPath = require.resolve('terser', {
           paths: [basedir]
         })
-        return _require(terserPath).minify(code, options) as Terser.MinifyOutput
+        // eslint-disable-next-line no-restricted-globals
+        return require(terserPath).minify(code, options) as Terser.MinifyOutput
       }
     )
 
