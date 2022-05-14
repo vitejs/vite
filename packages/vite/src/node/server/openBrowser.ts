@@ -8,13 +8,14 @@
  *
  */
 
-import path from 'path'
+import { join } from 'path'
 import { execSync } from 'child_process'
 import { createRequire } from 'module'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
+import { VITE_PACKAGE_DIR } from '../constants'
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome'
@@ -59,9 +60,6 @@ function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
   return true
 }
 
-  // TODO: use import()
-  const _require = createRequire(import.meta.url)
-
 function startBrowserProcess(browser: string | undefined, url: string) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
@@ -76,7 +74,7 @@ function startBrowserProcess(browser: string | undefined, url: string) {
       // on OS X Google Chrome with AppleScript
       execSync('ps cax | grep "Google Chrome"')
       execSync('osascript openChrome.applescript "' + encodeURI(url) + '"', {
-        cwd: path.dirname(_require.resolve('vite/bin/openChrome.applescript')),
+        cwd: join(VITE_PACKAGE_DIR, 'bin'),
         stdio: 'ignore'
       })
       return true

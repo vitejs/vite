@@ -14,10 +14,10 @@ import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
-// // @ts-ignore
-// const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
-// // @ts-ignore
-// const require = createRequire(import.meta.url)
+// @ts-ignore
+const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
+// @ts-ignore
+const require = createRequire(import.meta.url)
 
 /**
  * @type { import('rollup').RollupOptions }
@@ -77,7 +77,7 @@ const sharedNodeOptions = {
     entryFileNames: `node/[name].js`,
     chunkFileNames: 'node/chunks/dep-[hash].js',
     exports: 'named',
-    format: 'cjs',
+    format: 'esm',
     externalLiveBindings: false,
     freeze: false
   },

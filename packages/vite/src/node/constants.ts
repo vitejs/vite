@@ -1,6 +1,8 @@
 import path, { resolve } from 'path'
+// @ts-expect-error
+import { version } from '../../package.json'
 
-export { version as VERSION } from '../../package.json'
+export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
   'module',

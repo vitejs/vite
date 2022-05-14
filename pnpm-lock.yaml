@@ -237,6 +237,7 @@ importers:
       dotenv-expand: ^5.1.0
       es-module-lexer: ^0.10.5
       esbuild: ^0.14.38
+      esno: ^0.15.0
       estree-walker: ^2.0.2
       etag: ^1.8.1
       fast-glob: ^3.2.11
@@ -303,6 +304,7 @@ importers:
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
       es-module-lexer: 0.10.5
+      esno: 0.15.0
       estree-walker: 2.0.2
       etag: 1.8.1
       fast-glob: 3.2.11
@@ -1596,6 +1598,27 @@ packages:
   /@emotion/weak-memoize/0.2.5:
     resolution: {integrity: sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==}
     dev: false
+
+  /@esbuild-kit/cjs-loader/1.0.0:
+    resolution: {integrity: sha512-6oPhu5QcuTsU5nO3hBCd6OdfeaGsheU6OZrQSAzBsXOiZQ+lB2Zy1bAeAPKqzVGz16kBbheW+OuL54gLD79HdA==}
+    dependencies:
+      '@esbuild-kit/core-utils': 1.0.1
+      get-tsconfig: 3.0.1
+    dev: true
+
+  /@esbuild-kit/core-utils/1.0.1:
+    resolution: {integrity: sha512-N9fE4afacf4+82Xygmoa5IXASoPHHPL/OF3E5OaDVWtdoi1rk3StLGV6Vl7rqFSJCetghho/O1jvU/VnMf2pLw==}
+    dependencies:
+      esbuild: 0.14.38
+    dev: true
+
+  /@esbuild-kit/esm-loader/1.1.0:
+    resolution: {integrity: sha512-EoEChLvXMAg/PXzUscMHxPjMM6kUWr0fcWuMchis+TxCGPPtpg5XQrO29HbLvP1uw/4AE+aZcfmRgVykGi6gPQ==}
+    dependencies:
+      '@esbuild-kit/core-utils': 1.0.1
+      es-module-lexer: 0.10.5
+      get-tsconfig: 3.0.1
+    dev: true
 
   /@eslint/eslintrc/1.2.3:
     resolution: {integrity: sha512-uGo44hIwoLGNyduRpjdEpovcbMdd+Nv7amtmJxnKmI8xj6yd5LncmSwDa5NgX/41lIFJtkjD6YdVfgEzPfJ5UA==}
@@ -4301,6 +4324,13 @@ packages:
       - supports-color
     dev: true
 
+  /esno/0.15.0:
+    resolution: {integrity: sha512-Wws1YgB/PBUtc/Pq755Crv2r5XIcSZyqC/9qyiczzQoDNNIUdxQ75uSd6gaMJFJ+pieljcH3f9JawmrHk0vLXw==}
+    hasBin: true
+    dependencies:
+      tsx: 2.1.0
+    dev: true
+
   /espree/9.3.2:
     resolution: {integrity: sha512-D211tC7ZwouTIuY5x9XnS0E9sWNChB7IYKX/Xp5eQj3nFXhqmiUDB9q27y76oFl8jTg3pXcQx/bpxMfs3CIZbA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -4548,6 +4578,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /formdata-node/2.5.0:
     resolution: {integrity: sha512-JFSNLq34u2Tqc6F034x5aaK3ksIfrDBMPie8b4KYx2/pVDLxWFXDly52dsvHjZ+A0LGHTZb/w4HBZVdgN74RTw==}
@@ -4700,6 +4743,10 @@ packages:
 
   /get-them-args/1.3.2:
     resolution: {integrity: sha1-dKILqKSr7OWuGZrQPyvMaP38m6U=}
+    dev: true
+
+  /get-tsconfig/3.0.1:
+    resolution: {integrity: sha512-+m30eQjbcf3xMNdnacXH5IDAKUMbI7Mhbf3e1BHif1FzBlUhBzBlmOVc7kL4+kB035l8OCyBdI3dNXZ3of9HqA==}
     dev: true
 
   /git-raw-commits/2.0.11:
@@ -4927,7 +4974,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -8069,6 +8116,16 @@ packages:
     dependencies:
       tslib: 1.14.1
       typescript: 4.6.4
+    dev: true
+
+  /tsx/2.1.0:
+    resolution: {integrity: sha512-+b4qULxZUFzGGJ4N40wDv0krYW5JWjNB5TkfC3bS4DIA4pa4IE82F/XAInnj0+sWL1XvKzDyFbXvpe8UHSkBfQ==}
+    hasBin: true
+    dependencies:
+      '@esbuild-kit/cjs-loader': 1.0.0
+      '@esbuild-kit/esm-loader': 1.1.0
+    optionalDependencies:
+      fsevents: 2.3.2
     dev: true
 
   /type-check/0.4.0:
