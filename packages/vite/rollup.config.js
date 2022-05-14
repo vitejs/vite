@@ -444,9 +444,6 @@ function cjsPatchPlugin() {
       if (!chunk.fileName.includes('chunks/dep-')) 
       return
 
-      if (!code.match(/\b(require|__dirname|__filename)/))
-      return
-
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index + match[0].length : 0
       const s = new MagicString(code)
