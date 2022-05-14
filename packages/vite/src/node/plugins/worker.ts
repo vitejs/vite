@@ -241,9 +241,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return {
         code: `export default function WorkerWrapper() {
           return new ${workerConstructor}(${urlCode}, ${JSON.stringify(
-          workerOptions,
-          null,
-          2
+          workerOptions
         )})
         }`,
         map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
