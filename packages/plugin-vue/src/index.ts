@@ -18,7 +18,8 @@ import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
 import { EXPORT_HELPER_ID, helperCode } from './helper'
 
-export { parseVueRequest, VueQuery } from './utils/query'
+export { parseVueRequest } from './utils/query'
+export type { VueQuery } from './utils/query'
 
 export interface Options {
   include?: string | RegExp | (string | RegExp)[]
@@ -250,10 +251,3 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     }
   }
 }
-
-// overwrite for cjs require('...')() usage
-// The following lines are inserted by scripts/patchEsbuildDist.ts,
-// this doesn't bundle correctly after esbuild 0.14.4
-//
-// module.exports = vuePlugin
-// vuePlugin['default'] = vuePlugin

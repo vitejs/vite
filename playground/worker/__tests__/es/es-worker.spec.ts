@@ -52,8 +52,10 @@ test.each([[true], [false]])('shared worker', async (doTick) => {
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  expect(await page.textContent('.nested-worker')).toMatch('/worker-nested')
-  expect(await page.textContent('.nested-worker-module')).toMatch('/sub-worker')
+  expect(await page.textContent('.nested-worker')).toMatch(
+    'worker-nested-worker'
+  )
+  expect(await page.textContent('.nested-worker-module')).toMatch('sub-worker')
   expect(await page.textContent('.nested-worker-constructor')).toMatch(
     '"type":"constructor"'
   )
