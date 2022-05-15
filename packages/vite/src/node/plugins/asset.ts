@@ -101,10 +101,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const filename = file + postfix
         const outputFilepath = relativeBase
-          ? path.relative(path.dirname(chunk.fileName), filename)
-          : config.base + filename
-        const replacement = JSON.stringify(outputFilepath).slice(1, -1)
-        s.overwrite(match.index, match.index + full.length, replacement, {
+          ? `"+new URL(${JSON.stringify(
+              path.relative(path.dirname(chunk.fileName), filename)
+            )},import.meta.url)+"`
+          : JSON.stringify(config.base + filename).slice(1, -1)
+        s.overwrite(match.index, match.index + full.length, outputFilepath, {
           contentOnly: true
         })
       }
