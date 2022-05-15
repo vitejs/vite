@@ -159,7 +159,3 @@ The `customElement` plugin option can be used to configure the behavior:
 ## License
 
 MIT
-
-```
-
-```
