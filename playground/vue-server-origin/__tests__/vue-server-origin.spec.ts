@@ -1,4 +1,4 @@
-import { isBuild } from 'testUtils'
+import { isBuild, page } from '~utils'
 
 test('should render', async () => {
   const expected = isBuild
