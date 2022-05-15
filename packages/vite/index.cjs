@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 
 // proxy cjs utils
-Object.assign(module.exports, require('./dist/node-cjs/utils.cjs'))
+Object.assign(module.exports, require('./dist/node-cjs/publicUtils.cjs'))
 
 // type utils
 module.exports.defineConfig = (config) => config

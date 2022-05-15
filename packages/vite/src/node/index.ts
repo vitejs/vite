@@ -7,7 +7,7 @@ export { formatPostcssSourceMap } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
 export { resolvePackageData } from './packages'
-export * from './public-utils'
+export * from './publicUtils'
 
 // additional types
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'

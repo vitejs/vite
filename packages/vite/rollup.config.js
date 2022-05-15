@@ -251,7 +251,7 @@ function createCjsConfig(isProduction) {
   const nodeConfig = {
     ...sharedNodeOptions,
     input: {
-      utils: path.resolve(__dirname, 'src/node/public-utils.ts')
+      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts')
     },
     output: {
       dir: path.resolve(__dirname, 'dist'),
