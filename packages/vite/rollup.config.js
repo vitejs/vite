@@ -103,7 +103,7 @@ const sharedNodeOptions = {
  * @param {boolean} isProduction
  * @returns {import('rollup').Plugin[]}
  */
-function createNodePlugins(isProduction) {
+function createNodePlugins(isProduction, sourceMap = true) {
   return [
     alias({
       // packages with "module" field that doesn't play well with cjs bundles
@@ -121,6 +121,7 @@ function createNodePlugins(isProduction) {
       include: ['src/**/*.ts', 'types/**'],
       exclude: ['src/**/__tests__/**'],
       esModuleInterop: true,
+      sourceMap,
       // in production we use api-extractor for dts generation
       // in development we need to rely on the rollup ts plugin
       ...(isProduction
@@ -250,10 +251,7 @@ function createCjsConfig(isProduction) {
   const nodeConfig = {
     ...sharedNodeOptions,
     input: {
-      splitVendorChunk: path.resolve(
-        __dirname,
-        'src/node/plugins/splitVendorChunk.ts'
-      )
+      utils: path.resolve(__dirname, 'src/node/public-utils.ts')
     },
     output: {
       dir: path.resolve(__dirname, 'dist'),
@@ -270,7 +268,7 @@ function createCjsConfig(isProduction) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: createNodePlugins(false)
+    plugins: [...createNodePlugins(false, false), bundleSizeLimit(50)]
   }
 
   return nodeConfig
@@ -494,6 +492,29 @@ function cjsPatchPlugin() {
       return {
         code: s.toString(),
         map: s.generateMap()
+      }
+    }
+  }
+}
+
+/**
+ * @type { (limit: number) => import('rollup').Plugin }
+ */
+function bundleSizeLimit(limit) {
+  return {
+    name: 'bundle-limit',
+    generateBundle(options, bundle) {
+      const size = Buffer.byteLength(
+        Object.values(bundle)
+          .map((i) => ('code' in i ? i.code : ''))
+          .join(''),
+        'utf-8'
+      )
+      const kb = size / 1024
+      if (kb > limit) {
+        throw new Error(
+          `Bundle size exceeded ${limit}kb, current size is ${kb.toFixed(2)}kb.`
+        )
       }
     }
   }
