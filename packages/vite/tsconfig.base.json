@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2018",
+    "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
     "declaration": true,

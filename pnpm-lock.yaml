@@ -53,6 +53,7 @@ importers:
       prompts: ^2.4.2
       rimraf: ^3.0.2
       rollup: ^2.72.1
+      rollup-plugin-esbuild: ^4.9.1
       semver: ^7.3.7
       simple-git-hooks: ^2.7.0
       sirv: ^2.0.2
@@ -107,6 +108,7 @@ importers:
       prompts: 2.4.2
       rimraf: 3.0.2
       rollup: 2.72.1
+      rollup-plugin-esbuild: 4.9.1_pnyrwy4zazm4ltxxkdqkpc4vuy
       semver: 7.3.7
       simple-git-hooks: 2.7.0
       sirv: 2.0.2
@@ -4578,19 +4580,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dev: false
-
-  /follow-redirects/1.15.0_debug@4.3.4:
-    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
-    dependencies:
-      debug: 4.3.4
-    dev: true
 
   /formdata-node/2.5.0:
     resolution: {integrity: sha512-JFSNLq34u2Tqc6F034x5aaK3ksIfrDBMPie8b4KYx2/pVDLxWFXDly52dsvHjZ+A0LGHTZb/w4HBZVdgN74RTw==}
@@ -4974,7 +4963,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0_debug@4.3.4
+      follow-redirects: 1.15.0
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug

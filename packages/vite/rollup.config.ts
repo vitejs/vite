@@ -1,8 +1,6 @@
-// @ts-check
+/* eslint-disable no-restricted-globals */
 import fs from 'fs'
 import path from 'path'
-import { createRequire } from 'module'
-import { fileURLToPath } from 'url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -13,17 +11,11 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
+import type { Plugin } from 'rollup'
+import { defineConfig } from 'rollup'
+import pkg from './package.json'
 
-// @ts-ignore
-const __dirname = path.resolve(fileURLToPath(import.meta.url), '..')
-// @ts-ignore
-const require = createRequire(import.meta.url)
-const pkg = require('./package.json')
-
-/**
- * @type { import('rollup').RollupOptions }
- */
-const envConfig = {
+const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
@@ -40,12 +32,9 @@ const envConfig = {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
     sourcemap: true
   }
-}
+})
 
-/**
- * @type { import('rollup').RollupOptions }
- */
-const clientConfig = {
+const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   external: ['./env', '@vite/env'],
   plugins: [
@@ -62,12 +51,9 @@ const clientConfig = {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
     sourcemap: true
   }
-}
+})
 
-/**
- * @type { import('rollup').RollupOptions }
- */
-const sharedNodeOptions = {
+const sharedNodeOptions = defineConfig({
   treeshake: {
     moduleSideEffects: 'no-external',
     propertyReadSideEffects: false,
@@ -96,14 +82,9 @@ const sharedNodeOptions = {
     }
     warn(warning)
   }
-}
+})
 
-/**
- *
- * @param {boolean} isProduction
- * @returns {import('rollup').Plugin[]}
- */
-function createNodePlugins(isProduction, sourceMap = true) {
+function createNodePlugins(isProduction: boolean, sourceMap = true): Plugin[] {
   return [
     alias({
       // packages with "module" field that doesn't play well with cjs bundles
@@ -186,16 +167,8 @@ function createNodePlugins(isProduction, sourceMap = true) {
   ]
 }
 
-/**
- *
- * @param {boolean} isProduction
- * @returns {import('rollup').RollupOptions}
- */
-function createNodeConfig(isProduction) {
-  /**
-   * @type { import('rollup').RollupOptions }
-   */
-  const nodeConfig = {
+function createNodeConfig(isProduction: boolean) {
+  return defineConfig({
     ...sharedNodeOptions,
     input: {
       index: path.resolve(__dirname, 'src/node/index.ts'),
@@ -212,19 +185,15 @@ function createNodeConfig(isProduction) {
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
     plugins: createNodePlugins(isProduction)
-  }
-
-  return nodeConfig
+  })
 }
 
 /**
  * Terser needs to be run inside a worker, so it cannot be part of the main
  * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
  * use the production path during build.
- *
- * @type { import('rollup').RollupOptions }
  */
-const terserConfig = {
+const terserConfig = defineConfig({
   ...sharedNodeOptions,
   output: {
     ...sharedNodeOptions.output,
@@ -234,21 +203,14 @@ const terserConfig = {
     sourcemap: false
   },
   input: {
+    // eslint-disable-next-line node/no-restricted-require
     terser: require.resolve('terser')
   },
   plugins: [nodeResolve(), commonjs()]
-}
+})
 
-/**
- *
- * @param {boolean} isProduction
- * @returns {import('rollup').RollupOptions}
- */
-function createCjsConfig(isProduction) {
-  /**
-   * @type { import('rollup').RollupOptions }
-   */
-  const nodeConfig = {
+function createCjsConfig(isProduction: boolean) {
+  return defineConfig({
     ...sharedNodeOptions,
     input: {
       publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts')
@@ -269,31 +231,32 @@ function createCjsConfig(isProduction) {
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
     plugins: [...createNodePlugins(false, false), bundleSizeLimit(50)]
-  }
-
-  return nodeConfig
+  })
 }
 
-export default (commandLineArgs) => {
+export default (commandLineArgs: any) => {
   const isDev = commandLineArgs.watch
   const isProduction = !isDev
 
-  return [
+  return defineConfig([
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
     createCjsConfig(isProduction),
     ...(isProduction ? [terserConfig] : [])
-  ]
+  ])
 }
 
 // #region ======== Plugins ========
 
-/**
- * @type { (deps: Record<string, { src?: string, replacement: string, pattern?: RegExp }>) => import('rollup').Plugin }
- */
-function shimDepsPlugin(deps) {
-  const transformed = {}
+interface ShimOptions {
+  src?: string
+  replacement: string
+  pattern?: RegExp
+}
+
+function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
+  const transformed: Record<string, boolean> = {}
 
   return {
     name: 'shim-deps',
@@ -394,19 +357,19 @@ function licensePlugin() {
               text += `License: ${license}\n`
             }
             const names = new Set()
-            if (author && author.name) {
-              names.add(author.name)
-            }
-            for (const person of maintainers.concat(contributors)) {
-              if (person && person.name) {
-                names.add(person.name)
+            for (const person of [author, ...maintainers, ...contributors]) {
+              const name = typeof person === 'string' ? person : person?.name
+              if (name) {
+                names.add(name)
               }
             }
             if (names.size > 0) {
               text += `By: ${Array.from(names).join(', ')}\n`
             }
             if (repository) {
-              text += `Repository: ${repository.url || repository}\n`
+              text += `Repository: ${
+                typeof repository === 'string' ? repository : repository.url
+              }\n`
             }
             if (!licenseText) {
               try {
@@ -461,8 +424,11 @@ function licensePlugin() {
   })
 }
 
-// inject cjs context for each chunk
-const cjsPatch = `
+/**
+ * Inject CJS Context for each deps chunk
+ */
+function cjsPatchPlugin(): Plugin {
+  const cjsPatch = `
 import { fileURLToPath as __cjs_fileURLToPath } from 'url';
 import { dirname as __cjs_dirname } from 'path';
 import { createRequire as __cjs_createRequire } from 'module';
@@ -473,10 +439,6 @@ const require = __cjs_createRequire(import.meta.url);
 const __require = require;
 `.trimStart()
 
-/**
- * @type { () => import('rollup').Plugin }
- */
-function cjsPatchPlugin() {
   return {
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
@@ -498,9 +460,11 @@ function cjsPatchPlugin() {
 }
 
 /**
- * @type { (limit: number) => import('rollup').Plugin }
+ * Guard the bundle size
+ *
+ * @param limit size in KB
  */
-function bundleSizeLimit(limit) {
+function bundleSizeLimit(limit: number): Plugin {
   return {
     name: 'bundle-limit',
     generateBundle(options, bundle) {
