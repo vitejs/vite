@@ -161,7 +161,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
             expEnd,
-            `,${isModernFlag}?"${preloadMarker}":void 0)`
+            `,${isModernFlag}?"${preloadMarker}":void 0${
+              relativeBase ? ',import.meta.url' : ''
+            })`
           )
         }
 
@@ -335,7 +337,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                               : d
                           )
                         )
-                        .join(',')}]` + (relativeBase ? ',import.meta.url' : '')
+                        .join(',')}]`
                     : `[]`,
                   { contentOnly: true }
                 )
