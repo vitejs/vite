@@ -8,7 +8,11 @@ async function run(input: string) {
     process.cwd(),
     (id) => id
   )
-  return items.map((i) => ({ globs: i.globs, options: i.options, start:i.start }))
+  return items.map((i) => ({
+    globs: i.globs,
+    options: i.options,
+    start: i.start
+  }))
 }
 
 async function runError(input: string) {
@@ -140,12 +144,13 @@ describe('parse positives', async () => {
     `)
   })
 
-
   it('object properties - 1', async () => {
-    expect(await run(`
+    expect(
+      await run(`
     export const pageFiles = {
       '.page': import.meta.glob('/**/*.page.*([a-zA-Z0-9])')
-};`)).toMatchInlineSnapshot(`
+};`)
+    ).toMatchInlineSnapshot(`
   [
     {
       "globs": [
@@ -159,10 +164,12 @@ describe('parse positives', async () => {
   })
 
   it('object properties - 2', async () => {
-    expect(await run(`
+    expect(
+      await run(`
     export const pageFiles = {
       '.page': import.meta.glob('/**/*.page.*([a-zA-Z0-9])'),
-};`)).toMatchInlineSnapshot(`
+};`)
+    ).toMatchInlineSnapshot(`
   [
     {
       "globs": [
@@ -176,11 +183,13 @@ describe('parse positives', async () => {
   })
 
   it('object properties - 3', async () => {
-    expect(await run(`
+    expect(
+      await run(`
     export const pageFiles = {
       '.page.client': import.meta.glob('/**/*.page.client.*([a-zA-Z0-9])'),
       '.page.server': import.meta.glob('/**/*.page.server.*([a-zA-Z0-9])'),
-};`)).toMatchInlineSnapshot(`
+};`)
+    ).toMatchInlineSnapshot(`
   [
     {
       "globs": [
@@ -201,11 +210,13 @@ describe('parse positives', async () => {
   })
 
   it('array item', async () => {
-    expect(await run(`
+    expect(
+      await run(`
     export const pageFiles = [
       import.meta.glob('/**/*.page.client.*([a-zA-Z0-9])'),
       import.meta.glob('/**/*.page.server.*([a-zA-Z0-9])'),
-    ]`)).toMatchInlineSnapshot(`
+    ]`)
+    ).toMatchInlineSnapshot(`
       [
         {
           "globs": [
@@ -242,7 +253,9 @@ describe('parse negatives', async () => {
   it('3 args', async () => {
     expect(
       await runError('import.meta.glob("", {}, {})')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Expected 1-2 arguments, but got 3]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Expected 1-2 arguments, but got 3]'
+    )
   })
 
   it('in string', async () => {
@@ -259,7 +272,9 @@ describe('parse negatives', async () => {
     // eslint-disable-next-line no-template-curly-in-string
     expect(
       await runError('import.meta.glob(`hi ${hey}`)')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
   })
 
   it('be string', async () => {
@@ -269,56 +284,72 @@ describe('parse negatives', async () => {
   })
 
   it('be array variable', async () => {
-    expect(
-      await runError('import.meta.glob([hey])')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    expect(await runError('import.meta.glob([hey])')).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
     expect(
       await runError('import.meta.glob(["1", hey])')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
   })
 
   it('options', async () => {
     expect(
       await runError('import.meta.glob("hey", hey)')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "Identifier"]')
-    expect(
-      await runError('import.meta.glob("hey", [])')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "ArrayExpression"]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "Identifier"]'
+    )
+    expect(await runError('import.meta.glob("hey", [])')).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Expected the second argument o to be a object literal, but got "ArrayExpression"]'
+    )
   })
 
   it('options props', async () => {
     expect(
       await runError('import.meta.glob("hey", { hey: 1 })')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Unknown options hey]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Unknown options hey]'
+    )
     expect(
       await runError('import.meta.glob("hey", { import: hey })')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
     expect(
       await runError('import.meta.glob("hey", { eager: 123 })')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Expected the type of option "eager" to be "boolean", but got "number"]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Expected the type of option "eager" to be "boolean", but got "number"]'
+    )
   })
 
   it('options query', async () => {
     expect(
-      await runError(
-        'import.meta.glob("./*.js", { as: "raw", query: "hi" })'
-      )
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Options "as" and "query" cannot be used together]')
+      await runError('import.meta.glob("./*.js", { as: "raw", query: "hi" })')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Options "as" and "query" cannot be used together]'
+    )
     expect(
       await runError('import.meta.glob("./*.js", { query: 123 })')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Expected query to be a string, but got "number"]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Expected query to be a string, but got "number"]'
+    )
     expect(
       await runError('import.meta.glob("./*.js", { query: { foo: {} } })')
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
     expect(
-      await runError(
-        'import.meta.glob("./*.js", { query: { foo: hey } })'
-      )
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+      await runError('import.meta.glob("./*.js", { query: { foo: hey } })')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
     expect(
       await runError(
         'import.meta.glob("./*.js", { query: { foo: 123, ...a } })'
       )
-    ).toMatchInlineSnapshot('[Error: Invalid glob import syntax: Could only use literals]')
+    ).toMatchInlineSnapshot(
+      '[Error: Invalid glob import syntax: Could only use literals]'
+    )
   })
 })

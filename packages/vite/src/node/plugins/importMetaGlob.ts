@@ -1,7 +1,13 @@
 import { isAbsolute, posix } from 'path'
 import { isMatch, scan } from 'micromatch'
 import { stripLiteral } from 'strip-literal'
-import type { ArrayExpression, CallExpression, Literal, Node, SequenceExpression } from 'estree'
+import type {
+  ArrayExpression,
+  CallExpression,
+  Literal,
+  Node,
+  SequenceExpression
+} from 'estree'
 import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
@@ -121,31 +127,28 @@ export async function parseImportGlob(
         ranges: true,
         onToken: (token) => {
           lastTokenPos = token.end
-        },
+        }
       }) as any
-    }
-    catch (e) {
+    } catch (e) {
       const _e = e as any
       if (_e.message && _e.message.startsWith('Unterminated string constant'))
         return undefined!
-      if (lastTokenPos == null || lastTokenPos <= start)
-        throw _e
+      if (lastTokenPos == null || lastTokenPos <= start) throw _e
 
       // tailing comma in object or array will make the parser think it's a comma operation
       // we try to parse again removing the comma
       try {
-        const statement = code.slice(start, lastTokenPos)
-          .replace(/[,\s]*$/, '')
+        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
         ast = parseExpressionAt(
           ' '.repeat(start) + statement, // to keep the ast position
           start,
           {
             ecmaVersion: 'latest',
             sourceType: 'module',
-            ranges: true,
-          }) as any
-      }
-      catch {
+            ranges: true
+          }
+        ) as any
+      } catch {
         throw _e
       }
     }
