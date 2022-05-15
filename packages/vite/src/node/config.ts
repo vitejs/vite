@@ -619,7 +619,6 @@ function resolveBaseUrl(
   return base
 }
 
-
 export function sortUserPlugins(
   plugins: (Plugin | Plugin[])[] | undefined
 ): [Plugin[], Plugin[], Plugin[]] {
