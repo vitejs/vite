@@ -24,4 +24,13 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
+  /**
+   * default: system
+   * system | iife
+   */
+  legacyExecutionFormat?: string
+  /**
+   * default: false
+   */
+  mergePolyfillsWithCode?: boolean
 }

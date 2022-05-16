@@ -12,8 +12,10 @@ import type {
   ResolvedConfig
 } from 'vite'
 import type {
+  ModuleFormat,
   NormalizedOutputOptions,
   OutputBundle,
+  OutputChunk,
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk
@@ -112,6 +114,10 @@ const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVa
 
 const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
+const legacyCodeExecutionFormatUsable = ['iife', 'system']
+let legacyCodeExecutionFormat = 'system'
+let mergePolyfillWithLegacyCode = false
+
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
@@ -122,6 +128,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
 
+  if (
+    typeof options.legacyExecutionFormat === 'string' &&
+    legacyCodeExecutionFormatUsable.includes(options.legacyExecutionFormat)
+  ) {
+    legacyCodeExecutionFormat = options.legacyExecutionFormat
+  }
+  const useSystemJS = legacyCodeExecutionFormat === 'system'
+  mergePolyfillWithLegacyCode = options.mergePolyfillsWithCode === true
+
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
@@ -130,7 +145,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
-  const legacyPolyfills = new Set<string>()
+  // System JS relies on the Promise interface. It needs to be polyfilled for IE 11. (array.iterator is mandatory for supporting Promise.all)
+  const DEFAULT_LEGACY_POLYFILL = [
+    'core-js/modules/es.promise',
+    'core-js/modules/es.array.iterator'
+  ]
+  const legacyPolyfills = new Set(DEFAULT_LEGACY_POLYFILL)
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
@@ -210,9 +230,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           bundle,
           facadeToModernPolyfillMap,
           config.build,
-          'es',
-          opts,
-          true
+          options.externalSystemJS
         )
         return
       }
@@ -245,8 +263,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
           config.build,
-          'iife',
-          opts,
           options.externalSystemJS
         )
       }
@@ -300,7 +316,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       ): OutputOptions => {
         return {
           ...options,
-          format: 'system',
+          format: legacyCodeExecutionFormat as ModuleFormat,
           entryFileNames: getLegacyOutputFileName(options.entryFileNames),
           chunkFileNames: getLegacyOutputFileName(options.chunkFileNames)
         }
@@ -470,7 +486,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const legacyPolyfillFilename = facadeToLegacyPolyfillMap.get(
         chunk.facadeModuleId
       )
-      if (legacyPolyfillFilename) {
+      if (legacyPolyfillFilename && !mergePolyfillWithLegacyCode) {
         tags.push({
           tag: 'script',
           attrs: {
@@ -485,7 +501,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           },
           injectTo: 'body'
         })
-      } else if (legacyPolyfills.size) {
+      } else if (legacyPolyfills.size && !mergePolyfillWithLegacyCode) {
         throw new Error(
           `No corresponding legacy polyfill chunk found for ${htmlFilename}`
         )
@@ -496,7 +512,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         chunk.facadeModuleId
       )
       if (legacyEntryFilename) {
-        // `assets/foo.js` means importing "named register" in SystemJS
         tags.push({
           tag: 'script',
           attrs: {
@@ -506,15 +521,21 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': toAssetPathFromHtml(
-              legacyEntryFilename,
-              chunk.facadeModuleId!,
-              config
-            )
+            'data-src': config.base + legacyEntryFilename
           },
-          children: systemJSInlineCode,
           injectTo: 'body'
-        })
+        } as HtmlTagDescriptor
+
+        if (useSystemJS) {
+          // @ts-ignore
+          legacyEntryConfig.attrs['data-src'] = src
+          legacyEntryConfig.children = systemJSInlineCode
+        } else {
+          // @ts-ignore
+          legacyEntryConfig.attrs.src = src
+        }
+
+        tags.push(legacyEntryConfig)
       } else {
         throw new Error(
           `No corresponding legacy entry chunk found for ${htmlFilename}`
@@ -522,7 +543,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       // 5. inject dynamic import fallback entry
-      if (genDynamicFallback && legacyPolyfillFilename && legacyEntryFilename) {
+      if (
+        genDynamicFallback &&
+        legacyPolyfillFilename &&
+        legacyEntryFilename &&
+        useSystemJS
+      ) {
         tags.push({
           tag: 'script',
           attrs: { type: 'module' },
@@ -675,8 +701,17 @@ async function buildPolyfillChunk(
     }
   }
 
-  // add the chunk to the bundle
-  bundle[polyfillChunk.fileName] = polyfillChunk
+  const codeChunksNames = Object.keys(bundle).filter((codeChunksName) =>
+    codeChunksName.includes('.js')
+  )
+
+  if (codeChunksNames.length == 1 && mergePolyfillWithLegacyCode) {
+    const appChunk = bundle[codeChunksNames[0]] as OutputChunk
+    appChunk.code = polyfillChunk.code + appChunk.code
+  } else {
+    // add the chunk to the bundle
+    bundle[polyfillChunk.name] = polyfillChunk
+  }
 }
 
 const polyfillId = '\0vite/legacy-polyfills'
@@ -704,14 +739,17 @@ function polyfillsPlugin(
 }
 
 function isLegacyChunk(chunk: RenderedChunk, options: NormalizedOutputOptions) {
-  return options.format === 'system' && chunk.fileName.includes('-legacy')
+  return (
+    options.format === legacyCodeExecutionFormat &&
+    chunk.fileName.includes('-legacy')
+  )
 }
 
 function isLegacyBundle(
   bundle: OutputBundle,
   options: NormalizedOutputOptions
 ) {
-  if (options.format === 'system') {
+  if (options.format === legacyCodeExecutionFormat) {
     const entryChunk = Object.values(bundle).find(
       (output) => output.type === 'chunk' && output.isEntry
     )
