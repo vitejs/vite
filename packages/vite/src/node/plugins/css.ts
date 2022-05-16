@@ -42,6 +42,7 @@ import {
   processSrcSet
 } from '../utils'
 import { emptyCssComments } from '../utils'
+import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -748,7 +749,8 @@ async function compileCSS(
   }
   postcssPlugins.push(
     UrlRewritePostcssPlugin({
-      replacer: urlReplacer
+      replacer: urlReplacer,
+      logger: config.logger
     }) as PostCSS.Plugin
   )
 
@@ -980,6 +982,7 @@ const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
+  logger: Logger
 }> = (opts) => {
   if (!opts) {
     throw new Error('base or replace is required')
@@ -990,11 +993,19 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
     Once(root) {
       const promises: Promise<void>[] = []
       root.walkDecls((declaration) => {
+        const importer = declaration.source?.input.file
+        if (!importer) {
+          opts.logger.warnOnce(
+            '\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. ' +
+              'This may cause imported assets to be incorrectly transformed. ' +
+              "If you've recently added a PostCSS plugin that raised this warning, " +
+              'please contact the package author to fix the issue.'
+          )
+        }
         const isCssUrl = cssUrlRE.test(declaration.value)
         const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = (rawUrl: string) => {
-            const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
           const rewriterToUse = isCssImageSet
