@@ -300,7 +300,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ? rollupOptionsOutput[0]
       : rollupOptionsOutput
   )?.assetFileNames
-  const getCssAssetsDir = (cssAssetName: string) => {
+  const getCssAssetDirname = (cssAssetName: string) => {
     if (!assetFileNames) {
       return config.build.assetsDir
     } else if (typeof assetFileNames === 'string') {
@@ -452,8 +452,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
-        const cssAssetsDir = relativeBase
-          ? getCssAssetsDir(cssAssetName)
+        const cssAssetDirname = relativeBase
+          ? getCssAssetDirname(cssAssetName)
           : undefined
 
         // replace asset url references with resolved url.
@@ -462,7 +462,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (relativeBase) {
             // relative base + extracted CSS
-            const relativePath = path.relative(cssAssetsDir!, filename)
+            const relativePath = path.relative(cssAssetDirname!, filename)
             return relativePath.startsWith('.')
               ? relativePath
               : './' + relativePath
@@ -473,7 +473,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve public URL from CSS paths
         if (relativeBase) {
-          const relativePathToPublicFromCSS = path.relative(cssAssetsDir!, '')
+          const relativePathToPublicFromCSS = path.relative(
+            cssAssetDirname!,
+            ''
+          )
           chunkCSS = chunkCSS.replace(
             publicAssetUrlRE,
             (_, hash) =>
