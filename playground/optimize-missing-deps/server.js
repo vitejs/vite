@@ -5,7 +5,7 @@ const express = require('express')
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
 
-async function createServer(root = process.cwd()) {
+async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
   const app = express()
@@ -16,7 +16,12 @@ async function createServer(root = process.cwd()) {
   const vite = await require('vite').createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
-    server: { middlewareMode: 'ssr' }
+    server: {
+      middlewareMode: 'ssr',
+      hmr: {
+        port: hmrPort
+      }
+    }
   })
   app.use(vite.middlewares)
 

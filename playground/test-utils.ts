@@ -34,6 +34,14 @@ export const ports = {
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006
 }
+export const hmrPorts = {
+  'optimize-missing-deps': 24680,
+  'ssr-deps': 24681,
+  'ssr-html': 24682,
+  'ssr-pug': 24683,
+  'ssr-react': 24684,
+  'ssr-vue': 24685
+}
 
 const hexToNameMap: Record<string, string> = {}
 Object.keys(colors).forEach((color) => {

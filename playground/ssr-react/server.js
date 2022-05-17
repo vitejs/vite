@@ -9,7 +9,8 @@ process.env.MY_CUSTOM_SECRET = 'API_KEY_qwertyuiop'
 
 async function createServer(
   root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production'
+  isProd = process.env.NODE_ENV === 'production',
+  hmrPort
 ) {
   const resolve = (p) => path.resolve(__dirname, p)
 
@@ -34,6 +35,9 @@ async function createServer(
           // misses change events, so enforce polling for consistency
           usePolling: true,
           interval: 100
+        },
+        hmr: {
+          port: hmrPort
         }
       }
     })
