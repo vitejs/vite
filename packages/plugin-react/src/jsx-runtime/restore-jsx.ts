@@ -1,9 +1,11 @@
 import type * as babelCore from '@babel/core'
-import type { PluginItem, types as t } from '@babel/core'
 
-type RestoredJSX = [result: t.File | null | undefined, isCommonJS: boolean]
+type RestoredJSX = [
+  result: babelCore.types.File | null | undefined,
+  isCommonJS: boolean
+]
 
-let babelRestoreJSX: Promise<PluginItem> | undefined
+let babelRestoreJSX: Promise<babelCore.PluginItem> | undefined
 
 const jsxNotFound: RestoredJSX = [null, false]
 

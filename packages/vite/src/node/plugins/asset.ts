@@ -6,9 +6,8 @@ import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl } from '../utils'
+import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { getHash, normalizePath } from '../utils'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 

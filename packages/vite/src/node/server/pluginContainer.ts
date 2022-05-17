@@ -56,8 +56,9 @@ import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
-import { cleanUrl, combineSourcemaps } from '../utils'
 import {
+  cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,

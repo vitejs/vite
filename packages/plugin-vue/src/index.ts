@@ -1,6 +1,7 @@
 import fs from 'fs'
 import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
+/* eslint-disable import/no-duplicates */
 import type {
   SFCBlock,
   SFCScriptCompileOptions,
@@ -8,6 +9,7 @@ import type {
   SFCTemplateCompileOptions
 } from 'vue/compiler-sfc'
 import type * as _compiler from 'vue/compiler-sfc'
+/* eslint-enable import/no-duplicates */
 import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
