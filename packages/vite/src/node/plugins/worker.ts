@@ -14,8 +14,6 @@ import { ENV_PUBLIC_PATH } from '../constants'
 import { onRollupWarning } from '../build'
 import { fileToUrl } from './asset'
 
-export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
-
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
@@ -150,14 +148,15 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
+export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
+
 function encodeWorkerAssetFileName(
   fileName: string,
   workerCache: WorkerCache
 ): string {
   const { fileNameHash } = workerCache
-  let hash = fileNameHash.get(fileName)
-  if (!hash) {
-    hash = getHash(fileName)
+  const hash = getHash(fileName)
+  if (!fileNameHash.get(fileName)) {
     fileNameHash.set(hash, fileName)
   }
   return `__VITE_WORKER_ASSET__${hash}__`
