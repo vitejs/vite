@@ -293,16 +293,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   const relativeBase = isRelativeBase(config.base)
 
   // TODO: Could we call assetFileNames here with dummy info to know in what
-  // directory this asset to support the functional form?
+  // directory the CSS assets are emitted to support the functional form
+  // without assuming that build.assetsDir is correct in this case
   const { rollupOptions } = config.build
   const assetFileNames = (
     Array.isArray(rollupOptions) ? rollupOptions[0] : rollupOptions
   )?.assetFileNames
-  const cssDir =
+  const cssAssetsDir =
     typeof assetFileNames === 'string'
       ? path.dirname(assetFileNames)
       : config.build.assetsDir
-  const relativePathToPublicFromCSS = path.relative(cssDir, '')
 
   return {
     name: 'vite:css-post',
@@ -436,37 +436,36 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // resolve asset URL placeholders to their built file URLs and perform
-      // minification if necessary
-      const processChunkCSS = async (
-        css: string,
-        {
-          inlined,
-          minify
-        }: {
-          inlined: boolean
-          minify: boolean
-        }
-      ) => {
+      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+
+      // resolve asset URL placeholders to their built file URLs
+      // TODO: We can lift assumptions about where CSS assets are emitted if we pass
+      // to this function the cssAssetFilename instead of the cssAssetsDir. Adding
+      // the parameter explicitily now as a step in that direction
+      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetsDir: string) {
         // replace asset url references with resolved url.
-        css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+        chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          // TODO: inlined with relative base, should it use import.meta.url?
-          if (inlined || !relativeBase) {
-            // absolute base or relative base but inlined (injected as style tag into
-            // index.html) use the base as-is
+          if (relativeBase) {
+            // relative base + extracted CSS
+            return path.relative(cssAssetsDir, filename)
+          } else {
+            // absolute base
             return config.base + filename
           }
-          // relative base + extracted CSS - asset file will be in the same dir
-          return `./${path.posix.basename(filename)}`
         })
-        // only external @imports and @charset should exist at this point
-        css = await finalizeCss(css, minify, config)
-        return css
+        // resolve public URL from CSS paths
+        if (relativeBase) {
+          const relativePathToPublicFromCSS = path.relative(cssAssetsDir, '')
+          chunkCSS = chunkCSS.replace(
+            publicAssetUrlRE,
+            (_, hash) =>
+              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
+          )
+        }
+        return chunkCSS
       }
-
-      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
@@ -478,18 +477,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           opts.format === 'cjs' ||
           opts.format === 'system'
         ) {
-          chunkCSS = await processChunkCSS(chunkCSS, {
-            inlined: false,
-            minify: true
-          })
-          // resolve public URL from CSS paths
-          if (relativeBase) {
-            chunkCSS = chunkCSS.replace(
-              publicAssetUrlRE,
-              (_, hash) =>
-                relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
-            )
-          }
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetsDir)
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
@@ -498,18 +488,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
-          // legacy build, inline css
-          chunkCSS = await processChunkCSS(chunkCSS, {
-            inlined: true,
-            minify: true
-          })
+          // legacy build and inline css
+
+          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
+          // the vite:asset plugin, don't call resolveAssetUrlsInCss here
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
             `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
             `document.head.appendChild(${style});`
-          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
-          // the vite:asset plugin
           if (config.build.sourcemap) {
             const s = new MagicString(code)
             s.prepend(injectCode)
@@ -523,11 +512,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        // non-split extracted CSS will be minified together
-        chunkCSS = await processChunkCSS(chunkCSS, {
-          inlined: false,
-          minify: false
-        })
+        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetsDir)
+        // finalizeCss is called for the aggregated chunk in generateBundle
+
         outputToExtractedCSSMap.set(
           opts,
           (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
@@ -590,15 +577,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
-        // resolve public URL from CSS paths
-        if (isRelativeBase(config.base)) {
-          const publicAssetUrlMap = publicAssetUrlCache.get(config)!
-          extractedCss = extractedCss.replace(
-            publicAssetUrlRE,
-            (_, hash) =>
-              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
-          )
-        }
         this.emitFile({
           name: 'style.css',
           type: 'asset',
