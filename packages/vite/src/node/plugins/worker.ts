@@ -297,7 +297,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let outputFilepath = path.relative(
+          let outputFilepath = path.posix.relative(
             path.dirname(chunk.fileName),
             filename
           )

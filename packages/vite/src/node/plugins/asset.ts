@@ -85,7 +85,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       const absoluteUrlPathInterpolation = (filename: string) =>
         `"+new URL(${JSON.stringify(
-          path.relative(path.dirname(chunk.fileName), filename)
+          path.posix.relative(path.dirname(chunk.fileName), filename)
         )},import.meta.url).href+"`
 
       // Urls added with JS using e.g.

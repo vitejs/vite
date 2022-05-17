@@ -463,7 +463,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (relativeBase) {
             // relative base + extracted CSS
-            const relativePath = path.relative(cssAssetDirname!, filename)
+            const relativePath = path.posix.relative(cssAssetDirname!, filename)
             return relativePath.startsWith('.')
               ? relativePath
               : './' + relativePath
@@ -474,7 +474,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve public URL from CSS paths
         if (relativeBase) {
-          const relativePathToPublicFromCSS = path.relative(
+          const relativePathToPublicFromCSS = path.posix.relative(
             cssAssetDirname!,
             ''
           )
