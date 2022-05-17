@@ -27,6 +27,8 @@ import {
   isObject,
   lookupFile,
   mergeAlias,
+  mergeConfig,
+  normalizeAlias,
   normalizePath
 } from './utils'
 import { resolvePlugins } from './plugins'
@@ -41,7 +43,6 @@ import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
-import { mergeConfig, normalizeAlias } from './utils'
 import type { ResolvedBuildOptions } from '.'
 
 const debug = createDebugger('vite:config')
