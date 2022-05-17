@@ -1,7 +1,7 @@
-import { port } from './serve'
-import fetch from 'node-fetch-native'
-import { page, untilUpdated } from '~utils'
 import { platform } from 'os'
+import { fetch } from 'undici'
+import { port } from './serve'
+import { page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}/`
 

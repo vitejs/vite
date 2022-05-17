@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import fetch from 'node-fetch-native'
+import { fetch } from 'undici'
 import { port } from './serve'
 import {
   browserLogs,
