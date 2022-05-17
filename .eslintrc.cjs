@@ -89,6 +89,7 @@ module.exports = defineConfig({
       { prefer: 'type-imports' }
     ],
 
+    'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [
       'error',
