@@ -156,7 +156,7 @@ function encodeWorkerAssetFileName(
 ): string {
   const { fileNameHash } = workerCache
   const hash = getHash(fileName)
-  if (!fileNameHash.get(fileName)) {
+  if (!fileNameHash.get(hash)) {
     fileNameHash.set(hash, fileName)
   }
   return `__VITE_WORKER_ASSET__${hash}__`
@@ -297,10 +297,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          const outputFilepath = path.relative(
+          let outputFilepath = path.relative(
             path.dirname(chunk.fileName),
             filename
           )
+          if (!outputFilepath.startsWith('.')) {
+            outputFilepath = './' + outputFilepath
+          }
           const replacement = JSON.stringify(outputFilepath).slice(1, -1)
           s.overwrite(match.index, match.index + full.length, replacement, {
             contentOnly: true
