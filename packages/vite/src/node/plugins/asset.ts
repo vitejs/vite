@@ -7,7 +7,6 @@ import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, isRelativeBase, normalizePath } from '../utils'
-import { publicURLfromAsset } from '../build'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -84,6 +83,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
+      const absoluteUrlPathInterpolation = (filename: string) =>
+        `"+new URL(${JSON.stringify(
+          path.relative(path.dirname(chunk.fileName), filename)
+        )},import.meta.url).href+"`
+
       // Urls added with JS using e.g.
       // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
 
@@ -101,13 +105,26 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const filename = file + postfix
         const outputFilepath = relativeBase
-          ? `"+new URL(${JSON.stringify(
-              path.relative(path.dirname(chunk.fileName), filename)
-            )},import.meta.url)+"`
+          ? absoluteUrlPathInterpolation(filename)
           : JSON.stringify(config.base + filename).slice(1, -1)
         s.overwrite(match.index, match.index + full.length, outputFilepath, {
           contentOnly: true
         })
+      }
+
+      // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
+
+      if (relativeBase) {
+        const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+        while ((match = publicAssetUrlRE.exec(code))) {
+          s = s || (s = new MagicString(code))
+          const [full, hash] = match
+          const publicUrl = publicAssetUrlMap.get(hash)!
+          const replacement = absoluteUrlPathInterpolation(publicUrl.slice(1))
+          s.overwrite(match.index, match.index + full.length, replacement, {
+            contentOnly: true
+          })
+        }
       }
 
       if (s) {
@@ -265,6 +282,33 @@ export function assetFileNamesToFileName(
   return fileName
 }
 
+export const publicAssetUrlCache = new WeakMap<
+  ResolvedConfig,
+  // hash -> url
+  Map<string, string>
+>()
+
+export const publicAssetUrlRE = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
+
+export function publicFileToBuiltUrl(
+  url: string,
+  config: ResolvedConfig
+): string {
+  if (!isRelativeBase(config.base)) {
+    return config.base + url.slice(1)
+  }
+  const hash = getHash(url)
+  let cache = publicAssetUrlCache.get(config)
+  if (!cache) {
+    cache = new Map<string, string>()
+    publicAssetUrlCache.set(config, cache)
+  }
+  if (!cache.get(hash)) {
+    cache.set(hash, url)
+  }
+  return `__VITE_PUBLIC_ASSET__${hash}__`
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -276,7 +320,7 @@ async function fileToBuiltUrl(
   skipPublicCheck = false
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
-    return publicURLfromAsset(id, config)
+    return publicFileToBuiltUrl(id, config)
   }
 
   const cache = assetCache.get(config)!
@@ -349,7 +393,7 @@ export async function urlToBuiltUrl(
   pluginContext: PluginContext
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
-    return publicURLfromAsset(url, config)
+    return publicFileToBuiltUrl(url, config)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)

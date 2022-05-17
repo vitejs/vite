@@ -43,13 +43,15 @@ import {
   processSrcSet
 } from '../utils'
 import { emptyCssComments } from '../utils'
-import { publicURLfromAsset } from '../build'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename
+  getAssetFilename,
+  publicAssetUrlCache,
+  publicAssetUrlRE,
+  publicFileToBuiltUrl
 } from './asset'
 
 // const debug = createDebugger('vite:css')
@@ -184,7 +186,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
-          return publicURLfromAsset(url, config)
+          if (isRelativeBase(config.base)) {
+            return publicFileToBuiltUrl(url, config)
+          } else {
+            return config.base + url.slice(1)
+          }
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
@@ -283,6 +289,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
+
+  const relativeBase = isRelativeBase(config.base)
+
+  // TODO: Could we call assetFileNames here with dummy info to know in what
+  // directory this asset to support the functional form?
+  const { rollupOptions } = config.build
+  const assetFileNames = (
+    Array.isArray(rollupOptions) ? rollupOptions[0] : rollupOptions
+  )?.assetFileNames
+  const cssDir =
+    typeof assetFileNames === 'string'
+      ? path.dirname(assetFileNames)
+      : config.build.assetsDir
+  const relativePathToPublicFromCSS = path.relative(cssDir, '')
 
   return {
     name: 'vite:css-post',
@@ -429,7 +449,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       ) => {
         // replace asset url references with resolved url.
-        const relativeBase = isRelativeBase(config.base)
         css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
@@ -447,6 +466,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return css
       }
 
+      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
@@ -461,6 +482,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             inlined: false,
             minify: true
           })
+          // resolve public URL from CSS paths
+          if (relativeBase) {
+            chunkCSS = chunkCSS.replace(
+              publicAssetUrlRE,
+              (_, hash) =>
+                relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
+            )
+          }
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: chunk.name + '.css',
@@ -479,9 +508,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
             `document.head.appendChild(${style});`
+          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
+          // the vite:asset plugin
           if (config.build.sourcemap) {
             const s = new MagicString(code)
             s.prepend(injectCode)
+            // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
               map: s.generateMap({ hires: true })
@@ -558,6 +590,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
+        // resolve public URL from CSS paths
+        if (isRelativeBase(config.base)) {
+          const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+          extractedCss = extractedCss.replace(
+            publicAssetUrlRE,
+            (_, hash) =>
+              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
+          )
+        }
         this.emitFile({
           name: 'style.css',
           type: 'asset',

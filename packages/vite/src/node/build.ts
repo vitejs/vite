@@ -26,13 +26,7 @@ import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import {
-  copyDir,
-  emptyDir,
-  isRelativeBase,
-  lookupFile,
-  normalizePath
-} from './utils'
+import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -763,16 +757,4 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
-}
-
-export function publicURLfromAsset(
-  url: string,
-  config: ResolvedConfig
-): string {
-  if (isRelativeBase(config.base)) {
-    // Assume flat assets structure
-    return path.posix.relative(config.build.assetsDir, '') + url
-  } else {
-    return config.base + url.slice(1)
-  }
 }
