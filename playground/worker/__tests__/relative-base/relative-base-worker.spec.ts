@@ -103,13 +103,12 @@ test('module worker', async () => {
   )
 })
 
-// TODO: Maybe we can modify classic-worker.js and classic-shared-worker.js to take into account the different asset paths
-test('classic worker', async () => {
+test.runIf(isBuild)('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
 })
 
-test('emit chunk', async () => {
+test.runIf(isBuild)('emit chunk', async () => {
   expect(await page.textContent('.emit-chunk-worker')).toMatch(
     '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]'
   )
