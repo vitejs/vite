@@ -591,7 +591,7 @@ async function buildPolyfillChunk(
   }
 
   // add the chunk to the bundle
-  bundle[polyfillChunk.name] = polyfillChunk
+  bundle[polyfillChunk.fileName] = polyfillChunk
 }
 
 const polyfillId = '\0vite/legacy-polyfills'

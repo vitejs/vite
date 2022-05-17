@@ -979,6 +979,15 @@ importers:
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
 
+  playground/vue-server-origin:
+    specifiers:
+      '@vitejs/plugin-vue': workspace:*
+      vue: ^3.2.25
+    dependencies:
+      vue: 3.2.33
+    devDependencies:
+      '@vitejs/plugin-vue': link:../../packages/plugin-vue
+
   playground/vue-sourcemap:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
