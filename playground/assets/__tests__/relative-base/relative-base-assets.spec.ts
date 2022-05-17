@@ -18,7 +18,9 @@ const cssBgAssetMatch = absoluteAssetMatch
 
 const iconMatch = `/icon.png`
 
-const absoluteIconMatch = isBuild ? /http.*\/icon\.\w{8}\.png/ : './icon.png'
+const absoluteIconMatch = isBuild
+  ? /http.*\/icon\.\w{8}\.png/
+  : '/nested/icon.png'
 
 const absolutePublicIconMatch = isBuild ? /http.*\/icon\.png/ : '/icon.png'
 
