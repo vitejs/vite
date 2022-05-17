@@ -295,9 +295,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // TODO: Could we call assetFileNames here with dummy info to know in what
   // directory the CSS assets are emitted to support the functional form
   // without assuming that build.assetsDir is correct in this case
-  const { rollupOptions } = config.build
+  const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
-    Array.isArray(rollupOptions) ? rollupOptions[0] : rollupOptions
+    Array.isArray(rollupOptionsOutput)
+      ? rollupOptionsOutput[0]
+      : rollupOptionsOutput
   )?.assetFileNames
   const cssAssetsDir =
     typeof assetFileNames === 'string'
@@ -449,7 +451,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (relativeBase) {
             // relative base + extracted CSS
-            return path.relative(cssAssetsDir, filename)
+            const relativePath = path.relative(cssAssetsDir, filename)
+            return relativePath.startsWith('.')
+              ? relativePath
+              : './' + relativePath
           } else {
             // absolute base
             return config.base + filename
