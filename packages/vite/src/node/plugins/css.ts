@@ -109,6 +109,8 @@ const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
 const varRE = /^var\(/i
 
+const cssBundleName = 'style.css'
+
 const enum PreprocessLang {
   less = 'less',
   sass = 'sass',
@@ -292,19 +294,27 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
   const relativeBase = isRelativeBase(config.base)
 
-  // TODO: Could we call assetFileNames here with dummy info to know in what
-  // directory the CSS assets are emitted to support the functional form
-  // without assuming that build.assetsDir is correct in this case
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
     Array.isArray(rollupOptionsOutput)
       ? rollupOptionsOutput[0]
       : rollupOptionsOutput
   )?.assetFileNames
-  const cssAssetsDir =
-    typeof assetFileNames === 'string'
-      ? path.dirname(assetFileNames)
-      : config.build.assetsDir
+  const getCssAssetsDir = (cssAssetName: string) => {
+    if (!assetFileNames) {
+      return config.build.assetsDir
+    } else if (typeof assetFileNames === 'string') {
+      return path.dirname(assetFileNames)
+    } else {
+      return path.dirname(
+        assetFileNames({
+          name: cssAssetName,
+          type: 'asset',
+          source: '/* vite internal call, ignore */'
+        })
+      )
+    }
+  }
 
   return {
     name: 'vite:css-post',
@@ -441,17 +451,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      // TODO: We can lift assumptions about where CSS assets are emitted if we pass
-      // to this function the cssAssetFilename instead of the cssAssetsDir. Adding
-      // the parameter explicitily now as a step in that direction
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetsDir: string) {
+      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+        const cssAssetsDir = relativeBase
+          ? getCssAssetsDir(cssAssetName)
+          : undefined
+
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           if (relativeBase) {
             // relative base + extracted CSS
-            const relativePath = path.relative(cssAssetsDir, filename)
+            const relativePath = path.relative(cssAssetsDir!, filename)
             return relativePath.startsWith('.')
               ? relativePath
               : './' + relativePath
@@ -462,7 +473,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve public URL from CSS paths
         if (relativeBase) {
-          const relativePathToPublicFromCSS = path.relative(cssAssetsDir, '')
+          const relativePathToPublicFromCSS = path.relative(cssAssetsDir!, '')
           chunkCSS = chunkCSS.replace(
             publicAssetUrlRE,
             (_, hash) =>
@@ -482,12 +493,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           opts.format === 'cjs' ||
           opts.format === 'system'
         ) {
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetsDir)
+          const cssAssetName = chunk.name + '.css'
+
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: chunk.name + '.css',
+            name: cssAssetName,
             type: 'asset',
             source: chunkCSS
           })
@@ -517,7 +530,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetsDir)
+        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
         // finalizeCss is called for the aggregated chunk in generateBundle
 
         outputToExtractedCSSMap.set(
@@ -583,7 +596,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
-          name: 'style.css',
+          name: cssBundleName,
           type: 'asset',
           source: extractedCss
         })
