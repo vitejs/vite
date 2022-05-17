@@ -45,6 +45,7 @@ importers:
       kill-port: ^1.6.1
       lint-staged: ^12.4.1
       minimist: ^1.2.6
+      node-fetch-native: ^0.1.3
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
       playwright-chromium: ^1.21.1
@@ -58,7 +59,6 @@ importers:
       ts-node: ^10.7.0
       typescript: ^4.6.4
       unbuild: ^0.7.4
-      undici: ^5.2.0
       vite: workspace:*
       vitepress: ^0.22.4
       vitest: ^0.12.4
@@ -99,6 +99,7 @@ importers:
       kill-port: 1.6.1
       lint-staged: 12.4.1
       minimist: 1.2.6
+      node-fetch-native: 0.1.3
       npm-run-all: 4.1.5
       picocolors: 1.0.0
       playwright-chromium: 1.21.1
@@ -112,7 +113,6 @@ importers:
       ts-node: 10.7.0_sm5zkxj4s52nbddwl76qwfh6ya
       typescript: 4.6.4
       unbuild: 0.7.4
-      undici: 5.2.0
       vite: link:packages/vite
       vitepress: 0.22.4
       vitest: 0.12.4
@@ -5934,6 +5934,10 @@ packages:
       lodash: 4.17.21
     dev: false
 
+  /node-fetch-native/0.1.3:
+    resolution: {integrity: sha512-Jf1IQZdovUIv9E+5avmN6Sf+bND+rnMlODnBQhdE2VRyuWP9WgqZb/KEgPekh19DAN1X2C4vbS1VCOaz2OH19g==}
+    dev: true
+
   /node-fetch/2.6.7:
     resolution: {integrity: sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ==}
     engines: {node: 4.x || >=6.0.0}
@@ -8191,11 +8195,6 @@ packages:
       untyped: 0.4.4
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /undici/5.2.0:
-    resolution: {integrity: sha512-XY6+NS3WH9b3TKOHeNz2CjR+qrVz/k4fO9g3etPpLozRvULoQmZ1+dk9JbIz40ehn27xzFk4jYVU2MU3Nle62A==}
-    engines: {node: '>=12.18'}
     dev: true
 
   /universalify/0.1.2:

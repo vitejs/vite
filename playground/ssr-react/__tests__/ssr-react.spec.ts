@@ -1,4 +1,4 @@
-import { fetch } from 'undici'
+import fetch from 'node-fetch-native'
 import { port } from './serve'
 import { browserLogs, editFile, page, untilUpdated } from '~utils'
 
