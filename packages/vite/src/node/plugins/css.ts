@@ -32,6 +32,7 @@ import {
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
+  emptyCssComments,
   generateCodeFrame,
   getHash,
   isDataUrl,
@@ -41,7 +42,6 @@ import {
   parseRequest,
   processSrcSet
 } from '../utils'
-import { emptyCssComments } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
