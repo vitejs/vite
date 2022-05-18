@@ -18,6 +18,11 @@
   <span class="result"></span>
 </div>
 
+<div>
+  <h3>Importing as URL</h3>
+  <span class="url"></span>
+</div>
+
 <div class="worker-wasm">
   <h3>worker wasm</h3>
   <span class="result"></span>
@@ -71,4 +76,7 @@
         res instanceof WebAssembly.Instance
       )
     })
+
+  import lightUrl from './light.wasm?url'
+  text('.url', lightUrl)
 </script>

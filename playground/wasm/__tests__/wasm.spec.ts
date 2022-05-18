@@ -1,4 +1,4 @@
-import { page, untilUpdated } from '~utils'
+import { isBuild, page, untilUpdated } from '~utils'
 
 test('should work when inlined', async () => {
   await page.click('.inline-wasm .run')
@@ -15,6 +15,12 @@ test('init function returns WebAssembly.Instance', async () => {
   await untilUpdated(
     () => page.textContent('.init-returns-instance .result'),
     'true'
+  )
+})
+
+test('?url', async () => {
+  expect(await page.textContent('.url')).toMatch(
+    isBuild ? 'data:application/wasm' : '/light.wasm'
   )
 })
 
