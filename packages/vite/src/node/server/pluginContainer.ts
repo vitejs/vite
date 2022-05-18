@@ -30,48 +30,49 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, join } from 'path'
-import type { Plugin } from '../plugin'
+import { join, resolve } from 'path'
+import { performance } from 'perf_hooks'
 import type {
+  EmittedFile,
   InputOptions,
+  LoadResult,
   MinimalPluginContext,
-  OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
+  OutputOptions,
   PartialResolvedId,
   ResolvedId,
-  PluginContext as RollupPluginContext,
-  LoadResult,
-  SourceDescription,
-  EmittedFile,
-  SourceMap,
   RollupError,
+  PluginContext as RollupPluginContext,
+  SourceDescription,
+  SourceMap,
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
-import type { RawSourceMap } from '@ampproject/remapping/dist/types/types'
-import { combineSourcemaps } from '../utils'
+import type { RawSourceMap } from '@ampproject/remapping'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
+import colors from 'picocolors'
+import type * as postcss from 'postcss'
+import type { Plugin } from '../plugin'
 import {
+  cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
-  isObject,
   isExternalUrl,
+  isObject,
   normalizePath,
   numberToPos,
   prettifyUrl,
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
-import { performance } from 'perf_hooks'
-import { SourceMapConsumer } from 'source-map-js/lib/source-map-consumer'
-import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -90,6 +91,10 @@ export interface PluginContainer {
     options?: {
       skip?: Set<Plugin>
       ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -212,6 +217,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
@@ -241,7 +247,11 @@ export async function createPluginContainer(
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
+      let out = await container.resolveId(id, importer, {
+        skip,
+        ssr: this.ssr,
+        scan: this._scan
+      })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -376,13 +386,12 @@ export async function createPluginContainer(
       if (err.loc && ctx instanceof TransformContext) {
         const rawSourceMap = ctx._getCombinedSourcemap()
         if (rawSourceMap) {
-          const consumer = new SourceMapConsumer(rawSourceMap as any)
-          const { source, line, column } = consumer.originalPositionFor({
+          const traced = new TraceMap(rawSourceMap as any)
+          const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
-            column: Number(err.loc.column),
-            bias: SourceMapConsumer.GREATEST_LOWER_BOUND
+            column: Number(err.loc.column)
           })
-          if (source) {
+          if (source && line != null && column != null) {
             err.loc = { file: source, line, column }
           }
         }
@@ -420,7 +429,7 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(this.filename, [
+          combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             {
               ...(m as RawSourceMap),
               sourcesContent: combinedMap.sourcesContent
@@ -434,7 +443,7 @@ export async function createPluginContainer(
           ? new MagicString(this.originalCode).generateMap({
               includeContent: true,
               hires: true,
-              source: this.filename
+              source: cleanUrl(this.filename)
             })
           : null
       }
@@ -488,8 +497,10 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
+      const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0
 
@@ -506,7 +517,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr }
+          { ssr, scan }
         )
         if (!result) continue
 

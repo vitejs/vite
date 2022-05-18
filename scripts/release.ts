@@ -62,6 +62,9 @@ async function main(): Promise<void> {
   if (targetVersion.includes('beta') && !args.tag) {
     args.tag = 'beta'
   }
+  if (targetVersion.includes('alpha') && !args.tag) {
+    args.tag = 'alpha'
+  }
 
   const { yes }: { yes: boolean } = await prompts({
     type: 'confirm',
@@ -88,7 +91,7 @@ async function main(): Promise<void> {
     '--commit-path',
     '.'
   ]
-  if (pkgName !== 'vite') changelogArgs.push('--lerna-package', 'plugin-vue')
+  if (pkgName !== 'vite') changelogArgs.push('--lerna-package', pkgName)
   await run('npx', changelogArgs, { cwd: pkgDir })
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })

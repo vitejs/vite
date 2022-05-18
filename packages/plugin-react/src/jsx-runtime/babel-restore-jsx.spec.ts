@@ -1,5 +1,6 @@
-import babelRestoreJSX from './babel-restore-jsx'
 import * as babel from '@babel/core'
+import { describe, expect, it } from 'vitest'
+import babelRestoreJSX from './babel-restore-jsx'
 
 function jsx(code: string) {
   return babel.transform(code, {
