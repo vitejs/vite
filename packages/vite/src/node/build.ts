@@ -252,8 +252,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       'safari13' // transpile nullish coalescing
     ]
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2019 so it can be minified by terser
-    resolved.target = 'es2019'
+    // esnext + terser: limit to es2021 so it can be minified by terser
+    resolved.target = 'es2021'
   }
 
   if (!resolved.cssTarget) {
