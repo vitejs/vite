@@ -70,3 +70,24 @@ export default opts => initWasm(opts, ${JSON.stringify(url)})
     }
   }
 }
+
+export const wasmFallbackPlugin = (): Plugin => {
+  return {
+    name: 'vite:wasm-fallback',
+
+    async load(id) {
+      if (!id.endsWith('.wasm')) {
+        return
+      }
+
+      throw new Error(
+        [
+          '"ESM integration proposal for Wasm" is not supported currently.',
+          'Use vite-plugin-wasm or other community plugins to handle this.',
+          'Alternatively, you can use `.wasm?init` or `.wasm?url`.',
+          'See https://vitejs.dev/guide/features.html#webassembly for more details.'
+        ].join('\n')
+      )
+    }
+  }
+}
