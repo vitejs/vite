@@ -5,7 +5,7 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
+import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import type { ViteDevServer } from '..'
 import { workerFileToUrl } from './worker'
@@ -143,7 +143,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             cleanString,
             index + allExp.length
           )
-          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          const file = normalizePath(
+            path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          )
           let url: string
           if (isBuild) {
             url = await workerFileToUrl(this, config, file, query)

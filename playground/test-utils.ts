@@ -122,8 +122,12 @@ export function listAssets(base = ''): string[] {
   return fs.readdirSync(assetsDir)
 }
 
-export function findAssetFile(match: string | RegExp, base = ''): string {
-  const assetsDir = path.join(testDir, 'dist', base, 'assets')
+export function findAssetFile(
+  match: string | RegExp,
+  base = '',
+  assets = 'assets'
+): string {
+  const assetsDir = path.join(testDir, 'dist', base, assets)
   const files = fs.readdirSync(assetsDir)
   const file = files.find((file) => {
     return file.match(match)

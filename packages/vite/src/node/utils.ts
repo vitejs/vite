@@ -280,6 +280,10 @@ export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
+export function isRelativeBase(base: string): boolean {
+  return base === '' || base.startsWith('.')
+}
+
 export async function asyncReplace(
   input: string,
   re: RegExp,

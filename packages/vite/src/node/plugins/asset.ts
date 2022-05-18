@@ -6,7 +6,7 @@ import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, normalizePath } from '../utils'
+import { cleanUrl, getHash, isRelativeBase, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -29,6 +29,7 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
+  const relativeBase = isRelativeBase(config.base)
 
   // add own dictionary entry by directly assigning mrmine
   // https://github.com/lukeed/mrmime/issues/3
@@ -82,8 +83,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
+      const absoluteUrlPathInterpolation = (filename: string) =>
+        `"+new URL(${JSON.stringify(
+          path.posix.relative(path.dirname(chunk.fileName), filename)
+        )},import.meta.url).href+"`
+
       // Urls added with JS using e.g.
-      // imgElement.src = "my/file.png" are using quotes
+      // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
 
       // Urls added in CSS that is imported in JS end up like
       // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
@@ -94,13 +100,31 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         s = s || (s = new MagicString(code))
         const [full, hash, postfix = ''] = match
         // some internal plugins may still need to emit chunks (e.g. worker) so
-        // fallback to this.getFileName for that.
+        // fallback to this.getFileName for that. TODO: remove, not needed
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const outputFilepath = config.base + file + postfix
+        const filename = file + postfix
+        const outputFilepath = relativeBase
+          ? absoluteUrlPathInterpolation(filename)
+          : JSON.stringify(config.base + filename).slice(1, -1)
         s.overwrite(match.index, match.index + full.length, outputFilepath, {
           contentOnly: true
         })
+      }
+
+      // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
+
+      if (relativeBase) {
+        const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+        while ((match = publicAssetUrlRE.exec(code))) {
+          s = s || (s = new MagicString(code))
+          const [full, hash] = match
+          const publicUrl = publicAssetUrlMap.get(hash)!
+          const replacement = absoluteUrlPathInterpolation(publicUrl.slice(1))
+          s.overwrite(match.index, match.index + full.length, replacement, {
+            contentOnly: true
+          })
+        }
       }
 
       if (s) {
@@ -258,6 +282,33 @@ export function assetFileNamesToFileName(
   return fileName
 }
 
+export const publicAssetUrlCache = new WeakMap<
+  ResolvedConfig,
+  // hash -> url
+  Map<string, string>
+>()
+
+export const publicAssetUrlRE = /__VITE_PUBLIC_ASSET__([a-z\d]{8})__/g
+
+export function publicFileToBuiltUrl(
+  url: string,
+  config: ResolvedConfig
+): string {
+  if (!isRelativeBase(config.base)) {
+    return config.base + url.slice(1)
+  }
+  const hash = getHash(url)
+  let cache = publicAssetUrlCache.get(config)
+  if (!cache) {
+    cache = new Map<string, string>()
+    publicAssetUrlCache.set(config, cache)
+  }
+  if (!cache.get(hash)) {
+    cache.set(hash, url)
+  }
+  return `__VITE_PUBLIC_ASSET__${hash}__`
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -269,7 +320,7 @@ async function fileToBuiltUrl(
   skipPublicCheck = false
 ): Promise<string> {
   if (!skipPublicCheck && checkPublicFile(id, config)) {
-    return config.base + id.slice(1)
+    return publicFileToBuiltUrl(id, config)
   }
 
   const cache = assetCache.get(config)!
@@ -342,7 +393,7 @@ export async function urlToBuiltUrl(
   pluginContext: PluginContext
 ): Promise<string> {
   if (checkPublicFile(url, config)) {
-    return config.base + url.slice(1)
+    return publicFileToBuiltUrl(url, config)
   }
   const file = url.startsWith('/')
     ? path.join(config.root, url)

@@ -18,6 +18,9 @@
     "dev:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js dev",
     "build:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js build",
     "preview:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js preview",
+    "dev:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js dev",
+    "build:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js build",
+    "preview:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "devDependencies": {

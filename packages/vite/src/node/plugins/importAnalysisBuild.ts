@@ -4,7 +4,7 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { bareImportRE, combineSourcemaps } from '../utils'
+import { bareImportRE, combineSourcemaps, isRelativeBase } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -20,7 +20,7 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
-const preloadHelperId = 'vite/preload-helper'
+export const preloadHelperId = '\0vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
 const dynamicImportPrefixRE = /import\s*\(/
@@ -40,7 +40,11 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
-function preload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(
+  baseModule: () => Promise<{}>,
+  deps?: string[],
+  importerUrl?: string
+) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
@@ -49,7 +53,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${base}${dep}`
+      dep = assetsURL(dep, importerUrl)
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -91,10 +95,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
+  const relativeBase = isRelativeBase(config.base)
+
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
+  const assetsURL = relativeBase
+    ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
+    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:build-import-analysis',
@@ -107,7 +116,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode.replace(preloadBaseMarker, config.base)
+        return preloadCode
       }
     },
 
@@ -152,7 +161,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
             expEnd,
-            `,${isModernFlag}?"${preloadMarker}":void 0)`
+            `,${isModernFlag}?"${preloadMarker}":void 0${
+              relativeBase ? ',import.meta.url' : ''
+            })`
           )
         }
 
@@ -312,12 +323,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.overwrite(
                   markerStartPos,
                   markerStartPos + preloadMarkerWithQuote.length,
-                  // the dep list includes the main chunk, so only need to
-                  // preload when there are actual other deps.
+                  // the dep list includes the main chunk, so only need to reload when there are
+                  // actual other deps. Don't include the assets dir if the default asset file names
+                  // are used, the path will be reconstructed by the import preload helper
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    ? `[${[...deps]
+                        .map((d) =>
+                          JSON.stringify(
+                            relativeBase
+                              ? path.relative(path.dirname(file), d)
+                              : d
+                          )
+                        )
+                        .join(',')}]`
                     : `[]`,
                   { contentOnly: true }
                 )

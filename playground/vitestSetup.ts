@@ -54,6 +54,8 @@ export const serverLogs: string[] = []
 export const browserLogs: string[] = []
 export const browserErrors: Error[] = []
 
+export let resolvedConfig: ResolvedConfig = undefined!
+
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
@@ -199,7 +201,6 @@ export async function startDefaultServe() {
   } else {
     process.env.VITE_INLINE = 'inline-build'
     // determine build watch
-    let resolvedConfig: ResolvedConfig
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
       configResolved(config) {
@@ -229,7 +230,10 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // fallback internal base to ''
-  const base = (config?.base ?? '/') === '/' ? '' : config?.base ?? ''
+  let base = config?.base
+  if (!base || base === '/' || base === './') {
+    base = ''
+  }
 
   // @ts-ignore
   if (config && config.__test__) {
