@@ -162,7 +162,7 @@ export function createWebSocketServer(
   wss.on('error', (e: Error & { code: string }) => {
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
-        colors.red(`WebSocket server: Port is already in use`),
+        colors.red(`WebSocket server error: Port is already in use`),
         { error: e }
       )
     } else {
