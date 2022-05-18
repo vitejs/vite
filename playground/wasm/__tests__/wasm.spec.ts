@@ -10,6 +10,14 @@ test('should work when output', async () => {
   await untilUpdated(() => page.textContent('.output-wasm .result'), '24')
 })
 
+test('init function returns WebAssembly.Instance', async () => {
+  await page.click('.init-returns-instance .run')
+  await untilUpdated(
+    () => page.textContent('.init-returns-instance .result'),
+    'true'
+  )
+})
+
 test('should work when wasm in worker', async () => {
   await untilUpdated(() => page.textContent('.worker-wasm .result'), '3')
 })

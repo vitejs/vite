@@ -12,6 +12,12 @@
   <span class="result"></span>
 </div>
 
+<div class="init-returns-instance">
+  <h3>init function returns WebAssembly.Instance</h3>
+  <button class="run">Click to run</button>
+  <span class="result"></span>
+</div>
+
 <div class="worker-wasm">
   <h3>worker wasm</h3>
   <span class="result"></span>
@@ -51,4 +57,18 @@
     .addEventListener('click', async () =>
       testWasm(heavy, document.querySelector('.output-wasm .result'))
     )
+
+  document
+    .querySelector('.init-returns-instance .run')
+    .addEventListener('click', async () => {
+      const res = await light({
+        imports: {
+          imported_func: (res) => (resultElement.textContent = res)
+        }
+      })
+      text(
+        '.init-returns-instance .result',
+        res instanceof WebAssembly.Instance
+      )
+    })
 </script>
