@@ -295,7 +295,6 @@ export async function resolveConfig(
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
-  config.isSPA ??= true
   let configFileDependencies: string[] = []
   let mode = inlineConfig.mode || defaultMode
 
@@ -478,6 +477,8 @@ export async function resolveConfig(
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
 
   const optimizeDeps = config.optimizeDeps || {}
+
+  config.isSPA ??= true
 
   const resolved: ResolvedConfig = {
     ...config,
