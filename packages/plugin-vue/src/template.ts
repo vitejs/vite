@@ -1,15 +1,15 @@
 import path from 'path'
 import slash from 'slash'
 import type {
+  CompilerOptions,
   SFCDescriptor,
   SFCTemplateCompileOptions,
-  SFCTemplateCompileResults,
-  CompilerOptions
+  SFCTemplateCompileResults
 } from 'vue/compiler-sfc'
 import type { PluginContext, TransformPluginContext } from 'rollup'
-import type { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -119,11 +119,12 @@ export function resolveTemplateCompilerOptions(
     if (filename.startsWith(options.root)) {
       assetUrlOptions = {
         base:
+          (options.devServer.config.server?.origin ?? '') +
           options.devServer.config.base +
           slash(path.relative(options.root, path.dirname(filename)))
       }
     }
-  } else {
+  } else if (transformAssetUrls !== false) {
     // build: force all asset urls into import requests so that they go through
     // the assets plugin for asset registration
     assetUrlOptions = {
@@ -139,7 +140,7 @@ export function resolveTemplateCompilerOptions(
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions

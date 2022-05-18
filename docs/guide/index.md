@@ -38,7 +38,7 @@ The supported template presets are:
 ## Scaffolding Your First Vite Project
 
 ::: tip Compatibility Note
-Vite requires [Node.js](https://nodejs.org/en/) version >=12.2.0. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
+Vite requires [Node.js](https://nodejs.org/en/) version >=14.6.0. However, some templates require a higher Node.js version to work, please upgrade if your package manager warns about it.
 :::
 
 With NPM:
@@ -113,7 +113,7 @@ Running `vite` starts the dev server using the current working directory as root
 
 ## Command Line Interface
 
-In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here is the default npm scripts in a scaffolded Vite project:
+In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here are the default npm scripts in a scaffolded Vite project:
 
 <!-- prettier-ignore -->
 ```json5
@@ -145,4 +145,4 @@ Then go to your Vite based project and run `pnpm link --global vite` (or the pac
 
 ## Community
 
-If you have questions or need help, reach out to the community at [Discord](https://discord.gg/4cmKdMfpU5) and [GitHub Discussions](https://github.com/vitejs/vite/discussions).
+If you have questions or need help, reach out to the community at [Discord](https://chat.vitejs.dev) and [GitHub Discussions](https://github.com/vitejs/vite/discussions).

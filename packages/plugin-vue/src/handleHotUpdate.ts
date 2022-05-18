@@ -1,12 +1,12 @@
 import _debug from 'debug'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
+import type { HmrContext, ModuleNode } from 'vite'
 import {
   createDescriptor,
   getDescriptor,
   setPrevDescriptor
 } from './utils/descriptorCache'
 import { getResolvedScript, setResolvedScript } from './script'
-import type { ModuleNode, HmrContext } from 'vite'
 import type { ResolvedOptions } from '.'
 
 const debug = _debug('vite:hmr')
@@ -146,6 +146,11 @@ export async function handleHotUpdate(
     // template is inlined into main, add main module instead
     if (!templateModule) {
       affectedModules.add(mainModule)
+    } else if (mainModule && !affectedModules.has(mainModule)) {
+      const styleImporters = [...mainModule.importers].filter((m) =>
+        /\.css($|\?)/.test(m.url)
+      )
+      styleImporters.forEach((m) => affectedModules.add(m))
     }
   }
   if (didUpdateStyle) {

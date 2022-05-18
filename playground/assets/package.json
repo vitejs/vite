@@ -1,0 +1,14 @@
+{
+  "name": "test-assets",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview",
+    "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",
+    "build:relative-base": "vite --config ./vite.config-relative-base.js build",
+    "preview:relative-base": "vite --config ./vite.config-relative-base.js preview"
+  }
+}

@@ -1,15 +1,14 @@
 import path from 'path'
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
-import { transformImportGlob } from '../importGlob'
-import { bareImportRE, combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
+import { bareImportRE, combineSourcemaps, isRelativeBase } from '../utils'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -21,8 +20,10 @@ export const preloadMethod = `__vitePreload`
 export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
-const preloadHelperId = 'vite/preload-helper'
+export const preloadHelperId = '\0vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
+
+const dynamicImportPrefixRE = /import\s*\(/
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -39,7 +40,11 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
-function preload(baseModule: () => Promise<{}>, deps?: string[]) {
+function preload(
+  baseModule: () => Promise<{}>,
+  deps?: string[],
+  importerUrl?: string
+) {
   // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
@@ -48,7 +53,7 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
-      dep = `${base}${dep}`
+      dep = assetsURL(dep, importerUrl)
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -87,18 +92,18 @@ function preload(baseModule: () => Promise<{}>, deps?: string[]) {
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
-  const insertPreload = !(ssr || !!config.build.lib)
   const isWorker = config.isWorker
+  const insertPreload = !(ssr || !!config.build.lib || isWorker)
+
+  const relativeBase = isRelativeBase(config.base)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const preloadCode = `const scriptRel = ${scriptRel};const seen = {};const base = '${preloadBaseMarker}';export const ${preloadMethod} = ${preload.toString()}`
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
+  const assetsURL = relativeBase
+    ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
+    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:build-import-analysis',
@@ -111,20 +116,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode.replace(preloadBaseMarker, config.base)
+        return preloadCode
       }
     },
 
     async transform(source, importer) {
       if (
         importer.includes('node_modules') &&
-        !source.includes('import.meta.glob')
+        !dynamicImportPrefixRE.test(source)
       ) {
-        return
-      }
-
-      if (isWorker) {
-        // preload method use `document` and can't run in the worker
         return
       }
 
@@ -154,36 +154,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        // import.meta.glob
-        if (
-          source.slice(start, end) === 'import.meta' &&
-          source.slice(end, end + 5) === '.glob'
-        ) {
-          const { importsString, exp, endIndex, isEager } =
-            await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              config.root,
-              config.logger,
-              undefined,
-              resolve,
-              insertPreload
-            )
-          str().prepend(importsString)
-          str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-          if (!isEager) {
-            needPreloadHelper = true
-          }
-          continue
-        }
+        const isDynamic = dynamicIndex > -1
 
-        if (dynamicIndex > -1 && insertPreload) {
+        if (isDynamic && insertPreload) {
           needPreloadHelper = true
-          const original = source.slice(expStart, expEnd)
-          const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
-          str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
+          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          str().appendRight(
+            expEnd,
+            `,${isModernFlag}?"${preloadMarker}":void 0${
+              relativeBase ? ',import.meta.url' : ''
+            })`
+          )
         }
 
         // Differentiate CSS imports that use the default export from those that
@@ -193,12 +174,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (
           specifier &&
           isCSSRequest(specifier) &&
-          source.slice(expStart, start).includes('from') &&
+          // always inject ?used query when it is a dynamic import
+          // because there is no way to check whether the default export is used
+          (source.slice(expStart, start).includes('from') || isDynamic) &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
           // edge case for package names ending with .css (e.g normalize.css)
           !(bareImportRE.test(specifier) && !specifier.includes('/'))
         ) {
           const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+          str().overwrite(start, end, isDynamic ? `'${url}'` : url, {
             contentOnly: true
           })
         }
@@ -338,12 +323,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.overwrite(
                   markerStartPos,
                   markerStartPos + preloadMarkerWithQuote.length,
-                  // the dep list includes the main chunk, so only need to
-                  // preload when there are actual other deps.
+                  // the dep list includes the main chunk, so only need to reload when there are
+                  // actual other deps. Don't include the assets dir if the default asset file names
+                  // are used, the path will be reconstructed by the import preload helper
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps].map((d) => JSON.stringify(d)).join(',')}]`
+                    ? `[${[...deps]
+                        .map((d) =>
+                          JSON.stringify(
+                            relativeBase
+                              ? path.relative(path.dirname(file), d)
+                              : d
+                          )
+                        )
+                        .join(',')}]`
                     : `[]`,
                   { contentOnly: true }
                 )
