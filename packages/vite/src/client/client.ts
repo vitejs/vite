@@ -39,7 +39,7 @@ try {
     location.reload()
   })
 } catch (error) {
-  console.log(`[vite] failed to connect to websocket (${error}). `)
+  console.error(`[vite] failed to connect to websocket (${error}). `)
 }
 
 function warnFailedFetch(err: Error, path: string | string[]) {
