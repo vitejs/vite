@@ -1,0 +1,7 @@
+{
+  "name": "pkg",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js"
+}

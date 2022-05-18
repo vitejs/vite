@@ -1,15 +1,17 @@
 /**
  * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
+import { existsSync, readdirSync, writeFileSync } from 'fs'
+import path from 'path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions } from 'execa'
 import execa from 'execa'
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs'
-import path from 'path'
 import type { ReleaseType } from 'semver'
 import semver from 'semver'
+import fs from 'fs-extra'
+import minimist from 'minimist'
 
-export const args = require('minimist')(process.argv.slice(2))
+export const args = minimist(process.argv.slice(2))
 
 export const isDryRun = !!args.dry
 
@@ -92,42 +94,61 @@ export function step(msg: string) {
 
 export function getVersionChoices(currentVersion: string) {
   const currentBeta = currentVersion.includes('beta')
+  const currentAlpha = currentVersion.includes('alpha')
+  const isStable = !currentBeta && !currentAlpha
 
-  const inc: (i: ReleaseType) => string = (i) =>
-    semver.inc(currentVersion, i, 'beta')!
+  function inc(i: ReleaseType, tag = currentAlpha ? 'alpha' : 'beta') {
+    return semver.inc(currentVersion, i, tag)!
+  }
 
-  const versionChoices = [
+  let versionChoices = [
     {
       title: 'next',
-      value: inc(currentBeta ? 'prerelease' : 'patch')
-    },
-    ...(currentBeta
-      ? [
-          {
-            title: 'stable',
-            value: inc('patch')
-          }
-        ]
-      : [
-          {
-            title: 'beta-minor',
-            value: inc('preminor')
-          },
-          {
-            title: 'beta-major',
-            value: inc('premajor')
-          },
-          {
-            title: 'minor',
-            value: inc('minor')
-          },
-          {
-            title: 'major',
-            value: inc('major')
-          }
-        ]),
-    { value: 'custom', title: 'custom' }
-  ].map((i) => {
+      value: inc(isStable ? 'patch' : 'prerelease')
+    }
+  ]
+
+  if (isStable) {
+    versionChoices.push(
+      {
+        title: 'beta-minor',
+        value: inc('preminor')
+      },
+      {
+        title: 'beta-major',
+        value: inc('premajor')
+      },
+      {
+        title: 'alpha-minor',
+        value: inc('preminor', 'alpha')
+      },
+      {
+        title: 'alpha-major',
+        value: inc('premajor', 'alpha')
+      },
+      {
+        title: 'minor',
+        value: inc('minor')
+      },
+      {
+        title: 'major',
+        value: inc('major')
+      }
+    )
+  } else if (currentAlpha) {
+    versionChoices.push({
+      title: 'beta',
+      value: inc('patch') + '-beta.0'
+    })
+  } else {
+    versionChoices.push({
+      title: 'stable',
+      value: inc('patch')
+    })
+  }
+  versionChoices.push({ value: 'custom', title: 'custom' })
+
+  versionChoices = versionChoices.map((i) => {
     i.title = `${i.title} (${i.value})`
     return i
   })
@@ -136,7 +157,7 @@ export function getVersionChoices(currentVersion: string) {
 }
 
 export function updateVersion(pkgPath: string, version: string): void {
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+  const pkg = fs.readJSONSync(pkgPath)
   pkg.version = version
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
@@ -150,7 +171,6 @@ export async function publishPackage(
     publicArgs.push(`--tag`, tag)
   }
   await runIfNotDry('npm', publicArgs, {
-    stdio: 'pipe',
     cwd: pkdDir
   })
 }
@@ -195,7 +215,8 @@ export async function logRecentCommits(pkgName: string) {
 }
 
 export async function updateTemplateVersions() {
-  const viteVersion = require('../packages/vite/package.json').version
+  const viteVersion = (await fs.readJSON('../packages/vite/package.json'))
+    .version
   if (/beta|alpha|rc/.test(viteVersion)) return
 
   const dir = path.resolve(__dirname, '../packages/create-vite')
@@ -209,7 +230,7 @@ export async function updateTemplateVersions() {
     pkg.devDependencies.vite = `^` + viteVersion
     if (template.startsWith('template-vue')) {
       pkg.devDependencies['@vitejs/plugin-vue'] =
-        `^` + require('../packages/plugin-vue/package.json').version
+        `^` + (await fs.readJSON('../packages/plugin-vue/package.json')).version
     }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }

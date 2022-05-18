@@ -1,57 +1,56 @@
 import fs from 'fs'
 import path from 'path'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
+import { performance } from 'perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { isCSSRequest, isDirectCSSRequest } from './css'
+import { parse as parseJS } from 'acorn'
+import type { Node } from 'estree'
+import { makeLegalIdentifier } from '@rollup/pluginutils'
+import type { ViteDevServer } from '..'
 import {
-  isBuiltin,
-  cleanUrl,
-  createDebugger,
-  generateCodeFrame,
-  injectQuery,
-  isDataUrl,
-  isExternalUrl,
-  isJSRequest,
-  prettifyUrl,
-  timeFrom,
-  normalizePath,
-  removeImportQuery,
-  unwrapId,
-  moduleListContains,
-  fsPathFromUrl
-} from '../utils'
+  CLIENT_DIR,
+  CLIENT_PUBLIC_PATH,
+  DEP_VERSION_RE,
+  FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
+} from '../constants'
 import {
   debugHmr,
   handlePrunedModules,
   lexAcceptedHmrDeps
 } from '../server/hmr'
 import {
-  FS_PREFIX,
-  CLIENT_DIR,
-  CLIENT_PUBLIC_PATH,
-  DEP_VERSION_RE,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
-} from '../constants'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
-import type { ViteDevServer } from '..'
-import { checkPublicFile } from './asset'
-import { parse as parseJS } from 'acorn'
-import type { Node } from 'estree'
-import { transformImportGlob } from '../importGlob'
-import { makeLegalIdentifier } from '@rollup/pluginutils'
+  cleanUrl,
+  createDebugger,
+  fsPathFromUrl,
+  generateCodeFrame,
+  injectQuery,
+  isBuiltin,
+  isDataUrl,
+  isExternalUrl,
+  isJSRequest,
+  moduleListContains,
+  normalizePath,
+  prettifyUrl,
+  removeImportQuery,
+  timeFrom,
+  unwrapId
+} from '../utils'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import { performance } from 'perf_hooks'
 import { transformRequest } from '../server/transformRequest'
 import {
-  isOptimizedDepFile,
   getDepsCacheDir,
+  isOptimizedDepFile,
   optimizedDepNeedsInterop
 } from '../optimizer'
+import { checkPublicFile } from './asset'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
+import { isCSSRequest, isDirectCSSRequest } from './css'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -59,7 +58,8 @@ const debug = createDebugger('vite:import-analysis')
 const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
-const canSkip = (id: string) => skipRE.test(id) || isDirectCSSRequest(id)
+export const canSkipImportAnalysis = (id: string) =>
+  skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
@@ -107,11 +107,6 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const resolve = config.createResolver({
-    preferRelative: true,
-    tryIndex: false,
-    extensions: []
-  })
   let server: ViteDevServer
 
   return {
@@ -131,7 +126,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
       const prettyImporter = prettifyUrl(importer, root)
 
-      if (canSkip(importer)) {
+      if (canSkipImportAnalysis(importer)) {
         isDebug && debug(colors.dim(`[skipped] ${prettyImporter}`))
         return null
       }
@@ -155,7 +150,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           ? `If you are using JSX, make sure to name the file with the .jsx or .tsx extension.`
           : `You may need to install appropriate plugins to handle the ${path.extname(
               importer
-            )} file format.`
+            )} file format, or if it's an asset, add "**/*${path.extname(
+              importer
+            )}" to \`assetsInclude\` in your configuration.`
 
         this.error(
           `Failed to parse source for import analysis because the content ` +
@@ -351,44 +348,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
           } else if (prop === '.env') {
             hasEnv = true
-          } else if (prop === '.glo' && source[end + 4] === 'b') {
-            // transform import.meta.glob()
-            // e.g. `import.meta.glob('glob:./dir/*.js')`
-            const {
-              imports,
-              importsString,
-              exp,
-              endIndex,
-              base,
-              pattern,
-              isEager
-            } = await transformImportGlob(
-              source,
-              start,
-              importer,
-              index,
-              root,
-              config.logger,
-              normalizeUrl,
-              resolve
-            )
-            str().prepend(importsString)
-            str().overwrite(expStart, endIndex, exp, { contentOnly: true })
-            imports.forEach((url) => {
-              url = url.replace(base, '/')
-              importedUrls.add(url)
-              if (isEager) staticImportedUrls.add(url)
-            })
-            if (!(importerModule.file! in server._globImporters)) {
-              server._globImporters[importerModule.file!] = {
-                module: importerModule,
-                importGlobs: []
-              }
-            }
-            server._globImporters[importerModule.file!].importGlobs.push({
-              base,
-              pattern
-            })
           }
           continue
         }
@@ -533,7 +492,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const url = rawUrl
             .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
             .trim()
-          if (!hasViteIgnore && !isSupportedDynamicImport(url)) {
+          if (!hasViteIgnore) {
             this.warn(
               `\n` +
                 colors.cyan(importerModule.file) +
@@ -692,27 +651,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
-}
-
-/**
- * https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
- * This is probably less accurate but is much cheaper than a full AST parse.
- */
-function isSupportedDynamicImport(url: string) {
-  url = url.trim().slice(1, -1)
-  // must be relative
-  if (!url.startsWith('./') && !url.startsWith('../')) {
-    return false
-  }
-  // must have extension
-  if (!path.extname(url)) {
-    return false
-  }
-  // must be more specific if importing from same dir
-  if (url.startsWith('./${') && url.indexOf('/') === url.lastIndexOf('/')) {
-    return false
-  }
-  return true
 }
 
 type ImportNameSpecifier = { importedName: string; localName: string }

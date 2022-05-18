@@ -2,7 +2,7 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -38,15 +38,10 @@ export interface Options {
    * @default true
    */
   jsxPure?: boolean
-
   /**
    * Babel configuration applied in both dev and prod.
    */
   babel?: BabelOptions
-  /**
-   * @deprecated Use `babel.parserOpts.plugins` instead
-   */
-  parserPlugins?: ParserOptions['plugins']
 }
 
 export type BabelOptions = Omit<
@@ -104,7 +99,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   babelOptions.presets ||= []
   babelOptions.overrides ||= []
   babelOptions.parserOpts ||= {} as any
-  babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
+  babelOptions.parserOpts.plugins ||= []
 
   // Support patterns like:
   // - import * as React from 'react';
@@ -154,7 +149,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     },
     async transform(code, id, options) {
       const ssr = typeof options === 'boolean' ? options : options?.ssr === true
-      // File extension could be mocked/overriden in querystring.
+      // File extension could be mocked/overridden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =
         querystring.match(fileExtensionRE) ||
@@ -373,10 +368,3 @@ viteReact.preambleCode = preambleCode
 function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
 }
-
-// overwrite for cjs require('...')() usage
-// The following lines are inserted by scripts/patchEsbuildDist.ts,
-// this doesn't bundle correctly after esbuild 0.14.4
-//
-// module.exports = viteReact
-// viteReact['default'] = viteReact

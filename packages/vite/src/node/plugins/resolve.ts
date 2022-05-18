@@ -1,35 +1,36 @@
 import fs from 'fs'
 import path from 'path'
-import type { Plugin } from '../plugin'
 import colors from 'picocolors'
+import type { PartialResolvedId } from 'rollup'
+import { resolve as _resolveExports } from 'resolve.exports'
+import type { Plugin } from '../plugin'
 import {
-  FS_PREFIX,
-  SPECIAL_QUERY_RE,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
-  KNOWN_ESM_MAIN_FIELDS,
+  DEP_VERSION_RE,
+  FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
-  DEP_VERSION_RE
+  SPECIAL_QUERY_RE
 } from '../constants'
 import {
-  isBuiltin,
   bareImportRE,
-  createDebugger,
-  injectQuery,
-  isExternalUrl,
-  isObject,
-  normalizePath,
-  fsPathFromId,
-  ensureVolumeInPath,
-  resolveFrom,
-  isDataUrl,
   cleanUrl,
-  slash,
-  nestedResolveFrom,
+  createDebugger,
+  ensureVolumeInPath,
+  fsPathFromId,
+  getPotentialTsSrcPaths,
+  injectQuery,
+  isBuiltin,
+  isDataUrl,
+  isExternalUrl,
   isFileReadable,
-  isTsRequest,
+  isObject,
   isPossibleTsOutput,
-  getPotentialTsSrcPaths
+  isTsRequest,
+  nestedResolveFrom,
+  normalizePath,
+  resolveFrom,
+  slash
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
@@ -38,9 +39,7 @@ import {
   optimizedDepInfoFromId
 } from '../optimizer'
 import type { OptimizedDepInfo } from '../optimizer'
-import type { ViteDevServer, SSROptions } from '..'
-import type { PartialResolvedId } from 'rollup'
-import { resolve as _resolveExports } from 'resolve.exports'
+import type { SSROptions, ViteDevServer } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
 
@@ -129,10 +128,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options: InternalResolveOptions = {
         isRequire,
-
         ...baseOptions,
-        isFromTsImporter: isTsRequest(importer ?? ''),
         scan: resolveOpts?.scan ?? baseOptions.scan
+      }
+
+      if (importer) {
+        if (isTsRequest(importer)) {
+          options.isFromTsImporter = true
+        } else {
+          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
+        }
       }
 
       let res: string | PartialResolvedId | undefined
@@ -168,7 +174,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // relative
-      if (id.startsWith('.') || (preferRelative && /^\w/.test(id))) {
+      if (
+        id.startsWith('.') ||
+        (preferRelative && /^\w/.test(id)) ||
+        importer?.endsWith('.html')
+      ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
         // handle browser field mapping for relative imports
@@ -778,11 +788,6 @@ export function resolvePackageEntry(
 
     if (!entryPoint || entryPoint.endsWith('.mjs')) {
       for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
-        // If the initiator is a `require` call, don't use the ESM entries
-        if (options.isRequire && KNOWN_ESM_MAIN_FIELDS.includes(field)) {
-          continue
-        }
-
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
@@ -826,10 +831,10 @@ export function resolvePackageEntry(
         return resolvedEntryPoint
       }
     }
-    packageEntryFailure(id)
   } catch (e) {
     packageEntryFailure(id, e.message)
   }
+  packageEntryFailure(id)
 }
 
 function packageEntryFailure(id: string, details?: string) {
