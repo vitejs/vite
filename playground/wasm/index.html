@@ -18,8 +18,8 @@
 </div>
 
 <script type="module">
-  import light from './light.wasm'
-  import heavy from './heavy.wasm'
+  import light from './light.wasm?init'
+  import heavy from './heavy.wasm?init'
   import myWorker from './worker?worker'
 
   const w = new myWorker()
@@ -32,7 +32,7 @@
       imports: {
         imported_func: (res) => (resultElement.textContent = res)
       }
-    })
+    }).then((i) => i.exports)
     exported_func()
   }
 

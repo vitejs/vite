@@ -37,14 +37,14 @@ const wasmHelper = async (opts = {}, url: string) => {
       result = await WebAssembly.instantiate(buffer, opts)
     }
   }
-  return result.instance.exports
+  return result.instance
 }
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmPlugin = (config: ResolvedConfig): Plugin => {
+export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
   return {
-    name: 'vite:wasm',
+    name: 'vite:wasm-helper',
 
     resolveId(id) {
       if (id === wasmHelperId) {
@@ -57,7 +57,7 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
         return `export default ${wasmHelperCode}`
       }
 
-      if (!id.endsWith('.wasm')) {
+      if (!id.endsWith('.wasm?init')) {
         return
       }
 

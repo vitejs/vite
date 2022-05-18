@@ -10,7 +10,7 @@ import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmPlugin } from './wasm'
+import { wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
@@ -64,7 +64,7 @@ export async function resolvePlugins(
       },
       isBuild
     ),
-    wasmPlugin(config),
+    wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
