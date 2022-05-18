@@ -26,7 +26,11 @@ export default defineConfig({
             return 'src-import'
           }
         }
-      }
+      },
+      external: [
+        '/img/aaaSMPTE-color-bars.png',
+        './img/aaaSMPTE-color-bars.png'
+      ]
     }
   },
   css: {

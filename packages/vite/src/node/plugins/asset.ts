@@ -53,8 +53,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (publicFile) {
         return id
       }
-
-      return id
     },
 
     async load(id) {
@@ -78,12 +76,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       id = id.replace(urlRE, '$1').replace(/[\?&]$/, '')
-      const url = await fileToUrl(id, config, this).catch(() => {
-        config.logger.warnOnce(
-          `\n${id} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
-        )
-        return id
-      })
+      const url = await fileToUrl(id, config, this)
       return `export default ${JSON.stringify(url)}`
     },
 
