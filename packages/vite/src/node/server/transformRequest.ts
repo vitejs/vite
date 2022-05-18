@@ -188,7 +188,7 @@ async function doTransform(
     if (isObject(loadResult)) {
       code = loadResult.code
       map = loadResult.map
-    } else {
+    } else if (typeof loadResult === 'string') {
       code = loadResult
     }
   }
