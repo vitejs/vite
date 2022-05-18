@@ -27,6 +27,7 @@ import {
   isRelativeBase,
   normalizePath,
   processSrcSet,
+  removeCommonJsEntryQuery,
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -604,7 +605,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           (chunk) =>
             chunk.type === 'chunk' &&
             chunk.isEntry &&
-            chunk.facadeModuleId === id
+            chunk.facadeModuleId &&
+            removeCommonJsEntryQuery(chunk.facadeModuleId) === id
         ) as OutputChunk | undefined
 
         let canInlineEntry = false

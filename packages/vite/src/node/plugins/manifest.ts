@@ -2,7 +2,7 @@ import path from 'path'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { normalizePath } from '../utils'
+import { normalizePath, removeCommonJsEntryQuery } from '../utils'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -33,7 +33,10 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function getChunkName(chunk: OutputChunk) {
         if (chunk.facadeModuleId) {
           let name = normalizePath(
-            path.relative(config.root, chunk.facadeModuleId)
+            path.relative(
+              config.root,
+              removeCommonJsEntryQuery(chunk.facadeModuleId)
+            )
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)

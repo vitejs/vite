@@ -280,6 +280,11 @@ export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
+const commonJsEntryQueryRE = /(\?|&)commonjs-entry(?:&|$)/
+export function removeCommonJsEntryQuery(url: string): string {
+  return url.replace(commonJsEntryQueryRE, '').replace(trailingSeparatorRE, '')
+}
+
 export function isRelativeBase(base: string): boolean {
   return base === '' || base.startsWith('.')
 }
