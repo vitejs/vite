@@ -19,7 +19,7 @@ const envConfig = {
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
-      target: 'es2018',
+      target: 'es2020',
       include: ['src/client/env.ts'],
       baseUrl: path.resolve(__dirname, 'src/env'),
       paths: {
@@ -41,7 +41,7 @@ const clientConfig = {
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
-      target: 'es2018',
+      target: 'es2020',
       include: ['src/client/**/*.ts'],
       baseUrl: path.resolve(__dirname, 'src/client'),
       paths: {
@@ -128,7 +128,7 @@ const createNodeConfig = (isProduction) => {
       typescript({
         tsconfig: 'src/node/tsconfig.json',
         module: 'esnext',
-        target: 'es2019',
+        target: 'es2020',
         include: ['src/**/*.ts', 'types/**'],
         exclude: ['src/**/__tests__/**'],
         esModuleInterop: true,

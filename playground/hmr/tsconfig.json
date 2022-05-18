@@ -3,12 +3,12 @@
   "include": ["."],
   "exclude": ["**/dist/**", "**/__tests__/**"],
   "compilerOptions": {
-    "target": "es2019",
-    "module": "esnext",
+    "target": "ES2020",
+    "module": "ESNext",
     "outDir": "dist",
     "allowJs": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "baseUrl": ".",
     "jsx": "preserve",
     "types": ["vite/client", "node"]

@@ -3,7 +3,7 @@
   "include": ["./", "../../types"],
   "compilerOptions": {
     "outDir": "../../dist/client",
-    "module": "esnext",
+    "module": "ESNext",
     "types": [],
     "lib": ["ESNext", "DOM"],
     "declaration": false
