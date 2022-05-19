@@ -1,7 +1,7 @@
-// @ts-check
-const fs = require('fs')
-const path = require('path')
-const express = require('express')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import express from 'express'
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
 
@@ -22,8 +22,9 @@ const DYNAMIC_STYLES = `
   </style>
 `
 
-async function createServer(root = process.cwd(), hmrPort) {
-  const resolve = (p) => path.resolve(__dirname, p)
+export async function createServer(root = process.cwd(), hmrPort) {
+  const { createServer } = await import('vite')
+  const resolve = (p) => path.resolve(fileURLToPath(import.meta.url), '..', p)
 
   const app = express()
 
@@ -31,7 +32,7 @@ async function createServer(root = process.cwd(), hmrPort) {
    * @type {import('vite').ViteDevServer}
    */
   let vite
-  vite = await require('vite').createServer({
+  vite = await createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -93,6 +94,3 @@ if (!isTest) {
     })
   )
 }
-
-// for test use
-exports.createServer = createServer
