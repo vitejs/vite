@@ -21,7 +21,11 @@ export default defineConfig({
       if (log.match(/experimental|jit engine|emitted file|tailwind/i))
         return false
     },
-    maxThreads: process.env.CI ? 4 : undefined,
+    maxThreads: process.env.CI
+      ? process.platform === 'win32'
+        ? 2
+        : 4
+      : undefined,
     minThreads: process.env.CI ? 1 : undefined
   },
   esbuild: {
