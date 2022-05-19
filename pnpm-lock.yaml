@@ -49,6 +49,7 @@ importers:
       npm-run-all: ^4.1.5
       picocolors: ^1.0.0
       playwright-chromium: ^1.21.1
+      pnpm: ^7.1.2
       prettier: 2.6.2
       prompts: ^2.4.2
       rimraf: ^3.0.2
@@ -103,6 +104,7 @@ importers:
       npm-run-all: 4.1.5
       picocolors: 1.0.0
       playwright-chromium: 1.21.1
+      pnpm: 7.1.2
       prettier: 2.6.2
       prompts: 2.4.2
       rimraf: 3.0.2
@@ -6455,6 +6457,12 @@ packages:
   /pngjs/6.0.0:
     resolution: {integrity: sha512-TRzzuFRRmEoSW/p1KVAmiOgPco2Irlah+bGFCeNfJXxxYGwSw7YwAOAcd7X28K/m5bjBWKsC29KyoMfHbypayg==}
     engines: {node: '>=12.13.0'}
+    dev: true
+
+  /pnpm/7.1.2:
+    resolution: {integrity: sha512-nZieltHsIEvr5vGcDM4JchBixUk1Esq+XewDP9RCiPAPxRv5LzDhGujgsrtoETyXBsQ9mclXSPppNr80ya4Rnw==}
+    engines: {node: '>=14.19'}
+    hasBin: true
     dev: true
 
   /postcss-import/14.1.0_postcss@8.4.13:

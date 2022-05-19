@@ -72,6 +72,7 @@
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.21.1",
+    "pnpm": "^7.1.2",
     "prettier": "2.6.2",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
