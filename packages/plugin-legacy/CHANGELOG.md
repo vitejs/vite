@@ -1,3 +1,13 @@
+## 2.0.0-alpha.1 (2022-05-19)
+
+* fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)
+* fix(plugin-legacy): fail to get the fileName (#5250) ([c7fc1d4](https://github.com/vitejs/vite/commit/c7fc1d4)), closes [#5250](https://github.com/vitejs/vite/issues/5250)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+* feat!: relative base (#7644) ([09648c2](https://github.com/vitejs/vite/commit/09648c2)), closes [#7644](https://github.com/vitejs/vite/issues/7644)
+* docs: use latest core-js unpkg link (#8190) ([102b678](https://github.com/vitejs/vite/commit/102b678)), closes [#8190](https://github.com/vitejs/vite/issues/8190)
+
+
+
 ## 2.0.0-alpha.0 (2022-05-13)
 
 * chore: bump minors and rebuild lock (#8074) ([aeb5b74](https://github.com/vitejs/vite/commit/aeb5b74)), closes [#8074](https://github.com/vitejs/vite/issues/8074)
