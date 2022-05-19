@@ -14,7 +14,7 @@ import type {
   NodeTransform,
   TextNode
 } from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
+import { NodeTypes, findProp } from '@vue/compiler-dom'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
@@ -121,14 +121,261 @@ export function addToHTMLProxyTransformResult(
   htmlProxyResult.set(hash, code)
 }
 
-// this extends the config in @vue/compiler-sfc with <link href>
-export const assetAttrsConfig: Record<string, string[]> = {
-  link: ['href'],
-  video: ['src', 'poster'],
-  source: ['src', 'srcset'],
-  img: ['src', 'srcset'],
-  image: ['xlink:href', 'href'],
-  use: ['xlink:href', 'href']
+export interface HtmlAssetSource {
+  tag: string
+  attributes: string[]
+  type: 'src' | 'srcset'
+  filter?: (attribute: string, value: string, node: ElementNode) => boolean
+}
+
+interface AttributeNodeContext {
+  context: {
+    sourceType: 'src' | 'srcset'
+  }
+}
+
+export const defaultHtmlAssetSources: HtmlAssetSource[] = [
+  {
+    tag: 'audio',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'embed',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'img',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'img',
+    type: 'srcset',
+    attributes: ['srcset']
+  },
+  {
+    tag: 'input',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'object',
+    type: 'src',
+    attributes: ['data']
+  },
+  {
+    tag: 'source',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'source',
+    type: 'srcset',
+    attributes: ['srcset']
+  },
+  {
+    tag: 'track',
+    type: 'src',
+    attributes: ['src']
+  },
+  {
+    tag: 'video',
+    type: 'src',
+    attributes: ['poster', 'src']
+  },
+  {
+    tag: 'image',
+    type: 'src',
+    attributes: ['href', 'xlink:href']
+  },
+  {
+    tag: 'use',
+    type: 'src',
+    attributes: ['href', 'xlink:href']
+  },
+  {
+    tag: 'link',
+    type: 'src',
+    attributes: ['href'],
+    filter: (attribute, value, node) => {
+      const relProp = findProp(node, 'rel')
+      if (
+        relProp &&
+        relProp.type === NodeTypes.ATTRIBUTE &&
+        relProp.value?.content &&
+        [
+          'stylesheet',
+          'icon',
+          'shortcut icon',
+          'mask-icon',
+          'apple-touch-icon',
+          'apple-touch-icon-precomposed',
+          'apple-touch-startup-image',
+          'manifest',
+          'prefetch',
+          'preload'
+        ].includes(relProp.value.content)
+      ) {
+        return true
+      }
+
+      const itempropProp = findProp(node, 'itemprop')
+      if (
+        itempropProp &&
+        itempropProp.type === NodeTypes.ATTRIBUTE &&
+        itempropProp.value?.content &&
+        [
+          'image',
+          'logo',
+          'screenshot',
+          'thumbnailurl',
+          'contenturl',
+          'downloadurl',
+          'duringmedia',
+          'embedurl',
+          'installurl',
+          'layoutimage'
+        ].includes(itempropProp.value.content)
+      ) {
+        return true
+      }
+
+      return false
+    }
+  },
+  {
+    tag: 'link',
+    type: 'srcset',
+    attributes: ['imagesrcset'],
+    filter: (attribute, value, node) => {
+      const relProp = findProp(node, 'rel')
+      if (
+        relProp &&
+        relProp.type === NodeTypes.ATTRIBUTE &&
+        relProp.value?.content &&
+        [
+          'stylesheet',
+          'icon',
+          'shortcut icon',
+          'mask-icon',
+          'apple-touch-icon',
+          'apple-touch-icon-precomposed',
+          'apple-touch-startup-image',
+          'manifest',
+          'prefetch',
+          'preload'
+        ].includes(relProp.value.content)
+      ) {
+        return true
+      }
+
+      return false
+    }
+  },
+  {
+    tag: 'meta',
+    type: 'src',
+    attributes: ['content'],
+    filter: (attribute, value, node) => {
+      const nameProp = findProp(node, 'name')
+      if (
+        nameProp &&
+        nameProp.type === NodeTypes.ATTRIBUTE &&
+        nameProp.value?.content &&
+        [
+          'msapplication-tileimage',
+          'msapplication-square70x70logo',
+          'msapplication-square150x150logo',
+          'msapplication-wide310x150logo',
+          'msapplication-square310x310logo',
+          'msapplication-config',
+          'twitter:image'
+        ].includes(nameProp.value.content)
+      ) {
+        return true
+      }
+
+      const propertyProp = findProp(node, 'property')
+      if (
+        propertyProp &&
+        propertyProp.type === NodeTypes.ATTRIBUTE &&
+        propertyProp.value?.content &&
+        [
+          'og:image',
+          'og:image:url',
+          'og:image:secure_url',
+          'og:audio',
+          'og:audio:secure_url',
+          'og:video',
+          'og:video:secure_url',
+          'vk:image'
+        ].includes(propertyProp.value.content)
+      ) {
+        return true
+      }
+
+      const itempropProp = findProp(node, 'itemprop')
+      if (
+        itempropProp &&
+        itempropProp.type === NodeTypes.ATTRIBUTE &&
+        itempropProp.value?.content &&
+        [
+          'image',
+          'logo',
+          'screenshot',
+          'thumbnailurl',
+          'contenturl',
+          'downloadurl',
+          'duringmedia',
+          'embedurl',
+          'installurl',
+          'layoutimage'
+        ].includes(itempropProp.value.content)
+      ) {
+        return true
+      }
+
+      return false
+    }
+  },
+  {
+    tag: 'icon-uri',
+    type: 'src',
+    attributes: ['content']
+  }
+]
+
+export function getHtmlAssetSourceAttributes(
+  node: ElementNode,
+  assetSources: HtmlAssetSource[]
+) {
+  return assetSources
+    .filter((assetSource) => assetSource.tag === node.tag)
+    .flatMap((assetSource) => {
+      return assetSource.attributes.reduce((matches, name) => {
+        const attribute = node.props.find((prop) => {
+          return prop.type !== NodeTypes.DIRECTIVE && prop.name === name
+        }) as AttributeNode | undefined
+        if (
+          attribute &&
+          attribute.value &&
+          (assetSource.filter?.(
+            attribute.name,
+            attribute.value.content,
+            node
+          ) ??
+            true)
+        ) {
+          return [
+            ...matches,
+            { ...attribute, context: { sourceType: assetSource.type } }
+          ]
+        }
+        return matches
+      }, [] as (AttributeNode & AttributeNodeContext)[])
+    })
 }
 
 export const isAsyncScriptMap = new WeakMap<
@@ -249,7 +496,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let js = ''
         const s = new MagicString(html)
-        const assetUrls: AttributeNode[] = []
+        const assetUrls: (AttributeNode & AttributeNodeContext)[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
         const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
@@ -331,38 +578,33 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttrs = assetAttrsConfig[node.tag]
-          if (assetAttrs) {
-            for (const p of node.props) {
-              if (
-                p.type === NodeTypes.ATTRIBUTE &&
-                p.value &&
-                assetAttrs.includes(p.name)
-              ) {
-                // assetsUrl may be encodeURI
-                const url = decodeURI(p.value.content)
-                if (!isExcludedUrl(url)) {
-                  if (node.tag === 'link' && isCSSRequest(url)) {
-                    // CSS references, convert to import
-                    const importExpression = `\nimport ${JSON.stringify(url)}`
-                    styleUrls.push({
-                      url,
-                      start: node.loc.start.offset,
-                      end: node.loc.end.offset
-                    })
-                    js += importExpression
-                  } else {
-                    assetUrls.push(p)
-                  }
-                } else if (checkPublicFile(url, config)) {
-                  s.overwrite(
-                    p.value.loc.start.offset,
-                    p.value.loc.end.offset,
-                    `"${normalizePublicPath(url, publicBase)}"`,
-                    { contentOnly: true }
-                  )
-                }
+          const assetSourceAttrs = getHtmlAssetSourceAttributes(
+            node,
+            defaultHtmlAssetSources
+          )
+          for (const assetSourceAttr of assetSourceAttrs) {
+            // assetsUrl may be encodeURI
+            const url = decodeURI(assetSourceAttr.value!.content)
+            if (!isExcludedUrl(url)) {
+              if (node.tag === 'link' && isCSSRequest(url)) {
+                // CSS references, convert to import
+                const importExpression = `\nimport ${JSON.stringify(url)}`
+                styleUrls.push({
+                  url,
+                  start: node.loc.start.offset,
+                  end: node.loc.end.offset
+                })
+                js += importExpression
+              } else {
+                assetUrls.push(assetSourceAttr)
               }
+            } else if (checkPublicFile(url, config)) {
+              s.overwrite(
+                assetSourceAttr.value!.loc.start.offset,
+                assetSourceAttr.value!.loc.end.offset,
+                `"${normalizePublicPath(url, publicBase)}"`,
+                { contentOnly: true }
+              )
             }
           }
           // <tag style="... url(...) ..."></tag>
@@ -445,7 +687,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ) {
             try {
               const url =
-                attr.name === 'srcset'
+                attr.context.sourceType === 'srcset'
                   ? await processSrcSet(content, ({ url }) =>
                       urlToBuiltUrl(url, id, config, this)
                     )

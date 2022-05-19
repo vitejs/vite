@@ -9,7 +9,8 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
+  defaultHtmlAssetSources,
+  getHtmlAssetSourceAttributes,
   getScriptInfo,
   resolveHtmlTransforms,
   traverseHtml
@@ -200,18 +201,14 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       })
     }
 
-    // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.tag]
-    if (assetAttrs) {
-      for (const p of node.props) {
-        if (
-          p.type === NodeTypes.ATTRIBUTE &&
-          p.value &&
-          assetAttrs.includes(p.name)
-        ) {
-          processNodeUrl(p, s, config, htmlPath, originalUrl)
-        }
-      }
+    // For asset references in index.html, also generate an import
+    // statement for each - this will be handled by the asset plugin
+    const assetSourceAttrs = getHtmlAssetSourceAttributes(
+      node,
+      defaultHtmlAssetSources
+    )
+    for (const assetSourceAttr of assetSourceAttrs) {
+      processNodeUrl(assetSourceAttr, s, config, htmlPath, originalUrl)
     }
   })
 
