@@ -1,6 +1,8 @@
 /* eslint-disable node/no-extraneous-import */
 import path from 'path'
 import { createHash } from 'crypto'
+import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 import { build } from 'vite'
 import MagicString from 'magic-string'
 import type {
@@ -171,6 +173,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
+  const _require = createRequire(import.meta.url)
   const legacyPostPlugin: Plugin = {
     name: 'vite:legacy-post-process',
     enforce: 'post',
@@ -331,7 +334,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
                 ? {
-                    version: require('core-js/package.json').version,
+                    version: _require('core-js/package.json').version,
                     proposals: false
                   }
                 : undefined,
@@ -557,7 +560,7 @@ async function buildPolyfillChunk(
   minify = minify ? 'terser' : false
   const res = await build({
     // so that everything is resolved from here
-    root: __dirname,
+    root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
     logLevel: 'error',
     plugins: [polyfillsPlugin(imports, externalSystemJS)],
