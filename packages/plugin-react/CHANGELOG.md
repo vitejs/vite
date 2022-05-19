@@ -1,3 +1,11 @@
+## 2.0.0-alpha.1 (2022-05-19)
+
+* fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+* chore: enable `import/no-duplicates` eslint rule (#8199) ([11243de](https://github.com/vitejs/vite/commit/11243de)), closes [#8199](https://github.com/vitejs/vite/issues/8199)
+
+
+
 ## 2.0.0-alpha.0 (2022-05-13)
 
 * chore: restore-jsx.spec.ts lint (#8004) ([f1af941](https://github.com/vitejs/vite/commit/f1af941)), closes [#8004](https://github.com/vitejs/vite/issues/8004)
