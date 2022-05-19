@@ -534,6 +534,34 @@ export function removeDirSync(dir: string) {
   }
 }
 
+const REMOVE_DIR_TIMEOUT = 5000
+const rmdir = promisify(fs.rm ?? fs.rmdir) // TODO: Remove after support for Node 12 is dropped
+export async function removeDir(dir: string) {
+  const t0 = Date.now()
+  const attempt = async () => {
+    try {
+      await rmdir(dir, { recursive: true })
+    } catch (e) {
+      if (e.code === 'ENOENT') {
+        return
+      }
+      if (e.code === 'ENOTEMPTY' || e.code === 'EPERM') {
+        if (Date.now() - t0 < REMOVE_DIR_TIMEOUT) {
+          // There's no delay here, testing showed it wasn't required.
+          // If the remove doesn't succeed the first time, it almost always succeed immediately afterwards.
+          // In rare cases two or three attempts are needed before the dir is successfully removed,
+          // typically taking <1s total.
+          await attempt()
+          return
+        }
+      }
+
+      throw e
+    }
+  }
+  await attempt()
+}
+
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
