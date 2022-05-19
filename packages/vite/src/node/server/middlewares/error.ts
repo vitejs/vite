@@ -1,10 +1,10 @@
-import chalk from 'chalk'
-import { RollupError } from 'rollup'
-import { ViteDevServer } from '../..'
-import { Connect } from 'types/connect'
-import { pad } from '../../utils'
+import colors from 'picocolors'
+import type { RollupError } from 'rollup'
+import type { Connect } from 'types/connect'
 import strip from 'strip-ansi'
-import { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
+import { pad } from '../../utils'
+import type { ViteDevServer } from '../..'
 
 export function prepareError(err: Error | RollupError): ErrorPayload['err'] {
   // only copy the information we need and avoid serializing unnecessary
@@ -25,9 +25,9 @@ export function buildErrorMessage(
   args: string[] = [],
   includeStack = true
 ): string {
-  if (err.plugin) args.push(`  Plugin: ${chalk.magenta(err.plugin)}`)
-  if (err.id) args.push(`  File: ${chalk.cyan(err.id)}`)
-  if (err.frame) args.push(chalk.yellow(pad(err.frame)))
+  if (err.plugin) args.push(`  Plugin: ${colors.magenta(err.plugin)}`)
+  if (err.id) args.push(`  File: ${colors.cyan(err.id)}`)
+  if (err.frame) args.push(colors.yellow(pad(err.frame)))
   if (includeStack && err.stack) args.push(pad(cleanStack(err.stack)))
   return args.join('\n')
 }
@@ -39,6 +39,23 @@ function cleanStack(stack: string) {
     .join('\n')
 }
 
+export function logError(server: ViteDevServer, err: RollupError): void {
+  const msg = buildErrorMessage(err, [
+    colors.red(`Internal server error: ${err.message}`)
+  ])
+
+  server.config.logger.error(msg, {
+    clear: true,
+    timestamp: true,
+    error: err
+  })
+
+  server.ws.send({
+    type: 'error',
+    err: prepareError(err)
+  })
+}
+
 export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false
@@ -46,52 +63,29 @@ export function errorMiddleware(
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
-    const msg = buildErrorMessage(err, [
-      chalk.red(`Internal server error: ${err.message}`)
-    ])
-
-    server.config.logger.error(msg, {
-      clear: true,
-      timestamp: true
-    })
-
-    server.ws.send({
-      type: 'error',
-      err: prepareError(err)
-    })
+    logError(server, err)
 
     if (allowNext) {
       next()
     } else {
-      if (err instanceof AccessRestrictedError) {
-        res.statusCode = 403
-        res.write(renderErrorHTML(err.message))
-        res.end()
-      }
       res.statusCode = 500
-      res.end()
+      res.end(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Error</title>
+            <script type="module">
+              import { ErrorOverlay } from '/@vite/client'
+              document.body.appendChild(new ErrorOverlay(${JSON.stringify(
+                prepareError(err)
+              ).replace(/</g, '\\u003c')}))
+            </script>
+          </head>
+          <body>
+          </body>
+        </html>
+      `)
     }
   }
-}
-
-export class AccessRestrictedError extends Error {
-  constructor(msg: string, public url: string, public serveRoot: string) {
-    super(msg)
-  }
-}
-
-export function renderErrorHTML(msg: string): string {
-  // to have syntax highlighting and autocompletion in IDE
-  const html = String.raw
-  return html`
-    <body>
-      <h1>403 Restricted</h1>
-      <p>${msg.replace(/\n/g, '<br/>')}</p>
-      <style>
-        body {
-          padding: 1em 2em;
-        }
-      </style>
-    </body>
-  `
 }

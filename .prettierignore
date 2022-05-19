@@ -1,6 +1,10 @@
-docs/.vitepress/dist/
-packages/vite/dist/
-packages/plugin-vue/dist/
 packages/*/CHANGELOG.md
+playground-temp/
+dist/
+temp/
 LICENSE.md
-.prettierrc
+pnpm-lock.yaml
+pnpm-workspace.yaml
+playground/tsconfig-json-load-error/has-error/tsconfig.json
+playground/html/invalid.html
+playground/worker/classic-worker.js

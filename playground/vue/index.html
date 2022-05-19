@@ -1,0 +1,10 @@
+<div id="app"></div>
+<script type="module">
+  import { createApp, defineCustomElement } from 'vue'
+  import Main from './Main.vue'
+  import CustomElement from './CustomElement.ce.vue'
+
+  createApp(Main).mount('#app')
+  customElements.define('custom-element', defineCustomElement(CustomElement))
+</script>
+<custom-element label="count"></custom-element>

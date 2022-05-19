@@ -1,4 +1,6 @@
-import { scriptRE, commentRE } from '../optimizer/scan'
+import { describe, expect, test } from 'vitest'
+import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
+import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {
   const scriptContent = `import { defineComponent } from 'vue'
@@ -29,7 +31,8 @@ describe('optimizer-scan:script-test', () => {
     scriptRE.lastIndex = 0
     const ret = scriptRE.exec(
       `<template>
-        <!--  <script >var test = null</script> -->
+        <!--  <script >var test1 = null</script> -->
+        <!--  <script >var test2 = null</script> -->
       </template>`.replace(commentRE, '')
     )
     expect(ret).toEqual(null)
@@ -63,5 +66,55 @@ describe('optimizer-scan:script-test', () => {
     const [, tag1, content1] = scriptRE.exec(`<script>var test = null</script>`)
     expect(tag1).toEqual('<script>')
     expect(content1).toEqual('var test = null')
+  })
+
+  test('imports regex should work', () => {
+    const shouldMatchArray = [
+      `import 'vue'`,
+      `import { foo } from 'vue'`,
+      `import foo from 'vue'`,
+      `;import foo from 'vue'`,
+      `   import foo from 'vue'`,
+      `import { foo
+      } from 'vue'`,
+      `import bar, { foo } from 'vue'`,
+      `import foo from 'vue';`,
+      `*/ import foo from 'vue';`,
+      `import foo from 'vue';//comment`,
+      `import foo from 'vue';/*comment
+      */`
+      // Skipped, false negatives with current regex
+      // `import typescript from 'typescript'`,
+      // import type, {foo} from 'vue'
+    ]
+
+    shouldMatchArray.forEach((str) => {
+      importsRE.lastIndex = 0
+      expect(importsRE.exec(str)[1]).toEqual("'vue'")
+    })
+
+    const shouldFailArray = [
+      `testMultiline("import", {
+        body: "ok" });`,
+      `//;import foo from 'vue'`,
+      `import type { Bar } from 'foo'`,
+      `import type{ Bar } from 'foo'`,
+      `import type Bar from 'foo'`
+    ]
+    shouldFailArray.forEach((str) => {
+      expect(importsRE.test(str)).toBe(false)
+    })
+  })
+
+  test('script comments test', () => {
+    multilineCommentsRE.lastIndex = 0
+    let ret = `/*
+      export default { }
+      */`.replace(multilineCommentsRE, '')
+    expect(ret).not.toContain('export default')
+
+    singlelineCommentsRE.lastIndex = 0
+    ret = `//export default { }`.replace(singlelineCommentsRE, '')
+    expect(ret).not.toContain('export default')
   })
 })

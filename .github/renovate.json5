@@ -1,30 +1,34 @@
 {
-  "extends": [
-    "config:base",
-    "schedule:weekly",
-    "group:allNonMajor"
-  ],
-  "ignorePaths": [
-    "packages/playground/**",
-    "packages/create-app/template-*/**",
-    "**/__tests__/**"
-  ],
+  "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
+  "labels": ["dependencies"],
+  "ignorePaths": ["**/__tests__/**"],
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
-  "stabilityDays": 7,
+  "packageRules": [
+    {
+      "depTypeList": ["peerDependencies"],
+      "enabled": false
+    }
+  ],
   "ignoreDeps": [
     // manually bumping
     "esbuild",
     "rollup",
-    "@vue/compiler-sfc",
     "node",
+    "ts-node",
+    "typescript",
 
     // breaking changes
-    "source-map",
-    "react-refresh",
+    "cac", // `cac:v6.7.10+` has breaking changes
+    "react-router", // `react-router:v6.0.0+` has breaking changes
+    "react-router-dom", // `react-router-dom:v6.0.0+` has breaking changes
+    "source-map", // `source-map:v0.7.0+` needs more investigation
+    "dotenv-expand", // `dotenv-expand:6.0.0+` has breaking changes (#6858)
 
-    // breaks since "3.0.1", needs futher investigate
-    "postcss-load-config"
+    // ESM Only => https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-move-my-commonjs-project-to-esm
+    "node-fetch",
+    "periscopic",
+    "strip-ansi"
   ]
 }

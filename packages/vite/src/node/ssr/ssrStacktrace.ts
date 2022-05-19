@@ -1,5 +1,5 @@
-import { SourceMapConsumer, RawSourceMap } from 'source-map'
-import { ModuleGraph } from '../server/moduleGraph'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
+import type { ModuleGraph } from '../server/moduleGraph'
 
 let offset: number
 try {
@@ -31,21 +31,18 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          const consumer = new SourceMapConsumer(
-            rawSourceMap as any as RawSourceMap
-          )
+          const traced = new TraceMap(rawSourceMap as any)
 
-          const pos = consumer.originalPositionFor({
+          const pos = originalPositionFor(traced, {
             line: Number(line) - offset,
-            column: Number(column),
-            bias: SourceMapConsumer.LEAST_UPPER_BOUND
+            column: Number(column)
           })
 
-          if (!pos.source) {
+          if (!pos.source || pos.line == null || pos.column == null) {
             return input
           }
 
-          const source = `${pos.source}:${pos.line || 0}:${pos.column || 0}`
+          const source = `${pos.source}:${pos.line}:${pos.column}`
           if (!varName || varName === 'eval') {
             return `    at ${source}`
           } else {
@@ -55,4 +52,21 @@ export function ssrRewriteStacktrace(
       )
     })
     .join('\n')
+}
+
+export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
+  const { configurable, writable } = Object.getOwnPropertyDescriptor(
+    e,
+    'stack'
+  )!
+  if (configurable) {
+    Object.defineProperty(e, 'stack', {
+      value: stacktrace,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    })
+  } else if (writable) {
+    e.stack = stacktrace
+  }
 }

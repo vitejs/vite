@@ -1,0 +1,13 @@
+{
+  "name": "resolve-custom-condition",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "custom": "./index.custom.js",
+      "import": "./index.js",
+      "require": "./index.js"
+    }
+  }
+}

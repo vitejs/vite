@@ -1,16 +1,16 @@
 # JavaScript API
 
-Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VSCode to leverage the intellisense and validation.
+Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
 
 ## `createServer`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 ```
 
-**Example Usage**
+**Example Usage:**
 
 ```js
 const { createServer } = require('vite')
@@ -25,8 +25,14 @@ const { createServer } = require('vite')
     }
   })
   await server.listen()
+
+  server.printUrls()
 })()
 ```
+
+::: tip NOTE
+When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.`<wbr>`NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.`<wbr>`NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
+:::
 
 ## `InlineConfig`
 
@@ -40,7 +46,7 @@ The `InlineConfig` interface extends `UserConfig` with additional properties:
 ```ts
 interface ViteDevServer {
   /**
-   * The resolved vite config object.
+   * The resolved Vite config object.
    */
   config: ResolvedConfig
   /**
@@ -84,25 +90,15 @@ interface ViteDevServer {
     options?: TransformOptions
   ): Promise<TransformResult | null>
   /**
-   * Apply vite built-in HTML transforms and any plugin HTML transforms.
+   * Apply Vite built-in HTML transforms and any plugin HTML transforms.
    */
   transformIndexHtml(url: string, html: string): Promise<string>
-  /**
-   * Util for transforming a file with esbuild.
-   * Can be useful for certain plugins.
-   */
-  transformWithEsbuild(
-    code: string,
-    filename: string,
-    options?: EsbuildTransformOptions,
-    inMap?: object
-  ): Promise<ESBuildTransformResult>
   /**
    * Load a given URL as an instantiated module for SSR.
    */
   ssrLoadModule(
     url: string,
-    options?: { isolated?: boolean }
+    options?: { fixStacktrace?: boolean }
   ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace.
@@ -113,6 +109,12 @@ interface ViteDevServer {
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
   /**
+   * Restart the server.
+   *
+   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   */
+  restart(forceOptimize?: boolean): Promise<void>
+  /**
    * Stop the server.
    */
   close(): Promise<void>
@@ -121,7 +123,7 @@ interface ViteDevServer {
 
 ## `build`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function build(
@@ -129,7 +131,7 @@ async function build(
 ): Promise<RollupOutput | RollupOutput[]>
 ```
 
-**Example Usage**
+**Example Usage:**
 
 ```js
 const path = require('path')
@@ -138,8 +140,8 @@ const { build } = require('vite')
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
+    base: '/foo/',
     build: {
-      base: '/foo/',
       rollupOptions: {
         // ...
       }
@@ -148,9 +150,37 @@ const { build } = require('vite')
 })()
 ```
 
+## `preview`
+
+**Experimental**
+
+**Type Signature:**
+
+```ts
+async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
+```
+
+**Example Usage:**
+
+```js
+const { preview } = require('vite')
+
+;(async () => {
+  const previewServer = await preview({
+    // any valid user config options, plus `mode` and `configFile`
+    preview: {
+      port: 8080,
+      open: true
+    }
+  })
+
+  previewServer.printUrls()
+})()
+```
+
 ## `resolveConfig`
 
-**Type Signature**
+**Type Signature:**
 
 ```ts
 async function resolveConfig(
@@ -158,4 +188,19 @@ async function resolveConfig(
   command: 'build' | 'serve',
   defaultMode?: string
 ): Promise<ResolvedConfig>
+```
+
+The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
+
+## `transformWithEsbuild`
+
+**Type Signature:**
+
+```ts
+async function transformWithEsbuild(
+  code: string,
+  filename: string,
+  options?: EsbuildTransformOptions,
+  inMap?: object
+): Promise<ESBuildTransformResult>
 ```

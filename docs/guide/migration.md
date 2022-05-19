@@ -32,13 +32,13 @@
   - `httpsOptions` has been removed. [`server.https`](/config/#server-https) can directly accept the options object.
   - `chokidarWatchOptions` is now [`server.watch`](/config/#server-watch).
 
-- [`assetsInclude`](/config/#assetsInclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.
+- [`assetsInclude`](/config/#assetsinclude) now expects `string | RegExp | (string | RegExp)[]` instead of a function.
 
 - All Vue specific options are removed; Pass options to the Vue plugin instead.
 
 ## Alias Behavior Change
 
-[`alias`](/config/#alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
+[`alias`](/config/#resolve-alias) is now being passed to `@rollup/plugin-alias` and no longer require start/ending slashes. The behavior is now a direct replacement, so 1.0-style directory alias key should remove the ending slash:
 
 ```diff
 - alias: { '/@foo/': path.resolve(__dirname, 'some-special-dir') }
@@ -53,10 +53,11 @@ Vite 2.0 core is now framework agnostic. Vue support is now provided via [`@vite
 
 ```js
 import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig({
   plugins: [vue()]
-}
+})
 ```
 
 ### Custom Blocks Transforms
@@ -66,6 +67,7 @@ A custom plugin can be used to transform Vue custom blocks like the one below:
 ```ts
 // vite.config.js
 import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
 const vueI18nPlugin = {
   name: 'vue-i18n',
@@ -74,7 +76,7 @@ const vueI18nPlugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').safeLoad(code.trim()))
+      code = JSON.stringify(require('js-yaml').load(code.trim()))
     }
     return `export default Comp => {
       Comp.i18n = ${code}
@@ -82,14 +84,14 @@ const vueI18nPlugin = {
   }
 }
 
-export default {
+export default defineConfig({
   plugins: [vue(), vueI18nPlugin]
-}
+})
 ```
 
 ## React Support
 
-React Fast Refresh support is now provided via [`@vitejs/plugin-react-refresh`](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh).
+React Fast Refresh support is now provided via [`@vitejs/plugin-react`](https://github.com/vitejs/vite/tree/main/packages/plugin-react).
 
 ## HMR API Change
 

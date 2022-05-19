@@ -1,11 +1,25 @@
 import MagicString from 'magic-string'
-import { TransformResult } from 'rollup'
-import { ResolvedConfig } from '../config'
-import { Plugin } from '../plugin'
+import type { TransformResult } from 'rollup'
+import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { isCSSRequest } from './css'
+import { isHTMLRequest } from './html'
+
+const nonJsRe = /\.(json)($|\?)/
+const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+
+  const processNodeEnv: Record<string, string> = {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
+    'global.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    ),
+    'globalThis.process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || config.mode
+    )
+  }
 
   const userDefine: Record<string, string> = {}
   for (const key in config.define) {
@@ -30,35 +44,56 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     })
   }
 
-  const replacements: Record<string, string | undefined> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    ...userDefine,
-    ...importMetaKeys,
-    'process.env.': `({}).`,
-    'global.process.env.': `({}).`,
-    'globalThis.process.env.': `({}).`
+  function generatePattern(
+    ssr: boolean
+  ): [Record<string, string | undefined>, RegExp | null] {
+    const processEnv: Record<string, string> = {}
+    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
+
+    if (isNeedProcessEnv) {
+      Object.assign(processEnv, {
+        'process.env.': `({}).`,
+        'global.process.env.': `({}).`,
+        'globalThis.process.env.': `({}).`
+      })
+    }
+
+    const replacements: Record<string, string> = {
+      ...(isNeedProcessEnv ? processNodeEnv : {}),
+      ...userDefine,
+      ...importMetaKeys,
+      ...processEnv
+    }
+
+    const replacementsKeys = Object.keys(replacements)
+    const pattern = replacementsKeys.length
+      ? new RegExp(
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
+            replacementsKeys
+              .map((str) => {
+                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+              })
+              .join('|') +
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
+          'gu'
+        )
+      : null
+
+    return [replacements, pattern]
   }
 
-  const pattern = new RegExp(
-    '(?<!\\.)\\b(' +
-      Object.keys(replacements)
-        .map((str) => {
-          return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-        })
-        .join('|') +
-      ')\\b',
-    'g'
-  )
+  const defaultPattern = generatePattern(false)
+  const ssrPattern = generatePattern(true)
 
   return {
     name: 'vite:define',
-    transform(code, id, ssr) {
+
+    transform(code, id, options) {
+      const ssr = options?.ssr === true
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost.
@@ -66,11 +101,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
 
       if (
-        // exclude css and static assets for performance
+        // exclude html, css and static assets for performance
+        isHTMLRequest(id) ||
         isCSSRequest(id) ||
+        isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
         return
+      }
+
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+
+      if (!pattern) {
+        return null
       }
 
       if (ssr && !isBuild) {
@@ -82,14 +125,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
       const s = new MagicString(code)
       let hasReplaced = false
-      let match
+      let match: RegExpExecArray | null
 
       while ((match = pattern.exec(code))) {
         hasReplaced = true
         const start = match.index
         const end = start + match[0].length
         const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement)
+        s.overwrite(start, end, replacement, { contentOnly: true })
       }
 
       if (!hasReplaced) {

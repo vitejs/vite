@@ -23,15 +23,16 @@ features:
 footer: MIT Licensed | Copyright © 2019-present Evan You & Vite Contributors
 ---
 
-<div class="frontpage sponsors">
-  <h2>Sponsors</h2>
-  <a v-for="{ href, src, name, id } of sponsors" :href="href" target="_blank" rel="noopener" aria-label="sponsor-img">
-    <img :src="src" :alt="name" :id="`sponsor-${id}`">
-  </a>
-  <br>
-  <a href="https://github.com/sponsors/yyx990803" target="_blank" rel="noopener">Become a sponsor on GitHub</a>
-</div>
-
 <script setup>
-import sponsors from './.vitepress/theme/sponsors.json'
+import SponsorsGroup from './.vitepress/theme/SponsorsGroup.vue'
 </script>
+
+<h3 style="text-align:center;color:#999">Sponsors</h3>
+
+<SponsorsGroup tier="platinum" placement="landing" />
+
+<SponsorsGroup tier="gold" placement="landing" />
+
+<p style="text-align:center;margin-bottom:3em">
+  <a style="color: #999;font-size:.9em;" href="https://github.com/sponsors/yyx990803" target="_blank" rel="noopener">Become a sponsor on GitHub</a>
+</p>

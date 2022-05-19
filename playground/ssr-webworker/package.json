@@ -1,0 +1,16 @@
+{
+  "name": "test-ssr-webworker",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "DEV=1 node worker",
+    "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"
+  },
+  "dependencies": {
+    "react": "^17.0.2"
+  },
+  "devDependencies": {
+    "miniflare": "^1.4.1",
+    "resolve-linked": "workspace:*"
+  }
+}

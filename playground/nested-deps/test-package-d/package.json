@@ -1,0 +1,9 @@
+{
+  "name": "test-package-d",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "test-package-d-nested": "link:./test-package-d-nested"
+  }
+}

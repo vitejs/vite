@@ -1,0 +1,11 @@
+.path-resolving-css {
+  composes: apply-color from '@/composed.module.css';
+}
+
+.path-resolving-sass {
+  composes: apply-color from '@/composed.module.scss';
+}
+
+.path-resolving-less {
+  composes: apply-color from '@/composed.module.less';
+}
