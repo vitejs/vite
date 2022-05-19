@@ -5,6 +5,7 @@ declare module 'vue/compiler-sfc' {
   }
 }
 
+import { createRequire } from 'module'
 import type * as _compiler from 'vue/compiler-sfc'
 
 export function resolveCompiler(root: string): typeof _compiler {
@@ -23,8 +24,11 @@ export function resolveCompiler(root: string): typeof _compiler {
   return compiler
 }
 
+const _require = createRequire(import.meta.url)
 function tryRequire(id: string, from?: string) {
   try {
-    return from ? require(require.resolve(id, { paths: [from] })) : require(id)
+    return from
+      ? _require(_require.resolve(id, { paths: [from] }))
+      : _require(id)
   } catch (e) {}
 }
