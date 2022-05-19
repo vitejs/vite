@@ -102,8 +102,7 @@ export async function preview(
 
   if (isSPA) {
     // We need to apply the plugins' server post hooks before `sirv()`. (Because
-    // `sirv(_, { single: true })` catches all routes and plugin middlewares
-    // would never run.)
+    // `sirv(_, { single: true })` catches all routes.)
     postHooks.forEach((fn) => fn && fn())
   }
 

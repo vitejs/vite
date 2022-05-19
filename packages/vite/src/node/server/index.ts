@@ -504,8 +504,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, server))
 
   // We need to apply post server hooks before `spaFallbackMiddleware()`.
-  // (Because `spaFallbackMiddleware()` catches all routes and plugin
-  // middlewares would never run.)
+  // (Because `spaFallbackMiddleware()` catches all routes.)
   postHooks.forEach((fn) => fn && fn())
 
   const isMiddlewareModeSSR = middlewareMode && middlewareMode !== 'html'
