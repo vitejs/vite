@@ -4,7 +4,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "ES2020",
     "moduleResolution": "Node",
     "strict": true,
     "declaration": true,
