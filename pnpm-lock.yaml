@@ -241,7 +241,7 @@ importers:
       dotenv-expand: ^5.1.0
       es-module-lexer: ^0.10.5
       esbuild: ^0.14.38
-      esno: ^0.15.0
+      esno: ^0.16.3
       estree-walker: ^2.0.2
       etag: ^1.8.1
       fast-glob: ^3.2.11
@@ -308,7 +308,7 @@ importers:
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
       es-module-lexer: 0.10.5
-      esno: 0.15.0
+      esno: 0.16.3
       estree-walker: 2.0.2
       etag: 1.8.1
       fast-glob: 3.2.11
@@ -1612,23 +1612,23 @@ packages:
     resolution: {integrity: sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==}
     dev: false
 
-  /@esbuild-kit/cjs-loader/1.0.0:
-    resolution: {integrity: sha512-6oPhu5QcuTsU5nO3hBCd6OdfeaGsheU6OZrQSAzBsXOiZQ+lB2Zy1bAeAPKqzVGz16kBbheW+OuL54gLD79HdA==}
+  /@esbuild-kit/cjs-loader/2.0.0:
+    resolution: {integrity: sha512-1ijCpmiCQcOcr0dmwwwCpzv0inWpNtEgiXDWc74AL52AhvY108M26suhWe9PMDcF1esnPJf0YSeVBLLZS6SQvg==}
     dependencies:
-      '@esbuild-kit/core-utils': 1.0.1
+      '@esbuild-kit/core-utils': 1.1.1
       get-tsconfig: 3.0.1
     dev: true
 
-  /@esbuild-kit/core-utils/1.0.1:
-    resolution: {integrity: sha512-N9fE4afacf4+82Xygmoa5IXASoPHHPL/OF3E5OaDVWtdoi1rk3StLGV6Vl7rqFSJCetghho/O1jvU/VnMf2pLw==}
+  /@esbuild-kit/core-utils/1.1.1:
+    resolution: {integrity: sha512-Y5QM1ip6nUvycH8dc/bfNPLNyVt2ccBLB09lAndUvfCza/UwkAfYSiNMbcAnkLcEciEENMm6Lsyt1L98K57v3w==}
     dependencies:
       esbuild: 0.14.38
     dev: true
 
-  /@esbuild-kit/esm-loader/1.1.0:
-    resolution: {integrity: sha512-EoEChLvXMAg/PXzUscMHxPjMM6kUWr0fcWuMchis+TxCGPPtpg5XQrO29HbLvP1uw/4AE+aZcfmRgVykGi6gPQ==}
+  /@esbuild-kit/esm-loader/2.1.0:
+    resolution: {integrity: sha512-zE7BepoWvVhyoHDEnc2whD9x27UzdRIcUguOD6mUx8PzYjEw2pdNsY+2sP9PeGxW6YJvtLOqcDj3tqhxj61IPw==}
     dependencies:
-      '@esbuild-kit/core-utils': 1.0.1
+      '@esbuild-kit/core-utils': 1.1.1
       es-module-lexer: 0.10.5
       get-tsconfig: 3.0.1
     dev: true
@@ -4377,11 +4377,11 @@ packages:
       - supports-color
     dev: true
 
-  /esno/0.15.0:
-    resolution: {integrity: sha512-Wws1YgB/PBUtc/Pq755Crv2r5XIcSZyqC/9qyiczzQoDNNIUdxQ75uSd6gaMJFJ+pieljcH3f9JawmrHk0vLXw==}
+  /esno/0.16.3:
+    resolution: {integrity: sha512-6slSBEV1lMKcX13DBifvnDFpNno5WXhw4j/ff7RI0y51BZiDqEe5dNhhjhIQ3iCOQuzsm2MbVzmwqbN78BBhPg==}
     hasBin: true
     dependencies:
-      tsx: 2.1.0
+      tsx: 3.4.0
     dev: true
 
   /espree/9.3.2:
@@ -8164,12 +8164,13 @@ packages:
       typescript: 4.6.4
     dev: true
 
-  /tsx/2.1.0:
-    resolution: {integrity: sha512-+b4qULxZUFzGGJ4N40wDv0krYW5JWjNB5TkfC3bS4DIA4pa4IE82F/XAInnj0+sWL1XvKzDyFbXvpe8UHSkBfQ==}
+  /tsx/3.4.0:
+    resolution: {integrity: sha512-WWakMoC5OqUXvOVZuyAySyETjAZ9rJxZXRbbOhYXDCeHF95hQUBa07UwUFu1yprlnrJ/W7XWfA99YTNKO//KxQ==}
     hasBin: true
     dependencies:
-      '@esbuild-kit/cjs-loader': 1.0.0
-      '@esbuild-kit/esm-loader': 1.1.0
+      '@esbuild-kit/cjs-loader': 2.0.0
+      '@esbuild-kit/core-utils': 1.1.1
+      '@esbuild-kit/esm-loader': 2.1.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
