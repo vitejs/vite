@@ -13,7 +13,7 @@ declare const __HMR_PORT__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
-console.log('[vite] connecting...')
+console.debug('[vite] connecting...')
 
 // use server configuration, then fallback to inference
 const socketProtocol =
@@ -64,7 +64,7 @@ let isFirstUpdate = true
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.log(`[vite] connected.`)
+      console.debug(`[vite] connected.`)
       sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
