@@ -478,8 +478,6 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
-  config.isSPA ??= true
-
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,

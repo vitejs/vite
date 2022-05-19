@@ -98,7 +98,7 @@ export async function preview(
 
   app.use(compression())
 
-  const { isSPA } = config
+  const isSPA = config.isSPA ?? true
 
   if (isSPA) {
     // We need to apply the plugins' server post hooks before `sirv()`. (Because
