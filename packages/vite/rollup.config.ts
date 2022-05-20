@@ -134,8 +134,8 @@ function createNodePlugins(
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          src: `require(configFile)`,
-          replacement: `__require(configFile)`
+          pattern: /require(?=\((configFile|'ts-node')\))/g,
+          replacement: `eval('require')`
         }
       }),
 
