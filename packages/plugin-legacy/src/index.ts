@@ -131,11 +131,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills
           )
         await buildPolyfillChunk(
-          'polyfills-modern',
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
           config.build,
+          'es',
+          opts,
           options.externalSystemJS
         )
         return
@@ -160,13 +161,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           )
 
         await buildPolyfillChunk(
-          'polyfills-legacy',
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
           config.build,
+          'iife',
+          opts,
           options.externalSystemJS
         )
       }
@@ -549,11 +551,12 @@ export async function detectPolyfills(
 }
 
 async function buildPolyfillChunk(
-  name: string,
   imports: Set<string>,
   bundle: OutputBundle,
   facadeToChunkMap: Map<string, string>,
   buildOptions: BuildOptions,
+  format: 'iife' | 'es',
+  rollupOutputOptions: NormalizedOutputOptions,
   externalSystemJS?: boolean
 ) {
   let { minify, assetsDir } = buildOptions
@@ -571,10 +574,11 @@ async function buildPolyfillChunk(
       assetsDir,
       rollupOptions: {
         input: {
-          [name]: polyfillId
+          polyfills: polyfillId
         },
         output: {
-          format: name.includes('legacy') ? 'iife' : 'es',
+          format,
+          entryFileNames: rollupOutputOptions.entryFileNames,
           manualChunks: undefined
         }
       }
