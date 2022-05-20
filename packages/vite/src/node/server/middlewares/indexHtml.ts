@@ -9,7 +9,6 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  defaultHtmlAssetSources,
   getHtmlAssetSourceAttributes,
   getScriptInfo,
   resolveHtmlTransforms,
@@ -205,7 +204,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // statement for each - this will be handled by the asset plugin
     const assetSourceAttrs = getHtmlAssetSourceAttributes(
       node,
-      defaultHtmlAssetSources
+      config.build.htmlAssetSources
     )
     for (const assetSourceAttr of assetSourceAttrs) {
       processNodeUrl(assetSourceAttr, s, config, htmlPath, originalUrl)

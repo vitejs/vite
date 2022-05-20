@@ -76,6 +76,7 @@ export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
 import type { ChunkMetadata } from './plugins/metadata'
+export type { HtmlAssetSource } from './plugins/html'
 
 export type {
   WebSocketServer,

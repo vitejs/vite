@@ -339,11 +339,6 @@ export const defaultHtmlAssetSources: HtmlAssetSource[] = [
 
       return false
     }
-  },
-  {
-    tag: 'icon-uri',
-    type: 'src',
-    attributes: ['content']
   }
 ]
 
@@ -580,7 +575,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // statement for each - this will be handled by the asset plugin
           const assetSourceAttrs = getHtmlAssetSourceAttributes(
             node,
-            defaultHtmlAssetSources
+            config.build.htmlAssetSources
           )
           for (const assetSourceAttr of assetSourceAttrs) {
             // assetsUrl may be encodeURI

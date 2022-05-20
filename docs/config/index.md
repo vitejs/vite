@@ -792,6 +792,29 @@ export default defineConfig({
   If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size.
   :::
 
+### build.htmlAssetSources
+
+- **Type:** `{ tag: string, attributes: string[], type: 'src' | 'srcset', filter?: (attribute: string, value: string, node: ElementNode) => boolean }`
+
+  Specify which HTML tags and attributes should be resolved as assets.
+
+  ::: details Details: HTML tags and attributes that are resolved automatically
+
+  - the `src` attribute of the `audio` tag
+  - the `src` attribute of the `embed` tag
+  - the `src` and `srcset` attribute of the `img` tag
+  - the `src` attribute of the `input` tag
+  - the `data` attribute of the `object` tag
+  - the `src` and `srcset` attribute of the `source` tag
+  - the `src` attribute of the `track` tag
+  - the `src` and `poster` attribute of the `video` tag
+  - the `href` and `xlink:href` attribute of the `image` tag
+  - the `href` and `xlink:href` attribute of the `use` tag
+  - the `href` attribute of the `link` tag when the `rel` attribute contains `stylesheet`, `icon`, `shortcut icon`, `mask-icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, `apple-touch-startup-image`, `manifest`, `prefetch`, `preload` or when the `itemprop` attribute is `image`, `logo`, `screenshot`, `thumbnailurl`, `contenturl`, `downloadurl`, `duringmedia`, `embedurl`, `installurl`, `layoutimage`
+  - the `imagesrcset` attribute of the `link` tag when the `rel` attribute contains `stylesheet`, `icon`, `shortcut icon`, `mask-icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, `apple-touch-startup-image`, `manifest`, `prefetch`, `preload`
+  - the `content` attribute of the `meta` tag when the `name` attribute is `msapplication-tileimage`, `msapplication-square70x70logo`, `msapplication-square150x150logo`, `msapplication-wide310x150logo`, `msapplication-square310x310logo`, `msapplication-config`, `twitter:image` or when the `property` attribute is `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:secure_url`, `og:video`, `og:video:secure_url`, `vk:image` or when the `itemprop` attribute is `image`, `logo`, `screenshot`, `thumbnailurl`, `contenturl`, `downloadurl`, `duringmedia`, `embedurl`, `installurl`, `layoutimage`
+    :::
+
 ### build.cssCodeSplit
 
 - **Type:** `boolean`

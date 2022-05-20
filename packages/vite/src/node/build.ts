@@ -40,6 +40,8 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
+import type { HtmlAssetSource } from './plugins/html'
+import { defaultHtmlAssetSources } from './plugins/html'
 
 export interface BuildOptions {
   /**
@@ -83,6 +85,12 @@ export interface BuildOptions {
    * @default 4096
    */
   assetsInlineLimit?: number
+  /**
+   * Html tags and their corresponding attributes
+   * that should be resolved as assets.
+   * @default {@link defaultHtmlAssetSources#}
+   */
+  htmlAssetSources?: HtmlAssetSource[]
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -237,7 +245,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    htmlAssetSources: raw?.htmlAssetSources || defaultHtmlAssetSources
   }
 
   // handle special build targets
