@@ -109,7 +109,7 @@
     "less": "*",
     "sass": "*",
     "stylus": "*",
-    "terser": "^5.13.1"
+    "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
     "sass": {
