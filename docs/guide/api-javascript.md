@@ -96,7 +96,10 @@ interface ViteDevServer {
   /**
    * Load a given URL as an instantiated module for SSR.
    */
-  ssrLoadModule(url: string): Promise<Record<string, any>>
+  ssrLoadModule(
+    url: string,
+    options?: { fixStacktrace?: boolean }
+  ): Promise<Record<string, any>>
   /**
    * Fix ssr error stacktrace.
    */
