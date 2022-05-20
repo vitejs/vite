@@ -37,7 +37,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)
-            name = name.slice(0, -ext.length) + `-legacy` + ext
+            const endPos = ext.length !== 0 ? -ext.length : undefined
+            name = name.slice(0, endPos) + `-legacy` + ext
           }
           return name.replace(/\0/g, '')
         } else {
