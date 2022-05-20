@@ -311,7 +311,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const { code, map } = babel.transform(raw, {
         babelrc: false,
         configFile: false,
-        compact: true,
+        compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: sourceMaps ? chunk.map : undefined,
         presets: [
