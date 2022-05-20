@@ -17,7 +17,9 @@
       "import": "./dist/node/index.js",
       "require": "./index.cjs"
     },
-    "./*": "./*"
+    "./client": {
+      "types": "./client.d.ts"
+    }
   },
   "files": [
     "bin",
