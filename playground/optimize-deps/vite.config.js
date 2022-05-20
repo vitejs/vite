@@ -1,6 +1,8 @@
 const fs = require('fs')
 const vue = require('@vitejs/plugin-vue')
 
+process.env.NODE_ENV = ''
+
 /**
  * @type {import('vite').UserConfig}
  */
