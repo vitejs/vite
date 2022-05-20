@@ -5,25 +5,7 @@ export default defineConfig({
   description: 'Next Generation Frontend Tooling',
 
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
-
-    // TODO: This is neeeded to get smooth dark mode appearance on initial
-    // load. And this will be gone when VitePress figures out how to handle
-    // this in core.
-    [
-      'script',
-      {},
-      `
-        ;(() => {
-          const saved = localStorage.getItem('vitepress-theme-appearance')
-          const prefereDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-          if (!saved || saved === 'auto' ? prefereDark : saved === 'dark') {
-            document.documentElement.classList.add('dark')
-          }
-        })()
-      `
-    ]
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]
   ],
 
   vue: {
@@ -59,6 +41,11 @@ export default defineConfig({
         { text: '简体中文', link: 'https://cn.vitejs.dev' },
         { text: '日本語', link: 'https://ja.vitejs.dev' }
       ]
+    },
+
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2019-present Evan You & Vite Contributors'
     },
 
     nav: [
@@ -106,7 +93,7 @@ export default defineConfig({
     ],
 
     sidebar: {
-      '/': [
+      '/guide/': [
         {
           text: 'Guide',
           items: [
