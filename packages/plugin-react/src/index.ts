@@ -172,19 +172,19 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        let babelOptions = staticBabelOptions
+        let reactBabelOptions = staticBabelOptions
         if (typeof opts.babel === 'function') {
           const rawOptions = opts.babel(id, { ssr })
-          babelOptions = createBabelOptions(id, rawOptions, ssr)
-          runPluginOverrides(babelOptions)
-        } else if (!babelOptions) {
-          babelOptions = createBabelOptions(id, opts.babel, ssr)
-          if (!runPluginOverrides(babelOptions)) {
-            staticBabelOptions = babelOptions
+          reactBabelOptions = createBabelOptions(id, rawOptions, ssr)
+          runPluginOverrides(reactBabelOptions)
+        } else if (!reactBabelOptions) {
+          reactBabelOptions = createBabelOptions(id, opts.babel, ssr)
+          if (!runPluginOverrides(reactBabelOptions)) {
+            staticBabelOptions = reactBabelOptions
           }
         }
 
-        const plugins = isProjectFile ? [...babelOptions.plugins] : []
+        const plugins = isProjectFile ? [...reactBabelOptions.plugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -251,15 +251,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         // module, including node_modules and linked packages.
         const shouldSkip =
           !plugins.length &&
-          !babelOptions.configFile &&
-          !(isProjectFile && babelOptions.babelrc)
+          !reactBabelOptions.configFile &&
+          !(isProjectFile && reactBabelOptions.babelrc)
 
         if (shouldSkip) {
           return // Avoid parsing if no plugins exist.
         }
 
-        const parserPlugins: typeof babelOptions.parserOpts.plugins = [
-          ...babelOptions.parserOpts.plugins,
+        const parserPlugins: typeof reactBabelOptions.parserOpts.plugins = [
+          ...reactBabelOptions.parserOpts.plugins,
           'importMeta',
           // This plugin is applied before esbuild transforms the code,
           // so we need to enable some stage 3 syntax that is supported in
@@ -283,6 +283,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           : babel.transformAsync.bind(babel, code)
 
         const isReasonReact = extension.endsWith('.bs.js')
+        const { ssr: _ssr, file: _file, ...babelOptions } = reactBabelOptions
         const result = await transformAsync({
           ...babelOptions,
           ast: !isReasonReact,
