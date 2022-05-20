@@ -12,14 +12,25 @@
   <span class="result"></span>
 </div>
 
+<div class="init-returns-instance">
+  <h3>init function returns WebAssembly.Instance</h3>
+  <button class="run">Click to run</button>
+  <span class="result"></span>
+</div>
+
+<div>
+  <h3>Importing as URL</h3>
+  <span class="url"></span>
+</div>
+
 <div class="worker-wasm">
   <h3>worker wasm</h3>
   <span class="result"></span>
 </div>
 
 <script type="module">
-  import light from './light.wasm'
-  import heavy from './heavy.wasm'
+  import light from './light.wasm?init'
+  import heavy from './heavy.wasm?init'
   import myWorker from './worker?worker'
 
   const w = new myWorker()
@@ -32,7 +43,7 @@
       imports: {
         imported_func: (res) => (resultElement.textContent = res)
       }
-    })
+    }).then((i) => i.exports)
     exported_func()
   }
 
@@ -51,4 +62,21 @@
     .addEventListener('click', async () =>
       testWasm(heavy, document.querySelector('.output-wasm .result'))
     )
+
+  document
+    .querySelector('.init-returns-instance .run')
+    .addEventListener('click', async () => {
+      const res = await light({
+        imports: {
+          imported_func: (res) => (resultElement.textContent = res)
+        }
+      })
+      text(
+        '.init-returns-instance .result',
+        res instanceof WebAssembly.Instance
+      )
+    })
+
+  import lightUrl from './light.wasm?url'
+  text('.url', lightUrl)
 </script>

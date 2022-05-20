@@ -37,14 +37,14 @@ const wasmHelper = async (opts = {}, url: string) => {
       result = await WebAssembly.instantiate(buffer, opts)
     }
   }
-  return result.instance.exports
+  return result.instance
 }
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmPlugin = (config: ResolvedConfig): Plugin => {
+export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
   return {
-    name: 'vite:wasm',
+    name: 'vite:wasm-helper',
 
     resolveId(id) {
       if (id === wasmHelperId) {
@@ -57,7 +57,7 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
         return `export default ${wasmHelperCode}`
       }
 
-      if (!id.endsWith('.wasm')) {
+      if (!id.endsWith('.wasm?init')) {
         return
       }
 
@@ -67,6 +67,25 @@ export const wasmPlugin = (config: ResolvedConfig): Plugin => {
 import initWasm from "${wasmHelperId}"
 export default opts => initWasm(opts, ${JSON.stringify(url)})
 `
+    }
+  }
+}
+
+export const wasmFallbackPlugin = (): Plugin => {
+  return {
+    name: 'vite:wasm-fallback',
+
+    async load(id) {
+      if (!id.endsWith('.wasm')) {
+        return
+      }
+
+      throw new Error(
+        '"ESM integration proposal for Wasm" is not supported currently. ' +
+          'Use vite-plugin-wasm or other community plugins to handle this. ' +
+          'Alternatively, you can use `.wasm?init` or `.wasm?url`. ' +
+          'See https://vitejs.dev/guide/features.html#webassembly for more details.'
+      )
     }
   }
 }

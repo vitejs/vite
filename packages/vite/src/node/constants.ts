@@ -81,7 +81,6 @@ export const KNOWN_ASSET_TYPES = [
   'otf',
 
   // other
-  'wasm',
   'webmanifest',
   'pdf',
   'txt'
