@@ -499,14 +499,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
     if (skip?.includes(file)) {
       continue
     }
-    const abs = path.resolve(dir, file)
-    // baseline is Node 12 so can't use rmSync :(
-    if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
-      fs.rmdirSync(abs)
-    } else {
-      fs.unlinkSync(abs)
-    }
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
@@ -524,13 +517,6 @@ export function copyDir(srcDir: string, destDir: string): void {
     } else {
       fs.copyFileSync(srcFile, destFile)
     }
-  }
-}
-
-export function removeDirSync(dir: string) {
-  if (fs.existsSync(dir)) {
-    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-    rmSync(dir, { recursive: true })
   }
 }
 
