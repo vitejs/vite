@@ -61,8 +61,6 @@ export type BabelOptions = Omit<
  * an `api.reactBabel` method.
  */
 export interface ReactBabelOptions extends BabelOptions {
-  ssr?: boolean
-  file: string
   plugins: Extract<BabelOptions['plugins'], any[]>
   presets: Extract<BabelOptions['presets'], any[]>
   overrides: Extract<BabelOptions['overrides'], any[]>
@@ -72,9 +70,12 @@ export interface ReactBabelOptions extends BabelOptions {
 }
 
 type ReactBabelHook = (
-  options: ReactBabelOptions,
+  babelConfig: ReactBabelOptions,
+  context: ReactBabelHookContext,
   config: ResolvedConfig
 ) => void
+
+type ReactBabelHookContext = { ssr: boolean; id: string }
 
 declare module 'vite' {
   export interface Plugin {
@@ -95,7 +96,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
-  let runPluginOverrides = (options: ReactBabelOptions) => false
+  let runPluginOverrides = (
+    options: ReactBabelOptions,
+    context: ReactBabelHookContext
+  ) => false
   let staticBabelOptions: ReactBabelOptions | undefined
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
@@ -142,14 +146,14 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           )
       })
 
-      runPluginOverrides = (babelOptions) => {
+      runPluginOverrides = (babelOptions, context) => {
         const hooks = config.plugins
           .map((plugin) => plugin.api?.reactBabel)
           .filter(Boolean) as ReactBabelHook[]
 
         if (hooks.length > 0) {
           return (runPluginOverrides = (babelOptions) => {
-            hooks.forEach((hook) => hook(babelOptions, config))
+            hooks.forEach((hook) => hook(babelOptions, context, config))
             return true
           })(babelOptions)
         }
@@ -172,19 +176,19 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
-        let reactBabelOptions = staticBabelOptions
+        let babelOptions = staticBabelOptions
         if (typeof opts.babel === 'function') {
           const rawOptions = opts.babel(id, { ssr })
-          reactBabelOptions = createBabelOptions(id, rawOptions, ssr)
-          runPluginOverrides(reactBabelOptions)
-        } else if (!reactBabelOptions) {
-          reactBabelOptions = createBabelOptions(id, opts.babel, ssr)
-          if (!runPluginOverrides(reactBabelOptions)) {
-            staticBabelOptions = reactBabelOptions
+          babelOptions = createBabelOptions(rawOptions)
+          runPluginOverrides(babelOptions, { ssr, id: id })
+        } else if (!babelOptions) {
+          babelOptions = createBabelOptions(opts.babel)
+          if (!runPluginOverrides(babelOptions, { ssr, id: id })) {
+            staticBabelOptions = babelOptions
           }
         }
 
-        const plugins = isProjectFile ? [...reactBabelOptions.plugins] : []
+        const plugins = isProjectFile ? [...babelOptions.plugins] : []
 
         let useFastRefresh = false
         if (!skipFastRefresh && !ssr && !isNodeModules) {
@@ -251,15 +255,15 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         // module, including node_modules and linked packages.
         const shouldSkip =
           !plugins.length &&
-          !reactBabelOptions.configFile &&
-          !(isProjectFile && reactBabelOptions.babelrc)
+          !babelOptions.configFile &&
+          !(isProjectFile && babelOptions.babelrc)
 
         if (shouldSkip) {
           return // Avoid parsing if no plugins exist.
         }
 
-        const parserPlugins: typeof reactBabelOptions.parserOpts.plugins = [
-          ...reactBabelOptions.parserOpts.plugins,
+        const parserPlugins: typeof babelOptions.parserOpts.plugins = [
+          ...babelOptions.parserOpts.plugins,
           'importMeta',
           // This plugin is applied before esbuild transforms the code,
           // so we need to enable some stage 3 syntax that is supported in
@@ -283,7 +287,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           : babel.transformAsync.bind(babel, code)
 
         const isReasonReact = extension.endsWith('.bs.js')
-        const { ssr: _ssr, file: _file, ...babelOptions } = reactBabelOptions
         const result = await transformAsync({
           ...babelOptions,
           ast: !isReasonReact,
@@ -392,14 +395,8 @@ function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
 }
 
-function createBabelOptions(
-  file: string,
-  rawOptions?: BabelOptions,
-  ssr?: boolean
-) {
+function createBabelOptions(rawOptions?: BabelOptions) {
   const babelOptions = {
-    ssr,
-    file,
     babelrc: false,
     configFile: false,
     ...rawOptions
