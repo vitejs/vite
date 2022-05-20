@@ -14,7 +14,8 @@ const asyncFunctions = [
   'transformWithEsbuild',
   'resolveConfig',
   'optimizeDeps',
-  'formatPostcssSourceMap'
+  'formatPostcssSourceMap',
+  'loadConfigFromFile'
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
