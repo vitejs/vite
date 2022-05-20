@@ -123,7 +123,7 @@ function createNodePlugins(isProduction: boolean, sourceMap = true): Plugin[] {
       shimDepsPlugin({
         'plugins/terser.ts': {
           src: `require.resolve('terser'`,
-          replacement: `require.resolve('vite/dist/node-cjs/terser.cjs'`
+          replacement: `require.resolve('vite/terser'`
         },
         // chokidar -> fsevents
         'fsevents-handler.js': {

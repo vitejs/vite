@@ -19,6 +19,9 @@
     },
     "./client": {
       "types": "./client.d.ts"
+    },
+    "./terser": {
+      "require": "./dist/node-cjs/terser.cjs"
     }
   },
   "files": [
