@@ -245,15 +245,15 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     // Support browserslist
     // "defaults and supports es6-module and supports es6-module-dynamic-import",
     resolved.target = [
-      'es2019',
+      'es2020', // support import.meta.url
       'edge88',
       'firefox78',
       'chrome87',
-      'safari13.1'
+      'safari13' // transpile nullish coalescing
     ]
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2019 so it can be minified by terser
-    resolved.target = 'es2019'
+    // esnext + terser: limit to es2021 so it can be minified by terser
+    resolved.target = 'es2021'
   }
 
   if (!resolved.cssTarget) {
@@ -426,6 +426,7 @@ async function doBuild(
         exports: ssr ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        generatedCode: 'es2015',
         entryFileNames: ssr
           ? `[name].js`
           : libOptions

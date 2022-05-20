@@ -62,6 +62,9 @@ async function main(): Promise<void> {
   if (targetVersion.includes('beta') && !args.tag) {
     args.tag = 'beta'
   }
+  if (targetVersion.includes('alpha') && !args.tag) {
+    args.tag = 'alpha'
+  }
 
   const { yes }: { yes: boolean } = await prompts({
     type: 'confirm',

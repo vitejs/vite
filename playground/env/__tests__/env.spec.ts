@@ -3,7 +3,7 @@ import { isBuild, page } from '~utils'
 const mode = isBuild ? `production` : `development`
 
 test('base', async () => {
-  expect(await page.textContent('.base')).toBe('/')
+  expect(await page.textContent('.base')).toBe('/env/')
 })
 
 test('mode', async () => {
@@ -46,9 +46,15 @@ test('env object', async () => {
     VITE_EFFECTIVE_MODE_FILE_NAME: `.env.${mode}`,
     CUSTOM_PREFIX_ENV_VARIABLE: '1',
     VITE_CUSTOM_ENV_VARIABLE: '1',
-    BASE_URL: '/',
+    BASE_URL: '/env/',
     MODE: mode,
     DEV: !isBuild,
     PROD: isBuild
   })
 })
+
+if (!isBuild) {
+  test('relative url import script return import.meta.url', async () => {
+    expect(await page.textContent('.url')).toMatch('/env/index.js')
+  })
+}

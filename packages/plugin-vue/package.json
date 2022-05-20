@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "2.3.2",
+  "version": "3.0.0-alpha.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -35,10 +35,12 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-vue#readme",
   "peerDependencies": {
-    "vite": "^2.5.10",
+    "vite": "^3.0.0-alpha",
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "@jridgewell/gen-mapping": "^0.3.1",
+    "@jridgewell/trace-mapping": "^0.3.10",
     "debug": "^4.3.4",
     "rollup": "^2.72.1",
     "slash": "^4.0.0",

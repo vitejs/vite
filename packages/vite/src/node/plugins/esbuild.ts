@@ -12,22 +12,22 @@ import type { SourceMap } from 'rollup'
 import { createFilter } from '@rollup/pluginutils'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
-import { combineSourcemaps } from '../utils'
-import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /(.*)(var [^\s]+=function\([^)]*?\){"use strict";)(.*)/
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/
 const INJECT_HELPERS_UMD_RE =
   /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/
 

@@ -3,6 +3,7 @@ const path = require('path')
 const legacy = require('@vitejs/plugin-legacy').default
 
 module.exports = {
+  base: './',
   plugins: [
     legacy({
       targets: 'IE 11'

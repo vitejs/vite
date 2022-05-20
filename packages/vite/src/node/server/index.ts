@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import type * as net from 'net'
 import type * as http from 'http'
-import type { AddressInfo } from 'net'
 import { performance } from 'perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
@@ -16,7 +15,7 @@ import type { CommonServerOptions } from '../http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { mergeConfig, resolveConfig } from '../config'
-import { isParentDirectory, normalizePath } from '../utils'
+import { isParentDirectory, normalizePath, resolveHostname } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {
@@ -26,7 +25,6 @@ import {
 import { ssrTransform } from '../ssr/ssrTransform'
 import { createOptimizedDeps } from '../optimizer/registerMissing'
 import type { OptimizedDeps } from '../optimizer'
-import { resolveHostname } from '../utils'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -452,7 +450,7 @@ export async function createServer(
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as AddressInfo).port
+      serverConfig.port = (httpServer.address() as net.AddressInfo).port
     })
   }
 
