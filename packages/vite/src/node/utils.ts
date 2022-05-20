@@ -534,38 +534,8 @@ export function removeDirSync(dir: string) {
   }
 }
 
-const REMOVE_DIR_TIMEOUT = 5000
-const rmdir = promisify(fs.rm ?? fs.rmdir) // TODO: Remove after support for Node 12 is dropped
-export async function removeDir(dir: string) {
-  const t0 = Date.now()
-  let backoff = 0
-  const attempt = async () => {
-    const attemptStart = Date.now()
-    try {
-      await rmdir(dir, { recursive: true })
-    } catch (e) {
-      if (e.code === 'ENOENT') {
-        return
-      }
-      if (e.code === 'ENOTEMPTY' || e.code === 'EPERM') {
-        const now = Date.now()
-        if (now - t0 < REMOVE_DIR_TIMEOUT) {
-          const delay = backoff - (now - attemptStart)
-          if (delay > 0) {
-            await new Promise((resolve) => setTimeout(resolve, delay))
-          }
-          backoff = Math.min(backoff + 10, 100)
-          await attempt()
-          return
-        }
-      }
-
-      throw e
-    }
-  }
-  await attempt()
-}
-
+const rmdirSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+export const removeDir = isWindows ? promisify(gracefulRemoveDir) : rmdirSync
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
@@ -843,6 +813,38 @@ function gracefulRename(
       if (backoff < 100) backoff += 10
       return
     }
+    if (cb) cb(er)
+  })
+}
+
+const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
+function gracefulRemoveDir(
+  dir: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const rmdir = fs.rm ?? fs.rmdir // TODO: Remove after support for Node 12 is dropped
+  const start = Date.now()
+  let backoff = 0
+  rmdir(dir, { recursive: true }, function CB(er) {
+    if (er) {
+      if (
+        (er.code === 'ENOTEMPTY' ||
+          er.code === 'EACCES' ||
+          er.code === 'EPERM') &&
+        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
+      ) {
+        setTimeout(function () {
+          rmdir(dir, { recursive: true }, CB)
+        }, backoff)
+        if (backoff < 100) backoff += 10
+        return
+      }
+
+      if (er.code === 'ENOENT') {
+        er = null
+      }
+    }
+
     if (cb) cb(er)
   })
 }
