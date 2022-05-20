@@ -712,7 +712,6 @@ createServer()
 
 ### server.fs.deny
 
-- **Experimental**
 - **Type:** `string[]`
 
   Blocklist for sensitive files being restricted to be served by Vite dev server.

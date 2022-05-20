@@ -152,8 +152,6 @@ const { build } = require('vite')
 
 ## `preview`
 
-**Experimental**
-
 **Type Signature:**
 
 ```ts
