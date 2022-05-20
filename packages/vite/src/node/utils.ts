@@ -534,8 +534,9 @@ export function removeDirSync(dir: string) {
   }
 }
 
-const rmdirSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-export const removeDir = isWindows ? promisify(gracefulRemoveDir) : rmdirSync
+export const removeDir = isWindows
+  ? promisify(gracefulRemoveDir)
+  : removeDirSync
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
