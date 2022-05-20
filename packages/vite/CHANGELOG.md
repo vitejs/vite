@@ -16,20 +16,15 @@
 * feat: treat Astro file scripts as TS (#8151) ([559c952](https://github.com/vitejs/vite/commit/559c952)), closes [#8151](https://github.com/vitejs/vite/issues/8151)
 * feat: worker emit fileName with config (#7804) ([04c2edd](https://github.com/vitejs/vite/commit/04c2edd)), closes [#7804](https://github.com/vitejs/vite/issues/7804)
 * feat(glob-import): support `{ import: '*' }` (#8071) ([0b78b2a](https://github.com/vitejs/vite/commit/0b78b2a)), closes [#8071](https://github.com/vitejs/vite/issues/8071)
-* fix: add direct query to html-proxy css (fixes #8091) (#8094) ([54a941a](https://github.com/vitejs/vite/commit/54a941a)), closes [#8091](https://github.com/vitejs/vite/issues/8091) [#8094](https://github.com/vitejs/vite/issues/8094)
 * fix: add hash to lib chunk names (#7190) ([c81cedf](https://github.com/vitejs/vite/commit/c81cedf)), closes [#7190](https://github.com/vitejs/vite/issues/7190)
 * fix: allow css to be written for systemjs output (#5902) ([780b4f5](https://github.com/vitejs/vite/commit/780b4f5)), closes [#5902](https://github.com/vitejs/vite/issues/5902)
 * fix: client full reload (#8018) ([2f478ed](https://github.com/vitejs/vite/commit/2f478ed)), closes [#8018](https://github.com/vitejs/vite/issues/8018)
-* fix: graceful rename in windows (#8036) ([fe704f1](https://github.com/vitejs/vite/commit/fe704f1)), closes [#8036](https://github.com/vitejs/vite/issues/8036)
 * fix: handle optimize failure (#8006) ([ba95a2a](https://github.com/vitejs/vite/commit/ba95a2a)), closes [#8006](https://github.com/vitejs/vite/issues/8006)
-* fix: image-set with base64 images (fix #8028) (#8035) ([e10c0c1](https://github.com/vitejs/vite/commit/e10c0c1)), closes [#8028](https://github.com/vitejs/vite/issues/8028) [#8035](https://github.com/vitejs/vite/issues/8035)
 * fix: increase default HTTPS dev server session memory limit (#6207) ([f895f94](https://github.com/vitejs/vite/commit/f895f94)), closes [#6207](https://github.com/vitejs/vite/issues/6207)
-* fix: invalidate ssrError when HMR update occurs (#8052) ([c7356e0](https://github.com/vitejs/vite/commit/c7356e0)), closes [#8052](https://github.com/vitejs/vite/issues/8052)
 * fix: relative path html (#8122) ([d0deac0](https://github.com/vitejs/vite/commit/d0deac0)), closes [#8122](https://github.com/vitejs/vite/issues/8122)
 * fix: Remove ssrError when invalidating a module (#8124) ([a543220](https://github.com/vitejs/vite/commit/a543220)), closes [#8124](https://github.com/vitejs/vite/issues/8124)
 * fix: remove useless `/__vite_ping` handler (#8133) ([d607b2b](https://github.com/vitejs/vite/commit/d607b2b)), closes [#8133](https://github.com/vitejs/vite/issues/8133)
 * fix: typo in #8121 (#8143) ([c32e3ac](https://github.com/vitejs/vite/commit/c32e3ac)), closes [#8121](https://github.com/vitejs/vite/issues/8121) [#8143](https://github.com/vitejs/vite/issues/8143)
-* fix: use `strip-literal` to strip string lterals (#8054) ([1ffc010](https://github.com/vitejs/vite/commit/1ffc010)), closes [#8054](https://github.com/vitejs/vite/issues/8054)
 * fix: use Vitest for unit testing, clean regex bug (#8040) ([63cd53d](https://github.com/vitejs/vite/commit/63cd53d)), closes [#8040](https://github.com/vitejs/vite/issues/8040)
 * fix: Vite cannot load configuration files in the link directory (#4180) (#4181) ([a3fa1a3](https://github.com/vitejs/vite/commit/a3fa1a3)), closes [#4180](https://github.com/vitejs/vite/issues/4180) [#4181](https://github.com/vitejs/vite/issues/4181)
 * fix: vite client types (#7877) ([0e67fe8](https://github.com/vitejs/vite/commit/0e67fe8)), closes [#7877](https://github.com/vitejs/vite/issues/7877)
@@ -64,8 +59,18 @@
 * refactor: remove deprecated api for 3.0 (#5868) ([b5c3709](https://github.com/vitejs/vite/commit/b5c3709)), closes [#5868](https://github.com/vitejs/vite/issues/5868)
 * refactor: use `import.meta.glob` over `globEager` in tests (#8066) ([1878f46](https://github.com/vitejs/vite/commit/1878f46)), closes [#8066](https://github.com/vitejs/vite/issues/8066)
 * refactor: use node hash (#7975) ([5ce7c74](https://github.com/vitejs/vite/commit/5ce7c74)), closes [#7975](https://github.com/vitejs/vite/issues/7975)
-* perf(lib): reduce backtrack when injecting esbuild helpers (#8110) ([b993c5f](https://github.com/vitejs/vite/commit/b993c5f)), closes [#8110](https://github.com/vitejs/vite/issues/8110)
 * test: migrate to vitest (#8076) ([8148f67](https://github.com/vitejs/vite/commit/8148f67)), closes [#8076](https://github.com/vitejs/vite/issues/8076)
+
+
+
+## <small>2.9.9 (2022-05-11)</small>
+
+* fix: add direct query to html-proxy css (fixes #8091) (#8094) ([a24b5e3](https://github.com/vitejs/vite/commit/a24b5e3)), closes [#8091](https://github.com/vitejs/vite/issues/8091) [#8094](https://github.com/vitejs/vite/issues/8094)
+* fix: graceful rename in windows (#8036) ([84496f8](https://github.com/vitejs/vite/commit/84496f8)), closes [#8036](https://github.com/vitejs/vite/issues/8036)
+* fix: image-set with base64 images (fix #8028) (#8035) ([992aee2](https://github.com/vitejs/vite/commit/992aee2)), closes [#8028](https://github.com/vitejs/vite/issues/8028) [#8035](https://github.com/vitejs/vite/issues/8035)
+* fix: invalidate ssrError when HMR update occurs (#8052) ([22fa882](https://github.com/vitejs/vite/commit/22fa882)), closes [#8052](https://github.com/vitejs/vite/issues/8052)
+* fix: use `strip-literal` to strip string lterals (#8054) ([b6fc3cd](https://github.com/vitejs/vite/commit/b6fc3cd)), closes [#8054](https://github.com/vitejs/vite/issues/8054)
+* perf(lib): reduce backtrack when injecting esbuild helpers (#8110) ([e5556ab](https://github.com/vitejs/vite/commit/e5556ab)), closes [#8110](https://github.com/vitejs/vite/issues/8110)
 
 
 
