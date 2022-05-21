@@ -1,24 +1,25 @@
 #!/usr/bin/env node
 
 // @ts-check
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import minimist from 'minimist'
+import prompts from 'prompts'
+import {
+  blue,
+  cyan,
+  green,
+  lightRed,
+  magenta,
+  red,
+  reset,
+  yellow
+} from 'kolorist'
+
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
-const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
-// eslint-disable-next-line node/no-restricted-require
-const prompts = require('prompts')
-const {
-  yellow,
-  green,
-  cyan,
-  blue,
-  magenta,
-  lightRed,
-  red,
-  reset
-} = require('kolorist')
-
+const argv = minimist(process.argv.slice(2), { string: ['_'] })
 const cwd = process.cwd()
 
 const FRAMEWORKS = [
@@ -238,7 +239,11 @@ async function init() {
 
   console.log(`\nScaffolding project in ${root}...`)
 
-  const templateDir = path.join(__dirname, `template-${template}`)
+  const templateDir = path.resolve(
+    fileURLToPath(import.meta.url),
+    '..',
+    `template-${template}`
+  )
 
   const write = (file, content) => {
     const targetPath = renameFiles[file]
@@ -256,7 +261,9 @@ async function init() {
     write(file)
   }
 
-  const pkg = require(path.join(templateDir, `package.json`))
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8')
+  )
 
   pkg.name = packageName || targetDir
 
@@ -291,12 +298,18 @@ function copy(src, dest) {
   }
 }
 
+/**
+ * @param {string} projectName
+ */
 function isValidPackageName(projectName) {
   return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
     projectName
   )
 }
 
+/**
+ * @param {string} projectName
+ */
 function toValidPackageName(projectName) {
   return projectName
     .trim()
@@ -306,6 +319,10 @@ function toValidPackageName(projectName) {
     .replace(/[^a-z0-9-~]+/g, '-')
 }
 
+/**
+ * @param {string} srcDir
+ * @param {string} destDir
+ */
 function copyDir(srcDir, destDir) {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
@@ -315,11 +332,17 @@ function copyDir(srcDir, destDir) {
   }
 }
 
+/**
+ * @param {string} path
+ */
 function isEmpty(path) {
   const files = fs.readdirSync(path)
   return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
+/**
+ * @param {string} dir
+ */
 function emptyDir(dir) {
   if (!fs.existsSync(dir)) {
     return
