@@ -215,7 +215,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // automatic runtime!
             // Avoid parsing the optimized react-dom since it will never
             // contain compiled JSX and it's a pretty big file (800kb).
-            const isOptimizedReactDom = id.startsWith(resolvedCacheDir) && id.includes('/react-dom.js')
+            const isOptimizedReactDom =
+              id.startsWith(resolvedCacheDir) && id.includes('/react-dom.js')
             const [restoredAst, isCommonJS] =
               !isProjectFile && !isJSX && !isOptimizedReactDom
                 ? await restoreJSX(babel, code, id)
