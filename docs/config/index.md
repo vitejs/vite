@@ -467,7 +467,7 @@ export default defineConfig(({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Whether the app is an SPA. This toggles the SPA catch-all routing of the development and preview server: by default, all URLs are rendered to the same single page (in order to enable SPA client-side routing). For SSR and MPA apps, this behavior can be disabled by setting `spa` to `false`.
+  This configuration is meant for framework authors, or users using Vite's SSR API. See [SSR - Vite CLI](/guide/ssr#vite-cli).
 
 ## Server Options
 
