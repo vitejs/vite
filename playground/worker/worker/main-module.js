@@ -92,10 +92,14 @@ w2.port.addEventListener('message', (ev) => {
 })
 w2.port.start()
 
-const importMetaGlobEagerWorker = new ImportMetaGlobEagerWorker()
-
+const workers = import.meta.glob('../importMetaGlob.*.js', {
+  as: 'worker',
+  eager: true
+})
+const importMetaGlobEagerWorker = new workers[
+  '../importMetaGlob.worker.js'
+].default()
 importMetaGlobEagerWorker.postMessage('1')
-
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
   text('.importMetaGlobEager-worker', JSON.stringify(e.data))
 })
