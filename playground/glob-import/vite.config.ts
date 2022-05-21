@@ -6,5 +6,8 @@ export default defineConfig({
     alias: {
       '@dir': path.resolve(__dirname, './dir/')
     }
+  },
+  build: {
+    sourcemap: true
   }
 })
