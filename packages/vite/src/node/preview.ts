@@ -98,9 +98,9 @@ export async function preview(
 
   app.use(compression())
 
-  const isSPA = config.isSPA ?? true
+  const spa = config.spa ?? true
 
-  if (isSPA) {
+  if (spa) {
     // We need to apply the plugins' server post hooks before `sirv()`. (Because
     // `sirv(_, { single: true })` catches all routes.)
     postHooks.forEach((fn) => fn && fn())
@@ -113,11 +113,11 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: isSPA
+      single: spa
     })
   )
 
-  if (!isSPA) {
+  if (!spa) {
     // We apply the plugins' server post hooks after `sirv()` so that `sirv()`
     // can serve pre-rendered pages before any SSR middleware.
     postHooks.forEach((fn) => fn && fn())

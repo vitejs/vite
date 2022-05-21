@@ -509,9 +509,9 @@ export async function createServer(
 
   const isMiddlewareModeSSR = middlewareMode && middlewareMode !== 'html'
 
-  const isSPA = config.isSPA ?? true
+  const spa = config.spa ?? true
 
-  if (isSPA && !isMiddlewareModeSSR) {
+  if (spa && !isMiddlewareModeSSR) {
     // SPA catch-all fallback routing
     middlewares.use(spaFallbackMiddleware(root))
     // transform index.html
@@ -519,7 +519,7 @@ export async function createServer(
   }
 
   // Handle 404s.
-  // We keep 404 handling when `isSPA === false` because some SSR tools, such
+  // We keep 404 handling when `spa === false` because some SSR tools, such
   // as vite-plugin-ssr, cannot always render 404 pages. (E.g. if the
   // vite-plugin-ssr user didn't define a `_error.page.js`.)
   if (!isMiddlewareModeSSR) {

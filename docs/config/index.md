@@ -462,12 +462,12 @@ export default defineConfig(({ command, mode }) => {
   `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
   :::
 
-### isSPA
+### spa
 
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Whether the app is an SPA. This toggles the SPA catch-all routing of the development and preview server: by default, all URLs are rendered to the same single page (in order to enable SPA client-side routing). For SSR and MPA apps, this behavior can be disabled by setting `isSPA` to `false`.
+  Whether the app is an SPA. This toggles the SPA catch-all routing of the development and preview server: by default, all URLs are rendered to the same single page (in order to enable SPA client-side routing). For SSR and MPA apps, this behavior can be disabled by setting `spa` to `false`.
 
 ## Server Options
 
