@@ -11,7 +11,7 @@ const loadTerserPath = (root: string) => {
     terserPath = requireResolveFromRootWithFallback(root, 'terser')
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
-      throw new Error('terser not found. Did you install it? Since v3.0.0, terser has become a optional dependency and needs to be installed individually.')
+      throw new Error('terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.')
     } else {
       const message = new Error(`terser failed to load:\n${e.message}`)
       message.stack = e.stack + '\n' + message.stack
