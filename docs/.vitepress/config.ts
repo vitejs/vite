@@ -4,9 +4,7 @@ export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
 
-  head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]
-  ],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
 
   vue: {
     reactivityTransform: true
@@ -21,6 +19,12 @@ export default defineConfig({
       dir: 'docs',
       text: 'Suggest changes to this page'
     },
+
+    socialLinks: [
+      { icon: 'twitter', link: 'https://twitter.com/vite_js' },
+      { icon: 'discord', link: 'https://chat.vitejs.dev' },
+      { icon: 'github', link: 'https://github.com/vitejs/vite' }
+    ],
 
     algolia: {
       apiKey: 'b573aa848fd57fb47d693b531297403c',
