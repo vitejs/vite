@@ -65,7 +65,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(13)
+    expect(files.length).toBe(15)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -104,6 +104,12 @@ test('module worker', async () => {
 test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
+
+test('url query worker', async () => {
+  expect(await page.textContent('.simple-worker-url')).toMatch(
+    'Hello from simple worker!'
+  )
 })
 
 test('import.meta.glob eager in worker', async () => {
