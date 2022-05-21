@@ -1,15 +1,17 @@
-import { createRequire } from 'module'
+import { pathToFileURL } from 'url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
 
-let terserPath: string | undefined
-const loadTerserPath = (root: string) => {
-  if (terserPath) return terserPath
+let terserFileUrl: URL | undefined
+const loadTerserFileUrl = (root: string) => {
+  if (terserFileUrl) return terserFileUrl
   try {
-    terserPath = requireResolveFromRootWithFallback(root, 'terser')
+    terserFileUrl = pathToFileURL(
+      requireResolveFromRootWithFallback(root, 'terser')
+    )
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(
@@ -21,17 +23,19 @@ const loadTerserPath = (root: string) => {
       throw message
     }
   }
-  return terserPath
+  return terserFileUrl
 }
-
-// TODO: use import()
-const _require = createRequire(import.meta.url)
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
     new Worker(
-      (terserPath: string, code: string, options: Terser.MinifyOptions) => {
-        return _require(terserPath).minify(code, options) as Terser.MinifyOutput
+      async (
+        terserFileUrl: string,
+        code: string,
+        options: Terser.MinifyOptions
+      ) => {
+        const terser = await import(terserFileUrl)
+        return terser.minify(code, options) as Terser.MinifyOutput
       }
     )
 
@@ -61,8 +65,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserPath = loadTerserPath(config.root)
-      const res = await worker.run(terserPath, code, {
+      const terserFileUrl = loadTerserFileUrl(config.root)
+      const res = await worker.run(terserFileUrl.href, code, {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,
