@@ -1,3 +1,4 @@
+import { createRequire } from 'module'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
@@ -11,7 +12,9 @@ const loadTerserPath = (root: string) => {
     terserPath = requireResolveFromRootWithFallback(root, 'terser')
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
-      throw new Error('terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.')
+      throw new Error(
+        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.'
+      )
     } else {
       const message = new Error(`terser failed to load:\n${e.message}`)
       message.stack = e.stack + '\n' + message.stack
@@ -21,11 +24,14 @@ const loadTerserPath = (root: string) => {
   return terserPath
 }
 
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
     new Worker(
       (terserPath: string, code: string, options: Terser.MinifyOptions) => {
-        return require(terserPath).minify(code, options) as Terser.MinifyOutput
+        return _require(terserPath).minify(code, options) as Terser.MinifyOutput
       }
     )
 

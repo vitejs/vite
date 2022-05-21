@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { parse as parseUrl, pathToFileURL } from 'url'
 import { performance } from 'perf_hooks'
+import { createRequire } from 'module'
 import colors from 'picocolors'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
@@ -25,6 +26,9 @@ import {
   isExternalUrl,
   isObject,
   lookupFile,
+  mergeAlias,
+  mergeConfig,
+  normalizeAlias,
   normalizePath
 } from './utils'
 import { resolvePlugins } from './plugins'
@@ -616,118 +620,6 @@ function resolveBaseUrl(
   return base
 }
 
-function mergeConfigRecursively(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
-  rootPath: string
-) {
-  const merged: Record<string, any> = { ...defaults }
-  for (const key in overrides) {
-    const value = overrides[key]
-    if (value == null) {
-      continue
-    }
-
-    const existing = merged[key]
-
-    if (existing == null) {
-      merged[key] = value
-      continue
-    }
-
-    // fields that require special handling
-    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
-      merged[key] = mergeAlias(existing, value)
-      continue
-    } else if (key === 'assetsInclude' && rootPath === '') {
-      merged[key] = [].concat(existing, value)
-      continue
-    } else if (
-      key === 'noExternal' &&
-      rootPath === 'ssr' &&
-      (existing === true || value === true)
-    ) {
-      merged[key] = true
-      continue
-    }
-
-    if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
-      continue
-    }
-    if (isObject(existing) && isObject(value)) {
-      merged[key] = mergeConfigRecursively(
-        existing,
-        value,
-        rootPath ? `${rootPath}.${key}` : key
-      )
-      continue
-    }
-
-    merged[key] = value
-  }
-  return merged
-}
-
-export function mergeConfig(
-  defaults: Record<string, any>,
-  overrides: Record<string, any>,
-  isRoot = true
-): Record<string, any> {
-  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
-}
-
-function mergeAlias(
-  a?: AliasOptions,
-  b?: AliasOptions
-): AliasOptions | undefined {
-  if (!a) return b
-  if (!b) return a
-  if (isObject(a) && isObject(b)) {
-    return { ...a, ...b }
-  }
-  // the order is flipped because the alias is resolved from top-down,
-  // where the later should have higher priority
-  return [...normalizeAlias(b), ...normalizeAlias(a)]
-}
-
-function normalizeAlias(o: AliasOptions = []): Alias[] {
-  return Array.isArray(o)
-    ? o.map(normalizeSingleAlias)
-    : Object.keys(o).map((find) =>
-        normalizeSingleAlias({
-          find,
-          replacement: (o as any)[find]
-        })
-      )
-}
-
-// https://github.com/vitejs/vite/issues/1363
-// work around https://github.com/rollup/plugins/issues/759
-function normalizeSingleAlias({
-  find,
-  replacement,
-  customResolver
-}: Alias): Alias {
-  if (
-    typeof find === 'string' &&
-    find.endsWith('/') &&
-    replacement.endsWith('/')
-  ) {
-    find = find.slice(0, find.length - 1)
-    replacement = replacement.slice(0, replacement.length - 1)
-  }
-
-  const alias: Alias = {
-    find,
-    replacement
-  }
-  if (customResolver) {
-    alias.customResolver = customResolver
-  }
-  return alias
-}
-
 export function sortUserPlugins(
   plugins: (Plugin | Plugin[])[] | undefined
 ): [Plugin[], Plugin[], Plugin[]] {
@@ -934,14 +826,15 @@ interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
 
+const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
 ): Promise<UserConfig> {
   const extension = path.extname(fileName)
   const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = require.extensions[extension]!
-  require.extensions[extension] = (module: NodeModule, filename: string) => {
+  const defaultLoader = _require.extensions[extension]!
+  _require.extensions[extension] = (module: NodeModule, filename: string) => {
     if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
@@ -949,10 +842,10 @@ async function loadConfigFromBundledFile(
     }
   }
   // clear cache in case of server restart
-  delete require.cache[require.resolve(fileName)]
-  const raw = require(fileName)
+  delete _require.cache[_require.resolve(fileName)]
+  const raw = _require(fileName)
   const config = raw.__esModule ? raw.default : raw
-  require.extensions[extension] = defaultLoader
+  _require.extensions[extension] = defaultLoader
   return config
 }
 
