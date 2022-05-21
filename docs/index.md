@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Vite
-  text: The Next Generation Frontend Tooling
-  tagline: Get ready for the brazing fast build environment that can finally catch up with you.
+  text: Next Generation Frontend Tooling
+  tagline: Get ready for a development environment that can finally catch up with you.
   actions:
     - theme: brand
       text: Get Started
