@@ -1,6 +1,7 @@
 {
   "name": "create-vite",
   "version": "2.9.3",
+  "type": "module",
   "license": "MIT",
   "author": "Evan You",
   "bin": {
