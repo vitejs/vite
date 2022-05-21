@@ -275,3 +275,41 @@ The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps
    :::
 
 2. Set `config.spa` to `false`. This switches the development and preview server from SPA mode to SSR mode.
+
+# DRAFT
+
+By default, the development/preview server is in SPA mode. To switch to SSR mode, set the configuration `config.spa` to `false`.
+
+- Setting `spa` to `false` disables the following behaviors that SSR and MPA
+- apps typically want to be disabled:
+
+The differences between SPA and SSR mode are the following:
+
+To achieve make sure to set the configuration `config.spa` to `false` which disables
+To enable CLI commands
+
+This is typically set by your Vite frameworks and as a end-user
+Makes Vite treat your app
+
+Sets the development and preview server to SPA mode or SSR/MPA mode.
+Setting `spa` to `false` disables the following behaviors that SSR and MPA apps typically want to be disabled.
+
+- SPA catch-all routing: the development/preview server renders all URLs to
+  the same single page (in order to enable SPA client-side routing).
+
+- `transformIndexHtml()`: the development/preview server automatically
+  applies `transformIndexHtml()`. MPA and SSR apps should apply
+  `transformIndexHtml()` manually instead.
+
+  Whether the app is an SPA. This toggles the SPA catch-all routing of the development and preview server: by default, all URLs are rendered to the same single page (in order to enable SPA client-side routing). For SSR and MPA apps, this behavior can be disabled by setting `spa` to `false`.
+
+  - Setting `spa` to `false` disables the following behaviors that SSR and MPA
+  - apps typically want to be disabled:
+  -
+  - - SPA catch-all routing: the development/preview server renders all URLs to
+  - the same single page (in order to enable SPA client-side routing).
+  -
+  - - `transformIndexHtml()`: the development/preview server automatically
+  - applies `transformIndexHtml()`. MPA and SSR apps should apply
+  - `transformIndexHtml()` manually instead.
+  -
