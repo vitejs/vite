@@ -12,4 +12,4 @@ exports[`parse positives > basic 1`] = `"__variableDynamicImportRuntimeHelper((i
 
 exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
 
-exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
+exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"url\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
