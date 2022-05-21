@@ -110,7 +110,7 @@ importers:
       prompts: 2.4.2
       rimraf: 3.0.2
       rollup: 2.72.1
-      rollup-plugin-esbuild: 4.9.1_pnyrwy4zazm4ltxxkdqkpc4vuy
+      rollup-plugin-esbuild: 4.9.1_esbuild@0.14.38+rollup@2.72.1
       semver: 7.3.7
       simple-git-hooks: 2.7.0
       sirv: 2.0.2
@@ -4457,7 +4457,7 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
     dependencies:
-      debug: 4.3.3
+      debug: 4.3.4
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -4970,7 +4970,7 @@ packages:
     engines: {node: '>= 6'}
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.3
+      debug: 4.3.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -7422,7 +7422,7 @@ packages:
     engines: {node: '>= 10'}
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.3
+      debug: 4.3.4
       socks: 2.6.2
     transitivePeerDependencies:
       - supports-color
