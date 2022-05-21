@@ -35,6 +35,10 @@ describe('parse positives', () => {
   })
 
   it('? in url', async () => {
-    expect(await run('`./mo?ds/${base ?? foo}.js?raw`')).toMatchSnapshot()
+    expect(await run('`./mo?ds/${base ?? foo}.js?url`')).toMatchSnapshot()
+  })
+
+  it('? in worker', async () => {
+    expect(await run('`./mo?ds/${base ?? foo}.js?worker`')).toMatchSnapshot()
   })
 })
