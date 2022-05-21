@@ -3,7 +3,6 @@ import InlineWorker from '../my-worker?worker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
-import ImportMetaGlobEagerWorker from '../importMetaGlobEager.worker?worker'
 import { mode } from '../modules/workerImport'
 
 function text(el, text) {
@@ -92,12 +91,12 @@ w2.port.addEventListener('message', (ev) => {
 })
 w2.port.start()
 
-const workers = import.meta.glob('../importMetaGlob.*.js', {
+const workers = import.meta.glob('../importMetaGlobEager.*.js', {
   as: 'worker',
   eager: true
 })
 const importMetaGlobEagerWorker = new workers[
-  '../importMetaGlob.worker.js'
+  '../importMetaGlobEager.worker.js'
 ].default()
 importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
