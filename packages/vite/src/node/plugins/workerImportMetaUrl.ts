@@ -6,7 +6,7 @@ import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
-import type { WorkerType} from './worker';
+import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 
