@@ -12,5 +12,8 @@ module.exports = {
       'test-package-e-included'
     ],
     exclude: ['test-package-d', 'test-package-e-excluded']
+  },
+  build: {
+    optimizeDeps: false
   }
 }

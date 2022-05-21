@@ -35,6 +35,7 @@ import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
 import { findKnownImports, getDepsCacheDir } from './optimizer'
+import { createOptimizedDeps } from './optimizer/registerMissing'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
@@ -123,6 +124,12 @@ export interface BuildOptions {
    * https://rollupjs.org/guide/en/#big-list-of-options
    */
   rollupOptions?: RollupOptions
+  /**
+   * Optimize deps with esbuild in the same way as in dev
+   * When this is enabled, `@rollup/plugin-commonjs` isn't included
+   * @default true
+   */
+  optimizeDeps?: boolean
   /**
    * Options to pass on to `@rollup/plugin-commonjs`
    */
@@ -227,6 +234,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
+    optimizeDeps: !raw?.watch, // TODO: watch + optimizeDeps
     ...raw,
     commonjsOptions: {
       include: [/node_modules/],
@@ -282,7 +290,9 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      commonjsPlugin(options.commonjsOptions),
+      ...(!options.optimizeDeps || options.ssr || config.isWorker
+        ? [commonjsPlugin(options.commonjsOptions)]
+        : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
@@ -387,6 +397,11 @@ async function doBuild(
       resolveSSRExternal(config, knownImports),
       userExternal
     )
+  }
+
+  if (options.optimizeDeps && !ssr) {
+    /* @ts-ignore */
+    config._optimizedDeps = await createOptimizedDeps(config)
   }
 
   const rollupOptions: RollupOptions = {
@@ -508,11 +523,28 @@ async function doBuild(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
-    const bundle = await rollup(rollupOptions)
+    let bundle: RollupBuild | undefined
+    if (config._optimizedDeps) {
+      let usedBrowserHash = config._optimizedDeps?.metadata.browserHash
+      while (!bundle) {
+        bundle = await rollup(rollupOptions)
+        const { discovered, browserHash } = config._optimizedDeps!.metadata!
+        const missingDep = Object.values(discovered)[0]
+        if (missingDep || usedBrowserHash !== browserHash) {
+          // Missing dependencies where discovered, discard this bundle
+          bundle = undefined
+        }
+        missingDep && (await missingDep.processing)
+        usedBrowserHash = config._optimizedDeps!.metadata!.browserHash
+      }
+    } else {
+      bundle = await rollup(rollupOptions)
+    }
+
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](
+      return bundle![options.write ? 'write' : 'generate'](
         buildOutputOptions(output)
       )
     }

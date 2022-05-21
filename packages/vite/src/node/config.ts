@@ -34,7 +34,7 @@ import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationOptions, OptimizedDeps } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -143,6 +143,11 @@ export interface UserConfig {
    * Preview specific options, e.g. host, port, https...
    */
   preview?: PreviewOptions
+  /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   * TODO: Should it be optimizeDeps.force?
+   */
+  force?: boolean
   /**
    * Dep optimization options
    */
@@ -270,6 +275,8 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
+    /** @internal */
+    _optimizedDeps: OptimizedDeps | null
   }
 >
 
@@ -510,7 +517,8 @@ export async function resolveConfig(
         ...optimizeDeps.esbuildOptions
       }
     },
-    worker: resolvedWorkerOptions
+    worker: resolvedWorkerOptions,
+    _optimizedDeps: null
   }
 
   // flat config.worker.plugin

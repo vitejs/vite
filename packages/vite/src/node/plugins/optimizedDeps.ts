@@ -1,10 +1,10 @@
 import { promises as fs } from 'fs'
 import colors from 'picocolors'
+import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
-import type { ViteDevServer } from '..'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
@@ -13,19 +13,13 @@ export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
-export function optimizedDepsPlugin(): Plugin {
-  let server: ViteDevServer | undefined
-
+export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
 
-    configureServer(_server) {
-      server = _server
-    },
-
     async load(id) {
-      if (server && isOptimizedDepFile(id, server.config)) {
-        const metadata = server?._optimizedDeps?.metadata
+      if (isOptimizedDepFile(id, config)) {
+        const metadata = config._optimizedDeps?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -49,7 +43,7 @@ export function optimizedDepsPlugin(): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = server._optimizedDeps?.metadata
+            const newMetadata = config._optimizedDeps?.metadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {

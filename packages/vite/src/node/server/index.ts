@@ -24,7 +24,6 @@ import {
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { createOptimizedDeps } from '../optimizer/registerMissing'
-import type { OptimizedDeps } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -59,10 +58,6 @@ import { searchForWorkspaceRoot } from './searchRoot'
 export { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions extends CommonServerOptions {
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
   /**
    * Configure HMR-specific options (port, host, path & protocol)
    */
@@ -232,10 +227,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _optimizedDeps: OptimizedDeps | null
-  /**
-   * @internal
-   */
   _importGlobMap: Map<string, string[][]>
   /**
    * Deps that are externalized
@@ -326,7 +317,7 @@ export async function createServer(
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (!server._ssrExternals) {
         let knownImports: string[] = []
-        const optimizedDeps = server._optimizedDeps
+        const optimizedDeps = config._optimizedDeps
         if (optimizedDeps) {
           await optimizedDeps.scanProcessing
           knownImports = [
@@ -388,7 +379,6 @@ export async function createServer(
       return server._restartPromise
     },
 
-    _optimizedDeps: null,
     _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
@@ -527,9 +517,10 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const initOptimizer = () => {
+  const initOptimizer = async () => {
     if (!config.optimizeDeps.disabled) {
-      server._optimizedDeps = createOptimizedDeps(server)
+      /* @ts-ignore */
+      config._optimizedDeps = await createOptimizedDeps(config, server)
     }
   }
 
@@ -541,7 +532,7 @@ export async function createServer(
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          initOptimizer()
+          await initOptimizer()
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -552,7 +543,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    initOptimizer()
+    await initOptimizer()
   }
 
   return server

@@ -38,22 +38,27 @@ export async function resolvePlugins(
   return [
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    isBuild ? null : preAliasPlugin(),
+    isBuild ? null : preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      ...config.resolve,
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      ssrConfig: config.ssr,
-      asSrc: true
-    }),
-    isBuild ? null : optimizedDepsPlugin(),
+    resolvePlugin(
+      {
+        ...config.resolve,
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        ssrConfig: config.ssr,
+        asSrc: true
+      },
+      config
+    ),
+    ...(!isBuild || config.build.optimizeDeps
+      ? [optimizedDepsPlugin(config)]
+      : []),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

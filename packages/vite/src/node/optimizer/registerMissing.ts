@@ -1,7 +1,7 @@
 import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
-import type { ViteDevServer } from '..'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
   createOptimizedDepsMetadata,
@@ -28,8 +28,10 @@ const isDebugEnabled = _debug('vite:deps').enabled
  */
 const debounceMs = 100
 
-export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
-  const { config } = server
+export async function createOptimizedDeps(
+  config: ResolvedConfig,
+  server?: ViteDevServer
+): Promise<OptimizedDeps> {
   const { logger } = config
 
   const sessionTimestamp = Date.now().toString()
@@ -115,7 +117,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
         scanPhaseProcessing.resolve()
         optimizedDeps.scanProcessing = undefined
 
-        runOptimizer()
+        await runOptimizer()
       } catch (e) {
         logger.error(e.message)
         if (optimizedDeps.scanProcessing) {
@@ -125,7 +127,11 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
       }
     }
 
-    setTimeout(warmUp, 0)
+    if (config.command === 'build') {
+      await warmUp()
+    } else {
+      setTimeout(warmUp, 0)
+    }
   }
 
   async function runOptimizer(isRerun = false) {
@@ -304,15 +310,17 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
   }
 
   function fullReload() {
-    // Cached transform results have stale imports (resolved to
-    // old locations) so they need to be invalidated before the page is
-    // reloaded.
-    server.moduleGraph.invalidateAll()
+    if (server) {
+      // Cached transform results have stale imports (resolved to
+      // old locations) so they need to be invalidated before the page is
+      // reloaded.
+      server.moduleGraph.invalidateAll()
 
-    server.ws.send({
-      type: 'full-reload',
-      path: '*'
-    })
+      server.ws.send({
+        type: 'full-reload',
+        path: '*'
+      })
+    }
   }
 
   async function rerun() {
@@ -365,7 +373,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     newDepsDiscovered = true
     missing = addOptimizedDepInfo(metadata, 'discovered', {
       id,
-      file: getOptimizedDepPath(id, server.config),
+      file: getOptimizedDepPath(id, config),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run

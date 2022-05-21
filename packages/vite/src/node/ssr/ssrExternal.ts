@@ -123,6 +123,7 @@ function collectExternals(
         resolveOptions,
         true, // we set `targetWeb` to `true` to get the ESM entry
         undefined,
+        undefined,
         true
       )?.id
       // normalizePath required for windows. tryNodeResolve uses normalizePath

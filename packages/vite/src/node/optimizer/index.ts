@@ -171,7 +171,7 @@ export interface DepOptimizationMetadata {
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -227,7 +227,7 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
@@ -328,16 +328,16 @@ export function depsLogString(qualifiedIds: string[]): string {
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
 export async function runOptimizeDeps(
-  config: ResolvedConfig,
+  resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
-  config = {
-    ...config,
+  const config: ResolvedConfig = {
+    ...resolvedConfig,
     command: 'build'
   }
 
-  const depsCacheDir = getDepsCacheDir(config)
-  const processingCacheDir = getProcessingDepsCacheDir(config)
+  const depsCacheDir = getDepsCacheDir(resolvedConfig)
+  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig)
 
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
@@ -500,7 +500,7 @@ export async function runOptimizeDeps(
       const id = path
         .relative(processingCacheDirOutputPath, o)
         .replace(jsExtensionRE, '')
-      const file = getOptimizedDepPath(id, config)
+      const file = getOptimizedDepPath(id, resolvedConfig)
       if (
         !findOptimizedDepInfoInRecord(
           metadata.optimized,
@@ -557,7 +557,7 @@ async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const include = config.optimizeDeps?.include
   if (include) {
-    const resolve = config.createResolver({ asSrc: false })
+    const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of include) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
@@ -600,11 +600,13 @@ export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
 }
 
 export function getDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'deps'))
+  const dirName = config.command === 'build' ? 'depsBuild' : 'deps'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'processing'))
+  const dirName = config.command === 'build' ? 'processingBuild' : 'processing'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 export function isOptimizedDepFile(id: string, config: ResolvedConfig) {

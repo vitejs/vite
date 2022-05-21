@@ -202,7 +202,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          const optimizedDeps = server._optimizedDeps
+          const optimizedDeps = config._optimizedDeps
           if (optimizedDeps) {
             await optimizedDeps.scanProcessing
 
@@ -406,7 +406,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             importRewrites.push(async () => {
               let rewriteDone = false
               if (
-                server?._optimizedDeps &&
+                config._optimizedDeps &&
                 isOptimizedDepFile(resolvedId, config) &&
                 !resolvedId.match(optimizedDepChunkRE)
               ) {
@@ -418,7 +418,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
-                  server._optimizedDeps!.metadata,
+                  config._optimizedDeps!.metadata,
                   file
                 )
 

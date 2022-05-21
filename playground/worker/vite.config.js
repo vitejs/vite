@@ -8,6 +8,7 @@ module.exports = vite.defineConfig({
     plugins: [vueJsx()]
   },
   build: {
-    outDir: 'dist/iife'
+    outDir: 'dist/iife',
+    optimizeDeps: false
   }
 })
