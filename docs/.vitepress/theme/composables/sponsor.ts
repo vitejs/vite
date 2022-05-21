@@ -28,8 +28,7 @@ export function useSponsor() {
     }
 
     const result = await fetch(dataUrl)
-    // const json = await result.json()
-    const json = mock
+    const json = await result.json()
 
     data.value = mapSponsors(json)
   })
@@ -59,51 +58,4 @@ function mapImgPath(sponsors: Sponsor[]) {
     ...sponsor,
     img: `${dataHost}/images/${sponsor.img}`
   }))
-}
-
-const mock = {
-  platinum: [
-    {
-      name: 'StackBlitz',
-      url: 'https://stackblitz.com/',
-      img: 'stackblitz.svg'
-    }
-  ],
-  gold: [
-    {
-      name: 'Tailwind Labs',
-      url: 'https://tailwindcss.com',
-      img: 'tailwind_labs.svg'
-    },
-    {
-      name: 'Repl.it',
-      url: 'https://replit.com/',
-      img: 'repl_it.svg'
-    },
-    {
-      name: 'Vue Jobs',
-      url: 'https://vuejobs.com/?ref=vuejs',
-      img: 'vue_jobs.png'
-    },
-    {
-      name: 'PLAID, Inc.',
-      url: 'https://plaid.co.jp/',
-      img: 'plaid__inc_.svg'
-    },
-    {
-      name: 'divriots',
-      url: 'https://divriots.com/',
-      img: 'divriots.png'
-    },
-    {
-      name: 'Cypress.io',
-      url: 'https://cypress.io',
-      img: 'cypress_io.svg'
-    },
-    {
-      name: 'Prefect.io',
-      url: 'https://www.prefect.io/',
-      img: 'prefect_io.svg'
-    }
-  ]
 }
