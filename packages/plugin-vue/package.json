@@ -6,7 +6,7 @@
   "files": [
     "dist"
   ],
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "rimraf dist && run-p dev-types dev-watch",
