@@ -41,7 +41,6 @@
     "@types/debug": "^4.1.7",
     "@types/estree": "^0.0.51",
     "@types/etag": "^1.8.1",
-    "@types/express": "^4.17.13",
     "@types/fs-extra": "^9.0.13",
     "@types/hash-sum": "^1.0.0",
     "@types/less": "^3.0.3",
