@@ -1,5 +1,3 @@
-import type { Worker } from 'okie'
-
 export interface ImportGlobOptions<
   Eager extends boolean,
   AsType extends string
@@ -35,7 +33,7 @@ export type GeneralImportGlobOptions = ImportGlobOptions<boolean, string>
 export interface KnownAsTypeMap {
   raw: string
   url: string
-  worker: Worker<any, any>
+  worker: Worker
 }
 
 export interface ImportGlobFunction {
