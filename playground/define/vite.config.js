@@ -1,4 +1,6 @@
-module.exports = {
+import { defineConfig } from 'vite'
+
+export default defineConfig({
   define: {
     __EXP__: 'false',
     __STRING__: '"hello"',
@@ -20,4 +22,4 @@ module.exports = {
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false
   }
-}
+})

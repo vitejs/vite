@@ -1,6 +1,7 @@
 {
   "name": "test-vue-lib",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "scripts": {
     "dev-consumer": "vite --config ./vite.config.consumer.ts",

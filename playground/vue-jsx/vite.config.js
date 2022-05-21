@@ -1,10 +1,9 @@
-const vueJsxPlugin = require('@vitejs/plugin-vue-jsx')
-const vuePlugin = require('@vitejs/plugin-vue')
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+import vueJsxPlugin from '@vitejs/plugin-vue-jsx'
+import vuePlugin from '@vitejs/plugin-vue'
+
+export default defineConfig({
   plugins: [
     vueJsxPlugin({
       include: [/\.tesx$/, /\.[jt]sx$/]
@@ -39,4 +38,4 @@ export default defineComponent(() => {
   optimizeDeps: {
     disabled: true
   }
-}
+})

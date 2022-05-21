@@ -1,7 +1,7 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
-const vite = require('vite')
+import vueJsx from '@vitejs/plugin-vue-jsx'
+import { defineConfig } from 'vite'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   base: '/iife/',
   worker: {
     format: 'iife',

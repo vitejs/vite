@@ -70,6 +70,12 @@ module.exports = defineConfig({
     'node/no-unpublished-import': 'off',
     'node/no-unpublished-require': 'off',
     'node/no-unsupported-features/es-syntax': 'off',
+    'node/no-unsupported-features/node-builtins': [
+      'error',
+      {
+        version: '>=14.6.0'
+      }
+    ],
 
     '@typescript-eslint/ban-ts-comment': 'off', // TODO: we should turn this on in a new PR
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR

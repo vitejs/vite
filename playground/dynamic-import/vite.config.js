@@ -1,30 +1,33 @@
-const fs = require('fs')
-const path = require('path')
-const vite = require('vite')
+import { copyFileSync } from 'fs'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { defineConfig } from 'vite'
 
-module.exports = vite.defineConfig({
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig({
   plugins: [
     {
       name: 'copy',
       writeBundle() {
-        fs.copyFileSync(
-          path.resolve(__dirname, 'qux.js'),
-          path.resolve(__dirname, 'dist/qux.js')
+        copyFileSync(
+          resolve(__dirname, 'qux.js'),
+          resolve(__dirname, 'dist/qux.js')
         )
-        fs.copyFileSync(
-          path.resolve(__dirname, 'mxd.js'),
-          path.resolve(__dirname, 'dist/mxd.js')
+        copyFileSync(
+          resolve(__dirname, 'mxd.js'),
+          resolve(__dirname, 'dist/mxd.js')
         )
-        fs.copyFileSync(
-          path.resolve(__dirname, 'mxd.json'),
-          path.resolve(__dirname, 'dist/mxd.json')
+        copyFileSync(
+          resolve(__dirname, 'mxd.json'),
+          resolve(__dirname, 'dist/mxd.json')
         )
       }
     }
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'alias')
+      '@': resolve(__dirname, 'alias')
     }
   }
 })

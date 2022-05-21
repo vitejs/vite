@@ -1,9 +1,11 @@
-const MagicString = require('magic-string')
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import MagicString from 'magic-string'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig({
   resolve: {
     alias: {
       '@': __dirname
@@ -58,4 +60,4 @@ module.exports = {
       }
     }
   ]
-}
+})

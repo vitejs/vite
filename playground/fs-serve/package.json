@@ -1,6 +1,7 @@
 {
   "name": "test-fs-serve",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite root",

@@ -2,6 +2,7 @@
   "name": "test-env",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "cross-env VITE_INLINE=inline-serve vite",
     "build": "cross-env VITE_INLINE=inline-build vite build",
