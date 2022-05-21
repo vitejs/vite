@@ -22,29 +22,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const res = await page.request.get(new URL('./Js.vue', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
-        "sources": [
-          "/root/Js.vue",
-        ],
-        "sourcesContent": [
-          "<template>
-        <p>&lt;js&gt;</p>
-      </template>
-
-      <script>
-      console.log('script')
-      </script>
-
-      <script setup>
-      console.log('setup')
-      </script>
-      ",
-        ],
-        "version": 3,
-      }
-    `)
+    expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
   })
 
   test('ts', async () => {

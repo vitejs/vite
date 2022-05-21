@@ -645,7 +645,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return s.toString()
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+        }
       } else {
         return source
       }
