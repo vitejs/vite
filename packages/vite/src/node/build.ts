@@ -40,6 +40,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
+import { VERSION } from './constants'
 
 export interface BuildOptions {
   /**
@@ -339,7 +340,7 @@ async function doBuild(
 
   config.logger.info(
     colors.cyan(
-      `vite v${require('vite/package.json').version} ${colors.green(
+      `vite v${VERSION} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
       )}`
     )

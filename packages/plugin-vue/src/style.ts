@@ -51,7 +51,7 @@ export async function transformStyle(
   }
 
   const map = result.map
-    ? formatPostcssSourceMap(
+    ? await formatPostcssSourceMap(
         // version property of result.map is declared as string
         // but actually it is a number
         result.map as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
