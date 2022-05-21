@@ -148,6 +148,12 @@ module.exports = defineConfig({
       rules: {
         '@typescript-eslint/triple-slash-reference': 'off'
       }
+    },
+    {
+      files: 'packages/vite/**/*.*',
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+      }
     }
   ]
 })

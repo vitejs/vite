@@ -1,8 +1,11 @@
 import { resolve } from 'path'
 import { promises as fs } from 'fs'
+import { fileURLToPath } from 'url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
+
+const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id

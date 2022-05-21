@@ -1,18 +1,34 @@
 {
   "name": "vite",
   "version": "3.0.0-alpha.1",
+  "type": "module",
   "license": "MIT",
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
   "bin": {
     "vite": "bin/vite.js"
   },
-  "main": "dist/node/index.js",
-  "types": "dist/node/index.d.ts",
+  "main": "./dist/node/index.js",
+  "module": "./dist/node/index.js",
+  "types": "./dist/node/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js",
+      "require": "./index.cjs"
+    },
+    "./client": {
+      "types": "./client.d.ts"
+    },
+    "./terser": {
+      "require": "./dist/node-cjs/terser.cjs"
+    }
+  },
   "files": [
     "bin",
     "dist",
     "client.d.ts",
+    "index.cjs",
     "src/client",
     "types"
   ],
@@ -29,12 +45,12 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/#readme",
   "scripts": {
-    "dev": "rimraf dist && rollup -c -w",
+    "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "rollup -c",
+    "build-bundle": "rollup --config rollup.config.ts --configPlugin esbuild",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
-    "patch-types": "ts-node scripts/patchTypes.ts",
+    "patch-types": "esno scripts/patchTypes.ts",
     "roll-types": "api-extractor run && rimraf temp",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
@@ -75,6 +91,7 @@
     "dotenv": "^14.3.2",
     "dotenv-expand": "^5.1.0",
     "es-module-lexer": "^0.10.5",
+    "esno": "^0.16.3",
     "estree-walker": "^2.0.2",
     "etag": "^1.8.1",
     "fast-glob": "^3.2.11",

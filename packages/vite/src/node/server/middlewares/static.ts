@@ -3,7 +3,7 @@ import type { ServerResponse } from 'http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
-import { isMatch } from 'micromatch'
+import micromatch from 'micromatch'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -17,6 +17,8 @@ import {
   isWindows,
   slash
 } from '../../utils'
+
+const { isMatch } = micromatch
 
 const sirvOptions: Options = {
   dev: true,

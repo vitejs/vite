@@ -32,6 +32,7 @@ SOFTWARE.
 import fs from 'fs'
 import { join, resolve } from 'path'
 import { performance } from 'perf_hooks'
+import { createRequire } from 'module'
 import type {
   EmittedFile,
   InputOptions,
@@ -151,8 +152,14 @@ export async function createPluginContainer(
 
   const watchFiles = new Set<string>()
 
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+
   // get rollup version
-  const rollupPkgPath = resolve(require.resolve('rollup'), '../../package.json')
+  const rollupPkgPath = resolve(
+    _require.resolve('rollup'),
+    '../../package.json'
+  )
   const minimalContext: MinimalPluginContext = {
     meta: {
       rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))

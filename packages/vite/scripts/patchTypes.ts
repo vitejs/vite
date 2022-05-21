@@ -1,10 +1,14 @@
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'fs'
+import { dirname, relative, resolve } from 'path'
+import { fileURLToPath } from 'url'
 import type { ParseResult } from '@babel/parser'
 import { parse } from '@babel/parser'
 import type { File } from '@babel/types'
 import colors from 'picocolors'
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import MagicString from 'magic-string'
-import { dirname, relative, resolve } from 'path'
+
+// @ts-ignore
+const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 const tempDir = resolve(__dirname, '../temp/node')
 const typesDir = resolve(__dirname, '../types')

@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'path'
-import { isMatch, scan } from 'micromatch'
+import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -19,6 +19,8 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, slash } from '../utils'
 import { isCSSRequest } from './css'
+
+const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray

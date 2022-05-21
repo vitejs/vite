@@ -1648,7 +1648,7 @@ Repository: gulpjs/glob-parent
 
 ## http-proxy
 License: MIT
-By: Charlie Robbins
+By: Charlie Robbins, jcrugzz <jcrugzz@gmail.com>
 Repository: https://github.com/http-party/node-http-proxy.git
 
 > node-http-proxy

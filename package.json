@@ -77,6 +77,7 @@
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
     "rollup": "^2.72.1",
+    "rollup-plugin-esbuild": "^4.9.1",
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",

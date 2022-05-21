@@ -1,19 +1,13 @@
 export * from './config'
-export { createServer, searchForWorkspaceRoot } from './server'
+export { createServer } from './server'
 export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
-export { send } from './server/send'
-export { createLogger } from './logger'
 export { formatPostcssSourceMap } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { resolvePackageEntry } from './plugins/resolve'
-export {
-  splitVendorChunkPlugin,
-  splitVendorChunk
-} from './plugins/splitVendorChunk'
 export { resolvePackageData } from './packages'
-export { normalizePath } from './utils'
+export * from './publicUtils'
 
 // additional types
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'

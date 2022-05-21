@@ -14,8 +14,13 @@ import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { mergeConfig, resolveConfig } from '../config'
-import { isParentDirectory, normalizePath, resolveHostname } from '../utils'
+import { resolveConfig } from '../config'
+import {
+  isParentDirectory,
+  mergeConfig,
+  normalizePath,
+  resolveHostname
+} from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { resolveSSRExternal } from '../ssr/ssrExternal'
 import {

@@ -1,7 +1,12 @@
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
+
+// TODO: use import()
+const _dirname = dirname(fileURLToPath(import.meta.url))
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
@@ -10,10 +15,11 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
         // when vite is linked, the worker thread won't share the same resolve
         // root with vite itself, so we have to pass in the basedir and resolve
         // terser first.
-        // eslint-disable-next-line node/no-restricted-require
+        // eslint-disable-next-line node/no-restricted-require, no-restricted-globals
         const terserPath = require.resolve('terser', {
           paths: [basedir]
         })
+        // eslint-disable-next-line no-restricted-globals
         return require(terserPath).minify(code, options) as Terser.MinifyOutput
       }
     )
@@ -44,7 +50,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const res = await worker.run(__dirname, code, {
+      const res = await worker.run(_dirname, code, {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,

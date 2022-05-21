@@ -6,7 +6,12 @@ import type {
 } from 'rollup'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
-import { isCSSRequest } from './css'
+
+// This file will be built for both ESM and CJS. Avoid relying on other modules as possible.
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangRE = new RegExp(cssLangs)
+export const isCSSRequest = (request: string): boolean =>
+  cssLangRE.test(request)
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
 // We don't recommend using this strategy as a general solution moving forward
