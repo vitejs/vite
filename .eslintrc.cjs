@@ -89,6 +89,7 @@ module.exports = defineConfig({
       { prefer: 'type-imports' }
     ],
 
+    'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [
       'error',
@@ -112,6 +113,12 @@ module.exports = defineConfig({
       files: ['packages/vite/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
+      }
+    },
+    {
+      files: ['packages/plugin-*/**/*'],
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     },
     {

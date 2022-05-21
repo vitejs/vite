@@ -2,13 +2,16 @@
 // the default e2e test serve behavior
 
 import path from 'path'
-import { isBuild, ports, rootDir } from '~utils'
+import { hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['optimize-missing-deps']
 
 export async function serve() {
   const { createServer } = require(path.resolve(rootDir, 'server.js'))
-  const { app, vite } = await createServer(rootDir, isBuild)
+  const { app, vite } = await createServer(
+    rootDir,
+    hmrPorts['optimize-missing-deps']
+  )
 
   return new Promise((resolve, reject) => {
     try {

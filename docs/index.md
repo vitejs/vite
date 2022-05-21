@@ -23,6 +23,8 @@ features:
 footer: MIT Licensed | Copyright © 2019-present Evan You & Vite Contributors
 ---
 
+> TODO: Home Page feature is not ready in VitePress Next just yet! So this page looks broken for now.
+
 <script setup>
 import SponsorsGroup from './.vitepress/theme/SponsorsGroup.vue'
 </script>

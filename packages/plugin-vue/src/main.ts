@@ -269,7 +269,7 @@ async function genTemplateCode(
         ? `&src=${descriptor.id}`
         : '&src=true'
       : ''
-    const scopedQuery = hasScoped ? `&scoped=true` : ``
+    const scopedQuery = hasScoped ? `&scoped=${descriptor.id}` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${scopedQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
@@ -356,7 +356,8 @@ async function genStyleCode(
           : '&src=true'
         : ''
       const directQuery = asCustomElement ? `&inline` : ``
-      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
+      const scopedQuery = style.scoped ? `&scoped=${descriptor.id}` : ``
+      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}${scopedQuery}`
       const styleRequest = src + query + attrsQuery
       if (style.module) {
         if (asCustomElement) {
@@ -457,7 +458,7 @@ async function linkSrcToDescriptor(
 
 // these are built-in query parameters so should be ignored
 // if the user happen to add them as attrs
-const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module']
+const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module', 'scoped']
 
 function attrsToQuery(
   attrs: SFCBlock['attrs'],

@@ -3,10 +3,9 @@ import os from 'os'
 import path from 'path'
 import { createHash } from 'crypto'
 import { promisify } from 'util'
-import { URL, pathToFileURL } from 'url'
+import { URL, URLSearchParams, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
 import { performance } from 'perf_hooks'
-import { URLSearchParams } from 'url'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -279,6 +278,10 @@ export function injectQuery(url: string, queryToInject: string): string {
 const timestampRE = /\bt=\d{13}&?\b/
 export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
+}
+
+export function isRelativeBase(base: string): boolean {
+  return base === '' || base.startsWith('.')
 }
 
 export async function asyncReplace(
@@ -557,11 +560,16 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-export async function processSrcSet(
-  srcs: string,
-  replacer: (arg: ImageCandidate) => Promise<string>
-): Promise<string> {
-  const imageCandidates: ImageCandidate[] = splitSrcSet(srcs)
+function reduceSrcset(ret: { url: string; descriptor: string }[]) {
+  return ret.reduce((prev, { url, descriptor }, index) => {
+    descriptor ??= ''
+    return (prev +=
+      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
+  }, '')
+}
+
+function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
+  return splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
       const [url] = imageSetUrlRE.exec(src) || []
@@ -572,21 +580,30 @@ export async function processSrcSet(
       }
     })
     .filter(({ url }) => !!url)
+}
 
-  const ret = await Promise.all(
-    imageCandidates.map(async ({ url, descriptor }) => {
-      return {
-        url: await replacer({ url, descriptor }),
-        descriptor
-      }
-    })
+export function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+): Promise<string> {
+  return Promise.all(
+    splitSrcSetDescriptor(srcs).map(async ({ url, descriptor }) => ({
+      url: await replacer({ url, descriptor }),
+      descriptor
+    }))
+  ).then((ret) => reduceSrcset(ret))
+}
+
+export function processSrcSetSync(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => string
+): string {
+  return reduceSrcset(
+    splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
+      url: replacer({ url, descriptor }),
+      descriptor
+    }))
   )
-
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
 }
 
 function splitSrcSet(srcs: string) {

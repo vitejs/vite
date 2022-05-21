@@ -12,15 +12,15 @@ import type { SourceMap } from 'rollup'
 import { createFilter } from '@rollup/pluginutils'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
-import { combineSourcemaps } from '../utils'
-import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 

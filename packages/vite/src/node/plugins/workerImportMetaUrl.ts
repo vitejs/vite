@@ -5,9 +5,8 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery } from '../utils'
-import { parseRequest } from '../utils'
-import type { WorkerType } from './worker'
+import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
+import type { WorkerType} from './worker';
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 
@@ -111,7 +110,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             cleanString,
             index + allExp.length
           )
-          const file = path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          const file = normalizePath(
+            path.resolve(path.dirname(id), rawUrl.slice(1, -1))
+          )
           let url: string
           if (isBuild) {
             url = await workerFileToUrl(this, config, file, query)

@@ -13,6 +13,7 @@ module.exports = {
   },
   build: {
     outDir: 'dist/foo',
+    assetsInlineLimit: 8192, // 8kb
     manifest: true,
     watch: {}
   }
