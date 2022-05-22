@@ -100,12 +100,6 @@ export async function preview(
 
   const { spa } = config
 
-  if (spa) {
-    // We need to apply the plugins' server post hooks before `sirv()`. (Because
-    // `sirv(_, { single: true })` catches all routes.)
-    postHooks.forEach((fn) => fn && fn())
-  }
-
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
@@ -117,11 +111,10 @@ export async function preview(
     })
   )
 
-  if (!spa) {
-    // We apply the plugins' server post hooks after `sirv()` so that `sirv()`
-    // can serve pre-rendered pages before any SSR middleware.
-    postHooks.forEach((fn) => fn && fn())
+  // apply post server hooks from plugins
+  postHooks.forEach((fn) => fn && fn())
 
+  if (!spa) {
     // 404 handling (this simulates what most static hosts do)
     app.use(config.base, (_, res, next) => {
       const file = path.join(distDir, './404.html')
