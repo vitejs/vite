@@ -259,6 +259,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       // stringified url or `new URL(...)`
       let url: string
       const { format } = config.worker
+      const workerConstructor =
+        query.sharedworker != null ? 'SharedWorker' : 'Worker'
       const workerOptions = isBuild
         ? format === 'es'
           ? '{type: "module"}'
@@ -277,7 +279,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL, ${workerOptions}) : new Worker("data:application/javascript;base64," + encodedJs, ${workerOptions});
+                return objURL ? new ${workerConstructor}(objURL, ${workerOptions}) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs, ${workerOptions});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
@@ -300,9 +302,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
         }
       }
-
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
 
       return {
         code: `export default function WorkerWrapper() {
