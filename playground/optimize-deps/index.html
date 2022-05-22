@@ -114,8 +114,9 @@
   import { greeting } from './.hidden-dir/foo.js'
   text('.hidden-dir', greeting)
 
-  import { nestedInclude } from 'nested-exclude'
-  text('.nested-include', nestedInclude)
+  // TODO:
+  // import { nestedInclude } from 'nested-exclude'
+  // text('.nested-include', nestedInclude)
 
   import { parse } from 'node:url'
   text('.url', parse('https://vitejs.dev').hostname)
