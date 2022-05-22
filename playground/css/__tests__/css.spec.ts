@@ -415,9 +415,5 @@ test("relative path rewritten in Less's data-uri", async () => {
 test('PostCSS source.input.from includes query', async () => {
   const code = await page.textContent('.postcss-source-input')
   // should resolve assets
-  expect(code).toContain(
-    isBuild
-      ? '/postcss-source-input.css?used&query=foo'
-      : '/postcss-source-input.css?query=foo'
-  )
+  expect(code).toContain('/postcss-source-input.css?query=foo')
 })
