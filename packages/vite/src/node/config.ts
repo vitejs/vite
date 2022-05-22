@@ -206,7 +206,7 @@ export interface UserConfig {
   }
   /**
    * Whether your application is a Single Page Application (SPA). Set to `false`
-   * if using Vite's SSR functionality.
+   * for other kinds of apps like MPAs.
    * @default true
    */
   spa?: boolean

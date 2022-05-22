@@ -467,7 +467,7 @@ export default defineConfig(({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Whether your application is a Single Page Application (SPA). Set to `false` if using Vite's [SSR](/guide/ssr#vite-cli) functionality.
+  Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
 
 ## Server Options
 
