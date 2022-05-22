@@ -467,7 +467,7 @@ export default defineConfig(({ command, mode }) => {
 - **Type:** `boolean`
 - **Default:** `true`
 
-  This configuration is meant for framework authors, or users using Vite's SSR API. See [SSR - Vite CLI](/guide/ssr#vite-cli).
+  Whether your application is a Single Page Application (SPA). Set to `false` if using Vite's [SSR](/guide/ssr#vite-cli) functionality.
 
 ## Server Options
 
