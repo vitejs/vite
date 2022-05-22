@@ -4,19 +4,11 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import {
-  isOptimizedDepFile,
-  optimizedDepInfoFromFile,
-  optimizedDepNeedsInterop
-} from '../optimizer'
-import { transformCjsImport } from './importAnalysis'
-import { optimizedInteropProxyMap } from './importAnalysisBuild'
+import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
-
-const optimizedProxyQueryRE = /[\?&]optimized-proxy=([a-z\d]{8})/
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
@@ -81,20 +73,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
     async resolveId(id) {
       if (isOptimizedDepFile(id, config)) {
-        const optimizedProxyQuery = id.match(optimizedProxyQueryRE)
-        const metadata = config._optimizedDeps!.metadata
-        const file = cleanUrl(id)
-        if (optimizedProxyQuery) {
-          const needsInterop = await optimizedDepNeedsInterop(
-            metadata,
-            file,
-            config
-          )
-          // Ensure that packages that don't need interop are resolved to the same file
-          return needsInterop ? '\0' + id : file
-        } else {
-          return file
-        }
+        return id
       }
     },
 
@@ -104,7 +83,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
     async load(id) {
       const metadata = config._optimizedDeps?.metadata
-      id = id.replace('\0', '')
       if (!metadata || !isOptimizedDepFile(id, config)) {
         return
       }
@@ -126,14 +104,6 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       } else {
         // TODO: error
         return
-      }
-
-      const optimizedProxyQuery = id.match(optimizedProxyQueryRE)
-      if (optimizedProxyQuery) {
-        const expHash = optimizedProxyQuery[1]
-        const exp = optimizedInteropProxyMap.get(config)!.get(expHash)!
-        const proxyCode = transformCjsImport(exp, file, 'proxy', 0, true)
-        return proxyCode
       }
 
       // Load the file from the cache instead of waiting for other plugin

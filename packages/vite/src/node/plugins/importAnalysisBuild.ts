@@ -4,10 +4,11 @@ import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
+import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
+  cleanUrl,
   combineSourcemaps,
-  getHash,
   isDataUrl,
   isExternalUrl,
   isRelativeBase,
@@ -16,8 +17,9 @@ import {
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { isOptimizedDepFile } from '../optimizer'
+import { isOptimizedDepFile, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
+import { transformCjsImport } from './importAnalysis'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -36,11 +38,7 @@ const dynamicImportPrefixRE = /import\s*\(/
 
 // TODO: abstract
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
-
-export const optimizedInteropProxyMap = new WeakMap<
-  ResolvedConfig,
-  Map<string, string>
->()
+const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -122,16 +120,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
-  let optimizedInteropProxy: Map<string, string>
-
   return {
     name: 'vite:build-import-analysis',
-
-    buildStart() {
-      optimizedInteropProxy = new Map<string, string>()
-      optimizedInteropProxyMap.set(config, optimizedInteropProxy)
-    },
-
     resolveId(id) {
       if (id === preloadHelperId) {
         return id
@@ -290,28 +280,64 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               isOptimizedDepFile(resolvedId, config) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
-              // We need to do the interop inplace, we can't do this in a proxy, this needs to be applied even if interop isn't needed
-              if (isDynamicImport) {
-                // rewrite `import('package')` to expose the default directly
-                str().overwrite(
-                  expStart,
-                  expEnd,
-                  `import('${resolvedId}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
-                  { contentOnly: true }
-                )
-              } else {
-                // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
-                // internal optimized chunks don't need es interop and are excluded
-                const exp = source.slice(expStart, expEnd)
-                const expHash = getHash(exp)
-                optimizedInteropProxy.set(expHash, exp)
-                const interopId = resolvedId + `?optimized-proxy=${expHash}`
+              const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
+              const needsInterop = await optimizedDepNeedsInterop(
+                config._optimizedDeps.metadata,
+                file,
+                config
+              )
+
+              let rewriteDone = false
+
+              if (needsInterop === undefined) {
+                // Non-entry dynamic imports from dependencies will reach here as there isn't
+                // optimize info for them, but they don't need es interop. If the request isn't
+                // a dynamic import, then it is an internal Vite error
+                if (!file.match(optimizedDepDynamicRE)) {
+                  config.logger.error(
+                    colors.red(
+                      `Vite Error, ${url} optimized info should be defined`
+                    )
+                  )
+                }
+              } else if (needsInterop) {
+                // config.logger.info(`${url} needs interop`)
+                if (isDynamicImport) {
+                  // rewrite `import('package')` to expose the default directly
+                  str().overwrite(
+                    expStart,
+                    expEnd,
+                    `import('${file}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+                    { contentOnly: true }
+                  )
+                } else {
+                  const exp = source.slice(expStart, expEnd)
+                  const rewritten = transformCjsImport(
+                    exp,
+                    file,
+                    specifier,
+                    index
+                  )
+                  if (rewritten) {
+                    str().overwrite(expStart, expEnd, rewritten, {
+                      contentOnly: true
+                    })
+                  } else {
+                    // #1439 export * from '...'
+                    str().overwrite(start, end, file, { contentOnly: true })
+                  }
+                }
+                rewriteDone = true
+              }
+              if (!rewriteDone) {
                 str().overwrite(
                   start,
                   end,
-                  isDynamicImport ? `'${interopId}'` : interopId,
-                  { contentOnly: true }
+                  isDynamicImport ? `'${file}'` : file,
+                  {
+                    contentOnly: true
+                  }
                 )
               }
             }

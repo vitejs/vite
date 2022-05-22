@@ -653,8 +653,7 @@ export function transformCjsImport(
   importExp: string,
   url: string,
   rawUrl: string,
-  importIndex: number,
-  proxy = false
+  importIndex: number
 ): string | undefined {
   const node = (
     parseJS(importExp, {
@@ -716,26 +715,14 @@ export function transformCjsImport(
     )
     const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
-      const name = proxy ? importedName : localName
       if (importedName === '*') {
-        lines.push(
-          proxy
-            ? `export default ${cjsModuleName}`
-            : `const ${localName} = ${cjsModuleName}`
-        )
+        lines.push(`const ${localName} = ${cjsModuleName}`)
       } else if (importedName === 'default') {
-        const interop = `${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`
         lines.push(
-          proxy
-            ? `export default ${interop}`
-            : `const ${localName} = ${interop}`
+          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`
         )
       } else {
-        lines.push(
-          `${
-            proxy ? 'export ' : ''
-          }const ${name} = ${cjsModuleName}["${importedName}"]`
-        )
+        lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
       }
     })
     if (defaultExports) {
