@@ -40,6 +40,7 @@ export interface OptimizedDeps {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
+  delay: () => void
 }
 
 export interface DepOptimizationOptions {

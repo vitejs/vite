@@ -523,23 +523,7 @@ async function doBuild(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
-    let bundle: RollupBuild | undefined
-    if (config._optimizedDeps) {
-      let usedBrowserHash = config._optimizedDeps?.metadata.browserHash
-      while (!bundle) {
-        bundle = await rollup(rollupOptions)
-        const { discovered, browserHash } = config._optimizedDeps!.metadata!
-        const missingDep = Object.values(discovered)[0]
-        if (missingDep || usedBrowserHash !== browserHash) {
-          // Missing dependencies where discovered, discard this bundle
-          bundle = undefined
-        }
-        missingDep && (await missingDep.processing)
-        usedBrowserHash = config._optimizedDeps!.metadata!.browserHash
-      }
-    } else {
-      bundle = await rollup(rollupOptions)
-    }
+    const bundle = await rollup(rollupOptions)
 
     parallelBuilds.push(bundle)
 

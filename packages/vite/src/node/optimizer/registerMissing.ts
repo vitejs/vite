@@ -33,18 +33,27 @@ export async function createOptimizedDeps(
   server?: ViteDevServer
 ): Promise<OptimizedDeps> {
   const { logger } = config
+  const isBuild = config.command === 'build'
 
   const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
+  let handle: NodeJS.Timeout | undefined
+
+  let delayProcessing = false
+
   const optimizedDeps: OptimizedDeps = {
     metadata:
       cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
-    registerMissingImport
+    registerMissingImport,
+    delay() {
+      if (handle) {
+        delayProcessing = true
+      }
+    }
   }
 
-  let handle: NodeJS.Timeout | undefined
   let newDepsDiscovered = false
 
   let newDepsToLog: string[] = []
@@ -78,7 +87,7 @@ export async function createOptimizedDeps(
 
   // If there wasn't a cache or it is outdated, perform a fast scan with esbuild
   // to quickly find project dependencies and do a first optimize run
-  if (!cachedMetadata) {
+  if (!cachedMetadata && !isBuild) {
     currentlyProcessing = true
 
     const scanPhaseProcessing = newDepOptimizationProcessing()
@@ -126,12 +135,7 @@ export async function createOptimizedDeps(
         }
       }
     }
-
-    if (config.command === 'build') {
-      await warmUp()
-    } else {
-      setTimeout(warmUp, 0)
-    }
+    setTimeout(warmUp, 0)
   }
 
   async function runOptimizer(isRerun = false) {
@@ -332,7 +336,8 @@ export async function createOptimizedDeps(
     debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
-    runOptimizer(true)
+    const isRerun = !isBuild
+    runOptimizer(isRerun)
   }
 
   function getDiscoveredBrowserHash(
@@ -391,6 +396,17 @@ export async function createOptimizedDeps(
 
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
+
+    debouncedProcessing()
+
+    // Return the path for the optimized bundle, this path is known before
+    // esbuild is run to generate the pre-bundle
+    return missing
+  }
+
+  function debouncedProcessing() {
+    // Debounced rerun, let other missing dependencies be discovered before
+    // the running next optimizeDeps
     enqueuedRerun = undefined
     if (handle) clearTimeout(handle)
     if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -398,14 +414,13 @@ export async function createOptimizedDeps(
     handle = setTimeout(() => {
       handle = undefined
       enqueuedRerun = rerun
-      if (!currentlyProcessing) {
+      if (delayProcessing) {
+        delayProcessing = false
+        debouncedProcessing()
+      } else if (!currentlyProcessing) {
         enqueuedRerun()
       }
     }, debounceMs)
-
-    // Return the path for the optimized bundle, this path is known before
-    // esbuild is run to generate the pre-bundle
-    return missing
   }
 
   return optimizedDeps

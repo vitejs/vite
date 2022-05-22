@@ -3,7 +3,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
-import { optimizedDepsPlugin } from './optimizedDeps'
+import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
@@ -44,6 +44,13 @@ export async function resolvePlugins(
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
+    ...(!isBuild || config.build.optimizeDeps
+      ? [
+          isBuild
+            ? optimizedDepsBuildPlugin(config)
+            : optimizedDepsPlugin(config)
+        ]
+      : []),
     resolvePlugin(
       {
         ...config.resolve,
@@ -56,9 +63,6 @@ export async function resolvePlugins(
       },
       config
     ),
-    ...(!isBuild || config.build.optimizeDeps
-      ? [optimizedDepsPlugin(config)]
-      : []),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,

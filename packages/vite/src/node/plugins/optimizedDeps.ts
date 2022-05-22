@@ -4,11 +4,19 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
+import {
+  isOptimizedDepFile,
+  optimizedDepInfoFromFile,
+  optimizedDepNeedsInterop
+} from '../optimizer'
+import { transformCjsImport } from './importAnalysis'
+import { optimizedInteropProxyMap } from './importAnalysisBuild'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+
+const optimizedProxyQueryRE = /[\?&]optimized-proxy=([a-z\d]{8})/
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
@@ -62,6 +70,74 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
             throwOutdatedRequest(id)
           }
         }
+      }
+    }
+  }
+}
+
+export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
+  return {
+    name: 'vite:optimized-deps-build',
+
+    async resolveId(id) {
+      if (isOptimizedDepFile(id, config)) {
+        const optimizedProxyQuery = id.match(optimizedProxyQueryRE)
+        const metadata = config._optimizedDeps?.metadata
+        if (metadata && optimizedProxyQuery) {
+          const file = cleanUrl(id)
+          const needsInterop = await optimizedDepNeedsInterop(metadata, file)
+          // Ensure that packages that don't need interop are resolved to the same file
+          return needsInterop ? '\0' + id : file
+        }
+      }
+    },
+
+    transform() {
+      config._optimizedDeps?.delay()
+    },
+
+    async load(id) {
+      const metadata = config._optimizedDeps?.metadata
+      id = id.replace('\0', '')
+      if (!metadata || !isOptimizedDepFile(id, config)) {
+        return
+      }
+      const file = cleanUrl(id)
+      // Search in both the currently optimized and newly discovered deps
+      const info = optimizedDepInfoFromFile(metadata, file)
+      if (info) {
+        try {
+          // This is an entry point, it may still not be bundled
+          await info.processing
+        } catch {
+          // If the refresh has not happened after timeout, Vite considers
+          // something unexpected has happened. In this case, Vite
+          // returns an empty response that will error.
+          // throwProcessingError(id)
+          return
+        }
+        isDebug && debug(`load ${colors.cyan(file)}`)
+      } else {
+        // TODO: error
+        return
+      }
+
+      const optimizedProxyQuery = id.match(optimizedProxyQueryRE)
+      if (optimizedProxyQuery) {
+        const expHash = optimizedProxyQuery[1]
+        const exp = optimizedInteropProxyMap.get(config)!.get(expHash)!
+        const proxyCode = transformCjsImport(exp, file, 'proxy', 0, true)
+        return proxyCode
+      }
+
+      // Load the file from the cache instead of waiting for other plugin
+      // load hooks to avoid race conditions, once processing is resolved,
+      // we are sure that the file has been properly save to disk
+      try {
+        return await fs.readFile(file, 'utf-8')
+      } catch (e) {
+        // Outdated non-entry points (CHUNK), loaded after a rerun
+        return ''
       }
     }
   }
