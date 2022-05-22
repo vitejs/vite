@@ -103,22 +103,17 @@ export async function handleHMRUpdate(
   }
 
   if (!hmrContext.modules.length) {
-    // html file cannot be hot updated
-    if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true
-      })
-      ws.send({
-        type: 'full-reload',
-        path: config.server.middlewareMode
-          ? '*'
-          : '/' + normalizePath(path.relative(config.root, file))
-      })
-    } else {
-      // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
-    }
+    //should realod, if some files outside the module graph are changed
+    config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
+      clear: true,
+      timestamp: true
+    })
+    ws.send({
+      type: 'full-reload',
+      path: config.server.middlewareMode
+        ? '*'
+        : '/' + normalizePath(path.relative(config.root, file))
+    })
     return
   }
 
