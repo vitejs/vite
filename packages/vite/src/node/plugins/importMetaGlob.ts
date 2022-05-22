@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'path'
-import { isMatch, scan } from 'micromatch'
+import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -18,7 +18,8 @@ import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, slash } from '../utils'
-import { isCSSRequest } from './css'
+
+const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray
@@ -73,7 +74,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: result.s.toString(),
-          map: result.s.generateMap()
+          map: config.build.sourcemap ? result.s.generateMap() : null
         }
       }
     }
@@ -390,9 +391,6 @@ export async function transformGlobImport(
             const filePath = paths.filePath
             let importPath = paths.importPath
             let importQuery = query
-
-            if (isCSSRequest(file))
-              importQuery = importQuery ? `${importQuery}&used` : '?used'
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]

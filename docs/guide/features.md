@@ -435,13 +435,13 @@ Note that variables only represent file names one level deep. If `file` is `'foo
 
 ## WebAssembly
 
-Pre-compiled `.wasm` files can be directly imported - the default export will be an initialization function that returns a Promise of the exports object of the wasm instance:
+Pre-compiled `.wasm` files can be imported with `?init` - the default export will be an initialization function that returns a Promise of the wasm instance:
 
 ```js
-import init from './example.wasm'
+import init from './example.wasm?init'
 
-init().then((exports) => {
-  exports.test()
+init().then((instance) => {
+  instance.exports.test()
 })
 ```
 
@@ -460,6 +460,11 @@ init({
 ```
 
 In the production build, `.wasm` files smaller than `assetInlineLimit` will be inlined as base64 strings. Otherwise, they will be copied to the dist directory as an asset and fetched on-demand.
+
+::: warning
+[ES Module Integration Proposal for WebAssembly](https://github.com/WebAssembly/esm-integration) is not currently supported.
+Use [`vite-plugin-wasm`](https://github.com/Menci/vite-plugin-wasm) or other community plugins to handle this.
+:::
 
 ## Web Workers
 

@@ -1,6 +1,9 @@
-import { resolve } from 'path'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
 import { describe, expect, test } from 'vitest'
 import { searchForWorkspaceRoot } from '../searchRoot'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 describe('searchForWorkspaceRoot', () => {
   test('lerna', () => {

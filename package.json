@@ -15,7 +15,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/** scripts/**",
+    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/**/*.ts scripts/**",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
@@ -77,6 +77,7 @@
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
     "rollup": "^2.72.1",
+    "rollup-plugin-esbuild": "^4.9.1",
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",
@@ -84,7 +85,7 @@
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-draft.1",
+    "vitepress": "1.0.0-draft.3",
     "vitest": "^0.12.4",
     "vue": "^3.2.33"
   },
