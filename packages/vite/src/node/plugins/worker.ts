@@ -258,11 +258,16 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       // stringified url or `new URL(...)`
       let url: string
+      const { format } = config.worker
+      const workerOptions = isBuild
+        ? format === 'es'
+          ? '{type: "module"}'
+          : '{}'
+        : '{type: "module"}'
+
       if (isBuild) {
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
-          const { format } = config.worker
-          const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
           return {
             code: `const encodedJs = "${Buffer.from(chunk.code).toString(
@@ -272,7 +277,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new Worker(objURL, ${workerOptions}) : new Worker("data:application/javascript;base64," + encodedJs, {type: "module"});
+                return objURL ? new Worker(objURL, ${workerOptions}) : new Worker("data:application/javascript;base64," + encodedJs, ${workerOptions});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }
@@ -298,7 +303,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       const workerConstructor =
         query.sharedworker != null ? 'SharedWorker' : 'Worker'
-      const workerOptions = { type: 'module' }
 
       return {
         code: `export default function WorkerWrapper() {
