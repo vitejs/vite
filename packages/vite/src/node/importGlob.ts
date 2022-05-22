@@ -9,7 +9,6 @@ import {
   preloadMarker,
   preloadMethod
 } from './plugins/importAnalysisBuild'
-import { isCSSRequest } from './plugins/css'
 import {
   blankReplacer,
   cleanUrl,
@@ -150,16 +149,14 @@ export async function transformImportGlob(
         await fsp.readFile(path.join(base, files[i]), 'utf-8')
       )},`
     } else {
-      const importeeUrl = isCSSRequest(importee) ? `${importee}?used` : importee
       if (isEager) {
         const identifier = `__glob_${importIndex}_${i}`
-        // css imports injecting a ?used query to export the css string
         importsString += `import ${
           isEagerDefault ? `` : `* as `
-        }${identifier} from ${JSON.stringify(importeeUrl)};`
+        }${identifier} from ${JSON.stringify(importee)};`
         entries += ` ${JSON.stringify(file)}: ${identifier},`
       } else {
-        let imp = `import(${JSON.stringify(importeeUrl)})`
+        let imp = `import(${JSON.stringify(importee)})`
         if (!normalizeUrl && preload) {
           imp =
             `(${isModernFlag}` +
