@@ -1,6 +1,5 @@
 import path from 'path'
 import type * as http from 'http'
-import fs from 'fs'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'
