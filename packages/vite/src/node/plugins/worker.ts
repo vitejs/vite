@@ -1,6 +1,6 @@
 import path from 'path'
 import MagicString from 'magic-string'
-import type { EmittedAsset, OutputChunk, TransformPluginContext } from 'rollup'
+import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
