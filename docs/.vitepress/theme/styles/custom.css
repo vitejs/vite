@@ -1,35 +1,15 @@
-.home-hero .image {
-  width: 200px;
-  height: 200px;
+@media (min-width: 640px) {
+  .VPHero .text {
+    max-width: 592px;
+  }
+
+  .VPHero .tagline {
+    max-width: 440px;
+  }
 }
 
-.nav-bar .logo {
-  height: 30px;
-  margin-right: 2px;
-}
-
-.content img {
-  border-radius: 10px;
-}
-
-.nav-dropdown-link-item .icon {
-  display: none;
-}
-
-.custom-block.tip {
-  border-color: var(--vp-c-brand-light);
-}
-
-.DocSearch {
-  --docsearch-primary-color: var(--vp-c-brand) !important;
-}
-
-#play-vite-audio {
-  padding: 0;
-  margin-left: 5px;
-  display: inline-flex;
-}
-
-#play-vite-audio img {
-  opacity: 0.8;
+@media (min-width: 960px) {
+  .VPHero .tagline {
+    max-width: 480px;
+  }
 }

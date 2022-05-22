@@ -75,7 +75,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: result.s.toString(),
-          map: result.s.generateMap()
+          map: config.build.sourcemap ? result.s.generateMap() : null
         }
       }
     }
