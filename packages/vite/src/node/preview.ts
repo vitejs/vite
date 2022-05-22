@@ -97,8 +97,6 @@ export async function preview(
 
   app.use(compression())
 
-  const { spa } = config
-
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
@@ -106,7 +104,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: spa
+      single: config.spa
     })
   )
 
