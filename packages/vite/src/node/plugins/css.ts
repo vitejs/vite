@@ -108,7 +108,6 @@ const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
-const usedRE = /(\?|&)used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -406,18 +405,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (usedRE.test(id)) {
-        if (modulesCode) {
-          code = modulesCode
-        } else {
-          let content = css
-          if (config.build.minify) {
-            content = await minifyCSS(content, config)
-          }
-          code = `export default ${JSON.stringify(content)}`
-        }
+      if (modulesCode) {
+        code = modulesCode
       } else {
-        code = `export default ''`
+        let content = css
+        if (config.build.minify) {
+          content = await minifyCSS(content, config)
+        }
+        // marking as pure to make it tree-shakable by minifier
+        // but the module itself is still treated as a non tree-shakable module
+        // because moduleSideEffects is 'no-treeshake'
+        code = `export default /* #__PURE__ */ (() => ${JSON.stringify(
+          content
+        )})()`
       }
 
       return {

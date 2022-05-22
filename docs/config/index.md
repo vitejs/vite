@@ -257,8 +257,8 @@ export default defineConfig(({ command, mode }) => {
   {
     "exports": {
       ".": {
-        "import": "./index.esm.mjs",
-        "require": "./index.cjs.js"
+        "import": "./index.mjs",
+        "require": "./index.js"
       }
     }
   }
