@@ -223,8 +223,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     async transform(raw, id) {
       const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
-        const workerType = query['type'] as WorkerType
+      if (query && query[WORKER_FILE_ID] != null) {
+        // if import worker by worker constructor will had query.type
+        // other type will be import worker by esm
+        const workerType = query['type'] || ('module' as WorkerType)
         let injectEnv = ''
 
         if (workerType === 'classic') {
