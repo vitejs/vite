@@ -539,6 +539,9 @@ export function removeDirSync(dir: string) {
   }
 }
 
+export const removeDir = isWindows
+  ? promisify(gracefulRemoveDir)
+  : removeDirSync
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
@@ -830,6 +833,38 @@ function gracefulRename(
       if (backoff < 100) backoff += 10
       return
     }
+    if (cb) cb(er)
+  })
+}
+
+const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
+function gracefulRemoveDir(
+  dir: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const rmdir = fs.rm ?? fs.rmdir // TODO: Remove after support for Node 12 is dropped
+  const start = Date.now()
+  let backoff = 0
+  rmdir(dir, { recursive: true }, function CB(er) {
+    if (er) {
+      if (
+        (er.code === 'ENOTEMPTY' ||
+          er.code === 'EACCES' ||
+          er.code === 'EPERM') &&
+        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
+      ) {
+        setTimeout(function () {
+          rmdir(dir, { recursive: true }, CB)
+        }, backoff)
+        if (backoff < 100) backoff += 10
+        return
+      }
+
+      if (er.code === 'ENOENT') {
+        er = null
+      }
+    }
+
     if (cb) cb(er)
   })
 }
