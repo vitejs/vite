@@ -161,7 +161,7 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-[write] my-lib.es.mjs 0.08kb, brotli: 0.07kb
+[write] my-lib.mjs 0.08kb, brotli: 0.07kb
 [write] my-lib.umd.js 0.30kb, brotli: 0.16kb
 ```
 
@@ -172,10 +172,10 @@ Recommended `package.json` for your lib:
   "name": "my-lib",
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.es.mjs",
+  "module": "./dist/my-lib.mjs",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.es.mjs",
+      "import": "./dist/my-lib.mjs",
       "require": "./dist/my-lib.umd.js"
     }
   }
