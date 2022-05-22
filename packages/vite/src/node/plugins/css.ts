@@ -412,7 +412,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (config.build.minify) {
           content = await minifyCSS(content, config)
         }
-        code = `export default ${JSON.stringify(content)}`
+        // marking as pure to make it tree-shakable by minifier
+        // but the module itself is still treated as a non tree-shakable module
+        // because moduleSideEffects is 'no-treeshake'
+        code = `export default /* #__PURE__ */ (() => ${JSON.stringify(
+          content
+        )})()`
       }
 
       return {
