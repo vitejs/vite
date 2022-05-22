@@ -43,7 +43,6 @@ function saveEmitWorkerAsset(
 }
 
 export async function bundleWorkerEntry(
-  ctx: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
@@ -102,11 +101,10 @@ export async function bundleWorkerEntry(
   } finally {
     await bundle.close()
   }
-  return emitSourcemapForWorkerEntry(ctx, config, query, chunk)
+  return emitSourcemapForWorkerEntry(config, query, chunk)
 }
 
 function emitSourcemapForWorkerEntry(
-  ctx: TransformPluginContext,
   config: ResolvedConfig,
   query: Record<string, string> | null,
   chunk: OutputChunk
@@ -166,7 +164,6 @@ function encodeWorkerAssetFileName(
 }
 
 export async function workerFileToUrl(
-  ctx: TransformPluginContext,
   config: ResolvedConfig,
   id: string,
   query: Record<string, string> | null
@@ -174,7 +171,7 @@ export async function workerFileToUrl(
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
   if (!fileName) {
-    const outputChunk = await bundleWorkerEntry(ctx, config, id, query)
+    const outputChunk = await bundleWorkerEntry(config, id, query)
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
@@ -261,7 +258,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       let url: string
       if (isBuild) {
         if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(this, config, id, query)
+          const chunk = await bundleWorkerEntry(config, id, query)
           const { format } = config.worker
           const workerOptions = format === 'es' ? '{type: "module"}' : '{}'
           // inline as blob data url
@@ -283,7 +280,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' }
           }
         } else {
-          url = await workerFileToUrl(this, config, id, query)
+          url = await workerFileToUrl(config, id, query)
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)

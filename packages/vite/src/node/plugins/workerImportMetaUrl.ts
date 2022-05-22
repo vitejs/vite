@@ -115,7 +115,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           )
           let url: string
           if (isBuild) {
-            url = await workerFileToUrl(this, config, file, query)
+            url = await workerFileToUrl(config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
