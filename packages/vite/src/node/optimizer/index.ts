@@ -15,6 +15,7 @@ import {
   lookupFile,
   normalizeId,
   normalizePath,
+  removeDir,
   removeDirSync,
   renameDir,
   writeFile
@@ -539,7 +540,7 @@ export async function runOptimizeDeps(
   async function commitProcessingDepsCacheSync() {
     // Processing is done, we can now replace the depsCacheDir with processingCacheDir
     // Rewire the file paths from the temporal processing dir to the final deps cache dir
-    removeDirSync(depsCacheDir)
+    await removeDir(depsCacheDir)
     await renameDir(processingCacheDir, depsCacheDir)
   }
 
