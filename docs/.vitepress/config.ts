@@ -3,17 +3,28 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
+
   head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
+
   vue: {
     reactivityTransform: true
   },
+
   themeConfig: {
-    repo: 'vitejs/vite',
     logo: '/logo.svg',
-    docsDir: 'docs',
-    docsBranch: 'main',
-    editLinks: true,
-    editLinkText: 'Suggest changes to this page',
+
+    editLink: {
+      repo: 'vitejs/vite',
+      branch: 'main',
+      dir: 'docs',
+      text: 'Suggest changes to this page'
+    },
+
+    socialLinks: [
+      { icon: 'twitter', link: 'https://twitter.com/vite_js' },
+      { icon: 'discord', link: 'https://chat.vitejs.dev' },
+      { icon: 'github', link: 'https://github.com/vitejs/vite' }
+    ],
 
     algolia: {
       apiKey: 'b573aa848fd57fb47d693b531297403c',
@@ -26,6 +37,19 @@ export default defineConfig({
     carbonAds: {
       carbon: 'CEBIEK3N',
       placement: 'vitejsdev'
+    },
+
+    localeLinks: {
+      text: 'English',
+      items: [
+        { text: '简体中文', link: 'https://cn.vitejs.dev' },
+        { text: '日本語', link: 'https://ja.vitejs.dev' }
+      ]
+    },
+
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2019-present Evan You & Vite Contributors'
     },
 
     nav: [
@@ -69,34 +93,14 @@ export default defineConfig({
             link: 'https://v2.vitejs.dev'
           }
         ]
-      },
-      {
-        text: 'Languages',
-        items: [
-          {
-            text: 'English',
-            link: 'https://vitejs.dev'
-          },
-          {
-            text: '简体中文',
-            link: 'https://cn.vitejs.dev'
-          },
-          {
-            text: '日本語',
-            link: 'https://ja.vitejs.dev'
-          }
-        ]
       }
     ],
 
     sidebar: {
-      '/config/': 'auto',
-      '/plugins': 'auto',
-      // catch-all fallback
-      '/': [
+      '/guide/': [
         {
           text: 'Guide',
-          children: [
+          items: [
             {
               text: 'Why Vite',
               link: '/guide/why'
@@ -153,7 +157,7 @@ export default defineConfig({
         },
         {
           text: 'APIs',
-          children: [
+          items: [
             {
               text: 'Plugin API',
               link: '/guide/api-plugin'

@@ -40,6 +40,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
+import { VERSION } from './constants'
 
 export interface BuildOptions {
   /**
@@ -245,15 +246,15 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     // Support browserslist
     // "defaults and supports es6-module and supports es6-module-dynamic-import",
     resolved.target = [
-      'es2019',
+      'es2020', // support import.meta.url
       'edge88',
       'firefox78',
       'chrome87',
-      'safari13.1'
+      'safari13' // transpile nullish coalescing
     ]
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    // esnext + terser: limit to es2019 so it can be minified by terser
-    resolved.target = 'es2019'
+    // esnext + terser: limit to es2021 so it can be minified by terser
+    resolved.target = 'es2021'
   }
 
   if (!resolved.cssTarget) {
@@ -339,7 +340,7 @@ async function doBuild(
 
   config.logger.info(
     colors.cyan(
-      `vite v${require('vite/package.json').version} ${colors.green(
+      `vite v${VERSION} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`
       )}`
     )

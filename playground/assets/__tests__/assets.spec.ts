@@ -192,7 +192,7 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
-          : /\.\/nested\/asset\.png \d{1}x/
+          : /\/foo\/nested\/asset\.png \d{1}x/
       )
     })
   })

@@ -1,9 +1,17 @@
 import path from 'path'
+import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk, TransformPluginContext } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, parseRequest } from '../utils'
-import { ENV_PUBLIC_PATH } from '../constants'
+import type { ViteDevServer } from '../server'
+import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import {
+  cleanUrl,
+  getHash,
+  injectQuery,
+  isRelativeBase,
+  parseRequest
+} from '../utils'
 import { onRollupWarning } from '../build'
 import { fileToUrl } from './asset'
 
@@ -13,11 +21,16 @@ interface WorkerCache {
 
   // worker bundle don't deps on any more worker runtime info an id only had an result.
   // save worker bundled file id to avoid repeated execution of bundles
-  // <input_filename, hash>
+  // <input_filename, fileName>
   bundle: Map<string, string>
+
+  // <hash, fileName>
+  fileNameHash: Map<string, string>
 }
 
-const WorkerFileId = 'worker_file'
+export type WorkerType = 'classic' | 'module' | 'ignore'
+
+export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function saveEmitWorkerAsset(
@@ -138,6 +151,20 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
+export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
+
+function encodeWorkerAssetFileName(
+  fileName: string,
+  workerCache: WorkerCache
+): string {
+  const { fileNameHash } = workerCache
+  const hash = getHash(fileName)
+  if (!fileNameHash.get(hash)) {
+    fileNameHash.set(hash, fileName)
+  }
+  return `__VITE_WORKER_ASSET__${hash}__`
+}
+
 export async function workerFileToUrl(
   ctx: TransformPluginContext,
   config: ResolvedConfig,
@@ -156,14 +183,23 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-  return config.base + fileName
+
+  return isRelativeBase(config.base)
+    ? encodeWorkerAssetFileName(fileName, workerMap)
+    : config.base + fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  let server: ViteDevServer
   const isWorker = config.isWorker
+
   return {
     name: 'vite:worker',
+
+    configureServer(_server) {
+      server = _server
+    },
 
     buildStart() {
       if (isWorker) {
@@ -171,7 +207,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
       workerCache.set(config, {
         assets: new Map(),
-        bundle: new Map()
+        bundle: new Map(),
+        fileNameHash: new Map()
       })
     },
 
@@ -187,11 +224,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(_, id) {
+    async transform(raw, id) {
       const query = parseRequest(id)
-      if (query && query[WorkerFileId] != null) {
+      if (query && query[WORKER_FILE_ID] != null && query['type'] != null) {
+        const workerType = query['type'] as WorkerType
+        let injectEnv = ''
+
+        if (workerType === 'classic') {
+          injectEnv = `importScripts('${ENV_PUBLIC_PATH}')\n`
+        } else if (workerType === 'module') {
+          injectEnv = `import '${ENV_PUBLIC_PATH}'\n`
+        } else if (workerType === 'ignore') {
+          if (isBuild) {
+            injectEnv = ''
+          } else if (server) {
+            // dynamic worker type we can't know how import the env
+            // so we copy /@vite/env code of server transform result into file header
+            const { moduleGraph } = server
+            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            injectEnv = module?.transformResult?.code || ''
+          }
+        }
+
         return {
-          code: `import '${ENV_PUBLIC_PATH}'\n` + _
+          code: injectEnv + raw
         }
       }
       if (
@@ -201,6 +257,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      // stringified url or `new URL(...)`
       let url: string
       if (isBuild) {
         if (query.inline != null) {
@@ -230,7 +287,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, WorkerFileId)
+        url = injectQuery(url, WORKER_FILE_ID)
+      }
+
+      if (query.url != null) {
+        return {
+          code: `export default ${JSON.stringify(url)}`,
+          map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
+        }
       }
 
       const workerConstructor =
@@ -241,15 +305,51 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         code: `export default function WorkerWrapper() {
           return new ${workerConstructor}(${JSON.stringify(
           url
-        )}, ${JSON.stringify(workerOptions, null, 2)})
+        )}, ${JSON.stringify(workerOptions)})
         }`,
         map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
       }
     },
 
-    renderChunk(code) {
-      if (config.isWorker && code.includes('import.meta.url')) {
-        return code.replace('import.meta.url', 'self.location.href')
+    renderChunk(code, chunk) {
+      let s: MagicString
+      const result = () => {
+        return (
+          s && {
+            code: s.toString(),
+            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+          }
+        )
+      }
+      if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+        let match: RegExpExecArray | null
+        s = new MagicString(code)
+
+        // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
+        const workerMap = workerCache.get(config.mainConfig || config)!
+        const { fileNameHash } = workerMap
+
+        while ((match = workerAssetUrlRE.exec(code))) {
+          const [full, hash] = match
+          const filename = fileNameHash.get(hash)!
+          let outputFilepath = path.posix.relative(
+            path.dirname(chunk.fileName),
+            filename
+          )
+          if (!outputFilepath.startsWith('.')) {
+            outputFilepath = './' + outputFilepath
+          }
+          const replacement = JSON.stringify(outputFilepath).slice(1, -1)
+          s.overwrite(match.index, match.index + full.length, replacement, {
+            contentOnly: true
+          })
+        }
+
+        // TODO: check if this should be removed
+        if (config.isWorker) {
+          s = s.replace('import.meta.url', 'self.location.href')
+          return result()
+        }
       }
       if (!isWorker) {
         const workerMap = workerCache.get(config)!
@@ -258,6 +358,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           workerMap.assets.delete(asset.fileName!)
         })
       }
+      return result()
     }
   }
 }

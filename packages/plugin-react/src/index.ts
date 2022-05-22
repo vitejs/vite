@@ -41,7 +41,9 @@ export interface Options {
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: BabelOptions
+  babel?:
+    | BabelOptions
+    | ((id: string, options: { ssr?: boolean }) => BabelOptions)
 }
 
 export type BabelOptions = Omit<
@@ -67,13 +69,21 @@ export interface ReactBabelOptions extends BabelOptions {
   }
 }
 
+type ReactBabelHook = (
+  babelConfig: ReactBabelOptions,
+  context: ReactBabelHookContext,
+  config: ResolvedConfig
+) => void
+
+type ReactBabelHookContext = { ssr: boolean; id: string }
+
 declare module 'vite' {
   export interface Plugin {
     api?: {
       /**
        * Manipulate the Babel options of `@vitejs/plugin-react`
        */
-      reactBabel?: (options: ReactBabelOptions, config: ResolvedConfig) => void
+      reactBabel?: ReactBabelHook
     }
   }
 }
@@ -86,20 +96,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
+  let runPluginOverrides = (
+    options: ReactBabelOptions,
+    context: ReactBabelHookContext
+  ) => false
+  let staticBabelOptions: ReactBabelOptions | undefined
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
-
-  const babelOptions = {
-    babelrc: false,
-    configFile: false,
-    ...opts.babel
-  } as ReactBabelOptions
-
-  babelOptions.plugins ||= []
-  babelOptions.presets ||= []
-  babelOptions.overrides ||= []
-  babelOptions.parserOpts ||= {} as any
-  babelOptions.parserOpts.plugins ||= []
 
   // Support patterns like:
   // - import * as React from 'react';
@@ -141,11 +144,22 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
           )
-
-        if (plugin.api?.reactBabel) {
-          plugin.api.reactBabel(babelOptions, config)
-        }
       })
+
+      runPluginOverrides = (babelOptions, context) => {
+        const hooks = config.plugins
+          .map((plugin) => plugin.api?.reactBabel)
+          .filter(Boolean) as ReactBabelHook[]
+
+        if (hooks.length > 0) {
+          return (runPluginOverrides = (babelOptions) => {
+            hooks.forEach((hook) => hook(babelOptions, context, config))
+            return true
+          })(babelOptions)
+        }
+        runPluginOverrides = () => false
+        return false
+      }
     },
     async transform(code, id, options) {
       const ssr = typeof options === 'boolean' ? options : options?.ssr === true
@@ -161,6 +175,18 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isNodeModules = id.includes('/node_modules/')
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
+
+        let babelOptions = staticBabelOptions
+        if (typeof opts.babel === 'function') {
+          const rawOptions = opts.babel(id, { ssr })
+          babelOptions = createBabelOptions(rawOptions)
+          runPluginOverrides(babelOptions, { ssr, id: id })
+        } else if (!babelOptions) {
+          babelOptions = createBabelOptions(opts.babel)
+          if (!runPluginOverrides(babelOptions, { ssr, id: id })) {
+            staticBabelOptions = babelOptions
+          }
+        }
 
         const plugins = isProjectFile ? [...babelOptions.plugins] : []
 
@@ -367,4 +393,20 @@ viteReact.preambleCode = preambleCode
 
 function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
+}
+
+function createBabelOptions(rawOptions?: BabelOptions) {
+  const babelOptions = {
+    babelrc: false,
+    configFile: false,
+    ...rawOptions
+  } as ReactBabelOptions
+
+  babelOptions.plugins ||= []
+  babelOptions.presets ||= []
+  babelOptions.overrides ||= []
+  babelOptions.parserOpts ||= {} as any
+  babelOptions.parserOpts.plugins ||= []
+
+  return babelOptions
 }
