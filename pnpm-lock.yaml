@@ -63,7 +63,7 @@ importers:
       unbuild: ^0.7.4
       vite: workspace:*
       vitepress: 1.0.0-draft.1
-      vitest: ^0.12.4
+      vitest: ^0.12.9
       vue: ^3.2.33
     devDependencies:
       '@microsoft/api-extractor': 7.23.2
@@ -119,7 +119,7 @@ importers:
       unbuild: 0.7.4
       vite: link:packages/vite
       vitepress: 1.0.0-draft.1
-      vitest: 0.12.4
+      vitest: 0.12.9
       vue: 3.2.33
 
   packages/create-vite:
@@ -2911,7 +2911,7 @@ packages:
     dev: true
 
   /check-error/1.0.2:
-    resolution: {integrity: sha1-V00xLt2Iu13YkS6Sht1sCu1KrII=}
+    resolution: {integrity: sha512-BrgHpW9NURQgzoNyjfq0Wu6VFO6D7IZEmJNdtgNqpzGG8RuNFHt2jQxWlAs4HMe119chBnv+34syEZtc6IhLtA==}
     dev: true
 
   /chokidar/3.5.3:
@@ -8416,8 +8416,8 @@ packages:
       - react-dom
     dev: true
 
-  /vitest/0.12.4:
-    resolution: {integrity: sha512-EDxdhlAt6vcu6y4VouAI60z78iCAVFnfBL4VlSQVQnGmOk5altOtIKvp3xfZ+cfo4iVHgqq1QNyf5qOFiL4leg==}
+  /vitest/0.12.9:
+    resolution: {integrity: sha512-1NtyUANS72Qw5PwYvoztk067NX4fSiis2xQxhByOWS33eL2er/yupHyLxlBCOkF2ANe0dLFRvT1GVb+nczL5aw==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
     peerDependencies:
@@ -8438,10 +8438,13 @@ packages:
       '@types/chai': 4.3.1
       '@types/chai-subset': 1.3.3
       chai: 4.3.6
+      debug: 4.3.4
       local-pkg: 0.4.1
       tinypool: 0.1.3
       tinyspy: 0.3.2
       vite: link:packages/vite
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /void-elements/3.1.0:
