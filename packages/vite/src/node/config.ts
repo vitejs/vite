@@ -205,8 +205,9 @@ export interface UserConfig {
     >
   }
   /**
-   * This configuration is meant for framework authors, or users using Vite's
-   * SSR API.
+   * Whether your application is a Single Page Application (SPA). Set to `false`
+   * if using Vite's SSR functionality.
+   * @default true
    */
   spa?: boolean
 }
