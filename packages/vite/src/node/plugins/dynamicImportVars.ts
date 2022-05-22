@@ -206,10 +206,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: s.toString(),
-          map:
-            !isBuild || config.build.sourcemap
-              ? s.generateMap({ hires: true })
-              : null
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
         }
       }
     }
