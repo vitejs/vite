@@ -1,4 +1,4 @@
-lockfileVersion: 5.3
+lockfileVersion: 5.4
 
 overrides:
   vite: workspace:*
@@ -87,14 +87,14 @@ importers:
       '@types/semver': 7.3.9
       '@types/stylus': 0.48.38
       '@types/ws': 8.5.3
-      '@typescript-eslint/eslint-plugin': 5.23.0_17b6d2ce7129f0b36f2c30ae592c16e7
-      '@typescript-eslint/parser': 5.23.0_eslint@8.15.0+typescript@4.6.4
+      '@typescript-eslint/eslint-plugin': 5.23.0_c63nfttrfhylg3zmgcxfslaw44
+      '@typescript-eslint/parser': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       conventional-changelog-cli: 2.2.2
       cross-env: 7.0.3
       esbuild: 0.14.38
       eslint: 8.15.0
       eslint-define-config: 1.4.0
-      eslint-plugin-import: 2.26.0_eslint@8.15.0
+      eslint-plugin-import: 2.26.0_doddzorl55y6dbr5ij3nshfl64
       eslint-plugin-node: 11.1.0_eslint@8.15.0
       execa: 5.1.1
       fs-extra: 10.1.0
@@ -110,11 +110,11 @@ importers:
       prompts: 2.4.2
       rimraf: 3.0.2
       rollup: 2.72.1
-      rollup-plugin-esbuild: 4.9.1_esbuild@0.14.38+rollup@2.72.1
+      rollup-plugin-esbuild: 4.9.1_pnyrwy4zazm4ltxxkdqkpc4vuy
       semver: 7.3.7
       simple-git-hooks: 2.7.0
       sirv: 2.0.2
-      ts-node: 10.7.0_933b955d3c9774d08c765ffd0b14fec0
+      ts-node: 10.7.0_sm5zkxj4s52nbddwl76qwfh6ya
       typescript: 4.6.4
       unbuild: 0.7.4
       vite: link:packages/vite
@@ -293,7 +293,7 @@ importers:
       '@rollup/plugin-dynamic-import-vars': 1.4.3_rollup@2.72.1
       '@rollup/plugin-json': 4.1.0_rollup@2.72.1
       '@rollup/plugin-node-resolve': 13.2.1_rollup@2.72.1
-      '@rollup/plugin-typescript': 8.3.2_1ca3041dc435726c0a8fcb5dcdbe7c94
+      '@rollup/plugin-typescript': 8.3.2_rollup@2.72.1+tslib@2.4.0
       '@rollup/pluginutils': 4.2.1
       '@vue/compiler-dom': 3.2.33
       acorn: 8.7.1
@@ -324,7 +324,7 @@ importers:
       periscopic: 2.0.3
       picocolors: 1.0.0
       postcss-import: 14.1.0_postcss@8.4.13
-      postcss-load-config: 3.1.4_postcss@8.4.13+ts-node@10.7.0
+      postcss-load-config: 3.1.4_postcss@8.4.13
       postcss-modules: 4.3.1_postcss@8.4.13
       resolve.exports: 1.1.0
       rollup-plugin-license: 2.7.0_rollup@2.72.1
@@ -334,7 +334,7 @@ importers:
       strip-ansi: 6.0.1
       strip-literal: 0.3.0
       terser: 5.13.1
-      tsconfck: 2.0.0_typescript@4.6.4
+      tsconfck: 2.0.0
       tslib: 2.4.0
       types: link:types
       ufo: 0.8.4
@@ -354,7 +354,7 @@ importers:
       resolve-linked: workspace:*
       vue: ^3.2.33
     dependencies:
-      aliased-module: link:dir/module
+      aliased-module: file:playground/alias/dir/module
       vue: 3.2.33
     devDependencies:
       resolve-linked: link:../resolve-linked
@@ -370,7 +370,7 @@ importers:
       fast-glob: ^3.2.11
       tailwindcss: ^2.2.19
     dependencies:
-      tailwindcss: 2.2.19_ts-node@10.7.0
+      tailwindcss: 2.2.19
     devDependencies:
       fast-glob: 3.2.11
 
@@ -436,7 +436,7 @@ importers:
     specifiers:
       pkg: file:./pkg
     dependencies:
-      pkg: link:pkg
+      pkg: file:playground/dynamic-import/pkg
 
   playground/dynamic-import/pkg:
     specifiers: {}
@@ -491,7 +491,7 @@ importers:
     devDependencies:
       cross-env: 7.0.3
       express: 4.18.1
-      json-module: link:json-module
+      json-module: file:playground/json/json-module
       vue: 3.2.33
 
   playground/json/json-module:
@@ -590,16 +590,16 @@ importers:
     dependencies:
       axios: 0.24.0
       clipboard: 2.0.11
-      dep-cjs-compiled-from-cjs: link:dep-cjs-compiled-from-cjs
-      dep-cjs-compiled-from-esm: link:dep-cjs-compiled-from-esm
-      dep-esbuild-plugin-transform: link:dep-esbuild-plugin-transform
+      dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
+      dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
+      dep-esbuild-plugin-transform: file:playground/optimize-deps/dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
-      dep-node-env: link:dep-node-env
-      dep-not-js: link:dep-not-js
-      dep-with-dynamic-import: link:dep-with-dynamic-import
+      dep-node-env: file:playground/optimize-deps/dep-node-env
+      dep-not-js: file:playground/optimize-deps/dep-not-js
+      dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
       lodash-es: 4.17.21
-      nested-exclude: link:nested-exclude
+      nested-exclude: file:playground/optimize-deps/nested-exclude
       phoenix: 1.6.8
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
@@ -644,7 +644,7 @@ importers:
     specifiers:
       nested-include: file:../nested-include
     dependencies:
-      nested-include: link:../nested-include
+      nested-include: file:playground/optimize-deps/nested-include
 
   playground/optimize-deps/nested-include:
     specifiers: {}
@@ -654,7 +654,7 @@ importers:
       express: ^4.18.1
       missing-dep: file:./missing-dep
     dependencies:
-      missing-dep: link:missing-dep
+      missing-dep: file:playground/optimize-missing-deps/missing-dep
     devDependencies:
       express: 4.18.1
 
@@ -662,7 +662,7 @@ importers:
     specifiers:
       multi-entry-dep: file:../multi-entry-dep
     dependencies:
-      multi-entry-dep: link:../multi-entry-dep
+      multi-entry-dep: file:playground/optimize-missing-deps/multi-entry-dep
 
   playground/optimize-missing-deps/multi-entry-dep:
     specifiers: {}
@@ -711,7 +711,7 @@ importers:
       '@emotion/react': 11.9.0_react@17.0.2
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
-      react-switch: 6.0.0_react-dom@17.0.2+react@17.0.2
+      react-switch: 6.0.0_sfoxds7t5ydpegc3knd667wn6m
     devDependencies:
       '@babel/plugin-proposal-pipeline-operator': 7.17.6
       '@emotion/babel-plugin': 11.9.2
@@ -787,15 +787,15 @@ importers:
       ts-transpiled-exports: file:./ts-transpiled-exports
     dependencies:
       bcrypt: 5.0.1
-      define-properties-exports: link:define-properties-exports
-      define-property-exports: link:define-property-exports
-      forwarded-export: link:forwarded-export
-      object-assigned-exports: link:object-assigned-exports
-      only-object-assigned-exports: link:only-object-assigned-exports
-      primitive-export: link:primitive-export
-      read-file-content: link:read-file-content
-      require-absolute: link:require-absolute
-      ts-transpiled-exports: link:ts-transpiled-exports
+      define-properties-exports: file:playground/ssr-deps/define-properties-exports
+      define-property-exports: file:playground/ssr-deps/define-property-exports
+      forwarded-export: file:playground/ssr-deps/forwarded-export
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
+      only-object-assigned-exports: file:playground/ssr-deps/only-object-assigned-exports
+      primitive-export: file:playground/ssr-deps/primitive-export
+      read-file-content: file:playground/ssr-deps/read-file-content
+      require-absolute: file:playground/ssr-deps/require-absolute
+      ts-transpiled-exports: file:playground/ssr-deps/ts-transpiled-exports
     devDependencies:
       cross-env: 7.0.3
       express: 4.18.1
@@ -810,7 +810,7 @@ importers:
     specifiers:
       object-assigned-exports: file:../object-assigned-exports
     dependencies:
-      object-assigned-exports: link:../object-assigned-exports
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
 
   playground/ssr-deps/object-assigned-exports:
     specifiers: {}
@@ -885,7 +885,7 @@ importers:
       vue-router: ^4.0.15
       vuex: ^4.0.2
     dependencies:
-      example-external-component: link:example-external-component
+      example-external-component: file:playground/ssr-vue/example-external-component
       vue: 3.2.33
       vue-router: 4.0.15_vue@3.2.33
       vuex: 4.0.2_vue@3.2.33
@@ -925,18 +925,18 @@ importers:
       vue-router: ^4.0.15
     dependencies:
       autoprefixer: 10.4.7
-      tailwindcss: 2.2.19_243d11a951eff552b64227a524842e97
+      tailwindcss: 2.2.19_eq6rdkkr572vfnsce6ssjbbos4
       vue: 3.2.33
       vue-router: 4.0.15_vue@3.2.33
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
-      ts-node: 10.7.0_933b955d3c9774d08c765ffd0b14fec0
+      ts-node: 10.7.0
 
   playground/tailwind-sourcemap:
     specifiers:
       tailwindcss: ^3.0.24
     dependencies:
-      tailwindcss: 3.0.24_ts-node@10.7.0
+      tailwindcss: 3.0.24
 
   playground/tsconfig-json:
     specifiers: {}
@@ -1896,7 +1896,7 @@ packages:
       rollup: 2.72.1
     dev: true
 
-  /@rollup/plugin-typescript/8.3.2_1ca3041dc435726c0a8fcb5dcdbe7c94:
+  /@rollup/plugin-typescript/8.3.2_rollup@2.72.1+tslib@2.4.0:
     resolution: {integrity: sha512-MtgyR5LNHZr3GyN0tM7gNO9D0CS+Y+vflS4v/PHmrX17JCkHUYKvQ5jN5o3cz1YKllM3duXUqu3yOHwMPUxhDg==}
     engines: {node: '>=8.0.0'}
     peerDependencies:
@@ -1908,7 +1908,6 @@ packages:
       resolve: 1.22.0
       rollup: 2.72.1
       tslib: 2.4.0
-      typescript: 4.6.4
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.72.1:
@@ -2172,7 +2171,7 @@ packages:
     dev: true
     optional: true
 
-  /@typescript-eslint/eslint-plugin/5.23.0_17b6d2ce7129f0b36f2c30ae592c16e7:
+  /@typescript-eslint/eslint-plugin/5.23.0_c63nfttrfhylg3zmgcxfslaw44:
     resolution: {integrity: sha512-hEcSmG4XodSLiAp1uxv/OQSGsDY6QN3TcRU32gANp+19wGE1QQZLRS8/GV58VRUoXhnkuJ3ZxNQ3T6Z6zM59DA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2183,10 +2182,10 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.23.0_eslint@8.15.0+typescript@4.6.4
+      '@typescript-eslint/parser': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       '@typescript-eslint/scope-manager': 5.23.0
-      '@typescript-eslint/type-utils': 5.23.0_eslint@8.15.0+typescript@4.6.4
-      '@typescript-eslint/utils': 5.23.0_eslint@8.15.0+typescript@4.6.4
+      '@typescript-eslint/type-utils': 5.23.0_hcfsmds2fshutdssjqluwm76uu
+      '@typescript-eslint/utils': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       debug: 4.3.4
       eslint: 8.15.0
       functional-red-black-tree: 1.0.1
@@ -2199,7 +2198,7 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/parser/5.23.0_eslint@8.15.0+typescript@4.6.4:
+  /@typescript-eslint/parser/5.23.0_hcfsmds2fshutdssjqluwm76uu:
     resolution: {integrity: sha512-V06cYUkqcGqpFjb8ttVgzNF53tgbB/KoQT/iB++DOIExKmzI9vBJKjZKt/6FuV9c+zrDsvJKbJ2DOCYwX91cbw==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2227,7 +2226,7 @@ packages:
       '@typescript-eslint/visitor-keys': 5.23.0
     dev: true
 
-  /@typescript-eslint/type-utils/5.23.0_eslint@8.15.0+typescript@4.6.4:
+  /@typescript-eslint/type-utils/5.23.0_hcfsmds2fshutdssjqluwm76uu:
     resolution: {integrity: sha512-iuI05JsJl/SUnOTXA9f4oI+/4qS/Zcgk+s2ir+lRmXI+80D8GaGwoUqs4p+X+4AxDolPpEpVUdlEH4ADxFy4gw==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2237,7 +2236,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/utils': 5.23.0_eslint@8.15.0+typescript@4.6.4
+      '@typescript-eslint/utils': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       debug: 4.3.4
       eslint: 8.15.0
       tsutils: 3.21.0_typescript@4.6.4
@@ -2272,7 +2271,7 @@ packages:
       - supports-color
     dev: true
 
-  /@typescript-eslint/utils/5.23.0_eslint@8.15.0+typescript@4.6.4:
+  /@typescript-eslint/utils/5.23.0_hcfsmds2fshutdssjqluwm76uu:
     resolution: {integrity: sha512-dbgaKN21drqpkbbedGMNPCtRPZo1IOUr5EI9Jrrh99r5UW5Q0dz46RKXeSBoPV+56R6dFKpbrdhgUNSJsDDRZA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2767,6 +2766,8 @@ packages:
       raw-body: 2.5.1
       type-is: 1.6.18
       unpipe: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /body-scroll-lock/4.0.0-beta.0:
@@ -3106,6 +3107,8 @@ packages:
       on-headers: 1.0.2
       safe-buffer: 5.1.2
       vary: 1.1.2
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /concat-map/0.0.1:
@@ -3124,6 +3127,8 @@ packages:
       finalhandler: 1.1.2
       parseurl: 1.3.3
       utils-merge: 1.0.1
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /consola/2.15.3:
@@ -3462,18 +3467,33 @@ packages:
 
   /debug/2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.0.0
     dev: true
 
   /debug/3.1.0:
     resolution: {integrity: sha512-OX8XqP7/1a9cqkxYw2yXss15f26NKWBpDXQd0/uK/KPqdQhxbPa994hnzjcE2VqQpDslf55723cKPUOGSmMY3g==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.0.0
     dev: true
 
   /debug/3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.1.3
     dev: true
@@ -4178,14 +4198,34 @@ packages:
     dependencies:
       debug: 3.2.7
       resolve: 1.22.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
-  /eslint-module-utils/2.7.3:
+  /eslint-module-utils/2.7.3_cphntlaow2spielwlvsegonsm4:
     resolution: {integrity: sha512-088JEC7O3lDZM9xGe0RerkOMd0EjFl+Yvd1jPWIkMT5u3H9+HC34mWWPnqPrN13gieT9pBOO+Qt07Nb/6TresQ==}
     engines: {node: '>=4'}
+    peerDependencies:
+      '@typescript-eslint/parser': '*'
+      eslint-import-resolver-node: '*'
+      eslint-import-resolver-typescript: '*'
+      eslint-import-resolver-webpack: '*'
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
+      eslint-import-resolver-node:
+        optional: true
+      eslint-import-resolver-typescript:
+        optional: true
+      eslint-import-resolver-webpack:
+        optional: true
     dependencies:
+      '@typescript-eslint/parser': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       debug: 3.2.7
+      eslint-import-resolver-node: 0.3.6
       find-up: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /eslint-plugin-es/3.0.1_eslint@8.15.0:
@@ -4199,19 +4239,24 @@ packages:
       regexpp: 3.2.0
     dev: true
 
-  /eslint-plugin-import/2.26.0_eslint@8.15.0:
+  /eslint-plugin-import/2.26.0_doddzorl55y6dbr5ij3nshfl64:
     resolution: {integrity: sha512-hYfi3FXaM8WPLf4S1cikh/r4IxnO6zrhZbEGz2b660EJRbuxgpDS5gkCuYgGWg2xxh2rBuIr4Pvhve/7c31koA==}
     engines: {node: '>=4'}
     peerDependencies:
+      '@typescript-eslint/parser': '*'
       eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
     dependencies:
+      '@typescript-eslint/parser': 5.23.0_hcfsmds2fshutdssjqluwm76uu
       array-includes: 3.1.5
       array.prototype.flat: 1.3.0
       debug: 2.6.9
       doctrine: 2.1.0
       eslint: 8.15.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.3
+      eslint-module-utils: 2.7.3_cphntlaow2spielwlvsegonsm4
       has: 1.0.3
       is-core-module: 2.9.0
       is-glob: 4.0.3
@@ -4219,6 +4264,10 @@ packages:
       object.values: 1.1.5
       resolve: 1.22.0
       tsconfig-paths: 3.14.1
+    transitivePeerDependencies:
+      - eslint-import-resolver-typescript
+      - eslint-import-resolver-webpack
+      - supports-color
     dev: true
 
   /eslint-plugin-node/11.1.0_eslint@8.15.0:
@@ -4444,6 +4493,8 @@ packages:
       type-is: 1.6.18
       utils-merge: 1.0.1
       vary: 1.1.2
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /ext/1.6.0:
@@ -4523,6 +4574,8 @@ packages:
       parseurl: 1.3.3
       statuses: 1.5.0
       unpipe: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /finalhandler/1.2.0:
@@ -4536,6 +4589,8 @@ packages:
       parseurl: 1.3.3
       statuses: 2.0.1
       unpipe: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /find-root/1.1.0:
@@ -5447,6 +5502,8 @@ packages:
       mime: 1.6.0
       needle: 2.9.1
       source-map: 0.6.1
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /levn/0.4.1:
@@ -5761,7 +5818,7 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /mini-create-react-context/0.4.1_prop-types@15.8.1+react@17.0.2:
+  /mini-create-react-context/0.4.1_at7mkepldmzoo6silmqc5bca74:
     resolution: {integrity: sha512-YWCYEmd5CQeHGSAKrYvXgmzzkrvssZcuuQDDeqkT+PziKGMgE+0MCCtcKbROzocGBG1meBLl2FotlRwf4gAzbQ==}
     peerDependencies:
       prop-types: ^15.0.0
@@ -5936,6 +5993,8 @@ packages:
       debug: 3.2.7
       iconv-lite: 0.4.24
       sax: 1.2.4
+    transitivePeerDependencies:
+      - supports-color
     dev: true
     optional: true
 
@@ -6472,7 +6531,23 @@ packages:
       postcss: 8.4.13
     dev: false
 
-  /postcss-load-config/3.1.4_postcss@8.4.13+ts-node@10.7.0:
+  /postcss-load-config/3.1.4:
+    resolution: {integrity: sha512-6DiM4E7v4coTE4uzA8U//WhtPwyhiim3eyjEMFCnUpzbrkK9wJHgKDT2mR+HbtSrd/NubVaYTOpSpjUl8NQeRg==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      postcss: '>=8.0.9'
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      postcss:
+        optional: true
+      ts-node:
+        optional: true
+    dependencies:
+      lilconfig: 2.0.5
+      yaml: 1.10.2
+    dev: false
+
+  /postcss-load-config/3.1.4_postcss@8.4.13:
     resolution: {integrity: sha512-6DiM4E7v4coTE4uzA8U//WhtPwyhiim3eyjEMFCnUpzbrkK9wJHgKDT2mR+HbtSrd/NubVaYTOpSpjUl8NQeRg==}
     engines: {node: '>= 10'}
     peerDependencies:
@@ -6486,7 +6561,6 @@ packages:
     dependencies:
       lilconfig: 2.0.5
       postcss: 8.4.13
-      ts-node: 10.7.0_933b955d3c9774d08c765ffd0b14fec0
       yaml: 1.10.2
 
   /postcss-load-config/3.1.4_ts-node@10.7.0:
@@ -6502,7 +6576,7 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.0.5
-      ts-node: 10.7.0_933b955d3c9774d08c765ffd0b14fec0
+      ts-node: 10.7.0
       yaml: 1.10.2
     dev: false
 
@@ -6906,7 +6980,7 @@ packages:
       history: 4.10.1
       hoist-non-react-statics: 3.3.2
       loose-envify: 1.4.0
-      mini-create-react-context: 0.4.1_prop-types@15.8.1+react@17.0.2
+      mini-create-react-context: 0.4.1_at7mkepldmzoo6silmqc5bca74
       path-to-regexp: 1.8.0
       prop-types: 15.8.1
       react: 17.0.2
@@ -6915,7 +6989,7 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
-  /react-switch/6.0.0_react-dom@17.0.2+react@17.0.2:
+  /react-switch/6.0.0_sfoxds7t5ydpegc3knd667wn6m:
     resolution: {integrity: sha512-QV3/6eRK5/5epdQzIqvDAHRoGLbCv/wDpHUi6yBMXY1Xco5XGuIZxvB49PHoV1v/SpEgOCJLD/Zo43iic+aEIw==}
     peerDependencies:
       react: ^15.3.0 || ^16.0.0 || ^17.0.0
@@ -7132,7 +7206,7 @@ packages:
     dependencies:
       glob: 7.2.0
 
-  /rollup-plugin-dts/4.2.1_rollup@2.72.1+typescript@4.6.4:
+  /rollup-plugin-dts/4.2.1_pz6niy2zrvqhgxfup3pdyir4yu:
     resolution: {integrity: sha512-eaxQZNUJ5iQcxNGlpJ1CUgG4OSVqWjDZ3nNSWBIoGrpcote2aNphSe1RJOaSYkb8dwn3o+rYm1vvld/5z3EGSQ==}
     engines: {node: '>=v12.22.11'}
     peerDependencies:
@@ -7146,7 +7220,7 @@ packages:
       '@babel/code-frame': 7.16.7
     dev: true
 
-  /rollup-plugin-esbuild/4.9.1_esbuild@0.14.38+rollup@2.72.1:
+  /rollup-plugin-esbuild/4.9.1_pnyrwy4zazm4ltxxkdqkpc4vuy:
     resolution: {integrity: sha512-qn/x7Wz9p3Xnva99qcb+nopH0d2VJwVnsxJTGEg+Sh2Z3tqQl33MhOwzekVo1YTKgv+yAmosjcBRJygMfGrtLw==}
     engines: {node: '>=12'}
     peerDependencies:
@@ -7289,6 +7363,8 @@ packages:
       on-finished: 2.4.1
       range-parser: 1.2.1
       statuses: 2.0.1
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /serve-static/1.15.0:
@@ -7299,6 +7375,8 @@ packages:
       escape-html: 1.0.3
       parseurl: 1.3.3
       send: 0.18.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /set-blocking/2.0.0:
@@ -7690,6 +7768,8 @@ packages:
       sax: 1.2.4
       semver: 6.3.0
       source-map: 0.7.3
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /supports-color/5.5.0:
@@ -7721,7 +7801,51 @@ packages:
     resolution: {integrity: sha512-hqTN6kW+pN6/qro6G9OZ7ceDQOcYno020zBQKpZQLsJhYTDMCMNfXi/Y8duF5iW+4WWZr42ry0MMkcRGpbwG2A==}
     dev: false
 
-  /tailwindcss/2.2.19_243d11a951eff552b64227a524842e97:
+  /tailwindcss/2.2.19:
+    resolution: {integrity: sha512-6Ui7JSVtXadtTUo2NtkBBacobzWiQYVjYW0ZnKaP9S1ZCKQ0w7KVNz+YSDI/j7O7KCMHbOkz94ZMQhbT9pOqjw==}
+    engines: {node: '>=12.13.0'}
+    hasBin: true
+    peerDependencies:
+      autoprefixer: ^10.0.2
+      postcss: ^8.0.9
+    dependencies:
+      arg: 5.0.1
+      bytes: 3.1.2
+      chalk: 4.1.2
+      chokidar: 3.5.3
+      color: 4.2.3
+      cosmiconfig: 7.0.1
+      detective: 5.2.0
+      didyoumean: 1.2.2
+      dlv: 1.1.3
+      fast-glob: 3.2.11
+      fs-extra: 10.1.0
+      glob-parent: 6.0.2
+      html-tags: 3.2.0
+      is-color-stop: 1.1.0
+      is-glob: 4.0.3
+      lodash: 4.17.21
+      lodash.topath: 4.5.2
+      modern-normalize: 1.1.0
+      node-emoji: 1.11.0
+      normalize-path: 3.0.0
+      object-hash: 2.2.0
+      postcss-js: 3.0.3
+      postcss-load-config: 3.1.4
+      postcss-nested: 5.0.6
+      postcss-selector-parser: 6.0.10
+      postcss-value-parser: 4.2.0
+      pretty-hrtime: 1.0.3
+      purgecss: 4.1.3
+      quick-lru: 5.1.1
+      reduce-css-calc: 2.1.8
+      resolve: 1.22.0
+      tmp: 0.2.1
+    transitivePeerDependencies:
+      - ts-node
+    dev: false
+
+  /tailwindcss/2.2.19_eq6rdkkr572vfnsce6ssjbbos4:
     resolution: {integrity: sha512-6Ui7JSVtXadtTUo2NtkBBacobzWiQYVjYW0ZnKaP9S1ZCKQ0w7KVNz+YSDI/j7O7KCMHbOkz94ZMQhbT9pOqjw==}
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -7766,51 +7890,7 @@ packages:
       - ts-node
     dev: false
 
-  /tailwindcss/2.2.19_ts-node@10.7.0:
-    resolution: {integrity: sha512-6Ui7JSVtXadtTUo2NtkBBacobzWiQYVjYW0ZnKaP9S1ZCKQ0w7KVNz+YSDI/j7O7KCMHbOkz94ZMQhbT9pOqjw==}
-    engines: {node: '>=12.13.0'}
-    hasBin: true
-    peerDependencies:
-      autoprefixer: ^10.0.2
-      postcss: ^8.0.9
-    dependencies:
-      arg: 5.0.1
-      bytes: 3.1.2
-      chalk: 4.1.2
-      chokidar: 3.5.3
-      color: 4.2.3
-      cosmiconfig: 7.0.1
-      detective: 5.2.0
-      didyoumean: 1.2.2
-      dlv: 1.1.3
-      fast-glob: 3.2.11
-      fs-extra: 10.1.0
-      glob-parent: 6.0.2
-      html-tags: 3.2.0
-      is-color-stop: 1.1.0
-      is-glob: 4.0.3
-      lodash: 4.17.21
-      lodash.topath: 4.5.2
-      modern-normalize: 1.1.0
-      node-emoji: 1.11.0
-      normalize-path: 3.0.0
-      object-hash: 2.2.0
-      postcss-js: 3.0.3
-      postcss-load-config: 3.1.4_ts-node@10.7.0
-      postcss-nested: 5.0.6
-      postcss-selector-parser: 6.0.10
-      postcss-value-parser: 4.2.0
-      pretty-hrtime: 1.0.3
-      purgecss: 4.1.3
-      quick-lru: 5.1.1
-      reduce-css-calc: 2.1.8
-      resolve: 1.22.0
-      tmp: 0.2.1
-    transitivePeerDependencies:
-      - ts-node
-    dev: false
-
-  /tailwindcss/3.0.24_ts-node@10.7.0:
+  /tailwindcss/3.0.24:
     resolution: {integrity: sha512-H3uMmZNWzG6aqmg9q07ZIRNIawoiEcNFKDfL+YzOPuPsXuDXxJxB9icqzLgdzKNwjG3SAro2h9SYav8ewXNgig==}
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -7830,7 +7910,7 @@ packages:
       picocolors: 1.0.0
       postcss: 8.4.13
       postcss-js: 4.0.0_postcss@8.4.13
-      postcss-load-config: 3.1.4_postcss@8.4.13+ts-node@10.7.0
+      postcss-load-config: 3.1.4_postcss@8.4.13
       postcss-nested: 5.0.6_postcss@8.4.13
       postcss-selector-parser: 6.0.10
       postcss-value-parser: 4.2.0
@@ -7986,7 +8066,36 @@ packages:
       utf8-byte-length: 1.0.4
     dev: true
 
-  /ts-node/10.7.0_933b955d3c9774d08c765ffd0b14fec0:
+  /ts-node/10.7.0:
+    resolution: {integrity: sha512-TbIGS4xgJoX2i3do417KSaep1uRAW/Lu+WAL2doDHC0D6ummjirVOXU5/7aiZotbQ5p1Zp9tP7U6cYhA0O7M8A==}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': '>=1.2.50'
+      '@swc/wasm': '>=1.2.50'
+      '@types/node': '*'
+      typescript: '>=2.7'
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
+      '@swc/wasm':
+        optional: true
+    dependencies:
+      '@cspotcode/source-map-support': 0.7.0
+      '@tsconfig/node10': 1.0.8
+      '@tsconfig/node12': 1.0.9
+      '@tsconfig/node14': 1.0.1
+      '@tsconfig/node16': 1.0.2
+      acorn: 8.7.1
+      acorn-walk: 8.2.0
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    dev: true
+
+  /ts-node/10.7.0_sm5zkxj4s52nbddwl76qwfh6ya:
     resolution: {integrity: sha512-TbIGS4xgJoX2i3do417KSaep1uRAW/Lu+WAL2doDHC0D6ummjirVOXU5/7aiZotbQ5p1Zp9tP7U6cYhA0O7M8A==}
     hasBin: true
     peerDependencies:
@@ -8017,7 +8126,7 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /tsconfck/2.0.0_typescript@4.6.4:
+  /tsconfck/2.0.0:
     resolution: {integrity: sha512-GVDTXF4MdNBBxKfUfjs/wkb7LHd8Ho8WLavESCddTFQFG9AUZOZEm6kODBGmQopQ9OG+EHpkT6dBaIIGhYVt+Q==}
     engines: {node: ^14.13.1 || ^16 || >=18, pnpm: ^7.0.1}
     hasBin: true
@@ -8026,8 +8135,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-    dependencies:
-      typescript: 4.6.4
     dev: true
 
   /tsconfig-paths/3.14.1:
@@ -8192,8 +8299,8 @@ packages:
       pretty-bytes: 6.0.0
       rimraf: 3.0.2
       rollup: 2.72.1
-      rollup-plugin-dts: 4.2.1_rollup@2.72.1+typescript@4.6.4
-      rollup-plugin-esbuild: 4.9.1_esbuild@0.14.38+rollup@2.72.1
+      rollup-plugin-dts: 4.2.1_pz6niy2zrvqhgxfup3pdyir4yu
+      rollup-plugin-esbuild: 4.9.1_pnyrwy4zazm4ltxxkdqkpc4vuy
       scule: 0.2.1
       typescript: 4.6.4
       untyped: 0.4.4
@@ -8614,3 +8721,147 @@ packages:
     optionalDependencies:
       commander: 2.20.3
     dev: true
+
+  file:playground/alias/dir/module:
+    resolution: {directory: playground/alias/dir/module, type: directory}
+    name: '@vite/aliased-module'
+    version: 0.0.0
+    dev: false
+
+  file:playground/dynamic-import/pkg:
+    resolution: {directory: playground/dynamic-import/pkg, type: directory}
+    name: pkg
+    version: 1.0.0
+    dev: false
+
+  file:playground/json/json-module:
+    resolution: {directory: playground/json/json-module, type: directory}
+    name: json-module
+    version: 0.0.0
+    dev: true
+
+  file:playground/optimize-deps/dep-cjs-compiled-from-cjs:
+    resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-cjs, type: directory}
+    name: dep-cjs-compiled-from-cjs
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-cjs-compiled-from-esm:
+    resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-esm, type: directory}
+    name: dep-cjs-compiled-from-esm
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-esbuild-plugin-transform:
+    resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
+    name: dep-esbuild-plugin-transform
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-node-env:
+    resolution: {directory: playground/optimize-deps/dep-node-env, type: directory}
+    name: dep-node-env
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-not-js:
+    resolution: {directory: playground/optimize-deps/dep-not-js, type: directory}
+    name: dep-not-js
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-with-dynamic-import:
+    resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
+    name: dep-with-dynamic-import
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/nested-exclude:
+    resolution: {directory: playground/optimize-deps/nested-exclude, type: directory}
+    name: nested-exclude
+    version: 1.0.0
+    dependencies:
+      nested-include: file:playground/optimize-deps/nested-include
+    dev: false
+
+  file:playground/optimize-deps/nested-include:
+    resolution: {directory: playground/optimize-deps/nested-include, type: directory}
+    name: nested-include
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-missing-deps/missing-dep:
+    resolution: {directory: playground/optimize-missing-deps/missing-dep, type: directory}
+    name: missing-dep
+    version: 0.0.0
+    dependencies:
+      multi-entry-dep: file:playground/optimize-missing-deps/multi-entry-dep
+    dev: false
+
+  file:playground/optimize-missing-deps/multi-entry-dep:
+    resolution: {directory: playground/optimize-missing-deps/multi-entry-dep, type: directory}
+    name: multi-entry-dep
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/define-properties-exports:
+    resolution: {directory: playground/ssr-deps/define-properties-exports, type: directory}
+    name: define-properties-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/define-property-exports:
+    resolution: {directory: playground/ssr-deps/define-property-exports, type: directory}
+    name: define-property-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/forwarded-export:
+    resolution: {directory: playground/ssr-deps/forwarded-export, type: directory}
+    name: forwarded-export
+    version: 0.0.0
+    dependencies:
+      object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
+    dev: false
+
+  file:playground/ssr-deps/object-assigned-exports:
+    resolution: {directory: playground/ssr-deps/object-assigned-exports, type: directory}
+    name: object-assigned-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/only-object-assigned-exports:
+    resolution: {directory: playground/ssr-deps/only-object-assigned-exports, type: directory}
+    name: only-object-assigned-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/primitive-export:
+    resolution: {directory: playground/ssr-deps/primitive-export, type: directory}
+    name: primitive-export
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/read-file-content:
+    resolution: {directory: playground/ssr-deps/read-file-content, type: directory}
+    name: read-file-content
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/require-absolute:
+    resolution: {directory: playground/ssr-deps/require-absolute, type: directory}
+    name: require-absolute
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/ts-transpiled-exports:
+    resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
+    name: ts-transpiled-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-vue/example-external-component:
+    resolution: {directory: playground/ssr-vue/example-external-component, type: directory}
+    name: example-external-component
+    version: 0.0.0
+    dev: false
