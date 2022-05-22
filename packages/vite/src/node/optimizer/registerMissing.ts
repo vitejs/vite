@@ -9,6 +9,7 @@ import {
   depsFromOptimizedDepInfo,
   depsLogString,
   discoverProjectDependencies,
+  extractExportsData,
   getOptimizedDepPath,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
@@ -187,11 +188,28 @@ export async function createOptimizedDeps(
 
       const newData = processingResult.metadata
 
+      const needsInteropMismatch = []
+      for (const dep in metadata.discovered) {
+        const discoveredDepInfo = metadata.discovered[dep]
+        const depInfo = newData.optimized[dep]
+        if (depInfo) {
+          if (
+            discoveredDepInfo.needsInterop !== undefined &&
+            depInfo.needsInterop !== discoveredDepInfo.needsInterop
+          ) {
+            // This only happens when a discovered dependency has mixed ESM and CJS syntax
+            // and it hasn't been manually added to optimizeDeps.needsInterop
+            needsInteropMismatch.push(dep)
+          }
+        }
+      }
+
       // After a re-optimization, if the internal bundled chunks change a full page reload
       // is required. If the files are stable, we can avoid the reload that is expensive
       // for large applications. Comparing their fileHash we can find out if it is safe to
       // keep the current browser state.
       const needsReload =
+        needsInteropMismatch.length > 0 ||
         metadata.hash !== newData.hash ||
         Object.keys(metadata.optimized).some((dep) => {
           return (
@@ -294,6 +312,19 @@ export async function createOptimizedDeps(
               timestamp: true
             }
           )
+          if (needsInteropMismatch.length > 0) {
+            config.logger.warn(
+              `Mixed ESM and CJS detected in ${colors.yellow(
+                needsInteropMismatch.join(', ')
+              )}, add ${
+                needsInteropMismatch.length === 1 ? 'it' : 'them'
+              } to optimizeDeps.needsInterop to speed up cold start`,
+              {
+                timestamp: true
+              }
+            )
+          }
+
           fullReload()
         }
       }
@@ -391,7 +422,8 @@ export async function createOptimizedDeps(
       ),
       // loading of this pre-bundled dep needs to await for its processing
       // promise to be resolved
-      processing: depOptimizationProcessing.promise
+      processing: depOptimizationProcessing.promise,
+      exportsData: extractExportsData(resolved, config)
     })
 
     // Debounced rerun, let other missing dependencies be discovered before
