@@ -312,19 +312,30 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               isOptimizedDepFile(resolvedId, config) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
-              // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
-              // internal optimized chunks don't need es interop and are excluded
-              const exp = source.slice(expStart, expEnd)
-              const expHash = getHash(exp)
-              optimizedInteropProxy.set(expHash, exp)
-              const interopId = resolvedId + `?optimized-proxy=${expHash}`
+              // We need to do the interop inplace, we can't do this in a proxy, this needs to be applied even if interop isn't needed
+              if (isDynamicImport) {
+                // rewrite `import('package')` to expose the default directly
+                str().overwrite(
+                  expStart,
+                  expEnd,
+                  `import('${resolvedId}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+                  { contentOnly: true }
+                )
+              } else {
+                // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
+                // internal optimized chunks don't need es interop and are excluded
+                const exp = source.slice(expStart, expEnd)
+                const expHash = getHash(exp)
+                optimizedInteropProxy.set(expHash, exp)
+                const interopId = resolvedId + `?optimized-proxy=${expHash}`
 
-              str().overwrite(
-                start,
-                end,
-                isDynamicImport ? `'${interopId}'` : interopId,
-                { contentOnly: true }
-              )
+                str().overwrite(
+                  start,
+                  end,
+                  isDynamicImport ? `'${interopId}'` : interopId,
+                  { contentOnly: true }
+                )
+              }
             }
           }
         }

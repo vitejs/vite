@@ -82,12 +82,14 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     async resolveId(id) {
       if (isOptimizedDepFile(id, config)) {
         const optimizedProxyQuery = id.match(optimizedProxyQueryRE)
-        const metadata = config._optimizedDeps?.metadata
-        if (metadata && optimizedProxyQuery) {
-          const file = cleanUrl(id)
+        const metadata = config._optimizedDeps!.metadata
+        const file = cleanUrl(id)
+        if (optimizedProxyQuery) {
           const needsInterop = await optimizedDepNeedsInterop(metadata, file)
           // Ensure that packages that don't need interop are resolved to the same file
           return needsInterop ? '\0' + id : file
+        } else {
+          return file
         }
       }
     },
