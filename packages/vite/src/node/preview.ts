@@ -114,19 +114,6 @@ export async function preview(
   // apply post server hooks from plugins
   postHooks.forEach((fn) => fn && fn())
 
-  if (!spa) {
-    // 404 handling (this simulates what most static hosts do)
-    app.use(config.base, (_, res, next) => {
-      const file = path.join(distDir, './404.html')
-      if (fs.existsSync(file)) {
-        res.statusCode = 404
-        res.end(fs.readFileSync(file))
-      } else {
-        next()
-      }
-    })
-  }
-
   const options = config.preview
   const hostname = resolveHostname(options.host)
   const port = options.port ?? 4173
