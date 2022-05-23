@@ -269,7 +269,7 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 
 The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps:
 
-1. Add your SSR middleware to the development server with [`configureServer`](/guide/api-plugin.html#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin.html#configurepreviewserver).
+1. Add your SSR middleware to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
    :::tip Note
    Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
    :::
