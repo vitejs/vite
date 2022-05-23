@@ -23,7 +23,7 @@ export default defineConfig({
     },
     maxThreads: process.env.CI
       ? process.platform === 'win32'
-        ? 2
+        ? 1
         : 4
       : undefined,
     minThreads: process.env.CI ? 1 : undefined
