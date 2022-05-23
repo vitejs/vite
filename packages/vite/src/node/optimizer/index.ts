@@ -16,7 +16,6 @@ import {
   normalizeId,
   normalizePath,
   removeDir,
-  removeDirSync,
   renameDir,
   writeFile
 } from '../utils'
@@ -275,7 +274,7 @@ export function loadCachedDepOptimizationMetadata(
   }
 
   // Start with a fresh cache
-  removeDirSync(depsCacheDir)
+  fs.rmSync(depsCacheDir, { recursive: true, force: true })
 }
 
 /**
@@ -409,7 +408,7 @@ export async function runOptimizeDeps(
       await renameDir(processingCacheDir, depsCacheDir)
     },
     cancel() {
-      removeDirSync(processingCacheDir)
+      fs.rmSync(processingCacheDir, { recursive: true, force: true })
     }
   }
 
