@@ -528,8 +528,8 @@ export function copyDir(srcDir: string, destDir: string): void {
 export const removeDir = isWindows
   ? promisify(gracefulRemoveDir)
   : function removeDirSync(dir: string) {
-    fs.rmSync(dir, { recursive: true, force: true })
-  }
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
