@@ -208,6 +208,12 @@ export interface UserConfig {
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
+  /**
+   * Whether your application is a Single Page Application (SPA). Set to `false`
+   * for other kinds of apps like MPAs.
+   * @default true
+   */
+  spa?: boolean
 }
 
 export interface ExperimentalOptions {
@@ -274,6 +280,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
+    spa: boolean
   }
 >
 
@@ -514,7 +521,8 @@ export async function resolveConfig(
         ...optimizeDeps.esbuildOptions
       }
     },
-    worker: resolvedWorkerOptions
+    worker: resolvedWorkerOptions,
+    spa: config.spa ?? true
   }
 
   // flat config.worker.plugin
