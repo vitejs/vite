@@ -9,7 +9,7 @@ test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong')
   await untilUpdated(
     () => page.textContent('.mode'),
-    isBuild ? 'production' : 'development'
+    process.env.NODE_ENV // match workerImport.js
   )
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
