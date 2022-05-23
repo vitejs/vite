@@ -504,14 +504,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
     if (skip?.includes(file)) {
       continue
     }
-    const abs = path.resolve(dir, file)
-    // baseline is Node 12 so can't use rmSync :(
-    if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
-      fs.rmdirSync(abs)
-    } else {
-      fs.unlinkSync(abs)
-    }
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
@@ -532,16 +525,11 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export function removeDirSync(dir: string) {
-  if (fs.existsSync(dir)) {
-    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-    rmSync(dir, { recursive: true })
-  }
-}
-
 export const removeDir = isWindows
   ? promisify(gracefulRemoveDir)
-  : removeDirSync
+  : function removeDirSync(dir: string) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
@@ -842,10 +830,9 @@ function gracefulRemoveDir(
   dir: string,
   cb: (error: NodeJS.ErrnoException | null) => void
 ) {
-  const rmdir = fs.rm ?? fs.rmdir // TODO: Remove after support for Node 12 is dropped
   const start = Date.now()
   let backoff = 0
-  rmdir(dir, { recursive: true }, function CB(er) {
+  fs.rm(dir, { recursive: true }, function CB(er) {
     if (er) {
       if (
         (er.code === 'ENOTEMPTY' ||
@@ -854,7 +841,7 @@ function gracefulRemoveDir(
         Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
       ) {
         setTimeout(function () {
-          rmdir(dir, { recursive: true }, CB)
+          fs.rm(dir, { recursive: true }, CB)
         }, backoff)
         if (backoff < 100) backoff += 10
         return
