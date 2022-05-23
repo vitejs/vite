@@ -63,7 +63,7 @@ importers:
       typescript: ^4.6.4
       unbuild: ^0.7.4
       vite: workspace:*
-      vitepress: 1.0.0-draft.3
+      vitepress: 1.0.0-draft.4
       vitest: ^0.12.4
       vue: ^3.2.33
     devDependencies:
@@ -120,7 +120,7 @@ importers:
       typescript: 4.6.4
       unbuild: 0.7.4
       vite: link:packages/vite
-      vitepress: 1.0.0-draft.3
+      vitepress: 1.0.0-draft.4
       vitest: 0.12.4
       vue: 3.2.33
 
@@ -8396,8 +8396,8 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vitepress/1.0.0-draft.3:
-    resolution: {integrity: sha512-DTbej4xFhfYQ0/RPjORibMXu8DC5QY0L9UjsmT6+Bes6pNULNx0k6rCRZnvv/obJD8ClEaY/CkZ7vzBK+lt+zQ==}
+  /vitepress/1.0.0-draft.4:
+    resolution: {integrity: sha512-ViWGXaNFdILpCtC0iOiyNT8zsNYoWZTwZIK7rCrPJWyDD2sIeYuI9uK87pPGJo2XN+OuP7u68Ui86CJRuTtqpw==}
     engines: {node: '>=14.0.0'}
     hasBin: true
     dependencies:
