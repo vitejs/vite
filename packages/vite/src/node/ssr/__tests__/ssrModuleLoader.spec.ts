@@ -13,7 +13,7 @@ test('always throw error when evaluating an wrong SSR module', async () => {
   const expectedErrors = []
   for (const _ of [0, 1]) {
     try {
-      await viteServer.ssrLoadModule(badjs)
+      await viteServer.ssrLoadModule(badjs, { fixStacktrace: true })
     } catch (e) {
       expectedErrors.push(e)
     }
