@@ -64,7 +64,7 @@
     "eslint-define-config": "^1.4.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
-    "esno": "^0.15.0",
+    "esno": "^0.16.3",
     "execa": "^5.1.1",
     "fs-extra": "^10.1.0",
     "kill-port": "^1.6.1",

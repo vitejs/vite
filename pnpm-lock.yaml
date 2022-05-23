@@ -41,7 +41,7 @@ importers:
       eslint-define-config: ^1.4.0
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
-      esno: ^0.15.0
+      esno: ^0.16.3
       execa: ^5.1.1
       fs-extra: ^10.1.0
       kill-port: ^1.6.1
@@ -98,7 +98,7 @@ importers:
       eslint-define-config: 1.4.0
       eslint-plugin-import: 2.26.0_doddzorl55y6dbr5ij3nshfl64
       eslint-plugin-node: 11.1.0_eslint@8.15.0
-      esno: 0.15.0
+      esno: 0.16.3
       execa: 5.1.1
       fs-extra: 10.1.0
       kill-port: 1.6.1
@@ -1614,13 +1614,6 @@ packages:
     resolution: {integrity: sha512-6U71C2Wp7r5XtFtQzYrW5iKFT67OixrSxjI4MptCHzdSVlgabczzqLe0ZSgnub/5Kp4hSbpDB1tMytZY9pwxxA==}
     dev: false
 
-  /@esbuild-kit/cjs-loader/1.0.2:
-    resolution: {integrity: sha512-f6ZIRsc7BmeJ3Jd6g4MQ0e44ATlZsT7y1L5Py522b9HByc0ISIYD/KV9sZ0vJI8+pvXxLm/ve2gIff6FkUfzPQ==}
-    dependencies:
-      '@esbuild-kit/core-utils': 1.1.1
-      get-tsconfig: 3.0.1
-    dev: true
-
   /@esbuild-kit/cjs-loader/2.0.0:
     resolution: {integrity: sha512-1ijCpmiCQcOcr0dmwwwCpzv0inWpNtEgiXDWc74AL52AhvY108M26suhWe9PMDcF1esnPJf0YSeVBLLZS6SQvg==}
     dependencies:
@@ -1632,14 +1625,6 @@ packages:
     resolution: {integrity: sha512-Y5QM1ip6nUvycH8dc/bfNPLNyVt2ccBLB09lAndUvfCza/UwkAfYSiNMbcAnkLcEciEENMm6Lsyt1L98K57v3w==}
     dependencies:
       esbuild: 0.14.38
-    dev: true
-
-  /@esbuild-kit/esm-loader/1.1.2:
-    resolution: {integrity: sha512-ZxkU2ICaAKt9eZTdXNBOMZjq/QNd9m4y9XlYapua/wakTjlX+kt3IVBRXj/hubuZUPYsnb+hHkHMetyxXlHajg==}
-    dependencies:
-      '@esbuild-kit/core-utils': 1.1.1
-      es-module-lexer: 0.10.5
-      get-tsconfig: 3.0.1
     dev: true
 
   /@esbuild-kit/esm-loader/2.1.0:
@@ -4407,13 +4392,6 @@ packages:
       v8-compile-cache: 2.3.0
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /esno/0.15.0:
-    resolution: {integrity: sha512-Wws1YgB/PBUtc/Pq755Crv2r5XIcSZyqC/9qyiczzQoDNNIUdxQ75uSd6gaMJFJ+pieljcH3f9JawmrHk0vLXw==}
-    hasBin: true
-    dependencies:
-      tsx: 2.0.1
     dev: true
 
   /esno/0.16.3:
@@ -8170,16 +8148,6 @@ packages:
     dependencies:
       tslib: 1.14.1
       typescript: 4.6.4
-    dev: true
-
-  /tsx/2.0.1:
-    resolution: {integrity: sha512-qOzBwD5DkUodG7PjIUTPmRdAknYHC4jh7cOchnUScJCyayI8Cy8WqoD1rc7+zhM6x5a4YDoE5CJ+t3a92K4j2w==}
-    hasBin: true
-    dependencies:
-      '@esbuild-kit/cjs-loader': 1.0.2
-      '@esbuild-kit/esm-loader': 1.1.2
-    optionalDependencies:
-      fsevents: 2.3.2
     dev: true
 
   /tsx/3.4.0:
