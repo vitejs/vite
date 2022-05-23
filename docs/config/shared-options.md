@@ -132,8 +132,8 @@ A package with conditional exports may have the following `exports` field in its
 {
   "exports": {
     ".": {
-      "import": "./index.esm.mjs",
-      "require": "./index.cjs.js"
+      "import": "./index.mjs",
+      "require": "./index.js"
     }
   }
 }
@@ -335,3 +335,10 @@ Env variables starts with `envPrefix` will be exposed to your client source code
 :::warning SECURITY NOTES
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
 :::
+
+## spa
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
