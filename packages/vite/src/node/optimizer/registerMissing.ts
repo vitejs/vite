@@ -103,8 +103,7 @@ export async function createOptimizedDeps(
           processing: depOptimizationProcessing.promise
         })
       }
-    }
-    else {
+    } else {
       // Perform a esbuild base scan of user code to discover dependencies
       currentlyProcessing = true
 
