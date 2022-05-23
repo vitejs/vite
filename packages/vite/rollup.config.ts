@@ -19,6 +19,7 @@ const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
+      tsconfig: false,
       target: 'es2020',
       module: 'esnext',
       include: ['src/client/env.ts'],
@@ -39,6 +40,7 @@ const clientConfig = defineConfig({
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
+      tsconfig: false,
       target: 'es2020',
       include: ['src/client/**/*.ts'],
       baseUrl: path.resolve(__dirname, 'src/client'),

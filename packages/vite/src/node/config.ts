@@ -208,6 +208,12 @@ export interface UserConfig {
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
+  /**
+   * Whether your application is a Single Page Application (SPA). Set to `false`
+   * for other kinds of apps like MPAs.
+   * @default true
+   */
+  spa?: boolean
 }
 
 export interface ExperimentalOptions {
@@ -274,6 +280,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
+    spa: boolean
   }
 >
 
@@ -399,7 +406,9 @@ export async function resolveConfig(
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // production-like behavior is expected. This is indicated by NODE_ENV=production
   // loaded from `.staging.env` and set by us as VITE_USER_NODE_ENV
-  const isProduction = (process.env.VITE_USER_NODE_ENV || mode) === 'production'
+  const isProduction =
+    (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
+    'production'
   if (isProduction) {
     // in case default mode was not production and is overwritten
     process.env.NODE_ENV = 'production'
@@ -514,7 +523,8 @@ export async function resolveConfig(
         ...optimizeDeps.esbuildOptions
       }
     },
-    worker: resolvedWorkerOptions
+    worker: resolvedWorkerOptions,
+    spa: config.spa ?? true
   }
 
   // flat config.worker.plugin

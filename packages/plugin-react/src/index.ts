@@ -1,7 +1,9 @@
+import path from 'path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
 import resolve from 'resolve'
+import { normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
@@ -91,6 +93,7 @@ declare module 'vite' {
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let base = '/'
+  let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
   let isProduction = true
   let projectRoot = process.cwd()
@@ -119,6 +122,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     configResolved(config) {
       base = config.base
       projectRoot = config.root
+      resolvedCacheDir = normalizePath(path.resolve(config.cacheDir))
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
@@ -209,8 +213,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
+            // Avoid parsing the optimized react-dom since it will never
+            // contain compiled JSX and it's a pretty big file (800kb).
+            const isOptimizedReactDom =
+              id.startsWith(resolvedCacheDir) && id.includes('/react-dom.js')
             const [restoredAst, isCommonJS] =
-              !isProjectFile && !isJSX
+              !isProjectFile && !isJSX && !isOptimizedReactDom
                 ? await restoreJSX(babel, code, id)
                 : [null, false]
 
