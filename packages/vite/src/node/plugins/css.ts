@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { createRequire } from 'module'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -107,7 +108,6 @@ const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
-const usedRE = /(\?|&)used\b/
 const varRE = /^var\(/i
 
 const cssBundleName = 'style.css'
@@ -405,18 +405,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (usedRE.test(id)) {
-        if (modulesCode) {
-          code = modulesCode
-        } else {
-          let content = css
-          if (config.build.minify) {
-            content = await minifyCSS(content, config)
-          }
-          code = `export default ${JSON.stringify(content)}`
-        }
+      if (modulesCode) {
+        code = modulesCode
       } else {
-        code = `export default ''`
+        let content = css
+        if (config.build.minify) {
+          content = await minifyCSS(content, config)
+        }
+        // marking as pure to make it tree-shakable by minifier
+        // but the module itself is still treated as a non tree-shakable module
+        // because moduleSideEffects is 'no-treeshake'
+        code = `export default /* #__PURE__ */ (() => ${JSON.stringify(
+          content
+        )})()`
       }
 
       return {
@@ -888,7 +889,7 @@ async function compileCSS(
 
   const rawPostcssMap = postcssResult.map.toJSON()
 
-  const postcssMap = formatPostcssSourceMap(
+  const postcssMap = await formatPostcssSourceMap(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
@@ -904,10 +905,10 @@ async function compileCSS(
   }
 }
 
-export function formatPostcssSourceMap(
+export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string
-): ExistingRawSourceMap {
+): Promise<ExistingRawSourceMap> {
   const inputFileDir = path.dirname(file)
 
   const sources = rawMap.sources.map((source) => {
@@ -1278,6 +1279,9 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
+// TODO: use dynamic import
+const _require = createRequire(import.meta.url)
+
 function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
@@ -1292,9 +1296,9 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   try {
     // Search for the preprocessor in the root directory first, and fall back
     // to the default require paths.
-    const fallbackPaths = require.resolve.paths?.(lang) || []
-    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
-    return (loadedPreprocessors[lang] = require(resolved))
+    const fallbackPaths = _require.resolve.paths?.(lang) || []
+    const resolved = _require.resolve(lang, { paths: [root, ...fallbackPaths] })
+    return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(

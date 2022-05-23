@@ -4,7 +4,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { promisify } from 'util'
 import { URL, URLSearchParams, pathToFileURL } from 'url'
-import { builtinModules } from 'module'
+import { builtinModules, createRequire } from 'module'
 import { performance } from 'perf_hooks'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
@@ -12,6 +12,7 @@ import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
+import type { Alias, AliasOptions } from 'types/alias'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -70,8 +71,12 @@ export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 export let isRunningWithYarnPnp: boolean
+
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
 try {
-  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
 } catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
@@ -520,6 +525,16 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export function removeDirSync(dir: string) {
+  if (fs.existsSync(dir)) {
+    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
+    rmSync(dir, { recursive: true })
+  }
+}
+
+export const removeDir = isWindows
+  ? promisify(gracefulRemoveDir)
+  : removeDirSync
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
@@ -761,7 +776,7 @@ export const usingDynamicImport = typeof jest === 'undefined'
  */
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
-  : require
+  : _require
 
 export function parseRequest(id: string): Record<string, string> | null {
   const [_, search] = id.split(requestQuerySplitRE, 2)
@@ -815,6 +830,150 @@ function gracefulRename(
   })
 }
 
+const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
+function gracefulRemoveDir(
+  dir: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const rmdir = fs.rm ?? fs.rmdir // TODO: Remove after support for Node 12 is dropped
+  const start = Date.now()
+  let backoff = 0
+  rmdir(dir, { recursive: true }, function CB(er) {
+    if (er) {
+      if (
+        (er.code === 'ENOTEMPTY' ||
+          er.code === 'EACCES' ||
+          er.code === 'EPERM') &&
+        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
+      ) {
+        setTimeout(function () {
+          rmdir(dir, { recursive: true }, CB)
+        }, backoff)
+        if (backoff < 100) backoff += 10
+        return
+      }
+
+      if (er.code === 'ENOENT') {
+        er = null
+      }
+    }
+
+    if (cb) cb(er)
+  })
+}
+
 export function emptyCssComments(raw: string) {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+}
+
+function mergeConfigRecursively(
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
+  rootPath: string
+) {
+  const merged: Record<string, any> = { ...defaults }
+  for (const key in overrides) {
+    const value = overrides[key]
+    if (value == null) {
+      continue
+    }
+
+    const existing = merged[key]
+
+    if (existing == null) {
+      merged[key] = value
+      continue
+    }
+
+    // fields that require special handling
+    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+      merged[key] = mergeAlias(existing, value)
+      continue
+    } else if (key === 'assetsInclude' && rootPath === '') {
+      merged[key] = [].concat(existing, value)
+      continue
+    } else if (
+      key === 'noExternal' &&
+      rootPath === 'ssr' &&
+      (existing === true || value === true)
+    ) {
+      merged[key] = true
+      continue
+    }
+
+    if (Array.isArray(existing) || Array.isArray(value)) {
+      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
+      continue
+    }
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeConfigRecursively(
+        existing,
+        value,
+        rootPath ? `${rootPath}.${key}` : key
+      )
+      continue
+    }
+
+    merged[key] = value
+  }
+  return merged
+}
+
+export function mergeConfig(
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
+  isRoot = true
+): Record<string, any> {
+  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
+}
+
+export function mergeAlias(
+  a?: AliasOptions,
+  b?: AliasOptions
+): AliasOptions | undefined {
+  if (!a) return b
+  if (!b) return a
+  if (isObject(a) && isObject(b)) {
+    return { ...a, ...b }
+  }
+  // the order is flipped because the alias is resolved from top-down,
+  // where the later should have higher priority
+  return [...normalizeAlias(b), ...normalizeAlias(a)]
+}
+
+export function normalizeAlias(o: AliasOptions = []): Alias[] {
+  return Array.isArray(o)
+    ? o.map(normalizeSingleAlias)
+    : Object.keys(o).map((find) =>
+        normalizeSingleAlias({
+          find,
+          replacement: (o as any)[find]
+        })
+      )
+}
+
+// https://github.com/vitejs/vite/issues/1363
+// work around https://github.com/rollup/plugins/issues/759
+function normalizeSingleAlias({
+  find,
+  replacement,
+  customResolver
+}: Alias): Alias {
+  if (
+    typeof find === 'string' &&
+    find.endsWith('/') &&
+    replacement.endsWith('/')
+  ) {
+    find = find.slice(0, find.length - 1)
+    replacement = replacement.slice(0, replacement.length - 1)
+  }
+
+  const alias: Alias = {
+    find,
+    replacement
+  }
+  if (customResolver) {
+    alias.customResolver = customResolver
+  }
+  return alias
 }

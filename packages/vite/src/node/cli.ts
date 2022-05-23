@@ -5,6 +5,7 @@ import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
+import { VERSION } from './constants'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -97,7 +98,7 @@ cli
       const info = server.config.logger.info
 
       info(
-        colors.cyan(`\n  vite v${require('vite/package.json').version}`) +
+        colors.cyan(`\n  vite v${VERSION}`) +
           colors.green(` dev server running at:\n`),
         {
           clear: !server.config.logger.hasWarned
@@ -257,6 +258,6 @@ cli
   )
 
 cli.help()
-cli.version(require('../../package.json').version)
+cli.version(VERSION)
 
 cli.parse()

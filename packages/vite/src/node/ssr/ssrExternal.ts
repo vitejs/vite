@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { createRequire } from 'module'
 import { createFilter } from '@rollup/pluginutils'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -82,6 +83,9 @@ export function resolveSSRExternal(
 const CJS_CONTENT_RE =
   /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
 
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
 // do we need to do this ahead of time or could we do it lazily?
 function collectExternals(
   root: string,
@@ -116,6 +120,7 @@ function collectExternals(
 
     let esmEntry: string | undefined
     let requireEntry: string
+
     try {
       esmEntry = tryNodeResolve(
         id,
@@ -127,7 +132,7 @@ function collectExternals(
       )?.id
       // normalizePath required for windows. tryNodeResolve uses normalizePath
       // which returns with '/', require.resolve returns with '\\'
-      requireEntry = normalizePath(require.resolve(id, { paths: [root] }))
+      requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
       try {
         // no main entry, but deep imports may be allowed
