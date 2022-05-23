@@ -104,7 +104,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: true
+      single: config.spa
     })
   )
 
