@@ -98,7 +98,7 @@ test('import from hidden dir', async () => {
   expect(await page.textContent('.hidden-dir')).toBe('hello!')
 })
 
-test.skip('import optimize-excluded package that imports optimized-included package', async () => {
+test('import optimize-excluded package that imports optimized-included package', async () => {
   expect(await page.textContent('.nested-include')).toBe('nested-include')
 })
 

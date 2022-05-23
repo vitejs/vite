@@ -11,6 +11,7 @@ import {
   discoverProjectDependencies,
   extractExportsData,
   getOptimizedDepPath,
+  initialProjectDependencies,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   runOptimizeDeps
@@ -88,55 +89,71 @@ export async function createOptimizedDeps(
 
   // If there wasn't a cache or it is outdated, perform a fast scan with esbuild
   // to quickly find project dependencies and do a first optimize run
-  if (!cachedMetadata && !isBuild) {
-    currentlyProcessing = true
-
-    const scanPhaseProcessing = newDepOptimizationProcessing()
-    optimizedDeps.scanProcessing = scanPhaseProcessing.promise
-
-    const warmUp = async () => {
-      try {
-        debug(colors.green(`scanning for dependencies...`), {
-          timestamp: true
+  if (!cachedMetadata) {
+    if (isBuild) {
+      // Initialize discovered deps with manually added optimizeDeps.include info
+      const discovered = await initialProjectDependencies(
+        config,
+        sessionTimestamp
+      )
+      const { metadata } = optimizedDeps
+      for (const depInfo of Object.values(discovered)) {
+        addOptimizedDepInfo(metadata, 'discovered', {
+          ...depInfo,
+          processing: depOptimizationProcessing.promise
         })
-
-        const { metadata } = optimizedDeps
-
-        const discovered = await discoverProjectDependencies(
-          config,
-          sessionTimestamp
-        )
-
-        // Respect the scan phase discover order to improve reproducibility
-        for (const depInfo of Object.values(discovered)) {
-          addOptimizedDepInfo(metadata, 'discovered', {
-            ...depInfo,
-            processing: depOptimizationProcessing.promise
-          })
-        }
-
-        debug(
-          colors.green(
-            `dependencies found: ${depsLogString(Object.keys(discovered))}`
-          ),
-          {
-            timestamp: true
-          }
-        )
-
-        scanPhaseProcessing.resolve()
-        optimizedDeps.scanProcessing = undefined
-
-        await runOptimizer()
-      } catch (e) {
-        logger.error(e.message)
-        if (optimizedDeps.scanProcessing) {
-          scanPhaseProcessing.resolve()
-          optimizedDeps.scanProcessing = undefined
-        }
       }
     }
-    setTimeout(warmUp, 0)
+    else {
+      // Perform a esbuild base scan of user code to discover dependencies
+      currentlyProcessing = true
+
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      optimizedDeps.scanProcessing = scanPhaseProcessing.promise
+
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`), {
+            timestamp: true
+          })
+
+          const { metadata } = optimizedDeps
+
+          const discovered = await discoverProjectDependencies(
+            config,
+            sessionTimestamp
+          )
+
+          // Respect the scan phase discover order to improve reproducibility
+          for (const depInfo of Object.values(discovered)) {
+            addOptimizedDepInfo(metadata, 'discovered', {
+              ...depInfo,
+              processing: depOptimizationProcessing.promise
+            })
+          }
+
+          debug(
+            colors.green(
+              `dependencies found: ${depsLogString(Object.keys(discovered))}`
+            ),
+            {
+              timestamp: true
+            }
+          )
+
+          scanPhaseProcessing.resolve()
+          optimizedDeps.scanProcessing = undefined
+
+          await runOptimizer()
+        } catch (e) {
+          logger.error(e.message)
+          if (optimizedDeps.scanProcessing) {
+            scanPhaseProcessing.resolve()
+            optimizedDeps.scanProcessing = undefined
+          }
+        }
+      }, 0)
+    }
   }
 
   async function runOptimizer(isRerun = false) {

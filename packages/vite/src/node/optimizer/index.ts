@@ -302,6 +302,22 @@ export async function discoverProjectDependencies(
     )
   }
 
+  return initialProjectDependencies(config, timestamp, deps)
+}
+
+/**
+ * Create the initial discovered deps list. At build time we only 
+ * have the manually included deps. During dev, a scan phase is 
+ * performed and knownDeps is the list of discovered deps
+ */
+ export async function initialProjectDependencies(
+  config: ResolvedConfig,
+  timestamp?: string,
+  knownDeps?: Record<string, string>
+): Promise<Record<string, OptimizedDepInfo>> {
+
+  const deps: Record<string, string> = knownDeps ?? {}
+  
   await addManuallyIncludedOptimizeDeps(deps, config)
 
   const browserHash = getOptimizedBrowserHash(
