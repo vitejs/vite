@@ -1,9 +1,11 @@
 import type * as babelCore from '@babel/core'
-import type { PluginItem, types as t } from '@babel/core'
 
-type RestoredJSX = [result: t.File | null | undefined, isCommonJS: boolean]
+type RestoredJSX = [
+  result: babelCore.types.File | null | undefined,
+  isCommonJS: boolean
+]
 
-let babelRestoreJSX: Promise<PluginItem> | undefined
+let babelRestoreJSX: Promise<babelCore.PluginItem> | undefined
 
 const jsxNotFound: RestoredJSX = [null, false]
 
@@ -25,12 +27,6 @@ export async function restoreJSX(
   code: string,
   filename: string
 ): Promise<RestoredJSX> {
-  // Avoid parsing the optimized react-dom since it will never
-  // contain compiled JSX and it's a pretty big file (800kb).
-  if (filename.includes('/.vite/react-dom.js')) {
-    return jsxNotFound
-  }
-
   const [reactAlias, isCommonJS] = parseReactAlias(code)
 
   if (!reactAlias) {

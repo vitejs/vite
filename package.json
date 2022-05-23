@@ -15,7 +15,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/** scripts/**",
+    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/**/*.ts scripts/**",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.23.1",
+    "@rollup/plugin-typescript": "^8.3.2",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^1.5.2",
@@ -73,6 +74,7 @@
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.21.1",
+    "pnpm": "^7.1.2",
     "prettier": "2.6.2",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
@@ -80,10 +82,11 @@
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.7.0",
     "sirv": "^2.0.2",
+    "tslib": "^2.4.0",
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
-    "vitepress": "^0.22.4",
+    "vitepress": "1.0.0-draft.3",
     "vitest": "^0.12.4",
     "vue": "^3.2.33"
   },

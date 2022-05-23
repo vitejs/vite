@@ -122,9 +122,9 @@ The legacy plugin offers a way to use native `import()` in the modern build whil
 
 Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:
 
-- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@3.8.2/) - e.g. `es/map` will import `core-js/es/map`
+- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@latest/) - e.g. `es/map` will import `core-js/es/map`
 
-- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@3.8.2/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
+- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@latest/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
 
 **Example**
 
@@ -147,8 +147,12 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-4m6wOIrq/wFDmi9Xh3mFM2mwI4ik9n3TMgHk6xDtLxk=`
-- `sha256-uS7/g9fhQwNZS1f/MqYqqKv8y9hCu36IfX9XZB5L7YY=`
+- `sha256-BoFUHKsYhJ9tbsHugtNQCmnkBbZ11pcW6kZguu+T+EU=`
+- `sha256-A18HC3jLpyEc9B8oyxq/NBFCyFBJFSsRLt0gmT9kft8=`
+
+<!--
+Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
+-->
 
 These values (without the `sha256-` prefix) can also be retrieved via
 

@@ -1,4 +1,3 @@
-import { parse as parseUrl } from 'url'
 import type { Connect } from 'types/connect'
 import type { ViteDevServer } from '..'
 
@@ -12,7 +11,7 @@ export function baseMiddleware({
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
-    const parsed = parseUrl(url)
+    const parsed = new URL(url, 'http://vitejs.dev')
     const path = parsed.pathname || '/'
 
     if (path.startsWith(base)) {

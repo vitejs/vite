@@ -1,5 +1,4 @@
 import path from 'path'
-import type { Server } from 'http'
 import type * as http from 'http'
 import sirv from 'sirv'
 import connect from 'connect'
@@ -47,7 +46,7 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: Server
+  httpServer: http.Server
   /**
    * Print server urls
    */
@@ -105,7 +104,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: true
+      single: config.spa
     })
   )
 

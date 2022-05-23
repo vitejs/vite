@@ -257,8 +257,8 @@ export default defineConfig(({ command, mode }) => {
   {
     "exports": {
       ".": {
-        "import": "./index.esm.mjs",
-        "require": "./index.cjs.js"
+        "import": "./index.mjs",
+        "require": "./index.js"
       }
     }
   }
@@ -461,6 +461,13 @@ export default defineConfig(({ command, mode }) => {
   :::warning SECURITY NOTES
   `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
   :::
+
+### spa
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+  Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
 
 ## Server Options
 
@@ -712,7 +719,6 @@ createServer()
 
 ### server.fs.deny
 
-- **Experimental**
 - **Type:** `string[]`
 
   Blocklist for sensitive files being restricted to be served by Vite dev server.
@@ -741,11 +747,11 @@ export default defineConfig({
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-  Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets [browsers with native ES module support](https://caniuse.com/es6-module).
+  Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) support.
 
   Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
-  - If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2019'`.
+  - If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2021'`.
   - In other cases, it will perform no transpilation at all.
 
   The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.

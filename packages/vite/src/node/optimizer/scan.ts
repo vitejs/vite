@@ -277,6 +277,8 @@ function esbuildScanPlugin(
             let loader: Loader = 'js'
             if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
               loader = lang
+            } else if (path.endsWith('.astro')) {
+              loader = 'ts'
             }
             const srcMatch = openTag.match(srcRE)
             if (srcMatch) {

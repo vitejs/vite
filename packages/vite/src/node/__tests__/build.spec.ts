@@ -1,7 +1,10 @@
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 import { describe, expect, test } from 'vitest'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import { resolveLibFilename } from '../build'
+
+const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 type FormatsToFileNames = [LibraryFormats, string][]
 const baseLibOptions: LibraryOptions = {

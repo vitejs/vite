@@ -1,6 +1,9 @@
 const fs = require('fs')
 const vue = require('@vitejs/plugin-vue')
 
+// Overriding the NODE_ENV set by vitest
+process.env.NODE_ENV = ''
+
 /**
  * @type {import('vite').UserConfig}
  */
@@ -49,6 +52,15 @@ module.exports = {
           res.statusCode = 200
           res.end('pong')
         })
+      }
+    },
+    {
+      name: 'test-astro',
+      transform(code, id) {
+        if (id.endsWith('.astro')) {
+          code = `export default {}`
+          return { code }
+        }
       }
     }
   ]

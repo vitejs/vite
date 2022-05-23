@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { createRequire } from 'module'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -32,22 +33,27 @@ import {
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
+  emptyCssComments,
   generateCodeFrame,
   getHash,
   isDataUrl,
   isExternalUrl,
   isObject,
+  isRelativeBase,
   normalizePath,
   parseRequest,
   processSrcSet
 } from '../utils'
-import { emptyCssComments } from '../utils'
+import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
-  getAssetFilename
+  getAssetFilename,
+  publicAssetUrlCache,
+  publicAssetUrlRE,
+  publicFileToBuiltUrl
 } from './asset'
 
 // const debug = createDebugger('vite:css')
@@ -102,8 +108,9 @@ const htmlProxyRE = /(\?|&)html-proxy\b/
 const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /(\?|&)inline\b/
 const inlineCSSRE = /(\?|&)inline-css\b/
-const usedRE = /(\?|&)used\b/
 const varRE = /^var\(/i
+
+const cssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -182,7 +189,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
-          return config.base + url.slice(1)
+          if (isRelativeBase(config.base)) {
+            return publicFileToBuiltUrl(url, config)
+          } else {
+            return config.base + url.slice(1)
+          }
         }
         const resolved = await resolveUrl(url, importer)
         if (resolved) {
@@ -282,6 +293,30 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
 
+  const relativeBase = isRelativeBase(config.base)
+
+  const rollupOptionsOutput = config.build.rollupOptions.output
+  const assetFileNames = (
+    Array.isArray(rollupOptionsOutput)
+      ? rollupOptionsOutput[0]
+      : rollupOptionsOutput
+  )?.assetFileNames
+  const getCssAssetDirname = (cssAssetName: string) => {
+    if (!assetFileNames) {
+      return config.build.assetsDir
+    } else if (typeof assetFileNames === 'string') {
+      return path.dirname(assetFileNames)
+    } else {
+      return path.dirname(
+        assetFileNames({
+          name: cssAssetName,
+          type: 'asset',
+          source: '/* vite internal call, ignore */'
+        })
+      )
+    }
+  }
+
   return {
     name: 'vite:css-post',
 
@@ -370,18 +405,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (usedRE.test(id)) {
-        if (modulesCode) {
-          code = modulesCode
-        } else {
-          let content = css
-          if (config.build.minify) {
-            content = await minifyCSS(content, config)
-          }
-          code = `export default ${JSON.stringify(content)}`
-        }
+      if (modulesCode) {
+        code = modulesCode
       } else {
-        code = `export default ''`
+        let content = css
+        if (config.build.minify) {
+          content = await minifyCSS(content, config)
+        }
+        // marking as pure to make it tree-shakable by minifier
+        // but the module itself is still treated as a non tree-shakable module
+        // because moduleSideEffects is 'no-treeshake'
+        code = `export default /* #__PURE__ */ (() => ${JSON.stringify(
+          content
+        )})()`
       }
 
       return {
@@ -414,35 +450,42 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      // resolve asset URL placeholders to their built file URLs and perform
-      // minification if necessary
-      const processChunkCSS = async (
-        css: string,
-        {
-          inlined,
-          minify
-        }: {
-          inlined: boolean
-          minify: boolean
-        }
-      ) => {
+      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+
+      // resolve asset URL placeholders to their built file URLs
+      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+        const cssAssetDirname = relativeBase
+          ? getCssAssetDirname(cssAssetName)
+          : undefined
+
         // replace asset url references with resolved url.
-        const isRelativeBase = config.base === '' || config.base.startsWith('.')
-        css = css.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+        chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (!isRelativeBase || inlined) {
-            // absolute base or relative base but inlined (injected as style tag into
-            // index.html) use the base as-is
-            return config.base + filename
+          if (relativeBase) {
+            // relative base + extracted CSS
+            const relativePath = path.posix.relative(cssAssetDirname!, filename)
+            return relativePath.startsWith('.')
+              ? relativePath
+              : './' + relativePath
           } else {
-            // relative base + extracted CSS - asset file will be in the same dir
-            return `./${path.posix.basename(filename)}`
+            // absolute base
+            return config.base + filename
           }
         })
-        // only external @imports and @charset should exist at this point
-        css = await finalizeCss(css, minify, config)
-        return css
+        // resolve public URL from CSS paths
+        if (relativeBase) {
+          const relativePathToPublicFromCSS = path.posix.relative(
+            cssAssetDirname!,
+            ''
+          )
+          chunkCSS = chunkCSS.replace(
+            publicAssetUrlRE,
+            (_, hash) =>
+              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
+          )
+        }
+        return chunkCSS
       }
 
       if (config.build.cssCodeSplit) {
@@ -455,23 +498,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           opts.format === 'cjs' ||
           opts.format === 'system'
         ) {
-          chunkCSS = await processChunkCSS(chunkCSS, {
-            inlined: false,
-            minify: true
-          })
+          const cssAssetName = chunk.name + '.css'
+
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: chunk.name + '.css',
+            name: cssAssetName,
             type: 'asset',
             source: chunkCSS
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
-          // legacy build, inline css
-          chunkCSS = await processChunkCSS(chunkCSS, {
-            inlined: true,
-            minify: true
-          })
+          // legacy build and inline css
+
+          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
+          // the vite:asset plugin, don't call resolveAssetUrlsInCss here
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
@@ -480,6 +525,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (config.build.sourcemap) {
             const s = new MagicString(code)
             s.prepend(injectCode)
+            // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
               map: s.generateMap({ hires: true })
@@ -489,11 +535,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         }
       } else {
-        // non-split extracted CSS will be minified together
-        chunkCSS = await processChunkCSS(chunkCSS, {
-          inlined: false,
-          minify: false
-        })
+        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+        // finalizeCss is called for the aggregated chunk in generateBundle
+
         outputToExtractedCSSMap.set(
           opts,
           (outputToExtractedCSSMap.get(opts) || '') + chunkCSS
@@ -557,7 +601,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
         this.emitFile({
-          name: 'style.css',
+          name: cssBundleName,
           type: 'asset',
           source: extractedCss
         })
@@ -748,7 +792,8 @@ async function compileCSS(
   }
   postcssPlugins.push(
     UrlRewritePostcssPlugin({
-      replacer: urlReplacer
+      replacer: urlReplacer,
+      logger: config.logger
     }) as PostCSS.Plugin
   )
 
@@ -844,7 +889,7 @@ async function compileCSS(
 
   const rawPostcssMap = postcssResult.map.toJSON()
 
-  const postcssMap = formatPostcssSourceMap(
+  const postcssMap = await formatPostcssSourceMap(
     // version property of rawPostcssMap is declared as string
     // but actually it is a number
     rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
@@ -860,10 +905,10 @@ async function compileCSS(
   }
 }
 
-export function formatPostcssSourceMap(
+export async function formatPostcssSourceMap(
   rawMap: ExistingRawSourceMap,
   file: string
-): ExistingRawSourceMap {
+): Promise<ExistingRawSourceMap> {
   const inputFileDir = path.dirname(file)
 
   const sources = rawMap.sources.map((source) => {
@@ -980,6 +1025,7 @@ const cssImageSetRE = /(?<=image-set\()((?:[\w\-]+\([^\)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
+  logger: Logger
 }> = (opts) => {
   if (!opts) {
     throw new Error('base or replace is required')
@@ -990,11 +1036,19 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
     Once(root) {
       const promises: Promise<void>[] = []
       root.walkDecls((declaration) => {
+        const importer = declaration.source?.input.file
+        if (!importer) {
+          opts.logger.warnOnce(
+            '\nA PostCSS plugin did not pass the `from` option to `postcss.parse`. ' +
+              'This may cause imported assets to be incorrectly transformed. ' +
+              "If you've recently added a PostCSS plugin that raised this warning, " +
+              'please contact the package author to fix the issue.'
+          )
+        }
         const isCssUrl = cssUrlRE.test(declaration.value)
         const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = (rawUrl: string) => {
-            const importer = declaration.source?.input.file
             return opts.replacer(rawUrl, importer)
           }
           const rewriterToUse = isCssImageSet
@@ -1225,6 +1279,9 @@ export interface StylePreprocessorResults {
 
 const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
 
+// TODO: use dynamic import
+const _require = createRequire(import.meta.url)
+
 function loadPreprocessor(lang: PreprocessLang.scss, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.sass, root: string): typeof Sass
 function loadPreprocessor(lang: PreprocessLang.less, root: string): typeof Less
@@ -1239,9 +1296,9 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
   try {
     // Search for the preprocessor in the root directory first, and fall back
     // to the default require paths.
-    const fallbackPaths = require.resolve.paths?.(lang) || []
-    const resolved = require.resolve(lang, { paths: [root, ...fallbackPaths] })
-    return (loadedPreprocessors[lang] = require(resolved))
+    const fallbackPaths = _require.resolve.paths?.(lang) || []
+    const resolved = _require.resolve(lang, { paths: [root, ...fallbackPaths] })
+    return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(

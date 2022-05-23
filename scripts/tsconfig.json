@@ -2,9 +2,9 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "include": ["."],
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2019",
-    "moduleResolution": "node",
+    "module": "CommonJS",
+    "target": "ES2020",
+    "moduleResolution": "Node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

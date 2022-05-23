@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue-jsx",
-  "version": "1.3.10",
+  "version": "2.0.0-alpha.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -45,7 +45,7 @@
     "vite": "workspace:*"
   },
   "peerDependencies": {
-    "vite": "^2.0.0",
+    "vite": "^3.0.0-alpha",
     "vue": "^3.0.0"
   }
 }

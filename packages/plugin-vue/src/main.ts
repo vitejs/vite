@@ -3,7 +3,10 @@ import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'
 import type { RawSourceMap } from 'source-map'
-import { SourceMapConsumer, SourceMapGenerator } from 'source-map'
+import type { EncodedSourceMap as TraceEncodedSourceMap } from '@jridgewell/trace-mapping'
+import { TraceMap, eachMapping } from '@jridgewell/trace-mapping'
+import type { EncodedSourceMap as GenEncodedSourceMap } from '@jridgewell/gen-mapping'
+import { addMapping, fromMap, toEncodedMap } from '@jridgewell/gen-mapping'
 import { transformWithEsbuild } from 'vite'
 import {
   createDescriptor,
@@ -158,13 +161,19 @@ export async function transformMain(
   // of templateMap, we need to concatenate the two source maps.
   let resolvedMap = options.sourceMap ? map : undefined
   if (resolvedMap && templateMap) {
-    const generator = SourceMapGenerator.fromSourceMap(
-      new SourceMapConsumer(map)
+    const gen = fromMap(
+      // version property of result.map is declared as string
+      // but actually it is `3`
+      map as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
+    )
+    const tracer = new TraceMap(
+      // same above
+      templateMap as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
     )
     const offset = (scriptCode.match(/\r?\n/g)?.length ?? 0) + 1
-    const templateMapConsumer = new SourceMapConsumer(templateMap)
-    templateMapConsumer.eachMapping((m) => {
-      generator.addMapping({
+    eachMapping(tracer, (m) => {
+      if (m.source == null) return
+      addMapping(gen, {
         source: m.source,
         original: { line: m.originalLine, column: m.originalColumn },
         generated: {
@@ -173,7 +182,12 @@ export async function transformMain(
         }
       })
     })
-    resolvedMap = (generator as any).toJSON() as RawSourceMap
+
+    // same above
+    resolvedMap = toEncodedMap(gen) as Omit<
+      GenEncodedSourceMap,
+      'version'
+    > as RawSourceMap
     // if this is a template only update, we will be reusing a cached version
     // of the main module compile result, which has outdated sourcesContent.
     resolvedMap.sourcesContent = templateMap.sourcesContent
@@ -255,7 +269,7 @@ async function genTemplateCode(
         ? `&src=${descriptor.id}`
         : '&src=true'
       : ''
-    const scopedQuery = hasScoped ? `&scoped=true` : ``
+    const scopedQuery = hasScoped ? `&scoped=${descriptor.id}` : ``
     const attrsQuery = attrsToQuery(template.attrs, 'js', true)
     const query = `?vue&type=template${srcQuery}${scopedQuery}${attrsQuery}`
     const request = JSON.stringify(src + query)
@@ -342,7 +356,8 @@ async function genStyleCode(
           : '&src=true'
         : ''
       const directQuery = asCustomElement ? `&inline` : ``
-      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}`
+      const scopedQuery = style.scoped ? `&scoped=${descriptor.id}` : ``
+      const query = `?vue&type=style&index=${i}${srcQuery}${directQuery}${scopedQuery}`
       const styleRequest = src + query + attrsQuery
       if (style.module) {
         if (asCustomElement) {
@@ -443,7 +458,7 @@ async function linkSrcToDescriptor(
 
 // these are built-in query parameters so should be ignored
 // if the user happen to add them as attrs
-const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module']
+const ignoreList = ['id', 'index', 'src', 'type', 'lang', 'module', 'scoped']
 
 function attrsToQuery(
   attrs: SFCBlock['attrs'],

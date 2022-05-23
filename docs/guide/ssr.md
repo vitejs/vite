@@ -169,7 +169,7 @@ Our scripts in `package.json` will look like this:
 
 Note the `--ssr` flag which indicates this is an SSR build. It should also specify the SSR entry.
 
-Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
+Then, in `server.js` we need to add some production specific logic by checking `process.env.`<wbr>`NODE_ENV`:
 
 - Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
 
@@ -264,3 +264,14 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
+
+## Vite CLI
+
+The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps:
+
+1. Add your SSR middleware to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
+   :::tip Note
+   Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
+   :::
+
+2. Set `config.spa` to `false`. This switches the development and preview server from SPA mode to SSR/MPA mode.

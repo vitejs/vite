@@ -1,7 +1,13 @@
 import { isAbsolute, posix } from 'path'
-import { isMatch, scan } from 'micromatch'
+import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
-import type { ArrayExpression, CallExpression, Literal, Node } from 'estree'
+import type {
+  ArrayExpression,
+  CallExpression,
+  Literal,
+  Node,
+  SequenceExpression
+} from 'estree'
 import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
@@ -12,7 +18,8 @@ import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, slash } from '../utils'
-import { isCSSRequest } from './css'
+
+const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
   match: RegExpMatchArray
@@ -67,7 +74,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: result.s.toString(),
-          map: result.s.generateMap()
+          map: config.build.sourcemap ? result.s.generateMap() : null
         }
       }
     }
@@ -111,20 +118,44 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression
+    let ast: CallExpression | SequenceExpression
+    let lastTokenPos: number | undefined
 
     try {
       ast = parseExpressionAt(code, start, {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ranges: true
+        ranges: true,
+        onToken: (token) => {
+          lastTokenPos = token.end
+        }
       }) as any
     } catch (e) {
       const _e = e as any
       if (_e.message && _e.message.startsWith('Unterminated string constant'))
         return undefined!
-      throw _e
+      if (lastTokenPos == null || lastTokenPos <= start) throw _e
+
+      // tailing comma in object or array will make the parser think it's a comma operation
+      // we try to parse again removing the comma
+      try {
+        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
+        ast = parseExpressionAt(
+          ' '.repeat(start) + statement, // to keep the ast position
+          start,
+          {
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+            ranges: true
+          }
+        ) as any
+      } catch {
+        throw _e
+      }
     }
+
+    if (ast.type === 'SequenceExpression')
+      ast = ast.expressions[0] as CallExpression
 
     if (ast.type !== 'CallExpression')
       throw err(`Expect CallExpression, got ${ast.type}`)
@@ -360,9 +391,6 @@ export async function transformGlobImport(
             const filePath = paths.filePath
             let importPath = paths.importPath
             let importQuery = query
-
-            if (isCSSRequest(file))
-              importQuery = importQuery ? `${importQuery}&used` : '?used'
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]

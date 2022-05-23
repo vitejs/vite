@@ -20,9 +20,7 @@ export default defineConfig({
     onConsoleLog(log) {
       if (log.match(/experimental|jit engine|emitted file|tailwind/i))
         return false
-    },
-    maxThreads: process.env.CI ? 1 : undefined,
-    minThreads: process.env.CI ? 1 : undefined
+    }
   },
   esbuild: {
     target: 'node14'
