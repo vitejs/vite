@@ -1,3 +1,31 @@
+## 3.0.0-alpha.2 (2022-05-23)
+
+* fix: correctly replace process.env.NODE_ENV (#8283) ([ec52baa](https://github.com/vitejs/vite/commit/ec52baa)), closes [#8283](https://github.com/vitejs/vite/issues/8283)
+* fix: dev sourcemap (#8269) ([505f75e](https://github.com/vitejs/vite/commit/505f75e)), closes [#8269](https://github.com/vitejs/vite/issues/8269)
+* fix: EPERM error on Windows when processing dependencies (#8235) ([67743a3](https://github.com/vitejs/vite/commit/67743a3)), closes [#8235](https://github.com/vitejs/vite/issues/8235)
+* fix: glob types (#8257) ([03b227e](https://github.com/vitejs/vite/commit/03b227e)), closes [#8257](https://github.com/vitejs/vite/issues/8257)
+* fix: srcset handling in html (#6419) ([a0ee4ff](https://github.com/vitejs/vite/commit/a0ee4ff)), closes [#6419](https://github.com/vitejs/vite/issues/6419)
+* fix: support set NODE_ENV in scripts when custom mode option (#8218) ([adcf041](https://github.com/vitejs/vite/commit/adcf041)), closes [#8218](https://github.com/vitejs/vite/issues/8218)
+* fix(css): remove `?used` hack (fixes #6421, #8245) (#8278) ([0b25cc1](https://github.com/vitejs/vite/commit/0b25cc1)), closes [#6421](https://github.com/vitejs/vite/issues/6421) [#8245](https://github.com/vitejs/vite/issues/8245) [#8278](https://github.com/vitejs/vite/issues/8278)
+* fix(hmr): catch thrown errors when connecting to hmr websocket (#7111) ([4bc9284](https://github.com/vitejs/vite/commit/4bc9284)), closes [#7111](https://github.com/vitejs/vite/issues/7111)
+* fix(plugin-legacy): respect `entryFileNames` for polyfill chunks (#8247) ([baa9632](https://github.com/vitejs/vite/commit/baa9632)), closes [#8247](https://github.com/vitejs/vite/issues/8247)
+* fix(plugin-react): broken optimized deps dir check (#8255) ([9e2a1ea](https://github.com/vitejs/vite/commit/9e2a1ea)), closes [#8255](https://github.com/vitejs/vite/issues/8255)
+* chore: include 2.9.9 changelog in main (#8250) ([48f03e0](https://github.com/vitejs/vite/commit/48f03e0)), closes [#8250](https://github.com/vitejs/vite/issues/8250)
+* chore: remove unneeded worker context param (#8268) ([30a7acc](https://github.com/vitejs/vite/commit/30a7acc)), closes [#8268](https://github.com/vitejs/vite/issues/8268)
+* chore: show ws port conflict error (#8209) ([c86329b](https://github.com/vitejs/vite/commit/c86329b)), closes [#8209](https://github.com/vitejs/vite/issues/8209)
+* chore: use 'new URL' instead of 'url.parse' (#8254) ([d98c8a7](https://github.com/vitejs/vite/commit/d98c8a7)), closes [#8254](https://github.com/vitejs/vite/issues/8254)
+* chore: use typescript for rollup configPlugin (#8290) ([fa538cf](https://github.com/vitejs/vite/commit/fa538cf)), closes [#8290](https://github.com/vitejs/vite/issues/8290)
+* feat: sourcemap for importAnalysis (#8258) ([a4e4d39](https://github.com/vitejs/vite/commit/a4e4d39)), closes [#8258](https://github.com/vitejs/vite/issues/8258)
+* feat: spa option, `preview` and `dev` for MPA and SSR apps (#8217) ([d7cba46](https://github.com/vitejs/vite/commit/d7cba46)), closes [#8217](https://github.com/vitejs/vite/issues/8217)
+* feat: vite connected logs changed to console.debug (#7733) ([9f00c41](https://github.com/vitejs/vite/commit/9f00c41)), closes [#7733](https://github.com/vitejs/vite/issues/7733)
+* feat: worker support query url (#7914) ([95297dd](https://github.com/vitejs/vite/commit/95297dd)), closes [#7914](https://github.com/vitejs/vite/issues/7914)
+* feat(wasm): new wasm plugin (`.wasm?init`) (#8219) ([75c3bf6](https://github.com/vitejs/vite/commit/75c3bf6)), closes [#8219](https://github.com/vitejs/vite/issues/8219)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+* feat!: migrate to ESM (#8178) ([76fdc27](https://github.com/vitejs/vite/commit/76fdc27)), closes [#8178](https://github.com/vitejs/vite/issues/8178)
+* fix!: do not fixStacktrace by default (#7995) ([23f8e08](https://github.com/vitejs/vite/commit/23f8e08)), closes [#7995](https://github.com/vitejs/vite/issues/7995)
+
+
+
 ## 3.0.0-alpha.1 (2022-05-18)
 
 * feat!: relative base (#7644) ([09648c2](https://github.com/vitejs/vite/commit/09648c2)), closes [#7644](https://github.com/vitejs/vite/issues/7644)
