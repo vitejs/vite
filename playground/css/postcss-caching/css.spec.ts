@@ -1,6 +1,6 @@
-import { getColor, page, ports } from '~utils'
+import path from 'node:path'
 import { createServer } from 'vite'
-import path from 'path'
+import { getColor, page, ports } from '~utils'
 
 test('postcss config', async () => {
   const port = ports['css/postcss-caching']

@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import { build } from 'vite'
 import type { OutputChunk, RollupOutput } from 'rollup'
 
