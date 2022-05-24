@@ -171,11 +171,21 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
+  const urls: Array<{ label: string; url: string }> = []
+
   if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
-    info(`  > Local: ${colors.cyan(url)}`)
+    urls.push({
+      label: 'Local',
+      url: colors.cyan(
+        `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+      )
+    })
+
     if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${colors.dim('use `--host` to expose')}`)
+      urls.push({
+        label: 'Network',
+        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
+      })
     }
   } else {
     Object.values(os.networkInterfaces())
@@ -189,14 +199,24 @@ function printServerUrls(
             // Node >= v18
             (typeof detail.family === 'number' && detail.family === 4))
       )
-      .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
+      .forEach((detail) => {
         const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${colors.bold(port)}${base}`
-        return `  > ${type} ${colors.cyan(url)}`
+        const label = detail.address.includes('127.0.0.1') ? 'Local' : 'Network'
+
+        urls.push({ label, url: colors.cyan(url) })
       })
-      .forEach((msg) => info(msg))
   }
+
+  const length = urls.reduce(
+    (length, { label }) => Math.max(length, label.length),
+    0
+  )
+  urls.forEach(({ label, url: text }) => {
+    info(
+      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
+        length - label.length
+      )}${text}`
+    )
+  })
 }
