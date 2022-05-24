@@ -178,8 +178,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             // (that is, if it is under node_modules directory in the package source of the optimized file)
             for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
-              // TODO: how to get importerModule.file here? See importAnalysisPlugin
-              if (optimizedModule.file === 'importerModule.file') {
+              if (optimizedModule.file === importer) {
                 importerFile = optimizedModule.src
               }
             }
