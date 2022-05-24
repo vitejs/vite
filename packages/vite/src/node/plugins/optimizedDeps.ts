@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import type { Plugin } from '../plugin'
+import type { Plugin, PluginContext } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
@@ -68,6 +68,31 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
+
+  const ids: string[] = []
+  const seenIds = new Set<string>()
+  let waiting = false
+  function runOptimizerWhenIddle(plugin: PluginContext) {
+    if (!waiting) {
+      const id = ids.pop()
+      if (id) {
+        waiting = true
+        const afterLoad = () => {
+          waiting = false
+          if( ids.length > 0 ) {
+            runOptimizerWhenIddle(plugin)
+          }
+          else {
+            config._optimizedDeps?.run()
+          }
+        }
+        plugin.load({ id }).then(() => {
+          setTimeout(afterLoad, ids.length > 0 ? 0 : 100)
+        }).catch(afterLoad)
+      }
+    }
+  }
+
   return {
     name: 'vite:optimized-deps-build',
 
@@ -77,10 +102,14 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    transform() {
-      config._optimizedDeps?.delay()
+    transform(_code, id) {
+      if (!isOptimizedDepFile(id, config) && !seenIds.has(id)) {
+        seenIds.add(id)
+        ids.push(id)
+        runOptimizerWhenIddle(this)
+      }
     },
-
+  
     async load(id) {
       const metadata = config._optimizedDeps?.metadata
       if (!metadata || !isOptimizedDepFile(id, config)) {

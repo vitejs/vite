@@ -38,20 +38,20 @@ export async function createOptimizedDeps(
   const isBuild = config.command === 'build'
 
   const sessionTimestamp = Date.now().toString()
-
+  
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
   let handle: NodeJS.Timeout | undefined
-
+  
   let delayProcessing = false
 
   const optimizedDeps: OptimizedDeps = {
     metadata:
       cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
     registerMissingImport,
-    delay() {
-      if (handle) {
-        delayProcessing = true
+    run() {
+      if(Object.keys(optimizedDeps.metadata.discovered).length > 0) {
+        runOptimizer()
       }
     }
   }
@@ -87,8 +87,8 @@ export async function createOptimizedDeps(
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
 
-  // If there wasn't a cache or it is outdated, perform a fast scan with esbuild
-  // to quickly find project dependencies and do a first optimize run
+  // If there wasn't a cache or it is outdated, we need to prepare a first run
+  let firstRunCalled = !!cachedMetadata
   if (!cachedMetadata) {
     if (isBuild) {
       // Initialize discovered deps with manually added optimizeDeps.include info
@@ -155,7 +155,10 @@ export async function createOptimizedDeps(
     }
   }
 
-  async function runOptimizer(isRerun = false) {
+  async function runOptimizer() {
+    const isRerun = firstRunCalled
+    firstRunCalled = true
+
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
     currentlyProcessing = true
@@ -383,8 +386,7 @@ export async function createOptimizedDeps(
     debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
-    const isRerun = !isBuild
-    runOptimizer(isRerun)
+    runOptimizer()
   }
 
   function getDiscoveredBrowserHash(
@@ -444,8 +446,9 @@ export async function createOptimizedDeps(
 
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
-
-    debouncedProcessing()
+    if (!isBuild) {
+      debouncedProcessing()
+    }
 
     // Return the path for the optimized bundle, this path is known before
     // esbuild is run to generate the pre-bundle
