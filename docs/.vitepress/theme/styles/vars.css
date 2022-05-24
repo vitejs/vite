@@ -8,6 +8,7 @@
   --vp-c-brand-lighter: #9499ff;
   --vp-c-brand-dark: #535bf2;
   --vp-c-brand-darker: #454ce1;
+  --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
 }
 
 /**
@@ -37,6 +38,22 @@
     #bd34fe 30%,
     #41d1ff
   );
+}
+
+/**
+ * Component: Custom Block
+ * -------------------------------------------------------------------------- */
+
+:root {
+  --vp-custom-block-tip-border: var(--vp-c-brand);
+  --vp-custom-block-tip-text: var(--vp-c-brand-darker);
+  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
+}
+
+.dark {
+  --vp-custom-block-tip-border: var(--vp-c-brand);
+  --vp-custom-block-tip-text: var(--vp-c-brand-lighter);
+  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
 /**
