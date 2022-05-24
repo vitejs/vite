@@ -19,7 +19,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild && pnpm run patch-cjs",
-    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
+    "patch-cjs": "esno ../../scripts/patchCJS.ts",
     "prepublishOnly": "npm run build"
   },
   "engines": {

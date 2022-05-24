@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0-alpha.2",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -44,7 +44,7 @@
   "scripts": {
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "rollup --config rollup.config.ts --configPlugin esbuild",
+    "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
     "build-types": "run-s build-temp-types patch-types roll-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "patch-types": "esno scripts/patchTypes.ts",
