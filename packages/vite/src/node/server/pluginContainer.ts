@@ -147,6 +147,15 @@ export async function createPluginContainer(
   const debugPluginTransform = createDebugger('vite:plugin-transform', {
     onlyWhenFocused: 'vite:plugin'
   })
+  const debugSourcemapCombineFlag = 'vite:sourcemap-combine'
+  const isDebugSourcemapCombineFocused = process.env.DEBUG?.includes(
+    debugSourcemapCombineFlag
+  )
+  const debugSourcemapCombineFilter =
+    process.env.DEBUG_VITE_SOURCEMAP_COMBINE_FILTER
+  const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
+    onlyWhenFocused: true
+  })
 
   // ---------------------------------------------------------------------------
 
@@ -424,6 +433,16 @@ export async function createPluginContainer(
     }
 
     _getCombinedSourcemap(createIfNull = false) {
+      if (
+        debugSourcemapCombineFilter &&
+        this.filename.includes(debugSourcemapCombineFilter)
+      ) {
+        debugSourcemapCombine('----------', this.filename)
+        debugSourcemapCombine(this.combinedMap)
+        debugSourcemapCombine(this.sourcemapChain)
+        debugSourcemapCombine('----------')
+      }
+
       let combinedMap = this.combinedMap
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
@@ -613,6 +632,10 @@ export async function createPluginContainer(
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
+              if (isDebugSourcemapCombineFocused) {
+                // @ts-expect-error inject plugin name for debug purpose
+                result.map.name = plugin.name
+              }
               ctx.sourcemapChain.push(result.map)
             }
           }
