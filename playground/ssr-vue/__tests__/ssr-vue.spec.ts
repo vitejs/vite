@@ -50,7 +50,7 @@ test('/about', async () => {
   }
 })
 
-test.skip('/external', async () => {
+test('/external', async () => {
   await page.goto(url + '/external')
   expect(await page.textContent('div')).toMatch(
     'Example external component content'
