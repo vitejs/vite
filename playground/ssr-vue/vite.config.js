@@ -51,5 +51,8 @@ module.exports = {
       // this package has uncompiled .vue files
       'example-external-component'
     ]
+  },
+  optimizeDeps: {
+    exclude: ['example-external-component']
   }
 }
