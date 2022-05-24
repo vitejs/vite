@@ -148,12 +148,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // legacy bundle
       if (legacyPolyfills.size || genDynamicFallback) {
-        if (!legacyPolyfills.has('es.promise')) {
-          // check if the target needs Promise polyfill because SystemJS relies
-          // on it
-          await detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
-        }
-
         isDebug &&
           console.log(
             `[@vitejs/plugin-legacy] legacy polyfills:`,
