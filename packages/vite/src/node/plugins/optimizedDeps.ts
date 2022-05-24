@@ -39,7 +39,10 @@ function initRunProcessingInfo(config: ResolvedConfig) {
 }
 
 function getRunProcessingInfo(config: ResolvedConfig): RunProcessingInfo {
-  return runProcessingInfoMap.get(config.mainConfig || config) ?? initRunProcessingInfo(config)
+  return (
+    runProcessingInfoMap.get(config.mainConfig || config) ??
+    initRunProcessingInfo(config)
+  )
 }
 
 export function registerWorkersSource(config: ResolvedConfig, id: string) {
@@ -150,7 +153,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:optimized-deps-build',
 
     buildStart() {
-      if(!config.isWorker) {
+      if (!config.isWorker) {
         initRunProcessingInfo(config)
       }
     },
