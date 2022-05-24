@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "main": "index.js",
+  "type": "module",
   "dependencies": {
     "test-package-e-excluded": "link:../test-package-e-excluded"
   }
