@@ -7,11 +7,9 @@ import type { File } from '@babel/types'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 
-// @ts-ignore
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
-
-const tempDir = resolve(__dirname, '../temp/node')
-const typesDir = resolve(__dirname, '../types')
+const dir = dirname(fileURLToPath(import.meta.url))
+const tempDir = resolve(dir, '../temp/node')
+const typesDir = resolve(dir, '../types')
 
 // walk through the temp dts dir, find all import/export of types/*
 // and rewrite them into relative imports - so that api-extractor actually
