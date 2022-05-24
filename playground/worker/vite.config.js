@@ -8,7 +8,6 @@ module.exports = vite.defineConfig({
     plugins: [vueJsx()]
   },
   build: {
-    outDir: 'dist/iife',
-    sourcemap: true
+    outDir: 'dist/iife'
   }
 })
