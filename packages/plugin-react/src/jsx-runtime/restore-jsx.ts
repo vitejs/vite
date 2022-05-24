@@ -27,12 +27,6 @@ export async function restoreJSX(
   code: string,
   filename: string
 ): Promise<RestoredJSX> {
-  // Avoid parsing the optimized react-dom since it will never
-  // contain compiled JSX and it's a pretty big file (800kb).
-  if (filename.includes('/.vite/react-dom.js')) {
-    return jsxNotFound
-  }
-
   const [reactAlias, isCommonJS] = parseReactAlias(code)
 
   if (!reactAlias) {

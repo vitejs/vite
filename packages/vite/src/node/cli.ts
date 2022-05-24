@@ -5,6 +5,7 @@ import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
+import { VERSION } from './constants'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -96,8 +97,6 @@ cli
 
       const info = server.config.logger.info
 
-      const { version } = require('vite/package.json')
-
       // @ts-ignore
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
@@ -110,7 +109,7 @@ cli
 
       info(
         `\n  ${colors.green(
-          `${colors.bold('VITE')} v${version}`
+          `${colors.bold('VITE')} v${VERSION}`
         )}  ${startupDurationString}\n`,
         { clear: !server.config.logger.hasWarned }
       )
@@ -259,6 +258,6 @@ cli
   )
 
 cli.help()
-cli.version(require('../../package.json').version)
+cli.version(VERSION)
 
 cli.parse()

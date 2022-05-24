@@ -1,6 +1,8 @@
 /* eslint-disable node/no-extraneous-import */
 import path from 'path'
 import { createHash } from 'crypto'
+import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
 import { build } from 'vite'
 import MagicString from 'magic-string'
 import type {
@@ -38,7 +40,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 const detectModernBrowserVarName = '__vite_is_modern_browser'
-const detectModernBrowserCode = `try{import(new URL(import.meta.url).href).catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
+const detectModernBrowserCode = `try{import.meta.url;import("_").catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
 const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy build because dynamic import or import.meta.url is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
 const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
@@ -129,11 +131,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills
           )
         await buildPolyfillChunk(
-          'polyfills-modern',
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
           config.build,
+          'es',
+          opts,
           options.externalSystemJS
         )
         return
@@ -158,19 +161,21 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           )
 
         await buildPolyfillChunk(
-          'polyfills-legacy',
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
           config.build,
+          'iife',
+          opts,
           options.externalSystemJS
         )
       }
     }
   }
 
+  const _require = createRequire(import.meta.url)
   const legacyPostPlugin: Plugin = {
     name: 'vite:legacy-post-process',
     enforce: 'post',
@@ -306,7 +311,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const { code, map } = babel.transform(raw, {
         babelrc: false,
         configFile: false,
-        compact: true,
+        compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: sourceMaps ? chunk.map : undefined,
         presets: [
@@ -331,7 +336,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               useBuiltIns: needPolyfills ? 'usage' : false,
               corejs: needPolyfills
                 ? {
-                    version: require('core-js/package.json').version,
+                    version: _require('core-js/package.json').version,
                     proposals: false
                   }
                 : undefined,
@@ -546,18 +551,19 @@ export async function detectPolyfills(
 }
 
 async function buildPolyfillChunk(
-  name: string,
   imports: Set<string>,
   bundle: OutputBundle,
   facadeToChunkMap: Map<string, string>,
   buildOptions: BuildOptions,
+  format: 'iife' | 'es',
+  rollupOutputOptions: NormalizedOutputOptions,
   externalSystemJS?: boolean
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
     // so that everything is resolved from here
-    root: __dirname,
+    root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
     logLevel: 'error',
     plugins: [polyfillsPlugin(imports, externalSystemJS)],
@@ -568,10 +574,11 @@ async function buildPolyfillChunk(
       assetsDir,
       rollupOptions: {
         input: {
-          [name]: polyfillId
+          polyfills: polyfillId
         },
         output: {
-          format: name.includes('legacy') ? 'iife' : 'es',
+          format,
+          entryFileNames: rollupOutputOptions.entryFileNames,
           manualChunks: undefined
         }
       }

@@ -4,11 +4,11 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { bareImportRE, combineSourcemaps, isRelativeBase } from '../utils'
+import { combineSourcemaps, isRelativeBase } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
+import { removedPureCssFilesCache } from './css'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -145,14 +145,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
-        const {
-          s: start,
-          e: end,
-          ss: expStart,
-          se: expEnd,
-          n: specifier,
-          d: dynamicIndex
-        } = imports[index]
+        const { ss: expStart, se: expEnd, d: dynamicIndex } = imports[index]
 
         const isDynamic = dynamicIndex > -1
 
@@ -165,27 +158,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               relativeBase ? ',import.meta.url' : ''
             })`
           )
-        }
-
-        // Differentiate CSS imports that use the default export from those that
-        // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble tree-shaking
-        // them)
-        if (
-          specifier &&
-          isCSSRequest(specifier) &&
-          // always inject ?used query when it is a dynamic import
-          // because there is no way to check whether the default export is used
-          (source.slice(expStart, start).includes('from') || isDynamic) &&
-          // already has ?used query (by import.meta.glob)
-          !specifier.match(/\?used(&|$)/) &&
-          // edge case for package names ending with .css (e.g normalize.css)
-          !(bareImportRE.test(specifier) && !specifier.includes('/'))
-        ) {
-          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, isDynamic ? `'${url}'` : url, {
-            contentOnly: true
-          })
         }
       }
 

@@ -116,6 +116,12 @@ module.exports = defineConfig({
       }
     },
     {
+      files: ['packages/plugin-*/**/*'],
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+      }
+    },
+    {
       files: ['playground/**'],
       rules: {
         'node/no-extraneous-import': 'off',
@@ -141,6 +147,12 @@ module.exports = defineConfig({
       files: ['*.d.ts'],
       rules: {
         '@typescript-eslint/triple-slash-reference': 'off'
+      }
+    },
+    {
+      files: 'packages/vite/**/*.*',
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     }
   ]

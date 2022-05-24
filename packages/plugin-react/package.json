@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-react",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "license": "MIT",
   "author": "Evan You",
   "contributors": [
@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild && pnpm run patch-cjs",
-    "patch-cjs": "ts-node ../../scripts/patchCJS.ts",
+    "patch-cjs": "esno ../../scripts/patchCJS.ts",
     "prepublishOnly": "npm run build"
   },
   "engines": {
