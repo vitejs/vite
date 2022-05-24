@@ -1,17 +1,14 @@
-import { pathToFileURL } from 'url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
 
-let terserFileUrl: URL | undefined
-const loadTerserFileUrl = (root: string) => {
-  if (terserFileUrl) return terserFileUrl
+let terserPath: string | undefined
+const loadTerserPath = (root: string) => {
+  if (terserPath) return terserPath
   try {
-    terserFileUrl = pathToFileURL(
-      requireResolveFromRootWithFallback(root, 'terser')
-    )
+    terserPath = requireResolveFromRootWithFallback(root, 'terser')
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {
       throw new Error(
@@ -23,18 +20,19 @@ const loadTerserFileUrl = (root: string) => {
       throw message
     }
   }
-  return terserFileUrl
+  return terserPath
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
     new Worker(
       async (
-        terserFileUrl: string,
+        terserPath: string,
         code: string,
         options: Terser.MinifyOptions
       ) => {
-        const terser = await import(terserFileUrl)
+        // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
+        const terser = require(terserPath)
         return terser.minify(code, options) as Terser.MinifyOutput
       }
     )
@@ -65,8 +63,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const terserFileUrl = loadTerserFileUrl(config.root)
-      const res = await worker.run(terserFileUrl.href, code, {
+      const terserPath = loadTerserPath(config.root)
+      const res = await worker.run(terserPath, code, {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,
