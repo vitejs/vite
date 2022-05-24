@@ -75,7 +75,9 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: result.s.toString(),
-          map: config.build.sourcemap ? result.s.generateMap() : null
+          map: config.build.sourcemap
+            ? result.s.generateMap({ hires: true, source: id })
+            : null
         }
       }
     }

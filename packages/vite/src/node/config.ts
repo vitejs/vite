@@ -408,10 +408,6 @@ export async function resolveConfig(
   // resolve public base url
   const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
   const resolvedBuildOptions = resolveBuildOptions(config.build)
-  // avoid serve mode generate sourcemap
-  if (command === 'serve') {
-    resolvedBuildOptions.sourcemap = false
-  }
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
