@@ -291,7 +291,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!options.optimizeDeps || options.ssr || config.isWorker
+      ...(!options.optimizeDeps || options.ssr
         ? [commonjsPlugin(options.commonjsOptions)]
         : []),
       dataURIPlugin(),
