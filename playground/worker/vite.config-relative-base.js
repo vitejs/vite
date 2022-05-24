@@ -24,8 +24,7 @@ module.exports = vite.defineConfig({
         chunkFileNames: 'chunks/[name]-[hash].js',
         entryFileNames: 'entries/[name]-[hash].js'
       }
-    },
-    optimizeDeps: false
+    }
   },
   plugins: [
     {
