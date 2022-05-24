@@ -13,7 +13,8 @@ import {
 const url = `http://localhost:${port}`
 
 test('vuex can be import succeed by named import', async () => {
-  await page.goto(url + '/store')
+  // wait networkidle for dynamic optimize vuex
+  await page.goto(url + '/store', { waitUntil: 'networkidle' })
   expect(await page.textContent('h1')).toMatch('bar')
 
   // raw http request
@@ -111,19 +112,18 @@ test('/', async () => {
 })
 
 test('css', async () => {
+  await page.goto(url)
   if (isBuild) {
     expect(await getColor('h1')).toBe('green')
     expect(await getColor('.jsx')).toBe('blue')
   } else {
-    // During dev, the CSS is loaded from async chunk and we may have to wait
-    // when the test runs concurrently.
-    await page.waitForLoadState('networkidle')
     await untilUpdated(() => getColor('h1'), 'green')
     await untilUpdated(() => getColor('.jsx'), 'blue')
   }
 })
 
 test('asset', async () => {
+  await page.goto(url)
   // should have no 404s
   browserLogs.forEach((msg) => {
     expect(msg).not.toMatch('404')
@@ -135,36 +135,39 @@ test('asset', async () => {
 })
 
 test('jsx', async () => {
+  await page.goto(url)
   expect(await page.textContent('.jsx')).toMatch('from JSX')
 })
 
 test('virtual module', async () => {
+  await page.goto(url)
   expect(await page.textContent('.virtual')).toMatch('hi')
 })
 
 test('nested virtual module', async () => {
+  await page.goto(url)
   expect(await page.textContent('.nested-virtual')).toMatch('[success]')
 })
 
 test('hydration', async () => {
+  await page.goto(url)
   expect(await page.textContent('button')).toMatch('0')
   await page.click('button')
-  await page.waitForLoadState('networkidle')
   expect(await page.textContent('button')).toMatch('1')
 })
 
 test('hmr', async () => {
+  await page.goto(url)
   editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
-  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
 
 test('client navigation', async () => {
+  await page.goto(url)
   await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
-  await page.waitForLoadState('networkidle')
   await untilUpdated(() => page.textContent('h1'), 'changed')
   await page.click('a[href="/"]')
   await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
