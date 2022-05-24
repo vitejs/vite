@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import colors from 'picocolors'
 import type {
   Loader,

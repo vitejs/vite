@@ -1,4 +1,4 @@
-import { createRequire } from 'module'
+import { createRequire } from 'node:module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'

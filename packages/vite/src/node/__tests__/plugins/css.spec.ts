@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
 import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'

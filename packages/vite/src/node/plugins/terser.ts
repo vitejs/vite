@@ -1,5 +1,5 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'

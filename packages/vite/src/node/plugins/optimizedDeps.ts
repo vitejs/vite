@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs'
+import { promises as fs } from 'node:fs'
 import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'

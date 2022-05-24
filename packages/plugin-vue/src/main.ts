@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
 import { normalizePath } from '@rollup/pluginutils'

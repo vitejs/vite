@@ -1,5 +1,5 @@
-import path from 'path'
-import type * as http from 'http'
+import path from 'node:path'
+import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'

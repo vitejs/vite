@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from '@rollup/pluginutils'
 /* eslint-disable import/no-duplicates */
