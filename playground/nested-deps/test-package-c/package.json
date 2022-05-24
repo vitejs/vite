@@ -2,6 +2,7 @@
   "name": "test-package-c",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "module": "index-es.js"
 }
