@@ -38,11 +38,11 @@ export async function createOptimizedDeps(
   const isBuild = config.command === 'build'
 
   const sessionTimestamp = Date.now().toString()
-  
+
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
   let handle: NodeJS.Timeout | undefined
-  
+
   let delayProcessing = false
 
   const optimizedDeps: OptimizedDeps = {
@@ -50,7 +50,7 @@ export async function createOptimizedDeps(
       cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
     registerMissingImport,
     run() {
-      if(Object.keys(optimizedDeps.metadata.discovered).length > 0) {
+      if (Object.keys(optimizedDeps.metadata.discovered).length > 0) {
         runOptimizer()
       }
     }

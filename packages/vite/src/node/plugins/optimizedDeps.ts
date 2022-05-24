@@ -68,7 +68,6 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
-
   const ids: string[] = []
   const seenIds = new Set<string>()
   let waiting = false
@@ -79,16 +78,18 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
         waiting = true
         const afterLoad = () => {
           waiting = false
-          if( ids.length > 0 ) {
+          if (ids.length > 0) {
             runOptimizerWhenIddle(plugin)
-          }
-          else {
+          } else {
             config._optimizedDeps?.run()
           }
         }
-        plugin.load({ id }).then(() => {
-          setTimeout(afterLoad, ids.length > 0 ? 0 : 100)
-        }).catch(afterLoad)
+        plugin
+          .load({ id })
+          .then(() => {
+            setTimeout(afterLoad, ids.length > 0 ? 0 : 100)
+          })
+          .catch(afterLoad)
       }
     }
   }
@@ -109,7 +110,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
         runOptimizerWhenIddle(this)
       }
     },
-  
+
     async load(id) {
       const metadata = config._optimizedDeps?.metadata
       if (!metadata || !isOptimizedDepFile(id, config)) {
