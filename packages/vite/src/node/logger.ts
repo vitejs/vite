@@ -214,7 +214,7 @@ function printServerUrls(
   )
   urls.forEach(({ label, url: text }) => {
     info(
-      `    ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
+      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
         length - label.length
       )}${text}`
     )
