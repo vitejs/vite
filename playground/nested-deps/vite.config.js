@@ -9,11 +9,8 @@ module.exports = {
       'test-package-c',
       'test-package-c/side',
       'test-package-d    > test-package-d-nested',
-      'test-package-e-included'
+      // 'test-package-e-included'
     ],
     exclude: ['test-package-d', 'test-package-e-excluded']
-  },
-  build: {
-    optimizeDeps: false
   }
 }
