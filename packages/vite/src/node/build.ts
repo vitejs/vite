@@ -235,7 +235,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
-    optimizeDeps: !raw?.watch, // TODO: watch + optimizeDeps
+    optimizeDeps: true,
     ...raw,
     commonjsOptions: {
       include: [/node_modules/],

@@ -26,19 +26,20 @@ interface RunProcessingInfo {
 
 const runProcessingInfoMap = new WeakMap<ResolvedConfig, RunProcessingInfo>()
 
-function getRunProcessingInfo(config: ResolvedConfig): RunProcessingInfo {
+function initRunProcessingInfo(config: ResolvedConfig) {
   config = config.mainConfig || config
-  let runProcessingInfo = runProcessingInfoMap.get(config)
-  if (!runProcessingInfo) {
-    runProcessingInfo = {
-      ids: [],
-      seenIds: new Set<string>(),
-      workersSources: new Set<string>(),
-      waitingOn: undefined
-    }
-    runProcessingInfoMap.set(config, runProcessingInfo)
+  const runProcessingInfo = {
+    ids: [],
+    seenIds: new Set<string>(),
+    workersSources: new Set<string>(),
+    waitingOn: undefined
   }
+  runProcessingInfoMap.set(config, runProcessingInfo)
   return runProcessingInfo
+}
+
+function getRunProcessingInfo(config: ResolvedConfig): RunProcessingInfo {
+  return runProcessingInfoMap.get(config.mainConfig || config) ?? initRunProcessingInfo(config)
 }
 
 export function registerWorkersSource(config: ResolvedConfig, id: string) {
@@ -147,6 +148,12 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps-build',
+
+    buildStart() {
+      if(!config.isWorker) {
+        initRunProcessingInfo(config)
+      }
+    },
 
     async resolveId(id) {
       if (isOptimizedDepFile(id, config)) {
