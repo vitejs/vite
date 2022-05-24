@@ -17,7 +17,11 @@ import {
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { isOptimizedDepFile, optimizedDepNeedsInterop } from '../optimizer'
+import {
+  getOptimizedDeps,
+  isOptimizedDepFile,
+  optimizedDepNeedsInterop
+} from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { transformCjsImport } from './importAnalysis'
 
@@ -156,6 +160,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
+      const optimizedDeps = getOptimizedDeps(config)
 
       const normalizeUrl = async (
         url: string,
@@ -164,7 +169,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         let importerFile = importer
 
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          const optimizedDeps = config._optimizedDeps
           if (optimizedDeps) {
             await optimizedDeps.scanProcessing
 
@@ -241,7 +245,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        if (!config._optimizedDeps) {
+        if (!optimizedDeps) {
           continue
         }
 
@@ -276,14 +280,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (url !== specifier) {
             if (
-              config._optimizedDeps &&
+              optimizedDeps &&
               isOptimizedDepFile(resolvedId, config) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                config._optimizedDeps.metadata,
+                optimizedDeps.metadata,
                 file,
                 config
               )

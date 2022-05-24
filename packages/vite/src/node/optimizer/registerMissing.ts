@@ -30,6 +30,13 @@ const isDebugEnabled = _debug('vite:deps').enabled
  */
 const debounceMs = 100
 
+const optimizedDepsMap = new WeakMap<ResolvedConfig, OptimizedDeps>()
+
+export function getOptimizedDeps(config: ResolvedConfig) {
+  // Workers compilation shares the OptimizedDeps from the main build
+  return optimizedDepsMap.get(config.mainConfig || config)
+}
+
 export async function createOptimizedDeps(
   config: ResolvedConfig,
   server?: ViteDevServer
@@ -55,6 +62,8 @@ export async function createOptimizedDeps(
       }
     }
   }
+
+  optimizedDepsMap.set(config, optimizedDeps)
 
   let newDepsDiscovered = false
 

@@ -401,8 +401,7 @@ async function doBuild(
   }
 
   if (options.optimizeDeps && !ssr) {
-    /* @ts-ignore */
-    config._optimizedDeps = await createOptimizedDeps(config)
+    await createOptimizedDeps(config)
   }
 
   const rollupOptions: RollupOptions = {

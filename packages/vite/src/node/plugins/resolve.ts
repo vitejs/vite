@@ -34,6 +34,7 @@ import {
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
+  getOptimizedDeps,
   isOptimizedDepFile,
   optimizedDepInfoFromFile,
   optimizedDepInfoFromId
@@ -191,15 +192,13 @@ export function resolvePlugin(
 
         const normalizedFsPath = normalizePath(fsPath)
 
-        if (
-          config?._optimizedDeps &&
-          isOptimizedDepFile(normalizedFsPath, config)
-        ) {
+        const optimizedDeps = config && getOptimizedDeps(config)
+        if (optimizedDeps && isOptimizedDepFile(normalizedFsPath, config)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
             const browserHash = optimizedDepInfoFromFile(
-              config._optimizedDeps.metadata!,
+              optimizedDeps.metadata,
               normalizedFsPath
             )?.browserHash
             if (browserHash) {
@@ -276,7 +275,10 @@ export function resolvePlugin(
       if (bareImportRE.test(id)) {
         if (
           asSrc &&
-          (server || (config?.command === 'build' && config?._optimizedDeps)) &&
+          (server ||
+            (config &&
+              config.command === 'build' &&
+              getOptimizedDeps(config))) &&
           !ssr &&
           !options.scan &&
           (res = await tryOptimizedResolve(id, config, importer))
@@ -636,7 +638,7 @@ export function tryNodeResolve(
 
   // link id to pkg for browser field mapping check
   idToPkgMap.set(resolved, pkg)
-  if (isBuild && !(config?.build.optimizeDeps && config._optimizedDeps)) {
+  if (isBuild && !(config?.build.optimizeDeps && getOptimizedDeps(config))) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -644,16 +646,18 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   }
+  const optimizedDeps = config && getOptimizedDeps(config)
   if (
     !resolved.includes('node_modules') || // linked
     !config ||
-    !config._optimizedDeps || // resolving before listening to the server
+    !optimizedDeps || // resolving before listening to the server
     options.scan // initial esbuild scan phase
   ) {
     return { id: resolved }
   }
   // if we reach here, it's a valid dep import that hasn't been optimized.
   const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
+
   const exclude = config.optimizeDeps?.exclude
   if (
     !isJsType ||
@@ -669,19 +673,16 @@ export function tryNodeResolve(
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = config._optimizedDeps!.metadata.browserHash
+      const versionHash = optimizedDeps.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
     }
-  } else if (config._optimizedDeps) {
+  } else {
     // TODO: depsBuild
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = config._optimizedDeps.registerMissingImport(
-      id,
-      resolved
-    )
+    const optimizedInfo = optimizedDeps.registerMissingImport(id, resolved)
     resolved = isBuild ? optimizedInfo.file : getOptimizedUrl(optimizedInfo)
   }
 
@@ -705,7 +706,7 @@ export async function tryOptimizedResolve(
   config?: ResolvedConfig,
   importer?: string
 ): Promise<string | undefined> {
-  const optimizedDeps = config?._optimizedDeps
+  const optimizedDeps = config && getOptimizedDeps(config)
 
   if (!optimizedDeps) return
 

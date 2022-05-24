@@ -45,6 +45,7 @@ import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDir,
+  getOptimizedDeps,
   isOptimizedDepFile,
   optimizedDepNeedsInterop
 } from '../optimizer'
@@ -192,6 +193,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
+      const optimizedDeps = getOptimizedDeps(config)
+
       const normalizeUrl = async (
         url: string,
         pos: number
@@ -202,7 +205,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          const optimizedDeps = config._optimizedDeps
           if (optimizedDeps) {
             await optimizedDeps.scanProcessing
 
@@ -400,7 +402,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             let rewriteDone = false
             if (
-              config._optimizedDeps &&
+              optimizedDeps &&
               isOptimizedDepFile(resolvedId, config) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
@@ -412,7 +414,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                config._optimizedDeps.metadata,
+                optimizedDeps.metadata,
                 file,
                 config
               )

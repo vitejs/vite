@@ -286,8 +286,6 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     spa: boolean
-    /** @internal */
-    _optimizedDeps: OptimizedDeps | null
   }
 >
 
@@ -531,8 +529,7 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    spa: config.spa ?? true,
-    _optimizedDeps: null
+    spa: config.spa ?? true
   }
 
   // flat config.worker.plugin

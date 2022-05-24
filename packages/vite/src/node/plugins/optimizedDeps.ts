@@ -4,7 +4,11 @@ import type { ResolvedConfig } from '..'
 import type { Plugin, PluginContext } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import { isOptimizedDepFile, optimizedDepInfoFromFile } from '../optimizer'
+import {
+  getOptimizedDeps,
+  isOptimizedDepFile,
+  optimizedDepInfoFromFile
+} from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
@@ -19,7 +23,8 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     async load(id) {
       if (isOptimizedDepFile(id, config)) {
-        const metadata = config._optimizedDeps?.metadata
+        const optimizedDeps = getOptimizedDeps(config)
+        const metadata = optimizedDeps?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -43,7 +48,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = config._optimizedDeps?.metadata
+            const newMetadata = optimizedDeps.metadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
@@ -81,7 +86,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
           if (ids.length > 0) {
             runOptimizerWhenIddle(plugin)
           } else {
-            config._optimizedDeps?.run()
+            getOptimizedDeps(config)?.run()
           }
         }
         plugin
@@ -112,7 +117,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      const metadata = config._optimizedDeps?.metadata
+      const metadata = getOptimizedDeps(config)?.metadata
       if (!metadata || !isOptimizedDepFile(id, config)) {
         return
       }

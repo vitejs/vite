@@ -28,7 +28,7 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { createOptimizedDeps } from '../optimizer/registerMissing'
+import { createOptimizedDeps, getOptimizedDeps } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -322,7 +322,7 @@ export async function createServer(
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (!server._ssrExternals) {
         let knownImports: string[] = []
-        const optimizedDeps = config._optimizedDeps
+        const optimizedDeps = getOptimizedDeps(config)
         if (optimizedDeps) {
           await optimizedDeps.scanProcessing
           knownImports = [
@@ -529,8 +529,7 @@ export async function createServer(
 
   const initOptimizer = async () => {
     if (!config.optimizeDeps.disabled) {
-      /* @ts-ignore */
-      config._optimizedDeps = await createOptimizedDeps(config, server)
+      await createOptimizedDeps(config, server)
     }
   }
 

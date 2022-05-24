@@ -22,6 +22,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
+export { createOptimizedDeps, getOptimizedDeps } from './registerMissing'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
