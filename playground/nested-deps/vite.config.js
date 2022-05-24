@@ -11,9 +11,6 @@ module.exports = {
       'test-package-d    > test-package-d-nested',
       'test-package-e > test-package-e-included'
     ],
-    exclude: [
-      'test-package-d', 
-      'test-package-e > test-package-e-excluded'
-    ]
+    exclude: [ 'test-package-d', 'test-package-e-excluded' ]
   }
 }
