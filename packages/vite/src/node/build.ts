@@ -126,9 +126,10 @@ export interface BuildOptions {
    */
   rollupOptions?: RollupOptions
   /**
-   * Optimize deps with esbuild in the same way as in dev
+   * Optimize deps with esbuild during build in the same way as in dev
    * When this is enabled, `@rollup/plugin-commonjs` isn't included
    * @default true
+   * @experimental
    */
   optimizeDeps?: boolean
   /**
@@ -524,11 +525,10 @@ async function doBuild(
     // write or generate files with rollup
     const { rollup } = await import('rollup')
     const bundle = await rollup(rollupOptions)
-
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
-      return bundle![options.write ? 'write' : 'generate'](
+      return bundle[options.write ? 'write' : 'generate'](
         buildOutputOptions(output)
       )
     }

@@ -146,7 +146,7 @@ export interface UserConfig {
   preview?: PreviewOptions
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
-   * TODO: Should it be optimizeDeps.force?
+   * @experimental
    */
   force?: boolean
   /**

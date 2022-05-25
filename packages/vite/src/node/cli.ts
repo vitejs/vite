@@ -155,7 +155,7 @@ cli
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
     '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle`
+    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`
   )
   .option(
     '--emptyOutDir',
