@@ -117,6 +117,8 @@ test('css', async () => {
     expect(await getColor('h1')).toBe('green')
     expect(await getColor('.jsx')).toBe('blue')
   } else {
+    // During dev, the CSS is loaded from async chunk and we may have to wait
+    // when the test runs concurrently.
     await untilUpdated(() => getColor('h1'), 'green')
     await untilUpdated(() => getColor('.jsx'), 'blue')
   }
