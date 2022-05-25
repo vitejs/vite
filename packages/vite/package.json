@@ -20,6 +20,7 @@
     "./client": {
       "types": "./client.d.ts"
     },
+    "./dist/client/*": "./dist/client/*",
     "./terser": {
       "require": "./dist/node-cjs/terser.cjs"
     }
