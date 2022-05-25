@@ -21,6 +21,7 @@
     "test-serve": "vitest run -c vitest.config.e2e.ts",
     "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
     "test-unit": "vitest run",
+    "test-docs": "pnpm run docs-build",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
     "docs": "vitepress dev docs",

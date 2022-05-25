@@ -74,6 +74,9 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
+      - name: Test docs
+        run: pnpm run test-docs
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
