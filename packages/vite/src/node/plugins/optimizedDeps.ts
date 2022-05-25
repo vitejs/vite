@@ -55,7 +55,7 @@ export function registerWorkersSource(config: ResolvedConfig, id: string) {
   }
 }
 
-function delayDepsOptimizerUntil(
+export function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
   done: () => Promise<void>
