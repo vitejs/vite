@@ -169,6 +169,7 @@ export async function createOptimizedDeps(
     if (handle) clearTimeout(handle)
 
     if (Object.keys(optimizedDeps.metadata.discovered).length === 0) {
+      currentlyProcessing = false
       return
     }
 
