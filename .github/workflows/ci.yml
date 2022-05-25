@@ -74,6 +74,10 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
+      - name: Test docs
+        if: ${{ matrix.node_version }} == 16 && ${{ matrix.os }} == 'ubuntu-latest'
+        run: pnpm run test-docs
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
