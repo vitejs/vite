@@ -8,6 +8,7 @@ import {
   debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
   depsLogString,
+  discoverProjectDependencies,
   extractExportsData,
   getOptimizedDepPath,
   initialProjectDependencies,
@@ -41,6 +42,8 @@ export async function createOptimizedDeps(
   server?: ViteDevServer
 ): Promise<OptimizedDeps> {
   const { logger } = config
+
+  const scan = config.command !== 'build' && config.optimizeDeps.devScan
 
   const sessionTimestamp = Date.now().toString()
 
@@ -91,17 +94,68 @@ export async function createOptimizedDeps(
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
   if (!cachedMetadata) {
-    // Initialize discovered deps with manually added optimizeDeps.include info
-    const discovered = await initialProjectDependencies(
-      config,
-      sessionTimestamp
-    )
-    const { metadata } = optimizedDeps
-    for (const depInfo of Object.values(discovered)) {
-      addOptimizedDepInfo(metadata, 'discovered', {
-        ...depInfo,
-        processing: depOptimizationProcessing.promise
-      })
+    if (!scan) {
+      // Initialize discovered deps with manually added optimizeDeps.include info
+      const discovered = await initialProjectDependencies(
+        config,
+        sessionTimestamp
+      )
+      const { metadata } = optimizedDeps
+      for (const depInfo of Object.values(discovered)) {
+        addOptimizedDepInfo(metadata, 'discovered', {
+          ...depInfo,
+          processing: depOptimizationProcessing.promise
+        })
+      }
+    } else {
+      // Perform a esbuild base scan of user code to discover dependencies
+      currentlyProcessing = true
+
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      optimizedDeps.scanProcessing = scanPhaseProcessing.promise
+
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`), {
+            timestamp: true
+          })
+
+          const { metadata } = optimizedDeps
+
+          const discovered = await discoverProjectDependencies(
+            config,
+            sessionTimestamp
+          )
+
+          // Respect the scan phase discover order to improve reproducibility
+          for (const depInfo of Object.values(discovered)) {
+            addOptimizedDepInfo(metadata, 'discovered', {
+              ...depInfo,
+              processing: depOptimizationProcessing.promise
+            })
+          }
+
+          debug(
+            colors.green(
+              `dependencies found: ${depsLogString(Object.keys(discovered))}`
+            ),
+            {
+              timestamp: true
+            }
+          )
+
+          scanPhaseProcessing.resolve()
+          optimizedDeps.scanProcessing = undefined
+
+          await runOptimizer()
+        } catch (e) {
+          logger.error(e.message)
+          if (optimizedDeps.scanProcessing) {
+            scanPhaseProcessing.resolve()
+            optimizedDeps.scanProcessing = undefined
+          }
+        }
+      }, 0)
     }
   }
 
@@ -405,7 +459,7 @@ export async function createOptimizedDeps(
     // we can get a list of every missing dependency before giving to the
     // browser a dependency that may be outdated, thus avoiding full page reloads
 
-    if (firstRunCalled) {
+    if (scan || firstRunCalled) {
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()

@@ -621,9 +621,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          delayDepsOptimizerUntil(config, id, async () => {
-            await request
-          })
+          if (!config.optimizeDeps.devScan) {
+            delayDepsOptimizerUntil(config, id, async () => {
+              await request
+            })
+          }
         })
       }
 
