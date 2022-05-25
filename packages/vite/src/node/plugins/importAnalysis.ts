@@ -622,9 +622,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             config.logger.error(e.message)
           })
           if (!config.optimizeDeps.devScan) {
-            delayDepsOptimizerUntil(config, id, async () => {
-              await request
-            })
+            delayDepsOptimizerUntil(config, id, () => request)
           }
         })
       }
