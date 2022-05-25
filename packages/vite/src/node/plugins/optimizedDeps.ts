@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import type { Plugin, PluginContext } from '../plugin'
+import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import {
@@ -18,7 +18,7 @@ const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
 interface RunProcessingInfo {
-  ids: string[]
+  ids: { id: string; done: () => Promise<void> }[]
   seenIds: Set<string>
   workersSources: Set<string>
   waitingOn: string | undefined
@@ -53,38 +53,35 @@ export function registerWorkersSource(config: ResolvedConfig, id: string) {
   }
 }
 
-function registerId(
+function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
-  context: PluginContext
+  done: () => Promise<void>
 ) {
   const info = getRunProcessingInfo(config)
   if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
     info.seenIds.add(id)
-    info.ids.push(id)
-    runOptimizerWhenIdle(config, context)
+    info.ids.push({ id, done })
+    runOptimizerWhenIdle(config)
   }
 }
 
-function runOptimizerWhenIdle(
-  config: ResolvedConfig,
-  pluginContext: PluginContext
-) {
+function runOptimizerWhenIdle(config: ResolvedConfig) {
   const info = getRunProcessingInfo(config)
   if (!info.waitingOn) {
-    const id = info.ids.pop()
-    if (id) {
-      info.waitingOn = id
+    const next = info.ids.pop()
+    if (next) {
+      info.waitingOn = next.id
       const afterLoad = () => {
         info.waitingOn = undefined
         if (info.ids.length > 0) {
-          runOptimizerWhenIdle(config, pluginContext)
-        } else if (!info.workersSources.has(id)) {
+          runOptimizerWhenIdle(config)
+        } else if (!info.workersSources.has(next.id)) {
           getOptimizedDeps(config)?.run()
         }
       }
-      pluginContext
-        .load({ id })
+      next
+        .done()
         .then(() => {
           setTimeout(afterLoad, info.ids.length > 0 ? 0 : 100)
         })
@@ -165,7 +162,9 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform(_code, id) {
-      registerId(config, id, this)
+      delayDepsOptimizerUntil(config, id, async () => {
+        await this.load({ id })
+      })
     },
 
     async load(id) {
