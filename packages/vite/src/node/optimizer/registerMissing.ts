@@ -50,17 +50,11 @@ export async function createOptimizedDeps(
 
   let handle: NodeJS.Timeout | undefined
 
-  let delayProcessing = false
-
   const optimizedDeps: OptimizedDeps = {
     metadata:
       cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
     registerMissingImport,
-    run() {
-      if (Object.keys(optimizedDeps.metadata.discovered).length > 0) {
-        runOptimizer()
-      }
-    }
+    run: () => debouncedProcessing(0)
   }
 
   optimizedDepsMap.set(config, optimizedDeps)
@@ -170,10 +164,15 @@ export async function createOptimizedDeps(
 
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
-    currentlyProcessing = true
 
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
+
+    if (Object.keys(optimizedDeps.metadata.discovered).length === 0) {
+      return
+    }
+
+    currentlyProcessing = true
 
     // a succesful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
@@ -464,7 +463,7 @@ export async function createOptimizedDeps(
     return missing
   }
 
-  function debouncedProcessing() {
+  function debouncedProcessing(timeout = debounceMs) {
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
     enqueuedRerun = undefined
@@ -474,13 +473,10 @@ export async function createOptimizedDeps(
     handle = setTimeout(() => {
       handle = undefined
       enqueuedRerun = rerun
-      if (delayProcessing) {
-        delayProcessing = false
-        debouncedProcessing()
-      } else if (!currentlyProcessing) {
+      if (!currentlyProcessing) {
         enqueuedRerun()
       }
-    }, debounceMs)
+    }, timeout)
   }
 
   return optimizedDeps
