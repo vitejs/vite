@@ -17,6 +17,8 @@ export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
+const runOptimizerIfIdleAfterMs = 100
+
 interface RunProcessingInfo {
   ids: { id: string; done: () => Promise<void> }[]
   seenIds: Set<string>
@@ -83,7 +85,10 @@ function runOptimizerWhenIdle(config: ResolvedConfig) {
       next
         .done()
         .then(() => {
-          setTimeout(afterLoad, info.ids.length > 0 ? 0 : 100)
+          setTimeout(
+            afterLoad,
+            info.ids.length > 0 ? 0 : runOptimizerIfIdleAfterMs
+          )
         })
         .catch(afterLoad)
     }
