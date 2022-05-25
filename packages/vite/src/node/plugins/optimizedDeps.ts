@@ -62,11 +62,11 @@ function registerId(
   if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
     info.seenIds.add(id)
     info.ids.push(id)
-    runOptimizerWhenIddle(config, context)
+    runOptimizerWhenIdle(config, context)
   }
 }
 
-function runOptimizerWhenIddle(
+function runOptimizerWhenIdle(
   config: ResolvedConfig,
   pluginContext: PluginContext
 ) {
@@ -78,7 +78,7 @@ function runOptimizerWhenIddle(
       const afterLoad = () => {
         info.waitingOn = undefined
         if (info.ids.length > 0) {
-          runOptimizerWhenIddle(config, pluginContext)
+          runOptimizerWhenIdle(config, pluginContext)
         } else if (!info.workersSources.has(id)) {
           getOptimizedDeps(config)?.run()
         }
