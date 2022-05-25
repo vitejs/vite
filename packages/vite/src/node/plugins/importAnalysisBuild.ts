@@ -255,27 +255,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
           }
-          // skip ssr external
-          /* TODO: 
-          if (ssr) {
-            if (
-              server._ssrExternals &&
-              shouldExternalizeForSSR(specifier, server._ssrExternals)
-            ) {
-              continue
-            }
-            if (isBuiltin(specifier)) {
-              continue
-            }
-          }
-          */
 
           // normalize
-          const [normalizedUrl, resolvedId] = await normalizeUrl(
-            specifier,
-            start
-          )
-          const url = normalizedUrl
+          const [url, resolvedId] = await normalizeUrl(specifier, start)
 
           if (url !== specifier) {
             if (
