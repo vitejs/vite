@@ -50,7 +50,10 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import { ERR_OUTDATED_OPTIMIZED_DEP, registerId } from './optimizedDeps'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  delayDepsOptimizerUntil
+} from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 
 const isDebug = !!process.env.DEBUG
@@ -390,11 +393,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // normalize
-          const [normalizedUrl, resolvedId] = await normalizeUrl(
-            specifier,
-            start
-          )
-          const url = normalizedUrl
+          const [url, resolvedId] = await normalizeUrl(specifier, start)
 
           // record as safe modules
           server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
@@ -622,7 +621,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          registerId(config, id, async () => {
+          delayDepsOptimizerUntil(config, id, async () => {
             await request
           })
         })

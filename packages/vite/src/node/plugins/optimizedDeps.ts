@@ -17,6 +17,8 @@ export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
+const runOptimizerIfIdleAfterMs = 100
+
 interface RunProcessingInfo {
   ids: { id: string; done: () => Promise<void> }[]
   seenIds: Set<string>
@@ -53,7 +55,7 @@ export function registerWorkersSource(config: ResolvedConfig, id: string) {
   }
 }
 
-export function registerId(
+function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
   done: () => Promise<void>
@@ -62,11 +64,11 @@ export function registerId(
   if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
     info.seenIds.add(id)
     info.ids.push({ id, done })
-    runOptimizerWhenIddle(config)
+    runOptimizerWhenIdle(config)
   }
 }
 
-function runOptimizerWhenIddle(config: ResolvedConfig) {
+function runOptimizerWhenIdle(config: ResolvedConfig) {
   const info = getRunProcessingInfo(config)
   if (!info.waitingOn) {
     const next = info.ids.pop()
@@ -75,7 +77,7 @@ function runOptimizerWhenIddle(config: ResolvedConfig) {
       const afterLoad = () => {
         info.waitingOn = undefined
         if (info.ids.length > 0) {
-          runOptimizerWhenIddle(config)
+          runOptimizerWhenIdle(config)
         } else if (!info.workersSources.has(next.id)) {
           getOptimizedDeps(config)?.run()
         }
@@ -83,7 +85,10 @@ function runOptimizerWhenIddle(config: ResolvedConfig) {
       next
         .done()
         .then(() => {
-          setTimeout(afterLoad, info.ids.length > 0 ? 0 : 100)
+          setTimeout(
+            afterLoad,
+            info.ids.length > 0 ? 0 : runOptimizerIfIdleAfterMs
+          )
         })
         .catch(afterLoad)
     }
@@ -178,7 +183,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform(_code, id) {
-      registerId(config, id, async () => {
+      delayDepsOptimizerUntil(config, id, async () => {
         await this.load({ id })
       })
     },
