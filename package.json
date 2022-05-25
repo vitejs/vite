@@ -33,6 +33,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
+    "@babel/types": "^7.17.10",
     "@microsoft/api-extractor": "^7.23.1",
     "@rollup/plugin-typescript": "^8.3.2",
     "@types/babel__core": "^7.1.19",

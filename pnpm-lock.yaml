@@ -10,6 +10,7 @@ importers:
 
   .:
     specifiers:
+      '@babel/types': ^7.17.10
       '@microsoft/api-extractor': ^7.23.1
       '@rollup/plugin-typescript': ^8.3.2
       '@types/babel__core': ^7.1.19
@@ -67,6 +68,7 @@ importers:
       vitest: ^0.12.4
       vue: ^3.2.33
     devDependencies:
+      '@babel/types': 7.17.10
       '@microsoft/api-extractor': 7.23.2
       '@rollup/plugin-typescript': 8.3.2_dsrqihoegvzgycupzno43pt4sq
       '@types/babel__core': 7.1.19
