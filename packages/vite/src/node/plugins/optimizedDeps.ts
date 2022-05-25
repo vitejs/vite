@@ -112,8 +112,8 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     },
 
     // this.load({ id }) isn't implemented in PluginContainer
-    // The logic to register and id to wait until it is processed
-    // is in importAnalysis
+    // The logic to register an id to wait until it is processed
+    // is in importAnalysis, see call to delayDepsOptimizerUntil
 
     async load(id) {
       if (isOptimizedDepFile(id, config)) {
