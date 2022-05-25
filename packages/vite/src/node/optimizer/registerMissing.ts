@@ -111,10 +111,10 @@ export async function createOptimizedDeps(
 
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
-    
+
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
-    
+
     if (Object.keys(optimizedDeps.metadata.discovered).length === 0) {
       return
     }

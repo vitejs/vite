@@ -18,7 +18,7 @@ const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
 interface RunProcessingInfo {
-  ids: { id: string, done: () => Promise<void> }[]
+  ids: { id: string; done: () => Promise<void> }[]
   seenIds: Set<string>
   workersSources: Set<string>
   waitingOn: string | undefined
@@ -66,9 +66,7 @@ export function registerId(
   }
 }
 
-function runOptimizerWhenIddle(
-  config: ResolvedConfig
-) {
+function runOptimizerWhenIddle(config: ResolvedConfig) {
   const info = getRunProcessingInfo(config)
   if (!info.waitingOn) {
     const next = info.ids.pop()
@@ -82,10 +80,12 @@ function runOptimizerWhenIddle(
           getOptimizedDeps(config)?.run()
         }
       }
-      next.done().then(() => {
-        setTimeout(afterLoad, info.ids.length > 0 ? 0 : 100)
-      })
-      .catch(afterLoad)
+      next
+        .done()
+        .then(() => {
+          setTimeout(afterLoad, info.ids.length > 0 ? 0 : 100)
+        })
+        .catch(afterLoad)
     }
   }
 }
@@ -108,7 +108,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     // this.load({ id }) isn't implemented in PluginContainer
     // The logic to register and id to wait until it is processed
-    // is in importAnalysis 
+    // is in importAnalysis
 
     async load(id) {
       if (isOptimizedDepFile(id, config)) {
