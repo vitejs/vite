@@ -20,7 +20,7 @@ const debug = createDebugger('vite:optimize-deps')
 const runOptimizerIfIdleAfterMs = 100
 
 interface RunProcessingInfo {
-  ids: { id: string; done: () => Promise<void> }[]
+  ids: { id: string; done: () => Promise<any> }[]
   seenIds: Set<string>
   workersSources: Set<string>
   waitingOn: string | undefined
@@ -58,7 +58,7 @@ export function registerWorkersSource(config: ResolvedConfig, id: string) {
 export function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
-  done: () => Promise<void>
+  done: () => Promise<any>
 ) {
   const info = getRunProcessingInfo(config)
   if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
