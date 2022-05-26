@@ -45,7 +45,7 @@ import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDir,
-  getOptimizedDeps,
+  getDepsOptimizer,
   isOptimizedDepFile,
   optimizedDepNeedsInterop
 } from '../optimizer'
@@ -193,7 +193,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
-      const optimizedDeps = getOptimizedDeps(config)
+      const depsOptimizer = getDepsOptimizer(config)
 
       const normalizeUrl = async (
         url: string,
@@ -205,14 +205,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          if (optimizedDeps) {
-            await optimizedDeps.scanProcessing
+          if (depsOptimizer) {
+            await depsOptimizer.scanProcessing
 
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importerModule.file) {
                 importerFile = optimizedModule.src
@@ -398,7 +398,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             let rewriteDone = false
             if (
-              optimizedDeps &&
+              depsOptimizer &&
               isOptimizedDepFile(resolvedId, config) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
@@ -410,7 +410,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                optimizedDeps.metadata,
+                depsOptimizer.metadata,
                 file,
                 config
               )

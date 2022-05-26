@@ -34,8 +34,11 @@ import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
-import { findKnownImports, getDepsCacheDir } from './optimizer'
-import { createOptimizedDeps } from './optimizer/registerMissing'
+import {
+  findKnownImports,
+  getDepsCacheDir,
+  initDepsOptimizer
+} from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
@@ -402,7 +405,7 @@ async function doBuild(
   }
 
   if (options.optimizeDeps && !ssr) {
-    await createOptimizedDeps(config)
+    await initDepsOptimizer(config)
   }
 
   const rollupOptions: RollupOptions = {

@@ -5,7 +5,7 @@ import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
 import {
-  getOptimizedDeps,
+  getDepsOptimizer,
   isOptimizedDepFile,
   optimizedDepInfoFromFile
 } from '../optimizer'
@@ -79,7 +79,7 @@ function runOptimizerWhenIdle(config: ResolvedConfig) {
         if (info.ids.length > 0) {
           runOptimizerWhenIdle(config)
         } else if (!info.workersSources.has(next.id)) {
-          getOptimizedDeps(config)?.run()
+          getDepsOptimizer(config)?.run()
         }
       }
       next
@@ -101,8 +101,8 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     async load(id) {
       if (isOptimizedDepFile(id, config)) {
-        const optimizedDeps = getOptimizedDeps(config)
-        const metadata = optimizedDeps?.metadata
+        const depsOptimizer = getDepsOptimizer(config)
+        const metadata = depsOptimizer?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -126,7 +126,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = optimizedDeps.metadata
+            const newMetadata = depsOptimizer.metadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
@@ -173,7 +173,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      const metadata = getOptimizedDeps(config)?.metadata
+      const metadata = getDepsOptimizer(config)?.metadata
       if (!metadata || !isOptimizedDepFile(id, config)) {
         return
       }

@@ -34,7 +34,7 @@ import {
 } from '../utils'
 import {
   createIsOptimizedDepUrl,
-  getOptimizedDeps,
+  getDepsOptimizer,
   isOptimizedDepFile,
   optimizedDepInfoFromFile,
   optimizedDepInfoFromId
@@ -192,13 +192,13 @@ export function resolvePlugin(
 
         const normalizedFsPath = normalizePath(fsPath)
 
-        const optimizedDeps = config && getOptimizedDeps(config)
-        if (optimizedDeps && isOptimizedDepFile(normalizedFsPath, config)) {
+        const depsOptimizer = config && getDepsOptimizer(config)
+        if (depsOptimizer && isOptimizedDepFile(normalizedFsPath, config)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
             const browserHash = optimizedDepInfoFromFile(
-              optimizedDeps.metadata,
+              depsOptimizer.metadata,
               normalizedFsPath
             )?.browserHash
             if (browserHash) {
@@ -278,7 +278,7 @@ export function resolvePlugin(
           (server ||
             (config &&
               config.command === 'build' &&
-              getOptimizedDeps(config))) &&
+              getDepsOptimizer(config))) &&
           !ssr &&
           !options.scan &&
           (res = await tryOptimizedResolve(id, config, importer))
@@ -638,7 +638,7 @@ export function tryNodeResolve(
 
   // link id to pkg for browser field mapping check
   idToPkgMap.set(resolved, pkg)
-  if (isBuild && !(config?.build.optimizeDeps && getOptimizedDeps(config))) {
+  if (isBuild && !(config?.build.optimizeDeps && getDepsOptimizer(config))) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
@@ -646,11 +646,11 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved)
     }
   }
-  const optimizedDeps = config && getOptimizedDeps(config)
+  const depsOptimizer = config && getDepsOptimizer(config)
   if (
     !resolved.includes('node_modules') || // linked
     !config ||
-    !optimizedDeps || // resolving before listening to the server
+    !depsOptimizer || // resolving before listening to the server
     options.scan // initial esbuild scan phase
   ) {
     return { id: resolved }
@@ -673,7 +673,7 @@ export function tryNodeResolve(
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = optimizedDeps.metadata.browserHash
+      const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -682,7 +682,7 @@ export function tryNodeResolve(
     // TODO: depsBuild
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = optimizedDeps.registerMissingImport(id, resolved)
+    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
     resolved = isBuild ? optimizedInfo.file : getOptimizedUrl(optimizedInfo)
   }
 
@@ -706,13 +706,13 @@ export async function tryOptimizedResolve(
   config?: ResolvedConfig,
   importer?: string
 ): Promise<string | undefined> {
-  const optimizedDeps = config && getOptimizedDeps(config)
+  const depsOptimizer = config && getDepsOptimizer(config)
 
-  if (!optimizedDeps) return
+  if (!depsOptimizer) return
 
-  await optimizedDeps.scanProcessing
+  await depsOptimizer.scanProcessing
 
-  const depInfo = optimizedDepInfoFromId(optimizedDeps.metadata, id)
+  const depInfo = optimizedDepInfoFromId(depsOptimizer.metadata, id)
   if (depInfo) {
     return config.command === 'build' ? depInfo.file : getOptimizedUrl(depInfo)
   }
@@ -722,7 +722,7 @@ export async function tryOptimizedResolve(
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
-  for (const optimizedData of optimizedDeps.metadata.depInfoList) {
+  for (const optimizedData of depsOptimizer.metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
     const pkgPath = optimizedData.id

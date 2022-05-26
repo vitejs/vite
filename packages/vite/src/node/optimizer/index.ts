@@ -22,7 +22,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { createOptimizedDeps, getOptimizedDeps } from './registerMissing'
+export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -211,7 +211,7 @@ export async function optimizeDeps(
   return result.metadata
 }
 
-export function createOptimizedDepsMetadata(
+export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
   timestamp?: string
 ): DepOptimizationMetadata {
@@ -386,7 +386,7 @@ export async function runOptimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  const metadata = createOptimizedDepsMetadata(config)
+  const metadata = initDepsOptimizerMetadata(config)
 
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
