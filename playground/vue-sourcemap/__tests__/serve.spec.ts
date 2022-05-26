@@ -31,7 +31,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
+        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
         "sources": [
           "/root/Ts.vue",
         ],

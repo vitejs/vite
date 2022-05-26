@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^0.24.0",
+    "axios": "^0.27.2",
     "clipboard": "^2.0.11",
     "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
     "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
@@ -21,12 +21,12 @@
     "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.6.8",
+    "phoenix": "^1.6.9",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "resolve-linked": "workspace:0.0.0",
     "url": "^0.11.0",
-    "vue": "^3.2.33",
+    "vue": "^3.2.35",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
