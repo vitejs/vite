@@ -1,4 +1,4 @@
-import { getColor, isBuild, page } from '~utils'
+import { getColor, page } from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
   expect(await page.textContent('.cjs button')).toBe('count is 0')
@@ -90,7 +90,7 @@ test('vue + vuex', async () => {
 
 test('esbuild-plugin', async () => {
   expect(await page.textContent('.esbuild-plugin')).toMatch(
-    isBuild ? `Hello from a package` : `Hello from an esbuild plugin`
+    `Hello from an esbuild plugin`
   )
 })
 

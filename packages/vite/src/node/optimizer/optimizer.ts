@@ -1,24 +1,27 @@
 import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
-import type { ViteDevServer } from '..'
+import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
-  createOptimizedDepsMetadata,
+  createIsOptimizedDepUrl,
   debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
   depsLogString,
   discoverProjectDependencies,
   extractExportsData,
   getOptimizedDepPath,
+  initDepsOptimizerMetadata,
+  initialProjectDependencies,
+  isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   runOptimizeDeps
 } from '.'
 import type {
   DepOptimizationProcessing,
-  OptimizedDepInfo,
-  OptimizedDeps
+  DepsOptimizer,
+  OptimizedDepInfo
 } from '.'
 
 const isDebugEnabled = _debug('vite:deps').enabled
@@ -29,21 +32,40 @@ const isDebugEnabled = _debug('vite:deps').enabled
  */
 const debounceMs = 100
 
-export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
-  const { config } = server
+const depsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
+
+export function getDepsOptimizer(config: ResolvedConfig) {
+  // Workers compilation shares the DepsOptimizer from the main build
+  return depsOptimizerMap.get(config.mainConfig || config)
+}
+
+export async function initDepsOptimizer(
+  config: ResolvedConfig,
+  server?: ViteDevServer
+): Promise<DepsOptimizer> {
   const { logger } = config
+  const isBuild = config.command === 'build'
 
   const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
 
-  const optimizedDeps: OptimizedDeps = {
+  let handle: NodeJS.Timeout | undefined
+
+  const depsOptimizer: DepsOptimizer = {
     metadata:
-      cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
-    registerMissingImport
+      cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp),
+    registerMissingImport,
+    run: () => debouncedProcessing(0),
+    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepUrl: createIsOptimizedDepUrl(config),
+    getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
+      isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
+    options: config.optimizeDeps
   }
 
-  let handle: NodeJS.Timeout | undefined
+  depsOptimizerMap.set(config, depsOptimizer)
+
   let newDepsDiscovered = false
 
   let newDepsToLog: string[] = []
@@ -75,67 +97,90 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
 
-  // If there wasn't a cache or it is outdated, perform a fast scan with esbuild
-  // to quickly find project dependencies and do a first optimize run
+  // If there wasn't a cache or it is outdated, we need to prepare a first run
+  let firstRunCalled = !!cachedMetadata
   if (!cachedMetadata) {
-    currentlyProcessing = true
-
-    const scanPhaseProcessing = newDepOptimizationProcessing()
-    optimizedDeps.scanProcessing = scanPhaseProcessing.promise
-
-    const warmUp = async () => {
-      try {
-        debug(colors.green(`scanning for dependencies...`), {
-          timestamp: true
+    if (isBuild) {
+      // Initialize discovered deps with manually added optimizeDeps.include info
+      const discovered = await initialProjectDependencies(
+        config,
+        sessionTimestamp
+      )
+      const { metadata } = depsOptimizer
+      for (const depInfo of Object.values(discovered)) {
+        addOptimizedDepInfo(metadata, 'discovered', {
+          ...depInfo,
+          processing: depOptimizationProcessing.promise
         })
-
-        const { metadata } = optimizedDeps
-
-        const discovered = await discoverProjectDependencies(
-          config,
-          sessionTimestamp
-        )
-
-        // Respect the scan phase discover order to improve reproducibility
-        for (const depInfo of Object.values(discovered)) {
-          addOptimizedDepInfo(metadata, 'discovered', {
-            ...depInfo,
-            processing: depOptimizationProcessing.promise
-          })
-        }
-
-        debug(
-          colors.green(
-            `dependencies found: ${depsLogString(Object.keys(discovered))}`
-          ),
-          {
-            timestamp: true
-          }
-        )
-
-        scanPhaseProcessing.resolve()
-        optimizedDeps.scanProcessing = undefined
-
-        runOptimizer()
-      } catch (e) {
-        logger.error(e.message)
-        if (optimizedDeps.scanProcessing) {
-          scanPhaseProcessing.resolve()
-          optimizedDeps.scanProcessing = undefined
-        }
       }
-    }
+    } else {
+      // Perform a esbuild base scan of user code to discover dependencies
+      currentlyProcessing = true
 
-    setTimeout(warmUp, 0)
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`), {
+            timestamp: true
+          })
+
+          const { metadata } = depsOptimizer
+
+          const discovered = await discoverProjectDependencies(
+            config,
+            sessionTimestamp
+          )
+
+          // Respect the scan phase discover order to improve reproducibility
+          for (const depInfo of Object.values(discovered)) {
+            addOptimizedDepInfo(metadata, 'discovered', {
+              ...depInfo,
+              processing: depOptimizationProcessing.promise
+            })
+          }
+
+          debug(
+            colors.green(
+              `dependencies found: ${depsLogString(Object.keys(discovered))}`
+            ),
+            {
+              timestamp: true
+            }
+          )
+
+          scanPhaseProcessing.resolve()
+          depsOptimizer.scanProcessing = undefined
+
+          await runOptimizer()
+        } catch (e) {
+          logger.error(e.message)
+          if (depsOptimizer.scanProcessing) {
+            scanPhaseProcessing.resolve()
+            depsOptimizer.scanProcessing = undefined
+          }
+        }
+      }, 0)
+    }
   }
 
-  async function runOptimizer(isRerun = false) {
+  async function runOptimizer() {
+    const isRerun = firstRunCalled
+    firstRunCalled = true
+
     // Ensure that rerun is called sequentially
     enqueuedRerun = undefined
-    currentlyProcessing = true
 
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
+
+    if (Object.keys(depsOptimizer.metadata.discovered).length === 0) {
+      currentlyProcessing = false
+      return
+    }
+
+    currentlyProcessing = true
 
     // a succesful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
@@ -146,7 +191,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     // if the rerun fails, optimizeDeps.metadata remains untouched,
     // current discovered deps are cleaned, and a fullReload is issued
 
-    let { metadata } = optimizedDeps
+    let { metadata } = depsOptimizer
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
@@ -253,7 +298,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
           )
         }
 
-        metadata = optimizedDeps.metadata = newData
+        metadata = depsOptimizer.metadata = newData
         resolveEnqueuedProcessingPromises()
       }
 
@@ -335,27 +380,29 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
   }
 
   function fullReload() {
-    // Cached transform results have stale imports (resolved to
-    // old locations) so they need to be invalidated before the page is
-    // reloaded.
-    server.moduleGraph.invalidateAll()
+    if (server) {
+      // Cached transform results have stale imports (resolved to
+      // old locations) so they need to be invalidated before the page is
+      // reloaded.
+      server.moduleGraph.invalidateAll()
 
-    server.ws.send({
-      type: 'full-reload',
-      path: '*'
-    })
+      server.ws.send({
+        type: 'full-reload',
+        path: '*'
+      })
+    }
   }
 
   async function rerun() {
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
-    const deps = Object.keys(optimizedDeps.metadata.discovered)
+    const deps = Object.keys(depsOptimizer.metadata.discovered)
     const depsString = depsLogString(deps)
     debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
     })
-    runOptimizer(true)
+    runOptimizer()
   }
 
   function getDiscoveredBrowserHash(
@@ -373,12 +420,12 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     resolved: string,
     ssr?: boolean
   ): OptimizedDepInfo {
-    if (optimizedDeps.scanProcessing) {
+    if (depsOptimizer.scanProcessing) {
       config.logger.error(
         'Vite internal error: registering missing import before initial scanning is over'
       )
     }
-    const { metadata } = optimizedDeps
+    const { metadata } = depsOptimizer
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -396,7 +443,7 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
     newDepsDiscovered = true
     missing = addOptimizedDepInfo(metadata, 'discovered', {
       id,
-      file: getOptimizedDepPath(id, server.config),
+      file: getOptimizedDepPath(id, config),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
@@ -415,6 +462,18 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
 
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
+    if (!isBuild) {
+      debouncedProcessing()
+    }
+
+    // Return the path for the optimized bundle, this path is known before
+    // esbuild is run to generate the pre-bundle
+    return missing
+  }
+
+  function debouncedProcessing(timeout = debounceMs) {
+    // Debounced rerun, let other missing dependencies be discovered before
+    // the running next optimizeDeps
     enqueuedRerun = undefined
     if (handle) clearTimeout(handle)
     if (newDepsToLogHandle) clearTimeout(newDepsToLogHandle)
@@ -425,12 +484,8 @@ export function createOptimizedDeps(server: ViteDevServer): OptimizedDeps {
       if (!currentlyProcessing) {
         enqueuedRerun()
       }
-    }, debounceMs)
-
-    // Return the path for the optimized bundle, this path is known before
-    // esbuild is run to generate the pre-bundle
-    return missing
+    }, timeout)
   }
 
-  return optimizedDeps
+  return depsOptimizer
 }

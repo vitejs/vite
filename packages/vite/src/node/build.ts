@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { resolveConfig } from './config'
+import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -34,7 +34,11 @@ import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
-import { findKnownImports, getDepsCacheDir } from './optimizer'
+import {
+  findKnownImports,
+  getDepsCacheDir,
+  initDepsOptimizer
+} from './optimizer'
 import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
@@ -283,7 +287,9 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      commonjsPlugin(options.commonjsOptions),
+      ...(!isDepsOptimizerEnabled(config) || options.ssr
+        ? [commonjsPlugin(options.commonjsOptions)]
+        : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
@@ -388,6 +394,10 @@ async function doBuild(
       resolveSSRExternal(config, knownImports),
       userExternal
     )
+  }
+
+  if (isDepsOptimizerEnabled(config) && !ssr) {
+    await initDepsOptimizer(config)
   }
 
   const rollupOptions: RollupOptions = {
