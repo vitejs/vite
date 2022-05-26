@@ -34,6 +34,8 @@ export type ExportsData = ReturnType<typeof parse> & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
+  // hint if the dep requires loading as jsx
+  jsxLoader?: true
 }
 
 export interface OptimizedDeps {
@@ -64,6 +66,12 @@ export interface DepOptimizationOptions {
    * cannot be globs).
    */
   exclude?: string[]
+  /**
+   * Force ESM interop when importing for these dependencies. Some legacy
+   * packages advertise themselves as ESM but use `require` internally
+   * @experimental
+   */
+  needsInterop?: string[]
   /**
    * Options to pass to esbuild during the dep scanning and optimization
    *
@@ -134,6 +142,11 @@ export interface OptimizedDepInfo {
    * but the bundles may not yet be saved to disk
    */
   processing?: Promise<void>
+  /**
+   * ExportData cache, discovered deps will parse the src entry to get exports
+   * data used both to define if interop is needed and when pre-bundling
+   */
+  exportsData?: Promise<ExportsData>
 }
 
 export interface DepOptimizationMetadata {
@@ -297,12 +310,13 @@ export async function discoverProjectDependencies(
   )
   const discovered: Record<string, OptimizedDepInfo> = {}
   for (const id in deps) {
-    const entry = deps[id]
+    const src = deps[id]
     discovered[id] = {
       id,
       file: getOptimizedDepPath(id, config),
-      src: entry,
-      browserHash: browserHash
+      src,
+      browserHash: browserHash,
+      exportsData: extractExportsData(src, config)
     }
   }
   return discovered
@@ -368,15 +382,22 @@ export async function runOptimizeDeps(
 
   const qualifiedIds = Object.keys(depsInfo)
 
-  if (!qualifiedIds.length) {
-    return {
-      metadata,
-      commit() {
-        // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
-        return commitProcessingDepsCacheSync()
-      },
-      cancel
+  const processingResult: DepOptimizationResult = {
+    metadata,
+    async commit() {
+      // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
+      // Processing is done, we can now replace the depsCacheDir with processingCacheDir
+      // Rewire the file paths from the temporal processing dir to the final deps cache dir
+      await removeDir(depsCacheDir)
+      await renameDir(processingCacheDir, depsCacheDir)
+    },
+    cancel() {
+      fs.rmSync(processingCacheDir, { recursive: true, force: true })
     }
+  }
+
+  if (!qualifiedIds.length) {
+    return processingResult
   }
 
   // esbuild generates nested directory output with lowest common ancestor base
@@ -392,51 +413,20 @@ export async function runOptimizeDeps(
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
-  await init
   for (const id in depsInfo) {
-    const flatId = flattenId(id)
-    const filePath = (flatIdDeps[flatId] = depsInfo[id].src!)
-    let exportsData: ExportsData
-    if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
-      // For custom supported extensions, build the entry file to transform it into JS,
-      // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
-      // so only the entry file is being transformed.
-      const result = await build({
-        ...esbuildOptions,
-        plugins,
-        entryPoints: [filePath],
-        write: false,
-        format: 'esm'
-      })
-      exportsData = parse(result.outputFiles[0].text) as ExportsData
-    } else {
-      const entryContent = fs.readFileSync(filePath, 'utf-8')
-      try {
-        exportsData = parse(entryContent) as ExportsData
-      } catch {
-        const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
-        debug(
-          `Unable to parse dependency: ${id}. Trying again with a ${loader} transform.`
-        )
-        const transformed = await transformWithEsbuild(entryContent, filePath, {
-          loader
-        })
-        // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-        // This is useful for packages such as Gatsby.
-        esbuildOptions.loader = {
-          '.js': 'jsx',
-          ...esbuildOptions.loader
-        }
-        exportsData = parse(transformed.code) as ExportsData
-      }
-      for (const { ss, se } of exportsData[0]) {
-        const exp = entryContent.slice(ss, se)
-        if (/export\s+\*\s+from/.test(exp)) {
-          exportsData.hasReExports = true
-        }
+    const src = depsInfo[id].src!
+    const exportsData = await (depsInfo[id].exportsData ??
+      extractExportsData(src, config))
+    if (exportsData.jsxLoader) {
+      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+      // This is useful for packages such as Gatsby.
+      esbuildOptions.loader = {
+        '.js': 'jsx',
+        ...esbuildOptions.loader
       }
     }
-
+    const flatId = flattenId(id)
+    flatIdDeps[flatId] = src
     idToExports[id] = exportsData
     flatIdToExports[flatId] = exportsData
   }
@@ -483,15 +473,18 @@ export async function runOptimizeDeps(
   for (const id in depsInfo) {
     const output = esbuildOutputFromId(meta.outputs, id, processingCacheDir)
 
+    const { exportsData, ...info } = depsInfo[id]
     addOptimizedDepInfo(metadata, 'optimized', {
-      ...depsInfo[id],
-      needsInterop: needsInterop(id, idToExports[id], output),
+      ...info,
       // We only need to hash the output.imports in to check for stability, but adding the hash
       // and file path gives us a unique hash that may be useful for other things in the future
       fileHash: getHash(
         metadata.hash + depsInfo[id].file + JSON.stringify(output.imports)
       ),
-      browserHash: metadata.browserHash
+      browserHash: metadata.browserHash,
+      // After bundling we have more information and can warn the user about legacy packages
+      // that require manual configuration
+      needsInterop: needsInterop(config, id, idToExports[id], output)
     })
   }
 
@@ -522,25 +515,7 @@ export async function runOptimizeDeps(
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
-  return {
-    metadata,
-    commit() {
-      // Write metadata file, delete `deps` folder and rename the new `processing` folder to `deps` in sync
-      return commitProcessingDepsCacheSync()
-    },
-    cancel
-  }
-
-  async function commitProcessingDepsCacheSync() {
-    // Processing is done, we can now replace the depsCacheDir with processingCacheDir
-    // Rewire the file paths from the temporal processing dir to the final deps cache dir
-    await removeDir(depsCacheDir)
-    await renameDir(processingCacheDir, depsCacheDir)
-  }
-
-  function cancel() {
-    fs.rmSync(processingCacheDir, { recursive: true, force: true })
-  }
+  return processingResult
 }
 
 export async function findKnownImports(
@@ -735,17 +710,71 @@ function esbuildOutputFromId(
   ]
 }
 
+export async function extractExportsData(
+  filePath: string,
+  config: ResolvedConfig
+): Promise<ExportsData> {
+  await init
+  let exportsData: ExportsData
+
+  const esbuildOptions = config.optimizeDeps?.esbuildOptions ?? {}
+  if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
+    // For custom supported extensions, build the entry file to transform it into JS,
+    // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
+    // so only the entry file is being transformed.
+    const result = await build({
+      ...esbuildOptions,
+      entryPoints: [filePath],
+      write: false,
+      format: 'esm'
+    })
+    exportsData = parse(result.outputFiles[0].text) as ExportsData
+  } else {
+    const entryContent = fs.readFileSync(filePath, 'utf-8')
+    try {
+      exportsData = parse(entryContent) as ExportsData
+    } catch {
+      const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
+      debug(
+        `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`
+      )
+      const transformed = await transformWithEsbuild(entryContent, filePath, {
+        loader
+      })
+      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+      // This is useful for packages such as Gatsby.
+      esbuildOptions.loader = {
+        '.js': 'jsx',
+        ...esbuildOptions.loader
+      }
+      exportsData = parse(transformed.code) as ExportsData
+      exportsData.jsxLoader = true
+    }
+    for (const { ss, se } of exportsData[0]) {
+      const exp = entryContent.slice(ss, se)
+      if (/export\s+\*\s+from/.test(exp)) {
+        exportsData.hasReExports = true
+      }
+    }
+  }
+  return exportsData
+}
+
 // https://github.com/vitejs/vite/issues/1724#issuecomment-767619642
 // a list of modules that pretends to be ESM but still uses `require`.
 // this causes esbuild to wrap them as CJS even when its entry appears to be ESM.
 const KNOWN_INTEROP_IDS = new Set(['moment'])
 
 function needsInterop(
+  config: ResolvedConfig,
   id: string,
   exportsData: ExportsData,
-  output: { exports: string[] }
+  output?: { exports: string[] }
 ): boolean {
-  if (KNOWN_INTEROP_IDS.has(id)) {
+  if (
+    config.optimizeDeps?.needsInterop?.includes(id) ||
+    KNOWN_INTEROP_IDS.has(id)
+  ) {
     return true
   }
   const [imports, exports] = exportsData
@@ -754,16 +783,19 @@ function needsInterop(
     return true
   }
 
-  // if a peer dependency used require() on a ESM dependency, esbuild turns the
-  // ESM dependency's entry chunk into a single default export... detect
-  // such cases by checking exports mismatch, and force interop.
-  const generatedExports: string[] = output.exports
+  if (output) {
+    // if a peer dependency used require() on a ESM dependency, esbuild turns the
+    // ESM dependency's entry chunk into a single default export... detect
+    // such cases by checking exports mismatch, and force interop.
+    const generatedExports: string[] = output.exports
 
-  if (
-    !generatedExports ||
-    (isSingleDefaultExport(generatedExports) && !isSingleDefaultExport(exports))
-  ) {
-    return true
+    if (
+      !generatedExports ||
+      (isSingleDefaultExport(generatedExports) &&
+        !isSingleDefaultExport(exports))
+    ) {
+      return true
+    }
   }
   return false
 }
@@ -846,14 +878,17 @@ function findOptimizedDepInfoInRecord(
 
 export async function optimizedDepNeedsInterop(
   metadata: DepOptimizationMetadata,
-  file: string
+  file: string,
+  config: ResolvedConfig
 ): Promise<boolean | undefined> {
   const depInfo = optimizedDepInfoFromFile(metadata, file)
-
-  if (!depInfo) return undefined
-
-  // Wait until the dependency has been pre-bundled
-  await depInfo.processing
-
+  if (depInfo?.src && depInfo.needsInterop === undefined) {
+    depInfo.exportsData ??= extractExportsData(depInfo.src, config)
+    depInfo.needsInterop = needsInterop(
+      config,
+      depInfo.id,
+      await depInfo.exportsData
+    )
+  }
   return depInfo?.needsInterop
 }
