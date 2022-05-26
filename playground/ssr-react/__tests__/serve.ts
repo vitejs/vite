@@ -29,14 +29,19 @@ export async function serve() {
       build: {
         target: 'esnext',
         ssr: 'src/entry-server.jsx',
-        outDir: 'dist/server'
+        outDir: 'dist/server',
+        rollupOptions: {
+          output: {
+            entryFileNames: 'entry-server.cjs'
+          }
+        }
       }
     })
   }
 
   await kill(port)
 
-  const { createServer } = require(path.resolve(rootDir, 'server.js'))
+  const { createServer } = await import(path.resolve(rootDir, 'server.js'))
   const { app, vite } = await createServer(
     rootDir,
     isBuild,
