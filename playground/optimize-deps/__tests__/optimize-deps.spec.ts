@@ -122,11 +122,14 @@ test.runIf(isServe)('error on builtin modules usage', () => {
     expect.arrayContaining([
       // from dep-with-builtin-module-esm top-level try-catch
       expect.stringContaining(
-        'dep-with-builtin-module-esm Error: Cannnot access "fs.readFileSync" in client code.'
+        'dep-with-builtin-module-esm Error: Cannot access "fs.readFileSync" in client code.'
       ),
-      // from dep-with-builtin-module-esm top-level try-catch
       expect.stringContaining(
-        'dep-with-builtin-module-cjs Error: Cannnot access "fs.readFileSync" in client code.'
+        'dep-with-builtin-module-esm Error: Cannot access "path.join" in client code.'
+      ),
+      // from dep-with-builtin-module-cjs top-level try-catch
+      expect.stringContaining(
+        'dep-with-builtin-module-cjs Error: Cannot access "path.join" in client code.'
       )
     ])
   )
@@ -135,7 +138,7 @@ test.runIf(isServe)('error on builtin modules usage', () => {
     expect.arrayContaining([
       // from user source code
       'Cannot access "buffer.Buffer" in client code.',
-      'Cannot access "child_process.execSyn" in client code.',
+      'Cannot access "child_process.execSync" in client code.',
       // from dep-with-builtin-module-esm read()
       'Cannot access "fs.readFileSync" in client code.',
       // from dep-with-builtin-module-esm read()
