@@ -438,7 +438,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // correctly throw the error message.
             else if (
               url.includes(browserExternalId) &&
-              /import\s+{.*?}\s+from/s.test(source.slice(expStart, start))
+              source.slice(expStart, start).includes('{')
             ) {
               interopNamedImports(str(), imports[index], url, index)
               rewriteDone = true
