@@ -113,11 +113,13 @@ export interface DepOptimizationOptions {
    */
   extensions?: string[]
   /**
-   * Disables dependencies optimizations
+   * Disables dependencies optimizations, true disables the optimizer during
+   * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
+   * one of the modes. Deps optimization is enabled by default in both
    * @default false
    * @experimental
    */
-  disabled?: boolean
+  disabled?: boolean | 'build' | 'dev'
 }
 
 export interface DepOptimizationResult {

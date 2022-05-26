@@ -1,5 +1,6 @@
 import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from '../config'
+import { isDepsOptimizerEnabled } from '../config'
 import type { Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { jsonPlugin } from './json'
@@ -45,7 +46,7 @@ export async function resolvePlugins(
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    ...(!isBuild || config.build.optimizeDeps
+    ...(isDepsOptimizerEnabled(config)
       ? [
           isBuild
             ? optimizedDepsBuildPlugin(config)

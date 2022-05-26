@@ -860,3 +860,13 @@ async function loadConfigFromBundledFile(
   _require.extensions[extension] = defaultLoader
   return config
 }
+
+export function isDepsOptimizerEnabled(config: ResolvedConfig) {
+  const { command, optimizeDeps } = config
+  const { disabled } = optimizeDeps
+  return !(
+    disabled === true ||
+    (command === 'build' && disabled === 'build') ||
+    (command === 'serve' && optimizeDeps.disabled === 'dev')
+  )
+}

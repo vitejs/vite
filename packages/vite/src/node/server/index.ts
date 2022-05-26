@@ -14,7 +14,7 @@ import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   isParentDirectory,
   mergeConfig,
@@ -528,7 +528,7 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const initOptimizer = async () => {
-    if (!config.optimizeDeps.disabled) {
+    if (isDepsOptimizerEnabled(config)) {
       await initDepsOptimizer(config, server)
     }
   }

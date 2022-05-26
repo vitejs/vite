@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { resolveConfig } from './config'
+import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -129,13 +129,6 @@ export interface BuildOptions {
    */
   rollupOptions?: RollupOptions
   /**
-   * Optimize deps with esbuild during build in the same way as in dev
-   * When this is enabled, `@rollup/plugin-commonjs` isn't included
-   * @default true
-   * @experimental
-   */
-  optimizeDeps?: boolean
-  /**
    * Options to pass on to `@rollup/plugin-commonjs`
    */
   commonjsOptions?: RollupCommonJSOptions
@@ -239,7 +232,6 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
-    optimizeDeps: true,
     ...raw,
     commonjsOptions: {
       include: [/node_modules/],
@@ -295,7 +287,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!options.optimizeDeps || options.ssr
+      ...(!isDepsOptimizerEnabled(config) || options.ssr
         ? [commonjsPlugin(options.commonjsOptions)]
         : []),
       dataURIPlugin(),
@@ -404,7 +396,7 @@ async function doBuild(
     )
   }
 
-  if (options.optimizeDeps && !ssr) {
+  if (isDepsOptimizerEnabled(config) && !ssr) {
     await initDepsOptimizer(config)
   }
 
