@@ -299,10 +299,14 @@ function esbuildScanPlugin(
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
+                let transpiledContents
                 // transpile because `transformGlobImport` only expects js
-                const transpiledContents = (
-                  await transform(contents, { loader })
-                ).code
+                if (loader !== 'js') {
+                  transpiledContents = (await transform(contents, { loader }))
+                    .code
+                } else {
+                  transpiledContents = contents
+                }
 
                 scripts[key] = {
                   loader: 'js', // since it is transpiled
