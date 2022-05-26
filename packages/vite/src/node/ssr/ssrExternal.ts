@@ -88,37 +88,45 @@ const CJS_CONTENT_RE =
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
-const isSsrExternalCache = new WeakMap<ResolvedConfig, (id: string) => boolean | undefined>() 
+const isSsrExternalCache = new WeakMap<
+  ResolvedConfig,
+  (id: string) => boolean | undefined
+>()
 
 export function shouldExternalizeForSSR(
   id: string,
   config: ResolvedConfig
 ): boolean | undefined {
   let isSsrExternal = isSsrExternalCache.get(config)
-  if( !isSsrExternal ) {
+  if (!isSsrExternal) {
     isSsrExternal = createIsSsrExternal(config)
     isSsrExternalCache.set(config, isSsrExternal)
   }
   return isSsrExternal(id)
 }
 
-function createIsSsrExternal(config: ResolvedConfig): (id: string) => boolean | undefined {
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
   const processedIds = new Map<string, boolean | undefined>()
-  
+
   const { ssr, root } = config
 
   const noExternal = ssr?.noExternal
-  const noExternalFilter = noExternal !== 'undefined' && typeof noExternal !== 'boolean' && createFilter(undefined, noExternal, { resolve: false })
-  
+  const noExternalFilter =
+    noExternal !== 'undefined' &&
+    typeof noExternal !== 'boolean' &&
+    createFilter(undefined, noExternal, { resolve: false })
+
   const isConfiguredAsExternal = (id: string) => {
     const { ssr } = config
-    if ( !ssr || ssr.external?.includes(id)) {
+    if (!ssr || ssr.external?.includes(id)) {
       return true
     }
-    if ( typeof noExternal === 'boolean' ) {
+    if (typeof noExternal === 'boolean') {
       return !noExternal
     }
-    if ( noExternalFilter ) {
+    if (noExternalFilter) {
       return noExternalFilter(id)
     }
     return true
@@ -135,14 +143,16 @@ function createIsSsrExternal(config: ResolvedConfig): (id: string) => boolean | 
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
-    if( tryNodeResolve(
-      id,
-      undefined,
-      resolveOptions,
-      ssr?.target === 'webworker',
-      undefined,
-      true
-    )) {
+    if (
+      tryNodeResolve(
+        id,
+        undefined,
+        resolveOptions,
+        ssr?.target === 'webworker',
+        undefined,
+        true
+      )
+    ) {
       return true
     }
     try {
@@ -151,21 +161,22 @@ function createIsSsrExternal(config: ResolvedConfig): (id: string) => boolean | 
       if (pkgPath.includes('node_modules')) {
         return true
       }
-    } catch {}  
+    } catch {}
     return false
   }
-  
+
   return (id: string) => {
-    if( processedIds.has(id) ) {
+    if (processedIds.has(id)) {
       return processedIds.get(id)
     }
-    const external = isBuiltin(id) || (isPackageEntry(id) && isConfiguredAsExternal(id))
+    const external =
+      isBuiltin(id) || (isPackageEntry(id) && isConfiguredAsExternal(id))
     processedIds.set(id, external)
     return external
   }
 }
 
-// When ssr.format is 'node-cjs', this function is used reverting to the Vite 2.9 era 
+// When ssr.format is 'node-cjs', this function is used reverting to the Vite 2.9 era
 // SSR externalize heuristics
 function cjsSsrCollectExternals(
   root: string,
@@ -272,7 +283,13 @@ function cjsSsrCollectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    cjsSsrCollectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
+    cjsSsrCollectExternals(
+      depRoot,
+      preserveSymlinks,
+      ssrExternals,
+      seen,
+      logger
+    )
   }
 }
 
@@ -280,7 +297,7 @@ export function cjsShouldExternalizeForSSR(
   id: string,
   externals: string[] | null
 ): boolean {
-  if( !externals ) {
+  if (!externals) {
     return false
   }
   const should = externals.some((e) => {

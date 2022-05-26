@@ -41,7 +41,10 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cjsShouldExternalizeForSSR, shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import {
+  cjsShouldExternalizeForSSR,
+  shouldExternalizeForSSR
+} from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDir,
@@ -364,12 +367,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // skip ssr external
           if (ssr) {
             if (config.ssr?.target === 'node-cjs') {
-              if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)
-              ) {
+              if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)) {
                 continue
               }
-            }
-            else if (shouldExternalizeForSSR(specifier, config)) {
+            } else if (shouldExternalizeForSSR(specifier, config)) {
               continue
             }
             if (isBuiltin(specifier)) {

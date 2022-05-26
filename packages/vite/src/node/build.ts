@@ -31,7 +31,11 @@ import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import { cjsShouldExternalizeForSSR, cjsSsrResolveExternals, shouldExternalizeForSSR } from './ssr/ssrExternal'
+import {
+  cjsShouldExternalizeForSSR,
+  cjsSsrResolveExternals,
+  shouldExternalizeForSSR
+} from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
 import { findKnownImports, getDepsCacheDir } from './optimizer'
@@ -675,10 +679,9 @@ async function ssrResolveExternal(
   config: ResolvedConfig,
   user: ExternalOption | undefined
 ): Promise<ExternalOption> {
-  if( config.ssr?.target !== 'node-cjs') {
+  if (config.ssr?.target !== 'node-cjs') {
     return esmSsrResolveExternal(config, user)
-  }
-  else {
+  } else {
     // see if we have cached deps data available
     let knownImports: string[] | undefined
     const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
@@ -704,9 +707,9 @@ function esmSsrResolveExternal(
   user: ExternalOption | undefined
 ): ExternalOption {
   return (id, parentId, isResolved) => {
-    if( user ) {
+    if (user) {
       const isUserExternal = resolveUserExternal(user, id, parentId, isResolved)
-      if( typeof isUserExternal === 'boolean' ) {
+      if (typeof isUserExternal === 'boolean') {
         return isUserExternal
       }
     }
@@ -730,7 +733,12 @@ function cjsSsrResolveExternal(
   }
 }
 
-function resolveUserExternal(user: ExternalOption, id: string, parentId: string | undefined, isResolved: boolean) {
+function resolveUserExternal(
+  user: ExternalOption,
+  id: string,
+  parentId: string | undefined,
+  isResolved: boolean
+) {
   if (typeof user === 'function') {
     return user(id, parentId, isResolved)
   } else if (Array.isArray(user)) {

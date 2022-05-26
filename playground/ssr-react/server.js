@@ -27,7 +27,9 @@ export async function createServer(
    */
   let vite
   if (!isProd) {
-    vite = await (await import('vite')).createServer({
+    vite = await (
+      await import('vite')
+    ).createServer({
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {

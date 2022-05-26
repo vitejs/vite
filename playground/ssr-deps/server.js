@@ -16,7 +16,9 @@ export async function createServer(root = process.cwd(), hmrPort) {
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await (await import('vite')).createServer({
+  const vite = await (
+    await import('vite')
+  ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
