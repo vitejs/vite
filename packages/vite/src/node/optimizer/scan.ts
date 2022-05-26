@@ -318,7 +318,7 @@ function esbuildScanPlugin(
                         config.root,
                         resolve
                       )
-                    )?.s.toString() || contents
+                    )?.s.toString() || transpiledContents
                 }
               } else {
                 scripts[key] = {
