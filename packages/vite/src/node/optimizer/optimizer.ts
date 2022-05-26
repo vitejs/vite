@@ -44,6 +44,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<DepsOptimizer> {
   const { logger } = config
+  const isBuild = config.command === 'build'
 
   const scan = config.command !== 'build' && config.optimizeDeps.devScan
 

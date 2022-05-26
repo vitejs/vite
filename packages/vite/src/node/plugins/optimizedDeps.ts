@@ -105,7 +105,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async resolveId(id) {
-      if (isOptimizedDepFile(id, config)) {
+      if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
         return id
       }
     },
