@@ -22,7 +22,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { createOptimizedDeps, getOptimizedDeps } from './registerMissing'
+export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -39,11 +39,15 @@ export type ExportsData = ReturnType<typeof parse> & {
   jsxLoader?: true
 }
 
-export interface OptimizedDeps {
+export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
+  isOptimizedDepFile: (id: string) => boolean
+  isOptimizedDepUrl: (url: string) => boolean
+  getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+  options: DepOptimizationOptions
 }
 
 export interface DepOptimizationOptions {
@@ -78,6 +82,7 @@ export interface DepOptimizationOptions {
   /**
    * Force ESM interop when importing for these dependencies. Some legacy
    * packages advertise themselves as ESM but use `require` internally
+   * @experimental
    */
   needsInterop?: string[]
   /**
@@ -115,11 +120,13 @@ export interface DepOptimizationOptions {
    */
   extensions?: string[]
   /**
-   * Disables dependencies optimizations
+   * Disables dependencies optimizations, true disables the optimizer during
+   * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
+   * one of the modes. Deps optimization is enabled by default in both
    * @default false
    * @experimental
    */
-  disabled?: boolean
+  disabled?: boolean | 'build' | 'dev'
 }
 
 export interface DepOptimizationResult {
@@ -217,7 +224,7 @@ export async function optimizeDeps(
   return result.metadata
 }
 
-export function createOptimizedDepsMetadata(
+export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
   timestamp?: string
 ): DepOptimizationMetadata {
@@ -265,7 +272,7 @@ export function loadCachedDepOptimizationMetadata(
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
-      cachedMetadata = parseOptimizedDepsMetadata(
+      cachedMetadata = parseDepsOptimizerMetadata(
         fs.readFileSync(cachedMetadataPath, 'utf-8'),
         depsCacheDir
       )
@@ -392,7 +399,7 @@ export async function runOptimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  const metadata = createOptimizedDepsMetadata(config)
+  const metadata = initDepsOptimizerMetadata(config)
 
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
@@ -534,7 +541,7 @@ export async function runOptimizeDeps(
   }
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
+  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
@@ -630,7 +637,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
   }
 }
 
-function parseOptimizedDepsMetadata(
+function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string
 ): DepOptimizationMetadata | undefined {
@@ -684,7 +691,7 @@ function parseOptimizedDepsMetadata(
  * the next time the server start we need to use the global
  * browserHash to allow long term caching
  */
-function stringifyOptimizedDepsMetadata(
+function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
 ) {

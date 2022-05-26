@@ -4,22 +4,24 @@ import { getHash } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
-  createOptimizedDepsMetadata,
+  createIsOptimizedDepUrl,
   debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
   depsLogString,
   discoverProjectDependencies,
   extractExportsData,
   getOptimizedDepPath,
+  initDepsOptimizerMetadata,
   initialProjectDependencies,
+  isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   runOptimizeDeps
 } from '.'
 import type {
   DepOptimizationProcessing,
-  OptimizedDepInfo,
-  OptimizedDeps
+  DepsOptimizer,
+  OptimizedDepInfo
 } from '.'
 
 const isDebugEnabled = _debug('vite:deps').enabled
@@ -30,17 +32,17 @@ const isDebugEnabled = _debug('vite:deps').enabled
  */
 const debounceMs = 100
 
-const optimizedDepsMap = new WeakMap<ResolvedConfig, OptimizedDeps>()
+const depsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
-export function getOptimizedDeps(config: ResolvedConfig) {
-  // Workers compilation shares the OptimizedDeps from the main build
-  return optimizedDepsMap.get(config.mainConfig || config)
+export function getDepsOptimizer(config: ResolvedConfig) {
+  // Workers compilation shares the DepsOptimizer from the main build
+  return depsOptimizerMap.get(config.mainConfig || config)
 }
 
-export async function createOptimizedDeps(
+export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
-): Promise<OptimizedDeps> {
+): Promise<DepsOptimizer> {
   const { logger } = config
 
   const scan = config.command !== 'build' && config.optimizeDeps.devScan
@@ -51,14 +53,19 @@ export async function createOptimizedDeps(
 
   let handle: NodeJS.Timeout | undefined
 
-  const optimizedDeps: OptimizedDeps = {
+  const depsOptimizer: DepsOptimizer = {
     metadata:
-      cachedMetadata || createOptimizedDepsMetadata(config, sessionTimestamp),
+      cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp),
     registerMissingImport,
-    run: () => debouncedProcessing(0)
+    run: () => debouncedProcessing(0),
+    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepUrl: createIsOptimizedDepUrl(config),
+    getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
+      isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
+    options: config.optimizeDeps
   }
 
-  optimizedDepsMap.set(config, optimizedDeps)
+  depsOptimizerMap.set(config, depsOptimizer)
 
   let newDepsDiscovered = false
 
@@ -100,7 +107,7 @@ export async function createOptimizedDeps(
         config,
         sessionTimestamp
       )
-      const { metadata } = optimizedDeps
+      const { metadata } = depsOptimizer
       for (const depInfo of Object.values(discovered)) {
         addOptimizedDepInfo(metadata, 'discovered', {
           ...depInfo,
@@ -112,7 +119,7 @@ export async function createOptimizedDeps(
       currentlyProcessing = true
 
       const scanPhaseProcessing = newDepOptimizationProcessing()
-      optimizedDeps.scanProcessing = scanPhaseProcessing.promise
+      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
 
       setTimeout(async () => {
         try {
@@ -120,7 +127,7 @@ export async function createOptimizedDeps(
             timestamp: true
           })
 
-          const { metadata } = optimizedDeps
+          const { metadata } = depsOptimizer
 
           const discovered = await discoverProjectDependencies(
             config,
@@ -145,14 +152,14 @@ export async function createOptimizedDeps(
           )
 
           scanPhaseProcessing.resolve()
-          optimizedDeps.scanProcessing = undefined
+          depsOptimizer.scanProcessing = undefined
 
           await runOptimizer()
         } catch (e) {
           logger.error(e.message)
-          if (optimizedDeps.scanProcessing) {
+          if (depsOptimizer.scanProcessing) {
             scanPhaseProcessing.resolve()
-            optimizedDeps.scanProcessing = undefined
+            depsOptimizer.scanProcessing = undefined
           }
         }
       }, 0)
@@ -169,7 +176,7 @@ export async function createOptimizedDeps(
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
 
-    if (Object.keys(optimizedDeps.metadata.discovered).length === 0) {
+    if (Object.keys(depsOptimizer.metadata.discovered).length === 0) {
       currentlyProcessing = false
       return
     }
@@ -185,7 +192,7 @@ export async function createOptimizedDeps(
     // if the rerun fails, optimizeDeps.metadata remains untouched,
     // current discovered deps are cleaned, and a fullReload is issued
 
-    let { metadata } = optimizedDeps
+    let { metadata } = depsOptimizer
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
@@ -292,7 +299,7 @@ export async function createOptimizedDeps(
           )
         }
 
-        metadata = optimizedDeps.metadata = newData
+        metadata = depsOptimizer.metadata = newData
         resolveEnqueuedProcessingPromises()
       }
 
@@ -391,7 +398,7 @@ export async function createOptimizedDeps(
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
-    const deps = Object.keys(optimizedDeps.metadata.discovered)
+    const deps = Object.keys(depsOptimizer.metadata.discovered)
     const depsString = depsLogString(deps)
     debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
@@ -414,12 +421,12 @@ export async function createOptimizedDeps(
     resolved: string,
     ssr?: boolean
   ): OptimizedDepInfo {
-    if (optimizedDeps.scanProcessing) {
+    if (depsOptimizer.scanProcessing) {
       config.logger.error(
         'Vite internal error: registering missing import before initial scanning is over'
       )
     }
-    const { metadata } = optimizedDeps
+    const { metadata } = depsOptimizer
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -486,5 +493,5 @@ export async function createOptimizedDeps(
     }, timeout)
   }
 
-  return optimizedDeps
+  return depsOptimizer
 }

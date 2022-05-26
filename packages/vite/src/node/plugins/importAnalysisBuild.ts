@@ -17,11 +17,7 @@ import {
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import {
-  getOptimizedDeps,
-  isOptimizedDepFile,
-  optimizedDepNeedsInterop
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { transformCjsImport } from './importAnalysis'
 
@@ -160,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
-      const optimizedDeps = getOptimizedDeps(config)
+      const depsOptimizer = getDepsOptimizer(config)
 
       const normalizeUrl = async (
         url: string,
@@ -169,14 +165,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         let importerFile = importer
 
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
-          if (optimizedDeps) {
-            await optimizedDeps.scanProcessing
+          if (depsOptimizer) {
+            await depsOptimizer.scanProcessing
 
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of optimizedDeps.metadata.depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importer) {
                 importerFile = optimizedModule.src
@@ -244,7 +240,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        if (!optimizedDeps) {
+        if (!depsOptimizer) {
           continue
         }
 
@@ -261,14 +257,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (url !== specifier) {
             if (
-              optimizedDeps &&
-              isOptimizedDepFile(resolvedId, config) &&
+              depsOptimizer.isOptimizedDepFile(resolvedId) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                optimizedDeps.metadata,
+                depsOptimizer.metadata,
                 file,
                 config
               )

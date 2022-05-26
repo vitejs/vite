@@ -14,7 +14,7 @@ import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   isParentDirectory,
   mergeConfig,
@@ -28,7 +28,7 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { createOptimizedDeps, getOptimizedDeps } from '../optimizer'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -322,12 +322,12 @@ export async function createServer(
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (!server._ssrExternals) {
         let knownImports: string[] = []
-        const optimizedDeps = getOptimizedDeps(config)
-        if (optimizedDeps) {
-          await optimizedDeps.scanProcessing
+        const depsOptimizer = getDepsOptimizer(config)
+        if (depsOptimizer) {
+          await depsOptimizer.scanProcessing
           knownImports = [
-            ...Object.keys(optimizedDeps.metadata.optimized),
-            ...Object.keys(optimizedDeps.metadata.discovered)
+            ...Object.keys(depsOptimizer.metadata.optimized),
+            ...Object.keys(depsOptimizer.metadata.discovered)
           ]
         }
         server._ssrExternals = resolveSSRExternal(config, knownImports)
@@ -528,8 +528,8 @@ export async function createServer(
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   const initOptimizer = async () => {
-    if (!config.optimizeDeps.disabled) {
-      await createOptimizedDeps(config, server)
+    if (isDepsOptimizerEnabled(config)) {
+      await initDepsOptimizer(config, server)
     }
   }
 

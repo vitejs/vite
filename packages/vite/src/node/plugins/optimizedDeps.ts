@@ -4,11 +4,7 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import {
-  getOptimizedDeps,
-  isOptimizedDepFile,
-  optimizedDepInfoFromFile
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
@@ -61,7 +57,10 @@ export function delayDepsOptimizerUntil(
   done: () => Promise<any>
 ) {
   const info = getRunProcessingInfo(config)
-  if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
+  if (
+    !getDepsOptimizer(config)?.isOptimizedDepFile(id) &&
+    !info.seenIds.has(id)
+  ) {
     info.seenIds.add(id)
     info.ids.push({ id, done })
     runOptimizerWhenIdle(config)
@@ -79,7 +78,7 @@ function runOptimizerWhenIdle(config: ResolvedConfig) {
         if (info.ids.length > 0) {
           runOptimizerWhenIdle(config)
         } else if (!info.workersSources.has(next.id)) {
-          getOptimizedDeps(config)?.run()
+          getDepsOptimizer(config)?.run()
         }
       }
       next
@@ -116,9 +115,9 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     // is in importAnalysis, see call to delayDepsOptimizerUntil
 
     async load(id) {
-      if (isOptimizedDepFile(id, config)) {
-        const optimizedDeps = getOptimizedDeps(config)
-        const metadata = optimizedDeps?.metadata
+      const depsOptimizer = getDepsOptimizer(config)
+      if (depsOptimizer?.isOptimizedDepFile(id)) {
+        const metadata = depsOptimizer?.metadata
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -142,7 +141,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = optimizedDeps.metadata
+            const newMetadata = depsOptimizer.metadata
             if (metadata !== newMetadata) {
               const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
@@ -177,7 +176,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async resolveId(id) {
-      if (isOptimizedDepFile(id, config)) {
+      if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -189,8 +188,9 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      const metadata = getOptimizedDeps(config)?.metadata
-      if (!metadata || !isOptimizedDepFile(id, config)) {
+      const depsOptimizer = getDepsOptimizer(config)
+      const metadata = depsOptimizer?.metadata
+      if (!metadata || !depsOptimizer?.isOptimizedDepFile(id)) {
         return
       }
       const file = cleanUrl(id)

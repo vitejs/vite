@@ -1,6 +1,8 @@
 import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from '../config'
+import { isDepsOptimizerEnabled } from '../config'
 import type { Plugin } from '../plugin'
+import { getDepsOptimizer } from '../optimizer'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
@@ -44,25 +46,23 @@ export async function resolvePlugins(
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    ...(!isBuild || config.build.optimizeDeps
+    ...(isDepsOptimizerEnabled(config)
       ? [
           isBuild
             ? optimizedDepsBuildPlugin(config)
             : optimizedDepsPlugin(config)
         ]
       : []),
-    resolvePlugin(
-      {
-        ...config.resolve,
-        root: config.root,
-        isProduction: config.isProduction,
-        isBuild,
-        packageCache: config.packageCache,
-        ssrConfig: config.ssr,
-        asSrc: true
-      },
-      config
-    ),
+    resolvePlugin({
+      ...config.resolve,
+      root: config.root,
+      isProduction: config.isProduction,
+      isBuild,
+      packageCache: config.packageCache,
+      ssrConfig: config.ssr,
+      asSrc: true,
+      getDepsOptimizer: () => getDepsOptimizer(config)
+    }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
