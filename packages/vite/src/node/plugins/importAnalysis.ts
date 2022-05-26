@@ -315,7 +315,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
-          se: expEnd,
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
@@ -430,26 +429,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 debug(`${url} needs interop`)
-                if (isDynamicImport) {
-                  // rewrite `import('package')` to expose the default directly
-                  str().overwrite(
-                    expStart,
-                    expEnd,
-                    `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
-                    { contentOnly: true }
-                  )
-                } else {
-                  const exp = source.slice(expStart, expEnd)
-                  const rewritten = transformCjsImport(exp, url, rawUrl, index)
-                  if (rewritten) {
-                    str().overwrite(expStart, expEnd, rewritten, {
-                      contentOnly: true
-                    })
-                  } else {
-                    // #1439 export * from '...'
-                    str().overwrite(start, end, url, { contentOnly: true })
-                  }
-                }
+                interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
             }
@@ -458,7 +438,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // correctly throw the error message.
             else if (
               url.includes(browserExternalId) &&
-              /import\s+{.*?}\s+from/.test(source.slice(expStart, start))
+              /import\s+{.*?}\s+from/s.test(source.slice(expStart, start))
             ) {
               interopNamedImports(str(), imports[index], url, index)
               rewriteDone = true
