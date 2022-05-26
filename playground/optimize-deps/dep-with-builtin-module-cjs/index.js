@@ -1,3 +1,4 @@
+const fs = require('fs')
 const path = require('path')
 
 // NOTE: require destructure would error immediately to to how esbuild compiles
@@ -13,5 +14,5 @@ try {
 
 // access from function
 module.exports.read = () => {
-  return readFileSync('test')
+  return fs.readFileSync('test')
 }
