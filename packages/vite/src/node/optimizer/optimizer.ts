@@ -4,6 +4,7 @@ import { getHash } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
+  createIsOptimizedDepUrl,
   debuggerViteDeps as debug,
   depsFromOptimizedDepInfo,
   depsLogString,
@@ -12,14 +13,15 @@ import {
   getOptimizedDepPath,
   initDepsOptimizerMetadata,
   initialProjectDependencies,
+  isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   runOptimizeDeps
 } from '.'
 import type {
   DepOptimizationProcessing,
-  OptimizedDepInfo,
-  OptimizedDeps
+  DepsOptimizer,
+  OptimizedDepInfo
 } from '.'
 
 const isDebugEnabled = _debug('vite:deps').enabled
@@ -30,17 +32,17 @@ const isDebugEnabled = _debug('vite:deps').enabled
  */
 const debounceMs = 100
 
-const depsOptimizerMap = new WeakMap<ResolvedConfig, OptimizedDeps>()
+const depsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
 export function getDepsOptimizer(config: ResolvedConfig) {
-  // Workers compilation shares the OptimizedDeps from the main build
+  // Workers compilation shares the DepsOptimizer from the main build
   return depsOptimizerMap.get(config.mainConfig || config)
 }
 
 export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
-): Promise<OptimizedDeps> {
+): Promise<DepsOptimizer> {
   const { logger } = config
   const isBuild = config.command === 'build'
 
@@ -50,11 +52,16 @@ export async function initDepsOptimizer(
 
   let handle: NodeJS.Timeout | undefined
 
-  const depsOptimizer: OptimizedDeps = {
+  const depsOptimizer: DepsOptimizer = {
     metadata:
       cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp),
     registerMissingImport,
-    run: () => debouncedProcessing(0)
+    run: () => debouncedProcessing(0),
+    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepUrl: createIsOptimizedDepUrl(config),
+    getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
+      isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
+    options: config.optimizeDeps
   }
 
   depsOptimizerMap.set(config, depsOptimizer)

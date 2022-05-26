@@ -4,11 +4,7 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { cleanUrl, createDebugger } from '../utils'
-import {
-  getDepsOptimizer,
-  isOptimizedDepFile,
-  optimizedDepInfoFromFile
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
@@ -61,7 +57,10 @@ function delayDepsOptimizerUntil(
   done: () => Promise<void>
 ) {
   const info = getRunProcessingInfo(config)
-  if (!isOptimizedDepFile(id, config) && !info.seenIds.has(id)) {
+  if (
+    !getDepsOptimizer(config)?.isOptimizedDepFile(id) &&
+    !info.seenIds.has(id)
+  ) {
     info.seenIds.add(id)
     info.ids.push({ id, done })
     runOptimizerWhenIdle(config)
@@ -100,8 +99,8 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:optimized-deps',
 
     async load(id) {
-      if (isOptimizedDepFile(id, config)) {
-        const depsOptimizer = getDepsOptimizer(config)
+      const depsOptimizer = getDepsOptimizer(config)
+      if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer?.metadata
         if (metadata) {
           const file = cleanUrl(id)
@@ -161,7 +160,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async resolveId(id) {
-      if (isOptimizedDepFile(id, config)) {
+      if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -173,8 +172,9 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     async load(id) {
-      const metadata = getDepsOptimizer(config)?.metadata
-      if (!metadata || !isOptimizedDepFile(id, config)) {
+      const depsOptimizer = getDepsOptimizer(config)
+      const metadata = depsOptimizer?.metadata
+      if (!metadata || !depsOptimizer?.isOptimizedDepFile(id)) {
         return
       }
       const file = cleanUrl(id)

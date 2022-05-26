@@ -1,6 +1,7 @@
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { bareImportRE } from '../utils'
+import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
 /**
@@ -10,8 +11,14 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
-      if (!options?.ssr && bareImportRE.test(id) && !options?.scan) {
-        return await tryOptimizedResolve(id, config, importer)
+      const depsOptimizer = getDepsOptimizer(config)
+      if (
+        depsOptimizer &&
+        !options?.ssr &&
+        bareImportRE.test(id) &&
+        !options?.scan
+      ) {
+        return await tryOptimizedResolve(depsOptimizer, id, importer)
       }
     }
   }

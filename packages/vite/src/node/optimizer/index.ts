@@ -39,11 +39,15 @@ export type ExportsData = ReturnType<typeof parse> & {
   jsxLoader?: true
 }
 
-export interface OptimizedDeps {
+export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
+  isOptimizedDepFile: (id: string) => boolean
+  isOptimizedDepUrl: (url: string) => boolean
+  getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+  options: DepOptimizationOptions
 }
 
 export interface DepOptimizationOptions {
@@ -259,7 +263,7 @@ export function loadCachedDepOptimizationMetadata(
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
-      cachedMetadata = parseOptimizedDepsMetadata(
+      cachedMetadata = parseDepsOptimizerMetadata(
         fs.readFileSync(cachedMetadataPath, 'utf-8'),
         depsCacheDir
       )
@@ -528,7 +532,7 @@ export async function runOptimizeDeps(
   }
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
+  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
@@ -624,7 +628,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
   }
 }
 
-function parseOptimizedDepsMetadata(
+function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string
 ): DepOptimizationMetadata | undefined {
@@ -678,7 +682,7 @@ function parseOptimizedDepsMetadata(
  * the next time the server start we need to use the global
  * browserHash to allow long term caching
  */
-function stringifyOptimizedDepsMetadata(
+function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
 ) {

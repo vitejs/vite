@@ -17,11 +17,7 @@ import {
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import {
-  getDepsOptimizer,
-  isOptimizedDepFile,
-  optimizedDepNeedsInterop
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
 import { transformCjsImport } from './importAnalysis'
 
@@ -261,8 +257,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (url !== specifier) {
             if (
-              depsOptimizer &&
-              isOptimizedDepFile(resolvedId, config) &&
+              depsOptimizer.isOptimizedDepFile(resolvedId) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}

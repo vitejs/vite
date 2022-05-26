@@ -46,7 +46,6 @@ import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDir,
   getDepsOptimizer,
-  isOptimizedDepFile,
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
@@ -398,8 +397,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (url !== specifier) {
             let rewriteDone = false
             if (
-              depsOptimizer &&
-              isOptimizedDepFile(resolvedId, config) &&
+              depsOptimizer?.isOptimizedDepFile(resolvedId) &&
               !resolvedId.match(optimizedDepChunkRE)
             ) {
               // for optimized cjs deps, support named imports by rewriting named imports to const assignments.
