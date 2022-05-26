@@ -28,7 +28,7 @@
   import C from 'test-package-c'
   import { C as sideC } from 'test-package-c/side'
   import D, { nestedD } from 'test-package-d'
-  import { testExcluded } from 'test-package-e'
+  // import { testExcluded } from 'test-package-e'
 
   text('.a', A)
   text('.b', B)
@@ -40,7 +40,7 @@
   text('.d', D)
   text('.nested-d', nestedD)
 
-  text('.nested-e', testExcluded())
+  // text('.nested-e', testExcluded())
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

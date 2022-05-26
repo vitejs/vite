@@ -22,6 +22,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
+export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -38,10 +39,15 @@ export type ExportsData = ReturnType<typeof parse> & {
   jsxLoader?: true
 }
 
-export interface OptimizedDeps {
+export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
+  run: () => void
+  isOptimizedDepFile: (id: string) => boolean
+  isOptimizedDepUrl: (url: string) => boolean
+  getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+  options: DepOptimizationOptions
 }
 
 export interface DepOptimizationOptions {
@@ -107,11 +113,13 @@ export interface DepOptimizationOptions {
    */
   extensions?: string[]
   /**
-   * Disables dependencies optimizations
+   * Disables dependencies optimizations, true disables the optimizer during
+   * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
+   * one of the modes. Deps optimization is enabled by default in both
    * @default false
    * @experimental
    */
-  disabled?: boolean
+  disabled?: boolean | 'build' | 'dev'
 }
 
 export interface DepOptimizationResult {
@@ -184,7 +192,7 @@ export interface DepOptimizationMetadata {
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -209,7 +217,7 @@ export async function optimizeDeps(
   return result.metadata
 }
 
-export function createOptimizedDepsMetadata(
+export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
   timestamp?: string
 ): DepOptimizationMetadata {
@@ -240,7 +248,7 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
@@ -257,7 +265,7 @@ export function loadCachedDepOptimizationMetadata(
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
-      cachedMetadata = parseOptimizedDepsMetadata(
+      cachedMetadata = parseDepsOptimizerMetadata(
         fs.readFileSync(cachedMetadataPath, 'utf-8'),
         depsCacheDir
       )
@@ -301,6 +309,21 @@ export async function discoverProjectDependencies(
     )
   }
 
+  return initialProjectDependencies(config, timestamp, deps)
+}
+
+/**
+ * Create the initial discovered deps list. At build time we only
+ * have the manually included deps. During dev, a scan phase is
+ * performed and knownDeps is the list of discovered deps
+ */
+export async function initialProjectDependencies(
+  config: ResolvedConfig,
+  timestamp?: string,
+  knownDeps?: Record<string, string>
+): Promise<Record<string, OptimizedDepInfo>> {
+  const deps: Record<string, string> = knownDeps ?? {}
+
   await addManuallyIncludedOptimizeDeps(deps, config)
 
   const browserHash = getOptimizedBrowserHash(
@@ -342,16 +365,16 @@ export function depsLogString(qualifiedIds: string[]): string {
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
 export async function runOptimizeDeps(
-  config: ResolvedConfig,
+  resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
-  config = {
-    ...config,
+  const config: ResolvedConfig = {
+    ...resolvedConfig,
     command: 'build'
   }
 
-  const depsCacheDir = getDepsCacheDir(config)
-  const processingCacheDir = getProcessingDepsCacheDir(config)
+  const depsCacheDir = getDepsCacheDir(resolvedConfig)
+  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig)
 
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
@@ -369,7 +392,7 @@ export async function runOptimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  const metadata = createOptimizedDepsMetadata(config)
+  const metadata = initDepsOptimizerMetadata(config)
 
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
@@ -493,7 +516,7 @@ export async function runOptimizeDeps(
       const id = path
         .relative(processingCacheDirOutputPath, o)
         .replace(jsExtensionRE, '')
-      const file = getOptimizedDepPath(id, config)
+      const file = getOptimizedDepPath(id, resolvedConfig)
       if (
         !findOptimizedDepInfoInRecord(
           metadata.optimized,
@@ -511,7 +534,7 @@ export async function runOptimizeDeps(
   }
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
+  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
@@ -532,7 +555,7 @@ async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const include = config.optimizeDeps?.include
   if (include) {
-    const resolve = config.createResolver({ asSrc: false })
+    const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of include) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
@@ -575,11 +598,13 @@ export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
 }
 
 export function getDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'deps'))
+  const dirName = config.command === 'build' ? 'depsBuild' : 'deps'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'processing'))
+  const dirName = config.command === 'build' ? 'processingBuild' : 'processing'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
@@ -605,7 +630,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
   }
 }
 
-function parseOptimizedDepsMetadata(
+function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string
 ): DepOptimizationMetadata | undefined {
@@ -659,7 +684,7 @@ function parseOptimizedDepsMetadata(
  * the next time the server start we need to use the global
  * browserHash to allow long term caching
  */
-function stringifyOptimizedDepsMetadata(
+function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
 ) {

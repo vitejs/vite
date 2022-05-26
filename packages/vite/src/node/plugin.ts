@@ -7,6 +7,7 @@ import type {
   TransformPluginContext,
   TransformResult
 } from 'rollup'
+export type { PluginContext } from 'rollup'
 import type { UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'

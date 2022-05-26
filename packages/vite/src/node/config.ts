@@ -145,6 +145,11 @@ export interface UserConfig {
    */
   preview?: PreviewOptions
   /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   * @experimental
+   */
+  force?: boolean
+  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -854,4 +859,14 @@ async function loadConfigFromBundledFile(
   const config = raw.__esModule ? raw.default : raw
   _require.extensions[extension] = defaultLoader
   return config
+}
+
+export function isDepsOptimizerEnabled(config: ResolvedConfig) {
+  const { command, optimizeDeps } = config
+  const { disabled } = optimizeDeps
+  return !(
+    disabled === true ||
+    (command === 'build' && disabled === 'build') ||
+    (command === 'serve' && optimizeDeps.disabled === 'dev')
+  )
 }
