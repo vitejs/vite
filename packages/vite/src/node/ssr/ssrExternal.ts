@@ -170,7 +170,7 @@ function createIsSsrExternal(
       return processedIds.get(id)
     }
     const external =
-      isBuiltin(id) || (isPackageEntry(id) && isConfiguredAsExternal(id))
+      isBuiltin(id) || (isConfiguredAsExternal(id) && isPackageEntry(id))
     processedIds.set(id, external)
     return external
   }
