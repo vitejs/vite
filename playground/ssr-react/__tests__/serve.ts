@@ -32,7 +32,7 @@ export async function serve() {
         outDir: 'dist/server',
         rollupOptions: {
           output: {
-            entryFileNames: 'entry-server.cjs'
+            entryFileNames: 'entry-server.js'
           }
         }
       }

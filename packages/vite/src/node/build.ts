@@ -33,8 +33,7 @@ import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import {
   cjsShouldExternalizeForSSR,
-  cjsSsrResolveExternals,
-  shouldExternalizeForSSR
+  cjsSsrResolveExternals
 } from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
@@ -379,8 +378,12 @@ async function doBuild(
 
   const userExternal = options.rollupOptions?.external
   let external = userExternal
-  if (ssr) {
-    external = await ssrResolveExternal(config, userExternal)
+
+  // In CJS, we can pass the externals to rollup as is. In ESM, we need to
+  // do it in the resolve plugin so we can add the resolved extension for
+  // deep node_modules imports
+  if (ssr && config.ssr?.target === 'node-cjs') {
+    external = await cjsSsrResolveExternal(config, userExternal)
   }
 
   if (isDepsOptimizerEnabled(config) && !ssr) {
@@ -685,53 +688,25 @@ export function onRollupWarning(
   }
 }
 
-async function ssrResolveExternal(
+async function cjsSsrResolveExternal(
   config: ResolvedConfig,
   user: ExternalOption | undefined
 ): Promise<ExternalOption> {
-  if (config.ssr?.target !== 'node-cjs') {
-    return esmSsrResolveExternal(config, user)
-  } else {
-    // see if we have cached deps data available
-    let knownImports: string[] | undefined
-    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
-    try {
-      const data = JSON.parse(
-        fs.readFileSync(dataPath, 'utf-8')
-      ) as DepOptimizationMetadata
-      knownImports = Object.keys(data.optimized)
-    } catch (e) {}
-    if (!knownImports) {
-      // no dev deps optimization data, do a fresh scan
-      knownImports = await findKnownImports(config)
-    }
-    return cjsSsrResolveExternal(
-      cjsSsrResolveExternals(config, knownImports),
-      user
-    )
+  // see if we have cached deps data available
+  let knownImports: string[] | undefined
+  const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(dataPath, 'utf-8')
+    ) as DepOptimizationMetadata
+    knownImports = Object.keys(data.optimized)
+  } catch (e) {}
+  if (!knownImports) {
+    // no dev deps optimization data, do a fresh scan
+    knownImports = await findKnownImports(config)
   }
-}
+  const ssrExternals = cjsSsrResolveExternals(config, knownImports)
 
-function esmSsrResolveExternal(
-  config: ResolvedConfig,
-  user: ExternalOption | undefined
-): ExternalOption {
-  return (id, parentId, isResolved) => {
-    if (user) {
-      const isUserExternal = resolveUserExternal(user, id, parentId, isResolved)
-      if (typeof isUserExternal === 'boolean') {
-        return isUserExternal
-      }
-    }
-    return shouldExternalizeForSSR(id, config)
-  }
-}
-
-// When ssr.format is node-cjs, this function reverts back to the 2.9 logic for externalization
-function cjsSsrResolveExternal(
-  ssrExternals: string[],
-  user: ExternalOption | undefined
-): ExternalOption {
   return (id, parentId, isResolved) => {
     const isExternal = cjsShouldExternalizeForSSR(id, ssrExternals)
     if (isExternal) {
