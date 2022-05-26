@@ -130,3 +130,28 @@
   const reusedName = 'reused'
   text('.reused-variable-names', reusedName)
 </script>
+
+<script type="module">
+  // should error on builtin modules (named import)
+  import { Buffer } from 'buffer'
+  // named imports error immediately
+</script>
+
+<script type="module">
+  // should error on builtin modules (default import)
+  import cp from 'child_process'
+  // must access property to error
+  cp.execSync()
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-esm'
+  read()
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-cjs'
+  read()
+</script>

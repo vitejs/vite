@@ -1,4 +1,11 @@
-import { getColor, isBuild, page } from '~utils'
+import {
+  browserErrors,
+  browserLogs,
+  getColor,
+  isBuild,
+  isServe,
+  page
+} from '~utils'
 
 test('default + named imports from cjs dep (react)', async () => {
   expect(await page.textContent('.cjs button')).toBe('count is 0')
@@ -63,7 +70,7 @@ test('import * from optimized dep', async () => {
 })
 
 test('import from dep with process.env.NODE_ENV', async () => {
-  expect(await page.textContent('.node-env')).toMatch(`prod`)
+  expect(await page.textContent('.node-env')).toMatch(`dev`)
 })
 
 test('import from dep with .notjs files', async () => {
@@ -108,4 +115,31 @@ test('import aliased package with colon', async () => {
 
 test('variable names are reused in different scripts', async () => {
   expect(await page.textContent('.reused-variable-names')).toBe('reused')
+})
+
+test.runIf(isServe)('error on builtin modules usage', () => {
+  expect(browserLogs).toEqual(
+    expect.arrayContaining([
+      // from dep-with-builtin-module-esm top-level try-catch
+      expect.stringContaining(
+        'dep-with-builtin-module-esm Error: Cannnot access "fs.readFileSync" in client code.'
+      ),
+      // from dep-with-builtin-module-esm top-level try-catch
+      expect.stringContaining(
+        'dep-with-builtin-module-cjs Error: Cannnot access "fs.readFileSync" in client code.'
+      )
+    ])
+  )
+
+  expect(browserErrors.map((error) => error.message)).toEqual(
+    expect.arrayContaining([
+      // from user source code
+      'Cannot access "buffer.Buffer" in client code.',
+      'Cannot access "child_process.execSyn" in client code.',
+      // from dep-with-builtin-module-esm read()
+      'Cannot access "fs.readFileSync" in client code.',
+      // from dep-with-builtin-module-esm read()
+      'Cannot access "fs.readFileSync" in client code.'
+    ])
+  )
 })
