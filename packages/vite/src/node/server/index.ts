@@ -28,7 +28,7 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { initDepsOptimizer, getDepsOptimizer } from '../optimizer'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
