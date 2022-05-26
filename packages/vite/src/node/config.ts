@@ -223,7 +223,7 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
 }
 
-export type SSRTarget = 'node' | 'webworker'
+export type SSRTarget = 'node' | 'webworker' | 'node-cjs'
 
 export interface SSROptions {
   external?: string[]

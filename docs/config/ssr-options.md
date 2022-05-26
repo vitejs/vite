@@ -20,7 +20,7 @@ Prevent listed dependencies from being externalized for SSR. If `true`, no depen
 
 ## ssr.target
 
-- **Type:** `'node' | 'webworker'`
+- **Type:** `'node' | 'webworker' | 'node-cjs'`
 - **Default:** `node`
 
 Build target for the SSR server.
