@@ -3,7 +3,7 @@ import path from 'path'
 import { performance } from 'perf_hooks'
 import glob from 'fast-glob'
 import type { Loader, OnLoadResult, Plugin } from 'esbuild'
-import { build } from 'esbuild'
+import { build, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -299,12 +299,17 @@ function esbuildScanPlugin(
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
+                // transpile because `transformGlobImport` only expects js
+                const transpiledContents = (
+                  await transform(contents, { loader })
+                ).code
+
                 scripts[key] = {
-                  loader: 'js',
+                  loader: 'js', // since it is transpiled
                   contents:
                     (
                       await transformGlobImport(
-                        contents,
+                        transpiledContents,
                         path,
                         config.root,
                         resolve
