@@ -6,6 +6,7 @@ import colors from 'picocolors'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
+import type { ImportSpecifier as EsModuleLexerImportSpecifier } from 'types/es-module-lexer'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -31,7 +32,13 @@ const isDebugEnabled = _debug('vite:deps').enabled
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
-export type ExportsData = ReturnType<typeof parse> & {
+export type { EsModuleLexerImportSpecifier }
+export type EsModuleLexerParseReturnType = readonly [
+  imports: ReadonlyArray<EsModuleLexerImportSpecifier>,
+  exports: ReadonlyArray<string>,
+  facade: boolean
+]
+export type ExportsData = EsModuleLexerParseReturnType & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
   hasReExports?: true
