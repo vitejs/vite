@@ -485,7 +485,7 @@ export async function runOptimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: true,
+    ignoreAnnotations: resolvedConfig.command !== 'build',
     metafile: true,
     define,
     plugins: [
