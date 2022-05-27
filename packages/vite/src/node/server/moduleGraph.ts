@@ -1,5 +1,4 @@
 import { extname } from 'path'
-import { parse as parseUrl } from 'url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import { isHTMLRequest } from '../plugins/html'
@@ -229,7 +228,7 @@ export class ModuleGraph {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
-    const { pathname, search, hash } = parseUrl(url)
+    const { pathname, search, hash } = new URL(url)
     if (ext && !pathname!.endsWith(ext)) {
       url = pathname + ext + (search || '') + (hash || '')
     }

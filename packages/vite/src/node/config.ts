@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { parse as parseUrl, pathToFileURL } from 'url'
+import { pathToFileURL } from 'url'
 import { performance } from 'perf_hooks'
 import { createRequire } from 'module'
 import colors from 'picocolors'
@@ -606,7 +606,7 @@ function resolveBaseUrl(
   if (isExternalUrl(base)) {
     if (!isBuild) {
       // get base from full url during dev
-      const parsed = parseUrl(base)
+      const parsed = new URL(base, 'http://vitejs.dev')
       base = parsed.pathname || '/'
     }
   } else {
