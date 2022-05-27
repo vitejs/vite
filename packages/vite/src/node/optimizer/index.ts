@@ -6,7 +6,6 @@ import colors from 'picocolors'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
-import type { ImportSpecifier as EsModuleLexerImportSpecifier } from 'types/es-module-lexer'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -32,18 +31,15 @@ const isDebugEnabled = _debug('vite:deps').enabled
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
-export type { EsModuleLexerImportSpecifier }
-export type EsModuleLexerParseReturnType = readonly [
-  imports: ReadonlyArray<EsModuleLexerImportSpecifier>,
-  exports: ReadonlyArray<string>,
+export type ExportsData = {
+  hasImports: boolean
+  exports: readonly string[]
   facade: boolean
-]
-export type ExportsData = EsModuleLexerParseReturnType & {
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
-  hasReExports?: true
+  hasReExports?: boolean
   // hint if the dep requires loading as jsx
-  jsxLoader?: true
+  jsxLoader?: boolean
 }
 
 export interface DepsOptimizer {
@@ -754,7 +750,6 @@ export async function extractExportsData(
   config: ResolvedConfig
 ): Promise<ExportsData> {
   await init
-  let exportsData: ExportsData
 
   const esbuildOptions = config.optimizeDeps?.esbuildOptions ?? {}
   if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
@@ -767,34 +762,48 @@ export async function extractExportsData(
       write: false,
       format: 'esm'
     })
-    exportsData = parse(result.outputFiles[0].text) as ExportsData
-  } else {
-    const entryContent = fs.readFileSync(filePath, 'utf-8')
-    try {
-      exportsData = parse(entryContent) as ExportsData
-    } catch {
-      const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
-      debug(
-        `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`
-      )
-      const transformed = await transformWithEsbuild(entryContent, filePath, {
-        loader
-      })
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader
-      }
-      exportsData = parse(transformed.code) as ExportsData
-      exportsData.jsxLoader = true
+    const [imports, exports, facade] = parse(result.outputFiles[0].text)
+    return {
+      hasImports: imports.length > 0,
+      exports,
+      facade
     }
-    for (const { ss, se } of exportsData[0]) {
+  }
+
+  let parseResult: ReturnType<typeof parse>
+  let usedJsxLoader = false
+
+  const entryContent = fs.readFileSync(filePath, 'utf-8')
+  try {
+    parseResult = parse(entryContent)
+  } catch {
+    const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
+    debug(
+      `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`
+    )
+    const transformed = await transformWithEsbuild(entryContent, filePath, {
+      loader
+    })
+    // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+    // This is useful for packages such as Gatsby.
+    esbuildOptions.loader = {
+      '.js': 'jsx',
+      ...esbuildOptions.loader
+    }
+    parseResult = parse(transformed.code)
+    usedJsxLoader = true
+  }
+
+  const [imports, exports, facade] = parseResult
+  const exportsData: ExportsData = {
+    hasImports: imports.length > 0,
+    exports,
+    facade,
+    hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
-      if (/export\s+\*\s+from/.test(exp)) {
-        exportsData.hasReExports = true
-      }
-    }
+      return /export\s+\*\s+from/.test(exp)
+    }),
+    jsxLoader: usedJsxLoader
   }
   return exportsData
 }
@@ -816,9 +825,9 @@ function needsInterop(
   ) {
     return true
   }
-  const [imports, exports] = exportsData
+  const { hasImports, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !imports.length) {
+  if (!exports.length && !hasImports) {
     return true
   }
 

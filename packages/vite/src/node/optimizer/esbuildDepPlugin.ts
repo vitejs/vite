@@ -171,20 +171,15 @@ export function esbuildDepPlugin(
         }
 
         let contents = ''
-        const data = exportsData[id]
-        const [imports, exports] = data
-        if (!imports.length && !exports.length) {
+        const { hasImports, exports, hasReExports } = exportsData[id]
+        if (!hasImports && !exports.length) {
           // cjs
           contents += `export default require("${relativePath}");`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
           }
-          if (
-            data.hasReExports ||
-            exports.length > 1 ||
-            exports[0] !== 'default'
-          ) {
+          if (hasReExports || exports.length > 1 || exports[0] !== 'default') {
             contents += `\nexport * from "${relativePath}"`
           }
         }
