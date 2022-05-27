@@ -46,6 +46,8 @@ export async function initDepsOptimizer(
   const { logger } = config
   const isBuild = config.command === 'build'
 
+  const scan = config.command !== 'build' && config.optimizeDeps.devScan
+
   const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
@@ -100,7 +102,7 @@ export async function initDepsOptimizer(
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
   if (!cachedMetadata) {
-    if (isBuild) {
+    if (!scan) {
       // Initialize discovered deps with manually added optimizeDeps.include info
       const discovered = await initialProjectDependencies(
         config,
@@ -460,9 +462,14 @@ export async function initDepsOptimizer(
       exportsData: extractExportsData(resolved, config)
     })
 
-    // Debounced rerun, let other missing dependencies be discovered before
-    // the running next optimizeDeps
-    if (!isBuild) {
+    // Until the first optimize run is called, avoid triggering processing
+    // We'll wait until the user codebase is eagerly processed by Vite so
+    // we can get a list of every missing dependency before giving to the
+    // browser a dependency that may be outdated, thus avoiding full page reloads
+
+    if (scan || firstRunCalled) {
+      // Debounced rerun, let other missing dependencies be discovered before
+      // the running next optimizeDeps
       debouncedProcessing()
     }
 

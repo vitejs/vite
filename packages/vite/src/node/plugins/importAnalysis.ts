@@ -49,7 +49,10 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  delayDepsOptimizerUntil
+} from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 
 const isDebug = !!process.env.DEBUG
@@ -183,7 +186,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const staticImportedUrls = new Set<string>()
+      const staticImportedUrls = new Set<{ url: string; id: string }>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -462,7 +465,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           importedUrls.add(urlWithoutBase)
           if (!isDynamicImport) {
             // for pre-transforming
-            staticImportedUrls.add(urlWithoutBase)
+            staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
@@ -601,13 +604,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
+      // TODO: we should also crawl dynamic imports
       if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach((url) => {
+        staticImportedUrls.forEach(({ url, id }) => {
           url = unwrapId(removeImportQuery(url)).replace(
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          transformRequest(url, server, { ssr }).catch((e) => {
+          const request = transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
@@ -615,6 +619,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
+          if (!config.optimizeDeps.devScan) {
+            delayDepsOptimizerUntil(config, id, () => request)
+          }
         })
       }
 
