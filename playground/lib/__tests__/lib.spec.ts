@@ -46,7 +46,7 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('preserve process.env', () => {
-    const es = readFile('dist/my-lib-custom-filename.es.mjs')
+    const es = readFile('dist/my-lib-custom-filename.mjs')
     const iife = readFile('dist/my-lib-custom-filename.iife.js')
     const umd = readFile('dist/my-lib-custom-filename.umd.js')
     expect(es).toMatch('process.env.NODE_ENV')
