@@ -64,7 +64,7 @@ export async function resolvePlugins(
       asSrc: true,
       getDepsOptimizer: () => getDepsOptimizer(config),
       shouldExternalize:
-        isBuild && config.ssr?.target !== 'node-cjs'
+        isBuild && config.build.ssr && config.ssr?.target !== 'node-cjs'
           ? (id) => shouldExternalizeForSSR(id, config)
           : undefined
     }),
