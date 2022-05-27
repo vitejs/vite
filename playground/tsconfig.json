@@ -2,13 +2,20 @@
   "include": ["."],
   "exclude": ["**/dist/**"],
   "compilerOptions": {
-    "target": "es2019",
+    "target": "ES2020",
+    "module": "ESNext",
     "outDir": "dist",
+    "baseUrl": ".",
     "allowJs": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "baseUrl": ".",
+    "resolveJsonModule": true,
+    "moduleResolution": "Node",
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
     "jsx": "preserve",
-    "types": ["vite/client", "vitest/globals", "node"]
+    "types": ["vite/client", "vitest/globals", "node"],
+    "paths": {
+      "~utils": ["./test-utils.ts"]
+    }
   }
 }

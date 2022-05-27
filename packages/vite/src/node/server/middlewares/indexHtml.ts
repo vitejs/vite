@@ -19,15 +19,16 @@ import { send } from '../send'
 import {
   CLIENT_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX,
-  NULL_BYTE_PLACEHOLDER
+  NULL_BYTE_PLACEHOLDER,
+  VALID_ID_PREFIX
 } from '../../constants'
 import {
   cleanUrl,
+  ensureWatchedFile,
   fsPathFromId,
-  normalizePath,
   injectQuery,
-  ensureWatchedFile
+  normalizePath,
+  processSrcSetSync
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -79,7 +80,7 @@ const processNodeUrl = (
     }
   }
   if (startsWithSingleSlashRE.test(url)) {
-    // prefix with base
+    // prefix with base (dev only, base is never relative)
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
@@ -92,18 +93,23 @@ const processNodeUrl = (
     originalUrl !== '/' &&
     htmlPath === '/index.html'
   ) {
+    const replacer = (url: string) =>
+      path.posix.join(
+        config.base,
+        path.posix.relative(originalUrl, config.base),
+        url.slice(1)
+      )
+
     // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
     // path will add `/a/` prefix, it will caused 404.
-    // rewrite before `./index.js` -> `localhost:3000/a/index.js`.
-    // rewrite after `../index.js` -> `localhost:3000/index.js`.
+    // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
+    // rewrite after `../index.js` -> `localhost:5173/index.js`.
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${path.posix.join(
-        path.posix.relative(originalUrl, '/'),
-        url.slice(1)
-      )}"`,
-      { contentOnly: true }
+      node.name === 'srcset'
+        ? `"${processSrcSetSync(url, ({ url }) => replacer(url))}"`
+        : `"${replacer(url)}"`
     )
   }
 }
@@ -159,7 +165,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // add HTML Proxy to Map
     addToHTMLProxyCache(config, proxyCacheUrl, inlineModuleIndex, { code, map })
 
-    // inline js module. convert to src="proxy"
+    // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served

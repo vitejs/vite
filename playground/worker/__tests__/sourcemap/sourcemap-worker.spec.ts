@@ -1,14 +1,14 @@
 import fs from 'fs'
 import path from 'path'
-import { isBuild, testDir } from '../../../testUtils'
+import { isBuild, testDir } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('sourcemap generation for web workers', async () => {
-    const assetsDir = path.resolve(testDir(), 'dist/iife-sourcemap/assets')
+    const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(26)
+    expect(files.length).toBe(30)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)

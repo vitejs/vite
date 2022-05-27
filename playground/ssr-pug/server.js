@@ -14,10 +14,7 @@ const DYNAMIC_SCRIPTS = `
   <script type="module" src="/src/app.js"></script>
 `
 
-async function createServer(
-  root = process.cwd(),
-  isProd = process.env.NODE_ENV === 'production'
-) {
+async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
   const app = express()
@@ -36,6 +33,9 @@ async function createServer(
         // misses change events, so enforce polling for consistency
         usePolling: true,
         interval: 100
+      },
+      hmr: {
+        port: hmrPort
       }
     }
   })
@@ -66,8 +66,8 @@ async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(3000, () => {
-      console.log('http://localhost:3000')
+    app.listen(5173, () => {
+      console.log('http://localhost:5173')
     })
   )
 }

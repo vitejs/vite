@@ -1,20 +1,19 @@
 import path from 'path'
+import type * as http from 'http'
 import sirv from 'sirv'
 import connect from 'connect'
-import compression from './server/middlewares/compression'
-import type { Server } from 'http'
-import type { InlineConfig, ResolvedConfig } from '.'
-import { resolveConfig } from '.'
 import type { Connect } from 'types/connect'
+import corsMiddleware from 'cors'
 import type { ResolvedServerOptions } from './server'
 import type { CommonServerOptions } from './http'
-import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from './http'
+import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from './http'
 import { openBrowser } from './server/openBrowser'
-import corsMiddleware from 'cors'
+import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname } from './utils'
 import { printCommonServerUrls } from './logger'
-import type * as http from 'http'
+import { resolveConfig } from '.'
+import type { InlineConfig, ResolvedConfig } from '.'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -47,7 +46,7 @@ export interface PreviewServer {
   /**
    * native Node http server instance
    */
-  httpServer: Server
+  httpServer: http.Server
   /**
    * Print server urls
    */
@@ -61,10 +60,9 @@ export type PreviewServerHook = (server: {
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
- * @experimental
  */
 export async function preview(
-  inlineConfig: InlineConfig
+  inlineConfig: InlineConfig = {}
 ): Promise<PreviewServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'production')
 
@@ -106,7 +104,7 @@ export async function preview(
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: true
+      single: config.spa
     })
   )
 

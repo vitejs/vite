@@ -15,6 +15,7 @@ module.exports = {
         }
       }
     },
+    'process.env.NODE_ENV': '"dev"',
     'process.env.SOMEVAR': '"SOMEVAR"',
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,

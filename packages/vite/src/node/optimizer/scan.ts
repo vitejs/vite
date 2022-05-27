@@ -1,32 +1,32 @@
 import fs from 'fs'
 import path from 'path'
+import { performance } from 'perf_hooks'
 import glob from 'fast-glob'
+import type { Loader, OnLoadResult, Plugin } from 'esbuild'
+import { build, transform } from 'esbuild'
+import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import type { Loader, Plugin, OnLoadResult } from 'esbuild'
-import { build } from 'esbuild'
 import {
-  KNOWN_ASSET_TYPES,
   JS_TYPES_RE,
-  SPECIAL_QUERY_RE,
-  OPTIMIZABLE_ENTRY_RE
+  KNOWN_ASSET_TYPES,
+  OPTIMIZABLE_ENTRY_RE,
+  SPECIAL_QUERY_RE
 } from '../constants'
 import {
-  createDebugger,
-  normalizePath,
-  isObject,
   cleanUrl,
-  moduleListContains,
-  externalRE,
+  createDebugger,
   dataUrlRE,
+  externalRE,
+  isObject,
+  moduleListContains,
   multilineCommentsRE,
+  normalizePath,
   singlelineCommentsRE,
-  virtualModuleRE,
-  virtualModulePrefix
+  virtualModulePrefix,
+  virtualModuleRE
 } from '../utils'
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
-import { performance } from 'perf_hooks'
-import colors from 'picocolors'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 
 const debug = createDebugger('vite:deps')
@@ -277,6 +277,8 @@ function esbuildScanPlugin(
             let loader: Loader = 'js'
             if (lang === 'ts' || lang === 'tsx' || lang === 'jsx') {
               loader = lang
+            } else if (path.endsWith('.astro')) {
+              loader = 'ts'
             }
             const srcMatch = openTag.match(srcRE)
             if (srcMatch) {
@@ -297,17 +299,26 @@ function esbuildScanPlugin(
 
               const key = `${path}?id=${scriptId++}`
               if (contents.includes('import.meta.glob')) {
+                let transpiledContents
+                // transpile because `transformGlobImport` only expects js
+                if (loader !== 'js') {
+                  transpiledContents = (await transform(contents, { loader }))
+                    .code
+                } else {
+                  transpiledContents = contents
+                }
+
                 scripts[key] = {
-                  loader: 'js',
+                  loader: 'js', // since it is transpiled
                   contents:
                     (
                       await transformGlobImport(
-                        contents,
+                        transpiledContents,
                         path,
                         config.root,
                         resolve
                       )
-                    )?.s.toString() || contents
+                    )?.s.toString() || transpiledContents
                 }
               } else {
                 scripts[key] = {

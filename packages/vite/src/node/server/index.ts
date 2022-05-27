@@ -2,18 +2,39 @@ import fs from 'fs'
 import path from 'path'
 import type * as net from 'net'
 import type * as http from 'http'
+import { performance } from 'perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
-import type { AddressInfo } from 'net'
 import chokidar from 'chokidar'
+import type { FSWatcher, WatchOptions } from 'types/chokidar'
+import type { Connect } from 'types/connect'
+import launchEditorMiddleware from 'launch-editor-middleware'
+import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
-import { resolveHttpsConfig, resolveHttpServer, httpServerStart } from '../http'
+import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { mergeConfig, resolveConfig } from '../config'
+import { isDepsOptimizerEnabled, resolveConfig } from '../config'
+import {
+  isParentDirectory,
+  mergeConfig,
+  normalizePath,
+  resolveHostname
+} from '../utils'
+import { ssrLoadModule } from '../ssr/ssrModuleLoader'
+import { resolveSSRExternal } from '../ssr/ssrExternal'
+import {
+  rebindErrorStacktrace,
+  ssrRewriteStacktrace
+} from '../ssr/ssrStacktrace'
+import { ssrTransform } from '../ssr/ssrTransform'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
+import { CLIENT_DIR } from '../constants'
+import type { Logger } from '../logger'
+import { printCommonServerUrls } from '../logger'
+import { invalidatePackageData } from '../packages'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
-import type { FSWatcher, WatchOptions } from 'types/chokidar'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -25,46 +46,23 @@ import {
   indexHtmlMiddleware
 } from './middlewares/indexHtml'
 import {
-  serveRawFsMiddleware,
   servePublicMiddleware,
+  serveRawFsMiddleware,
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
-import type { Connect } from 'types/connect'
-import { isParentDirectory, normalizePath } from '../utils'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
-import { handleHMRUpdate, handleFileAddUnlink } from './hmr'
+import { handleFileAddUnlink, handleHMRUpdate } from './hmr'
 import { openBrowser } from './openBrowser'
-import launchEditorMiddleware from 'launch-editor-middleware'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
-import { ssrLoadModule } from '../ssr/ssrModuleLoader'
-import { resolveSSRExternal } from '../ssr/ssrExternal'
-import {
-  rebindErrorStacktrace,
-  ssrRewriteStacktrace
-} from '../ssr/ssrStacktrace'
-import { ssrTransform } from '../ssr/ssrTransform'
-import { createOptimizedDeps } from '../optimizer/registerMissing'
-import type { OptimizedDeps } from '../optimizer'
-import { resolveHostname } from '../utils'
 import { searchForWorkspaceRoot } from './searchRoot'
-import { CLIENT_DIR } from '../constants'
-import type { Logger } from '../logger'
-import { printCommonServerUrls } from '../logger'
-import { performance } from 'perf_hooks'
-import { invalidatePackageData } from '../packages'
-import type { SourceMap } from 'rollup'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions extends CommonServerOptions {
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
   /**
    * Configure HMR-specific options (port, host, path & protocol)
    */
@@ -95,8 +93,6 @@ export interface ServerOptions extends CommonServerOptions {
   origin?: string
   /**
    * Pre-transform known direct imports
-   *
-   * @experimental this option is experimental and might be changed in the future
    * @default true
    */
   preTransformRequests?: boolean
@@ -131,8 +127,6 @@ export interface FileSystemServeOptions {
    * Glob patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
-   *
-   * @experimental
    */
   deny?: string[]
 }
@@ -196,7 +190,6 @@ export interface ViteDevServer {
   ): Promise<string>
   /**
    * Transform module code into SSR format.
-   * @experimental
    */
   ssrTransform(
     code: string,
@@ -236,10 +229,6 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
-  /**
-   * @internal
-   */
-  _optimizedDeps: OptimizedDeps | null
   /**
    * @internal
    */
@@ -333,12 +322,12 @@ export async function createServer(
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       if (!server._ssrExternals) {
         let knownImports: string[] = []
-        const optimizedDeps = server._optimizedDeps
-        if (optimizedDeps) {
-          await optimizedDeps.scanProcessing
+        const depsOptimizer = getDepsOptimizer(config)
+        if (depsOptimizer) {
+          await depsOptimizer.scanProcessing
           knownImports = [
-            ...Object.keys(optimizedDeps.metadata.optimized),
-            ...Object.keys(optimizedDeps.metadata.discovered)
+            ...Object.keys(depsOptimizer.metadata.optimized),
+            ...Object.keys(depsOptimizer.metadata.discovered)
           ]
         }
         server._ssrExternals = resolveSSRExternal(config, knownImports)
@@ -395,7 +384,6 @@ export async function createServer(
       return server._restartPromise
     },
 
-    _optimizedDeps: null,
     _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
@@ -457,7 +445,7 @@ export async function createServer(
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
-      serverConfig.port = (httpServer.address() as AddressInfo).port
+      serverConfig.port = (httpServer.address() as net.AddressInfo).port
     })
   }
 
@@ -496,12 +484,6 @@ export async function createServer(
   // open in editor support
   middlewares.use('/__open-in-editor', launchEditorMiddleware())
 
-  // hmr reconnect ping
-  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  middlewares.use('/__vite_ping', function viteHMRPingMiddleware(_, res) {
-    res.end('pong')
-  })
-
   // serve static files under /public
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
@@ -516,8 +498,10 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
+  const isMiddlewareMode = middlewareMode && middlewareMode !== 'html'
+
   // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (config.spa && !isMiddlewareMode) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -526,9 +510,12 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (config.spa && !isMiddlewareMode) {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
+  }
+
+  if (!isMiddlewareMode) {
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
@@ -540,9 +527,9 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const initOptimizer = () => {
-    if (!config.optimizeDeps.disabled) {
-      server._optimizedDeps = createOptimizedDeps(server)
+  const initOptimizer = async () => {
+    if (isDepsOptimizerEnabled(config)) {
+      await initDepsOptimizer(config, server)
     }
   }
 
@@ -554,7 +541,7 @@ export async function createServer(
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          initOptimizer()
+          await initOptimizer()
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -565,7 +552,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    initOptimizer()
+    await initOptimizer()
   }
 
   return server
@@ -582,7 +569,7 @@ async function startServer(
   }
 
   const options = server.config.server
-  const port = inlinePort ?? options.port ?? 3000
+  const port = inlinePort ?? options.port ?? 5173
   const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'

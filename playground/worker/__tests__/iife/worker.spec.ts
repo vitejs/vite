@@ -1,15 +1,15 @@
 import fs from 'fs'
 import path from 'path'
-import { untilUpdated, isBuild, testDir } from '../../../testUtils'
 import type { Page } from 'playwright-chromium'
 import { test } from 'vitest'
+import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
   await page.click('.ping')
   await untilUpdated(() => page.textContent('.pong'), 'pong')
   await untilUpdated(
     () => page.textContent('.mode'),
-    isBuild ? 'production' : 'development'
+    process.env.NODE_ENV // match workerImport.js
   )
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
@@ -63,9 +63,9 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
-    const assetsDir = path.resolve(testDir(), 'dist/iife/assets')
+    const assetsDir = path.resolve(testDir, 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(13)
+    expect(files.length).toBe(15)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -104,6 +104,12 @@ test('module worker', async () => {
 test('classic worker', async () => {
   expect(await page.textContent('.classic-worker')).toMatch('A classic')
   expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+})
+
+test('url query worker', async () => {
+  expect(await page.textContent('.simple-worker-url')).toMatch(
+    'Hello from simple worker!'
+  )
 })
 
 test('import.meta.glob eager in worker', async () => {

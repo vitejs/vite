@@ -1,14 +1,17 @@
-// this is automatically detected by scripts/vitestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
 import path from 'path'
-import { ports } from '../../testUtils'
+import kill from 'kill-port'
+import { hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-pug']
 
-export async function serve(root, isProd) {
-  const { createServer } = require(path.resolve(root, 'server.js'))
-  const { app, vite } = await createServer(root, isProd)
+export async function serve() {
+  await kill(port)
+
+  const { createServer } = require(path.resolve(rootDir, 'server.js'))
+  const { app, vite } = await createServer(rootDir, hmrPorts['ssr-pug'])
 
   return new Promise((resolve, reject) => {
     try {

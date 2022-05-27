@@ -2,12 +2,12 @@ import { posix } from 'path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { normalizePath, parseRequest, requestQuerySplitRE } from '../utils'
 import { parse as parseJS } from 'acorn'
 import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
+import type { Plugin } from '../plugin'
+import type { ResolvedConfig } from '../config'
+import { normalizePath, parseRequest, requestQuerySplitRE } from '../utils'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
@@ -117,7 +117,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const { include, exclude, warnOnError } =
     config.build.dynamicImportVarsOptions
   const filter = createFilter(include, exclude)
-  const isBuild = config.command === 'build'
+
   return {
     name: 'vite:dynamic-import-vars',
 
@@ -206,10 +206,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: s.toString(),
-          map:
-            !isBuild || config.build.sourcemap
-              ? s.generateMap({ hires: true })
-              : null
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
         }
       }
     }

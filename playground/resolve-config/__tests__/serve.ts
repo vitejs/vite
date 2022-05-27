@@ -1,15 +1,16 @@
-// this is automatically detected by scripts/vitestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
 import path from 'path'
 import fs from 'fs-extra'
+import { isBuild, rootDir } from '~utils'
 
 const configNames = ['js', 'cjs', 'mjs', 'ts']
 
-export async function serve(root: string, isProd: boolean) {
-  if (!isProd) return
+export async function serve() {
+  if (!isBuild) return
 
-  const fromTestDir = (...p: string[]) => path.resolve(root, '..', ...p)
+  const fromTestDir = (...p: string[]) => path.resolve(rootDir, '..', ...p)
 
   // create separate directories for all config types:
   // ./{js,cjs,mjs,ts} and ./{js,cjs,mjs,ts}-module (with package#type)

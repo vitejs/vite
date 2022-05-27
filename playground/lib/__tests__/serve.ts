@@ -1,25 +1,30 @@
-// this is automatically detected by scripts/vitestSetup.ts and will replace
+// this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
 import path from 'path'
 import http from 'http'
 import sirv from 'sirv'
-import { ports } from '../../testUtils'
+import {
+  isBuild,
+  page,
+  ports,
+  rootDir,
+  serverLogs,
+  setViteUrl,
+  viteTestUrl
+} from '~utils'
 
 export const port = ports.lib
 
-export async function serve(root, isBuildTest) {
-  // @ts-expect-error
-  global.serverLogs = []
-
+export async function serve() {
   setupConsoleWarnCollector()
 
-  if (!isBuildTest) {
-    const { createServer } = require('vite')
+  if (!isBuild) {
+    const { createServer } = await import('vite')
     process.env.VITE_INLINE = 'inline-serve'
     const viteServer = await (
       await createServer({
-        root: root,
+        root: rootDir,
         logLevel: 'silent',
         server: {
           watch: {
@@ -28,7 +33,7 @@ export async function serve(root, isBuildTest) {
           },
           host: true,
           fs: {
-            strict: !isBuildTest
+            strict: !isBuild
           }
         },
         build: {
@@ -38,28 +43,26 @@ export async function serve(root, isBuildTest) {
     ).listen()
     // use resolved port/base from server
     const base = viteServer.config.base === '/' ? '' : viteServer.config.base
-    const url =
-      // @ts-expect-error
-      (global.viteTestUrl = `http://localhost:${viteServer.config.server.port}${base}`)
-    await page.goto(url)
+    setViteUrl(`http://localhost:${viteServer.config.server.port}${base}`)
+    await page.goto(viteTestUrl)
 
     return viteServer
   } else {
-    const { build } = require('vite')
+    const { build } = await import('vite')
     await build({
-      root,
+      root: rootDir,
       logLevel: 'silent',
       configFile: path.resolve(__dirname, '../vite.config.js')
     })
 
     await build({
-      root,
+      root: rootDir,
       logLevel: 'warn', // output esbuild warns
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
     })
 
     // start static file server
-    const serve = sirv(path.resolve(root, 'dist'))
+    const serve = sirv(path.resolve(rootDir, 'dist'))
     const httpServer = http.createServer((req, res) => {
       if (req.url === '/ping') {
         res.statusCode = 200
@@ -92,8 +95,7 @@ export async function serve(root, isBuildTest) {
 function setupConsoleWarnCollector() {
   const warn = console.warn
   console.warn = (...args) => {
-    // @ts-expect-error
-    global.serverLogs.push(args.join(' '))
+    serverLogs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

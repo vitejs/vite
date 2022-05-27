@@ -31,16 +31,16 @@ jobs:
         os: [ubuntu-latest]
         node_version: [14, 16, 18]
         include:
+          # Active LTS + other OS
           - os: macos-latest
             node_version: 16
-          - os: macos-latest
-            node_version: 18
           - os: windows-latest
             node_version: 16
-          # Maybe bug with jest on windows and node-v18
-          # - os: windows-latest
-          #   node_version: 18
       fail-fast: false
+
+    env:
+      # Install playwright's binray under node_modules so it will be cached together
+      PLAYWRIGHT_BROWSERS_PATH: "0"
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
@@ -59,14 +59,11 @@ jobs:
       - name: Install deps
         run: pnpm install
 
-      - name: Build vite
-        run: pnpm run ci-build-vite
+      - name: Install Playwright
+        run: pnpm playwright install
 
-      - name: Build plugin-vue
-        run: pnpm run build-plugin-vue
-
-      - name: Build plugin-react
-        run: pnpm run build-plugin-react
+      - name: Build
+        run: pnpm run build
 
       - name: Test unit
         run: pnpm run test-unit
@@ -76,6 +73,9 @@ jobs:
 
       - name: Test build
         run: pnpm run test-build
+
+      - name: Test docs
+        run: pnpm run test-docs
 
   lint:
     timeout-minutes: 10
@@ -97,14 +97,17 @@ jobs:
 
       - name: Install deps
         run: pnpm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
-      - name: Prepare
-        run: |
-          pnpm run ci-build-vite
-          pnpm run build-plugin-vue
+      - name: Build
+        run: pnpm run build
 
       - name: Lint
         run: pnpm run lint
 
       - name: Check formatting
         run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck

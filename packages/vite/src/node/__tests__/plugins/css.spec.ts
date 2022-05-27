@@ -1,8 +1,8 @@
-import { cssUrlRE, cssPlugin, hoistAtRules } from '../../plugins/css'
-import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
-import { describe, vi, test, expect } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import { resolveConfig } from '../../config'
+import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -72,7 +72,7 @@ describe('css path resolutions', () => {
 
     const mockFs = vi
       .spyOn(fs, 'readFile')
-      // @ts-ignore jest.spyOn not recognize overrided `fs.readFile` definition.
+      // @ts-ignore vi.spyOn not recognize override `fs.readFile` definition.
       .mockImplementationOnce((p, encoding, callback) => {
         expect(p).toBe(path.join(mockedProjectPath, mockedBarCssRelativePath))
         expect(encoding).toBe('utf-8')

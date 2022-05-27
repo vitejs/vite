@@ -1,15 +1,15 @@
-import fs from 'fs'
-import path from 'path'
+import { readFileSync } from 'fs'
 import {
   editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
+  page,
   removeFile,
-  testDir,
+  serverLogs,
   untilUpdated
-} from '../../testUtils'
+} from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
 // in later assertions to ensure CSS HMR doesn't reload the page
@@ -395,7 +395,7 @@ test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
-    require('fs').readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
+    readFileSync(require.resolve('../raw-imported.css'), 'utf-8')
   )
 })
 
@@ -415,9 +415,5 @@ test("relative path rewritten in Less's data-uri", async () => {
 test('PostCSS source.input.from includes query', async () => {
   const code = await page.textContent('.postcss-source-input')
   // should resolve assets
-  expect(code).toContain(
-    isBuild
-      ? '/postcss-source-input.css?used&query=foo'
-      : '/postcss-source-input.css?query=foo'
-  )
+  expect(code).toContain('/postcss-source-input.css?query=foo')
 })

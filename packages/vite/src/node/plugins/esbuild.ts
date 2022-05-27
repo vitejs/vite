@@ -1,33 +1,33 @@
 import path from 'path'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
 import type {
-  Message,
   Loader,
+  Message,
   TransformOptions,
   TransformResult
 } from 'esbuild'
 import { transform } from 'esbuild'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { SourceMap } from 'rollup'
+import { createFilter } from '@rollup/pluginutils'
+import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
 import type { ResolvedConfig, ViteDevServer } from '..'
-import { createFilter } from '@rollup/pluginutils'
-import { combineSourcemaps } from '../utils'
-import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
-import { parse, findAll, TSConfckParseError } from 'tsconfck'
+import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /(.*)(var [^\s]+=function\([^)]*?\){"use strict";)(.*)/
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/
 const INJECT_HELPERS_UMD_RE =
   /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/
 

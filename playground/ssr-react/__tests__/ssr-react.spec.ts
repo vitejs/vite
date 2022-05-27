@@ -1,6 +1,6 @@
-import { editFile, untilUpdated } from '../../testUtils'
-import { port } from './serve'
 import fetch from 'node-fetch'
+import { port } from './serve'
+import { browserLogs, editFile, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -40,6 +40,7 @@ test('/', async () => {
 })
 
 test('hmr', async () => {
+  await page.goto(url)
   editFile('src/pages/Home.jsx', (code) =>
     code.replace('<h1>Home', '<h1>changed')
   )
@@ -47,6 +48,7 @@ test('hmr', async () => {
 })
 
 test('client navigation', async () => {
+  await page.goto(url)
   await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
@@ -56,7 +58,7 @@ test('client navigation', async () => {
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
 
-test(`circular dependecies modules doesn't throw`, async () => {
+test(`circular dependencies modules doesn't throw`, async () => {
   await page.goto(url)
   expect(await page.textContent('.circ-dep-init')).toMatch(
     'circ-dep-init-a circ-dep-init-b'

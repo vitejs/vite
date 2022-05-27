@@ -1,15 +1,19 @@
+import { describe, expect, test } from 'vitest'
 import {
+  browserLogs,
+  editFile,
   findAssetFile,
   getBg,
   getColor,
   isBuild,
   listAssets,
-  readManifest,
-  readFile,
-  editFile,
   notifyRebuildComplete,
-  untilUpdated
-} from '../../testUtils'
+  page,
+  readFile,
+  readManifest,
+  untilUpdated,
+  watcher
+} from '~utils'
 
 const assetMatch = isBuild
   ? /\/foo\/assets\/asset\.\w{8}\.png/
@@ -188,7 +192,7 @@ describe('image', () => {
       expect(s).toMatch(
         isBuild
           ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
-          : /\.\/nested\/asset\.png \d{1}x/
+          : /\/foo\/nested\/asset\.png \d{1}x/
       )
     })
   })
@@ -342,4 +346,9 @@ test('html import word boundary', async () => {
     'ignore object import prop'
   )
   expect(await page.textContent('.string-import-express')).toMatch('no load')
+})
+
+test('relative path in html asset', async () => {
+  expect(await page.textContent('.relative-js')).toMatch('hello')
+  expect(await getColor('.relative-css')).toMatch('red')
 })

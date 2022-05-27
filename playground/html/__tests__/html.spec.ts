@@ -1,4 +1,5 @@
-import { getColor, isBuild, editFile, isServe } from '../../testUtils'
+import { beforeAll, describe, expect, test } from 'vitest'
+import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -65,6 +66,13 @@ function testPage(isNested: boolean) {
     expect(await getColor('h1')).toBe(isNested ? 'red' : 'blue')
     expect(await getColor('p')).toBe('grey')
   })
+
+  if (isNested) {
+    test('relative path in html asset', async () => {
+      expect(await page.textContent('.relative-js')).toMatch('hello')
+      expect(await getColor('.relative-css')).toMatch('red')
+    })
+  }
 }
 
 describe('main', () => {
@@ -79,7 +87,6 @@ describe('main', () => {
 
 describe('nested', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/')
   })
 
@@ -88,7 +95,6 @@ describe('nested', () => {
 
 describe('nested w/ query', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/nested/index.html?v=1')
   })
 
@@ -98,7 +104,6 @@ describe('nested w/ query', () => {
 describe.runIf(isBuild)('build', () => {
   describe('scriptAsync', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptAsync.html')
     })
 
@@ -110,7 +115,6 @@ describe.runIf(isBuild)('build', () => {
 
   describe('scriptMixed', () => {
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/scriptMixed.html')
     })
 
@@ -124,7 +128,6 @@ describe.runIf(isBuild)('build', () => {
     // Ensure that the modulePreload polyfill is discarded in this case
 
     beforeAll(async () => {
-      // viteTestUrl is globally injected in scripts/vitestSetup.ts
       await page.goto(viteTestUrl + '/zeroJS.html')
     })
 
@@ -168,7 +171,6 @@ describe.runIf(isBuild)('build', () => {
 
 describe('noHead', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noHead.html')
   })
 
@@ -183,7 +185,6 @@ describe('noHead', () => {
 
 describe('noBody', () => {
   beforeAll(async () => {
-    // viteTestUrl is globally injected in scripts/vitestSetup.ts
     await page.goto(viteTestUrl + '/noBody.html')
   })
 
@@ -197,17 +198,17 @@ describe('noBody', () => {
   })
 })
 
-describe('unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
     )
-    expect(await page.textContent('h1')).toBe('unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 
   test('spa fallback', async () => {
     await page.goto(viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/')
-    expect(await page.textContent('h1')).toBe('unicode-path')
+    expect(await page.textContent('h1')).toBe('Unicode path')
   })
 })
 
@@ -226,7 +227,7 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should reload when fixed', async () => {
-    const response = await page.goto(viteTestUrl + '/invalid.html')
+    await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
       return content.replace('<div Bad', '<div> Good')
     })

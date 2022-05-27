@@ -1,9 +1,10 @@
+import { URL } from 'url'
 import {
   extractSourcemap,
   formatSourcemapForSnapshot,
-  isServe
-} from '../../testUtils'
-import { URL } from 'url'
+  isServe,
+  page
+} from '~utils'
 
 describe.runIf(isServe)('serve:vue-sourcemap', () => {
   const getStyleTagContentIncluding = async (content: string) => {
@@ -14,36 +15,14 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
         return text
       }
     }
-    throw new Error('Not found')
+    throw new Error('Style not found: ' + content)
   }
 
   test('js', async () => {
     const res = await page.request.get(new URL('./Js.vue', page.url()).href)
     const js = await res.text()
     const map = extractSourcemap(js)
-    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-      {
-        "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
-        "sources": [
-          "/root/Js.vue",
-        ],
-        "sourcesContent": [
-          "<template>
-        <p>&lt;js&gt;</p>
-      </template>
-
-      <script>
-      console.log('script')
-      </script>
-
-      <script setup>
-      console.log('setup')
-      </script>
-      ",
-        ],
-        "version": 3,
-      }
-    `)
+    expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
   })
 
   test('ts', async () => {
@@ -52,7 +31,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
+        "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
         "sources": [
           "/root/Ts.vue",
         ],

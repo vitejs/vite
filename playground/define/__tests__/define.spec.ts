@@ -1,5 +1,8 @@
+import viteConfig from '../vite.config'
+import { page } from '~utils'
+
 test('string', async () => {
-  const defines = require('../vite.config.js').define
+  const defines = viteConfig.define
 
   expect(await page.textContent('.exp')).toBe(
     String(typeof eval(defines.__EXP__))
@@ -10,6 +13,9 @@ test('string', async () => {
 
   expect(await page.textContent('.object')).toBe(
     JSON.stringify(defines.__OBJ__, null, 2)
+  )
+  expect(await page.textContent('.process-node-env')).toBe(
+    JSON.parse(defines['process.env.NODE_ENV'])
   )
   expect(await page.textContent('.env-var')).toBe(
     JSON.parse(defines['process.env.SOMEVAR'])

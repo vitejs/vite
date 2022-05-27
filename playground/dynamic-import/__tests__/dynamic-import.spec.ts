@@ -1,4 +1,4 @@
-import { getColor, isBuild, untilUpdated } from '../../testUtils'
+import { getColor, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -71,7 +71,7 @@ test('should load dynamic import with vars', async () => {
 test('should load dynamic import with vars alias', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-alias'),
-    'hello',
+    'hi',
     true
   )
 })

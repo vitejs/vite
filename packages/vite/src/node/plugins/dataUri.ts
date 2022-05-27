@@ -1,8 +1,8 @@
 // This is based on @rollup/plugin-data-uri
 // MIT Licensed https://github.com/rollup/plugins/blob/master/LICENSE
 // ref https://github.com/vitejs/vite/issues/1428#issuecomment-757033808
-import type { Plugin } from '../plugin'
 import { URL } from 'url'
+import type { Plugin } from '../plugin'
 
 const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
 
