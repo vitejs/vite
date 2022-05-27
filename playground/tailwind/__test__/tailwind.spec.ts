@@ -89,10 +89,10 @@ if (!isBuild) {
   })
 
   describe('tailwindcss html hmr', () => {
-      test('shouldn\'t full-reload', async () => {
-        await page.goto(viteTestUrl)
-        editFile('hmr.html', (code) => code)
-        try {
+    test("shouldn't full-reload", async () => {
+      await page.goto(viteTestUrl)
+      editFile('hmr.html', (code) => code)
+      try {
         await page.waitForNavigation({ timeout: 500 })
       } catch (err) {
         const errMsg = 'page.waitForNavigation: Timeout 500ms exceeded.'

@@ -5,7 +5,7 @@ module.exports = {
     // Look https://github.com/vitejs/vite/pull/6959 for more details
     __dirname + '/src/{components,views}/**/*.vue',
     __dirname + '/src/App.vue',
-    __dirname + '/*.html',
+    __dirname + '/*.html'
   ],
   darkMode: false, // or 'media' or 'class'
   theme: {
