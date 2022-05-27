@@ -16,7 +16,7 @@ const debug = createDebugger('vite:optimize-deps')
 const runOptimizerIfIdleAfterMs = 100
 
 interface RunProcessingInfo {
-  ids: { id: string; done: () => Promise<void> }[]
+  ids: { id: string; done: () => Promise<any> }[]
   seenIds: Set<string>
   workersSources: Set<string>
   waitingOn: string | undefined
@@ -51,10 +51,10 @@ export function registerWorkersSource(config: ResolvedConfig, id: string) {
   }
 }
 
-function delayDepsOptimizerUntil(
+export function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
-  done: () => Promise<void>
+  done: () => Promise<any>
 ) {
   const info = getRunProcessingInfo(config)
   if (
@@ -97,6 +97,22 @@ function runOptimizerWhenIdle(config: ResolvedConfig) {
 export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
+
+    buildStart() {
+      if (!config.isWorker) {
+        initRunProcessingInfo(config)
+      }
+    },
+
+    async resolveId(id) {
+      if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
+        return id
+      }
+    },
+
+    // this.load({ id }) isn't implemented in PluginContainer
+    // The logic to register an id to wait until it is processed
+    // is in importAnalysis, see call to delayDepsOptimizerUntil
 
     async load(id) {
       const depsOptimizer = getDepsOptimizer(config)
