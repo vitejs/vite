@@ -49,10 +49,11 @@
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "run-s build-temp-types patch-types roll-types",
+    "build-types": "run-s build-temp-types patch-types roll-types check-dist-types",
     "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
     "patch-types": "esno scripts/patchTypes.ts",
     "roll-types": "api-extractor run && rimraf temp",
+    "check-dist-types": "tsc --project tsconfig.check.json",
     "lint": "eslint --ext .ts src/**",
     "format": "prettier --write --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
