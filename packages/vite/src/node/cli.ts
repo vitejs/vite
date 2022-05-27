@@ -25,6 +25,7 @@ interface GlobalCLIOptions {
   filter?: string
   m?: string
   mode?: string
+  force?: boolean
 }
 
 /**
@@ -97,24 +98,24 @@ cli
 
       const info = server.config.logger.info
 
+      // @ts-ignore
+      const viteStartTime = global.__vite_start_time ?? false
+      const startupDurationString = viteStartTime
+        ? colors.dim(
+            `ready in ${colors.white(
+              colors.bold(Math.ceil(performance.now() - viteStartTime))
+            )} ms`
+          )
+        : ''
+
       info(
-        colors.cyan(`\n  vite v${VERSION}`) +
-          colors.green(` dev server running at:\n`),
-        {
-          clear: !server.config.logger.hasWarned
-        }
+        `\n  ${colors.green(
+          `${colors.bold('VITE')} v${VERSION}`
+        )}  ${startupDurationString}\n`,
+        { clear: !server.config.logger.hasWarned }
       )
 
       server.printUrls()
-
-      // @ts-ignore
-      if (global.__vite_start_time) {
-        // @ts-ignore
-        const startupDuration = performance.now() - global.__vite_start_time
-        info(
-          `\n  ${colors.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`
-        )
-      }
     } catch (e) {
       createLogger(options.logLevel).error(
         colors.red(`error when starting dev server:\n${e.stack}`),
@@ -153,6 +154,10 @@ cli
   .option('--manifest [name]', `[boolean | string] emit build manifest json`)
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
+    '--force',
+    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`
+  )
+  .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
   )
@@ -169,6 +174,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
+        force: options.force,
         build: buildOptions
       })
     } catch (e) {

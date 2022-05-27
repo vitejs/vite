@@ -36,7 +36,10 @@ export type {
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
-  OptimizedDeps
+  DepsOptimizer,
+  EsModuleLexerImportSpecifier,
+  EsModuleLexerParseReturnType,
+  ExportsData
 } from './optimizer'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'
