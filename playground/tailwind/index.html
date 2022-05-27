@@ -10,5 +10,13 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script type="module">
+      if (import.meta.hot) {
+        import.meta.hot.on('vite:beforeFullReload', (data) => {
+          if (data.path)
+            console.log('data.path: ' + data.path)
+        })
+      }
+    </script>
   </body>
 </html>

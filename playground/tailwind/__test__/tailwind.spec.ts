@@ -1,11 +1,13 @@
 import {
-  isBuild,
-  editFile,
-  untilUpdated,
-  getColor,
-  getBgColor,
   browserLogs,
-  page
+  editFile,
+  getBgColor,
+  getColor,
+  isBuild,
+  page,
+  timeout,
+  untilUpdated,
+  viteTestUrl
 } from '~utils'
 
 test('should render', async () => {
@@ -84,5 +86,27 @@ if (!isBuild) {
     ])
 
     browserLogs.length = 0
+  })
+
+  describe('tailwindcss html hmr', () => {
+      test('shouldn\'t full-reload', async () => {
+        await page.goto(viteTestUrl)
+        editFile('hmr.html', (code) => code)
+        try {
+        await page.waitForNavigation({ timeout: 500 })
+      } catch (err) {
+        const errMsg = 'page.waitForNavigation: Timeout 500ms exceeded.'
+        expect(err.message.slice(0, errMsg.length)).toBe(errMsg)
+      }
+    })
+
+    test('data.path should be defined', async () => {
+      browserLogs.length = 0
+      await page.goto(viteTestUrl)
+      editFile('hmr.html', (code) => code)
+      await timeout(500)
+      expect(browserLogs.includes('data.path: /hmr.html')).toBeTruthy()
+      browserLogs.length = 0
+    })
   })
 }

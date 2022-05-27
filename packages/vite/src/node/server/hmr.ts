@@ -167,7 +167,8 @@ export function updateModules(
       timestamp: true
     })
     ws.send({
-      type: 'full-reload'
+      type: 'full-reload',
+      path: '/' + file
     })
   } else {
     config.logger.info(

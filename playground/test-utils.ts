@@ -68,7 +68,7 @@ function rgbToHex(rgb: string): string {
   }
 }
 
-const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
+export const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
 
 async function toEl(el: string | ElementHandle): Promise<ElementHandle> {
   if (typeof el === 'string') {
