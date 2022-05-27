@@ -425,7 +425,7 @@ export function lexAcceptedHmrDeps(
 
 function error(pos: number) {
   const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
+    `import.meta.hot.accept() can only accept string literals or an ` +
       `Array of string literals.`
   ) as RollupError
   err.pos = pos
