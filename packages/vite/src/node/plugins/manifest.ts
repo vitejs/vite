@@ -101,7 +101,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       function createAsset(chunk: OutputAsset): ManifestChunk {
         return {
-          file: chunk.fileName
+          file: chunk.fileName,
+          src: chunk.name
         }
       }
 
