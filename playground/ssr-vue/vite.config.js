@@ -9,6 +9,7 @@ const nestedVirtualId = '\0' + nestedVirtualFile
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  base: '/test/',
   plugins: [
     vuePlugin(),
     vueJsx(),
