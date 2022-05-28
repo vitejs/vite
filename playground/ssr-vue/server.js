@@ -29,6 +29,7 @@ async function createServer(
   let vite
   if (!isProd) {
     vite = await require('vite').createServer({
+      base: '/test/',
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {
@@ -49,6 +50,7 @@ async function createServer(
   } else {
     app.use(require('compression')())
     app.use(
+      '/test/',
       require('serve-static')(resolve('dist/client'), {
         index: false
       })
