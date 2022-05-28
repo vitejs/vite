@@ -35,7 +35,7 @@ export default defineConfig({
     },
 
     carbonAds: {
-      carbon: 'CEBIEK3N',
+      code: 'CEBIEK3N',
       placement: 'vitejsdev'
     },
 
