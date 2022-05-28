@@ -15,7 +15,7 @@ export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
     !config.build.ssr ||
     !config.resolve.dedupe?.length ||
     config.ssr?.noExternal === true ||
-    config.ssr?.target !== 'node-cjs' ||
+    config.ssr?.format !== 'cjs' ||
     isBuildOutputEsm(config)
   ) {
     return null

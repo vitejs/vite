@@ -362,7 +362,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // skip ssr external
           if (ssr) {
-            if (config.ssr?.target === 'node-cjs') {
+            if (config.ssr?.format === 'cjs') {
               if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)) {
                 continue
               }
