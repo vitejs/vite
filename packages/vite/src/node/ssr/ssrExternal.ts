@@ -18,7 +18,7 @@ const debug = createDebugger('vite:ssr-external')
 /**
  * Converts "parent > child" syntax to just "child"
  */
-export function stripNesting(packages: string[]) {
+export function stripNesting(packages: string[]): string[] {
   return packages.map((s) => {
     const arr = s.split('>')
     return arr[arr.length - 1].trim()

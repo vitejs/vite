@@ -861,7 +861,7 @@ async function loadConfigFromBundledFile(
   return config
 }
 
-export function isDepsOptimizerEnabled(config: ResolvedConfig) {
+export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
   const { command, optimizeDeps } = config
   const { disabled } = optimizeDeps
   return !(

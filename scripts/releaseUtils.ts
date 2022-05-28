@@ -4,7 +4,7 @@
 import { existsSync, readdirSync, writeFileSync } from 'fs'
 import path from 'path'
 import colors from 'picocolors'
-import type { Options as ExecaOptions } from 'execa'
+import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
 import execa from 'execa'
 import type { ReleaseType } from 'semver'
 import semver from 'semver'
@@ -39,7 +39,18 @@ export const versionIncrements: ReleaseType[] = [
   // 'prerelease'
 ]
 
-export function getPackageInfo(pkgName: string) {
+interface Pkg {
+  name: string
+  version: string
+  private?: boolean
+}
+export function getPackageInfo(pkgName: string): {
+  pkg: Pkg
+  pkgName: string
+  pkgDir: string
+  pkgPath: string
+  currentVersion: string
+} {
   const pkgDir = path.resolve(__dirname, '../packages/' + pkgName)
 
   if (!existsSync(pkgDir)) {
@@ -47,11 +58,7 @@ export function getPackageInfo(pkgName: string) {
   }
 
   const pkgPath = path.resolve(pkgDir, 'package.json')
-  const pkg: {
-    name: string
-    version: string
-    private?: boolean
-  } = require(pkgPath)
+  const pkg: Pkg = require(pkgPath)
   const currentVersion = pkg.version
 
   if (pkg.private) {
@@ -71,7 +78,7 @@ export async function run(
   bin: string,
   args: string[],
   opts: ExecaOptions<string> = {}
-) {
+): Promise<ExecaReturnValue<string>> {
   return execa(bin, args, { stdio: 'inherit', ...opts })
 }
 
@@ -79,7 +86,7 @@ export async function dryRun(
   bin: string,
   args: string[],
   opts?: ExecaOptions<string>
-) {
+): Promise<void> {
   return console.log(
     colors.blue(`[dryrun] ${bin} ${args.join(' ')}`),
     opts || ''
@@ -88,11 +95,15 @@ export async function dryRun(
 
 export const runIfNotDry = isDryRun ? dryRun : run
 
-export function step(msg: string) {
+export function step(msg: string): void {
   return console.log(colors.cyan(msg))
 }
 
-export function getVersionChoices(currentVersion: string) {
+interface VersionChoice {
+  title: string
+  value: string
+}
+export function getVersionChoices(currentVersion: string): VersionChoice[] {
   const currentBeta = currentVersion.includes('beta')
   const currentAlpha = currentVersion.includes('alpha')
   const isStable = !currentBeta && !currentAlpha
@@ -101,7 +112,7 @@ export function getVersionChoices(currentVersion: string) {
     return semver.inc(currentVersion, i, tag)!
   }
 
-  let versionChoices = [
+  let versionChoices: VersionChoice[] = [
     {
       title: 'next',
       value: inc(isStable ? 'patch' : 'prerelease')
@@ -175,7 +186,7 @@ export async function publishPackage(
   })
 }
 
-export async function getLatestTag(pkgName: string) {
+export async function getLatestTag(pkgName: string): Promise<string> {
   const tags = (await run('git', ['tag'], { stdio: 'pipe' })).stdout
     .split(/\n/)
     .filter(Boolean)
@@ -186,7 +197,7 @@ export async function getLatestTag(pkgName: string) {
     .reverse()[0]
 }
 
-export async function logRecentCommits(pkgName: string) {
+export async function logRecentCommits(pkgName: string): Promise<void> {
   const tag = await getLatestTag(pkgName)
   if (!tag) return
   const sha = await run('git', ['rev-list', '-n', '1', tag], {
@@ -214,7 +225,7 @@ export async function logRecentCommits(pkgName: string) {
   console.log()
 }
 
-export async function updateTemplateVersions() {
+export async function updateTemplateVersions(): Promise<void> {
   const viteVersion = (await fs.readJSON('../packages/vite/package.json'))
     .version
   if (/beta|alpha|rc/.test(viteVersion)) return
