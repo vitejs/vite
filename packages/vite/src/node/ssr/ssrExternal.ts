@@ -170,7 +170,9 @@ function createIsSsrExternal(
       return processedIds.get(id)
     }
     const external =
-      isBuiltin(id) || (isConfiguredAsExternal(id) && isPackageEntry(id))
+      !id.startsWith('.') &&
+      !path.isAbsolute(id) &&
+      (isBuiltin(id) || (isConfiguredAsExternal(id) && isPackageEntry(id)))
     processedIds.set(id, external)
     return external
   }
