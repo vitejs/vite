@@ -13,7 +13,8 @@
       "type": "object",
       "properties": {
         "src": {
-          "type": "string"
+          "type": "string",
+          "description": "Source file of the chunk."
         },
         "file": {
           "type": "string",
@@ -45,6 +46,7 @@
         },
         "imports": {
           "type": "array",
+          "description": "Imports of the chunk.",
           "items": {
             "type": "string",
             "description": "A key for an existing JS entry in the manifest."
@@ -52,6 +54,7 @@
         },
         "dynamicImports": {
           "type": "array",
+          "description": "Dynamic imports of the chunk.",
           "items": {
             "type": "string",
             "description": "A key for an existing JS entry in the manifest."
