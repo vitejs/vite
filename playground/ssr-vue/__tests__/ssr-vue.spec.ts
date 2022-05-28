@@ -10,20 +10,20 @@ import {
   untilUpdated
 } from '~utils'
 
-const url = `http://localhost:${port}/test`
+const url = `http://localhost:${port}/test/`
 
 test('vuex can be import succeed by named import', async () => {
   // wait networkidle for dynamic optimize vuex
-  await page.goto(url + '/store', { waitUntil: 'networkidle' })
+  await page.goto(url + 'store', { waitUntil: 'networkidle' })
   expect(await page.textContent('h1')).toMatch('bar')
 
   // raw http request
-  const storeHtml = await (await fetch(url + '/store')).text()
+  const storeHtml = await (await fetch(url + 'store')).text()
   expect(storeHtml).toMatch('bar')
 })
 
 test('/about', async () => {
-  await page.goto(url + '/about')
+  await page.goto(url + 'about')
   expect(await page.textContent('h1')).toMatch('About')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -31,7 +31,7 @@ test('/about', async () => {
   })
 
   // fetch sub route
-  const aboutHtml = await (await fetch(url + '/about')).text()
+  const aboutHtml = await (await fetch(url + 'about')).text()
   expect(aboutHtml).toMatch('About')
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
@@ -51,7 +51,7 @@ test('/about', async () => {
 })
 
 test('/external', async () => {
-  await page.goto(url + '/external')
+  await page.goto(url + 'external')
   expect(await page.textContent('div')).toMatch(
     'Example external component content'
   )
@@ -61,7 +61,7 @@ test('/external', async () => {
   })
 
   // fetch sub route
-  const externalHtml = await (await fetch(url + '/external')).text()
+  const externalHtml = await (await fetch(url + 'external')).text()
   expect(externalHtml).toMatch('Example external component content')
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS

@@ -59,10 +59,7 @@ async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      let url = req.originalUrl
-      if (isProd) {
-        url = url.replace('/test/', '/')
-      }
+      const url = req.originalUrl.replace('/test/', '/')
 
       let template, render
       if (!isProd) {
@@ -95,8 +92,8 @@ async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(5173, () => {
-      console.log('http://localhost:5173')
+    app.listen(6173, () => {
+      console.log('http://localhost:6173')
     })
   )
 }
