@@ -30,48 +30,50 @@ SOFTWARE.
 */
 
 import fs from 'fs'
-import { resolve, join } from 'path'
-import type { Plugin } from '../plugin'
+import { join, resolve } from 'path'
+import { performance } from 'perf_hooks'
+import { createRequire } from 'module'
 import type {
+  EmittedFile,
   InputOptions,
+  LoadResult,
   MinimalPluginContext,
-  OutputOptions,
   ModuleInfo,
   NormalizedInputOptions,
+  OutputOptions,
   PartialResolvedId,
   ResolvedId,
-  PluginContext as RollupPluginContext,
-  LoadResult,
-  SourceDescription,
-  EmittedFile,
-  SourceMap,
   RollupError,
+  PluginContext as RollupPluginContext,
+  SourceDescription,
+  SourceMap,
   TransformResult
 } from 'rollup'
 import * as acorn from 'acorn'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import { combineSourcemaps } from '../utils'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
+import colors from 'picocolors'
+import type * as postcss from 'postcss'
+import type { Plugin } from '../plugin'
 import {
+  cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
-  isObject,
   isExternalUrl,
+  isObject,
   normalizePath,
   numberToPos,
   prettifyUrl,
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
-import { performance } from 'perf_hooks'
-import type * as postcss from 'postcss'
 
 export interface PluginContainerOptions {
   cwd?: string
@@ -90,6 +92,10 @@ export interface PluginContainer {
     options?: {
       skip?: Set<Plugin>
       ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -141,13 +147,28 @@ export async function createPluginContainer(
   const debugPluginTransform = createDebugger('vite:plugin-transform', {
     onlyWhenFocused: 'vite:plugin'
   })
+  const debugSourcemapCombineFlag = 'vite:sourcemap-combine'
+  const isDebugSourcemapCombineFocused = process.env.DEBUG?.includes(
+    debugSourcemapCombineFlag
+  )
+  const debugSourcemapCombineFilter =
+    process.env.DEBUG_VITE_SOURCEMAP_COMBINE_FILTER
+  const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
+    onlyWhenFocused: true
+  })
 
   // ---------------------------------------------------------------------------
 
   const watchFiles = new Set<string>()
 
+  // TODO: use import()
+  const _require = createRequire(import.meta.url)
+
   // get rollup version
-  const rollupPkgPath = resolve(require.resolve('rollup'), '../../package.json')
+  const rollupPkgPath = resolve(
+    _require.resolve('rollup'),
+    '../../package.json'
+  )
   const minimalContext: MinimalPluginContext = {
     meta: {
       rollupVersion: JSON.parse(fs.readFileSync(rollupPkgPath, 'utf-8'))
@@ -212,6 +233,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
     _activeCode: string | null = null
@@ -241,7 +263,11 @@ export async function createPluginContainer(
         skip = new Set(this._resolveSkips)
         skip.add(this._activePlugin)
       }
-      let out = await container.resolveId(id, importer, { skip, ssr: this.ssr })
+      let out = await container.resolveId(id, importer, {
+        skip,
+        ssr: this.ssr,
+        scan: this._scan
+      })
       if (typeof out === 'string') out = { id: out }
       return out as ResolvedId | null
     }
@@ -407,6 +433,16 @@ export async function createPluginContainer(
     }
 
     _getCombinedSourcemap(createIfNull = false) {
+      if (
+        debugSourcemapCombineFilter &&
+        this.filename.includes(debugSourcemapCombineFilter)
+      ) {
+        debugSourcemapCombine('----------', this.filename)
+        debugSourcemapCombine(this.combinedMap)
+        debugSourcemapCombine(this.sourcemapChain)
+        debugSourcemapCombine('----------')
+      }
+
       let combinedMap = this.combinedMap
       for (let m of this.sourcemapChain) {
         if (typeof m === 'string') m = JSON.parse(m)
@@ -419,7 +455,7 @@ export async function createPluginContainer(
         if (!combinedMap) {
           combinedMap = m as SourceMap
         } else {
-          combinedMap = combineSourcemaps(this.filename, [
+          combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             {
               ...(m as RawSourceMap),
               sourcesContent: combinedMap.sourcesContent
@@ -433,7 +469,7 @@ export async function createPluginContainer(
           ? new MagicString(this.originalCode).generateMap({
               includeContent: true,
               hires: true,
-              source: this.filename
+              source: cleanUrl(this.filename)
             })
           : null
       }
@@ -487,8 +523,10 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
+      const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0
 
@@ -505,7 +543,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr }
+          { ssr, scan }
         )
         if (!result) continue
 
@@ -594,6 +632,10 @@ export async function createPluginContainer(
           if (result.code !== undefined) {
             code = result.code
             if (result.map) {
+              if (isDebugSourcemapCombineFocused) {
+                // @ts-expect-error inject plugin name for debug purpose
+                result.map.name = plugin.name
+              }
               ctx.sourcemapChain.push(result.map)
             }
           }

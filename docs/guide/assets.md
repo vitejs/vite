@@ -103,8 +103,17 @@ function getImageUrl(name) {
 }
 ```
 
-During the production build, Vite will perform necessary transforms so that the URLs still point to the correct location even after bundling and asset hashing.
+During the production build, Vite will perform necessary transforms so that the URLs still point to the correct location even after bundling and asset hashing. However, the URL string must be static so it can be analyzed, otherwise the code will be left as is, which can cause runtime errors if `build.target` does not support `import.meta.url`
 
-::: warning Note: Does not work with SSR
+```js
+// Vite will not transform this
+const imgUrl = new URL(imagePath, import.meta.url).href
+```
+
+::: warning Does not work with SSR
 This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` have different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
+:::
+
+::: warning `target` needs to be `es2020` or higher
+This pattern will not work if [build-target](https://vitejs.dev/config/#build-target) or [optimizedeps.esbuildoptions.target](https://vitejs.dev/config/#optimizedeps-esbuildoptions) is set to a value lower than `es2020`.
 :::

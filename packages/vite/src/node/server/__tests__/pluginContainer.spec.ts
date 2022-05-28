@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'

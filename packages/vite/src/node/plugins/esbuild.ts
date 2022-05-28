@@ -1,30 +1,35 @@
 import path from 'path'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
 import type {
-  Message,
   Loader,
+  Message,
   TransformOptions,
   TransformResult
 } from 'esbuild'
 import { transform } from 'esbuild'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { SourceMap } from 'rollup'
+import { createFilter } from '@rollup/pluginutils'
+import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
+  combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
 import type { ResolvedConfig, ViteDevServer } from '..'
-import { createFilter } from '@rollup/pluginutils'
-import { combineSourcemaps } from '../utils'
-import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
-import { parse, findAll, TSConfckParseError } from 'tsconfck'
+import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
+
+const INJECT_HELPERS_IIFE_RE =
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/
+const INJECT_HELPERS_UMD_RE =
+  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/
 
 let server: ViteDevServer
 
@@ -81,6 +86,7 @@ export async function transformWithEsbuild(
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
     const meaningfulFields: Array<keyof TSCompilerOptions> = [
+      'target',
       'jsxFactory',
       'jsxFragmentFactory',
       'useDefineForClassFields',
@@ -97,13 +103,6 @@ export async function transformWithEsbuild(
           // @ts-ignore TypeScript can't tell they are of the same type
           compilerOptionsForFile[field] = loadedCompilerOptions[field]
         }
-      }
-
-      // align with TypeScript 4.3
-      // https://github.com/microsoft/TypeScript/pull/42663
-      if (loadedCompilerOptions.target?.toLowerCase() === 'esnext') {
-        compilerOptionsForFile.useDefineForClassFields =
-          loadedCompilerOptions.useDefineForClassFields ?? true
       }
     }
 
@@ -260,6 +259,26 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
             }
           : undefined)
       })
+
+      if (config.build.lib) {
+        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+        // names are minified potentially causing collision with other globals.
+        // We use a regex to inject the helpers inside the wrappers.
+        // We don't need to create a MagicString here because both the helpers and
+        // the headers don't modify the sourcemap
+        const injectHelpers =
+          opts.format === 'umd'
+            ? INJECT_HELPERS_UMD_RE
+            : opts.format === 'iife'
+            ? INJECT_HELPERS_IIFE_RE
+            : undefined
+        if (injectHelpers) {
+          res.code = res.code.replace(
+            injectHelpers,
+            (_, helpers, header, rest) => header + helpers + rest
+          )
+        }
+      }
       return res
     }
   }

@@ -1,6 +1,6 @@
 # JavaScript API
 
-Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VSCode to leverage the intellisense and validation.
+Vite's JavaScript APIs are fully typed, and it's recommended to use TypeScript or enable JS type checking in VS Code to leverage the intellisense and validation.
 
 ## `createServer`
 
@@ -29,6 +29,10 @@ const { createServer } = require('vite')
   server.printUrls()
 })()
 ```
+
+::: tip NOTE
+When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.`<wbr>`NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.`<wbr>`NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
+:::
 
 ## `InlineConfig`
 
@@ -147,8 +151,6 @@ const { build } = require('vite')
 ```
 
 ## `preview`
-
-**Experimental**
 
 **Type Signature:**
 

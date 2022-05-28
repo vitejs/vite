@@ -1,13 +1,14 @@
 import path from 'path'
-import type { Plugin, ImportKind } from 'esbuild'
+import { promises as fs } from 'fs'
+import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'
 import {
-  isRunningWithYarnPnp,
   flattenId,
-  normalizePath,
   isExternalUrl,
-  moduleListContains
+  isRunningWithYarnPnp,
+  moduleListContains,
+  normalizePath
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import type { ExportsData } from '.'
@@ -37,8 +38,7 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig,
-  ssr?: boolean
+  config: ResolvedConfig
 ): Plugin {
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = config.optimizeDeps.extensions
@@ -48,12 +48,13 @@ export function esbuildDepPlugin(
     : externalTypes
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false, scan: true })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
-    isRequire: true
+    isRequire: true,
+    scan: true
   })
 
   const resolve = (
@@ -72,7 +73,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined)
   }
 
   return {
@@ -170,20 +171,15 @@ export function esbuildDepPlugin(
         }
 
         let contents = ''
-        const data = exportsData[id]
-        const [imports, exports] = data
-        if (!imports.length && !exports.length) {
+        const { hasImports, exports, hasReExports } = exportsData[id]
+        if (!hasImports && !exports.length) {
           // cjs
           contents += `export default require("${relativePath}");`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
           }
-          if (
-            data.hasReExports ||
-            exports.length > 1 ||
-            exports[0] !== 'default'
-          ) {
+          if (hasReExports || exports.length > 1 || exports[0] !== 'default') {
             contents += `\nexport * from "${relativePath}"`
           }
         }
@@ -220,7 +216,7 @@ export function esbuildDepPlugin(
           })
         )
         build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await require('fs').promises.readFile(args.path),
+          contents: await fs.readFile(args.path),
           loader: 'default'
         }))
       }
