@@ -10,20 +10,20 @@ import {
   untilUpdated
 } from '~utils'
 
-const url = `http://localhost:${port}`
+const url = `http://localhost:${port}/test/`
 
 test('vuex can be import succeed by named import', async () => {
   // wait networkidle for dynamic optimize vuex
-  await page.goto(url + '/store', { waitUntil: 'networkidle' })
+  await page.goto(url + 'store', { waitUntil: 'networkidle' })
   expect(await page.textContent('h1')).toMatch('bar')
 
   // raw http request
-  const storeHtml = await (await fetch(url + '/store')).text()
+  const storeHtml = await (await fetch(url + 'store')).text()
   expect(storeHtml).toMatch('bar')
 })
 
 test('/about', async () => {
-  await page.goto(url + '/about')
+  await page.goto(url + 'about')
   expect(await page.textContent('h1')).toMatch('About')
   // should not have hydration mismatch
   browserLogs.forEach((msg) => {
@@ -31,27 +31,27 @@ test('/about', async () => {
   })
 
   // fetch sub route
-  const aboutHtml = await (await fetch(url + '/about')).text()
+  const aboutHtml = await (await fetch(url + 'about')).text()
   expect(aboutHtml).toMatch('About')
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(aboutHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
     )
     expect(aboutHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
     )
     expect(aboutHtml).toMatch(
-      /link rel="stylesheet".*?href="\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
     )
   }
 })
 
 test('/external', async () => {
-  await page.goto(url + '/external')
+  await page.goto(url + 'external')
   expect(await page.textContent('div')).toMatch(
     'Example external component content'
   )
@@ -61,18 +61,18 @@ test('/external', async () => {
   })
 
   // fetch sub route
-  const externalHtml = await (await fetch(url + '/external')).text()
+  const externalHtml = await (await fetch(url + 'external')).text()
   expect(externalHtml).toMatch('Example external component content')
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(externalHtml).not.toMatch(
-      /link rel="modulepreload".*?href="\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
     )
     expect(externalHtml).not.toMatch(
-      /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
     )
     expect(externalHtml).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/External\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/External\.\w{8}\.js"/
     )
   }
 })
@@ -90,23 +90,23 @@ test('/', async () => {
   if (isBuild) {
     // assert correct preload directive generation for async chunks and CSS
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/Home\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Home\.\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/assets\/Home\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Home\.\w{8}\.css"/
     )
     // JSX component preload registration
     expect(html).toMatch(
-      /link rel="modulepreload".*?href="\/assets\/Foo\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/Foo\.\w{8}\.js"/
     )
     expect(html).toMatch(
-      /link rel="stylesheet".*?href="\/assets\/Foo\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/Foo\.\w{8}\.css"/
     )
     expect(html).not.toMatch(
-      /link rel="modulepreload".*?href="\/assets\/About\.\w{8}\.js"/
+      /link rel="modulepreload".*?href="\/test\/assets\/About\.\w{8}\.js"/
     )
     expect(html).not.toMatch(
-      /link rel="stylesheet".*?href="\/assets\/About\.\w{8}\.css"/
+      /link rel="stylesheet".*?href="\/test\/assets\/About\.\w{8}\.css"/
     )
   }
 })
@@ -132,7 +132,7 @@ test('asset', async () => {
   })
   const img = await page.$('img')
   expect(await img.getAttribute('src')).toMatch(
-    isBuild ? /\/assets\/logo\.\w{8}\.png/ : '/src/assets/logo.png'
+    isBuild ? /\/test\/assets\/logo\.\w{8}\.png/ : '/src/assets/logo.png'
   )
 })
 
@@ -166,13 +166,13 @@ test('hmr', async () => {
 
 test('client navigation', async () => {
   await page.goto(url)
-  await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
-  await page.click('a[href="/about"]')
+  await untilUpdated(() => page.textContent('a[href="/test/about"]'), 'About')
+  await page.click('a[href="/test/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')
   editFile('src/pages/About.vue', (code) => code.replace('About', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
-  await page.click('a[href="/"]')
-  await untilUpdated(() => page.textContent('a[href="/"]'), 'Home')
+  await page.click('a[href="/test/"]')
+  await untilUpdated(() => page.textContent('a[href="/test/"]'), 'Home')
 })
 
 test('import.meta.url', async () => {
@@ -183,7 +183,8 @@ test('import.meta.url', async () => {
 test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
   await page.goto(url)
   const homeHtml = await (await fetch(url)).text()
-  const re = /link rel="modulepreload".*?href="\/assets\/(Home\.\w{8}\.js)"/
+  const re =
+    /link rel="modulepreload".*?href="\/test\/assets\/(Home\.\w{8}\.js)"/
   const filename = re.exec(homeHtml)[1]
   const manifest = require(resolve(
     process.cwd(),

@@ -59,7 +59,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.push(`/${file}`)
+                      deps.push(join(config.base, file))
                     })
                     chunk.imports.forEach(addDeps)
                   }
