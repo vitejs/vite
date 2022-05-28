@@ -1,14 +1,25 @@
+// import fs from 'fs'
 import path from 'path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
+import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { bareImportRE, combineSourcemaps, isRelativeBase } from '../utils'
+import {
+  cleanUrl,
+  combineSourcemaps,
+  isDataUrl,
+  isExternalUrl,
+  isRelativeBase,
+  moduleListContains
+} from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { isCSSRequest, removedPureCssFilesCache } from './css'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { removedPureCssFilesCache } from './css'
+import { transformCjsImport } from './importAnalysis'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -24,6 +35,10 @@ export const preloadHelperId = '\0vite/preload-helper'
 const preloadMarkerWithQuote = `"${preloadMarker}"` as const
 
 const dynamicImportPrefixRE = /import\s*\(/
+
+// TODO: abstract
+const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
+const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
 
 /**
  * Helper for preloading CSS and direct imports of async chunks in parallel to
@@ -107,7 +122,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:build-import-analysis',
-
     resolveId(id) {
       if (id === preloadHelperId) {
         return id
@@ -140,6 +154,65 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length) {
         return null
       }
+
+      const { root } = config
+      const depsOptimizer = getDepsOptimizer(config)
+
+      const normalizeUrl = async (
+        url: string,
+        pos: number
+      ): Promise<[string, string]> => {
+        let importerFile = importer
+
+        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+          if (depsOptimizer) {
+            await depsOptimizer.scanProcessing
+
+            // if the dependency encountered in the optimized file was excluded from the optimization
+            // the dependency needs to be resolved starting from the original source location of the optimized file
+            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+            // (that is, if it is under node_modules directory in the package source of the optimized file)
+            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+              if (!optimizedModule.src) continue // Ignore chunks
+              if (optimizedModule.file === importer) {
+                importerFile = optimizedModule.src
+              }
+            }
+          }
+        }
+
+        const resolved = await this.resolve(url, importerFile)
+
+        if (!resolved) {
+          // in ssr, we should let node handle the missing modules
+          if (ssr) {
+            return [url, url]
+          }
+          this.error(
+            `Failed to resolve import "${url}" from "${path.relative(
+              process.cwd(),
+              importerFile
+            )}". Does the file exist?`,
+            pos
+          )
+        }
+
+        // normalize all imports into resolved URLs
+        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
+        if (resolved.id.startsWith(root + '/')) {
+          // in root: infer short absolute path from root
+          url = resolved.id.slice(root.length)
+        } else {
+          url = resolved.id
+        }
+
+        if (isExternalUrl(url)) {
+          return [url, url]
+        }
+
+        return [url, resolved.id]
+      }
+
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
@@ -154,9 +227,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex
         } = imports[index]
 
-        const isDynamic = dynamicIndex > -1
+        const isDynamicImport = dynamicIndex > -1
 
-        if (isDynamic && insertPreload) {
+        if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
@@ -167,25 +240,88 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        // Differentiate CSS imports that use the default export from those that
-        // do not by injecting a ?used query - this allows us to avoid including
-        // the CSS string when unnecessary (esbuild has trouble tree-shaking
-        // them)
-        if (
-          specifier &&
-          isCSSRequest(specifier) &&
-          // always inject ?used query when it is a dynamic import
-          // because there is no way to check whether the default export is used
-          (source.slice(expStart, start).includes('from') || isDynamic) &&
-          // already has ?used query (by import.meta.glob)
-          !specifier.match(/\?used(&|$)/) &&
-          // edge case for package names ending with .css (e.g normalize.css)
-          !(bareImportRE.test(specifier) && !specifier.includes('/'))
-        ) {
-          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
-          str().overwrite(start, end, isDynamic ? `'${url}'` : url, {
-            contentOnly: true
-          })
+        if (!depsOptimizer) {
+          continue
+        }
+
+        // static import or valid string in dynamic import
+        // If resolvable, let's resolve it
+        if (specifier) {
+          // skip external / data uri
+          if (isExternalUrl(specifier) || isDataUrl(specifier)) {
+            continue
+          }
+
+          // normalize
+          const [url, resolvedId] = await normalizeUrl(specifier, start)
+
+          if (url !== specifier) {
+            if (
+              depsOptimizer.isOptimizedDepFile(resolvedId) &&
+              !resolvedId.match(optimizedDepChunkRE)
+            ) {
+              const file = cleanUrl(resolvedId) // Remove ?v={hash}
+
+              const needsInterop = await optimizedDepNeedsInterop(
+                depsOptimizer.metadata,
+                file,
+                config
+              )
+
+              let rewriteDone = false
+
+              if (needsInterop === undefined) {
+                // Non-entry dynamic imports from dependencies will reach here as there isn't
+                // optimize info for them, but they don't need es interop. If the request isn't
+                // a dynamic import, then it is an internal Vite error
+                if (!file.match(optimizedDepDynamicRE)) {
+                  config.logger.error(
+                    colors.red(
+                      `Vite Error, ${url} optimized info should be defined`
+                    )
+                  )
+                }
+              } else if (needsInterop) {
+                // config.logger.info(`${url} needs interop`)
+                if (isDynamicImport) {
+                  // rewrite `import('package')` to expose the default directly
+                  str().overwrite(
+                    expStart,
+                    expEnd,
+                    `import('${file}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+                    { contentOnly: true }
+                  )
+                } else {
+                  const exp = source.slice(expStart, expEnd)
+                  const rewritten = transformCjsImport(
+                    exp,
+                    file,
+                    specifier,
+                    index
+                  )
+                  if (rewritten) {
+                    str().overwrite(expStart, expEnd, rewritten, {
+                      contentOnly: true
+                    })
+                  } else {
+                    // #1439 export * from '...'
+                    str().overwrite(start, end, file, { contentOnly: true })
+                  }
+                }
+                rewriteDone = true
+              }
+              if (!rewriteDone) {
+                str().overwrite(
+                  start,
+                  end,
+                  isDynamicImport ? `'${file}'` : file,
+                  {
+                    contentOnly: true
+                  }
+                )
+              }
+            }
+          }
         }
       }
 

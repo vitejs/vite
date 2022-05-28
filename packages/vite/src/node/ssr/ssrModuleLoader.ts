@@ -206,7 +206,7 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
-    if (e.stack && fixStacktrace !== false) {
+    if (e.stack && fixStacktrace) {
       const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
       rebindErrorStacktrace(e, stacktrace)
       server.config.logger.error(
