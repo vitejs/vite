@@ -1,6 +1,6 @@
 import Ajv2020 from 'ajv/dist/2020'
 
-const schema = require('vite/schemas/manifest.schema.json')
+const schema = require('../../../../packages/vite/schemas/manifest.schema.json')
 const ajv = new Ajv2020()
 const validate = ajv.compile(schema)
 
