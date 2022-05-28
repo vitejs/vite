@@ -606,7 +606,7 @@ function resolveBaseUrl(
   if (isExternalUrl(base)) {
     if (!isBuild) {
       // get base from full url during dev
-      const parsed = new URL(base, 'http://vitejs.dev')
+      const parsed = new URL(base, '/')
       base = parsed.pathname || '/'
     }
   } else {
