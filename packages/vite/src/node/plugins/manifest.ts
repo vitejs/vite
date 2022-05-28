@@ -1,5 +1,5 @@
 import path from 'path'
-import type { OutputChunk, OutputAsset } from 'rollup'
+import type { OutputAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
