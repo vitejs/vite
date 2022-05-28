@@ -150,7 +150,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: 'packages/vite/**/*.*',
+      files: ['packages/vite/**/*.*'],
       rules: {
         'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
