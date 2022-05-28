@@ -59,7 +59,10 @@ async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      const url = req.originalUrl
+      let url = req.originalUrl
+      if (isProd) {
+        url = url.replace('/test/', '/')
+      }
 
       let template, render
       if (!isProd) {

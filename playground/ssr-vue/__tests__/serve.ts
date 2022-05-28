@@ -13,6 +13,7 @@ export async function serve() {
     const { build } = await import('vite')
     // client build
     await build({
+      base: '/test/',
       root: rootDir,
       logLevel: 'silent', // exceptions are logged by Vitest
       build: {
@@ -24,6 +25,7 @@ export async function serve() {
     })
     // server build
     await build({
+      base: '/test/',
       root: rootDir,
       logLevel: 'silent',
       build: {
