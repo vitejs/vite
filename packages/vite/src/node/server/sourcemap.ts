@@ -59,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(map: SourceMap | string | undefined) {
+export function genSourceMapUrl(map: SourceMap | string | undefined): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -70,7 +70,7 @@ export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
   map: SourceMap | null
-) {
+): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }

@@ -27,7 +27,7 @@ export class SplitVendorChunkCache {
   constructor() {
     this.cache = new Map<string, boolean>()
   }
-  reset() {
+  reset(): void {
     this.cache = new Map<string, boolean>()
   }
 }

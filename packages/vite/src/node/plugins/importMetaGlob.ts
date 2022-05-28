@@ -33,7 +33,10 @@ export interface ParsedImportGlob {
   end: number
 }
 
-export function getAffectedGlobModules(file: string, server: ViteDevServer) {
+export function getAffectedGlobModules(
+  file: string,
+  server: ViteDevServer
+): ModuleNode[] {
   const modules: ModuleNode[] = []
   for (const [id, allGlobs] of server._importGlobMap!) {
     if (allGlobs.some((glob) => isMatch(file, glob)))
@@ -501,7 +504,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   return commonAncestor
 }
 
-export function isVirtualModule(id: string) {
+export function isVirtualModule(id: string): boolean {
   // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id.startsWith('\0') || !id.includes('/')
 }

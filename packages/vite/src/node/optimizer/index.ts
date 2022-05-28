@@ -595,19 +595,22 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 // Convert to { id: src }
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>
-) {
+): Record<string, string> {
   return Object.fromEntries(
     Object.entries(depsInfo).map((d) => [d[0], d[1].src!])
   )
 }
 
-export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
+export function getOptimizedDepPath(
+  id: string,
+  config: ResolvedConfig
+): string {
   return normalizePath(
     path.resolve(getDepsCacheDir(config), flattenId(id) + '.js')
   )
 }
 
-export function getDepsCacheDir(config: ResolvedConfig) {
+export function getDepsCacheDir(config: ResolvedConfig): string {
   const dirName = config.command === 'build' ? 'depsBuild' : 'deps'
   return normalizePath(path.resolve(config.cacheDir, dirName))
 }
@@ -617,11 +620,16 @@ function getProcessingDepsCacheDir(config: ResolvedConfig) {
   return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
-export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
+export function isOptimizedDepFile(
+  id: string,
+  config: ResolvedConfig
+): boolean {
   return id.startsWith(getDepsCacheDir(config))
 }
 
-export function createIsOptimizedDepUrl(config: ResolvedConfig) {
+export function createIsOptimizedDepUrl(
+  config: ResolvedConfig
+): (url: string) => boolean {
   const { root } = config
   const depsCacheDir = getDepsCacheDir(config)
 

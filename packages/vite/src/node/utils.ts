@@ -234,10 +234,10 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string) =>
+export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
+export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
-export function getPotentialTsSrcPaths(filePath: string) {
+export function getPotentialTsSrcPaths(filePath: string): string[] {
   const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
   const paths = [name + type.replace('js', 'ts') + query]
   if (!type.endsWith('x')) {
@@ -781,7 +781,7 @@ export function parseRequest(id: string): Record<string, string> | null {
   return Object.fromEntries(new URLSearchParams(search))
 }
 
-export const blankReplacer = (match: string) => ' '.repeat(match.length)
+export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
@@ -856,7 +856,7 @@ function gracefulRemoveDir(
   })
 }
 
-export function emptyCssComments(raw: string) {
+export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
