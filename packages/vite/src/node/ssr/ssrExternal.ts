@@ -157,8 +157,7 @@ function createIsSsrExternal(
     }
     try {
       // no main entry, but deep imports may be allowed
-      const pkgPath = resolveFrom(`${id}/package.json`, root)
-      if (pkgPath.includes('node_modules')) {
+      if (resolveFrom(`${id}/package.json`, root)) {
         return true
       }
     } catch {}
