@@ -1,6 +1,9 @@
 ---
 layout: home
 
+title: Vite
+titleTemplate: Next Generation Frontend Tooling
+
 hero:
   name: Vite
   text: Next Generation Frontend Tooling
