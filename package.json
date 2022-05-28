@@ -1,6 +1,7 @@
 {
   "name": "vite-monorepo",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=14.6.0"
   },
@@ -88,7 +89,7 @@
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-draft.6",
+    "vitepress": "1.0.0-draft.7",
     "vitest": "^0.12.9",
     "vue": "^3.2.35"
   },

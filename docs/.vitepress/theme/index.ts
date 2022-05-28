@@ -10,7 +10,7 @@ export default {
   Layout() {
     return h(Theme.Layout, null, {
       'home-features-after': () => h(HomeSponsors),
-      'aside-outline-after': () => h(AsideSponsors)
+      'aside-ads-before': () => h(AsideSponsors)
     })
   }
 }
