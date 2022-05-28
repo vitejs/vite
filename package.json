@@ -15,7 +15,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/**/*.ts scripts/**",
+    "lint": "eslint packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
