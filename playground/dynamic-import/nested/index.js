@@ -48,7 +48,6 @@ document.querySelector('.mxdjson').addEventListener('click', async () => {
 // data URLs (`blob:`)
 const code1 = 'export const msg = "blob"'
 const blob = new Blob([code1], { type: 'text/javascript;charset=UTF-8' })
-// eslint-disable-next-line node/no-unsupported-features/node-builtins
 const blobURL = URL.createObjectURL(blob)
 document.querySelector('.issue-2658-1').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ blobURL)
