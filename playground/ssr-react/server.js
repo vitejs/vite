@@ -1,13 +1,15 @@
-// @ts-check
-const fs = require('fs')
-const path = require('path')
-const express = require('express')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import express from 'express'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
 
 process.env.MY_CUSTOM_SECRET = 'API_KEY_qwertyuiop'
 
-async function createServer(
+export async function createServer(
   root = process.cwd(),
   isProd = process.env.NODE_ENV === 'production',
   hmrPort
@@ -25,7 +27,9 @@ async function createServer(
    */
   let vite
   if (!isProd) {
-    vite = await require('vite').createServer({
+    vite = await (
+      await import('vite')
+    ).createServer({
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {
@@ -44,9 +48,9 @@ async function createServer(
     // use vite's connect instance as middleware
     app.use(vite.middlewares)
   } else {
-    app.use(require('compression')())
+    app.use((await import('compression')).default())
     app.use(
-      require('serve-static')(resolve('dist/client'), {
+      (await import('serve-static')).default(resolve('dist/client'), {
         index: false
       })
     )
@@ -65,7 +69,7 @@ async function createServer(
       } else {
         template = indexProd
         // @ts-ignore
-        render = require('./dist/server/entry-server.js').render
+        render = (await import('./dist/server/entry-server.js')).render
       }
 
       const context = {}
@@ -96,6 +100,3 @@ if (!isTest) {
     })
   )
 }
-
-// for test use
-exports.createServer = createServer

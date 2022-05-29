@@ -22,7 +22,7 @@ import {
   resolveHostname
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
-import { resolveSSRExternal } from '../ssr/ssrExternal'
+import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import {
   rebindErrorStacktrace,
   ssrRewriteStacktrace
@@ -330,7 +330,7 @@ export async function createServer(
             ...Object.keys(depsOptimizer.metadata.discovered)
           ]
         }
-        server._ssrExternals = resolveSSRExternal(config, knownImports)
+        server._ssrExternals = cjsSsrResolveExternals(config, knownImports)
       }
       return ssrLoadModule(
         url,

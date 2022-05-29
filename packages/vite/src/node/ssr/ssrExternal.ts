@@ -5,7 +5,9 @@ import { createFilter } from '@rollup/pluginutils'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
+  bareImportRE,
   createDebugger,
+  isBuiltin,
   isDefined,
   lookupFile,
   normalizePath,
@@ -29,7 +31,7 @@ export function stripNesting(packages: string[]): string[] {
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
  */
-export function resolveSSRExternal(
+export function cjsSsrResolveExternals(
   config: ResolvedConfig,
   knownImports: string[]
 ): string[] {
@@ -49,7 +51,7 @@ export function resolveSSRExternal(
     seen.add(id)
   })
 
-  collectExternals(
+  cjsSsrCollectExternals(
     config.root,
     config.resolve.preserveSymlinks,
     ssrExternals,
@@ -86,8 +88,98 @@ const CJS_CONTENT_RE =
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
-// do we need to do this ahead of time or could we do it lazily?
-function collectExternals(
+const isSsrExternalCache = new WeakMap<
+  ResolvedConfig,
+  (id: string) => boolean | undefined
+>()
+
+export function shouldExternalizeForSSR(
+  id: string,
+  config: ResolvedConfig
+): boolean | undefined {
+  let isSsrExternal = isSsrExternalCache.get(config)
+  if (!isSsrExternal) {
+    isSsrExternal = createIsSsrExternal(config)
+    isSsrExternalCache.set(config, isSsrExternal)
+  }
+  return isSsrExternal(id)
+}
+
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const processedIds = new Map<string, boolean | undefined>()
+
+  const { ssr, root } = config
+
+  const noExternal = ssr?.noExternal
+  const noExternalFilter =
+    noExternal !== 'undefined' &&
+    typeof noExternal !== 'boolean' &&
+    createFilter(undefined, noExternal, { resolve: false })
+
+  const isConfiguredAsExternal = (id: string) => {
+    const { ssr } = config
+    if (!ssr || ssr.external?.includes(id)) {
+      return true
+    }
+    if (typeof noExternal === 'boolean') {
+      return !noExternal
+    }
+    if (noExternalFilter) {
+      return noExternalFilter(id)
+    }
+    return true
+  }
+
+  const resolveOptions: InternalResolveOptions = {
+    root,
+    preserveSymlinks: config.resolve.preserveSymlinks,
+    isProduction: false,
+    isBuild: true
+  }
+
+  const isPackageEntry = (id: string) => {
+    if (!bareImportRE.test(id) || id.includes('\0')) {
+      return false
+    }
+    if (
+      tryNodeResolve(
+        id,
+        undefined,
+        resolveOptions,
+        ssr?.target === 'webworker',
+        undefined,
+        true
+      )
+    ) {
+      return true
+    }
+    try {
+      // no main entry, but deep imports may be allowed
+      if (resolveFrom(`${id}/package.json`, root)) {
+        return true
+      }
+    } catch {}
+    return false
+  }
+
+  return (id: string) => {
+    if (processedIds.has(id)) {
+      return processedIds.get(id)
+    }
+    const external =
+      !id.startsWith('.') &&
+      !path.isAbsolute(id) &&
+      (isBuiltin(id) || (isConfiguredAsExternal(id) && isPackageEntry(id)))
+    processedIds.set(id, external)
+    return external
+  }
+}
+
+// When ssr.format is 'cjs', this function is used reverting to the Vite 2.9
+// SSR externalization heuristics
+function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,
   ssrExternals: Set<string>,
@@ -192,14 +284,23 @@ function collectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
+    cjsSsrCollectExternals(
+      depRoot,
+      preserveSymlinks,
+      ssrExternals,
+      seen,
+      logger
+    )
   }
 }
 
-export function shouldExternalizeForSSR(
+export function cjsShouldExternalizeForSSR(
   id: string,
-  externals: string[]
+  externals: string[] | null
 ): boolean {
+  if (!externals) {
+    return false
+  }
   const should = externals.some((e) => {
     if (id === e) {
       return true

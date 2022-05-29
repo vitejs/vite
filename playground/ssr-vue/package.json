@@ -2,6 +2,7 @@
   "name": "test-ssr-vue",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "node server",
     "build": "npm run build:client && npm run build:server",

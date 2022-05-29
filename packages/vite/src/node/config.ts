@@ -230,6 +230,8 @@ export interface ExperimentalOptions {
 
 export type SSRTarget = 'node' | 'webworker'
 
+export type SSRFormat = 'esm' | 'cjs'
+
 export interface SSROptions {
   external?: string[]
   noExternal?: string | RegExp | (string | RegExp)[] | true
@@ -239,12 +241,14 @@ export interface SSROptions {
    * Default: 'node'
    */
   target?: SSRTarget
-
   /**
-   * Define the module format for the ssr build.
-   * Default: 'cjs'
+   * Define the format for the ssr build. Since Vite v3 the SSR build generates ESM by default.
+   * `'cjs'` can be selected to generate a CJS build, but it isn't recommended. This option is
+   * left marked as experimental to give users more time to update to ESM. CJS builds requires
+   * complex externalization heuristics that aren't present in the ESM format.
+   * @experimental
    */
-  format?: 'es' | 'cjs'
+  format?: SSRFormat
 }
 
 export interface ResolveWorkerOptions {

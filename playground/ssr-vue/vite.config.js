@@ -1,14 +1,12 @@
-const vuePlugin = require('@vitejs/plugin-vue')
-const vueJsx = require('@vitejs/plugin-vue-jsx')
+import { defineConfig } from 'vite'
+import vuePlugin from '@vitejs/plugin-vue'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
 const nestedVirtualFile = '@nested-virtual-file'
 const nestedVirtualId = '\0' + nestedVirtualFile
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: '/test/',
   plugins: [
     vuePlugin(),
@@ -56,4 +54,4 @@ module.exports = {
   optimizeDeps: {
     exclude: ['example-external-component']
   }
-}
+})

@@ -1,10 +1,12 @@
-// @ts-check
-const path = require('path')
-const { Miniflare } = require('miniflare')
+import { fileURLToPath } from 'url'
+import path from 'path'
+import { Miniflare } from 'miniflare'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = !!process.env.TEST
 
-async function createServer() {
+export async function createServer() {
   const mf = new Miniflare({
     scriptPath: path.resolve(__dirname, 'dist/worker/entry-worker.js')
   })
@@ -21,6 +23,3 @@ if (!isTest) {
     })
   )
 }
-
-// for test use
-exports.createServer = createServer
