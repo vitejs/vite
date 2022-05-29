@@ -1,5 +1,4 @@
 import path from 'path'
-import { parse as parseUrl } from 'url'
 import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
@@ -350,7 +349,7 @@ async function fileToBuiltUrl(
     // https://github.com/rollup/rollup/issues/3415
     const map = assetHashToFilenameMap.get(config)!
     const contentHash = getHash(content)
-    const { search, hash } = parseUrl(id)
+    const { search, hash } = new URL(id)
     const postfix = (search || '') + (hash || '')
     const output = config.build?.rollupOptions?.output
     const assetFileNames =
