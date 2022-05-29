@@ -123,16 +123,10 @@ describe.runIf(isBuild)('build', () => {
 
 describe.runIf(isServe)('serve:worker-sourcemap', () => {
   test('nested worker', async () => {
-    let res = await page.request.get(
+    const res = await page.request.get(
       new URL('./possible-ts-output-worker.mjs?worker_file', page.url()).href
     )
-    let map = extractSourcemap(await res.text())
-    expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
-
-    res = await page.request.get(
-      new URL('./sub-worker.js?type=module&worker_file', page.url()).href
-    )
-    map = extractSourcemap(await res.text())
+    const map = extractSourcemap(await res.text())
     expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
   })
 })
