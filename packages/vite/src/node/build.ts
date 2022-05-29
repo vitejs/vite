@@ -200,9 +200,25 @@ export interface BuildOptions {
 }
 
 export interface LibraryOptions {
+  /**
+   * Path of library entry
+   */
   entry: string
+  /**
+   * The name of exposed global variable. Required when formats includes
+   * `umd` or `iife`
+   */
   name?: string
+  /**
+   * Output bundle formats
+   * @default ['es', 'umd']
+   */
   formats?: LibraryFormats[]
+  /**
+   * The name of the package file output, default fileName is the name option
+   * of package.json. It can also be defined as function taking the format
+   * as an argument.
+   */
   fileName?: string | ((format: ModuleFormat) => string)
 }
 
