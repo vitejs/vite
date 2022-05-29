@@ -5,7 +5,13 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
+import {
+  cleanUrl,
+  injectQuery,
+  normalizePath,
+  parseRequest,
+  transformResult
+} from '../utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -130,10 +136,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
+          return transformResult(s, id, config)
         }
 
         return null

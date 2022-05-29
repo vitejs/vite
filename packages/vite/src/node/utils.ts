@@ -13,6 +13,9 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
+import type MagicString from 'magic-string'
+
+import type { TransformResult } from 'rollup'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -21,6 +24,7 @@ import {
   FS_PREFIX,
   VALID_ID_PREFIX
 } from './constants'
+import type { ResolvedConfig } from '.'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -970,4 +974,17 @@ function normalizeSingleAlias({
     alias.customResolver = customResolver
   }
   return alias
+}
+
+export function transformResult(
+  s: MagicString,
+  id: string,
+  config: ResolvedConfig
+): TransformResult {
+  const isBuild = config.command === 'build'
+  const needSourceMap = !isBuild || config.build.sourcemap
+  return {
+    code: s.toString(),
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+  }
 }

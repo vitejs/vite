@@ -3,7 +3,6 @@ import InlineWorker from '../my-worker?worker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
-import ImportMetaGlobEagerWorker from '../importMetaGlobEager.worker?worker'
 import { mode } from '../modules/workerImport'
 
 function text(el, text) {
@@ -63,6 +62,8 @@ nestedWorker.addEventListener('message', (ev) => {
       text('.nested-worker-module', JSON.stringify(ev.data))
     } else if (data.type === 'constructor') {
       text('.nested-worker-constructor', JSON.stringify(ev.data))
+    } else if (data.type === 'importMetaGlobEager') {
+      text('.importMetaGlobEager-worker', JSON.stringify(ev.data))
     }
   }
 })
@@ -91,11 +92,3 @@ w2.port.addEventListener('message', (ev) => {
   text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
 })
 w2.port.start()
-
-const importMetaGlobEagerWorker = new ImportMetaGlobEagerWorker()
-
-importMetaGlobEagerWorker.postMessage('1')
-
-importMetaGlobEagerWorker.addEventListener('message', (e) => {
-  text('.importMetaGlobEager-worker', JSON.stringify(e.data))
-})

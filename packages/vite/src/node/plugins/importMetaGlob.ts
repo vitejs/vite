@@ -17,7 +17,7 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash } from '../utils'
+import { normalizePath, slash, transformResult } from '../utils'
 
 const { isMatch, scan } = micromatch
 
@@ -75,10 +75,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             server!.watcher.add(dirname(file))
           })
         }
-        return {
-          code: result.s.toString(),
-          map: config.build.sourcemap ? result.s.generateMap() : null
-        }
+        return transformResult(result.s, id, config)
       }
     }
   }

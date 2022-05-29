@@ -1,3 +1,4 @@
+import ImportMetaGlobEagerWorker from './importMetaGlobEager.worker?worker'
 import SubWorker from './sub-worker?worker'
 
 const subWorker = new SubWorker()
@@ -23,6 +24,17 @@ const classicWorker = new Worker(new URL('./url-worker.js', import.meta.url), {
 classicWorker.addEventListener('message', (ev) => {
   self.postMessage({
     type: 'constructor',
+    data: ev.data
+  })
+})
+
+const importMetaGlobEagerWorker = new ImportMetaGlobEagerWorker()
+
+importMetaGlobEagerWorker.postMessage('1')
+
+importMetaGlobEagerWorker.addEventListener('message', (ev) => {
+  self.postMessage({
+    type: 'importMetaGlobEager',
     data: ev.data
   })
 })

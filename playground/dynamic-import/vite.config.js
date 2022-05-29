@@ -26,5 +26,8 @@ module.exports = vite.defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'alias')
     }
+  },
+  build: {
+    sourcemap: true
   }
 })
