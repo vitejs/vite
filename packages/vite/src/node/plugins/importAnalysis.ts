@@ -37,6 +37,7 @@ import {
   prettifyUrl,
   removeImportQuery,
   timeFrom,
+  transformResult,
   unwrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -111,7 +112,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   let server: ViteDevServer
-  const isBuild = config.command === 'build'
+
   return {
     name: 'vite:import-analysis',
 
@@ -626,13 +627,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return {
-          code: s.toString(),
-          map:
-            !isBuild || config.build.sourcemap
-              ? s.generateMap({ hires: true, source: importer })
-              : null
-        }
+        return transformResult(s, importer, config)
       } else {
         return source
       }

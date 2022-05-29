@@ -17,7 +17,7 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash } from '../utils'
+import { normalizePath, slash, transformResult } from '../utils'
 
 const { isMatch, scan } = micromatch
 
@@ -47,7 +47,6 @@ export function getAffectedGlobModules(file: string, server: ViteDevServer) {
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
-  const isBuild = config.command === 'build'
 
   return {
     name: 'vite:import-glob',
@@ -73,13 +72,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             server!.watcher.add(dirname(file))
           })
         }
-        return {
-          code: result.s.toString(),
-          map:
-            !isBuild || config.build.sourcemap
-              ? result.s.generateMap({ hires: true, source: id })
-              : null
-        }
+        return transformResult(result.s, id, config)
       }
     }
   }
