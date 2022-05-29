@@ -8,7 +8,6 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, parseRequest, requestQuerySplitRE } from '../utils'
-import { isBuild } from './../../../../../playground/vitestSetup'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
