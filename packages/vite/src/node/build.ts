@@ -422,18 +422,19 @@ async function doBuild(
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const format = output.format || cjsSsrBuild ? 'cjs' : 'es'
       return {
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
-        format: cjsSsrBuild ? 'cjs' : 'es',
+        format,
         exports: cjsSsrBuild ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         generatedCode: 'es2015',
         entryFileNames: ssr
-          ? `[name].js`
+          ? `[name].${resolveOutputJsExtensionFromRoot(format, config.root)}`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
+          ? resolveLibFilename(libOptions, format, config.root)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
           ? `[name].[hash].js`
@@ -575,6 +576,18 @@ function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
+function resolveOutputJsExtensionFromRoot(format: ModuleFormat, root: string): 'js' | 'cjs' | 'mjs' {
+  return resolveOutputJsExtension(format, getPkgJson(root)?.type)
+}
+
+function resolveOutputJsExtension(format: ModuleFormat, type: string = 'commonjs'): 'js' | 'cjs' | 'mjs' {
+  if (type === 'module') {
+    return format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
+  } else {
+    return format === 'es' ? 'mjs' : 'js'
+  }
+}
+
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
@@ -592,13 +605,7 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  let extension: string
-
-  if (packageJson?.type === 'module') {
-    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
-  } else {
-    extension = format === 'es' ? 'mjs' : 'js'
-  }
+  const extension = resolveOutputJsExtension(format, packageJson?.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`
