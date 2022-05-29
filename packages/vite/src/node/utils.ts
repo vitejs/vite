@@ -15,6 +15,7 @@ import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
 import type MagicString from 'magic-string'
 
+import type { TransformResult } from 'rollup'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -979,7 +980,7 @@ export function transformResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
-) {
+): TransformResult {
   const isBuild = config.command === 'build'
   const needSourceMap = !isBuild || config.build.sourcemap
   return {
