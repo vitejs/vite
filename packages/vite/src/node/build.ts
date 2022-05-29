@@ -216,7 +216,7 @@ export interface LibraryOptions {
   formats?: LibraryFormats[]
   /**
    * The name of the package file output. The default file name is the name option
-   * of the project package.json. It can also be defined as a function taking the 
+   * of the project package.json. It can also be defined as a function taking the
    * format as an argument.
    */
   fileName?: string | ((format: ModuleFormat) => string)
