@@ -41,7 +41,7 @@ export function getShortName(file: string, root: string): string {
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
-): Promise<any> {
+): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
