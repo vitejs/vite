@@ -1,4 +1,3 @@
-/* eslint-disable node/no-unsupported-features/node-builtins */
 import fs from 'fs'
 import path from 'path'
 import {
