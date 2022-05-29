@@ -576,11 +576,17 @@ function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
-function resolveOutputJsExtensionFromRoot(format: ModuleFormat, root: string): 'js' | 'cjs' | 'mjs' {
+function resolveOutputJsExtensionFromRoot(
+  format: ModuleFormat,
+  root: string
+): 'js' | 'cjs' | 'mjs' {
   return resolveOutputJsExtension(format, getPkgJson(root)?.type)
 }
 
-function resolveOutputJsExtension(format: ModuleFormat, type: string = 'commonjs'): 'js' | 'cjs' | 'mjs' {
+function resolveOutputJsExtension(
+  format: ModuleFormat,
+  type: string = 'commonjs'
+): 'js' | 'cjs' | 'mjs' {
   if (type === 'module') {
     return format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
   } else {
