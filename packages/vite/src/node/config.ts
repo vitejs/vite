@@ -239,6 +239,12 @@ export interface SSROptions {
    * Default: 'node'
    */
   target?: SSRTarget
+
+  /**
+   * Define the module format for the ssr build.
+   * Default: 'cjs'
+   */
+  format?: 'es' | 'cjs'
 }
 
 export interface ResolveWorkerOptions {
