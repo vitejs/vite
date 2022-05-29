@@ -37,6 +37,7 @@ import {
   prettifyUrl,
   removeImportQuery,
   timeFrom,
+  transformResult,
   unwrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -630,10 +631,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-        }
+        return transformResult(s, importer, config)
       } else {
         return source
       }
