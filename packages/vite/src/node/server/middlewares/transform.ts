@@ -122,14 +122,27 @@ export function transformMiddleware(
         const publicPath = `${publicDir.slice(rootDir.length)}/`
         // warn explicit public paths
         if (url.startsWith(publicPath)) {
-          logger.warn(
-            colors.yellow(
+          let warning: string
+
+          if (isImportRequest(url)) {
+            const rawUrl = removeImportQuery(url)
+
+            warning =
+              'Assets in public cannot be imported from JavaScript.\n' +
+              `Instead of ${colors.cyan(
+                rawUrl
+              )}, put the file in the src directory, and use ${colors.cyan(
+                rawUrl.replace(publicPath, '/src/')
+              )} instead.`
+          } else {
+            warning =
               `files in the public directory are served at the root path.\n` +
-                `Instead of ${colors.cyan(url)}, use ${colors.cyan(
-                  url.replace(publicPath, '/')
-                )}.`
-            )
-          )
+              `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+                url.replace(publicPath, '/')
+              )}.`
+          }
+
+          logger.warn(colors.yellow(warning))
         }
       }
 
