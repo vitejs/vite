@@ -204,9 +204,12 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
           )
         }
-        // and then will be transformed by importMetaGlob.ts
-        // so we don't need to generate map
-        return s.toString()
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap
+            ? s.generateMap({ hires: true, source: importer })
+            : null
+        }
       }
     }
   }
