@@ -1,6 +1,5 @@
 import '../../../../../../types/importMeta'
 
-/* eslint-disable @typescript-eslint/comma-dangle */
 export interface ModuleType {
   name: string
 }
