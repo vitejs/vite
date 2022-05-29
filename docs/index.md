@@ -9,8 +9,8 @@ hero:
   text: Next Generation Frontend Tooling
   tagline: Get ready for a development environment that can finally catch up with you.
   image:
-    light: /vite-splash-light.jpg
-    dark: /vite-splash-dark.jpg
+    src: /logo-with-shadow.png
+    alt: Vite
   actions:
     - theme: brand
       text: Get Started
