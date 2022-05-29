@@ -1,7 +1,6 @@
 {
   "name": "vite-monorepo",
   "private": true,
-  "type": "module",
   "engines": {
     "node": ">=14.6.0"
   },
