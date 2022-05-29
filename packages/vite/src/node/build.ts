@@ -342,6 +342,7 @@ async function doBuild(
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
   const ssr = !!options.ssr
+  const esm = config.ssr?.format === 'es' || !ssr
   const libOptions = options.lib
 
   config.logger.info(
@@ -433,8 +434,8 @@ async function doBuild(
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       return {
         dir: outDir,
-        format: ssr ? 'cjs' : 'es',
-        exports: ssr ? 'named' : 'auto',
+        format: esm ? 'es' : 'cjs',
+        exports: esm ? 'auto' : 'named',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         generatedCode: 'es2015',
