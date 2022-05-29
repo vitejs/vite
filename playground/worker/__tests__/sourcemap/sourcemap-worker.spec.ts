@@ -130,10 +130,7 @@ describe.runIf(isServe)('serve:worker-sourcemap', () => {
     expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
 
     res = await page.request.get(
-      new URL(
-        './importMetaGlobEager.worker.js?type=module&worker_file',
-        page.url()
-      ).href
+      new URL('./sub-worker.js?type=module&worker_file', page.url()).href
     )
     map = extractSourcemap(await res.text())
     expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
