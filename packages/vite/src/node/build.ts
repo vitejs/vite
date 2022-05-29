@@ -422,7 +422,7 @@ async function doBuild(
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
-      const format = output.format || cjsSsrBuild ? 'cjs' : 'es'
+      const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       return {
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
