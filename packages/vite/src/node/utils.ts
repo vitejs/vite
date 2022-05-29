@@ -981,12 +981,9 @@ export function transformResult(
   config: ResolvedConfig
 ) {
   const isBuild = config.command === 'build'
-
+  const needSourceMap = !isBuild || config.build.sourcemap
   return {
     code: s.toString(),
-    map:
-      !isBuild || config.build.sourcemap
-        ? s.generateMap({ hires: true, source: id })
-        : null
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
   }
 }
