@@ -25,7 +25,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     }
   })
 
-  const { createServer } = require(path.resolve(rootDir, 'worker.js'))
+  const { createServer } = await import(path.resolve(rootDir, 'worker.js'))
   const { app } = await createServer(rootDir, isBuild)
 
   return new Promise((resolve, reject) => {

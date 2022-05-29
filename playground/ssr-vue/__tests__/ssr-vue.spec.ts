@@ -186,10 +186,14 @@ test.runIf(isBuild)('dynamic css file should be preloaded', async () => {
   const re =
     /link rel="modulepreload".*?href="\/test\/assets\/(Home\.\w{8}\.js)"/
   const filename = re.exec(homeHtml)[1]
-  const manifest = require(resolve(
-    process.cwd(),
-    './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
-  ))
+  const manifest = (
+    await import(
+      resolve(
+        process.cwd(),
+        './playground-temp/ssr-vue/dist/client/ssr-manifest.json'
+      )
+    )
+  ).default
   const depFile = manifest[filename]
   for (const file of depFile) {
     expect(homeHtml).toMatch(file)

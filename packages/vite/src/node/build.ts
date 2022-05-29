@@ -31,7 +31,10 @@ import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
+import {
+  cjsShouldExternalizeForSSR,
+  cjsSsrResolveExternals
+} from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
 import {
@@ -342,7 +345,6 @@ async function doBuild(
   const config = await resolveConfig(inlineConfig, 'build', 'production')
   const options = config.build
   const ssr = !!options.ssr
-  const esm = config.ssr?.format === 'es' || !ssr
   const libOptions = options.lib
 
   config.logger.info(
@@ -374,27 +376,14 @@ async function doBuild(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
   let external = userExternal
-  if (ssr) {
-    // see if we have cached deps data available
-    let knownImports: string[] | undefined
-    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
-    try {
-      const data = JSON.parse(
-        fs.readFileSync(dataPath, 'utf-8')
-      ) as DepOptimizationMetadata
-      knownImports = Object.keys(data.optimized)
-    } catch (e) {}
-    if (!knownImports) {
-      // no dev deps optimization data, do a fresh scan
-      knownImports = await findKnownImports(config)
-    }
-    external = resolveExternal(
-      resolveSSRExternal(config, knownImports),
-      userExternal
-    )
+
+  // In CJS, we can pass the externals to rollup as is. In ESM, we need to
+  // do it in the resolve plugin so we can add the resolved extension for
+  // deep node_modules imports
+  if (ssr && config.ssr?.format === 'cjs') {
+    external = await cjsSsrResolveExternal(config, userExternal)
   }
 
   if (isDepsOptimizerEnabled(config) && !ssr) {
@@ -432,10 +421,12 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
       return {
         dir: outDir,
-        format: esm ? 'es' : 'cjs',
-        exports: esm ? 'auto' : 'named',
+        // Default format is 'es' for regular and for SSR builds
+        format: cjsSsrBuild ? 'cjs' : 'es',
+        exports: cjsSsrBuild ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         generatedCode: 'es2015',
@@ -697,23 +688,48 @@ export function onRollupWarning(
   }
 }
 
-function resolveExternal(
-  ssrExternals: string[],
+async function cjsSsrResolveExternal(
+  config: ResolvedConfig,
   user: ExternalOption | undefined
-): ExternalOption {
+): Promise<ExternalOption> {
+  // see if we have cached deps data available
+  let knownImports: string[] | undefined
+  const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(dataPath, 'utf-8')
+    ) as DepOptimizationMetadata
+    knownImports = Object.keys(data.optimized)
+  } catch (e) {}
+  if (!knownImports) {
+    // no dev deps optimization data, do a fresh scan
+    knownImports = await findKnownImports(config)
+  }
+  const ssrExternals = cjsSsrResolveExternals(config, knownImports)
+
   return (id, parentId, isResolved) => {
-    if (shouldExternalizeForSSR(id, ssrExternals)) {
+    const isExternal = cjsShouldExternalizeForSSR(id, ssrExternals)
+    if (isExternal) {
       return true
     }
     if (user) {
-      if (typeof user === 'function') {
-        return user(id, parentId, isResolved)
-      } else if (Array.isArray(user)) {
-        return user.some((test) => isExternal(id, test))
-      } else {
-        return isExternal(id, user)
-      }
+      return resolveUserExternal(user, id, parentId, isResolved)
     }
+  }
+}
+
+function resolveUserExternal(
+  user: ExternalOption,
+  id: string,
+  parentId: string | undefined,
+  isResolved: boolean
+) {
+  if (typeof user === 'function') {
+    return user(id, parentId, isResolved)
+  } else if (Array.isArray(user)) {
+    return user.some((test) => isExternal(id, test))
+  } else {
+    return isExternal(id, user)
   }
 }
 
