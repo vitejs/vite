@@ -597,18 +597,21 @@ export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
   root: string,
-  extension: JsExt
+  extension?: JsExt
 ): string {
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format)
   }
 
-  const name = libOptions.fileName || getPkgName(getPkgJson(root).name)
+  const packageJson = getPkgJson(root)
+  const name = libOptions.fileName || getPkgName(packageJson.name)
 
   if (!name)
     throw new Error(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
+
+  extension ??= resolveOutputJsExtension(format, packageJson.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`
