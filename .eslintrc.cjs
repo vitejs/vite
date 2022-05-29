@@ -159,5 +159,6 @@ module.exports = defineConfig({
         'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     }
-  ]
+  ],
+  reportUnusedDisableDirectives: true
 })

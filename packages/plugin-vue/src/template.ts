@@ -42,7 +42,6 @@ export async function transformTemplateAsModule(
 /**
  * transform the template directly in the main SFC module
  */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function transformTemplateInMain(
   code: string,
   descriptor: SFCDescriptor,
