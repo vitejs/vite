@@ -8,6 +8,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, parseRequest, requestQuerySplitRE } from '../utils'
+import { isBuild } from './../../../../../playground/vitestSetup'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
@@ -117,6 +118,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
   const { include, exclude, warnOnError } =
     config.build.dynamicImportVarsOptions
   const filter = createFilter(include, exclude)
+  const isBuild = config.command === 'build'
 
   return {
     name: 'vite:dynamic-import-vars',
@@ -206,9 +208,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: s.toString(),
-          map: config.build.sourcemap
-            ? s.generateMap({ hires: true, source: importer })
-            : null
+          map:
+            !isBuild || config.build.sourcemap
+              ? s.generateMap({ hires: true, source: importer })
+              : null
         }
       }
     }

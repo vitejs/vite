@@ -132,9 +132,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           return {
             code: s.toString(),
-            map: config.build.sourcemap
-              ? s.generateMap({ hires: true, source: id })
-              : null
+            map:
+              !isBuild || config.build.sourcemap
+                ? s.generateMap({ hires: true, source: id })
+                : null
           }
         }
 

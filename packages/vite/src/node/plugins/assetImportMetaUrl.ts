@@ -17,6 +17,8 @@ import { preloadHelperId } from './importAnalysisBuild'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  const isBuild = config.command === 'build'
+
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
@@ -82,9 +84,10 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           return {
             code: s.toString(),
-            map: config.build.sourcemap
-              ? s.generateMap({ hires: true, source: id })
-              : null
+            map:
+              !isBuild || config.build.sourcemap
+                ? s.generateMap({ hires: true, source: id })
+                : null
           }
         }
       }

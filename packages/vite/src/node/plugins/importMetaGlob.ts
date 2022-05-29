@@ -47,6 +47,7 @@ export function getAffectedGlobModules(file: string, server: ViteDevServer) {
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
+  const isBuild = config.command === 'build'
 
   return {
     name: 'vite:import-glob',
@@ -74,9 +75,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         }
         return {
           code: result.s.toString(),
-          map: config.build.sourcemap
-            ? result.s.generateMap({ hires: true, source: id })
-            : null
+          map:
+            !isBuild || config.build.sourcemap
+              ? result.s.generateMap({ hires: true, source: id })
+              : null
         }
       }
     }
