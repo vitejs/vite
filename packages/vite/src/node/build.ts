@@ -205,7 +205,7 @@ export interface LibraryOptions {
    */
   entry: string
   /**
-   * The name of exposed global variable. Required when formats includes
+   * The name of the exposed global variable. Required when the `formats` option includes
    * `umd` or `iife`
    */
   name?: string
