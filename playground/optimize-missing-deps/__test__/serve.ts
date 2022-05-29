@@ -6,7 +6,7 @@ import { hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['optimize-missing-deps']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   const { createServer } = require(path.resolve(rootDir, 'server.js'))
   const { app, vite } = await createServer(
     rootDir,

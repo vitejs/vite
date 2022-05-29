@@ -16,7 +16,7 @@ import {
 
 export const port = ports.lib
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   setupConsoleWarnCollector()
 
   if (!isBuild) {

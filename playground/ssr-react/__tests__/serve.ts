@@ -7,7 +7,7 @@ import { hmrPorts, isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-react']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   if (isBuild) {
     // build first
     const { build } = await import('vite')
