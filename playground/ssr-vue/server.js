@@ -33,6 +33,7 @@ export async function createServer(
     vite = await (
       await import('vite')
     ).createServer({
+      base: '/test/',
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {
@@ -53,6 +54,7 @@ export async function createServer(
   } else {
     app.use((await import('compression')).default())
     app.use(
+      '/test/',
       (await import('serve-static')).default(resolve('dist/client'), {
         index: false
       })
@@ -61,7 +63,7 @@ export async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      const url = req.originalUrl
+      const url = req.originalUrl.replace('/test/', '/')
 
       let template, render
       if (!isProd) {
@@ -94,8 +96,8 @@ export async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(5173, () => {
-      console.log('http://localhost:5173')
+    app.listen(6173, () => {
+      console.log('http://localhost:6173')
     })
   )
 }

@@ -7,6 +7,7 @@ const nestedVirtualFile = '@nested-virtual-file'
 const nestedVirtualId = '\0' + nestedVirtualFile
 
 export default defineConfig({
+  base: '/test/',
   plugins: [
     vuePlugin(),
     vueJsx(),

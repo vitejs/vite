@@ -7,12 +7,13 @@ import { hmrPorts, isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-vue']
 
-export async function serve() {
+export async function serve(): Promise<void> {
   if (isBuild) {
     // build first
     const { build } = await import('vite')
     // client build
     await build({
+      base: '/test/',
       root: rootDir,
       logLevel: 'silent', // exceptions are logged by Vitest
       build: {
@@ -24,6 +25,7 @@ export async function serve() {
     })
     // server build
     await build({
+      base: '/test/',
       root: rootDir,
       logLevel: 'silent',
       build: {

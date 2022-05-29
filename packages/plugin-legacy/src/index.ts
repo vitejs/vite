@@ -517,7 +517,7 @@ export async function detectPolyfills(
   code: string,
   targets: any,
   list: Set<string>
-) {
+): Promise<void> {
   const babel = await loadBabel()
   const { ast } = babel.transform(code, {
     ast: true,

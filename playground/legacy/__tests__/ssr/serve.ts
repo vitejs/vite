@@ -5,7 +5,7 @@ import { ports, rootDir } from '~utils'
 
 export const port = ports['legacy/ssr']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   const { build } = await import('vite')
   await build({
     root: rootDir,
