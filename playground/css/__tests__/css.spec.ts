@@ -417,3 +417,7 @@ test('PostCSS source.input.from includes query', async () => {
   // should resolve assets
   expect(code).toContain('/postcss-source-input.css?query=foo')
 })
+
+test('css preprocessor in index.html', async () => {
+  expect(await getColor('.scss-index-html')).toBe('red')
+})

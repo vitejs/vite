@@ -36,6 +36,7 @@ interface AssetNode {
   start: number
   end: number
   code: string
+  lang: string
 }
 
 export function createDevHtmlTransformFn(
@@ -202,7 +203,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       styleUrl.push({
         start: children.loc.start.offset,
         end: children.loc.end.offset,
-        code: children.content
+        code: children.content,
+        lang:
+          (
+            node.props.find(
+              (prop) =>
+                prop.name === 'lang' &&
+                prop.type === NodeTypes.ATTRIBUTE &&
+                prop.value
+            ) as AttributeNode
+          )?.value?.content || 'css'
       })
     }
 
@@ -222,8 +232,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   await Promise.all(
-    styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
+    styleUrl.map(async ({ start, end, code, lang }, index) => {
+      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.${lang}`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)

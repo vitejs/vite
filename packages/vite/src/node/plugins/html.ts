@@ -45,7 +45,8 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
+const htmlProxyRE =
+  /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css|less|sass|scss|styl|stylus|pcss|postcss)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -396,13 +397,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // <style>...</style>
           if (node.tag === 'style' && node.children.length) {
+            const lang =
+              (
+                node.props.find(
+                  (prop) =>
+                    prop.name === 'lang' &&
+                    prop.type === NodeTypes.ATTRIBUTE &&
+                    prop.value
+                ) as AttributeNode
+              )?.value?.content || 'css'
             const styleNode = node.children.pop() as TextNode
             const filePath = id.replace(normalizePath(config.root), '')
             inlineModuleIndex++
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.content
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.${lang}"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
