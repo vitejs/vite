@@ -320,18 +320,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (!server._ssrExternals) {
-        let knownImports: string[] = []
-        const depsOptimizer = getDepsOptimizer(config)
-        if (depsOptimizer) {
-          await depsOptimizer.scanProcessing
-          knownImports = [
-            ...Object.keys(depsOptimizer.metadata.optimized),
-            ...Object.keys(depsOptimizer.metadata.discovered)
-          ]
-        }
-        server._ssrExternals = cjsSsrResolveExternals(config, knownImports)
-      }
+      await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
         server,
@@ -754,4 +743,19 @@ async function restartServer(server: ViteDevServer) {
 
   // new server (the current server) can restart now
   newServer._restartPromise = null
+}
+
+async function updateCjsSsrExternals(server: ViteDevServer) {
+  if (!server._ssrExternals) {
+    let knownImports: string[] = []
+    const depsOptimizer = getDepsOptimizer(server.config)
+    if (depsOptimizer) {
+      await depsOptimizer.scanProcessing
+      knownImports = [
+        ...Object.keys(depsOptimizer.metadata.optimized),
+        ...Object.keys(depsOptimizer.metadata.discovered)
+      ]
+    }
+    server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
+  }
 }

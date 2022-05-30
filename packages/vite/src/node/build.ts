@@ -306,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!isDepsOptimizerEnabled(config) || options.ssr
+      ...(!isDepsOptimizerEnabled(config)
         ? [commonjsPlugin(options.commonjsOptions)]
         : []),
       dataURIPlugin(),
@@ -402,7 +402,7 @@ async function doBuild(
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
-  if (isDepsOptimizerEnabled(config) && !ssr) {
+  if (isDepsOptimizerEnabled(config)) {
     await initDepsOptimizer(config)
   }
 
