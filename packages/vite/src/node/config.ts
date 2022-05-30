@@ -383,9 +383,20 @@ export async function resolveConfig(
   }
 
   // resolve root
-  const resolvedRoot = normalizePath(
-    config.root ? path.resolve(config.root) : process.cwd()
-  )
+  let resolvedRoot: string
+  if (!config.root) {
+    resolvedRoot = process.cwd()
+  } else if (path.isAbsolute(config.root)) {
+    resolvedRoot = config.root
+  } else {
+    if (typeof configFile !== 'string') {
+      throw new Error(
+        `"config.root" cannot be relative when config file is not used.`
+      )
+    }
+    resolvedRoot = path.resolve(path.dirname(configFile), config.root)
+  }
+  resolvedRoot = normalizePath(resolvedRoot)
 
   const clientAlias = [
     { find: /^[\/]?@vite\/env/, replacement: () => ENV_ENTRY },
