@@ -27,7 +27,7 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 ## Dev server Changes
 
-Vite optimizes dependencies with esbuild to both convert CJS only deps to ESM and to reduce the number of modules the browser needs to request. In v3 the default strategy to discover and batch dependencies has changed. Vite no longer pre-scan user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed. To get back the v2 strategy you can use [`optimizeDeps.scan`](../config/dep-optimization-options.md#optimizedepsscan).
+Vite optimizes dependencies with esbuild to both convert CJS only deps to ESM and to reduce the number of modules the browser needs to request. In v3 the default strategy to discover and batch dependencies has changed. Vite no longer pre-scan user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed. To get back the v2 strategy you can use [`optimizeDeps.devScan`](../config/dep-optimization-options.md#optimizedepsdevscan).
 
 ## Build Changes
 
