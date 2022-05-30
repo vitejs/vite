@@ -215,8 +215,8 @@ You can also use CSS modules combined with pre-processors by prepending `.module
 If you want to turn off the automatic injection of CSS contents, you can do via the `?inline` query parameter:
 
 ```js
-import styles from './foo.js'; // will be injected into the page
-import otherStyles from './bar.js?inline'; // will not be injected into the page
+import styles from './foo.css'; // will be injected into the page
+import otherStyles from './bar.css?inline'; // will not be injected into the page
 ```
 
 
