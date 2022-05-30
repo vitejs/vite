@@ -438,21 +438,26 @@ async function doBuild(
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
+      const jsExt =
+        (ssr && config.ssr?.target !== 'webworker') || libOptions
+          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+          : 'js'
       return {
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
-        format: cjsSsrBuild ? 'cjs' : 'es',
+        format,
         exports: cjsSsrBuild ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         generatedCode: 'es2015',
         entryFileNames: ssr
-          ? `[name].js`
+          ? `[name].${jsExt}`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
+          ? resolveLibFilename(libOptions, format, config.root, jsExt)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
-          ? `[name].[hash].js`
+          ? `[name].[hash].${jsExt}`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         assetFileNames: libOptions
           ? `[name].[ext]`
@@ -591,10 +596,24 @@ function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
+type JsExt = 'js' | 'cjs' | 'mjs'
+
+function resolveOutputJsExtension(
+  format: ModuleFormat,
+  type: string = 'commonjs'
+): JsExt {
+  if (type === 'module') {
+    return format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
+  } else {
+    return format === 'es' ? 'mjs' : 'js'
+  }
+}
+
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  root: string
+  root: string,
+  extension?: JsExt
 ): string {
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format)
@@ -608,13 +627,7 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  let extension: string
-
-  if (packageJson?.type === 'module') {
-    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
-  } else {
-    extension = format === 'es' ? 'mjs' : 'js'
-  }
+  extension ??= resolveOutputJsExtension(format, packageJson.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`

@@ -40,13 +40,13 @@ describe.runIf(isBuild)('build', () => {
       'hello vite'
     )
     const code = fs.readFileSync(
-      path.join(testDir, 'dist/lib/dynamic-import-message.es.js'),
+      path.join(testDir, 'dist/lib/dynamic-import-message.es.mjs'),
       'utf-8'
     )
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.js"\)/)
+    expect(code).toMatch(/await import\("\.\/message.[a-z\d]{8}.mjs"\)/)
   })
 
   test('@import hoist', async () => {
