@@ -19,13 +19,17 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 - The following options that were already deprecated in v2 have been removed:
 
-  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
-  - `build.base` (switch to [`base`](../config/shared-options.md#base))
   - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolvealias))
   - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolvededupe))
-  - `polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+  - `build.base` (switch to [`base`](../config/shared-options.md#base))
+  - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
+  - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
+  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
 
 ## Dev Server Changes
+
+Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
 Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM and to reduce the number of modules the browser needs to request. In v3, the default strategy to discover and batch dependencies has changed. Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
 
@@ -45,9 +49,41 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 
 ## General Changes
 
-- [Raw `import.meta.glob`](features.md#glob-import-as) switched from `{ assert: { type: 'raw' }}` to `{ as: 'raw' }`
-
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+
+### `import.meta.glob`
+
+- [Raw `import.meta.glob`](features.md#glob-import-as) switched from `{ assert: { type: 'raw' }}` to `{ as: 'raw' }`
+- Keys of `import.meta.glob` are now relative to the current module.
+
+  ```diff
+  // file: /foo/index.js
+  const modules = import.meta.glob('../foo/*.js')
+
+  // transformed:
+  const modules = {
+  -  '../foo/bar.js': () => {}
+  +  './bar.js': () => {}
+  }
+  ```
+
+- When using an alias with `import.meta.glob`, the keys are always absolute.
+- `import.meta.globEager` is now deprecated. Use `import.meta.glob('*', { eager: true })` instead.
+
+### WebAssembly support
+
+`import init from 'example.wasm'` syntax is dropped to prevent future collision with ["ESM integration for Wasm"](https://github.com/WebAssembly/esm-integration).
+You can use `?init` which is similar to the previous behavior.
+
+```diff
+-import init from 'example.wasm'
++import init from 'example.wasm?init'
+
+-init().then((instance) => {
++init().then(({ exports }) => {
+  exports.test()
+})
+```
 
 ## Migration from v1
 
