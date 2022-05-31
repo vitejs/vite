@@ -58,6 +58,7 @@ import colors from 'picocolors'
 import type * as postcss from 'postcss'
 import type { Plugin } from '../plugin'
 import {
+  arraify,
   cleanUrl,
   combineSourcemaps,
   createDebugger,
@@ -496,7 +497,9 @@ export async function createPluginContainer(
           (await plugin.options.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
-        parser = acorn.Parser.extend(options.acornInjectPlugins as any)
+        parser = acorn.Parser.extend(
+          ...(arraify(options.acornInjectPlugins) as any)
+        )
       }
       return {
         acorn,
