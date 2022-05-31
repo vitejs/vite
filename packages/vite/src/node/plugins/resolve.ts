@@ -636,8 +636,14 @@ export function tryNodeResolve(
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
-    const resolvedId =
-      isDeepImport && path.extname(id) !== resolvedExt ? id + resolvedExt : id
+    let resolvedId = id
+    if (
+      isDeepImport &&
+      !pkg?.data.exports &&
+      path.extname(id) !== resolvedExt
+    ) {
+      resolvedId += resolvedExt
+    }
     return { ...resolved, id: resolvedId, external: true }
   }
 
