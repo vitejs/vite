@@ -68,6 +68,21 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 - When using an alias with `import.meta.glob`, the keys are always absolute.
 - `import.meta.globEager` is now deprecated. Use `import.meta.glob('*', { eager: true })` instead.
 
+### WebAssembly support
+
+`import init from 'example.wasm'` syntax is dropped to prevent future collision with ["ESM integration for Wasm"](https://github.com/WebAssembly/esm-integration).
+You can use `?init` which is similar to the previous behavior.
+
+```diff
+-import init from 'example.wasm'
++import init from 'example.wasm?init'
+
+-init().then((instance) => {
++init().then(({ exports }) => {
+  exports.test()
+})
+```
+
 ## Migration from v1
 
 Check the [Migration from v1 Guide](https://v2.vitejs.dev/guide/migration.html) in the Vite v2 docs first to see the needed changes to port your app to Vite v2, and then proceed with the changes on this page.
