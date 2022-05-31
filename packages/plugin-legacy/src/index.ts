@@ -47,6 +47,8 @@ const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('d
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
+const _require = createRequire(import.meta.url)
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   const targets = options.targets || 'defaults'
@@ -175,7 +177,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
-  const _require = createRequire(import.meta.url)
   const legacyPostPlugin: Plugin = {
     name: 'vite:legacy-post-process',
     enforce: 'post',
@@ -328,21 +329,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             'env',
-            {
-              targets,
-              modules: false,
-              bugfixes: true,
-              loose: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false
-                  }
-                : undefined,
-              shippedProposals: true,
+            createBabelPresetEnvOptions(targets, {
+              needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
-            }
+            })
           ]
         ]
       })
@@ -528,14 +518,7 @@ export async function detectPolyfills(
     presets: [
       [
         'env',
-        {
-          targets,
-          modules: false,
-          useBuiltIns: 'usage',
-          corejs: { version: 3, proposals: false },
-          shippedProposals: true,
-          ignoreBrowserslistConfig: true
-        }
+        createBabelPresetEnvOptions(targets, { ignoreBrowserslistConfig: true })
       ]
     ]
   })
@@ -549,6 +532,30 @@ export async function detectPolyfills(
         list.add(source)
       }
     }
+  }
+}
+
+function createBabelPresetEnvOptions(
+  targets: any,
+  {
+    needPolyfills = true,
+    ignoreBrowserslistConfig
+  }: { needPolyfills?: boolean; ignoreBrowserslistConfig?: boolean }
+) {
+  return {
+    targets,
+    bugfixes: true,
+    loose: false,
+    modules: false,
+    useBuiltIns: needPolyfills ? 'usage' : false,
+    corejs: needPolyfills
+      ? {
+          version: _require('core-js/package.json').version,
+          proposals: false
+        }
+      : undefined,
+    shippedProposals: true,
+    ignoreBrowserslistConfig
   }
 }
 
