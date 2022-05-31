@@ -97,7 +97,7 @@ test('vue + vuex', async () => {
 
 test('esbuild-plugin', async () => {
   expect(await page.textContent('.esbuild-plugin')).toMatch(
-    isBuild ? `Hello from a package` : `Hello from an esbuild plugin`
+    `Hello from an esbuild plugin`
   )
 })
 

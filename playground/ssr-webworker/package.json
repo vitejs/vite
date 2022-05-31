@@ -2,6 +2,7 @@
   "name": "test-ssr-webworker",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "DEV=1 node worker",
     "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"

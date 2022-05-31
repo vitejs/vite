@@ -1,11 +1,14 @@
 // @ts-check
-const fs = require('fs')
-const path = require('path')
-const express = require('express')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import express from 'express'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
 
-async function createServer(root = process.cwd(), hmrPort) {
+export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
   const app = express()
@@ -13,7 +16,9 @@ async function createServer(root = process.cwd(), hmrPort) {
   /**
    * @type {import('vite').ViteDevServer}
    */
-  const vite = await require('vite').createServer({
+  const vite = await (
+    await import('vite')
+  ).createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -63,6 +68,3 @@ if (!isTest) {
     })
   )
 }
-
-// for test use
-exports.createServer = createServer

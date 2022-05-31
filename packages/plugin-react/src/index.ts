@@ -2,7 +2,6 @@ import path from 'path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter } from '@rollup/pluginutils'
-import resolve from 'resolve'
 import { normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
@@ -362,7 +361,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  const runtimeId = 'react/jsx-runtime'
+  // const runtimeId = 'react/jsx-runtime'
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
@@ -373,10 +372,14 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           include: ['react/jsx-dev-runtime']
         }
       }
-    },
+    }
+    // TODO: this optimization may not be necesary and it is breacking esbuild+rollup compat,
+    // see https://github.com/vitejs/vite/pull/7246#discussion_r861552185
+    // We could still do the same trick and resolve to the optimized dependency here
+    /*
     resolveId(id: string) {
       return id === runtimeId ? id : null
-    },
+    }, 
     load(id: string) {
       if (id === runtimeId) {
         const runtimePath = resolve.sync(runtimeId, {
@@ -391,7 +394,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           ...exports.map((name) => `export const ${name} = jsxRuntime.${name}`)
         ].join('\n')
       }
-    }
+    } */
   }
 
   return [viteBabel, viteReactRefresh, useAutomaticRuntime && viteReactJsx]

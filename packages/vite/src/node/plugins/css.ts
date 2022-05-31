@@ -16,9 +16,7 @@ import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
-// We need to disable check of extraneous import which is buggy for stylus,
-// and causes the CI tests fail, see: https://github.com/vitejs/vite/pull/2860
-import type Stylus from 'stylus' // eslint-disable-line node/no-extraneous-import
+import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'types/alias'
 import { formatMessages, transform } from 'esbuild'
@@ -1197,7 +1195,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   }
 }
 
-export async function hoistAtRules(css: string) {
+export async function hoistAtRules(css: string): Promise<string> {
   const s = new MagicString(css)
   const cleanCss = emptyCssComments(css)
   let match: RegExpExecArray | null

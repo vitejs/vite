@@ -22,6 +22,7 @@ import {
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
+export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -30,18 +31,26 @@ const isDebugEnabled = _debug('vite:deps').enabled
 const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
-export type ExportsData = ReturnType<typeof parse> & {
+export type ExportsData = {
+  hasImports: boolean
+  exports: readonly string[]
+  facade: boolean
   // es-module-lexer has a facade detection but isn't always accurate for our
   // use case when the module has default export
-  hasReExports?: true
+  hasReExports?: boolean
   // hint if the dep requires loading as jsx
-  jsxLoader?: true
+  jsxLoader?: boolean
 }
 
-export interface OptimizedDeps {
+export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
+  run: () => void
+  isOptimizedDepFile: (id: string) => boolean
+  isOptimizedDepUrl: (url: string) => boolean
+  getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+  options: DepOptimizationOptions
 }
 
 export interface DepOptimizationOptions {
@@ -56,6 +65,13 @@ export interface DepOptimizationOptions {
    * vite project root. This will overwrite default entries inference.
    */
   entries?: string | string[]
+  /**
+   * Enable esbuild based scan phase, to get back to the optimized deps discovery
+   * strategy used in Vite v2
+   * @default false
+   * @experimental
+   */
+  devScan?: boolean
   /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
@@ -107,11 +123,13 @@ export interface DepOptimizationOptions {
    */
   extensions?: string[]
   /**
-   * Disables dependencies optimizations
+   * Disables dependencies optimizations, true disables the optimizer during
+   * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
+   * one of the modes. Deps optimization is enabled by default in both
    * @default false
    * @experimental
    */
-  disabled?: boolean
+  disabled?: boolean | 'build' | 'dev'
 }
 
 export interface DepOptimizationResult {
@@ -184,7 +202,7 @@ export interface DepOptimizationMetadata {
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -209,7 +227,7 @@ export async function optimizeDeps(
   return result.metadata
 }
 
-export function createOptimizedDepsMetadata(
+export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
   timestamp?: string
 ): DepOptimizationMetadata {
@@ -240,7 +258,7 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
-  force = config.server.force,
+  force = config.force,
   asCommand = false
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
@@ -257,7 +275,7 @@ export function loadCachedDepOptimizationMetadata(
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
       const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
-      cachedMetadata = parseOptimizedDepsMetadata(
+      cachedMetadata = parseDepsOptimizerMetadata(
         fs.readFileSync(cachedMetadataPath, 'utf-8'),
         depsCacheDir
       )
@@ -301,6 +319,21 @@ export async function discoverProjectDependencies(
     )
   }
 
+  return initialProjectDependencies(config, timestamp, deps)
+}
+
+/**
+ * Create the initial discovered deps list. At build time we only
+ * have the manually included deps. During dev, a scan phase is
+ * performed and knownDeps is the list of discovered deps
+ */
+export async function initialProjectDependencies(
+  config: ResolvedConfig,
+  timestamp?: string,
+  knownDeps?: Record<string, string>
+): Promise<Record<string, OptimizedDepInfo>> {
+  const deps: Record<string, string> = knownDeps ?? {}
+
   await addManuallyIncludedOptimizeDeps(deps, config)
 
   const browserHash = getOptimizedBrowserHash(
@@ -342,16 +375,16 @@ export function depsLogString(qualifiedIds: string[]): string {
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
 export async function runOptimizeDeps(
-  config: ResolvedConfig,
+  resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
-  config = {
-    ...config,
+  const config: ResolvedConfig = {
+    ...resolvedConfig,
     command: 'build'
   }
 
-  const depsCacheDir = getDepsCacheDir(config)
-  const processingCacheDir = getProcessingDepsCacheDir(config)
+  const depsCacheDir = getDepsCacheDir(resolvedConfig)
+  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig)
 
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
@@ -369,7 +402,7 @@ export async function runOptimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  const metadata = createOptimizedDepsMetadata(config)
+  const metadata = initDepsOptimizerMetadata(config)
 
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
@@ -452,7 +485,7 @@ export async function runOptimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: true,
+    ignoreAnnotations: resolvedConfig.command !== 'build',
     metafile: true,
     define,
     plugins: [
@@ -493,7 +526,7 @@ export async function runOptimizeDeps(
       const id = path
         .relative(processingCacheDirOutputPath, o)
         .replace(jsExtensionRE, '')
-      const file = getOptimizedDepPath(id, config)
+      const file = getOptimizedDepPath(id, resolvedConfig)
       if (
         !findOptimizedDepInfoInRecord(
           metadata.optimized,
@@ -511,7 +544,7 @@ export async function runOptimizeDeps(
   }
 
   const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyOptimizedDepsMetadata(metadata, depsCacheDir))
+  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 
@@ -532,7 +565,7 @@ async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const include = config.optimizeDeps?.include
   if (include) {
-    const resolve = config.createResolver({ asSrc: false })
+    const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of include) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
@@ -562,31 +595,41 @@ export function newDepOptimizationProcessing(): DepOptimizationProcessing {
 // Convert to { id: src }
 export function depsFromOptimizedDepInfo(
   depsInfo: Record<string, OptimizedDepInfo>
-) {
+): Record<string, string> {
   return Object.fromEntries(
     Object.entries(depsInfo).map((d) => [d[0], d[1].src!])
   )
 }
 
-export function getOptimizedDepPath(id: string, config: ResolvedConfig) {
+export function getOptimizedDepPath(
+  id: string,
+  config: ResolvedConfig
+): string {
   return normalizePath(
     path.resolve(getDepsCacheDir(config), flattenId(id) + '.js')
   )
 }
 
-export function getDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'deps'))
+export function getDepsCacheDir(config: ResolvedConfig): string {
+  const dirName = config.command === 'build' ? 'depsBuild' : 'deps'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig) {
-  return normalizePath(path.resolve(config.cacheDir, 'processing'))
+  const dirName = config.command === 'build' ? 'processingBuild' : 'processing'
+  return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
-export function isOptimizedDepFile(id: string, config: ResolvedConfig) {
+export function isOptimizedDepFile(
+  id: string,
+  config: ResolvedConfig
+): boolean {
   return id.startsWith(getDepsCacheDir(config))
 }
 
-export function createIsOptimizedDepUrl(config: ResolvedConfig) {
+export function createIsOptimizedDepUrl(
+  config: ResolvedConfig
+): (url: string) => boolean {
   const { root } = config
   const depsCacheDir = getDepsCacheDir(config)
 
@@ -605,7 +648,7 @@ export function createIsOptimizedDepUrl(config: ResolvedConfig) {
   }
 }
 
-function parseOptimizedDepsMetadata(
+function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string
 ): DepOptimizationMetadata | undefined {
@@ -659,7 +702,7 @@ function parseOptimizedDepsMetadata(
  * the next time the server start we need to use the global
  * browserHash to allow long term caching
  */
-function stringifyOptimizedDepsMetadata(
+function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string
 ) {
@@ -715,7 +758,6 @@ export async function extractExportsData(
   config: ResolvedConfig
 ): Promise<ExportsData> {
   await init
-  let exportsData: ExportsData
 
   const esbuildOptions = config.optimizeDeps?.esbuildOptions ?? {}
   if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
@@ -728,34 +770,48 @@ export async function extractExportsData(
       write: false,
       format: 'esm'
     })
-    exportsData = parse(result.outputFiles[0].text) as ExportsData
-  } else {
-    const entryContent = fs.readFileSync(filePath, 'utf-8')
-    try {
-      exportsData = parse(entryContent) as ExportsData
-    } catch {
-      const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
-      debug(
-        `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`
-      )
-      const transformed = await transformWithEsbuild(entryContent, filePath, {
-        loader
-      })
-      // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
-      // This is useful for packages such as Gatsby.
-      esbuildOptions.loader = {
-        '.js': 'jsx',
-        ...esbuildOptions.loader
-      }
-      exportsData = parse(transformed.code) as ExportsData
-      exportsData.jsxLoader = true
+    const [imports, exports, facade] = parse(result.outputFiles[0].text)
+    return {
+      hasImports: imports.length > 0,
+      exports,
+      facade
     }
-    for (const { ss, se } of exportsData[0]) {
+  }
+
+  let parseResult: ReturnType<typeof parse>
+  let usedJsxLoader = false
+
+  const entryContent = fs.readFileSync(filePath, 'utf-8')
+  try {
+    parseResult = parse(entryContent)
+  } catch {
+    const loader = esbuildOptions.loader?.[path.extname(filePath)] || 'jsx'
+    debug(
+      `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`
+    )
+    const transformed = await transformWithEsbuild(entryContent, filePath, {
+      loader
+    })
+    // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
+    // This is useful for packages such as Gatsby.
+    esbuildOptions.loader = {
+      '.js': 'jsx',
+      ...esbuildOptions.loader
+    }
+    parseResult = parse(transformed.code)
+    usedJsxLoader = true
+  }
+
+  const [imports, exports, facade] = parseResult
+  const exportsData: ExportsData = {
+    hasImports: imports.length > 0,
+    exports,
+    facade,
+    hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)
-      if (/export\s+\*\s+from/.test(exp)) {
-        exportsData.hasReExports = true
-      }
-    }
+      return /export\s+\*\s+from/.test(exp)
+    }),
+    jsxLoader: usedJsxLoader
   }
   return exportsData
 }
@@ -777,9 +833,9 @@ function needsInterop(
   ) {
     return true
   }
-  const [imports, exports] = exportsData
+  const { hasImports, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !imports.length) {
+  if (!exports.length && !hasImports) {
     return true
   }
 

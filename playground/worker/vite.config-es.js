@@ -1,6 +1,5 @@
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
-const path = require('path')
 
 module.exports = vite.defineConfig({
   base: '/es/',

@@ -145,6 +145,11 @@ export interface UserConfig {
    */
   preview?: PreviewOptions
   /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   * @experimental
+   */
+  force?: boolean
+  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -225,6 +230,8 @@ export interface ExperimentalOptions {
 
 export type SSRTarget = 'node' | 'webworker'
 
+export type SSRFormat = 'esm' | 'cjs'
+
 export interface SSROptions {
   external?: string[]
   noExternal?: string | RegExp | (string | RegExp)[] | true
@@ -234,6 +241,14 @@ export interface SSROptions {
    * Default: 'node'
    */
   target?: SSRTarget
+  /**
+   * Define the format for the ssr build. Since Vite v3 the SSR build generates ESM by default.
+   * `'cjs'` can be selected to generate a CJS build, but it isn't recommended. This option is
+   * left marked as experimental to give users more time to update to ESM. CJS builds requires
+   * complex externalization heuristics that aren't present in the ESM format.
+   * @experimental
+   */
+  format?: SSRFormat
 }
 
 export interface ResolveWorkerOptions {
@@ -854,4 +869,14 @@ async function loadConfigFromBundledFile(
   const config = raw.__esModule ? raw.default : raw
   _require.extensions[extension] = defaultLoader
   return config
+}
+
+export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
+  const { command, optimizeDeps } = config
+  const { disabled } = optimizeDeps
+  return !(
+    disabled === true ||
+    (command === 'build' && disabled === 'build') ||
+    (command === 'serve' && optimizeDeps.disabled === 'dev')
+  )
 }
