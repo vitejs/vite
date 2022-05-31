@@ -15,7 +15,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 A small fraction of users will now require using [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills.
 
-## Config Options Change
+## Config Options Changes
 
 - The following options that were already deprecated in v2 have been removed:
 
