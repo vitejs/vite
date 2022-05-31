@@ -19,11 +19,13 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 - The following options that were already deprecated in v2 have been removed:
 
-  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
-  - `build.base` (switch to [`base`](../config/shared-options.md#base))
   - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolvealias))
   - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolvededupe))
-  - `polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+  - `build.base` (switch to [`base`](../config/shared-options.md#base))
+  - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
+  - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
+  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
 
 ## Dev Server Changes
 
