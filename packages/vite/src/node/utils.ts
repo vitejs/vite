@@ -795,12 +795,12 @@ export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
 ): string => {
-  // require in the root directory first, and fallback to the default require.
-  const _requireFromRoot = createRequire(path.resolve(root, './index.cjs'))
-  try {
-    return _requireFromRoot.resolve(id)
-  } catch {}
-  return _require.resolve(id)
+  // Search in the root directory first, and fallback to the default require paths.
+  const fallbackPaths = _require.resolve.paths?.(id) || []
+  const path = _require.resolve(id, {
+    paths: [root, ...fallbackPaths]
+  })
+  return path
 }
 
 // Based on node-graceful-fs
