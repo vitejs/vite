@@ -41,7 +41,7 @@ Vite v3 uses ESM for the SSR build by default. When using ESM, the [ssr external
 
 - [Raw `import.meta.glob`](features.md#glob-import-as) switched from `{ assert: { type: 'raw' }}` to `{ as: 'raw' }`
 
-- JS Extensions in SSR and lib mode now use a valid js extension (`js`, `mjs`, or `cjs`) for output js entries and chunks based on their format and the package type.
+- JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
 
 ## Migration from v1
 
