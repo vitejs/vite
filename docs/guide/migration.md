@@ -45,9 +45,26 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 
 ## General Changes
 
-- [Raw `import.meta.glob`](features.md#glob-import-as) switched from `{ assert: { type: 'raw' }}` to `{ as: 'raw' }`
-
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+
+### `import.meta.glob`
+
+- [Raw `import.meta.glob`](features.md#glob-import-as) switched from `{ assert: { type: 'raw' }}` to `{ as: 'raw' }`
+- Keys of `import.meta.glob` are now relative to the current module.
+
+  ```diff
+  // file: /foo/index.js
+  const modules = import.meta.glob('../foo/*.js')
+
+  // transformed:
+  const modules = {
+  -  '../foo/bar.js': () => {}
+  +  './bar.js': () => {}
+  }
+  ```
+
+- When using an alias with `import.meta.glob`, the keys are always absolute.
+- `import.meta.globEager` is now deprecated. Use `import.meta.glob('*', { eager: true })` instead.
 
 ## Migration from v1
 
