@@ -89,6 +89,7 @@ export interface InternalResolveOptions extends ResolveOptions {
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
+    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
@@ -266,7 +267,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           !external &&
           asSrc &&
           depsOptimizer &&
-          !ssr &&
+          (isBuild || !ssr) &&
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
@@ -668,7 +669,7 @@ export function tryNodeResolve(
     exclude?.includes(pkgId) ||
     exclude?.includes(nestedPath) ||
     SPECIAL_QUERY_RE.test(resolved) ||
-    ssr
+    (!isBuild && ssr)
   ) {
     // excluded from optimization
     // Inject a version query to npm deps so that the browser
@@ -682,7 +683,6 @@ export function tryNodeResolve(
       }
     }
   } else {
-    // TODO: depsBuild
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
     const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
