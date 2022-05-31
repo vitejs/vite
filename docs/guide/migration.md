@@ -35,7 +35,7 @@ In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it remov
 
 ## SSR Changes
 
-Vite v3 uses ESM for the SSR build by default. When using ESM, the [ssr externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle. You can use `ssr.format: 'cjs'` to generate a CJS bundle, in which cases the same externalization strategy of Vite v2 is used.
+Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle. You can use `ssr.format: 'cjs'` to generate a CJS bundle, in which cases the same externalization strategy of Vite v2 is used.
 
 ## General Changes
 
