@@ -794,7 +794,7 @@ export function getHash(text: Buffer | string): string {
 export const requireResolveFromRootWithFallback = (
   root: string,
   id: string
-) => {
+): string => {
   // Search in the root directory first, and fallback to the default require paths.
   const fallbackPaths = _require.resolve.paths?.(id) || []
   const path = _require.resolve(id, {
