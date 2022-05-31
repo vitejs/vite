@@ -25,7 +25,7 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
   - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolvededupe))
   - `polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
 
-## Dev server Changes
+## Dev Server Changes
 
 Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM and to reduce the number of modules the browser needs to request. In v3, the default strategy to discover and batch dependencies has changed. Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
 
