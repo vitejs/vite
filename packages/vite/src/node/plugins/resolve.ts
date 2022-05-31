@@ -336,7 +336,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Cannot access "${id}.\${key}" in client code.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
   }
 })`
         }
