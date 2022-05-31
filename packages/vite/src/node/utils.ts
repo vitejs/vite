@@ -13,6 +13,9 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
+import type MagicString from 'magic-string'
+
+import type { TransformResult } from 'rollup'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -21,6 +24,7 @@ import {
   FS_PREFIX,
   VALID_ID_PREFIX
 } from './constants'
+import type { ResolvedConfig } from '.'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -234,10 +238,10 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string) =>
+export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
+export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
-export function getPotentialTsSrcPaths(filePath: string) {
+export function getPotentialTsSrcPaths(filePath: string): string[] {
   const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
   const paths = [name + type.replace('js', 'ts') + query]
   if (!type.endsWith('x')) {
@@ -481,7 +485,7 @@ export function writeFile(
 }
 
 /**
- * Use instead of fs.existsSync(filename)
+ * Use fs.statSync(filename) instead of fs.existsSync(filename)
  * #2051 if we don't have read permission on a directory, existsSync() still
  * works and will result in massively slow subsequent checks (which are
  * unnecessary in the first place)
@@ -781,7 +785,7 @@ export function parseRequest(id: string): Record<string, string> | null {
   return Object.fromEntries(new URLSearchParams(search))
 }
 
-export const blankReplacer = (match: string) => ' '.repeat(match.length)
+export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
@@ -868,7 +872,7 @@ function gracefulRemoveDir(
   })
 }
 
-export function emptyCssComments(raw: string) {
+export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
@@ -982,4 +986,17 @@ function normalizeSingleAlias({
     alias.customResolver = customResolver
   }
   return alias
+}
+
+export function transformResult(
+  s: MagicString,
+  id: string,
+  config: ResolvedConfig
+): TransformResult {
+  const isBuild = config.command === 'build'
+  const needSourceMap = !isBuild || config.build.sourcemap
+  return {
+    code: s.toString(),
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+  }
 }

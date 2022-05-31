@@ -7,10 +7,10 @@ import { hmrPorts, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-html']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
 
-  const { createServer } = require(path.resolve(rootDir, 'server.js'))
+  const { createServer } = await import(path.resolve(rootDir, 'server.js'))
   const { app, vite } = await createServer(rootDir, hmrPorts['ssr-html'])
 
   return new Promise((resolve, reject) => {

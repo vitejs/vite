@@ -43,7 +43,10 @@ function getRunProcessingInfo(config: ResolvedConfig): RunProcessingInfo {
   )
 }
 
-export function registerWorkersSource(config: ResolvedConfig, id: string) {
+export function registerWorkersSource(
+  config: ResolvedConfig,
+  id: string
+): void {
   const info = getRunProcessingInfo(config)
   info.workersSources.add(id)
   if (info.waitingOn === id) {
@@ -55,7 +58,7 @@ export function delayDepsOptimizerUntil(
   config: ResolvedConfig,
   id: string,
   done: () => Promise<any>
-) {
+): void {
   const info = getRunProcessingInfo(config)
   if (
     !getDepsOptimizer(config)?.isOptimizedDepFile(id) &&

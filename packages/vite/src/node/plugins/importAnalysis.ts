@@ -37,11 +37,15 @@ import {
   prettifyUrl,
   removeImportQuery,
   timeFrom,
+  transformResult,
   unwrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import {
+  cjsShouldExternalizeForSSR,
+  shouldExternalizeForSSR
+} from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDir,
@@ -61,7 +65,7 @@ const debug = createDebugger('vite:import-analysis')
 const clientDir = normalizePath(CLIENT_DIR)
 
 const skipRE = /\.(map|json)$/
-export const canSkipImportAnalysis = (id: string) =>
+export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
 const optimizedDepChunkRE = /\/chunk-[A-Z0-9]{8}\.js/
@@ -362,10 +366,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // skip ssr external
           if (ssr) {
-            if (
-              server._ssrExternals &&
-              shouldExternalizeForSSR(specifier, server._ssrExternals)
-            ) {
+            if (config.ssr?.format === 'cjs') {
+              if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)) {
+                continue
+              }
+            } else if (shouldExternalizeForSSR(specifier, config)) {
               continue
             }
             if (isBuiltin(specifier)) {
@@ -626,10 +631,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-        }
+        return transformResult(s, importer, config)
       } else {
         return source
       }

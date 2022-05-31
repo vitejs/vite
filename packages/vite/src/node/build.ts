@@ -31,7 +31,10 @@ import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
-import { resolveSSRExternal, shouldExternalizeForSSR } from './ssr/ssrExternal'
+import {
+  cjsShouldExternalizeForSSR,
+  cjsSsrResolveExternals
+} from './ssr/ssrExternal'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import type { DepOptimizationMetadata } from './optimizer'
 import {
@@ -200,9 +203,25 @@ export interface BuildOptions {
 }
 
 export interface LibraryOptions {
+  /**
+   * Path of library entry
+   */
   entry: string
+  /**
+   * The name of the exposed global variable. Required when the `formats` option includes
+   * `umd` or `iife`
+   */
   name?: string
+  /**
+   * Output bundle formats
+   * @default ['es', 'umd']
+   */
   formats?: LibraryFormats[]
+  /**
+   * The name of the package file output. The default file name is the name option
+   * of the project package.json. It can also be defined as a function taking the
+   * format as an argument.
+   */
   fileName?: string | ((format: ModuleFormat) => string)
 }
 
@@ -373,27 +392,14 @@ async function doBuild(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  // inject ssrExternal if present
   const userExternal = options.rollupOptions?.external
   let external = userExternal
-  if (ssr) {
-    // see if we have cached deps data available
-    let knownImports: string[] | undefined
-    const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
-    try {
-      const data = JSON.parse(
-        fs.readFileSync(dataPath, 'utf-8')
-      ) as DepOptimizationMetadata
-      knownImports = Object.keys(data.optimized)
-    } catch (e) {}
-    if (!knownImports) {
-      // no dev deps optimization data, do a fresh scan
-      knownImports = await findKnownImports(config)
-    }
-    external = resolveExternal(
-      resolveSSRExternal(config, knownImports),
-      userExternal
-    )
+
+  // In CJS, we can pass the externals to rollup as is. In ESM, we need to
+  // do it in the resolve plugin so we can add the resolved extension for
+  // deep node_modules imports
+  if (ssr && config.ssr?.format === 'cjs') {
+    external = await cjsSsrResolveExternal(config, userExternal)
   }
 
   if (isDepsOptimizerEnabled(config) && !ssr) {
@@ -431,20 +437,27 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
+      const jsExt =
+        (ssr && config.ssr?.target !== 'webworker') || libOptions
+          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+          : 'js'
       return {
         dir: outDir,
-        format: ssr ? 'cjs' : 'es',
-        exports: ssr ? 'named' : 'auto',
+        // Default format is 'es' for regular and for SSR builds
+        format,
+        exports: cjsSsrBuild ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
         generatedCode: 'es2015',
         entryFileNames: ssr
-          ? `[name].js`
+          ? `[name].${jsExt}`
           : libOptions
-          ? resolveLibFilename(libOptions, output.format || 'es', config.root)
+          ? resolveLibFilename(libOptions, format, config.root, jsExt)
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         chunkFileNames: libOptions
-          ? `[name].[hash].js`
+          ? `[name].[hash].${jsExt}`
           : path.posix.join(options.assetsDir, `[name].[hash].js`),
         assetFileNames: libOptions
           ? `[name].[ext]`
@@ -583,10 +596,24 @@ function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
 
+type JsExt = 'js' | 'cjs' | 'mjs'
+
+function resolveOutputJsExtension(
+  format: ModuleFormat,
+  type: string = 'commonjs'
+): JsExt {
+  if (type === 'module') {
+    return format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
+  } else {
+    return format === 'es' ? 'mjs' : 'js'
+  }
+}
+
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
-  root: string
+  root: string,
+  extension?: JsExt
 ): string {
   if (typeof libOptions.fileName === 'function') {
     return libOptions.fileName(format)
@@ -600,13 +627,7 @@ export function resolveLibFilename(
       'Name in package.json is required if option "build.lib.fileName" is not provided.'
     )
 
-  let extension: string
-
-  if (packageJson?.type === 'module') {
-    extension = format === 'cjs' || format === 'umd' ? 'cjs' : 'js'
-  } else {
-    extension = format === 'es' ? 'mjs' : 'js'
-  }
+  extension ??= resolveOutputJsExtension(format, packageJson.type)
 
   if (format === 'cjs' || format === 'es') {
     return `${name}.${extension}`
@@ -696,23 +717,48 @@ export function onRollupWarning(
   }
 }
 
-function resolveExternal(
-  ssrExternals: string[],
+async function cjsSsrResolveExternal(
+  config: ResolvedConfig,
   user: ExternalOption | undefined
-): ExternalOption {
+): Promise<ExternalOption> {
+  // see if we have cached deps data available
+  let knownImports: string[] | undefined
+  const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(dataPath, 'utf-8')
+    ) as DepOptimizationMetadata
+    knownImports = Object.keys(data.optimized)
+  } catch (e) {}
+  if (!knownImports) {
+    // no dev deps optimization data, do a fresh scan
+    knownImports = await findKnownImports(config)
+  }
+  const ssrExternals = cjsSsrResolveExternals(config, knownImports)
+
   return (id, parentId, isResolved) => {
-    if (shouldExternalizeForSSR(id, ssrExternals)) {
+    const isExternal = cjsShouldExternalizeForSSR(id, ssrExternals)
+    if (isExternal) {
       return true
     }
     if (user) {
-      if (typeof user === 'function') {
-        return user(id, parentId, isResolved)
-      } else if (Array.isArray(user)) {
-        return user.some((test) => isExternal(id, test))
-      } else {
-        return isExternal(id, user)
-      }
+      return resolveUserExternal(user, id, parentId, isResolved)
     }
+  }
+}
+
+function resolveUserExternal(
+  user: ExternalOption,
+  id: string,
+  parentId: string | undefined,
+  isResolved: boolean
+) {
+  if (typeof user === 'function') {
+    return user(id, parentId, isResolved)
+  } else if (Array.isArray(user)) {
+    return user.some((test) => isExternal(id, test))
+  } else {
+    return isExternal(id, user)
   }
 }
 

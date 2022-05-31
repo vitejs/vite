@@ -419,6 +419,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         chunk.facadeModuleId
       )
       if (legacyEntryFilename) {
+        // `assets/foo.js` means importing "named register" in SystemJS
+        const nonBareBase = config.base === '' ? './' : config.base
         tags.push({
           tag: 'script',
           attrs: {
@@ -427,7 +429,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': config.base + legacyEntryFilename
+            'data-src': nonBareBase + legacyEntryFilename
           },
           children: systemJSInlineCode,
           injectTo: 'body'
@@ -517,7 +519,7 @@ export async function detectPolyfills(
   code: string,
   targets: any,
   list: Set<string>
-) {
+): Promise<void> {
   const babel = await loadBabel()
   const { ast } = babel.transform(code, {
     ast: true,
