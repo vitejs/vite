@@ -13,9 +13,10 @@ async function getBabelRestoreJSX() {
   if (!babelRestoreJSX)
     babelRestoreJSX = import('./babel-restore-jsx').then((r) => {
       const fn = r.default
-      if ('default' in fn)
-        // @ts-expect-error
+      if ('default' in fn) {
+        // @ts-expect-error TypeScript can't infer `fn` has `default
         return fn.default
+      }
       return fn
     })
   return babelRestoreJSX

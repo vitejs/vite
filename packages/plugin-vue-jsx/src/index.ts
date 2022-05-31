@@ -24,7 +24,7 @@ const ssrRegisterHelperCode =
 function ssrRegisterHelper(comp: ComponentOptions, filename: string) {
   const setup = comp.setup
   comp.setup = (props, ctx) => {
-    // @ts-ignore
+    // @ts-expect-error injected in a virtual module during SSR
     const ssrContext = useSSRContext()
     ;(ssrContext.modules || (ssrContext.modules = new Set())).add(filename)
     if (setup) {
@@ -88,14 +88,17 @@ function vueJsxPlugin(options: Options = {}): Plugin {
       // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
       // use filepath for plain jsx files (e.g. App.jsx)
       if (filter(id) || filter(filepath)) {
-        const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
+        const plugins: babel.PluginItem[] = [
+          importMeta,
+          [jsx, babelPluginOptions],
+          ...babelPlugins
+        ]
         if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
-            // @ts-ignore missing type
+            // @ts-expect-error missing type
             await import('@babel/plugin-transform-typescript').then(
               (r) => r.default
             ),
-            // @ts-ignore
             { isTSX: true, allowExtensions: true }
           ])
         }

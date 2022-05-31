@@ -761,7 +761,7 @@ export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
-// @ts-expect-error
+declare const jest: any | undefined
 export const usingDynamicImport = typeof jest === 'undefined'
 
 /**

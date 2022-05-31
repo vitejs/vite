@@ -111,7 +111,7 @@ async function getPluginContainer(
     'serve'
   )
 
-  // @ts-ignore: This plugin requires a ViteDevServer instance.
+  // @ts-expect-error This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !/pre-alias/.test(p.name))
 
   resolveId = (id) => container.resolveId(id)

@@ -46,49 +46,43 @@ const optimizedDepDynamicRE = /-[A-Z0-9]{8}\.js/
  */
 
 function detectScriptRel() {
-  // @ts-ignore
   const relList = document.createElement('link').relList
-  // @ts-ignore
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
 }
 
+declare const __VITE_IS_MODERN__: boolean
 declare const scriptRel: string
+declare function assetsURL(dep: string, importUrl?: string): string
+declare const seen: { [dep: string]: boolean }
+
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
   importerUrl?: string
 ) {
-  // @ts-ignore
   if (!__VITE_IS_MODERN__ || !deps || deps.length === 0) {
     return baseModule()
   }
 
   return Promise.all(
     deps.map((dep) => {
-      // @ts-ignore
       dep = assetsURL(dep, importerUrl)
-      // @ts-ignore
       if (dep in seen) return
-      // @ts-ignore
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      // @ts-ignore check if the file is already preloaded by SSR markup
       if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
-      // @ts-ignore
       const link = document.createElement('link')
-      // @ts-ignore
       link.rel = isCss ? 'stylesheet' : scriptRel
       if (!isCss) {
         link.as = 'script'
         link.crossOrigin = ''
       }
       link.href = dep
-      // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
         return new Promise((res, rej) => {

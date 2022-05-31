@@ -98,7 +98,7 @@ cli
 
       const info = server.config.logger.info
 
-      // @ts-ignore
+      // @ts-expect-error missing types
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
         ? colors.dim(

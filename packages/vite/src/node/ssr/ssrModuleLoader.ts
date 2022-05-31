@@ -224,6 +224,7 @@ async function instantiateModule(
   return Object.freeze(ssrModule)
 }
 
+declare const jest: any | undefined
 // In node@12+ we can use dynamic import to load CJS and ESM
 async function nodeImport(
   id: string,
@@ -286,7 +287,6 @@ async function nodeImport(
       importer,
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions

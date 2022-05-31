@@ -19,6 +19,7 @@ import type {
   RenderedChunk
 } from 'rollup'
 import type { PluginItem as BabelPlugin } from '@babel/core'
+import type { ImportDeclaration } from '@babel/types'
 import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
@@ -283,23 +284,21 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
-      // @ts-ignore avoid esbuild transform on legacy chunks since it produces
+      // @ts-expect-error avoid esbuild transform on legacy chunks since it produces
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
 
-      // @ts-ignore force terser for legacy chunks. This only takes effect if
+      // @ts-expect-error force terser for legacy chunks. This only takes effect if
       // minification isn't disabled, because that leaves out the terser plugin
       // entirely.
       opts.__vite_force_terser__ = true
 
-      // @ts-ignore
-      // In the `generateBundle` hook,
+      // @ts-expect-error in the `generateBundle` hook,
       // we'll delete the assets from the legacy bundle to avoid emitting duplicate assets.
       // But that's still a waste of computing resource.
       // So we add this flag to avoid emitting the asset in the first place whenever possible.
       opts.__vite_skip_asset_emit__ = true
 
-      // @ts-ignore avoid emitting assets for legacy bundle
       const needPolyfills =
         options.polyfills !== false && !Array.isArray(options.polyfills)
 
@@ -661,8 +660,7 @@ function recordAndRemovePolyfillBabelPlugin(
     post({ path }) {
       path.get('body').forEach((p) => {
         if (t.isImportDeclaration(p)) {
-          // @ts-expect-error
-          polyfills.add(p.node.source.value)
+          polyfills.add((p.node as ImportDeclaration).source.value)
           p.remove()
         }
       })

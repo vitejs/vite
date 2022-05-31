@@ -545,7 +545,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(opts, bundle) {
-      // @ts-ignore asset emits are skipped in legacy bundle
+      // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__) {
         return
       }
@@ -987,7 +987,6 @@ async function resolvePostcssConfig(
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
     try {
-      // @ts-ignore
       result = await postcssrc({}, searchPath)
     } catch (e) {
       if (!/No PostCSS Config found/.test(e.message)) {

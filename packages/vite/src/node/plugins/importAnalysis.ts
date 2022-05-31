@@ -326,7 +326,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          // @ts-ignore
           n: specifier
         } = imports[index]
 

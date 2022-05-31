@@ -174,7 +174,7 @@ export async function initDepsOptimizer(
     firstRunCalled = true
 
     // Ensure that rerun is called sequentially
-    enqueuedRerun = undefined
+    enqueuedRerun = undefined as typeof enqueuedRerun
 
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
@@ -379,7 +379,6 @@ export async function initDepsOptimizer(
     }
 
     currentlyProcessing = false
-    // @ts-ignore
     enqueuedRerun?.()
   }
 

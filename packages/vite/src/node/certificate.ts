@@ -33,9 +33,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// @ts-ignore
+// @ts-expect-error missing types
 import forge from 'node-forge/lib/forge'
-// @ts-ignore
 import 'node-forge/lib/pki'
 
 // a hexString is considered negative if it's most significant bit is 1

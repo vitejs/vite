@@ -572,7 +572,7 @@ async function startServer(
     logger: server.config.logger
   })
 
-  // @ts-ignore
+  // @ts-expect-error missing types
   const profileSession = global.__vite_profile_session
   if (profileSession) {
     profileSession.post('Profiler.stop', (err: any, { profile }: any) => {
@@ -690,7 +690,7 @@ export function resolveServerOptions(
 }
 
 async function restartServer(server: ViteDevServer) {
-  // @ts-ignore
+  // @ts-expect-error missing types
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
 
@@ -718,10 +718,9 @@ async function restartServer(server: ViteDevServer) {
   for (const key in newServer) {
     if (key === '_restartPromise') {
       // prevent new server `restart` function from calling
-      // @ts-ignore
       newServer[key] = server[key]
     } else if (key !== 'app') {
-      // @ts-ignore
+      // @ts-expect-error The type of `key` is a actually `keyof ViteDevServer`
       server[key] = newServer[key]
     }
   }

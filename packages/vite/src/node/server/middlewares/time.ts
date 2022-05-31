@@ -11,7 +11,7 @@ export function timeMiddleware(root: string): Connect.NextHandleFunction {
     const end = res.end
     res.end = (...args: any[]) => {
       logTime(`${timeFrom(start)} ${prettifyUrl(req.url!, root)}`)
-      // @ts-ignore
+      // @ts-expect-error TypeScript can't infer this is a safe assignment
       return end.call(res, ...args)
     }
     next()
