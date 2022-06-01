@@ -159,7 +159,9 @@ test('hydration', async () => {
 })
 
 test('hmr', async () => {
-  await page.goto(url)
+  // This is test is flaky in Mac CI, but can't be reproduced locally. Wait until
+  // network idle to avoid the issue
+  await page.goto(url, { waitUntil: 'networkidle' })
   editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
   await untilUpdated(() => page.textContent('h1'), 'changed')
 })
