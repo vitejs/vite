@@ -42,11 +42,13 @@ declare module 'postcss-load-config' {
 declare module 'postcss-import' {
   import type { Plugin } from 'postcss'
   const plugin: (options: {
-    resolve: (
+    resolve?: (
       id: string,
       basedir: string,
       importOptions: any
     ) => string | string[] | Promise<string | string[]>
+
+    load?: (filename: string, importOptions: any) => Promise<string>
   }) => Plugin
   export = plugin
 }

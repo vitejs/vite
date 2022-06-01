@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs, { promises as pfs } from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
 import glob from 'fast-glob'
@@ -666,6 +666,76 @@ function getCssResolversKeys(
   return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
 }
 
+async function preProcessCSS(
+  config: ResolvedConfig,
+  id: string,
+  code: string,
+  deps: Set<string>,
+  atImportResolvers: CSSAtImportResolvers,
+  sourcemap: boolean // if use in postcss can disable sourcemap
+) {
+  const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  if (!isPreProcessor(lang)) {
+    return
+  }
+  const { preprocessorOptions, devSourcemap } = config.css || {}
+  const preProcessor = preProcessors[lang]
+  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
+  // support @import from node dependencies by default
+  switch (lang) {
+    case PreprocessLang.scss:
+    case PreprocessLang.sass:
+      opts = {
+        includePaths: ['node_modules'],
+        alias: config.resolve.alias,
+        ...opts
+      }
+      break
+    case PreprocessLang.less:
+    case PreprocessLang.styl:
+    case PreprocessLang.stylus:
+      opts = {
+        paths: ['node_modules'],
+        alias: config.resolve.alias,
+        ...opts
+      }
+  }
+  // important: set this for relative import resolving
+  opts.filename = cleanUrl(id)
+  opts.enableSourcemap = sourcemap && (devSourcemap ?? false)
+
+  const preprocessResult = await preProcessor(
+    code,
+    config.root,
+    opts,
+    atImportResolvers
+  )
+
+  if (preprocessResult.errors.length) {
+    throw preprocessResult.errors[0]
+  }
+
+  code = preprocessResult.code
+  const preprocessorMap = combineSourcemapsIfExists(
+    opts.filename,
+    preprocessResult.map,
+    preprocessResult.additionalMap
+  )
+
+  if (preprocessResult.deps) {
+    preprocessResult.deps.forEach((dep) => {
+      // sometimes sass registers the file itself as a dep
+      if (normalizePath(dep) !== normalizePath(opts.filename)) {
+        deps.add(dep)
+      }
+    })
+  }
+  return {
+    code,
+    map: preprocessorMap
+  }
+}
+
 async function compileCSS(
   id: string,
   code: string,
@@ -680,11 +750,7 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const {
-    modules: modulesOptions,
-    preprocessorOptions,
-    devSourcemap
-  } = config.css || {}
+  const { modules: modulesOptions, devSourcemap } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -692,6 +758,7 @@ async function compileCSS(
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  const importer = id
 
   // 1. plain css that needs no processing
   if (
@@ -709,58 +776,17 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
-  if (isPreProcessor(lang)) {
-    const preProcessor = preProcessors[lang]
-    let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
-    // support @import from node dependencies by default
-    switch (lang) {
-      case PreprocessLang.scss:
-      case PreprocessLang.sass:
-        opts = {
-          includePaths: ['node_modules'],
-          alias: config.resolve.alias,
-          ...opts
-        }
-        break
-      case PreprocessLang.less:
-      case PreprocessLang.styl:
-      case PreprocessLang.stylus:
-        opts = {
-          paths: ['node_modules'],
-          alias: config.resolve.alias,
-          ...opts
-        }
-    }
-    // important: set this for relative import resolving
-    opts.filename = cleanUrl(id)
-    opts.enableSourcemap = devSourcemap ?? false
-
-    const preprocessResult = await preProcessor(
-      code,
-      config.root,
-      opts,
-      atImportResolvers
-    )
-
-    if (preprocessResult.errors.length) {
-      throw preprocessResult.errors[0]
-    }
-
-    code = preprocessResult.code
-    preprocessorMap = combineSourcemapsIfExists(
-      opts.filename,
-      preprocessResult.map,
-      preprocessResult.additionalMap
-    )
-
-    if (preprocessResult.deps) {
-      preprocessResult.deps.forEach((dep) => {
-        // sometimes sass registers the file itself as a dep
-        if (normalizePath(dep) !== normalizePath(opts.filename)) {
-          deps.add(dep)
-        }
-      })
-    }
+  const preProcessResult = await preProcessCSS(
+    config,
+    id,
+    code,
+    deps,
+    atImportResolvers,
+    true
+  )
+  if (preProcessResult) {
+    code = preProcessResult.code
+    preprocessorMap = preProcessResult.map
   }
 
   // 3. postcss
@@ -771,21 +797,32 @@ async function compileCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
-        async resolve(id, basedir) {
+        async resolve(id) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
             return publicFile
           }
+          for (const key of getCssResolversKeys(atImportResolvers)) {
+            const resolved = await atImportResolvers[key](id, importer)
 
-          const resolved = await atImportResolvers.css(
-            id,
-            path.join(basedir, '*')
-          )
-
-          if (resolved) {
-            return path.resolve(resolved)
+            if (resolved) {
+              return path.resolve(resolved)
+            }
           }
+
           return id
+        },
+        async load(id) {
+          const code = await pfs.readFile(id, { encoding: 'utf-8' })
+          const preProcessResult = await preProcessCSS(
+            config,
+            id,
+            code,
+            deps,
+            atImportResolvers,
+            false
+          )
+          return preProcessResult ? preProcessResult.code : code
         }
       })
     )
