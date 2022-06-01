@@ -758,7 +758,6 @@ async function compileCSS(
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
-  const importer = id
 
   // 1. plain css that needs no processing
   if (
@@ -797,13 +796,16 @@ async function compileCSS(
   if (needInlineImport) {
     postcssPlugins.unshift(
       (await import('postcss-import')).default({
-        async resolve(id) {
+        async resolve(id, basedir) {
           const publicFile = checkPublicFile(id, config)
           if (publicFile) {
             return publicFile
           }
           for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id, importer)
+            const resolved = await atImportResolvers[key](
+              id,
+              path.join(basedir, '*')
+            )
 
             if (resolved) {
               return path.resolve(resolved)
