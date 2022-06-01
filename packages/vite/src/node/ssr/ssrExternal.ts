@@ -139,29 +139,19 @@ function createIsSsrExternal(
     isBuild: true
   }
 
-  const isPackageEntry = (id: string) => {
+  const isValidPackageEntry = (id: string) => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
-    if (
-      tryNodeResolve(
-        id,
-        undefined,
-        resolveOptions,
-        ssr?.target === 'webworker',
-        undefined,
-        true
-      )
-    ) {
-      return true
-    }
-    try {
-      // no main entry, but deep imports may be allowed
-      if (resolveFrom(`${id}/package.json`, root)) {
-        return true
-      }
-    } catch {}
-    return false
+    return !!tryNodeResolve(
+      id,
+      undefined,
+      resolveOptions,
+      ssr?.target === 'webworker',
+      undefined,
+      true,
+      true // try to externalize, will return undefined if not possible
+    )
   }
 
   return (id: string) => {
@@ -171,7 +161,7 @@ function createIsSsrExternal(
     const external =
       !id.startsWith('.') &&
       !path.isAbsolute(id) &&
-      (isBuiltin(id) || (isConfiguredAsExternal(id) && isPackageEntry(id)))
+      (isBuiltin(id) || (isConfiguredAsExternal(id) && isValidPackageEntry(id)))
     processedIds.set(id, external)
     return external
   }

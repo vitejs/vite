@@ -262,7 +262,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
         const external = options.shouldExternalize?.(id)
-
         if (
           !external &&
           asSrc &&
@@ -636,8 +635,17 @@ export function tryNodeResolve(
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
-    const resolvedId =
-      isDeepImport && path.extname(id) !== resolvedExt ? id + resolvedExt : id
+    let resolvedId = id
+    if (isDeepImport) {
+      // check ext before externalizing - only externalize
+      // extension-less imports and explicit .js imports
+      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
+        return
+      }
+      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
+        resolvedId += resolvedExt
+      }
+    }
     return { ...resolved, id: resolvedId, external: true }
   }
 
