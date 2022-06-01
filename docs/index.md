@@ -1,10 +1,16 @@
 ---
 layout: home
 
+title: Vite
+titleTemplate: Next Generation Frontend Tooling
+
 hero:
   name: Vite
   text: Next Generation Frontend Tooling
   tagline: Get ready for a development environment that can finally catch up with you.
+  image:
+    src: /logo-with-shadow.png
+    alt: Vite
   actions:
     - theme: brand
       text: Get Started
