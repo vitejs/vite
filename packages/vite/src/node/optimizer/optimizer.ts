@@ -16,9 +16,11 @@ import {
   isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
+  optimizeServerSsrDeps,
   runOptimizeDeps
 } from '.'
 import type {
+  DepOptimizationMetadata,
   DepOptimizationProcessing,
   DepsOptimizer,
   OptimizedDepInfo
@@ -56,9 +58,18 @@ export async function initDepsOptimizer(
 
   let handle: NodeJS.Timeout | undefined
 
+  let ssrServerDepsMetadata: DepOptimizationMetadata
+  let _metadata =
+    cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp)
+
   const depsOptimizer: DepsOptimizer = {
-    metadata:
-      cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp),
+    metadata: (options: { ssr: boolean }) => {
+      if (isBuild || !options.ssr) {
+        return _metadata
+      } else {
+        return ssrServerDepsMetadata
+      }
+    },
     registerMissingImport,
     run: () => debouncedProcessing(0),
     isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
@@ -69,6 +80,16 @@ export async function initDepsOptimizer(
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
+
+  if (!isBuild && config.ssr && config.optimizeDeps) {
+    const { noExternal } = config.ssr
+    const { include } = config.optimizeDeps
+    if (noExternal && include) {
+      ssrServerDepsMetadata = await optimizeServerSsrDeps(config)
+    } else {
+      ssrServerDepsMetadata = initDepsOptimizerMetadata(config)
+    }
+  }
 
   let newDepsDiscovered = false
 
@@ -110,7 +131,7 @@ export async function initDepsOptimizer(
         config,
         sessionTimestamp
       )
-      const { metadata } = depsOptimizer
+      const metadata = _metadata
       for (const depInfo of Object.values(discovered)) {
         addOptimizedDepInfo(metadata, 'discovered', {
           ...depInfo,
@@ -130,7 +151,7 @@ export async function initDepsOptimizer(
             timestamp: true
           })
 
-          const { metadata } = depsOptimizer
+          const metadata = _metadata
 
           const discovered = await discoverProjectDependencies(
             config,
@@ -179,7 +200,7 @@ export async function initDepsOptimizer(
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
 
-    if (Object.keys(depsOptimizer.metadata.discovered).length === 0) {
+    if (Object.keys(_metadata.discovered).length === 0) {
       currentlyProcessing = false
       return
     }
@@ -189,13 +210,13 @@ export async function initDepsOptimizer(
     // a succesful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
     // in the cache dir and a new metadata info object assigned
-    // to optimizeDeps.metadata. A fullReload is only issued if
-    // the previous bundled dependencies have changed.
+    // to _metadata. A fullReload is only issued if the previous bundled
+    // dependencies have changed.
 
-    // if the rerun fails, optimizeDeps.metadata remains untouched,
-    // current discovered deps are cleaned, and a fullReload is issued
+    // if the rerun fails, _metadata remains untouched, current discovered
+    // deps are cleaned, and a fullReload is issued
 
-    let { metadata } = depsOptimizer
+    let metadata = _metadata
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
@@ -302,7 +323,7 @@ export async function initDepsOptimizer(
           )
         }
 
-        metadata = depsOptimizer.metadata = newData
+        metadata = _metadata = newData
         resolveEnqueuedProcessingPromises()
       }
 
@@ -401,7 +422,7 @@ export async function initDepsOptimizer(
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
-    const deps = Object.keys(depsOptimizer.metadata.discovered)
+    const deps = Object.keys(_metadata.discovered)
     const depsString = depsLogString(deps)
     debug(colors.green(`new dependencies found: ${depsString}`), {
       timestamp: true
@@ -429,7 +450,12 @@ export async function initDepsOptimizer(
         'Vite internal error: registering missing import before initial scanning is over'
       )
     }
-    const { metadata } = depsOptimizer
+    if (!isBuild && ssr) {
+      config.logger.error(
+        `Error: ${id} is a missing dependency in SSR dev server, it needs to be added to optimizeDeps.include`
+      )
+    }
+    const metadata = _metadata
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -447,7 +473,7 @@ export async function initDepsOptimizer(
     newDepsDiscovered = true
     missing = addOptimizedDepInfo(metadata, 'discovered', {
       id,
-      file: getOptimizedDepPath(id, config),
+      file: getOptimizedDepPath(id, config, ssr),
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run

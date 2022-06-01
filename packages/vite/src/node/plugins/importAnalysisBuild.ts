@@ -172,7 +172,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata({ ssr })
+              .depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importer) {
                 importerFile = optimizedModule.src
@@ -263,7 +264,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                depsOptimizer.metadata,
+                depsOptimizer.metadata({ ssr }),
                 file,
                 config
               )
