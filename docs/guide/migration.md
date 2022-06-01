@@ -24,7 +24,7 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
   - `build.base` (switch to [`base`](../config/shared-options.md#base))
   - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
   - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
-  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
   - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
 
 ## Dev Server Changes
@@ -37,7 +37,7 @@ To get back the v2 strategy, you can use [`optimizeDeps.devScan`](../config/dep-
 
 ## Build Changes
 
-In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it removes one of the most significant differences between dev and prod present in v2. Because esbuild converts CJS-only dependencies to ESM, [`@rollupjs/plugin-commonjs`] is no longer used.
+In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it removes one of the most significant differences between dev and prod present in v2. Because esbuild converts CJS-only dependencies to ESM, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer used.
 
 If you need to get back to the v2 strategy, you can use [`optimizeDeps.disabled: 'build'`](../config/dep-optimization-options.md#optimizedepsdisabled).
 
