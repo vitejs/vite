@@ -1,4 +1,4 @@
-import fs, { promises as pfs } from 'fs'
+import fs, { promises as fsp } from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
 import glob from 'fast-glob'
@@ -207,14 +207,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         modules,
         deps,
         map
-      } = await compileCSS(
-        id,
-        raw,
-        config,
-        urlReplacer,
-        atImportResolvers,
-        server
-      )
+      } = await compileCSS(id, raw, config, urlReplacer, atImportResolvers)
       if (modules) {
         moduleCache.set(id, modules)
       }
@@ -670,13 +663,13 @@ async function preProcessCSS(
   config: ResolvedConfig,
   id: string,
   code: string,
-  deps: Set<string>,
   atImportResolvers: CSSAtImportResolvers,
-  sourcemap: boolean // if use in postcss can disable sourcemap
-) {
+  deps: Set<string>,
+  sourcemap: boolean = true // if use in postcss can disable sourcemap
+): Promise<null | { code: string; map?: ExistingRawSourceMap }> {
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
   if (!isPreProcessor(lang)) {
-    return
+    return null
   }
   const { preprocessorOptions, devSourcemap } = config.css || {}
   const preProcessor = preProcessors[lang]
@@ -741,8 +734,7 @@ async function compileCSS(
   code: string,
   config: ResolvedConfig,
   urlReplacer: CssUrlReplacer,
-  atImportResolvers: CSSAtImportResolvers,
-  server?: ViteDevServer
+  atImportResolvers: CSSAtImportResolvers
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -779,9 +771,8 @@ async function compileCSS(
     config,
     id,
     code,
-    deps,
     atImportResolvers,
-    true
+    deps
   )
   if (preProcessResult) {
     code = preProcessResult.code
@@ -815,13 +806,13 @@ async function compileCSS(
           return id
         },
         async load(id) {
-          const code = await pfs.readFile(id, { encoding: 'utf-8' })
+          const code = await fsp.readFile(id, 'utf-8')
           const preProcessResult = await preProcessCSS(
             config,
             id,
             code,
-            deps,
             atImportResolvers,
+            deps,
             false
           )
           return preProcessResult ? preProcessResult.code : code
