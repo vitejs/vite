@@ -6,6 +6,11 @@ const path = require('path')
  */
 module.exports = {
   build: {
+    rollupOptions: {
+      output: {
+        banner: `/*!\nMayLib\n*/`
+      }
+    },
     lib: {
       entry: path.resolve(__dirname, 'src/main.js'),
       name: 'MyLib',

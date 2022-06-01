@@ -27,9 +27,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/s
 const INJECT_HELPERS_UMD_RE =
-  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/
+  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/s
 
 let server: ViteDevServer
 
