@@ -360,6 +360,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             type: 'module',
+            crossorigin: true,
             src: `${config.base}${modernPolyfillFilename}`
           }
         })
@@ -390,6 +391,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             nomodule: true,
+            crossorigin: true,
             id: legacyPolyfillId,
             src: `${config.base}${legacyPolyfillFilename}`
           },
@@ -412,6 +414,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             nomodule: true,
+            crossorigin: true,
             // we set the entry path on the element as an attribute so that the
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
