@@ -373,6 +373,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             type: 'module',
+            crossorigin: true,
             src: `${config.base}${modernPolyfillFilename}`
           }
         })
