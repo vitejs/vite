@@ -558,8 +558,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
           opts.format === 'es' || opts.format === 'system'
-            ? `\\bimport\\s*"[^"]*(?:${emptyChunkFiles})";\n?`
-            : `\\brequire\\(\\s*"[^"]*(?:${emptyChunkFiles})"\\);\n?`,
+            ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+            : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
           'g'
         )
         for (const file in bundle) {
