@@ -81,14 +81,8 @@ export async function initDepsOptimizer(
 
   depsOptimizerMap.set(config, depsOptimizer)
 
-  if (!isBuild && config.ssr && config.optimizeDeps) {
-    const { noExternal } = config.ssr
-    const { include } = config.optimizeDeps
-    if (noExternal && include) {
-      ssrServerDepsMetadata = await optimizeServerSsrDeps(config)
-    } else {
-      ssrServerDepsMetadata = initDepsOptimizerMetadata(config)
-    }
+  if (!isBuild && config.ssr) {
+    ssrServerDepsMetadata = await optimizeServerSsrDeps(config)
   }
 
   let newDepsDiscovered = false

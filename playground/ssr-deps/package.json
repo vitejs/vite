@@ -18,7 +18,8 @@
     "primitive-export": "file:./primitive-export",
     "read-file-content": "file:./read-file-content",
     "require-absolute": "file:./require-absolute",
-    "ts-transpiled-exports": "file:./ts-transpiled-exports"
+    "ts-transpiled-exports": "file:./ts-transpiled-exports",
+    "no-external-cjs": "file:./no-external-cjs"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

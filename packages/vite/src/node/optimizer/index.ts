@@ -9,6 +9,7 @@ import { init, parse } from 'es-module-lexer'
 import { createFilter } from '@rollup/pluginutils'
 import type { ResolvedConfig } from '../config'
 import {
+  arraify,
   createDebugger,
   emptyDir,
   flattenId,
@@ -245,15 +246,28 @@ export async function optimizeServerSsrDeps(
     return cachedMetadata
   }
 
-  const { noExternal } = config.ssr!
-  const noExternalFilter =
-    noExternal === true
-      ? (dep: string) => false
-      : createFilter(noExternal, undefined, { resolve: false })
+  let alsoInclude: string[] | undefined
+  let noExternalFilter: ((id: unknown) => boolean) | undefined
+
+  const noExternal = config.ssr?.noExternal
+  if (noExternal) {
+    alsoInclude = arraify(noExternal).filter(
+      (ne) => typeof ne === 'string'
+    ) as string[]
+    noExternalFilter =
+      noExternal === true
+        ? (dep: unknown) => false
+        : createFilter(noExternal, undefined, { resolve: false })
+  }
 
   const deps: Record<string, string> = {}
 
-  await addManuallyIncludedOptimizeDeps(deps, config, noExternalFilter)
+  await addManuallyIncludedOptimizeDeps(
+    deps,
+    config,
+    alsoInclude,
+    noExternalFilter
+  )
 
   const depsInfo = toDiscoveredDependencies(config, deps, true)
 
@@ -610,9 +624,10 @@ export async function findKnownImports(
 async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
-  filter?: (id: string) => boolean | undefined
+  extra?: string[],
+  filter?: (id: string) => boolean
 ): Promise<void> {
-  const include = config.optimizeDeps?.include
+  const include = [...(config.optimizeDeps?.include ?? []), ...(extra ?? [])]
   if (include) {
     const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of include) {
