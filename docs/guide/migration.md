@@ -85,6 +85,29 @@ You can use `?init` which is similar to the previous behavior.
 })
 ```
 
+## Advanced
+
+There are some changes which only affects plugin/tool creators.
+
+- [[#5868] refactor: remove deprecated api for 3.0](https://github.com/vitejs/vite/pull/5868)
+  - `printHttpServerUrls` is removed
+  - `server.app`, `server.transformWithEsbuild` are removed
+  - `import.meta.hot.acceptDeps` is removed
+- [[#7995] chore: do not fixStacktrace](https://github.com/vitejs/vite/pull/7995)
+  - `ssrLoadModule`'s `fixStacktrace` option's default is now `false`
+- [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
+  - `formatPostcssSourceMap` is now async
+  - `resolvePackageEntry`, `resolvePackageData` are no longer available from CJS build (dynamic import is needed to use in CJS)
+
+Also there are other breaking changes which only affect few users.
+
+- [[#5018] feat: enable `generatedCode: 'es2015'` for rollup build](https://github.com/vitejs/vite/pull/5018)
+  - Transpile to ES5 is now necessary even if the user code only includes ES5.
+- [[#7877] fix: vite client types](https://github.com/vitejs/vite/pull/7877)
+  - `/// <reference lib="dom" />` is removed from `vite/client.d.ts`. `{ "lib": ["dom"] }` or `{ "lib": ["webworker"] }` is necessary in `tsconfig.json`.
+- [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
+  - `server.force` option was removed in favor of `force` option.
+
 ## Migration from v1
 
 Check the [Migration from v1 Guide](https://v2.vitejs.dev/guide/migration.html) in the Vite v2 docs first to see the needed changes to port your app to Vite v2, and then proceed with the changes on this page.
