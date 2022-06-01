@@ -437,6 +437,16 @@ async function doBuild(
 
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
+      // See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
+      // @ts-ignore
+      if (output.output) {
+        config.logger.warn(
+          `You've set "rollupOptions.output.output" in your config. ` +
+            `This is deprecated and will override all Vite.js default output options. ` +
+            `Please use "rollupOptions.output" instead.`
+        )
+      }
+
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
