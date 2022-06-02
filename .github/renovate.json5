@@ -1,11 +1,7 @@
 {
   "extends": ["config:base", "schedule:weekly", "group:allNonMajor"],
   "labels": ["dependencies"],
-  "ignorePaths": [
-    "packages/playground/**",
-    "packages/create-vite/template-*/**",
-    "**/__tests__/**"
-  ],
+  "ignorePaths": ["**/__tests__/**"],
   "pin": false,
   "rangeStrategy": "bump",
   "node": false,
@@ -20,7 +16,6 @@
     "esbuild",
     "rollup",
     "node",
-    "ts-node",
     "typescript",
 
     // breaking changes

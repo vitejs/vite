@@ -1,6 +1,5 @@
 import fs from 'fs'
-import { dirname } from 'path'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import { isFileReadable } from '../utils'
 
 // https://github.com/vitejs/vite/issues/2820#issuecomment-812495079
