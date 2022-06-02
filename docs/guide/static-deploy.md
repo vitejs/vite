@@ -266,10 +266,12 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
    # creates a new app with a specified name
    $ heroku apps:create example
+   ```
 
 6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
 
    ```bash
+   # set buildpacks
    $ heroku buildpacks:set heroku/nodejs
    $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
    ```
