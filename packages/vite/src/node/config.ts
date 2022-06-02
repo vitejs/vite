@@ -790,6 +790,7 @@ async function bundleConfigFile(
   fileName: string,
   isESM = false
 ): Promise<{ code: string; dependencies: string[] }> {
+  const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -800,6 +801,9 @@ async function bundleConfigFile(
     format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
+    define: {
+      'import.meta.url': importMetaUrlVarName
+    },
     plugins: [
       {
         name: 'externalize-deps',
@@ -815,22 +819,20 @@ async function bundleConfigFile(
         }
       },
       {
-        name: 'replace-import-meta',
+        name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
+            const injectValues =
+              `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
+              `const __filename = ${JSON.stringify(args.path)};` +
+              `const ${importMetaUrlVarName} = ${JSON.stringify(
+                pathToFileURL(args.path).href
+              )};`
+
             return {
               loader: args.path.endsWith('.ts') ? 'ts' : 'js',
-              contents: contents
-                .replace(
-                  /\bimport\.meta\.url\b/g,
-                  JSON.stringify(pathToFileURL(args.path).href)
-                )
-                .replace(
-                  /\b__dirname\b/g,
-                  JSON.stringify(path.dirname(args.path))
-                )
-                .replace(/\b__filename\b/g, JSON.stringify(args.path))
+              contents: injectValues + contents
             }
           })
         }
