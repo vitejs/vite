@@ -180,7 +180,7 @@ export function transformMiddleware(
           return res.end()
         }
 
-        // resolve, load and transform using the plugin container
+        // resolveId, load and transform hook using the plugin container
         const result = await transformRequest(url, server, {
           html: req.headers.accept?.includes('text/html')
         })
