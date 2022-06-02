@@ -153,14 +153,17 @@ export default defineConfig({
 
 ## server.middlewareMode
 
-- **Type:** `'ssr' | 'html'`
+- **Type:** `boolean`
+- **Default:** `false`
 
-Create Vite server in middleware mode. (without a HTTP server)
+Create Vite server in middleware mode
 
-- `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
-- `'html'` will enable Vite's own HTML serving logic.
+- Use together with:
 
-- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+  - `appType: 'custom'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
+  - `appType: 'mpa'` will enable Vite's own HTML serving logic, except for spa specific middlewares like the SPA fallback.
+
+- **Related:** [appType](./shared#apptype),[SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
 
@@ -173,14 +176,15 @@ async function createServer() {
 
   // Create Vite server in middleware mode.
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom'
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
-    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
+    // If `appType` is `'custom'`, should serve `index.html` here.
+    // If `appType` is `'spa'` or `'mpa'`, there is no need to serve `index.html`
     // because Vite will do that.
   })
 }

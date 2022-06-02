@@ -273,5 +273,3 @@ The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps
    :::tip Note
    Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
    :::
-
-2. Set `config.spa` to `false`. This switches the development and preview server from SPA mode to SSR/MPA mode.
