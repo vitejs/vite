@@ -1,5 +1,6 @@
 import path, { resolve } from 'path'
 import { fileURLToPath } from 'url'
+// @ts-expect-error Cannot import JSON files by default
 import { version } from '../../package.json'
 
 export const VERSION = version as string

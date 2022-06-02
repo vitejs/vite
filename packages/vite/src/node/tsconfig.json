@@ -7,7 +7,6 @@
     "outDir": "../../dist/node",
     "module": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "sourceMap": true,
-    "resolveJsonModule": true
+    "sourceMap": true
   }
 }
