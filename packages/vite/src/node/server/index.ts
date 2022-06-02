@@ -487,10 +487,10 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  const isMiddlewareMode = middlewareMode && middlewareMode !== 'html'
+  const isSsrMiddlewareMode = middlewareMode && middlewareMode !== 'html'
 
   // spa fallback
-  if (config.spa && !isMiddlewareMode) {
+  if (config.spa && !isSsrMiddlewareMode) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -499,12 +499,12 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (config.spa && !isMiddlewareMode) {
+  if (!isSsrMiddlewareMode) {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
   }
 
-  if (!isMiddlewareMode) {
+  if (!isSsrMiddlewareMode) {
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
