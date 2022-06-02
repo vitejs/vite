@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { isDepsOptimizerEnabled, resolveBaseUrl, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -48,6 +48,53 @@ import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { VERSION } from './constants'
+
+export type BuildBasePath =
+  | string
+  | { url?: string; dynamic?: (filename: string) => string }
+
+export function getBuildBasePathUrl(
+  basePath: BuildBasePath | undefined,
+  config: ResolvedConfig
+): string | undefined {
+  let baseUrl =
+    basePath && (typeof basePath === 'string' ? basePath : basePath?.url)
+  if (!baseUrl && config.base !== './' && config.base !== '') {
+    // Default non-relative base
+    baseUrl = config.base
+  }
+  return baseUrl
+}
+
+export interface BuildBaseOptions {
+  /**
+   * Relative base. If true, every generated URL is relative and the dist folder
+   * can be deployed to any base or subdomain. Use this option when the base
+   * is unkown at build time
+   * @default false
+   */
+  relative?: boolean
+  /**
+   * Base for assets and public files paths when served in production
+   */
+  assets?: BuildBasePath
+  public?: BuildBasePath
+  /**
+   * If defined, these functions will be called for assets and public files
+   * paths which are generated in JS assets. Examples:
+   *
+   *   assets: { dynamic: (url: string) => `window.__assetsPath(${url})` }
+   *   public: { dynamic: (url: string) => `window.__publicPath + ${url}` }
+   *
+   * For assets and public files paths in CSS or HTML, the corresponding
+   * `assets.url` and `public.url` base urls or global base will be used.
+   *
+   * When using relative base, the assets.dynamic function isn't needed as
+   * all the asset paths will be computed using import.meta.url
+   * The public.dynamic function is still useful if the public files aren't
+   * deployed in the same base as the hashed assets
+   */
+}
 
 export interface BuildOptions {
   /**
@@ -85,6 +132,10 @@ export interface BuildOptions {
    * @default 'assets'
    */
   assetsDir?: string
+  /**
+   * Build base options.
+   */
+  baseOptions?: BuildBaseOptions
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
    * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
@@ -229,7 +280,11 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<BuildOptions>
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  raw: BuildOptions | undefined,
+  isBuild: boolean,
+  logger: Logger
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -261,7 +316,8 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    baseOptions: resolveBuildBaseOptions(raw?.baseOptions, isBuild, logger)
   }
 
   // handle special build targets
@@ -824,4 +880,49 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+}
+
+/**
+ * Resolve base. Note that some users use Vite to build for non-web targets like
+ * electron or expects to deploy
+ */
+function resolveBuildBaseOptions(
+  baseOptions: BuildBaseOptions | undefined,
+  isBuild: boolean,
+  logger: Logger
+): BuildBaseOptions {
+  baseOptions ??= {}
+  const relative = !!baseOptions?.relative
+  if (relative && !isBuild) {
+    return {
+      relative: true
+    }
+  }
+  return {
+    relative,
+    assets: resolveBuildBasePath(
+      baseOptions?.assets,
+      isBuild,
+      logger,
+      'build.baseOptions.assets'
+    ),
+    public: resolveBuildBasePath(
+      baseOptions?.public,
+      isBuild,
+      logger,
+      'build.baseOptions.public'
+    )
+  }
+}
+
+function resolveBuildBasePath(
+  path: BuildBasePath | undefined,
+  isBuild: boolean,
+  logger: Logger,
+  optionName: string
+): BuildBasePath | undefined {
+  if (typeof path === 'string') {
+    return resolveBaseUrl(path, isBuild, logger, optionName)
+  }
+  return path
 }

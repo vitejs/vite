@@ -4,9 +4,10 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
+import { getBuildBasePathUrl } from '../build'
 import type { Plugin } from '../plugin'
-import type { ResolvedConfig } from '../config'
-import { cleanUrl, getHash, isRelativeBase, normalizePath } from '../utils'
+import type { BuildBasePath, ResolvedConfig } from '../config'
+import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
@@ -29,7 +30,7 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
-  const relativeBase = isRelativeBase(config.base)
+  const { baseOptions } = config.build
 
   // add own dictionary entry by directly assigning mrmine
   // https://github.com/lukeed/mrmime/issues/3
@@ -88,6 +89,19 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           path.posix.relative(path.dirname(chunk.fileName), filename)
         )},import.meta.url).href+"`
 
+      const toOutputFilePathInString = (
+        filename: string,
+        basePath: BuildBasePath | undefined
+      ) => {
+        const assetsBaseUrl = getBuildBasePathUrl(basePath, config)
+        const dynamicBase = typeof basePath === 'object' && basePath.dynamic
+        return dynamicBase
+          ? `"+${dynamicBase(JSON.stringify(filename))}+"`
+          : assetsBaseUrl
+          ? JSON.stringify(assetsBaseUrl + filename).slice(1, -1)
+          : absoluteUrlPathInterpolation(filename)
+      }
+
       // Urls added with JS using e.g.
       // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
 
@@ -104,27 +118,29 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = getAssetFilename(hash, config) || this.getFileName(hash)
         chunk.viteMetadata.importedAssets.add(cleanUrl(file))
         const filename = file + postfix
-        const outputFilepath = relativeBase
-          ? absoluteUrlPathInterpolation(filename)
-          : JSON.stringify(config.base + filename).slice(1, -1)
-        s.overwrite(match.index, match.index + full.length, outputFilepath, {
+        const replacement = toOutputFilePathInString(
+          filename,
+          baseOptions.assets
+        )
+        s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
         })
       }
 
       // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
 
-      if (relativeBase) {
-        const publicAssetUrlMap = publicAssetUrlCache.get(config)!
-        while ((match = publicAssetUrlRE.exec(code))) {
-          s = s || (s = new MagicString(code))
-          const [full, hash] = match
-          const publicUrl = publicAssetUrlMap.get(hash)!
-          const replacement = absoluteUrlPathInterpolation(publicUrl.slice(1))
-          s.overwrite(match.index, match.index + full.length, replacement, {
-            contentOnly: true
-          })
-        }
+      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+      while ((match = publicAssetUrlRE.exec(code))) {
+        s = s || (s = new MagicString(code))
+        const [full, hash] = match
+        const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+        const replacement = toOutputFilePathInString(
+          publicUrl,
+          baseOptions.public
+        )
+        s.overwrite(match.index, match.index + full.length, replacement, {
+          contentOnly: true
+        })
       }
 
       if (s) {
@@ -196,7 +212,8 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     rtn = path.posix.join(FS_PREFIX + id)
   }
   const origin = config.server?.origin ?? ''
-  return origin + config.base + rtn.replace(/^\//, '')
+  const devBase = config.base
+  return origin + devBase + rtn.replace(/^\//, '')
 }
 
 export function getAssetFilename(
@@ -294,7 +311,8 @@ export function publicFileToBuiltUrl(
   url: string,
   config: ResolvedConfig
 ): string {
-  if (!isRelativeBase(config.base)) {
+  if (config.command !== 'build') {
+    // We don't need relative base or build.baseOptions support during dev
     return config.base + url.slice(1)
   }
   const hash = getHash(url)

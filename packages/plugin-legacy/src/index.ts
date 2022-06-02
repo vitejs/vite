@@ -31,6 +31,16 @@ async function loadBabel() {
   return babel
 }
 
+// TODO:base
+function toAssetPathFromHtml(filename: string, config: ResolvedConfig): string {
+  const nonBareBase = config.base === '' ? './' : config.base
+  return nonBareBase + filename
+  /*
+  const { baseOptions } = config.build.baseOptions
+  return baseOptions.relative ? 'TODO:base' : `${base.assets}${filename}`
+  */
+}
+
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
 // DO NOT ALTER THIS CONTENT
 const safari10NoModuleFix = `!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();`
@@ -360,7 +370,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             type: 'module',
-            src: `${config.base}${modernPolyfillFilename}`
+            src: toAssetPathFromHtml(modernPolyfillFilename, config)
           }
         })
       } else if (modernPolyfills.size) {
@@ -391,7 +401,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           attrs: {
             nomodule: true,
             id: legacyPolyfillId,
-            src: `${config.base}${legacyPolyfillFilename}`
+            src: toAssetPathFromHtml(legacyPolyfillFilename, config)
           },
           injectTo: 'body'
         })
@@ -407,7 +417,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       )
       if (legacyEntryFilename) {
         // `assets/foo.js` means importing "named register" in SystemJS
-        const nonBareBase = config.base === '' ? './' : config.base
         tags.push({
           tag: 'script',
           attrs: {
@@ -416,7 +425,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': nonBareBase + legacyEntryFilename
+            'data-src': toAssetPathFromHtml(legacyEntryFilename, config)
           },
           children: systemJSInlineCode,
           injectTo: 'body'

@@ -1,7 +1,6 @@
 import * as http from 'http'
-import { dirname, resolve } from 'path'
+import path, { dirname, resolve } from 'path'
 import os from 'os'
-import path from 'path'
 import sirv from 'sirv'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
@@ -61,7 +60,7 @@ export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
 
-export function setViteUrl(url: string) {
+export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
@@ -156,7 +155,7 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe() {
+export async function startDefaultServe(): Promise<void> {
   const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
   let config: InlineConfig | undefined
   if (fs.existsSync(testCustomConfig)) {
@@ -195,8 +194,10 @@ export async function startDefaultServe() {
       await createServer(mergeConfig(options, config || {}))
     ).listen()
     // use resolved port/base from server
-    const base = server.config.base === '/' ? '' : server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+    const devBase = server.config.base
+    viteTestUrl = `http://localhost:${server.config.server.port}${
+      devBase === '/' ? '' : devBase
+    }`
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'

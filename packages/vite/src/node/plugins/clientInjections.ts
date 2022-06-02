@@ -32,7 +32,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         } else {
           port = String(port || options.port || config.server.port!)
         }
-        let hmrBase = config.base
+        const devBase = config.base
+        let hmrBase = devBase
         if (options.path) {
           hmrBase = path.posix.join(hmrBase, options.path)
         }
@@ -42,7 +43,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(`__BASE__`, JSON.stringify(config.base))
+          .replace(`__BASE__`, JSON.stringify(devBase))
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))

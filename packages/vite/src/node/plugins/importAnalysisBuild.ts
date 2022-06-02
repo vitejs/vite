@@ -11,9 +11,9 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
-  isRelativeBase,
   moduleListContains
 } from '../utils'
+import { getBuildBasePathUrl } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -110,14 +110,22 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const relativeBase = isRelativeBase(config.base)
+  const { baseOptions } = config.build
+  const assetsBaseUrl = getBuildBasePathUrl(baseOptions.assets, config)
+  const dynamicBase =
+    typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
+  const relativePreloadUrls = !(assetsBaseUrl || dynamicBase)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const assetsURL = relativeBase
+  const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
-    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+    : `function(dep) { return ${
+        dynamicBase
+          ? dynamicBase('dep')
+          : `${JSON.stringify(assetsBaseUrl)}+dep`
+      }}`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -235,7 +243,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().appendRight(
             expEnd,
             `,${isModernFlag}?"${preloadMarker}":void 0${
-              relativeBase ? ',import.meta.url' : ''
+              relativePreloadUrls ? ',import.meta.url' : ''
             })`
           )
         }
@@ -468,7 +476,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? `[${[...deps]
                         .map((d) =>
                           JSON.stringify(
-                            relativeBase
+                            relativePreloadUrls
                               ? path.relative(path.dirname(file), d)
                               : d
                           )

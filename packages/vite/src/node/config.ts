@@ -44,6 +44,8 @@ import { loadEnv, resolveEnvPrefix } from './env'
 
 const debug = createDebugger('vite:config')
 
+export type { BuildBaseOptions, BuildBasePath } from './build'
+
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
 export interface ConfigEnv {
@@ -427,8 +429,24 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const isBuild = command === 'build'
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    isBuild,
+    logger
+  )
+  const relativeBaseShortcut = config.base === '' || config.base === './'
+  // TODO:base should we deprecate the relative base shortcut?
+  const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
+  let resolvedBase = relativeBaseShortcut
+    ? base
+    : resolveBaseUrl(base, isBuild, logger)
+  if (relativeBaseShortcut && isBuild) {
+    resolvedBuildOptions.baseOptions.relative = true
+  }
+  if (resolvedBuildOptions.baseOptions.relative && config.base === undefined) {
+    resolvedBase = './'
+  }
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -494,6 +512,8 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
+  const BASE_URL = resolvedBase
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -502,7 +522,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: BASE_URL,
+    base: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -588,23 +608,20 @@ export async function resolveConfig(
 }
 
 /**
- * Resolve base. Note that some users use Vite to build for non-web targets like
+ * Resolve base url. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBaseUrl(
+export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger
+  logger: Logger,
+  optionName: string = 'base'
 ): string {
-  // #1669 special treatment for empty for same dir relative base
-  if (base === '' || base === './') {
-    return isBuild ? base : '/'
-  }
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+          `(!) invalid "${optionName}" option: ${base}. The value can only be an absolute ` +
             `URL, ./, or an empty string.`
         )
       )
@@ -624,7 +641,7 @@ function resolveBaseUrl(
     if (!base.startsWith('/')) {
       logger.warn(
         colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
+          colors.bold(`(!) "${optionName}" option should start with a slash.`)
         )
       )
       base = '/' + base
@@ -634,7 +651,9 @@ function resolveBaseUrl(
   // ensure ending slash
   if (!base.endsWith('/')) {
     logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+      colors.yellow(
+        colors.bold(`(!) "${optionName}" option should end with a slash.`)
+      )
     )
     base += '/'
   }

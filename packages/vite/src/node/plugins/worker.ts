@@ -5,14 +5,8 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import {
-  cleanUrl,
-  getHash,
-  injectQuery,
-  isRelativeBase,
-  parseRequest
-} from '../utils'
-import { onRollupWarning } from '../build'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
+import { getBuildBasePathUrl, onRollupWarning } from '../build'
 import { fileToUrl } from './asset'
 import { registerWorkersSource } from './optimizedDeps'
 
@@ -181,10 +175,13 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-
-  return isRelativeBase(config.base)
+  const { baseOptions } = config.build
+  const assetsBaseUrl = getBuildBasePathUrl(baseOptions.assets, config)
+  const dynamicBase =
+    typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
+  return baseOptions.relative || dynamicBase
     ? encodeWorkerAssetFileName(fileName, workerMap)
-    : config.base + fileName
+    : assetsBaseUrl + fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -333,18 +330,27 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
+        const { baseOptions } = config.build
+        const dynamicBase =
+          typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let outputFilepath = path.posix.relative(
-            path.dirname(chunk.fileName),
-            filename
-          )
-          if (!outputFilepath.startsWith('.')) {
-            outputFilepath = './' + outputFilepath
+          let replacement: string
+          if (dynamicBase) {
+            replacement = `"+${dynamicBase(JSON.stringify(filename))}+"`
+          } else {
+            // Relative base
+            let outputFilepath = path.posix.relative(
+              path.dirname(chunk.fileName),
+              filename
+            )
+            if (!outputFilepath.startsWith('.')) {
+              outputFilepath = './' + outputFilepath
+            }
+            replacement = JSON.stringify(outputFilepath).slice(1, -1)
           }
-          const replacement = JSON.stringify(outputFilepath).slice(1, -1)
           s.overwrite(match.index, match.index + full.length, replacement, {
             contentOnly: true
           })

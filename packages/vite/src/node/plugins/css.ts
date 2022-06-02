@@ -37,7 +37,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isObject,
-  isRelativeBase,
   normalizePath,
   parseRequest,
   processSrcSet
@@ -146,6 +145,10 @@ const postcssConfigCache = new WeakMap<
   PostCSSConfigResult | null
 >()
 
+function encodePublicUrlsInCSS(config: ResolvedConfig) {
+  return config.command === 'build'
+}
+
 /**
  * Plugin applied before user plugins
  */
@@ -187,7 +190,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
-          if (isRelativeBase(config.base)) {
+          if (encodePublicUrlsInCSS(config)) {
             return publicFileToBuiltUrl(url, config)
           } else {
             return config.base + url.slice(1)
@@ -229,6 +232,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // server only logic for handling CSS @import dependency hmr
         const { moduleGraph } = server
         const thisModule = moduleGraph.getModuleById(id)
+        const devBase = config.base
         if (thisModule) {
           // CSS modules cannot self-accept since it exports values
           const isSelfAccepting =
@@ -244,10 +248,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                   : await moduleGraph.ensureEntryFromUrl(
                       (
                         await fileToUrl(file, config, this)
-                      ).replace(
-                        (config.server?.origin ?? '') + config.base,
-                        '/'
-                      ),
+                      ).replace((config.server?.origin ?? '') + devBase, '/'),
                       ssr
                     )
               )
@@ -290,8 +291,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let outputToExtractedCSSMap: Map<NormalizedOutputOptions, string>
   let hasEmitted = false
-
-  const relativeBase = isRelativeBase(config.base)
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -367,9 +366,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         const cssContent = await getContentWithSourcemap(css)
+        const devBase = config.base
         return [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
-            path.posix.join(config.base, CLIENT_PUBLIC_PATH)
+            path.posix.join(devBase, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
@@ -448,19 +448,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const { baseOptions } = config.build
+
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
-        const cssAssetDirname = relativeBase
-          ? getCssAssetDirname(cssAssetName)
-          : undefined
+        const encodedPublicUrls = encodePublicUrlsInCSS(config)
+        const cssAssetDirname =
+          encodedPublicUrls || baseOptions.relative
+            ? getCssAssetDirname(cssAssetName)
+            : undefined
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (relativeBase) {
+          if (baseOptions.relative) {
             // relative base + extracted CSS
             const relativePath = path.posix.relative(cssAssetDirname!, filename)
             return relativePath.startsWith('.')
@@ -468,11 +472,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               : './' + relativePath
           } else {
             // absolute base
-            return config.base + filename
+            if (typeof baseOptions.assets === 'function') {
+              config.logger.error('Error TODO:base')
+            }
+            return (baseOptions.assets ?? config.base) + filename
           }
         })
         // resolve public URL from CSS paths
-        if (relativeBase) {
+        if (encodedPublicUrls) {
           const relativePathToPublicFromCSS = path.posix.relative(
             cssAssetDirname!,
             ''
