@@ -163,7 +163,7 @@ Create Vite server in middleware mode
   - `appType: 'custom'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
   - `appType: 'mpa'` will enable Vite's own HTML serving logic, except for spa specific middlewares like the SPA fallback.
 
-- **Related:** [appType](./shared#apptype),[SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+- **Related:** [appType](./shared-options#apptype),[SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
 
