@@ -10,7 +10,7 @@ globalThis.__publicBase = '/'
 const baseConfig = require('./vite.config.js')
 module.exports = {
   ...baseConfig,
-  base: undefined, // overwrite the original base: '/foo/'
+  base: './', // overwrite the original base: '/foo/'
   build: {
     ...baseConfig.build,
     outDir: 'dist',
