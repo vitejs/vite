@@ -183,7 +183,7 @@ async function createServer() {
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `appType` is `'custom'`, should serve `index.html` here.
+    // If `appType` is `'custom'`, should serve response here.
     // If `appType` is `'spa'` or `'mpa'`, there is no need to serve `index.html`
     // because Vite will do that.
   })
