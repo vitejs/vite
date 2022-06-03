@@ -345,6 +345,6 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 
 - `'spa'`: include SPA fallback midleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
 - `'mpa'`: only include non-SPA HTML middlewares
-- `'custom'`: don't include HTML midlewares
+- `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#servermiddlewaremode).
