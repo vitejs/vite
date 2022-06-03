@@ -343,7 +343,7 @@ Env variables starts with `envPrefix` will be exposed to your client source code
 
 Whether your application is a Single Page Application (SPA), a Multi Page Application (MPA), or Custom Application (SSR and frameworks with custom HTML handling):
 
-- `'spa'`: include spa fallback midleware and configure sirv with `single: true` in preview
+- `'spa'`: include SPA fallback midleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
 - `'mpa'`: only include non-SPA HTML middlewares
 - `'custom'`: don't include HTML midlewares
 
