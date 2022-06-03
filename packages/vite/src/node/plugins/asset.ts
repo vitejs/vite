@@ -4,9 +4,10 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
-import { getBuildBasePathUrl } from '../build'
+import { resolveBuildBaseOptions } from '../build'
+import type { BuildBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
-import type { BuildBasePath, ResolvedConfig } from '../config'
+import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
@@ -91,15 +92,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       const toOutputFilePathInString = (
         filename: string,
-        basePath: BuildBasePath | undefined
+        basePath: BuildBaseOptions | string | undefined
       ) => {
-        const assetsBaseUrl = getBuildBasePathUrl(basePath, config)
-        const dynamicBase = typeof basePath === 'object' && basePath.dynamic
-        return dynamicBase
-          ? `"+${dynamicBase(JSON.stringify(filename))}+"`
-          : assetsBaseUrl
-          ? JSON.stringify(assetsBaseUrl + filename).slice(1, -1)
-          : absoluteUrlPathInterpolation(filename)
+        const assetsBase = resolveBuildBaseOptions(basePath, config)
+        return assetsBase.dynamic
+          ? `"+${assetsBase.dynamic(JSON.stringify(filename))}+"`
+          : assetsBase.relative
+          ? absoluteUrlPathInterpolation(filename)
+          : JSON.stringify(assetsBase.url + filename).slice(1, -1)
       }
 
       // Urls added with JS using e.g.

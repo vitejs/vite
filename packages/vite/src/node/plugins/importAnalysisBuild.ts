@@ -13,7 +13,7 @@ import {
   isExternalUrl,
   moduleListContains
 } from '../utils'
-import { getBuildBasePathUrl } from '../build'
+import { resolveBuildBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -111,10 +111,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const { baseOptions } = config.build
-  const assetsBaseUrl = getBuildBasePathUrl(baseOptions.assets, config)
-  const dynamicBase =
-    typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
-  const relativePreloadUrls = !(assetsBaseUrl || dynamicBase)
+  const assetsBase = resolveBuildBaseOptions(baseOptions.assets, config)
+  const relativePreloadUrls = !(assetsBase.url || assetsBase.dynamic)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -122,9 +120,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
     : `function(dep) { return ${
-        dynamicBase
-          ? dynamicBase('dep')
-          : `${JSON.stringify(assetsBaseUrl)}+dep`
+      assetsBase.dynamic
+          ? assetsBase.dynamic('dep')
+          : `${JSON.stringify(assetsBase.url)}+dep`
       }}`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 

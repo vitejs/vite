@@ -49,23 +49,22 @@ import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { VERSION } from './constants'
 
-export type BuildBasePath =
-  | string
-  | { url?: string; dynamic?: (filename: string) => string }
-
-export function getBuildBasePathUrl(
-  basePath: BuildBasePath | undefined,
-  config: ResolvedConfig
-): string | undefined {
-  let baseUrl =
-    basePath && (typeof basePath === 'string' ? basePath : basePath?.url)
-  if (!baseUrl && config.base !== './' && config.base !== '') {
-    // Default non-relative base
-    baseUrl = config.base
-  }
-  return baseUrl
-}
-
+/*
+ * If defined, these functions will be called for assets and public files
+ * paths which are generated in JS assets. Examples:
+ *
+ *   assets: { dynamic: (url: string) => `window.__assetsPath(${url})` }
+ *   public: { dynamic: (url: string) => `window.__publicPath + ${url}` }
+ *
+ * For assets and public files paths in CSS or HTML, the corresponding
+ * `assets.url` and `public.url` base urls or global base will be used.
+ *
+ * When using relative base, the assets.dynamic function isn't needed as
+ * all the asset paths will be computed using import.meta.url
+ * The public.dynamic function is still useful if the public files aren't
+ * deployed in the same base as the hashed assets
+ */
+  
 export interface BuildBaseOptions {
   /**
    * Relative base. If true, every generated URL is relative and the dist folder
@@ -74,26 +73,65 @@ export interface BuildBaseOptions {
    * @default false
    */
   relative?: boolean
+  url?: string
+  dynamic?: (filename: string) => string
+}
+
+export type BuildBaseConfig = BuildBaseOptions & {
   /**
-   * Base for assets and public files paths when served in production
+   * Base for assets and public files in case they should be different
    */
-  assets?: BuildBasePath
-  public?: BuildBasePath
-  /**
-   * If defined, these functions will be called for assets and public files
-   * paths which are generated in JS assets. Examples:
-   *
-   *   assets: { dynamic: (url: string) => `window.__assetsPath(${url})` }
-   *   public: { dynamic: (url: string) => `window.__publicPath + ${url}` }
-   *
-   * For assets and public files paths in CSS or HTML, the corresponding
-   * `assets.url` and `public.url` base urls or global base will be used.
-   *
-   * When using relative base, the assets.dynamic function isn't needed as
-   * all the asset paths will be computed using import.meta.url
-   * The public.dynamic function is still useful if the public files aren't
-   * deployed in the same base as the hashed assets
-   */
+  assets?: string | BuildBaseOptions
+  public?: string | BuildBaseOptions
+}
+
+export function resolveBuildBaseOptions(
+  options: string | BuildBaseOptions | undefined,
+  config: ResolvedConfig
+): BuildBaseOptions {
+  return {
+    relative: resolveBuildBaseRelative(options, config),
+    url: resolveBuildBaseUrl(options, config),
+    dynamic: resolveBuildBaseDynamic(options, config)
+  }
+}
+
+export function resolveBuildBaseRelative(
+  options: string | BuildBaseOptions | undefined,
+  config: ResolvedConfig
+): boolean {
+  let baseRelative = typeof options === 'object' ? options?.relative : undefined
+  if (!baseRelative) {
+    baseRelative = config.build.baseOptions.relative ?? false
+  }
+  return baseRelative
+}
+
+export function resolveBuildBaseUrl(
+  options: string | BuildBaseOptions | undefined,
+  config: ResolvedConfig
+): string | undefined {
+  let baseUrl =
+    options && (typeof options === 'string' ? options : options?.url)
+  if (!baseUrl) {
+    baseUrl = config.build.baseOptions.url
+  }
+  if (!baseUrl && config.base !== './' && config.base !== '') {
+    // Default non-relative base
+    baseUrl = config.base
+  }
+  return baseUrl
+}
+
+export function resolveBuildBaseDynamic(
+  options: string | BuildBaseOptions | undefined,
+  config: ResolvedConfig
+): ((filename: string) => string) | undefined {
+  let baseDynamic = typeof options === 'object' ? options?.dynamic : undefined
+  if (!baseDynamic) {
+    baseDynamic = config.build.baseOptions.dynamic
+  }
+  return baseDynamic
 }
 
 export interface BuildOptions {
@@ -135,7 +173,7 @@ export interface BuildOptions {
   /**
    * Build base options.
    */
-  baseOptions?: BuildBaseOptions
+  baseOptions?: BuildBaseConfig
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
    * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
@@ -317,7 +355,7 @@ export function resolveBuildOptions(
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     },
-    baseOptions: resolveBuildBaseOptions(raw?.baseOptions, isBuild, logger)
+    baseOptions: resolveBuildBaseConfig(raw?.baseOptions, isBuild, logger)
   }
 
   // handle special build targets
@@ -886,13 +924,13 @@ function injectSsrFlag<T extends Record<string, any>>(
  * Resolve base. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBuildBaseOptions(
-  baseOptions: BuildBaseOptions | undefined,
+function resolveBuildBaseConfig(
+  baseConfig: BuildBaseConfig | undefined,
   isBuild: boolean,
   logger: Logger
-): BuildBaseOptions {
-  baseOptions ??= {}
-  const relative = !!baseOptions?.relative
+): BuildBaseConfig {
+  baseConfig ??= {}
+  const relative = !!baseConfig?.relative
   if (relative && !isBuild) {
     return {
       relative: true
@@ -900,29 +938,34 @@ function resolveBuildBaseOptions(
   }
   return {
     relative,
-    assets: resolveBuildBasePath(
-      baseOptions?.assets,
+    url: baseConfig?.url && resolveBaseUrl(baseConfig?.url,isBuild,logger,'build.baseOptions.url'),
+    assets: resolveBuildBaseSeparateOptions(
+      baseConfig?.assets,
       isBuild,
       logger,
-      'build.baseOptions.assets'
+      'assets'
     ),
-    public: resolveBuildBasePath(
-      baseOptions?.public,
+    public: resolveBuildBaseSeparateOptions(
+      baseConfig?.public,
       isBuild,
       logger,
-      'build.baseOptions.public'
+      'public'
     )
   }
 }
 
-function resolveBuildBasePath(
-  path: BuildBasePath | undefined,
+function resolveBuildBaseSeparateOptions(
+  options: BuildBaseOptions | string | undefined,
   isBuild: boolean,
   logger: Logger,
   optionName: string
-): BuildBasePath | undefined {
-  if (typeof path === 'string') {
-    return resolveBaseUrl(path, isBuild, logger, optionName)
+): BuildBaseOptions | string | undefined {
+  const configPath = `build.baseOptions.${optionName}`
+  if (typeof options === 'string') {
+    return resolveBaseUrl(options, isBuild, logger, configPath)
   }
-  return path
+  if( typeof options === 'object' && options.url ) {
+    return { ...options, url: resolveBaseUrl(options.url, isBuild, logger, configPath+'.url') }
+  }
+  return options
 }

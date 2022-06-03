@@ -42,6 +42,7 @@ import {
   processSrcSet
 } from '../utils'
 import type { Logger } from '../logger'
+import { resolveBuildBaseOptions } from '../build'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -455,8 +456,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
+        const assetsBase = resolveBuildBaseOptions(baseOptions.assets,config)
         const cssAssetDirname =
-          encodedPublicUrls || baseOptions.relative
+          encodedPublicUrls || assetsBase.relative
             ? getCssAssetDirname(cssAssetName)
             : undefined
 
@@ -464,21 +466,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (baseOptions.relative) {
+          if (assetsBase.relative) {
             // relative base + extracted CSS
             const relativePath = path.posix.relative(cssAssetDirname!, filename)
             return relativePath.startsWith('.')
               ? relativePath
               : './' + relativePath
           } else {
-            // absolute base
-            if (typeof baseOptions.assets === 'function') {
-              config.logger.error('Error TODO:base')
+            if (assetsBase.dynamic) {
+              // config.logger.error('Error TODO:base')... absolute + dynamic
             }
-            return (baseOptions.assets ?? config.base) + filename
+            return assetsBase.url + filename
           }
         })
-        // resolve public URL from CSS paths
+        // resolve public URL from CSS paths, TODO:base
         if (encodedPublicUrls) {
           const relativePathToPublicFromCSS = path.posix.relative(
             cssAssetDirname!,

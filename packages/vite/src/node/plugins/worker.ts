@@ -6,7 +6,7 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { getBuildBasePathUrl, onRollupWarning } from '../build'
+import { onRollupWarning, resolveBuildBaseOptions } from '../build'
 import { fileToUrl } from './asset'
 import { registerWorkersSource } from './optimizedDeps'
 
@@ -176,12 +176,10 @@ export async function workerFileToUrl(
     workerMap.bundle.set(id, fileName)
   }
   const { baseOptions } = config.build
-  const assetsBaseUrl = getBuildBasePathUrl(baseOptions.assets, config)
-  const dynamicBase =
-    typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
-  return baseOptions.relative || dynamicBase
+  const assetsBase = resolveBuildBaseOptions(baseOptions.assets, config)
+  return assetsBase.relative || assetsBase.dynamic
     ? encodeWorkerAssetFileName(fileName, workerMap)
-    : assetsBaseUrl + fileName
+    : assetsBase.url + fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {

@@ -29,8 +29,8 @@ import {
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import { getBuildBasePathUrl } from '../build'
-import type { BuildBasePath } from '../build'
+import { resolveBuildBaseUrl } from '../build'
+import type { BuildBaseOptions } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -829,11 +829,11 @@ function isEntirelyImport(code: string) {
 
 function getBaseInHTML(
   urlRelativePath: string,
-  basePath: BuildBasePath | undefined,
+  basePath: BuildBaseOptions | string | undefined,
   config: ResolvedConfig
 ) {
   return (
-    getBuildBasePathUrl(basePath, config) ??
+    resolveBuildBaseUrl(basePath, config) ??
     path.posix.join(path.posix.relative(urlRelativePath, '').slice(0, -2), './')
   )
 }
