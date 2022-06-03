@@ -24,15 +24,15 @@ module.exports = {
         assetFileNames: 'other-assets/[name].[hash][extname]'
       }
     },
-    baseOptions: {
+    advancedBaseOptions: {
       relative: true,
       assets: {
         url: '/',
-        dynamic: (url) => `globalThis.__toAssetUrl(${url})`
+        runtime: (url) => `globalThis.__toAssetUrl(${url})`
       },
       public: {
         url: '/',
-        dynamic: (url) => `globalThis.__publicBase+${url}`
+        runtime: (url) => `globalThis.__publicBase+${url}`
       }
     }
   },

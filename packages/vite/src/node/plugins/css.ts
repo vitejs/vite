@@ -449,14 +449,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const { baseOptions } = config.build
+      const { advancedBaseOptions } = config.build
 
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
-        const assetsBase = resolveBuildBaseOptions(baseOptions.assets,config)
+        const assetsBase = resolveBuildBaseOptions(
+          advancedBaseOptions.assets,
+          config
+        )
         const cssAssetDirname =
           encodedPublicUrls || assetsBase.relative
             ? getCssAssetDirname(cssAssetName)
@@ -473,8 +476,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               ? relativePath
               : './' + relativePath
           } else {
-            if (assetsBase.dynamic) {
-              // config.logger.error('Error TODO:base')... absolute + dynamic
+            if (assetsBase.runtime) {
+              // config.logger.error('Error TODO:base')... absolute + runtime
             }
             return assetsBase.url + filename
           }

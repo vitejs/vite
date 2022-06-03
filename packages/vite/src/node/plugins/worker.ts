@@ -175,9 +175,9 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-  const { baseOptions } = config.build
-  const assetsBase = resolveBuildBaseOptions(baseOptions.assets, config)
-  return assetsBase.relative || assetsBase.dynamic
+  const { advancedBaseOptions } = config.build
+  const assetsBase = resolveBuildBaseOptions(advancedBaseOptions.assets, config)
+  return assetsBase.relative || assetsBase.runtime
     ? encodeWorkerAssetFileName(fileName, workerMap)
     : assetsBase.url + fileName
 }
@@ -328,16 +328,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
-        const { baseOptions } = config.build
-        const dynamicBase =
-          typeof baseOptions.assets === 'object' && baseOptions.assets.dynamic
+        const { advancedBaseOptions } = config.build
+        const assetsBase = resolveBuildBaseOptions(
+          advancedBaseOptions.assets,
+          config
+        )
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
           let replacement: string
-          if (dynamicBase) {
-            replacement = `"+${dynamicBase(JSON.stringify(filename))}+"`
+          if (assetsBase.runtime) {
+            // TODO:base relative should have priority?
+            replacement = `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
           } else {
             // Relative base
             let outputFilepath = path.posix.relative(

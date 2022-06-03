@@ -110,9 +110,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const { baseOptions } = config.build
-  const assetsBase = resolveBuildBaseOptions(baseOptions.assets, config)
-  const relativePreloadUrls = !(assetsBase.url || assetsBase.dynamic)
+  const { advancedBaseOptions } = config.build
+  const assetsBase = resolveBuildBaseOptions(advancedBaseOptions.assets, config)
+  const relativePreloadUrls = !(assetsBase.url || assetsBase.runtime)
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
@@ -120,8 +120,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
     : `function(dep) { return ${
-      assetsBase.dynamic
-          ? assetsBase.dynamic('dep')
+        assetsBase.runtime
+          ? assetsBase.runtime('dep')
           : `${JSON.stringify(assetsBase.url)}+dep`
       }}`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`

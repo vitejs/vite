@@ -44,7 +44,7 @@ import { loadEnv, resolveEnvPrefix } from './env'
 
 const debug = createDebugger('vite:config')
 
-export type { BuildBaseOptions, BuildBaseConfig } from './build'
+export type { BuildAdvancedBaseOptions, BuildAdvancedBaseConfig } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
@@ -442,9 +442,12 @@ export async function resolveConfig(
     ? base
     : resolveBaseUrl(base, isBuild, logger, 'base')
   if (relativeBaseShortcut && isBuild) {
-    resolvedBuildOptions.baseOptions.relative = true
+    resolvedBuildOptions.advancedBaseOptions.relative = true
   }
-  if (resolvedBuildOptions.baseOptions.relative && config.base === undefined) {
+  if (
+    resolvedBuildOptions.advancedBaseOptions.relative &&
+    config.base === undefined
+  ) {
     resolvedBase = './'
   }
 

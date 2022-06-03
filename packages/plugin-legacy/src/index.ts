@@ -36,8 +36,8 @@ function toAssetPathFromHtml(filename: string, config: ResolvedConfig): string {
   const nonBareBase = config.base === '' ? './' : config.base
   return nonBareBase + filename
   /*
-  const { baseOptions } = config.build.baseOptions
-  return baseOptions.relative ? 'TODO:base' : `${base.assets}${filename}`
+  const { advancedBaseOptions } = config.build.advancedBaseOptions
+  return advancedBaseOptions.relative ? 'TODO:base' : `${base.assets}${filename}`
   */
 }
 

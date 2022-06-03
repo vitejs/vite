@@ -30,7 +30,7 @@ import {
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { resolveBuildBaseUrl } from '../build'
-import type { BuildBaseOptions } from '../build'
+import type { BuildAdvancedBaseOptions } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -829,7 +829,7 @@ function isEntirelyImport(code: string) {
 
 function getBaseInHTML(
   urlRelativePath: string,
-  basePath: BuildBaseOptions | string | undefined,
+  basePath: BuildAdvancedBaseOptions | string | undefined,
   config: ResolvedConfig
 ) {
   return (
@@ -839,11 +839,19 @@ function getBaseInHTML(
 }
 
 function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(urlRelativePath, config.build.baseOptions.public, config)
+  return getBaseInHTML(
+    urlRelativePath,
+    config.build.advancedBaseOptions.public,
+    config
+  )
 }
 
 function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(urlRelativePath, config.build.baseOptions.assets, config)
+  return getBaseInHTML(
+    urlRelativePath,
+    config.build.advancedBaseOptions.assets,
+    config
+  )
 }
 
 function toPublicPath(filename: string, publicBase: string) {

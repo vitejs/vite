@@ -5,7 +5,7 @@ import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
 import { resolveBuildBaseOptions } from '../build'
-import type { BuildBaseOptions } from '../build'
+import type { BuildAdvancedBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
@@ -31,7 +31,7 @@ const emittedHashMap = new WeakMap<ResolvedConfig, Set<string>>()
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
-  const { baseOptions } = config.build
+  const { advancedBaseOptions } = config.build
 
   // add own dictionary entry by directly assigning mrmine
   // https://github.com/lukeed/mrmime/issues/3
@@ -92,11 +92,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       const toOutputFilePathInString = (
         filename: string,
-        basePath: BuildBaseOptions | string | undefined
+        basePath: BuildAdvancedBaseOptions | string | undefined
       ) => {
         const assetsBase = resolveBuildBaseOptions(basePath, config)
-        return assetsBase.dynamic
-          ? `"+${assetsBase.dynamic(JSON.stringify(filename))}+"`
+        return assetsBase.runtime
+          ? `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
           : assetsBase.relative
           ? absoluteUrlPathInterpolation(filename)
           : JSON.stringify(assetsBase.url + filename).slice(1, -1)
@@ -120,7 +120,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const filename = file + postfix
         const replacement = toOutputFilePathInString(
           filename,
-          baseOptions.assets
+          advancedBaseOptions.assets
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
@@ -136,7 +136,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
         const replacement = toOutputFilePathInString(
           publicUrl,
-          baseOptions.public
+          advancedBaseOptions.public
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
@@ -312,7 +312,7 @@ export function publicFileToBuiltUrl(
   config: ResolvedConfig
 ): string {
   if (config.command !== 'build') {
-    // We don't need relative base or build.baseOptions support during dev
+    // We don't need relative base or build.advancedBaseOptions support during dev
     return config.base + url.slice(1)
   }
   const hash = getHash(url)
