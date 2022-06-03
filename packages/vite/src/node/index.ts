@@ -39,6 +39,12 @@ export type {
   DepsOptimizer,
   ExportsData
 } from './optimizer'
+export type {
+  ResolvedSSROptions,
+  SSROptions,
+  SSRFormat,
+  SSRTarget
+} from './ssr'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'
 export type {
