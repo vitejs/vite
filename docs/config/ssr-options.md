@@ -32,3 +32,9 @@ Build target for the SSR server.
 - **Experimental**
 
 Build format for the SSR server. Since Vite v3 the SSR build generates ESM by default. `'cjs'` can be selected to generate a CJS build, but it isn't recommended. The option is left marked as experimental to give users more time to update to ESM. CJS builds requires complex externalization heuristics that aren't present in the ESM format.
+
+## ssr.fileExtension
+
+- **Type:** `'js' | 'cjs' | 'mjs'`
+
+File extension of generated bundles. When not specified, it will infer from root package.json's "type" field.
