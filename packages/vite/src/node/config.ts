@@ -219,7 +219,7 @@ export interface UserConfig {
   }
   /**
    * Whether your application is a Single Page Application (SPA),
-   * a Multi Page Application (MPA), or Custom Application (SSR
+   * a Multi-Page Application (MPA), or Custom Application (SSR
    * and frameworks with custom HTML handling)
    * @default 'spa'
    */
