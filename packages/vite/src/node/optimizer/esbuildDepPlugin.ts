@@ -79,18 +79,44 @@ export function esbuildDepPlugin(
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
+      const externalWithConversionNamespace =
+        'vite:dep-pre-bundle:external-conversion'
+      const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
+
       // externalize assets and commonly known non-js file types
+      // See #8459 for more details about this require-import conversion
       build.onResolve(
         {
           filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer, kind }) => {
-          const resolved = await resolve(id, importer, kind)
-          if (resolved) {
+          // if the prefix exist, it is already converted to `import`, so set `external: true`
+          if (id.startsWith(convertedExternalPrefix)) {
             return {
-              path: resolved,
+              path: id.slice(convertedExternalPrefix.length),
               external: true
             }
+          }
+
+          const resolved = await resolve(id, importer, kind)
+          if (resolved) {
+            // here it is not set to `external: true` to convert `require` to `import`
+            return {
+              path: resolved,
+              namespace: externalWithConversionNamespace
+            }
+          }
+        }
+      )
+      build.onLoad(
+        { filter: /./, namespace: externalWithConversionNamespace },
+        (args) => {
+          // import itself with prefix (this is the actual part of require-import conversion)
+          return {
+            contents:
+              `export { default } from "${convertedExternalPrefix}${args.path}";` +
+              `export * from "${convertedExternalPrefix}${args.path}";`,
+            loader: 'js'
           }
         }
       )

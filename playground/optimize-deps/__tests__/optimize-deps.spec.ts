@@ -77,7 +77,11 @@ test('dep with dynamic import', async () => {
 })
 
 test('dep with css import', async () => {
-  expect(await getColor('h1')).toBe('red')
+  expect(await getColor('.dep-linked-include')).toBe('red')
+})
+
+test('CJS dep with css import', async () => {
+  expect(await getColor('.cjs-with-assets')).toBe('blue')
 })
 
 test('dep w/ non-js files handled via plugin', async () => {
