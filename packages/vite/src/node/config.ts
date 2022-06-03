@@ -228,6 +228,8 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
 }
 
+export type JsExt = 'js' | 'cjs' | 'mjs'
+
 export type SSRTarget = 'node' | 'webworker'
 
 export type SSRFormat = 'esm' | 'cjs'
@@ -238,7 +240,7 @@ export interface SSROptions {
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
-   * Default: 'node'
+   * @default 'node'
    */
   target?: SSRTarget
   /**
@@ -249,6 +251,11 @@ export interface SSROptions {
    * @experimental
    */
   format?: SSRFormat
+  /**
+   * File extension of generated bundles
+   * Will infer from root package.json's "type" field if not specified
+   */
+  fileExtension?: JsExt
 }
 
 export interface ResolveWorkerOptions {

@@ -21,7 +21,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
-import type { InlineConfig, ResolvedConfig } from './config'
+import type { InlineConfig, JsExt, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -451,8 +451,10 @@ async function doBuild(
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
         (ssr && config.ssr?.target !== 'webworker') || libOptions
-          ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
+          ? config.ssr?.fileExtension ||
+            resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
+
       return {
         dir: outDir,
         // Default format is 'es' for regular and for SSR builds
@@ -605,8 +607,6 @@ function getPkgJson(root: string): PackageData['data'] {
 function getPkgName(name: string) {
   return name?.startsWith('@') ? name.split('/')[1] : name
 }
-
-type JsExt = 'js' | 'cjs' | 'mjs'
 
 function resolveOutputJsExtension(
   format: ModuleFormat,
