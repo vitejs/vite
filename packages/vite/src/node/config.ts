@@ -52,7 +52,7 @@ export interface ConfigEnv {
 }
 
 /**
- * spa: include spa fallback midleware and configure sirv with `single: true` in preview
+ * spa: include SPA fallback middleware and configure sirv with `single: true` in preview
  * mpa: only include non-spa HTML middlewares
  * custom: don't include HTML midlewares
  */
