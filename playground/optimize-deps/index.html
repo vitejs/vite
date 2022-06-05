@@ -35,6 +35,12 @@
 <h2>Optimizing force included dep even when it's linked</h2>
 <div class="force-include"></div>
 
+<h2>Dep with CSS</h2>
+<div class="dep-linked-include">This should be red</div>
+
+<h2>CJS Dep with CSS</h2>
+<div class="cjs-with-assets">This should be blue</div>
+
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
@@ -90,6 +96,8 @@
   if (keys.length) {
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
+
+  import 'dep-cjs-with-assets'
 
   import { env } from 'dep-node-env'
   text('.node-env', env)
