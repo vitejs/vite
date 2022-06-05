@@ -48,9 +48,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     ssr: boolean
   ): [Record<string, string | undefined>, RegExp | null] {
     const processEnv: Record<string, string> = {}
+    const isNodeTarget =
+      typeof config.build.target === 'string' &&
+      config.build.target.startsWith('node')
     const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
-    if (isNeedProcessEnv) {
+    if (isNeedProcessEnv && !isNodeTarget) {
       Object.assign(processEnv, {
         'process.env.': `({}).`,
         'global.process.env.': `({}).`,
@@ -59,7 +62,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     const replacements: Record<string, string> = {
-      ...(isNeedProcessEnv ? processNodeEnv : {}),
+      ...(isNeedProcessEnv && !isNodeTarget ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
       ...processEnv
