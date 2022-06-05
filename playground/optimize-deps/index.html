@@ -149,17 +149,23 @@
   // should error on builtin modules (default import)
   import cp from 'child_process'
   // must access property to error
-  cp.execSync()
+  if (import.meta.env.DEV) {
+    cp.execSync()
+  }
 </script>
 
 <script type="module">
   // should error on builtin modules from dep
   import { read } from 'dep-with-builtin-module-esm'
-  read()
+  if (import.meta.env.DEV) {
+    read()
+  }
 </script>
 
 <script type="module">
   // should error on builtin modules from dep
   import { read } from 'dep-with-builtin-module-cjs'
-  read()
+  if (import.meta.env.DEV) {
+    read()
+  }
 </script>
