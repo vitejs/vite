@@ -576,6 +576,7 @@ importers:
       clipboard: ^2.0.11
       dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
+      dep-cjs-with-assets: file:./dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
@@ -596,6 +597,7 @@ importers:
       clipboard: 2.0.11
       dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
+      dep-cjs-with-assets: file:playground/optimize-deps/dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:playground/optimize-deps/dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
@@ -618,6 +620,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-cjs-compiled-from-esm:
+    specifiers: {}
+
+  playground/optimize-deps/dep-cjs-with-assets:
     specifiers: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform:
@@ -8807,6 +8812,12 @@ packages:
   file:playground/optimize-deps/dep-cjs-compiled-from-esm:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-esm, type: directory}
     name: dep-cjs-compiled-from-esm
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-cjs-with-assets:
+    resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
+    name: dep-cjs-with-assets
     version: 0.0.0
     dev: false
 
