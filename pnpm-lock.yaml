@@ -39,7 +39,7 @@ importers:
       cross-env: ^7.0.3
       esbuild: ^0.14.38
       eslint: ^8.16.0
-      eslint-define-config: ^1.4.1
+      eslint-define-config: ^1.5.0
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
       esno: ^0.16.3
@@ -97,7 +97,7 @@ importers:
       cross-env: 7.0.3
       esbuild: 0.14.38
       eslint: 8.16.0
-      eslint-define-config: 1.4.1
+      eslint-define-config: 1.5.0
       eslint-plugin-import: 2.26.0_xsmuhwqsfrjm7m3kqio7zoeziq
       eslint-plugin-node: 11.1.0_eslint@8.16.0
       esno: 0.16.3
@@ -576,6 +576,7 @@ importers:
       clipboard: ^2.0.11
       dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
+      dep-cjs-with-assets: file:./dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
@@ -598,6 +599,7 @@ importers:
       clipboard: 2.0.11
       dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
+      dep-cjs-with-assets: file:playground/optimize-deps/dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:playground/optimize-deps/dep-esbuild-plugin-transform
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
@@ -622,6 +624,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-cjs-compiled-from-esm:
+    specifiers: {}
+
+  playground/optimize-deps/dep-cjs-with-assets:
     specifiers: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform:
@@ -4437,8 +4442,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  /eslint-define-config/1.4.1:
-    resolution: {integrity: sha512-3kjqLpYgAjr8XtI0ufInSX7cIWe1rDbiG1AjyOHY+00BgWhce8LZ/xd2BMKpgSsDI6bqd59eMmRcxOZSLme+Mg==}
+  /eslint-define-config/1.5.0:
+    resolution: {integrity: sha512-2C6tmeMRAXQ+y5vxbXsOjn/CTmMseJ0eRXsK+ThFEjeibSpMmurPq2SjBGzl5Ha4pTpVSMJQc0lzE8Y3hPYbHQ==}
     engines: {node: '>= 14.6.0', npm: '>= 6.0.0', pnpm: '>= 7.0.0'}
     dev: true
 
@@ -8817,6 +8822,12 @@ packages:
   file:playground/optimize-deps/dep-cjs-compiled-from-esm:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-esm, type: directory}
     name: dep-cjs-compiled-from-esm
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-cjs-with-assets:
+    resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
+    name: dep-cjs-with-assets
     version: 0.0.0
     dev: false
 

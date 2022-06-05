@@ -89,6 +89,7 @@ export interface InternalResolveOptions extends ResolveOptions {
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
+    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
@@ -261,12 +262,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
         const external = options.shouldExternalize?.(id)
-
         if (
           !external &&
           asSrc &&
           depsOptimizer &&
-          !ssr &&
+          (isBuild || !ssr) &&
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
@@ -637,8 +637,17 @@ export function tryNodeResolve(
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
-    const resolvedId =
-      isDeepImport && path.extname(id) !== resolvedExt ? id + resolvedExt : id
+    let resolvedId = id
+    if (isDeepImport) {
+      // check ext before externalizing - only externalize
+      // extension-less imports and explicit .js imports
+      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
+        return
+      }
+      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
+        resolvedId += resolvedExt
+      }
+    }
     return { ...resolved, id: resolvedId, external: true }
   }
 
@@ -670,7 +679,7 @@ export function tryNodeResolve(
     exclude?.includes(pkgId) ||
     exclude?.includes(nestedPath) ||
     SPECIAL_QUERY_RE.test(resolved) ||
-    ssr
+    (!isBuild && ssr)
   ) {
     // excluded from optimization
     // Inject a version query to npm deps so that the browser
@@ -684,7 +693,6 @@ export function tryNodeResolve(
       }
     }
   } else {
-    // TODO: depsBuild
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
     const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
