@@ -339,15 +339,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
     load(id) {
       if (id.startsWith(browserExternalId)) {
-        return isProduction
-          ? `export default {}`
-          : `export default new Proxy({}, {
-  get() {
-    throw new Error('Module "${id.slice(
-      browserExternalId.length + 1
-    )}" has been externalized for browser compatibility and cannot be accessed in client code.')
+        if (isProduction) {
+          return `export default {}`
+        } else {
+          id = id.slice(browserExternalId.length + 1)
+          return `\
+export default new Proxy({}, {
+  get(_, key) {
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
   }
 })`
+        }
       }
     }
   }

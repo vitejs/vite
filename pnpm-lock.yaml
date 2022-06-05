@@ -582,6 +582,8 @@ importers:
       dep-linked-include: link:./dep-linked-include
       dep-node-env: file:./dep-node-env
       dep-not-js: file:./dep-not-js
+      dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
+      dep-with-builtin-module-esm: file:./dep-with-builtin-module-esm
       dep-with-dynamic-import: file:./dep-with-dynamic-import
       lodash-es: ^4.17.21
       nested-exclude: file:./nested-exclude
@@ -603,6 +605,8 @@ importers:
       dep-linked-include: link:dep-linked-include
       dep-node-env: file:playground/optimize-deps/dep-node-env
       dep-not-js: file:playground/optimize-deps/dep-not-js
+      dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
+      dep-with-builtin-module-esm: file:playground/optimize-deps/dep-with-builtin-module-esm
       dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
       lodash-es: 4.17.21
       nested-exclude: file:playground/optimize-deps/nested-exclude
@@ -644,6 +648,12 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-not-js:
+    specifiers: {}
+
+  playground/optimize-deps/dep-with-builtin-module-cjs:
+    specifiers: {}
+
+  playground/optimize-deps/dep-with-builtin-module-esm:
     specifiers: {}
 
   playground/optimize-deps/dep-with-dynamic-import:
@@ -8837,6 +8847,18 @@ packages:
     resolution: {directory: playground/optimize-deps/dep-not-js, type: directory}
     name: dep-not-js
     version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-with-builtin-module-cjs:
+    resolution: {directory: playground/optimize-deps/dep-with-builtin-module-cjs, type: directory}
+    name: dep-with-builtin-module-cjs
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-with-builtin-module-esm:
+    resolution: {directory: playground/optimize-deps/dep-with-builtin-module-esm, type: directory}
+    name: dep-with-builtin-module-esm
+    version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-with-dynamic-import:
