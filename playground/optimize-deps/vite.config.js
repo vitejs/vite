@@ -62,6 +62,19 @@ module.exports = {
           return { code }
         }
       }
+    },
+    // TODO: Remove this one support for prebundling in build lands.
+    // It is expected that named importing in build doesn't work
+    // as it incurs a lot of overhead in build.
+    {
+      name: 'polyfill-named-fs-build',
+      apply: 'build',
+      enforce: 'pre',
+      load(id) {
+        if (id === '__vite-browser-external:fs') {
+          return `export default {}; export function readFileSync() {}`
+        }
+      }
     }
   ]
 }

@@ -219,15 +219,37 @@ export function esbuildDepPlugin(
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
-        ({ path: id }) => {
+        ({ path }) => {
           return {
-            contents:
-              `export default new Proxy({}, {
-  get() {
-    throw new Error('Module "${id}" has been externalized for ` +
-              `browser compatibility and cannot be accessed in client code.')
+            // Return in CJS to intercept named imports. Use `Object.create` to
+            // create the Proxy in the prototype to workaround esbuild issue. Why?
+            //
+            // In short, esbuild cjs->esm flow:
+            // 1. Create empty object using `Object.create(Object.getPrototypeOf(module.exports))`.
+            // 2. Assign props of `module.exports` to the object.
+            // 3. Return object for ESM use.
+            //
+            // If we do `module.exports = new Proxy({}, {})`, step 1 returns empty object,
+            // step 2 does nothing as there's no props for `module.exports`. The final object
+            // is just an empty object.
+            //
+            // Creating the Proxy in the prototype satisfies step 1 immediately, which means
+            // the returned object is a Proxy that we can intercept.
+            //
+            // Note: Skip keys that are accessed by esbuild and browser devtools.
+            contents: `\
+module.exports = Object.create(new Proxy({}, {
+  get(_, key) {
+    if (
+      key !== '__esModule' &&
+      key !== '__proto__' &&
+      key !== 'constructor' &&
+      key !== 'splice'
+    ) {
+      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+    }
   }
-})`
+}))`
           }
         }
       )

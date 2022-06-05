@@ -58,6 +58,7 @@ import {
   delayDepsOptimizerUntil
 } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
+import { browserExternalId } from './resolve'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:import-analysis')
@@ -322,11 +323,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
-          se: expEnd,
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          // @ts-ignore
           n: specifier
         } = imports[index]
 
@@ -434,28 +433,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 debug(`${url} needs interop`)
-                if (isDynamicImport) {
-                  // rewrite `import('package')` to expose the default directly
-                  str().overwrite(
-                    expStart,
-                    expEnd,
-                    `import('${url}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
-                    { contentOnly: true }
-                  )
-                } else {
-                  const exp = source.slice(expStart, expEnd)
-                  const rewritten = transformCjsImport(exp, url, rawUrl, index)
-                  if (rewritten) {
-                    str().overwrite(expStart, expEnd, rewritten, {
-                      contentOnly: true
-                    })
-                  } else {
-                    // #1439 export * from '...'
-                    str().overwrite(start, end, url, { contentOnly: true })
-                  }
-                }
+                interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
+            }
+            // If source code imports builtin modules via named imports, the stub proxy export
+            // would fail as it's `export default` only. Apply interop for builtin modules to
+            // correctly throw the error message.
+            else if (
+              url.includes(browserExternalId) &&
+              source.slice(expStart, start).includes('{')
+            ) {
+              interopNamedImports(str(), imports[index], url, index)
+              rewriteDone = true
             }
             if (!rewriteDone) {
               str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
@@ -635,6 +625,41 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       } else {
         return source
       }
+    }
+  }
+}
+
+function interopNamedImports(
+  str: MagicString,
+  importSpecifier: ImportSpecifier,
+  rewrittenUrl: string,
+  importIndex: number
+) {
+  const source = str.original
+  const {
+    s: start,
+    e: end,
+    ss: expStart,
+    se: expEnd,
+    d: dynamicIndex
+  } = importSpecifier
+  if (dynamicIndex > -1) {
+    // rewrite `import('package')` to expose the default directly
+    str.overwrite(
+      expStart,
+      expEnd,
+      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
+      { contentOnly: true }
+    )
+  } else {
+    const exp = source.slice(expStart, expEnd)
+    const rawUrl = source.slice(start, end)
+    const rewritten = transformCjsImport(exp, rewrittenUrl, rawUrl, importIndex)
+    if (rewritten) {
+      str.overwrite(expStart, expEnd, rewritten, { contentOnly: true })
+    } else {
+      // #1439 export * from '...'
+      str.overwrite(start, end, rewrittenUrl, { contentOnly: true })
     }
   }
 }

@@ -19,6 +19,8 @@
     "dep-linked-include": "link:./dep-linked-include",
     "dep-node-env": "file:./dep-node-env",
     "dep-not-js": "file:./dep-not-js",
+    "dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
+    "dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
