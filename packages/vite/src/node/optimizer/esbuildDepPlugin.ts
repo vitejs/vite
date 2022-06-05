@@ -13,6 +13,10 @@ import {
 import { browserExternalId } from '../plugins/resolve'
 import type { ExportsData } from '.'
 
+const externalWithConversionNamespace =
+  'vite:dep-pre-bundle:external-conversion'
+const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
+
 const externalTypes = [
   'css',
   // supported pre-processor types
@@ -79,10 +83,6 @@ export function esbuildDepPlugin(
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
-      const externalWithConversionNamespace =
-        'vite:dep-pre-bundle:external-conversion'
-      const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
-
       // externalize assets and commonly known non-js file types
       // See #8459 for more details about this require-import conversion
       build.onResolve(
