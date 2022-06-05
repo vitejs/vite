@@ -31,7 +31,7 @@ describe.runIf(isBuild)('build', () => {
       () => page.textContent('.dynamic-import-message'),
       'hello vite'
     )
-    const code = readFile('dist/lib/dynamic-import-message.es.js')
+    const code = readFile('dist/lib/dynamic-import-message.es.mjs')
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
