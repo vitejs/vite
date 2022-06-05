@@ -1,26 +1,30 @@
-import debug from 'debug'
-import colors from 'picocolors'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { pathToFileURL, URL } from 'url'
-import {
-  FS_PREFIX,
-  DEFAULT_EXTENSIONS,
-  VALID_ID_PREFIX,
-  CLIENT_PUBLIC_PATH,
-  ENV_PUBLIC_PATH
-} from './constants'
+import { createHash } from 'crypto'
+import { promisify } from 'util'
+import { URL, URLSearchParams, pathToFileURL } from 'url'
+import { builtinModules, createRequire } from 'module'
+import { performance } from 'perf_hooks'
 import resolve from 'resolve'
-import { builtinModules } from 'module'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
-import type {
-  DecodedSourceMap,
-  RawSourceMap
-} from '@ampproject/remapping/dist/types/types'
-import { performance } from 'perf_hooks'
-import { parse as parseUrl, URLSearchParams } from 'url'
+import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
+import colors from 'picocolors'
+import debug from 'debug'
+import type { Alias, AliasOptions } from 'types/alias'
+import type MagicString from 'magic-string'
+
+import type { TransformResult } from 'rollup'
+import {
+  CLIENT_ENTRY,
+  CLIENT_PUBLIC_PATH,
+  DEFAULT_EXTENSIONS,
+  ENV_PUBLIC_PATH,
+  FS_PREFIX,
+  VALID_ID_PREFIX
+} from './constants'
+import type { ResolvedConfig } from '.'
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -33,7 +37,7 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.]/g, '_')
+  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -71,8 +75,12 @@ export const bareImportRE = /^[\w@](?!.*:\/\/)/
 export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 export let isRunningWithYarnPnp: boolean
+
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
 try {
-  isRunningWithYarnPnp = Boolean(require('pnpapi'))
+  isRunningWithYarnPnp = Boolean(_require('pnpapi'))
 } catch {}
 
 const ssrExtensions = ['.js', '.cjs', '.json', '.node']
@@ -85,6 +93,7 @@ export function resolveFrom(
 ): string {
   return resolve.sync(id, {
     basedir,
+    paths: [],
     extensions: ssr ? ssrExtensions : DEFAULT_EXTENSIONS,
     // necessary to work with pnpm
     preserveSymlinks: preserveSymlinks || isRunningWithYarnPnp || false
@@ -139,7 +148,25 @@ export function createDebugger(
   }
 }
 
+function testCaseInsensitiveFS() {
+  if (!CLIENT_ENTRY.endsWith('client.mjs')) {
+    throw new Error(
+      `cannot test case insensitive FS, CLIENT_ENTRY const doesn't contain client.mjs`
+    )
+  }
+  if (!fs.existsSync(CLIENT_ENTRY)) {
+    throw new Error(
+      'cannot test case insensitive FS, CLIENT_ENTRY does not point to an existing file: ' +
+        CLIENT_ENTRY
+    )
+  }
+  return fs.existsSync(CLIENT_ENTRY.replace('client.mjs', 'cLiEnT.mjs'))
+}
+
+export const isCaseInsensitiveFS = testCaseInsensitiveFS()
+
 export const isWindows = os.platform() === 'win32'
+
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -147,10 +174,35 @@ export function normalizePath(id: string): string {
 }
 
 export function fsPathFromId(id: string): string {
-  const fsPath = normalizePath(id.slice(FS_PREFIX.length))
+  const fsPath = normalizePath(
+    id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id
+  )
   return fsPath.startsWith('/') || fsPath.match(VOLUME_RE)
     ? fsPath
     : `/${fsPath}`
+}
+
+export function fsPathFromUrl(url: string): string {
+  return fsPathFromId(cleanUrl(url))
+}
+
+/**
+ * Check if dir is a parent of file
+ *
+ * Warning: parameters are not validated, only works with normalized absolute paths
+ *
+ * @param dir - normalized absolute path
+ * @param file - normalized absolute path
+ * @returns true if dir is a parent of file
+ */
+export function isParentDirectory(dir: string, file: string): boolean {
+  if (!dir.endsWith('/')) {
+    dir = `${dir}/`
+  }
+  return (
+    file.startsWith(dir) ||
+    (isCaseInsensitiveFS && file.toLowerCase().startsWith(dir.toLowerCase()))
+  )
 }
 
 export function ensureVolumeInPath(file: string): string {
@@ -186,11 +238,17 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(cleanUrl(url))
-export const isPossibleTsOutput = (url: string) =>
+export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
+export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
-export const getTsSrcPath = (filename: string) =>
-  filename.replace(/\.([cm])?(js)(x?)(\?|$)/, '.$1ts$3')
+export function getPotentialTsSrcPaths(filePath: string): string[] {
+  const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
+  const paths = [name + type.replace('js', 'ts') + query]
+  if (!type.endsWith('x')) {
+    paths.push(name + type.replace('js', 'tsx') + query)
+  }
+  return paths
+}
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const internalPrefixes = [
@@ -222,13 +280,17 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
   pathname = decodeURIComponent(pathname)
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
+    hash ?? ''
   }`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
 export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
+}
+
+export function isRelativeBase(base: string): boolean {
+  return base === '' || base.startsWith('.')
 }
 
 export async function asyncReplace(
@@ -292,20 +354,28 @@ export function isDefined<T>(value: T | undefined | null): value is T {
   return value != null
 }
 
+interface LookupFileOptions {
+  pathOnly?: boolean
+  rootDir?: string
+}
+
 export function lookupFile(
   dir: string,
   formats: string[],
-  pathOnly = false
+  options?: LookupFileOptions
 ): string | undefined {
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
     }
   }
   const parentDir = path.dirname(dir)
-  if (parentDir !== dir) {
-    return lookupFile(parentDir, formats, pathOnly)
+  if (
+    parentDir !== dir &&
+    (!options?.rootDir || parentDir.startsWith(options?.rootDir))
+  ) {
+    return lookupFile(parentDir, formats, options)
   }
 }
 
@@ -415,15 +485,15 @@ export function writeFile(
 }
 
 /**
- * Use instead of fs.existsSync(filename)
+ * Use fs.statSync(filename) instead of fs.existsSync(filename)
  * #2051 if we don't have read permission on a directory, existsSync() still
  * works and will result in massively slow subsequent checks (which are
  * unnecessary in the first place)
  */
 export function isFileReadable(filename: string): boolean {
   try {
-    fs.accessSync(filename, fs.constants.R_OK)
-    return true
+    const stat = fs.statSync(filename, { throwIfNoEntry: false })
+    return !!stat
   } catch {
     return false
   }
@@ -438,14 +508,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
     if (skip?.includes(file)) {
       continue
     }
-    const abs = path.resolve(dir, file)
-    // baseline is Node 12 so can't use rmSync :(
-    if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
-      fs.rmdirSync(abs)
-    } else {
-      fs.unlinkSync(abs)
-    }
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
@@ -466,9 +529,12 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export function ensureLeadingSlash(path: string): string {
-  return !path.startsWith('/') ? '/' + path : path
-}
+export const removeDir = isWindows
+  ? promisify(gracefulRemoveDir)
+  : function removeDirSync(dir: string) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
   watcher: FSWatcher,
@@ -493,35 +559,90 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
-export async function processSrcSet(
-  srcs: string,
-  replacer: (arg: ImageCandidate) => Promise<string>
-): Promise<string> {
-  const imageCandidates: ImageCandidate[] = srcs
-    .split(',')
-    .map((s) => {
-      const [url, descriptor] = s
-        .replace(escapedSpaceCharacters, ' ')
-        .trim()
-        .split(' ', 2)
-      return { url, descriptor }
-    })
-    .filter(({ url }) => !!url)
-
-  const ret = await Promise.all(
-    imageCandidates.map(async ({ url, descriptor }) => {
-      return {
-        url: await replacer({ url, descriptor }),
-        descriptor
-      }
-    })
-  )
-
+const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+function reduceSrcset(ret: { url: string; descriptor: string }[]) {
   return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor = descriptor || ''
+    descriptor ??= ''
     return (prev +=
       url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
   }, '')
+}
+
+function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
+  return splitSrcSet(srcs)
+    .map((s) => {
+      const src = s.replace(escapedSpaceCharacters, ' ').trim()
+      const [url] = imageSetUrlRE.exec(src) || []
+
+      return {
+        url,
+        descriptor: src?.slice(url.length).trim()
+      }
+    })
+    .filter(({ url }) => !!url)
+}
+
+export function processSrcSet(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => Promise<string>
+): Promise<string> {
+  return Promise.all(
+    splitSrcSetDescriptor(srcs).map(async ({ url, descriptor }) => ({
+      url: await replacer({ url, descriptor }),
+      descriptor
+    }))
+  ).then((ret) => reduceSrcset(ret))
+}
+
+export function processSrcSetSync(
+  srcs: string,
+  replacer: (arg: ImageCandidate) => string
+): string {
+  return reduceSrcset(
+    splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
+      url: replacer({ url, descriptor }),
+      descriptor
+    }))
+  )
+}
+
+function splitSrcSet(srcs: string) {
+  const parts: string[] = []
+  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  const cleanedSrcs = srcs.replace(
+    /(?:url|image|gradient|cross-fade)\([^\)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g,
+    blankReplacer
+  )
+  let startIndex = 0
+  let splitIndex: number
+  do {
+    splitIndex = cleanedSrcs.indexOf(',', startIndex)
+    parts.push(
+      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined)
+    )
+    startIndex = splitIndex + 1
+  } while (splitIndex !== -1)
+  return parts
+}
+
+function escapeToLinuxLikePath(path: string) {
+  if (/^[A-Z]:/.test(path)) {
+    return path.replace(/^([A-Z]):\//, '/windows/$1/')
+  }
+  if (/^\/[^/]/.test(path)) {
+    return `/linux${path}`
+  }
+  return path
+}
+
+function unescapeToLinuxLikePath(path: string) {
+  if (path.startsWith('/linux/')) {
+    return path.slice('/linux'.length)
+  }
+  if (path.startsWith('/windows/')) {
+    return path.replace(/^\/windows\/([A-Z])\//, '$1:/')
+  }
+  return path
 }
 
 // based on https://github.com/sveltejs/svelte/blob/abf11bb02b2afbd3e4cac509a0f70e318c306364/src/compiler/utils/mapped_code.ts#L221
@@ -533,7 +654,8 @@ const nullSourceMap: RawSourceMap = {
 }
 export function combineSourcemaps(
   filename: string,
-  sourcemapList: Array<DecodedSourceMap | RawSourceMap>
+  sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
+  excludeContent = true
 ): RawSourceMap {
   if (
     sourcemapList.length === 0 ||
@@ -542,29 +664,50 @@ export function combineSourcemaps(
     return { ...nullSourceMap }
   }
 
+  // hack for parse broken with normalized absolute paths on windows (C:/path/to/something).
+  // escape them to linux like paths
+  // also avoid mutation here to prevent breaking plugin's using cache to generate sourcemaps like vue (see #7442)
+  sourcemapList = sourcemapList.map((sourcemap) => {
+    const newSourcemaps = { ...sourcemap }
+    newSourcemaps.sources = sourcemap.sources.map((source) =>
+      source ? escapeToLinuxLikePath(source) : null
+    )
+    if (sourcemap.sourceRoot) {
+      newSourcemaps.sourceRoot = escapeToLinuxLikePath(sourcemap.sourceRoot)
+    }
+    return newSourcemaps
+  })
+  const escapedFilename = escapeToLinuxLikePath(filename)
+
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
   let mapIndex = 1
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
-    map = remapping(sourcemapList, () => null, true)
+    map = remapping(sourcemapList, () => null, excludeContent)
   } else {
     map = remapping(
       sourcemapList[0],
       function loader(sourcefile) {
-        if (sourcefile === filename && sourcemapList[mapIndex]) {
+        if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
           return sourcemapList[mapIndex++]
         } else {
-          return { ...nullSourceMap }
+          return null
         }
       },
-      true
+      excludeContent
     )
   }
   if (!map.file) {
     delete map.file
   }
+
+  // unescape the previous hack
+  map.sources = map.sources.map((source) =>
+    source ? unescapeToLinuxLikePath(source) : source
+  )
+  map.file = filename
 
   return map as RawSourceMap
 }
@@ -584,11 +727,7 @@ export function resolveHostname(
   optionsHost: string | boolean | undefined
 ): Hostname {
   let host: string | undefined
-  if (
-    optionsHost === undefined ||
-    optionsHost === false ||
-    optionsHost === 'localhost'
-  ) {
+  if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
     host = '127.0.0.1'
   } else if (optionsHost === true) {
@@ -620,8 +759,11 @@ export function toUpperCaseDriveLetter(pathName: string): string {
 
 export const multilineCommentsRE = /\/\*(.|[\r\n])*?\*\//gm
 export const singlelineCommentsRE = /\/\/.*/g
+export const requestQuerySplitRE = /\?(?!.*[\/|\}])/
 
+// @ts-expect-error
 export const usingDynamicImport = typeof jest === 'undefined'
+
 /**
  * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
  *
@@ -633,12 +775,216 @@ export const usingDynamicImport = typeof jest === 'undefined'
  */
 export const dynamicImport = usingDynamicImport
   ? new Function('file', 'return import(file)')
-  : require
+  : _require
 
 export function parseRequest(id: string): Record<string, string> | null {
-  const { search } = parseUrl(id)
+  const [_, search] = id.split(requestQuerySplitRE, 2)
   if (!search) {
     return null
   }
-  return Object.fromEntries(new URLSearchParams(search.slice(1)))
+  return Object.fromEntries(new URLSearchParams(search))
+}
+
+export const blankReplacer = (match: string): string => ' '.repeat(match.length)
+
+export function getHash(text: Buffer | string): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}
+
+// Based on node-graceful-fs
+
+// The ISC License
+// Copyright (c) 2011-2022 Isaac Z. Schlueter, Ben Noordhuis, and Contributors
+// https://github.com/isaacs/node-graceful-fs/blob/main/LICENSE
+
+// On Windows, A/V software can lock the directory, causing this
+// to fail with an EACCES or EPERM if the directory contains newly
+// created files. The original tried for up to 60 seconds, we only
+// wait for 5 seconds, as a longer time would be seen as an error
+
+const GRACEFUL_RENAME_TIMEOUT = 5000
+function gracefulRename(
+  from: string,
+  to: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rename(from, to, function CB(er) {
+    if (
+      er &&
+      (er.code === 'EACCES' || er.code === 'EPERM') &&
+      Date.now() - start < GRACEFUL_RENAME_TIMEOUT
+    ) {
+      setTimeout(function () {
+        fs.stat(to, function (stater, st) {
+          if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
+          else CB(er)
+        })
+      }, backoff)
+      if (backoff < 100) backoff += 10
+      return
+    }
+    if (cb) cb(er)
+  })
+}
+
+const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
+function gracefulRemoveDir(
+  dir: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rm(dir, { recursive: true }, function CB(er) {
+    if (er) {
+      if (
+        (er.code === 'ENOTEMPTY' ||
+          er.code === 'EACCES' ||
+          er.code === 'EPERM') &&
+        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
+      ) {
+        setTimeout(function () {
+          fs.rm(dir, { recursive: true }, CB)
+        }, backoff)
+        if (backoff < 100) backoff += 10
+        return
+      }
+
+      if (er.code === 'ENOENT') {
+        er = null
+      }
+    }
+
+    if (cb) cb(er)
+  })
+}
+
+export function emptyCssComments(raw: string): string {
+  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+}
+
+function mergeConfigRecursively(
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
+  rootPath: string
+) {
+  const merged: Record<string, any> = { ...defaults }
+  for (const key in overrides) {
+    const value = overrides[key]
+    if (value == null) {
+      continue
+    }
+
+    const existing = merged[key]
+
+    if (existing == null) {
+      merged[key] = value
+      continue
+    }
+
+    // fields that require special handling
+    if (key === 'alias' && (rootPath === 'resolve' || rootPath === '')) {
+      merged[key] = mergeAlias(existing, value)
+      continue
+    } else if (key === 'assetsInclude' && rootPath === '') {
+      merged[key] = [].concat(existing, value)
+      continue
+    } else if (
+      key === 'noExternal' &&
+      rootPath === 'ssr' &&
+      (existing === true || value === true)
+    ) {
+      merged[key] = true
+      continue
+    }
+
+    if (Array.isArray(existing) || Array.isArray(value)) {
+      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
+      continue
+    }
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeConfigRecursively(
+        existing,
+        value,
+        rootPath ? `${rootPath}.${key}` : key
+      )
+      continue
+    }
+
+    merged[key] = value
+  }
+  return merged
+}
+
+export function mergeConfig(
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
+  isRoot = true
+): Record<string, any> {
+  return mergeConfigRecursively(defaults, overrides, isRoot ? '' : '.')
+}
+
+export function mergeAlias(
+  a?: AliasOptions,
+  b?: AliasOptions
+): AliasOptions | undefined {
+  if (!a) return b
+  if (!b) return a
+  if (isObject(a) && isObject(b)) {
+    return { ...a, ...b }
+  }
+  // the order is flipped because the alias is resolved from top-down,
+  // where the later should have higher priority
+  return [...normalizeAlias(b), ...normalizeAlias(a)]
+}
+
+export function normalizeAlias(o: AliasOptions = []): Alias[] {
+  return Array.isArray(o)
+    ? o.map(normalizeSingleAlias)
+    : Object.keys(o).map((find) =>
+        normalizeSingleAlias({
+          find,
+          replacement: (o as any)[find]
+        })
+      )
+}
+
+// https://github.com/vitejs/vite/issues/1363
+// work around https://github.com/rollup/plugins/issues/759
+function normalizeSingleAlias({
+  find,
+  replacement,
+  customResolver
+}: Alias): Alias {
+  if (
+    typeof find === 'string' &&
+    find.endsWith('/') &&
+    replacement.endsWith('/')
+  ) {
+    find = find.slice(0, find.length - 1)
+    replacement = replacement.slice(0, replacement.length - 1)
+  }
+
+  const alias: Alias = {
+    find,
+    replacement
+  }
+  if (customResolver) {
+    alias.customResolver = customResolver
+  }
+  return alias
+}
+
+export function transformResult(
+  s: MagicString,
+  id: string,
+  config: ResolvedConfig
+): TransformResult {
+  const isBuild = config.command === 'build'
+  const needSourceMap = !isBuild || config.build.sourcemap
+  return {
+    code: s.toString(),
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+  }
 }

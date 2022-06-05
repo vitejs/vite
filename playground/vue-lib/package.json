@@ -1,0 +1,16 @@
+{
+  "name": "test-vue-lib",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev-consumer": "vite --config ./vite.config.consumer.ts",
+    "build-lib": "vite build --config ./vite.config.lib.ts",
+    "build-consumer": "vite build --config ./vite.config.consumer.ts"
+  },
+  "dependencies": {
+    "vue": "^3.2.36"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "workspace:*"
+  }
+}

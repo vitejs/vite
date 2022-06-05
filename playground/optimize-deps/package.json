@@ -1,0 +1,38 @@
+{
+  "name": "test-optimize-deps",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "clipboard": "^2.0.11",
+    "dep-cjs-compiled-from-cjs": "file:./dep-cjs-compiled-from-cjs",
+    "dep-cjs-compiled-from-esm": "file:./dep-cjs-compiled-from-esm",
+    "dep-cjs-with-assets": "file:./dep-cjs-with-assets",
+    "dep-esbuild-plugin-transform": "file:./dep-esbuild-plugin-transform",
+    "dep-linked": "link:./dep-linked",
+    "dep-linked-include": "link:./dep-linked-include",
+    "dep-node-env": "file:./dep-node-env",
+    "dep-not-js": "file:./dep-not-js",
+    "dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
+    "dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
+    "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
+    "lodash-es": "^4.17.21",
+    "nested-exclude": "file:./nested-exclude",
+    "phoenix": "^1.6.9",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "resolve-linked": "workspace:0.0.0",
+    "url": "^0.11.0",
+    "vue": "^3.2.36",
+    "vuex": "^4.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "workspace:*"
+  }
+}

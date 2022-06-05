@@ -33,9 +33,16 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 [Read the Docs to Learn More](https://vitejs.dev).
 
-## Migrating from 1.x
+## v3.0
 
-Check out the [Migration Guide](https://vitejs.dev/guide/migration.html) if you are upgrading from 1.x.
+Current Status: **Alpha** (for internal testing, not recommended for production)
+
+The `main` branch is now for v3.0, if you are looking for current stable releases, check the [`v2` branch](https://github.com/vitejs/vite/tree/v2) branch instead.
+
+We will start drafting release notes and migration guide for v3.0 when we enter the beta stage. Before that you can check:
+
+- [v3.0 Milestone](https://github.com/vitejs/vite/milestone/5)
+- [Breaking Change List](https://github.com/vitejs/vite/issues?q=label%3A%22breaking+change%22+is%3Aclosed+milestone%3A3.0)
 
 ## Packages
 
@@ -55,3 +62,11 @@ See [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.m
 ## License
 
 MIT
+
+## Sponsors
+
+<p align="center">
+  <a target="_blank" href="https://github.com/sponsors/yyx990803">
+    <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg">
+  </a>
+</p>

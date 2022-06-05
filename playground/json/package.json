@@ -1,0 +1,20 @@
+{
+  "name": "test-json",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview",
+    "dev:ssr": "node server",
+    "serve:ssr": "cross-env NODE_ENV=production node server",
+    "debug:ssr": "node --inspect-brk server"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "express": "^4.18.1",
+    "json-module": "file:./json-module",
+    "vue": "^3.2.36"
+  }
+}

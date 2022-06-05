@@ -1,0 +1,171 @@
+<h1>Optimize Deps</h1>
+
+<h2>CommonJS w/ named imports (react)</h2>
+<div class="cjs"></div>
+<h2>CommonJS w/ named imports (phoenix)</h2>
+<div class="cjs-phoenix">fail</div>
+<h2>CommonJS w/ default export (clipboard)</h2>
+<div class="cjs-clipboard">fail</div>
+
+<script type="module" src="./cjs.js"></script>
+
+<h2>CommonJS dynamic import default + named (react)</h2>
+<div class="cjs-dynamic"></div>
+<h2>CommonJS dynamic import named (phoenix)</h2>
+<div class="cjs-dynamic-phoenix"></div>
+<h2>CommonJS dynamic import default (clipboard)</h2>
+<div class="cjs-dynamic-clipboard"></div>
+<h2>CommonJS dynamic import default (dep-cjs-compiled-from-esm)</h2>
+<div class="cjs-dynamic-dep-cjs-compiled-from-esm"></div>
+<h2>CommonJS dynamic import default (dep-cjs-compiled-from-cjs)</h2>
+<div class="cjs-dynamic-dep-cjs-compiled-from-cjs"></div>
+
+<script type="module" src="./cjs-dynamic.js"></script>
+
+<h2>Dedupe (dep in linked & optimized package)</h2>
+<div class="dedupe"></div>
+<script type="module" src="./dedupe.js"></script>
+
+<h2>CommonJS w/ browser field mapping (axios)</h2>
+<div>This should show pong: <span class="cjs-browser-field"></span></div>
+
+<h2>Detecting linked src package and optimizing its deps (lodash-es)</h2>
+<div>This should show fooBarBaz: <span class="deps-linked"></span></div>
+
+<h2>Optimizing force included dep even when it's linked</h2>
+<div class="force-include"></div>
+
+<h2>Dep with CSS</h2>
+<div class="dep-linked-include">This should be red</div>
+
+<h2>CJS Dep with CSS</h2>
+<div class="cjs-with-assets">This should be blue</div>
+
+<h2>import * as ...</h2>
+<div class="import-star"></div>
+
+<h2>Import from dependency with process.env.NODE_ENV</h2>
+<div class="node-env"></div>
+
+<h2>Import from dependency with .notjs files</h2>
+<div class="not-js"></div>
+
+<h2>Import from dependency with dynamic import</h2>
+<div class="dep-with-dynamic-import"></div>
+
+<h2>Dep w/ special file format supported via plugins</h2>
+<div class="plugin"></div>
+
+<h2>Vue & Vuex</h2>
+<div class="vue"></div>
+
+<h2>Dep with changes from esbuild plugin</h2>
+<div>This should show a greeting: <span class="esbuild-plugin"></span></div>
+
+<h2>Dep from hidden dir</h2>
+<div>This should show hello!: <span class="hidden-dir"></span></div>
+
+<h2>Nested include</h2>
+<div>Module path: <span class="nested-include"></span></div>
+
+<h2>Alias with colon</h2>
+<div>URL: <span class="url"></span></div>
+
+<h2>Reused variable names</h2>
+<div>This should show reused: <span class="reused-variable-names"></span></div>
+
+<script>
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
+
+<script type="module">
+  // test dep detection in globbed files
+  const globbed = import.meta.glob('./glob/*.js', { eager: true })
+
+  import { camelCase } from 'dep-linked'
+  text('.deps-linked', camelCase('foo-bar-baz'))
+
+  import { msg, VueSFC } from 'dep-linked-include'
+  text('.force-include', msg)
+  text('.plugin', VueSFC.render())
+
+  import * as linked from 'dep-linked-include'
+  const keys = Object.keys(linked)
+  if (keys.length) {
+    text('.import-star', `[success] ${keys.join(', ')}`)
+  }
+
+  import 'dep-cjs-with-assets'
+
+  import { env } from 'dep-node-env'
+  text('.node-env', env)
+
+  import { notjsValue } from 'dep-not-js'
+  text('.not-js', notjsValue)
+
+  import { lazyFoo } from 'dep-with-dynamic-import'
+  lazyFoo().then((foo) => {
+    text('.dep-with-dynamic-import', foo)
+  })
+
+  import { createApp } from 'vue'
+  import { createStore } from 'vuex'
+  if (typeof createApp === 'function' && typeof createStore === 'function') {
+    text('.vue', '[success]')
+  }
+
+  import { hello } from 'dep-esbuild-plugin-transform'
+  text('.esbuild-plugin', hello())
+
+  import { greeting } from './.hidden-dir/foo.js'
+  text('.hidden-dir', greeting)
+
+  import { nestedInclude } from 'nested-exclude'
+  text('.nested-include', nestedInclude)
+
+  import { parse } from 'node:url'
+  text('.url', parse('https://vitejs.dev').hostname)
+
+  import './index.astro'
+</script>
+
+<script type="module">
+  const reusedName = 1
+</script>
+<script type="module">
+  const reusedName = 'reused'
+  text('.reused-variable-names', reusedName)
+</script>
+
+<script type="module">
+  // should error on builtin modules (named import)
+  import { Buffer } from 'buffer'
+  // named imports error immediately
+</script>
+
+<script type="module">
+  // should error on builtin modules (default import)
+  import cp from 'child_process'
+  // must access property to error
+  if (import.meta.env.DEV) {
+    cp.execSync()
+  }
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-esm'
+  if (import.meta.env.DEV) {
+    read()
+  }
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-cjs'
+  if (import.meta.env.DEV) {
+    read()
+  }
+</script>

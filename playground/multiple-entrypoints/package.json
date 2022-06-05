@@ -1,0 +1,15 @@
+{
+  "name": "multiple-entrypoints",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "fast-glob": "^3.2.11",
+    "sass": "^1.52.1"
+  }
+}

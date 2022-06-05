@@ -29,21 +29,25 @@ If you need a custom integration, you can follow the steps in this guide to conf
    import 'vite/modulepreload-polyfill'
    ```
 
-2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <!-- if development -->
-   <script type="module" src="http://localhost:3000/@vite/client"></script>
-   <script type="module" src="http://localhost:3000/main.js"></script>
+   <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
-   Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
+   In order to properly serve assets, you have two options:
+
+   - Make sure the server is configured to proxy static assets requests to the Vite server
+   - Set [`server.origin`](https://vitejs.dev/config/#server-origin) so that generated asset URLs will be resolved using the back-end server URL instead of a relative path
+
+   This is needed for assets such as images to load properly.
 
    Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
 
    ```html
    <script type="module">
-     import RefreshRuntime from 'http://localhost:3000/@react-refresh'
+     import RefreshRuntime from 'http://localhost:5173/@react-refresh'
      RefreshRuntime.injectIntoGlobalHook(window)
      window.$RefreshReg$ = () => {}
      window.$RefreshSig$ = () => (type) => type

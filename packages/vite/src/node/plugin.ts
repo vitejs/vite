@@ -1,18 +1,20 @@
-import type { UserConfig } from './config'
 import type {
   CustomPluginOptions,
   LoadResult,
-  Plugin as RollupPlugin,
   PluginContext,
   ResolveIdResult,
+  Plugin as RollupPlugin,
   TransformPluginContext,
   TransformResult
 } from 'rollup'
+export type { PluginContext } from 'rollup'
+import type { UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
-import type { ConfigEnv, ResolvedConfig } from './'
 import type { HmrContext } from './server/hmr'
+import type { PreviewServerHook } from './preview'
+import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -80,6 +82,15 @@ export interface Plugin extends RollupPlugin {
    */
   configureServer?: ServerHook
   /**
+   * Configure the preview server. The hook receives the connect server and
+   * its underlying http server.
+   *
+   * The hooks are called before other middlewares are applied. A hook can
+   * return a post hook that will be called after other middlewares are
+   * applied. Hooks can be async functions and will be called in series.
+   */
+  configurePreviewServer?: PreviewServerHook
+  /**
    * Transform index.html.
    * The hook receives the following arguments:
    *
@@ -121,7 +132,14 @@ export interface Plugin extends RollupPlugin {
     this: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: CustomPluginOptions; ssr?: boolean }
+    options: {
+      custom?: CustomPluginOptions
+      ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
+    }
   ): Promise<ResolveIdResult> | ResolveIdResult
   load?(
     this: PluginContext,

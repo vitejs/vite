@@ -1,0 +1,29 @@
+{
+  "name": "test-worker",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev:es": "vite --config ./vite.config-es.js dev",
+    "build:es": "vite --config ./vite.config-es.js build",
+    "preview:es": "vite --config ./vite.config-es.js preview",
+    "dev:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap": "cross-env WORKER_MODE=sourcemap vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-hidden": "cross-env WORKER_MODE=hidden vite --config ./vite.config-sourcemap.js preview",
+    "dev:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js dev",
+    "build:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js build",
+    "preview:sourcemap-inline": "cross-env WORKER_MODE=inline vite --config ./vite.config-sourcemap.js preview",
+    "dev:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js dev",
+    "build:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js build",
+    "preview:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue-jsx": "workspace:*"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "test-css",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "css-dep": "link:./css-dep",
+    "fast-glob": "^3.2.11",
+    "less": "^4.1.2",
+    "postcss-nested": "^5.0.6",
+    "sass": "^1.52.1",
+    "stylus": "^0.58.0"
+  }
+}
