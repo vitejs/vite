@@ -1,3 +1,14 @@
+## <small>2.9.10 (2022-06-06)</small>
+
+* feat: backport treat Astro file scripts as TS (#8151) ([9fdd0a3](https://github.com/vitejs/vite/commit/9fdd0a3)), closes [#8151](https://github.com/vitejs/vite/issues/8151)
+* feat: new hook `configurePreviewServer` (#7658) (#8437) ([7b972bc](https://github.com/vitejs/vite/commit/7b972bc)), closes [#7658](https://github.com/vitejs/vite/issues/7658) [#8437](https://github.com/vitejs/vite/issues/8437)
+* fix: backport remove empty chunk css imports when using esnext (#8345) ([9fbc1a9](https://github.com/vitejs/vite/commit/9fbc1a9)), closes [#8345](https://github.com/vitejs/vite/issues/8345)
+* fix: EPERM error on Windows when processing dependencies (#8235) ([dfe4307](https://github.com/vitejs/vite/commit/dfe4307)), closes [#8235](https://github.com/vitejs/vite/issues/8235)
+* fix(css): remove `?used` hack (fixes #6421, #8245) (#8278) (#8471) ([8d7bac4](https://github.com/vitejs/vite/commit/8d7bac4)), closes [#6421](https://github.com/vitejs/vite/issues/6421) [#8245](https://github.com/vitejs/vite/issues/8245) [#8278](https://github.com/vitejs/vite/issues/8278) [#8471](https://github.com/vitejs/vite/issues/8471)
+* chore(lint): sort for imports (#8113) ([4bd1531](https://github.com/vitejs/vite/commit/4bd1531)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
+
+
+
 ## <small>2.9.9 (2022-05-11)</small>
 
 * fix: add direct query to html-proxy css (fixes #8091) (#8094) ([a24b5e3](https://github.com/vitejs/vite/commit/a24b5e3)), closes [#8091](https://github.com/vitejs/vite/issues/8091) [#8094](https://github.com/vitejs/vite/issues/8094)
