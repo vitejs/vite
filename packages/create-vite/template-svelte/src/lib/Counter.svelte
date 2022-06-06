@@ -6,29 +6,26 @@
 </script>
 
 <button on:click={increment}>
-  Clicks: {count}
+  count is {count}
 </button>
 
 <style>
   button {
+    border: 0;
+    border-radius: 4px;
+    padding: 0.5em 1em;
+    outline: 1px solid #8888;
+    font-size: 1em;
     font-family: inherit;
-    font-size: inherit;
-    padding: 1em 2em;
-    color: #ff3e00;
-    background-color: rgba(255, 62, 0, 0.1);
-    border-radius: 2em;
-    border: 2px solid rgba(255, 62, 0, 0);
-    outline: none;
-    width: 200px;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
+    background-color: transparent;
   }
-
-  button:focus {
-    border: 2px solid #ff3e00;
+  
+  button:hover {
+    outline-color: #888;
   }
-
-  button:active {
-    background-color: rgba(255, 62, 0, 0.2);
+  button:focus,
+  button:focus-visible {
+    outline: 1px dotted;
+    outline: 4px auto -webkit-focus-ring-color;
   }
 </style>
