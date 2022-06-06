@@ -3,7 +3,7 @@ import viteLogo from '/vite.svg'
 import typescriptLogo from './typescript.svg'
 import { setupCounter } from './counter'
 
-document.querySelector<HTMLDivElement>('#app').innerHTML = `
+document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
     <a href="https://vitejs.dev" target="_blank">
       <img class="logo" alt="Vite logo" src="${viteLogo}" />
