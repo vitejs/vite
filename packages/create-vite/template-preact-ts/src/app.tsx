@@ -12,7 +12,7 @@ export function App() {
         <a href="https://vitejs.dev" target="_blank">
           <img src={viteLogo} class="logo" alt="Vite logo" />
         </a>
-        <a Shref="https://preactjs.com" target="_blank">
+        <a href="https://preactjs.com" target="_blank">
           <img src={preactLogo} class="logo" alt="Preact logo" />
         </a>
       </div>
