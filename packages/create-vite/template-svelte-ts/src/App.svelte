@@ -6,10 +6,10 @@
 
 <main>
   <div>
-    <a href="https://vitejs.dev"> 
+    <a href="https://vitejs.dev" target="_blank"> 
       <img src={viteLogo} alt="Vite Logo" />
     </a>
-    <a href="https://svelte.dev"> 
+    <a href="https://svelte.dev" target="_blank"> 
       <img src={svelteLogo} alt="Svelte Logo" />
     </a>
   </div>
