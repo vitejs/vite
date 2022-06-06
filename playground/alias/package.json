@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "aliased-module": "file:./dir/module",
-    "vue": "^3.2.36"
+    "vue": "^3.2.37"
   },
   "devDependencies": {
     "resolve-linked": "workspace:*"
