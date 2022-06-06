@@ -34,24 +34,6 @@ h1 {
   font-size: 3.2em;
 }
 
-button {
-  border: 0;
-  border-radius: 4px;
-  padding: 0.5em 1em;
-  outline: 1px solid #8888;
-  font-size: 1em;
-  font-family: inherit;
-  background-color: transparent;
-}
-
-button:hover {
-  outline-color: #888;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
 #app {
   max-width: 1280px;
   margin: 0 auto;
@@ -63,24 +45,8 @@ button:focus-visible {
   height: 6em;
   padding: 1.5em;
 }
-
 .logo:hover {
   filter: drop-shadow(0 0 2em #888);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
 }
 
 .card {
