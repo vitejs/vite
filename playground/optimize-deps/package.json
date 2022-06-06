@@ -24,12 +24,12 @@
     "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.6.9",
+    "phoenix": "^1.6.10",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "resolve-linked": "workspace:0.0.0",
     "url": "^0.11.0",
-    "vue": "^3.2.36",
+    "vue": "^3.2.37",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
