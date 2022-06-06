@@ -773,19 +773,17 @@ export function resolvePackageEntry(
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
       entryPoint = resolveExports(data, '.', options, targetWeb)
-    }
-
-    // if exports resolved to .mjs, still resolve other fields.
-    // This is because .mjs files can technically import .cjs files which would
-    // make them invalid for pure ESM environments - so if other module/browser
-    // fields are present, prioritize those instead.
-    if (targetWeb && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+      if (!entryPoint) {
+        packageEntryFailure(id)
+      }
+    } else if (targetWeb) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
       const browserEntry =
         typeof data.browser === 'string'
           ? data.browser
           : isObject(data.browser) && data.browser['.']
+
       if (browserEntry) {
         // check if the package also has a "module" field.
         if (
@@ -820,15 +818,15 @@ export function resolvePackageEntry(
       }
     }
 
-    if (!entryPoint || entryPoint.endsWith('.mjs')) {
+    if (!entryPoint) {
       for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
         }
       }
+      entryPoint ||= data.main
     }
-    entryPoint ||= data.main
 
     // try default entry when entry is not define
     // https://nodejs.org/api/modules.html#all-together
@@ -871,7 +869,7 @@ export function resolvePackageEntry(
   packageEntryFailure(id)
 }
 
-function packageEntryFailure(id: string, details?: string) {
+function packageEntryFailure(id: string, details?: string): never {
   throw new Error(
     `Failed to resolve entry for package "${id}". ` +
       `The package may have incorrect main/module/exports specified in its package.json` +
