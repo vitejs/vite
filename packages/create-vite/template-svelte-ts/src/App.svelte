@@ -34,7 +34,7 @@
     padding: 1.5em;
   }
   img:hover {
-    filter: drop-shadow(0 0 2em #888);
+    filter: drop-shadow(0 0 2em #646cff);
   }
   .read-the-docs {
     color: #888;
