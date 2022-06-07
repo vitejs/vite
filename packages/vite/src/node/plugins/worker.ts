@@ -31,8 +31,31 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
+interface WorkerQueryOptions {
+  type?: WorkerType
+  format?: 'esm' | 'cjs'
+  inline: boolean
+  worker_file: boolean
+  worker: boolean
+  sharedworker: boolean
+  url: boolean
+}
+
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+export function parseWorkerQuery(id: string): WorkerQueryOptions {
+  const parsedQuery = parseRequest(id) as unknown as WorkerQueryOptions
+  if (!parsedQuery) {
+    return {} as WorkerQueryOptions
+  }
+  parsedQuery.inline = parsedQuery.inline != null
+  parsedQuery.worker_file = parsedQuery.worker_file != null
+  parsedQuery.worker = parsedQuery.worker != null
+  parsedQuery.sharedworker = parsedQuery.sharedworker != null
+  parsedQuery.url = parsedQuery.url != null
+  return parsedQuery
+}
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
@@ -46,7 +69,7 @@ function saveEmitWorkerAsset(
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: WorkerQueryOptions
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
@@ -84,7 +107,7 @@ export async function bundleWorkerEntry(
         '[name].[hash].[ext]'
       ),
       ...workerConfig,
-      format,
+      format: query.format || format,
       sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
@@ -107,7 +130,7 @@ export async function bundleWorkerEntry(
 
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
-  query: Record<string, string> | null,
+  query: WorkerQueryOptions,
   chunk: OutputChunk
 ): OutputChunk {
   const { map: sourcemap } = chunk
@@ -167,7 +190,7 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: WorkerQueryOptions
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
@@ -212,7 +235,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (isBuild) {
-        const parsedQuery = parseRequest(id)
+        const parsedQuery = parseWorkerQuery(id)
         if (
           parsedQuery &&
           (parsedQuery.worker ?? parsedQuery.sharedworker) != null
@@ -223,8 +246,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null) {
+      const query = parseWorkerQuery(id)
+      if (query[WORKER_FILE_ID] != null) {
         // if import worker by worker constructor will had query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
@@ -250,10 +273,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: injectEnv + raw
         }
       }
-      if (
-        query == null ||
-        (query && (query.worker ?? query.sharedworker) == null)
-      ) {
+      if ((query.worker ?? query.sharedworker) == null) {
         return
       }
 

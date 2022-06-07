@@ -5,15 +5,9 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  injectQuery,
-  normalizePath,
-  parseRequest,
-  transformResult
-} from '../utils'
-import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import { cleanUrl, injectQuery, normalizePath, transformResult } from '../utils'
+import type { WorkerType } from './worker';
+import { WORKER_FILE_ID , parseWorkerQuery, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 import { registerWorkersSource } from './optimizedDeps'
 
@@ -76,7 +70,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const query = parseRequest(id)
+      const query = parseWorkerQuery(id)
       let s: MagicString | undefined
       if (
         (code.includes('new Worker') || code.includes('new SharedWorker')) &&
