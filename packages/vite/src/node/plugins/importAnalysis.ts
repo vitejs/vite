@@ -53,10 +53,7 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  delayDepsOptimizerUntil
-} from './optimizedDeps'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
@@ -616,8 +613,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (!config.optimizeDeps.devScan) {
-            delayDepsOptimizerUntil(config, id, () => request)
+          if (depsOptimizer && !config.optimizeDeps.devScan) {
+            depsOptimizer.delayDepsOptimizerUntil(id, () => request)
           }
         })
       }

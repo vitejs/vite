@@ -33,7 +33,8 @@ module.exports = {
           }
         }
       ]
-    }
+    },
+    entries: ['entry.js']
   },
 
   build: {
