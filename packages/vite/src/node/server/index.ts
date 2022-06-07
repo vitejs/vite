@@ -539,7 +539,9 @@ export async function createServer(
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
   if (config.publicDir) {
-    middlewares.use(servePublicMiddleware(config.publicDir))
+    middlewares.use(
+      servePublicMiddleware(config.publicDir, config.server.headers)
+    )
   }
 
   // main transform middleware
