@@ -161,10 +161,9 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl =
-          query?.inline != null
-            ? mapFileName
-            : path.relative(config.build.assetsDir, mapFileName)
+        const sourceMapUrl = query.inline
+          ? mapFileName
+          : path.relative(config.build.assetsDir, mapFileName)
         chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
@@ -236,10 +235,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     load(id) {
       if (isBuild) {
         const parsedQuery = parseWorkerQuery(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
+        if (parsedQuery.worker || parsedQuery.sharedworker) {
           return ''
         }
       }
@@ -247,10 +243,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     async transform(raw, id) {
       const query = parseWorkerQuery(id)
-      if (query[WORKER_FILE_ID] != null) {
+      if (query[WORKER_FILE_ID]) {
         // if import worker by worker constructor will had query.type
         // other type will be import worker by esm
-        const workerType = query['type']! as WorkerType
+        const workerType = query.type
         let injectEnv = ''
 
         if (workerType === 'classic') {
@@ -273,15 +269,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: injectEnv + raw
         }
       }
-      if ((query.worker ?? query.sharedworker) == null) {
+      if (!query.worker || !query.sharedworker) {
         return
       }
 
       // stringified url or `new URL(...)`
       let url: string
       const { format } = config.worker
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+      const workerConstructor = query.sharedworker ? 'SharedWorker' : 'Worker'
       const workerType = isBuild
         ? format === 'es'
           ? 'module'
@@ -290,7 +285,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
         registerWorkersSource(config, id)
-        if (query.inline != null) {
+        if (query.inline) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
           return {
@@ -319,7 +314,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, `type=${workerType}`)
       }
 
-      if (query.url != null) {
+      if (query.url) {
         return {
           code: `export default ${JSON.stringify(url)}`,
           map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
