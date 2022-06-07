@@ -79,6 +79,15 @@ export class MyElement extends LitElement {
       font-size: 3.2em;
     }
 
+      a {
+        font-weight: 500;
+        color: #646cff;
+        text-decoration: inherit;
+      }
+      a:hover {
+        color: #535bf2;
+      }
+
     button {
       border-radius: 8px;
       border: 1px solid transparent;
