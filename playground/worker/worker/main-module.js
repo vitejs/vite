@@ -1,6 +1,6 @@
-import myWorker from '../my-worker?worker'
+import myWorker from '../my-worker?worker&format=esm'
+import mySharedWorker from '../my-shared-worker?sharedworker&format=iife'
 import InlineWorker from '../my-worker?worker&inline'
-import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'

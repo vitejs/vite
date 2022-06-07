@@ -269,7 +269,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: injectEnv + raw
         }
       }
-      if (!query.worker || !query.sharedworker) {
+
+      if (!query.worker && !query.sharedworker) {
         return
       }
 
