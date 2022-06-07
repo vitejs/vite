@@ -47,10 +47,6 @@ export class MyElement extends LitElement {
     this.count++
   }
 
-  foo(): string {
-    return 'foo'
-  }
-
   static styles = css`
     :host {
       max-width: 1280px;
@@ -108,10 +104,6 @@ export class MyElement extends LitElement {
     }
 
     @media (prefers-color-scheme: light) {
-      :root {
-        color: #213547;
-        background-color: #ffffff;
-      }
       a:hover {
         color: #747bff;
       }

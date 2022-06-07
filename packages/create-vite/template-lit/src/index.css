@@ -22,3 +22,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+}
