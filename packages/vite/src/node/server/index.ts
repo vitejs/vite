@@ -7,6 +7,7 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
+import glob from 'fast-glob'
 import type { FSWatcher, WatchOptions } from 'types/chokidar'
 import type { Connect } from 'types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
@@ -521,6 +522,7 @@ export async function createServer(
   const initOptimizer = async () => {
     if (isDepsOptimizerEnabled(config)) {
       await initDepsOptimizer(config, server)
+      pretransformOptimizeDepsEntries(server)
     }
   }
 
@@ -759,5 +761,26 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
+  }
+}
+
+export async function pretransformOptimizeDepsEntries(
+  server: ViteDevServer
+): Promise<void> {
+  const { config } = server
+  const { entries } = config.optimizeDeps
+  if (entries) {
+    const explicitEntries = await glob(entries, {
+      cwd: config.root,
+      ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
+      absolute: true
+    })
+    // TODO: should we restrict the entries to JS and HTML like the
+    // scanner did? I think we can let the user chose any entry
+    for (const entry of explicitEntries) {
+      transformRequest(entry, server, { ssr: false }).catch((e) => {
+        config.logger.error(e.message)
+      })
+    }
   }
 }
