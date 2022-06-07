@@ -1,5 +1,5 @@
 import path from 'path'
-import type { ServerResponse } from 'http'
+import type { OutgoingHttpHeaders, ServerResponse } from 'http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
@@ -20,24 +20,34 @@ import {
 
 const { isMatch } = micromatch
 
-const sirvOptions: Options = {
-  dev: true,
-  etag: true,
-  extensions: [],
-  setHeaders(res, pathname) {
-    // Matches js, jsx, ts, tsx.
-    // The reason this is done, is that the .ts file extension is reserved
-    // for the MIME type video/mp2t. In almost all cases, we can expect
-    // these files to be TypeScript files, and for Vite to serve them with
-    // this Content-Type.
-    if (/\.[tj]sx?$/.test(pathname)) {
-      res.setHeader('Content-Type', 'application/javascript')
+const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
+  return {
+    dev: true,
+    etag: true,
+    extensions: [],
+    setHeaders(res, pathname) {
+      // Matches js, jsx, ts, tsx.
+      // The reason this is done, is that the .ts file extension is reserved
+      // for the MIME type video/mp2t. In almost all cases, we can expect
+      // these files to be TypeScript files, and for Vite to serve them with
+      // this Content-Type.
+      if (/\.[tj]sx?$/.test(pathname)) {
+        res.setHeader('Content-Type', 'application/javascript')
+      }
+      if (headers) {
+        for (const name in headers) {
+          res.setHeader(name, headers[name]!)
+        }
+      }
     }
   }
 }
 
-export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions)
+export function servePublicMiddleware(
+  dir: string,
+  headers?: OutgoingHttpHeaders
+): Connect.NextHandleFunction {
+  const serve = sirv(dir, sirvOptions(headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
@@ -53,7 +63,7 @@ export function serveStaticMiddleware(
   dir: string,
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions)
+  const serve = sirv(dir, sirvOptions(server.config.server.headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
@@ -109,7 +119,7 @@ export function serveStaticMiddleware(
 export function serveRawFsMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const serveFromRoot = sirv('/', sirvOptions)
+  const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
