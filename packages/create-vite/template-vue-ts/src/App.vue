@@ -22,6 +22,6 @@ import HelloWorld from './components/HelloWorld.vue'
   padding: 1.5em;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cff);
+  filter: drop-shadow(0 0 2em #646cffaa);
 }
 </style>
