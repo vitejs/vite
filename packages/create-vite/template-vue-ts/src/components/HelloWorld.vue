@@ -18,7 +18,7 @@ const count = ref(0)
   </div>
 
   <p>
-    Chech out
+    Check out
     <a
       href="https://vuejs.org/guide/quick-start.html#with-build-tools"
       target="_blank"
