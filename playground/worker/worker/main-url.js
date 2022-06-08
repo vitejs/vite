@@ -1,4 +1,4 @@
-import { url } from '../simple-worker?worker'
+import workerUrl from '../simple-worker?worker&url'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
