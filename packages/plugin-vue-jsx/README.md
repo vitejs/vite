@@ -19,7 +19,7 @@ export default {
 
 ### include
 
-Type: `(string | RegExp)[] | string | RegExp | null;`
+Type: `(string | RegExp)[] | string | RegExp | null`
 
 Default: `/\.[jt]sx$/`
 
@@ -27,7 +27,7 @@ A [picomatch pattern](https://github.com/micromatch/picomatch), or array of patt
 
 ### exclude
 
-Type: `(string | RegExp)[] | string | RegExp | null;`
+Type: `(string | RegExp)[] | string | RegExp | null`
 
 Default: `undefined`
 
