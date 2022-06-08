@@ -610,13 +610,23 @@ export function getOptimizedDepPath(
   )
 }
 
+function getDepsCacheSuffix(config: ResolvedConfig): string {
+  let suffix = ''
+  if (config.command === 'build') {
+    suffix += '_build'
+    if (config.build.ssr) {
+      suffix += '_ssr'
+    }
+  }
+  return suffix
+}
 export function getDepsCacheDir(config: ResolvedConfig): string {
-  const dirName = config.command === 'build' ? 'depsBuild' : 'deps'
+  const dirName = 'deps' + getDepsCacheSuffix(config)
   return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig) {
-  const dirName = config.command === 'build' ? 'processingBuild' : 'processing'
+  const dirName = 'deps' + getDepsCacheSuffix(config) + '_temp'
   return normalizePath(path.resolve(config.cacheDir, dirName))
 }
 

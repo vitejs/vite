@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.0.0-alpha.7",
+  "version": "3.0.0-alpha.9",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -77,7 +77,7 @@
     "@rollup/plugin-node-resolve": "13.3.0",
     "@rollup/plugin-typescript": "^8.3.2",
     "@rollup/pluginutils": "^4.2.1",
-    "@vue/compiler-dom": "^3.2.36",
+    "@vue/compiler-dom": "^3.2.37",
     "acorn": "^8.7.1",
     "cac": "6.7.9",
     "chokidar": "^3.5.3",

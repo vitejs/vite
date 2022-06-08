@@ -35,6 +35,12 @@
 <h2>Optimizing force included dep even when it's linked</h2>
 <div class="force-include"></div>
 
+<h2>Dep with CSS</h2>
+<div class="dep-linked-include">This should be red</div>
+
+<h2>CJS Dep with CSS</h2>
+<div class="cjs-with-assets">This should be blue</div>
+
 <h2>import * as ...</h2>
 <div class="import-star"></div>
 
@@ -91,6 +97,8 @@
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
 
+  import 'dep-cjs-with-assets'
+
   import { env } from 'dep-node-env'
   text('.node-env', env)
 
@@ -129,4 +137,35 @@
 <script type="module">
   const reusedName = 'reused'
   text('.reused-variable-names', reusedName)
+</script>
+
+<script type="module">
+  // should error on builtin modules (named import)
+  import { Buffer } from 'buffer'
+  // named imports error immediately
+</script>
+
+<script type="module">
+  // should error on builtin modules (default import)
+  import cp from 'child_process'
+  // must access property to error
+  if (import.meta.env.DEV) {
+    cp.execSync()
+  }
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-esm'
+  if (import.meta.env.DEV) {
+    read()
+  }
+</script>
+
+<script type="module">
+  // should error on builtin modules from dep
+  import { read } from 'dep-with-builtin-module-cjs'
+  if (import.meta.env.DEV) {
+    read()
+  }
 </script>
