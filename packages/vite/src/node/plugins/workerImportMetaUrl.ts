@@ -7,8 +7,8 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl, injectQuery, normalizePath, transformResult } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
-import type { WorkerFormat, WorkerType } from './worker';
-import { WORKER_FILE_ID , parseWorkerQuery, workerFileToUrl } from './worker'
+import type { WorkerFormat, WorkerType } from './worker'
+import { WORKER_FILE_ID, parseWorkerQuery, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
