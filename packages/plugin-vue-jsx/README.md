@@ -17,7 +17,23 @@ export default {
 
 ## Options
 
-See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next).
+There has been a few own plugins.
+
+### include
+
+Type: `<string | RegExp> | string | RegExp | null;`
+
+Default: `/\.[jt]sx$/`
+
+if you want to add extensions option to vue-jsx plugin, you can use `include`
+
+### exclude
+
+Type: `<string | RegExp> | string | RegExp | null;`
+
+Default: `undefined`
+
+See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next) for other plugins.
 
 ## HMR Detection
 
