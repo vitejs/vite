@@ -534,7 +534,7 @@ export async function initDepsOptimizer(
     }
     if (server && !optimizeDepsEntriesVisited) {
       optimizeDepsEntriesVisited = true
-      pretransformOptimizeDepsEntries(server)
+      preTransformOptimizeDepsEntries(server)
     }
   }
 
@@ -567,7 +567,7 @@ export async function initDepsOptimizer(
   return depsOptimizer
 }
 
-export async function pretransformOptimizeDepsEntries(
+export async function preTransformOptimizeDepsEntries(
   server: ViteDevServer
 ): Promise<void> {
   const { config } = server
