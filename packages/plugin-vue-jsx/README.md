@@ -19,7 +19,7 @@ export default {
 
 ### include
 
-Type: `<string | RegExp> | string | RegExp | null;`
+Type: `(string | RegExp)[] | string | RegExp | null;`
 
 Default: `/\.[jt]sx$/`
 
