@@ -314,6 +314,9 @@ function isValidPackageName(projectName) {
  * @param {string} projectName
  */
 function toValidPackageName(projectName) {
+  if (projectName === '.') {
+    projectName = path.basename(path.resolve())
+  }
   return projectName
     .trim()
     .toLowerCase()
