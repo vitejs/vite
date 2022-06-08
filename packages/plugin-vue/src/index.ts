@@ -107,14 +107,6 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
 
-  // Temporal handling for 2.7 breaking change
-  const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
-    opt === undefined
-      ? false
-      : typeof opt === 'boolean'
-      ? opt
-      : opt?.ssr === true
-
   return {
     name: 'vite:vue',
 
@@ -169,7 +161,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       if (id === EXPORT_HELPER_ID) {
         return helperCode
       }
@@ -202,7 +194,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     transform(code, id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
       if (query.raw) {
         return
