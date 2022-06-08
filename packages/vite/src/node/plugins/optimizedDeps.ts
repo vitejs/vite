@@ -13,99 +13,9 @@ export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:optimize-deps')
 
-const runOptimizerIfIdleAfterMs = 100
-
-interface RunProcessingInfo {
-  ids: { id: string; done: () => Promise<any> }[]
-  seenIds: Set<string>
-  workersSources: Set<string>
-  waitingOn: string | undefined
-}
-
-const runProcessingInfoMap = new WeakMap<ResolvedConfig, RunProcessingInfo>()
-
-function initRunProcessingInfo(config: ResolvedConfig) {
-  config = config.mainConfig || config
-  const runProcessingInfo = {
-    ids: [],
-    seenIds: new Set<string>(),
-    workersSources: new Set<string>(),
-    waitingOn: undefined
-  }
-  runProcessingInfoMap.set(config, runProcessingInfo)
-  return runProcessingInfo
-}
-
-function getRunProcessingInfo(config: ResolvedConfig): RunProcessingInfo {
-  return (
-    runProcessingInfoMap.get(config.mainConfig || config) ??
-    initRunProcessingInfo(config)
-  )
-}
-
-export function registerWorkersSource(
-  config: ResolvedConfig,
-  id: string
-): void {
-  const info = getRunProcessingInfo(config)
-  info.workersSources.add(id)
-  if (info.waitingOn === id) {
-    info.waitingOn = undefined
-  }
-}
-
-export function delayDepsOptimizerUntil(
-  config: ResolvedConfig,
-  id: string,
-  done: () => Promise<any>
-): void {
-  const info = getRunProcessingInfo(config)
-  if (
-    !getDepsOptimizer(config)?.isOptimizedDepFile(id) &&
-    !info.seenIds.has(id)
-  ) {
-    info.seenIds.add(id)
-    info.ids.push({ id, done })
-    runOptimizerWhenIdle(config)
-  }
-}
-
-function runOptimizerWhenIdle(config: ResolvedConfig) {
-  const info = getRunProcessingInfo(config)
-  if (!info.waitingOn) {
-    const next = info.ids.pop()
-    if (next) {
-      info.waitingOn = next.id
-      const afterLoad = () => {
-        info.waitingOn = undefined
-        if (info.ids.length > 0) {
-          runOptimizerWhenIdle(config)
-        } else if (!info.workersSources.has(next.id)) {
-          getDepsOptimizer(config)?.run()
-        }
-      }
-      next
-        .done()
-        .then(() => {
-          setTimeout(
-            afterLoad,
-            info.ids.length > 0 ? 0 : runOptimizerIfIdleAfterMs
-          )
-        })
-        .catch(afterLoad)
-    }
-  }
-}
-
 export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
-
-    buildStart() {
-      if (!config.isWorker) {
-        initRunProcessingInfo(config)
-      }
-    },
 
     async resolveId(id) {
       if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
@@ -174,7 +84,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       if (!config.isWorker) {
-        initRunProcessingInfo(config)
+        getDepsOptimizer(config)?.resetRegisteredIds()
       }
     },
 
@@ -185,7 +95,7 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform(_code, id) {
-      delayDepsOptimizerUntil(config, id, async () => {
+      getDepsOptimizer(config)?.delayDepsOptimizerUntil(id, async () => {
         await this.load({ id })
       })
     },

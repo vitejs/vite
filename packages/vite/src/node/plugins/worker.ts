@@ -13,8 +13,8 @@ import {
   parseRequest
 } from '../utils'
 import { onRollupWarning } from '../build'
+import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
-import { registerWorkersSource } from './optimizedDeps'
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
@@ -269,7 +269,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        registerWorkersSource(config, id)
+        getDepsOptimizer(config)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url

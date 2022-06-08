@@ -12,10 +12,10 @@ import {
   parseRequest,
   transformResult
 } from '../utils'
+import { getDepsOptimizer } from '../optimizer'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
-import { registerWorkersSource } from './optimizedDeps'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -123,7 +123,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let url: string
           if (isBuild) {
-            registerWorkersSource(config, id)
+            getDepsOptimizer(config)?.registerWorkersSource(id)
             url = await workerFileToUrl(config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)

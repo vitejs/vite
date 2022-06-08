@@ -45,11 +45,18 @@ export type ExportsData = {
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
+
   registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
+
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+
+  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  registerWorkersSource: (id: string) => void
+  resetRegisteredIds: () => void
+
   options: DepOptimizationOptions
 }
 
