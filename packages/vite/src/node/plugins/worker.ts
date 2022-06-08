@@ -30,6 +30,7 @@ interface WorkerCache {
 }
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
+export type WorkerFormat = 'es' | 'iife'
 
 interface WorkerQueryOptions {
   type?: WorkerType
@@ -37,6 +38,11 @@ interface WorkerQueryOptions {
   worker_file: boolean
   worker: boolean
   sharedworker: boolean
+}
+
+interface WorkerBundleOptions {
+  format: WorkerFormat
+  inline: boolean
 }
 
 export const WORKER_FILE_ID = 'worker_file'
@@ -66,11 +72,11 @@ function saveEmitWorkerAsset(
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: WorkerQueryOptions
+  query: WorkerBundleOptions
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
-  const { plugins, rollupOptions, format } = config.worker
+  const { plugins, rollupOptions } = config.worker
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
@@ -104,7 +110,7 @@ export async function bundleWorkerEntry(
         '[name].[hash].[ext]'
       ),
       ...workerConfig,
-      format,
+      format: query.format,
       sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
@@ -127,7 +133,7 @@ export async function bundleWorkerEntry(
 
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
-  query: WorkerQueryOptions,
+  query: WorkerBundleOptions,
   chunk: OutputChunk
 ): OutputChunk {
   const { map: sourcemap } = chunk
@@ -186,7 +192,7 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: WorkerQueryOptions
+  query: WorkerBundleOptions
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
@@ -284,7 +290,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (isBuild) {
         registerWorkersSource(config, id)
         if (query.inline) {
-          const chunk = await bundleWorkerEntry(config, id, query)
+          const chunk = await bundleWorkerEntry(config, id, {
+            inline: query.inline,
+            format
+          })
           // inline as blob data url
           return {
             code: `const encodedJs = "${Buffer.from(chunk.code).toString(
@@ -304,7 +313,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' }
           }
         } else {
-          url = await workerFileToUrl(config, id, query)
+          url = await workerFileToUrl(config, id, {
+            inline: query.inline,
+            format
+          })
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
