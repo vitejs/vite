@@ -23,7 +23,7 @@ Type: `(string | RegExp)[] | string | RegExp | null;`
 
 Default: `/\.[jt]sx$/`
 
-if you want to add extensions option to vue-jsx plugin, you can use `include`
+A [picomatch pattern](https://github.com/micromatch/picomatch), or array of patterns, which specifies the files the plugin should operate on.
 
 ### exclude
 
