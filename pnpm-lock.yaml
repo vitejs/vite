@@ -572,6 +572,7 @@ importers:
   playground/optimize-deps:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
+      added-in-entries: file:./added-in-entries
       axios: ^0.27.2
       clipboard: ^2.0.11
       dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
@@ -595,6 +596,7 @@ importers:
       vue: ^3.2.37
       vuex: ^4.0.2
     dependencies:
+      added-in-entries: file:playground/optimize-deps/added-in-entries
       axios: 0.27.2
       clipboard: 2.0.11
       dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
@@ -619,6 +621,9 @@ importers:
       vuex: 4.0.2_vue@3.2.37
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
+
+  playground/optimize-deps/added-in-entries:
+    specifiers: {}
 
   playground/optimize-deps/dep-cjs-compiled-from-cjs:
     specifiers: {}
@@ -8854,6 +8859,12 @@ packages:
     name: json-module
     version: 0.0.0
     dev: true
+
+  file:playground/optimize-deps/added-in-entries:
+    resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
+    name: added-in-entries
+    version: 1.0.0
+    dev: false
 
   file:playground/optimize-deps/dep-cjs-compiled-from-cjs:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-cjs, type: directory}

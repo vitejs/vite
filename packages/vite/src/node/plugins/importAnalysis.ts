@@ -53,10 +53,7 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  delayDepsOptimizerUntil
-} from './optimizedDeps'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
@@ -599,7 +596,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
-      // TODO: we should also crawl dynamic imports
+      // TODO: should we also crawl dynamic imports? or the experience is good enough to allow
+      // users to chose their tradeoffs by explicitily setting optimizeDeps.entries for the
+      // most common dynamic imports
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
           url = unwrapId(removeImportQuery(url)).replace(
@@ -614,8 +613,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (!config.optimizeDeps.devScan) {
-            delayDepsOptimizerUntil(config, id, () => request)
+          if (depsOptimizer && !config.optimizeDeps.devScan) {
+            depsOptimizer.delayDepsOptimizerUntil(id, () => request)
           }
         })
       }
