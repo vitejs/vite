@@ -65,6 +65,7 @@ export class MyElement extends LitElement {
       .logo {
         height: 6em;
         padding: 1.5em;
+        will-change: filter;
       }
       .logo:hover {
         filter: drop-shadow(0 0 2em #646cffaa);
@@ -89,6 +90,7 @@ export class MyElement extends LitElement {
 
       h1 {
         font-size: 3.2em;
+        line-height: 1.1;
       }
 
       button {
