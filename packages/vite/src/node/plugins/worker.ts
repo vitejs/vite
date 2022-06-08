@@ -37,7 +37,6 @@ interface WorkerQueryOptions {
   worker_file: boolean
   worker: boolean
   sharedworker: boolean
-  url: boolean
 }
 
 export const WORKER_FILE_ID = 'worker_file'
@@ -52,7 +51,6 @@ export function parseWorkerQuery(id: string): WorkerQueryOptions {
   parsedQuery.worker_file = parsedQuery.worker_file != null
   parsedQuery.worker = parsedQuery.worker != null
   parsedQuery.sharedworker = parsedQuery.sharedworker != null
-  parsedQuery.url = parsedQuery.url != null
   return parsedQuery
 }
 
@@ -314,15 +312,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, `type=${workerType}`)
       }
 
-      if (query.url) {
-        return {
-          code: `export default ${JSON.stringify(url)};`,
-          map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
-        }
-      }
-
       return {
-        code: `export default function WorkerWrapper() {
+        code: `export const url = ${JSON.stringify(url)};
+        export default function WorkerWrapper() {
           return new ${workerConstructor}(${JSON.stringify(
           url
         )}${workerOptions})

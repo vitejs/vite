@@ -176,6 +176,7 @@ declare module '*?worker' {
   const workerConstructor: {
     new (): Worker
   }
+  export const url: string
   export default workerConstructor
 }
 
@@ -186,28 +187,15 @@ declare module '*?worker&inline' {
   export default workerConstructor
 }
 
-declare module '*?worker&url' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
   }
+  export const url: string
   export default sharedWorkerConstructor
 }
 
 declare module '*?sharedworker&inline' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&url' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
   }
