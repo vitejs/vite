@@ -33,7 +33,7 @@ Type: `<string | RegExp> | string | RegExp | null;`
 
 Default: `undefined`
 
-See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next) for other plugins.
+> See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next) for other options.
 
 ## HMR Detection
 
