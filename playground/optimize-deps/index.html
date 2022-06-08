@@ -74,6 +74,10 @@
 <h2>Reused variable names</h2>
 <div>This should show reused: <span class="reused-variable-names"></span></div>
 
+<h2>Flatten Id</h2>
+<div class="clonedeep-slash"></div>
+<div class="clonedeep-dot"></div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -168,4 +172,12 @@
   if (import.meta.env.DEV) {
     read()
   }
+</script>
+
+<script type="module">
+  import cloneDeepSlash from 'lodash/cloneDeep'
+  import cloneDeepDot from 'lodash.clonedeep'
+
+  text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
+  text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
 </script>
