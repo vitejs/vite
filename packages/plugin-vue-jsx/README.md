@@ -17,8 +17,6 @@ export default {
 
 ## Options
 
-There has been a few own options.
-
 ### include
 
 Type: `<string | RegExp> | string | RegExp | null;`
