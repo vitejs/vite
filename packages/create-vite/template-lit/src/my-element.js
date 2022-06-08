@@ -1,4 +1,6 @@
 import { html, css, LitElement } from 'lit'
+import viteLogo from '/vite.svg'
+import litLogo from './assets/lit.svg'
 
 /**
  * An example element.
@@ -7,23 +9,12 @@ import { html, css, LitElement } from 'lit'
  * @csspart button - The button
  */
 export class MyElement extends LitElement {
-  static get styles() {
-    return css`
-      :host {
-        display: block;
-        border: solid 1px gray;
-        padding: 16px;
-        max-width: 800px;
-      }
-    `
-  }
-
   static get properties() {
     return {
       /**
-       * The name to say "Hello" to.
+       * Copy for the read the docs hint.
        */
-      name: { type: String },
+      docsHint: { type: String },
 
       /**
        * The number of times the button has been clicked.
@@ -34,22 +25,100 @@ export class MyElement extends LitElement {
 
   constructor() {
     super()
-    this.name = 'World'
+    this.docsHint = 'Click on the Vite and Lit logos to learn more'
     this.count = 0
   }
 
   render() {
     return html`
-      <h1>Hello, ${this.name}!</h1>
-      <button @click=${this._onClick} part="button">
-        Click Count: ${this.count}
-      </button>
+      <div>
+        <a href="https://vitejs.dev" target="_blank"
+          ><img src="${viteLogo}" class="logo" alt="Vite logo"
+        /></a>
+        <a href="https://lit.dev" target="_blank"
+          ><img src=${litLogo} class="logo" alt="Lit logo"
+        /></a>
+      </div>
       <slot></slot>
+      <div class="card">
+        <button @click=${this._onClick} part="button">
+          count is ${this.count}
+        </button>
+      </div>
+      <p class="read-the-docs">${this.docsHint}</p>
     `
   }
 
   _onClick() {
     this.count++
+  }
+
+  static get styles() {
+    return css`
+      :host {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 2rem;
+        text-align: center;
+      }
+
+      .logo {
+        height: 6em;
+        padding: 1.5em;
+      }
+      .logo:hover {
+        filter: drop-shadow(0 0 2em #646cffaa);
+      }
+
+      .card {
+        padding: 2em;
+      }
+
+      .read-the-docs {
+        color: #888;
+      }
+
+      a {
+        font-weight: 500;
+        color: #646cff;
+        text-decoration: inherit;
+      }
+      a:hover {
+        color: #535bf2;
+      }
+
+      h1 {
+        font-size: 3.2em;
+      }
+
+      button {
+        border-radius: 8px;
+        border: 1px solid transparent;
+        padding: 0.6em 1.2em;
+        font-size: 1em;
+        font-weight: 500;
+        font-family: inherit;
+        background-color: #1a1a1a;
+        cursor: pointer;
+        transition: border-color 0.25s;
+      }
+      button:hover {
+        border-color: #646cff;
+      }
+      button:focus,
+      button:focus-visible {
+        outline: 4px auto -webkit-focus-ring-color;
+      }
+
+      @media (prefers-color-scheme: light) {
+        a:hover {
+          color: #747bff;
+        }
+        button {
+          background-color: #f9f9f9;
+        }
+      }
+    `
   }
 }
 
