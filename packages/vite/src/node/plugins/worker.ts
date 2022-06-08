@@ -33,7 +33,6 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 
 interface WorkerQueryOptions {
   type?: WorkerType
-  format?: 'esm' | 'cjs'
   inline: boolean
   worker_file: boolean
   worker: boolean
@@ -107,7 +106,7 @@ export async function bundleWorkerEntry(
         '[name].[hash].[ext]'
       ),
       ...workerConfig,
-      format: query.format || format,
+      format,
       sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
@@ -317,7 +316,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       if (query.url) {
         return {
-          code: `export default ${JSON.stringify(url)}`,
+          code: `export default ${JSON.stringify(url)};`,
           map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
         }
       }

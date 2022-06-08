@@ -193,48 +193,6 @@ declare module '*?worker&url' {
   export default workerConstructor
 }
 
-declare module '*?worker&format=esm' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
-declare module '*?worker&format=iife' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
-declare module '*?worker&url&format=esm' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
-declare module '*?worker&url&format=iife' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
-declare module '*?worker&inline&format=esm' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
-declare module '*?worker&inline&format=iife' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
-}
-
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
@@ -250,48 +208,6 @@ declare module '*?sharedworker&inline' {
 }
 
 declare module '*?sharedworker&url' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&format=esm' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&format=iife' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&url&format=esm' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&url&format=iife' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&inline&format=esm' {
-  const sharedWorkerConstructor: {
-    new (): SharedWorker
-  }
-  export default sharedWorkerConstructor
-}
-
-declare module '*?sharedworker&inline&format=iife' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
   }
