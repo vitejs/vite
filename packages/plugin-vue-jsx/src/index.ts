@@ -74,7 +74,7 @@ function vueJsxPlugin(options: Options = {}): Plugin {
     },
 
     async transform(code, id, opt) {
-      const ssr = typeof opt === 'boolean' ? opt : (opt && opt.ssr) === true
+      const ssr = opt?.ssr === true
       const {
         include,
         exclude,

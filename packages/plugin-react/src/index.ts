@@ -165,7 +165,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       }
     },
     async transform(code, id, options) {
-      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
+      const ssr = options?.ssr === true
       // File extension could be mocked/overridden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =
@@ -379,7 +379,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     /*
     resolveId(id: string) {
       return id === runtimeId ? id : null
-    }, 
+    },
     load(id: string) {
       if (id === runtimeId) {
         const runtimePath = resolve.sync(runtimeId, {
