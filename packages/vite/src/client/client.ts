@@ -101,7 +101,16 @@ async function handleMessage(payload: HMRPayload) {
             const newPath = `${base}${searchUrl.slice(1)}${
               searchUrl.includes('?') ? '&' : '?'
             }t=${timestamp}`
-            el.href = new URL(newPath, el.href).href
+
+            // rather than swapping the href on the existing tag, we will
+            // create a new link tag. Once the new stylesheet has loaded we
+            // will remove the existing link tag. This removes a Flash Of
+            // Unstyled Content that can occur when swapping out the tag href
+            // directly, as the new stylesheet has not yet been loaded.
+            const newLinkTag = el.cloneNode() as HTMLLinkElement
+            newLinkTag.href = new URL(newPath, el.href).href
+            newLinkTag.addEventListener('load', () => el.remove())
+            el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
         }
