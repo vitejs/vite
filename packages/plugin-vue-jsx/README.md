@@ -17,7 +17,7 @@ export default {
 
 ## Options
 
-There has been a few own plugins.
+There has been a few own options.
 
 ### include
 
