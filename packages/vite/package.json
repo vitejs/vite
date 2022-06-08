@@ -20,10 +20,7 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./dist/client/*": "./dist/client/*",
-    "./terser": {
-      "require": "./dist/node-cjs/terser.cjs"
-    }
+    "./dist/client/*": "./dist/client/*"
   },
   "files": [
     "bin",
@@ -118,7 +115,6 @@
     "source-map-support": "^0.5.21",
     "strip-ansi": "^6.0.1",
     "strip-literal": "^0.3.0",
-    "terser": "^5.14.0",
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
     "types": "link:./types",
@@ -128,7 +124,8 @@
   "peerDependencies": {
     "less": "*",
     "sass": "*",
-    "stylus": "*"
+    "stylus": "*",
+    "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
     "sass": {
@@ -138,6 +135,9 @@
       "optional": true
     },
     "less": {
+      "optional": true
+    },
+    "terser": {
       "optional": true
     }
   }
