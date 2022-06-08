@@ -27,7 +27,7 @@ if you want to add extensions option to vue-jsx plugin, you can use `include`
 
 ### exclude
 
-Type: `<string | RegExp> | string | RegExp | null;`
+Type: `(string | RegExp)[] | string | RegExp | null;`
 
 Default: `undefined`
 
