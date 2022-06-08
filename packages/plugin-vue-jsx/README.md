@@ -17,7 +17,23 @@ export default {
 
 ## Options
 
-See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next).
+### include
+
+Type: `(string | RegExp)[] | string | RegExp | null`
+
+Default: `/\.[jt]sx$/`
+
+A [picomatch pattern](https://github.com/micromatch/picomatch), or array of patterns, which specifies the files the plugin should operate on.
+
+### exclude
+
+Type: `(string | RegExp)[] | string | RegExp | null`
+
+Default: `undefined`
+
+A [picomatch pattern](https://github.com/micromatch/picomatch), or array of patterns, which specifies the files to be ignored by the plugin.
+
+> See [@vue/babel-plugin-jsx](https://github.com/vuejs/jsx-next) for other options.
 
 ## HMR Detection
 
