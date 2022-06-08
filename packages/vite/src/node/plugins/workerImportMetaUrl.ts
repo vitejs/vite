@@ -6,10 +6,10 @@ import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl, injectQuery, normalizePath, transformResult } from '../utils'
-import type { WorkerFormat, WorkerType } from './worker'
-import { WORKER_FILE_ID, parseWorkerQuery, workerFileToUrl } from './worker'
+import { getDepsOptimizer } from '../optimizer'
+import type { WorkerFormat, WorkerType } from './worker';
+import { WORKER_FILE_ID , parseWorkerQuery, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
-import { registerWorkersSource } from './optimizedDeps'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
 
@@ -126,7 +126,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let url: string
           if (isBuild) {
-            registerWorkersSource(config, id)
+            getDepsOptimizer(config)?.registerWorkersSource(id)
             query.type === 'module'
             url = await workerFileToUrl(config, file, {
               inline: query.inline,
