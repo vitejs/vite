@@ -130,12 +130,12 @@ const renameFiles = {
 }
 
 async function init() {
-  let targetDir = argv._[0]
+  let targetDir = formatTargetDir(argv._[0])
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir
-    ? 'vite-project'
-    : targetDir.trim().replace(/\/+$/g, '')
+  const defaultTargetDir = 'vite-project'
+  const getProjectName = () =>
+    targetDir === '.' ? path.basename(path.resolve()) : targetDir
 
   let result = {}
 
@@ -146,10 +146,10 @@ async function init() {
           type: targetDir ? null : 'text',
           name: 'projectName',
           message: reset('Project name:'),
-          initial: defaultProjectName,
-          onState: (state) =>
-            (targetDir =
-              state.value.trim().replace(/\/+$/g, '') || defaultProjectName)
+          initial: defaultTargetDir,
+          onState: (state) => {
+            targetDir = formatTargetDir(state.value) || defaultTargetDir
+          }
         },
         {
           type: () =>
@@ -171,10 +171,10 @@ async function init() {
           name: 'overwriteChecker'
         },
         {
-          type: () => (isValidPackageName(targetDir) ? null : 'text'),
+          type: () => (isValidPackageName(getProjectName()) ? null : 'text'),
           name: 'packageName',
           message: reset('Package name:'),
-          initial: () => toValidPackageName(targetDir),
+          initial: () => toValidPackageName(getProjectName()),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name'
         },
@@ -265,7 +265,7 @@ async function init() {
     fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8')
   )
 
-  pkg.name = packageName || targetDir
+  pkg.name = packageName || getProjectName()
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
@@ -287,6 +287,13 @@ async function init() {
       break
   }
   console.log()
+}
+
+/**
+ * @param {string | undefined} targetDir
+ */
+function formatTargetDir(targetDir) {
+  return targetDir?.trim().replace(/\/+$/g, '')
 }
 
 function copy(src, dest) {

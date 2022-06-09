@@ -40,6 +40,12 @@ test('prompts for the project name if none supplied', () => {
   expect(stdout).toContain('Project name:')
 })
 
+test('prompts for the framework if none supplied when target dir is current directory', () => {
+  mkdirpSync(genPath)
+  const { stdout } = run(['.'], { cwd: genPath })
+  expect(stdout).toContain('Select a framework:')
+})
+
 test('prompts for the framework if none supplied', () => {
   const { stdout } = run([projectName])
   expect(stdout).toContain('Select a framework:')
@@ -65,7 +71,7 @@ test('asks to overwrite non-empty target directory', () => {
 
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
-  const { stdout } = run(['.'], { cwd: genPath, input: 'test-app\n' })
+  const { stdout } = run(['.'], { cwd: genPath })
   expect(stdout).toContain(`Current directory is not empty.`)
 })
 
