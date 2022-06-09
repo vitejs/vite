@@ -169,6 +169,20 @@ if (!isBuild) {
     expect(textpost).not.toMatch('direct')
   })
 
+  test('it swaps out link tags', async () => {
+    await page.goto(viteTestUrl)
+
+    editFile('global.css', (code) => code.replace('white', 'tomato'))
+
+    let el = await page.$('.link-tag-added')
+    await untilUpdated(() => el.textContent(), 'yes')
+
+    el = await page.$('.link-tag-removed')
+    await untilUpdated(() => el.textContent(), 'yes')
+
+    expect((await page.$$('link')).length).toBe(1)
+  })
+
   test('not loaded dynamic import', async () => {
     await page.goto(viteTestUrl + '/counter/index.html')
 
