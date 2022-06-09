@@ -46,8 +46,8 @@ if (import.meta.hot) {
         (document.querySelector('.global-css') as HTMLLinkElement).href
       )
 
-      // We don't have a vite:afterUpdate event, but updates are currently
-      // sync. We need to wait until the tag has been swapped out, which
+      // We don't have a vite:afterUpdate event.
+      // We need to wait until the tag has been swapped out, which
       // includes the time taken to download and parse the new stylesheet.
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
