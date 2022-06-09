@@ -243,11 +243,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (legacyPolyfills.size || genDynamicFallback) {
         // check if the target needs Promise polyfill because SystemJS relies on it
         // https://github.com/systemjs/systemjs#ie11-support
-        await detectPolyfills(
-          `Promise.resolve(); Promise.all();`,
-          targets,
-          legacyPolyfills
-        )
+        if (useSystemJS) {
+          await detectPolyfills(
+            `Promise.resolve(); Promise.all();`,
+            targets,
+            legacyPolyfills
+          )
+        }
 
         isDebug &&
           console.log(
