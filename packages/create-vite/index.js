@@ -9,7 +9,6 @@ import prompts from 'prompts'
 import {
   blue,
   cyan,
-  gray,
   green,
   lightRed,
   magenta,
@@ -146,9 +145,7 @@ async function init() {
         {
           type: targetDir ? null : 'text',
           name: 'projectName',
-          message: `${reset('Project name')}${gray(
-            ' (Use . for the current directory)'
-          )}${reset(':')}`,
+          message: reset('Project name:'),
           initial: defaultProjectName,
           onState: (state) =>
             (targetDir =
