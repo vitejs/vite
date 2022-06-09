@@ -505,7 +505,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: cssAssetName,
+            name: chunk.facadeModuleId
+              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+              : cssAssetName,
             type: 'asset',
             source: chunkCSS
           })
