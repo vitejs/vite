@@ -586,7 +586,9 @@ importers:
       dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:./dep-with-builtin-module-esm
       dep-with-dynamic-import: file:./dep-with-dynamic-import
+      lodash: ^4.17.21
       lodash-es: ^4.17.21
+      lodash.clonedeep: ^4.5.0
       nested-exclude: file:./nested-exclude
       phoenix: ^1.6.10
       react: ^17.0.2
@@ -610,7 +612,9 @@ importers:
       dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:playground/optimize-deps/dep-with-builtin-module-esm
       dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
+      lodash: 4.17.21
       lodash-es: 4.17.21
+      lodash.clonedeep: 4.5.0
       nested-exclude: file:playground/optimize-deps/nested-exclude
       phoenix: 1.6.10
       react: 17.0.2
@@ -5848,6 +5852,10 @@ packages:
   /lodash.camelcase/4.3.0:
     resolution: {integrity: sha1-soqmKIorn8ZRA1x3EfZathkDMaY=}
     dev: true
+
+  /lodash.clonedeep/4.5.0:
+    resolution: {integrity: sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==}
+    dev: false
 
   /lodash.defaults/4.2.0:
     resolution: {integrity: sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=}

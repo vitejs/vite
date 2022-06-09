@@ -121,6 +121,11 @@ test('variable names are reused in different scripts', async () => {
   expect(await page.textContent('.reused-variable-names')).toBe('reused')
 })
 
+test('flatten id should generate correctly', async () => {
+  expect(await page.textContent('.clonedeep-slash')).toBe('clonedeep-slash')
+  expect(await page.textContent('.clonedeep-dot')).toBe('clonedeep-dot')
+})
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([
