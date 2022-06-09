@@ -109,7 +109,9 @@ async function handleMessage(payload: HMRPayload) {
             // directly, as the new stylesheet has not yet been loaded.
             const newLinkTag = el.cloneNode() as HTMLLinkElement
             newLinkTag.href = new URL(newPath, el.href).href
-            newLinkTag.addEventListener('load', () => el.remove())
+            const removeOldEl = () => el.remove()
+            newLinkTag.addEventListener('load', removeOldEl)
+            newLinkTag.addEventListener('error', removeOldEl)
             el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
