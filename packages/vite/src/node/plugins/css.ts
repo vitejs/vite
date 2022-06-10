@@ -47,6 +47,7 @@ import {
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
+  assetFileNamesToFileName,
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
@@ -512,9 +513,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
+          const output = config.build?.rollupOptions?.output
+          const assetFileNames =
+            (output && !Array.isArray(output)
+              ? output.assetFileNames
+              : undefined) ??
+            // defaults to '<assetsDir>/[name].[hash][extname]'
+            // slightly different from rollup's one ('assets/[name]-[hash][extname]')
+            path.posix.join(config.build.assetsDir, '[name].[hash][extname]')
+
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: cssAssetName,
+            fileName: assetFileNamesToFileName(
+              assetFileNames,
+              cssAssetName,
+              getHash(chunkCSS),
+              chunkCSS
+            ),
             type: 'asset',
             source: chunkCSS
           })
