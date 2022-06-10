@@ -73,7 +73,7 @@ export function optimizedDepsPlugin(): Plugin {
   }
 }
 
-function throwProcessingError(id: string) {
+function throwProcessingError(id: string): never {
   const err: any = new Error(
     `Something unexpected happened while optimizing "${id}". ` +
       `The current page should have reloaded by now`
@@ -84,7 +84,7 @@ function throwProcessingError(id: string) {
   throw err
 }
 
-function throwOutdatedRequest(id: string) {
+export function throwOutdatedRequest(id: string): never {
   const err: any = new Error(
     `There is a new version of the pre-bundle for "${id}", ` +
       `a page reload is going to ask for it.`
