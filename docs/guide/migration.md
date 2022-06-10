@@ -111,6 +111,8 @@ Also there are other breaking changes which only affect few users.
   - Transpile to ES5 is now necessary even if the user code only includes ES5.
 - [[#7877] fix: vite client types](https://github.com/vitejs/vite/pull/7877)
   - `/// <reference lib="dom" />` is removed from `vite/client.d.ts`. `{ "lib": ["dom"] }` or `{ "lib": ["webworker"] }` is necessary in `tsconfig.json`.
+- [[#8090] feat: preserve process env vars in lib build](https://github.com/vitejs/vite/pull/8090)
+  - `process.env.*` is now preserved in library mode
 - [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
   - `server.force` option was removed in favor of `force` option.
 
