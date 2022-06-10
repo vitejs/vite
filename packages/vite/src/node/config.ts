@@ -53,8 +53,8 @@ export interface ConfigEnv {
   mode: string
 }
 
-export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
-export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
+export type UserConfigFn<T = UserConfig> = (env: ConfigEnv) => T | Promise<T>
+export type UserConfigExport<T = UserConfig> = T | Promise<T> | UserConfigFn<T>
 
 /**
  * Type helper to make it easier to use vite.config.ts
@@ -308,7 +308,7 @@ export async function resolveConfig(
   if (configFile !== false) {
     const loadResult = await loadConfigFromFile(
       configEnv,
-      configFile,
+      configFile ? [path.resolve(configFile)] : undefined,
       config.root,
       config.logLevel
     )
@@ -642,80 +642,48 @@ export function sortUserPlugins(
   return [prePlugins, normalPlugins, postPlugins]
 }
 
-export async function loadConfigFromFile(
+export const supportedConfigExtensions = ['.js', '.ts', '.mjs', '.cjs']
+
+export async function loadConfigFromFile<T = UserConfig>(
   configEnv: ConfigEnv,
-  configFile?: string,
-  configRoot: string = process.cwd(),
+  tryFiles = supportedConfigExtensions.map((ext) => `vite.config${ext}`),
+  projectRoot = process.cwd(),
   logLevel?: LogLevel
 ): Promise<{
   path: string
-  config: UserConfig
+  config: T
   dependencies: string[]
 } | null> {
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
-  let resolvedPath: string | undefined
-  let isTS = false
-  let isESM = false
-  let dependencies: string[] = []
-
-  // check package.json for type: "module" and set `isMjs` to true
-  try {
-    const pkg = lookupFile(configRoot, ['package.json'])
-    if (pkg && JSON.parse(pkg).type === 'module') {
-      isESM = true
-    }
-  } catch (e) {}
-
-  if (configFile) {
-    // explicit config path is always resolved from cwd
-    resolvedPath = path.resolve(configFile)
-    isTS = configFile.endsWith('.ts')
-
-    if (configFile.endsWith('.mjs')) {
-      isESM = true
-    }
-  } else {
-    // implicit config file loaded from inline root (if present)
-    // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
-
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
-        isESM = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
-        isTS = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
-      if (fs.existsSync(cjsConfigFile)) {
-        resolvedPath = cjsConfigFile
-        isESM = false
-      }
-    }
-  }
+  // use project root to resolve non-absolute paths
+  const resolvedPath = tryFiles
+    .map((file) => path.resolve(projectRoot, file))
+    .find(fs.existsSync)
 
   if (!resolvedPath) {
     debug('no config file found.')
     return null
   }
 
+  let isESM = false
+  // check package.json for type: "module" and set `isESM` to true
   try {
-    let userConfig: UserConfigExport | undefined
+    const pkg = lookupFile(projectRoot, ['package.json'])
+    if (pkg && JSON.parse(pkg).type === 'module') {
+      isESM = true
+    }
+  } catch (e) {}
+
+  const extension = path.extname(resolvedPath)
+  const isTS = extension === '.ts'
+  if (extension === '.mjs') isESM = true
+  else if (extension === '.cjs') isESM = false
+
+  try {
+    let dependencies: string[] = []
+    let userConfig: UserConfigExport<T> | undefined
 
     if (isESM) {
       const fileUrl = pathToFileURL(resolvedPath)
@@ -744,12 +712,15 @@ export async function loadConfigFromFile(
       // Bundle config file and transpile it to cjs using esbuild.
       const bundled = await bundleConfigFile(resolvedPath)
       dependencies = bundled.dependencies
-      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
+      userConfig = await loadConfigFromBundledFile<T>(
+        resolvedPath,
+        bundled.code
+      )
       debug(`bundled config file loaded in ${getTime()}`)
     }
 
     const config = await (typeof userConfig === 'function'
-      ? userConfig(configEnv)
+      ? (userConfig as UserConfigFn<T>)(configEnv)
       : userConfig)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
@@ -833,10 +804,10 @@ interface NodeModuleWithCompile extends NodeModule {
 }
 
 const _require = createRequire(import.meta.url)
-async function loadConfigFromBundledFile(
+async function loadConfigFromBundledFile<T = UserConfig>(
   fileName: string,
   bundledCode: string
-): Promise<UserConfig> {
+): Promise<T> {
   const realFileName = fs.realpathSync(fileName)
   const defaultLoader = _require.extensions['.js']
   _require.extensions['.js'] = (module: NodeModule, filename: string) => {
