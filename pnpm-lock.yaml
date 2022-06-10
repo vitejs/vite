@@ -1045,8 +1045,14 @@ importers:
   playground/worker:
     specifiers:
       '@vitejs/plugin-vue-jsx': workspace:*
+      dep-to-optimize: file:./dep-to-optimize
+    dependencies:
+      dep-to-optimize: file:playground/worker/dep-to-optimize
     devDependencies:
       '@vitejs/plugin-vue-jsx': link:../../packages/plugin-vue-jsx
+
+  playground/worker/dep-to-optimize:
+    specifiers: {}
 
 packages:
 
@@ -9016,4 +9022,10 @@ packages:
     resolution: {directory: playground/ssr-vue/example-external-component, type: directory}
     name: example-external-component
     version: 0.0.0
+    dev: false
+
+  file:playground/worker/dep-to-optimize:
+    resolution: {directory: playground/worker/dep-to-optimize, type: directory}
+    name: dep-to-optimize
+    version: 1.0.0
     dev: false
