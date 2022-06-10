@@ -1,3 +1,10 @@
+## <small>2.9.11 (2022-06-10)</small>
+
+* fix: backport respect server.headers in static middlewares (#8481) ([ab7dc1c](https://github.com/vitejs/vite/commit/ab7dc1c)), closes [#8481](https://github.com/vitejs/vite/issues/8481)
+* fix(dev): avoid FOUC when swapping out link tag (fix #7973) (#8495) ([01fa807](https://github.com/vitejs/vite/commit/01fa807)), closes [#7973](https://github.com/vitejs/vite/issues/7973) [#8495](https://github.com/vitejs/vite/issues/8495)
+
+
+
 ## <small>2.9.10 (2022-06-06)</small>
 
 * feat: backport treat Astro file scripts as TS (#8151) ([9fdd0a3](https://github.com/vitejs/vite/commit/9fdd0a3)), closes [#8151](https://github.com/vitejs/vite/issues/8151)
