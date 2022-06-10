@@ -488,6 +488,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return chunkCSS
       }
 
+      function ensureFileExt(name: string, ext: string) {
+        return path.format({ ...path.parse(name), base: undefined, ext })
+      }
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
@@ -498,16 +502,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           opts.format === 'cjs' ||
           opts.format === 'system'
         ) {
-          const cssAssetName = chunk.name + '.css'
+          const cssAssetName = ensureFileExt(
+            chunk.facadeModuleId
+              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+              : chunk.name,
+            '.css'
+          )
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: chunk.facadeModuleId
-              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-              : cssAssetName,
+            name: cssAssetName,
             type: 'asset',
             source: chunkCSS
           })
