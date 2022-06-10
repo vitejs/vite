@@ -1,3 +1,9 @@
+## <small>2.9.12 (2022-06-10)</small>
+
+* fix: backport outdated optimized dep removed from module graph (#8534) ([c0d6c60](https://github.com/vitejs/vite/commit/c0d6c60)), closes [#8534](https://github.com/vitejs/vite/issues/8534)
+
+
+
 ## <small>2.9.11 (2022-06-10)</small>
 
 * fix: backport respect server.headers in static middlewares (#8481) ([ab7dc1c](https://github.com/vitejs/vite/commit/ab7dc1c)), closes [#8481](https://github.com/vitejs/vite/issues/8481)
