@@ -50,7 +50,10 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  throwOutdatedRequest
+} from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 
 const isDebug = !!process.env.DEBUG
@@ -170,6 +173,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
+      if (!importerModule && isOptimizedDepFile(importer, config)) {
+        // Ids of optimized deps could be invalidated and removed from the graph
+        // Return without transforming, this request is no longer valid, a full reload
+        // is going to request this id again. Throwing an outdated error so we
+        // properly finish the request with a 504 sent to the browser.
+        throwOutdatedRequest(importer)
+      }
 
       if (!imports.length) {
         importerModule.isSelfAccepting = false
