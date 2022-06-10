@@ -521,8 +521,12 @@ export async function initDepsOptimizer(
 
   function registerWorkersSource(id: string): void {
     workersSources.add(id)
+    // Avoid waiting for this id, as it may be blocked by the rollup
+    // bundling process of the worker that also depends on the optimizer
+    registeredIds = registeredIds.filter((registered) => registered.id !== id)
     if (waitingOn === id) {
       waitingOn = undefined
+      runOptimizerWhenIdle()
     }
   }
 
@@ -545,10 +549,12 @@ export async function initDepsOptimizer(
         waitingOn = next.id
         const afterLoad = () => {
           waitingOn = undefined
-          if (registeredIds.length > 0) {
-            runOptimizerWhenIdle()
-          } else if (!workersSources.has(next.id)) {
-            getDepsOptimizer(config)?.run()
+          if (!workersSources.has(next.id)) {
+            if (registeredIds.length > 0) {
+              runOptimizerWhenIdle()
+            } else {
+              getDepsOptimizer(config)?.run()
+            }
           }
         }
         next

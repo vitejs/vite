@@ -23,6 +23,9 @@
     "preview:relative-base": "cross-env WORKER_MODE=inline vite --config ./vite.config-relative-base.js preview",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
+  "dependencies": {
+    "dep-to-optimize": "file:./dep-to-optimize"
+  },
   "devDependencies": {
     "@vitejs/plugin-vue-jsx": "workspace:*"
   }
