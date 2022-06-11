@@ -26,12 +26,12 @@ export class MyElement extends LitElement {
   render() {
     return html`
       <div>
-        <a href="https://vitejs.dev" target="_blank"
-          ><img src="${viteLogo}" class="logo" alt="Vite logo"
-        /></a>
-        <a href="https://lit.dev" target="_blank"
-          ><img src=${litLogo} class="logo" alt="Lit logo"
-        /></a>
+        <a href="https://vitejs.dev" target="_blank">
+          <img src="${viteLogo}" class="logo" alt="Vite logo" />
+        </a>
+        <a href="https://lit.dev" target="_blank">
+          <img src=${litLogo} class="logo lit" alt="Lit logo" />
+        </a>
       </div>
       <slot></slot>
       <div class="card">
@@ -62,6 +62,9 @@ export class MyElement extends LitElement {
     }
     .logo:hover {
       filter: drop-shadow(0 0 2em #646cffaa);
+    }
+    .logo.lit:hover {
+      filter: drop-shadow(0 0 2em #325cffaa);
     }
 
     .card {
