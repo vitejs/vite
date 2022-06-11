@@ -5,7 +5,7 @@ import type {
   OutgoingHttpHeaders as HttpServerHeaders
 } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
-import dns from 'dns/promises'
+import { promises as dns } from 'dns'
 import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
