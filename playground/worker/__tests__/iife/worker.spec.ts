@@ -20,7 +20,7 @@ test('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
-test.each([[true], [false]])('shared worker', async (doTick) => {
+test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong')
 })
 
