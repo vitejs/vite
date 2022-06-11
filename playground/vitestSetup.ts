@@ -243,7 +243,7 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, config.build.outDir), {
+  const serve = sirv(resolve(rootDir, config?.build?.outDir || 'dist'), {
     dev: !!config?.build?.watch
   })
   const httpServer = (server = http.createServer((req, res) => {
