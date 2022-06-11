@@ -10,7 +10,7 @@
       <img src={viteLogo} alt="Vite Logo" />
     </a>
     <a href="https://svelte.dev" target="_blank"> 
-      <img src={svelteLogo} alt="Svelte Logo" />
+      <img src={svelteLogo} class="svelte" alt="Svelte Logo" />
     </a>
   </div>
   <h1>Vite + Svelte</h1>
@@ -36,6 +36,9 @@
   }
   img:hover {
     filter: drop-shadow(0 0 2em #646cffaa);
+  }
+  img.svelte:hover {
+    filter: drop-shadow(0 0 2em #ff3e00aa);
   }
   .read-the-docs {
     color: #888;
