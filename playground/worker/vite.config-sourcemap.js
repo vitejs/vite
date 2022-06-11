@@ -15,9 +15,9 @@ module.exports = vite.defineConfig((sourcemap) => {
       plugins: [vueJsx()],
       rollupOptions: {
         output: {
-          assetFileNames: 'worker-assets/worker_asset.[name]-[hash].[ext]',
-          chunkFileNames: 'worker-chunks/worker_chunk.[name]-[hash].js',
-          entryFileNames: 'worker-entries/worker_entry.[name]-[hash].js'
+          assetFileNames: 'assets/worker_asset.[name].[ext]',
+          chunkFileNames: 'assets/worker_chunk.[name].js',
+          entryFileNames: 'assets/worker_entry.[name].js'
         }
       }
     },
@@ -28,9 +28,9 @@ module.exports = vite.defineConfig((sourcemap) => {
       sourcemap: sourcemap,
       rollupOptions: {
         output: {
-          assetFileNames: 'other-assets/[name]-[hash].[ext]',
-          chunkFileNames: 'chunks/[name]-[hash].js',
-          entryFileNames: 'entries/[name]-[hash].js'
+          assetFileNames: 'assets/[name].[ext]',
+          chunkFileNames: 'assets/[name].js',
+          entryFileNames: 'assets/[name].js'
         }
       }
     }
