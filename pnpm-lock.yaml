@@ -164,7 +164,6 @@ importers:
       '@babel/plugin-transform-react-jsx-source': ^7.16.7
       '@rollup/pluginutils': ^4.2.1
       react-refresh: ^0.13.0
-      resolve: ^1.22.0
       vite: workspace:*
     dependencies:
       '@babel/core': 7.18.2
@@ -174,7 +173,6 @@ importers:
       '@babel/plugin-transform-react-jsx-source': 7.16.7_@babel+core@7.18.2
       '@rollup/pluginutils': 4.2.1
       react-refresh: 0.13.0
-      resolve: 1.22.0
     devDependencies:
       vite: link:../vite
 
@@ -720,9 +718,11 @@ importers:
   playground/react:
     specifiers:
       '@vitejs/plugin-react': workspace:*
+      jsx-entry: file:./jsx-entry
       react: ^17.0.2
       react-dom: ^17.0.2
     dependencies:
+      jsx-entry: file:playground/react/jsx-entry
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
     devDependencies:
@@ -746,6 +746,9 @@ importers:
       '@babel/plugin-proposal-pipeline-operator': 7.18.2
       '@emotion/babel-plugin': 11.9.2
       '@vitejs/plugin-react': link:../../packages/plugin-react
+
+  playground/react/jsx-entry:
+    specifiers: {}
 
   playground/resolve:
     specifiers:
@@ -8959,6 +8962,12 @@ packages:
   file:playground/optimize-missing-deps/multi-entry-dep:
     resolution: {directory: playground/optimize-missing-deps/multi-entry-dep, type: directory}
     name: multi-entry-dep
+    version: 0.0.0
+    dev: false
+
+  file:playground/react/jsx-entry:
+    resolution: {directory: playground/react/jsx-entry, type: directory}
+    name: jsx-entry
     version: 0.0.0
     dev: false
 
