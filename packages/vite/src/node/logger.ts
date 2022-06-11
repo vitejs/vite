@@ -144,15 +144,15 @@ export function createLogger(
   return logger
 }
 
-export async function printCommonServerUrls(
+export function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
   config: ResolvedConfig
-): Promise<void> {
+): void {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = await resolveHostname(options.host)
+    const hostname = resolveHostname(options.host)
     const protocol = options.https ? 'https' : 'http'
     printServerUrls(
       hostname,

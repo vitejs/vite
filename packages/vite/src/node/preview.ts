@@ -112,7 +112,7 @@ export async function preview(
   postHooks.forEach((fn) => fn && fn())
 
   const options = config.preview
-  const hostname = await resolveHostname(options.host)
+  const hostname = resolveHostname(options.host)
   const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
@@ -139,8 +139,8 @@ export async function preview(
   return {
     config,
     httpServer,
-    async printUrls() {
-      await printCommonServerUrls(httpServer, config.preview, config)
+    printUrls() {
+      printCommonServerUrls(httpServer, config.preview, config)
     }
   }
 }

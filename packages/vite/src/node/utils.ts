@@ -6,7 +6,6 @@ import { promisify } from 'util'
 import { URL, URLSearchParams, pathToFileURL } from 'url'
 import { builtinModules, createRequire } from 'module'
 import { performance } from 'perf_hooks'
-import dns from 'dns/promises'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -733,9 +732,9 @@ const wildcardHosts = new Set([
   '0000:0000:0000:0000:0000:0000:0000:0000'
 ])
 
-export async function resolveHostname(
+export function resolveHostname(
   optionsHost: string | boolean | undefined
-): Promise<Hostname> {
+): Hostname {
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
@@ -750,13 +749,6 @@ export async function resolveHostname(
   // Set host name to localhost when possible
   const name =
     host === undefined || wildcardHosts.has(host) ? 'localhost' : host
-
-  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
-  // https://github.com/nodejs/node/pull/39987
-  if (host === 'localhost') {
-    const addr = await dns.lookup('localhost', { verbatim: true })
-    host = addr.address
-  }
 
   return { host, name }
 }
