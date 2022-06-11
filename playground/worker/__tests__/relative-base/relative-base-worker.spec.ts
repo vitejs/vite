@@ -48,12 +48,15 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
-  test('inlined code generation', async () => {
-    const chunksDir = path.resolve(testDir, 'dist/chunks')
+  test('inlined code generation', () => {
+    const chunksDir = path.resolve(testDir, 'dist/relative-base/chunks')
     const files = fs.readdirSync(chunksDir)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(chunksDir, index), 'utf-8')
-    const workerEntriesDir = path.resolve(testDir, 'dist/worker-entries')
+    const workerEntriesDir = path.resolve(
+      testDir,
+      'dist/relative-base/worker-entries'
+    )
     const workerFiles = fs.readdirSync(workerEntriesDir)
     const worker = workerFiles.find((f) => f.includes('worker_entry.my-worker'))
     const workerContent = fs.readFileSync(

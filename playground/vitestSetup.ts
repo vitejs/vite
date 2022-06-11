@@ -1,7 +1,6 @@
 import * as http from 'http'
-import { dirname, resolve } from 'path'
+import path, { dirname, resolve } from 'path'
 import os from 'os'
-import path from 'path'
 import sirv from 'sirv'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
@@ -61,7 +60,7 @@ export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
 
-export function setViteUrl(url: string) {
+export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
@@ -156,7 +155,7 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe() {
+export async function startDefaultServe(): Promise<void> {
   const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
   let config: InlineConfig | undefined
   if (fs.existsSync(testCustomConfig)) {
@@ -244,7 +243,9 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const serve = sirv(resolve(rootDir, config.build.outDir), {
+    dev: !!config?.build?.watch
+  })
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
