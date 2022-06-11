@@ -12,6 +12,9 @@
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+.logo.preact:hover {
+  filter: drop-shadow(0 0 2em #673ab8aa);
+}
 
 .card {
   padding: 2em;

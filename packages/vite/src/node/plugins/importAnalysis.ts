@@ -53,7 +53,10 @@ import {
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from './optimizedDeps'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  throwOutdatedRequest
+} from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
@@ -167,10 +170,19 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
+      const depsOptimizer = getDepsOptimizer(config)
+
       const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)!
+      if (!importerModule && depsOptimizer?.isOptimizedDepFile(importer)) {
+        // Ids of optimized deps could be invalidated and removed from the graph
+        // Return without transforming, this request is no longer valid, a full reload
+        // is going to request this id again. Throwing an outdated error so we
+        // properly finish the request with a 504 sent to the browser.
+        throwOutdatedRequest(importer)
+      }
 
       if (!imports.length) {
         importerModule.isSelfAccepting = false
@@ -196,8 +208,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }>()
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
-
-      const depsOptimizer = getDepsOptimizer(config)
 
       const normalizeUrl = async (
         url: string,
