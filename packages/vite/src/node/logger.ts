@@ -181,10 +181,18 @@ function printServerUrls(
   const urls: Array<{ label: string; url: string }> = []
 
   if (loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+
     urls.push({
       label: 'Local',
       url: colors.cyan(
-        `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+        `${protocol}://${hostnameName}:${colors.bold(port)}${base}`
       )
     })
 
