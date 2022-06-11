@@ -1,6 +1,6 @@
+const path = require('path')
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
-const path = require('path')
 
 module.exports = vite.defineConfig({
   base: './',
@@ -17,7 +17,7 @@ module.exports = vite.defineConfig({
     }
   },
   build: {
-    outDir: 'dist',
+    outDir: 'dist/relative-base',
     rollupOptions: {
       output: {
         assetFileNames: 'other-assets/[name]-[hash].[ext]',
