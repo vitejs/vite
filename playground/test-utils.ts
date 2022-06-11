@@ -162,12 +162,12 @@ export async function untilUpdated(
   }
 }
 
-export const extractSourcemap = (content: string) => {
+export const extractSourcemap = (content: string): any => {
   const lines = content.trim().split('\n')
   return fromComment(lines[lines.length - 1]).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any) => {
+export const formatSourcemapForSnapshot = (map: any): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
