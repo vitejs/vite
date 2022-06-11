@@ -144,15 +144,15 @@ export function createLogger(
   return logger
 }
 
-export function printCommonServerUrls(
+export async function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
   config: ResolvedConfig
-): void {
+): Promise<void> {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(options.host)
+    const hostname = await resolveHostname(options.host)
     const protocol = options.https ? 'https' : 'http'
     printServerUrls(
       hostname,
@@ -164,6 +164,13 @@ export function printCommonServerUrls(
   }
 }
 
+const loopbackHosts = new Set<string | undefined>([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '0000:0000:0000:0000:0000:0000:0000:0001'
+])
+
 function printServerUrls(
   hostname: Hostname,
   protocol: string,
@@ -173,7 +180,7 @@ function printServerUrls(
 ): void {
   const urls: Array<{ label: string; url: string }> = []
 
-  if (hostname.host === '127.0.0.1') {
+  if (loopbackHosts.has(hostname.host)) {
     urls.push({
       label: 'Local',
       url: colors.cyan(
@@ -181,7 +188,7 @@ function printServerUrls(
       )
     })
 
-    if (hostname.name !== '127.0.0.1') {
+    if (hostname.name === 'localhost') {
       urls.push({
         label: 'Network',
         url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)

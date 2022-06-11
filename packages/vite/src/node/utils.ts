@@ -6,6 +6,7 @@ import { promisify } from 'util'
 import { URL, URLSearchParams, pathToFileURL } from 'url'
 import { builtinModules, createRequire } from 'module'
 import { performance } from 'perf_hooks'
+import dns from 'dns/promises'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -726,13 +727,19 @@ export interface Hostname {
   name: string
 }
 
-export function resolveHostname(
+const wildcardHosts = new Set([
+  '0.0.0.0',
+  '::',
+  '0000:0000:0000:0000:0000:0000:0000:0000'
+])
+
+export async function resolveHostname(
   optionsHost: string | boolean | undefined
-): Hostname {
+): Promise<Hostname> {
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
-    host = '127.0.0.1'
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -740,14 +747,16 @@ export function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
+  // Set host name to localhost when possible
   const name =
-    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
-    host === '0.0.0.0' ||
-    host === '::' ||
-    host === undefined
-      ? 'localhost'
-      : host
+    host === undefined || wildcardHosts.has(host) ? 'localhost' : host
+
+  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
+  // https://github.com/nodejs/node/pull/39987
+  if (host === 'localhost') {
+    const addr = await dns.lookup('localhost', { verbatim: true })
+    host = addr.address
+  }
 
   return { host, name }
 }
