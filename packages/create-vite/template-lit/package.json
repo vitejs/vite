@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "dist/my-element.es.mjs",
+  "main": "dist/my-element.es.js",
   "exports": {
-    ".": "./dist/my-element.es.mjs"
+    ".": "./dist/my-element.es.js"
   },
   "files": [
     "dist"

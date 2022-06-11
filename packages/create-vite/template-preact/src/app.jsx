@@ -13,7 +13,7 @@ export function App() {
           <img src={viteLogo} class="logo" alt="Vite logo" />
         </a>
         <a href="https://preactjs.com" target="_blank">
-          <img src={preactLogo} class="logo" alt="Preact logo" />
+          <img src={preactLogo} class="logo preact" alt="Preact logo" />
         </a>
       </div>
       <h1>Vite + Preact</h1>
