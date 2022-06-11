@@ -135,9 +135,7 @@ export async function initDepsOptimizer(
 
       setTimeout(async () => {
         try {
-          debug(colors.green(`scanning for dependencies...`), {
-            timestamp: true
-          })
+          debug(colors.green(`scanning for dependencies...`))
 
           const { metadata } = depsOptimizer
 
@@ -157,10 +155,7 @@ export async function initDepsOptimizer(
           debug(
             colors.green(
               `dependencies found: ${depsLogString(Object.keys(discovered))}`
-            ),
-            {
-              timestamp: true
-            }
+            )
           )
 
           scanPhaseProcessing.resolve()
@@ -325,9 +320,7 @@ export async function initDepsOptimizer(
             logNewlyDiscoveredDeps()
           }, 2 * debounceMs)
         } else {
-          debug(colors.green(`✨ optimized dependencies unchanged`), {
-            timestamp: true
-          })
+          debug(colors.green(`✨ optimized dependencies unchanged`))
         }
       } else {
         if (newDepsDiscovered) {
@@ -340,10 +333,7 @@ export async function initDepsOptimizer(
           debug(
             colors.green(
               `✨ delaying reload as new dependencies have been found...`
-            ),
-            {
-              timestamp: true
-            }
+            )
           )
         } else {
           await commitProcessing()
@@ -412,9 +402,7 @@ export async function initDepsOptimizer(
     // optimizeDeps processing is finished
     const deps = Object.keys(depsOptimizer.metadata.discovered)
     const depsString = depsLogString(deps)
-    debug(colors.green(`new dependencies found: ${depsString}`), {
-      timestamp: true
-    })
+    debug(colors.green(`new dependencies found: ${depsString}`))
     runOptimizer()
   }
 
