@@ -561,7 +561,7 @@ async function startServer(
 
   const options = server.config.server
   const port = inlinePort ?? options.port ?? 5173
-  const hostname = await resolveHostname(options.host)
+  const hostname = resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
