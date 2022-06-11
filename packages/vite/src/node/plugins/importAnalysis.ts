@@ -638,12 +638,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-function interopNamedImports(
+export function interopNamedImports(
   str: MagicString,
   importSpecifier: ImportSpecifier,
   rewrittenUrl: string,
   importIndex: number
-) {
+): void {
   const source = str.original
   const {
     s: start,
