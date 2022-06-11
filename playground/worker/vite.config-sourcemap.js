@@ -12,13 +12,27 @@ module.exports = vite.defineConfig((sourcemap) => {
     }/`,
     worker: {
       format: 'iife',
-      plugins: [vueJsx()]
+      plugins: [vueJsx()],
+      rollupOptions: {
+        output: {
+          assetFileNames: 'worker-assets/worker_asset.[name]-[hash].[ext]',
+          chunkFileNames: 'worker-chunks/worker_chunk.[name]-[hash].js',
+          entryFileNames: 'worker-entries/worker_entry.[name]-[hash].js'
+        }
+      }
     },
     build: {
       outDir: `dist/iife-${
         typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
       }/`,
-      sourcemap: sourcemap
+      sourcemap: sourcemap,
+      rollupOptions: {
+        output: {
+          assetFileNames: 'other-assets/[name]-[hash].[ext]',
+          chunkFileNames: 'chunks/[name]-[hash].js',
+          entryFileNames: 'entries/[name]-[hash].js'
+        }
+      }
     }
   }
 })
