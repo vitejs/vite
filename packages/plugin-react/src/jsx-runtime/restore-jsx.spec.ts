@@ -1,6 +1,67 @@
 import * as babel from '@babel/core'
 import { describe, expect, it } from 'vitest'
-import { restoreJSX } from './restore-jsx'
+import { parseReactAlias, restoreJSX } from './restore-jsx'
+
+describe('parseReactAlias', () => {
+  it('handles cjs require', () => {
+    expect(parseReactAlias(`const React = require("react")`))
+      .toMatchInlineSnapshot(`
+        [
+          "React",
+          true,
+        ]
+      `)
+  })
+
+  it('handles cjs require (minified)', () => {
+    expect(parseReactAlias(`var F=require('foo');var R=require('react')`))
+      .toMatchInlineSnapshot(`
+        [
+          "R",
+          true,
+        ]
+      `)
+  })
+
+  it('does not handle destructured cjs require', () => {
+    expect(parseReactAlias(`var {createElement} = require("react")`))
+      .toMatchInlineSnapshot(`
+        [
+          undefined,
+          false,
+        ]
+      `)
+  })
+
+  it('handles esm import', () => {
+    expect(parseReactAlias(`import React from 'react'`)).toMatchInlineSnapshot(`
+      [
+        "React",
+        false,
+      ]
+    `)
+  })
+
+  it('handles esm import namespace', () => {
+    expect(parseReactAlias(`import * as React from "react"`))
+      .toMatchInlineSnapshot(`
+        [
+          "React",
+          false,
+        ]
+      `)
+  })
+
+  it('does not handle destructured esm import', () => {
+    expect(parseReactAlias(`import {createElement} from "react"`))
+      .toMatchInlineSnapshot(`
+        [
+          undefined,
+          false,
+        ]
+      `)
+  })
+})
 
 async function jsx(sourceCode: string) {
   const [ast] = await restoreJSX(babel, sourceCode, 'test.js')

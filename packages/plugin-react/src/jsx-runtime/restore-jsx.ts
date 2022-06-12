@@ -79,16 +79,16 @@ export async function restoreJSX(
   return [result?.ast, isCommonJS]
 }
 
-function parseReactAlias(
+export function parseReactAlias(
   code: string
 ): [alias: string | undefined, isCommonJS: boolean] {
   let match = code.match(
-    /\b(var|let|const) +(\w+) *= *require\(["']react["']\)/
+    /\b(var|let|const)\s+([^=\{\s]+)\s*=\s*require\(["']react["']\)/
   )
   if (match) {
     return [match[2], true]
   }
-  match = code.match(/^import (\w+).+? from ["']react["']/m)
+  match = code.match(/^import\s+(?:\*\s+as\s+)?(\w+).+?\bfrom\s*["']react["']/m)
   if (match) {
     return [match[1], false]
   }
