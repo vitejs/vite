@@ -24,7 +24,10 @@ export const workspaceRoot = path.resolve(__dirname, '../')
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
 export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(workspaceRoot, 'packages/vite/bin/vite.js')
+export const viteBinPath = path.posix.join(
+  workspaceRoot,
+  'packages/vite/bin/vite.js'
+)
 
 // #endregion
 
@@ -68,6 +71,8 @@ export let watcher: RollupWatcher | undefined = undefined
 declare module 'vite' {
   interface InlineConfig {
     testConfig?: {
+      // relative base output use relative path
+      // rewrite the url to truth file path
       baseRoute: string
     }
   }
@@ -266,7 +271,7 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
       res.end('pong')
     } else {
       if (baseDir) {
-        req.url = path.join(baseDir, req.url)
+        req.url = path.posix.join(baseDir, req.url)
       }
       serve(req, res)
     }
