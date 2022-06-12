@@ -11,7 +11,7 @@ Output format for worker bundle.
 
 - **Type:** [`(Plugin | Plugin[])[]`](./shared-options#plugins)
 
-Vite plugins that apply to worker bundle
+Vite plugins that apply to worker bundle. Note `config.plugin` is not apply to worker, we should config the specific plugins of bundle worker.
 
 ## worker.rollupOptions
 
