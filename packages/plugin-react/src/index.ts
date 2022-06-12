@@ -361,7 +361,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  // const runtimeId = 'react/jsx-runtime'
+  const reactJsxRuntimeId = 'react/jsx-runtime'
+  const reactJsxDevRuntimeId = 'react/jsx-dev-runtime'
+  const virtualReactJsxRuntimeId = '\0' + reactJsxRuntimeId
+  const virtualReactJsxDevRuntimeId = '\0' + reactJsxDevRuntimeId
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
@@ -369,32 +372,42 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: ['react/jsx-dev-runtime']
+          include: [reactJsxRuntimeId, reactJsxDevRuntimeId]
         }
       }
-    }
-    // TODO: this optimization may not be necesary and it is breacking esbuild+rollup compat,
-    // see https://github.com/vitejs/vite/pull/7246#discussion_r861552185
-    // We could still do the same trick and resolve to the optimized dependency here
-    /*
-    resolveId(id: string) {
-      return id === runtimeId ? id : null
     },
-    load(id: string) {
-      if (id === runtimeId) {
-        const runtimePath = resolve.sync(runtimeId, {
-          basedir: projectRoot
-        })
-        const exports = ['jsx', 'jsxs', 'Fragment']
+    resolveId(id, importer) {
+      // Resolve runtime to a virtual path to be interoped.
+      // Since the interop code re-imports `id`, we need to prevent re-resolving
+      // to the virtual id if the importer is already the virtual id.
+      if (id === reactJsxRuntimeId && importer !== virtualReactJsxRuntimeId) {
+        return virtualReactJsxRuntimeId
+      }
+      if (
+        id === reactJsxDevRuntimeId &&
+        importer !== virtualReactJsxDevRuntimeId
+      ) {
+        return virtualReactJsxDevRuntimeId
+      }
+    },
+    load(id) {
+      // Apply manual interop
+      if (id === virtualReactJsxRuntimeId) {
         return [
-          `import * as jsxRuntime from ${JSON.stringify(runtimePath)}`,
-          // We can't use `export * from` or else any callsite that uses
-          // this module will be compiled to `jsxRuntime.exports.jsx`
-          // instead of the more concise `jsx` alias.
-          ...exports.map((name) => `export const ${name} = jsxRuntime.${name}`)
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsx = jsxRuntime.jsx`,
+          `export const jsxs = jsxRuntime.jsxs`
         ].join('\n')
       }
-    } */
+      if (id === virtualReactJsxDevRuntimeId) {
+        return [
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxDevRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsxDEV = jsxRuntime.jsxDEV`
+        ].join('\n')
+      }
+    }
   }
 
   return [viteBabel, viteReactRefresh, useAutomaticRuntime && viteReactJsx]
