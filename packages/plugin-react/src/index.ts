@@ -361,9 +361,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     }
   }
 
-  const reactJsxRuntime = 'react/jsx-runtime'
-  const reactJsxDevRuntime = 'react/jsx-dev-runtime'
-  const virtualPrefix = 'virtual:'
+  const reactJsxRuntimeId = 'react/jsx-runtime'
+  const reactJsxDevRuntimeId = 'react/jsx-dev-runtime'
+  const virtualReactJsxRuntimeId = '\0virtual:react/jsx-runtime'
+  const virtualReactJsxDevRuntimeId = '\0virtual:react/jsx-dev-runtime'
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
@@ -371,36 +372,37 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: [reactJsxRuntime, reactJsxDevRuntime]
+          include: [reactJsxRuntimeId, reactJsxDevRuntimeId]
         }
       }
     },
     resolveId(id, importer) {
       // Resolve runtime to a virtual path to be interoped.
-      // Since the interop code re-imports `id`, we need to prevent re-setting
-      // the virtual id if the importer is already the virtual id.
+      // Since the interop code re-imports `id`, we need to prevent re-resolving
+      // to the virtual id if the importer is already the virtual id.
+      if (id === reactJsxRuntimeId && importer !== virtualReactJsxRuntimeId) {
+        return virtualReactJsxRuntimeId
+      }
       if (
-        importer &&
-        !importer.startsWith(virtualPrefix) &&
-        (id === reactJsxRuntime || id === reactJsxDevRuntime)
+        id === reactJsxDevRuntimeId &&
+        importer !== virtualReactJsxDevRuntimeId
       ) {
-        return virtualPrefix + id
+        return virtualReactJsxDevRuntimeId
       }
     },
     load(id) {
-      if (!id.startsWith(virtualPrefix)) return
-      id = id.slice(virtualPrefix.length)
       // Apply manual interop
-      if (id === reactJsxRuntime) {
+      if (id === virtualReactJsxRuntimeId) {
         return [
-          `import * as jsxRuntime from ${JSON.stringify(id)}`,
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxRuntimeId)}`,
           `export const Fragment = jsxRuntime.Fragment`,
           `export const jsx = jsxRuntime.jsx`,
           `export const jsxs = jsxRuntime.jsxs`
         ].join('\n')
-      } else if (id === reactJsxDevRuntime) {
+      }
+      if (id === virtualReactJsxDevRuntimeId) {
         return [
-          `import * as jsxRuntime from ${JSON.stringify(id)}`,
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxDevRuntimeId)}`,
           `export const Fragment = jsxRuntime.Fragment`,
           `export const jsxDEV = jsxRuntime.jsxDEV`
         ].join('\n')
