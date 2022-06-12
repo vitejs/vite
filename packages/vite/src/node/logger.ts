@@ -164,7 +164,7 @@ export function printCommonServerUrls(
   }
 }
 
-const loopbackHosts = new Set<string | undefined>([
+const loopbackHosts = new Set([
   'localhost',
   '127.0.0.1',
   '::1',
@@ -180,7 +180,7 @@ function printServerUrls(
 ): void {
   const urls: Array<{ label: string; url: string }> = []
 
-  if (loopbackHosts.has(hostname.host)) {
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
     if (
       hostnameName === '::1' ||
