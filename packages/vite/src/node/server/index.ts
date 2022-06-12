@@ -299,7 +299,6 @@ export async function createServer(
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  // eslint-disable-next-line prefer-const
   let exitProcess: () => void
 
   const server: ViteDevServer = {
@@ -342,9 +341,8 @@ export async function createServer(
       return startServer(server, port, isRestart)
     },
     async close() {
-      process.off('SIGTERM', exitProcess)
-
       if (!middlewareMode && process.env.CI !== 'true') {
+        process.off('SIGTERM', exitProcess)
         process.stdin.off('end', exitProcess)
       }
 
@@ -382,17 +380,15 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  exitProcess = async () => {
-    try {
-      await server.close()
-    } finally {
-      process.exit()
-    }
-  }
-
-  process.once('SIGTERM', exitProcess)
-
   if (!middlewareMode && process.env.CI !== 'true') {
+    exitProcess = async () => {
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
+    }
+    process.once('SIGTERM', exitProcess)
     process.stdin.on('end', exitProcess)
   }
 
