@@ -212,7 +212,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizeUrl = async (
         url: string,
         pos: number
-      ): Promise<[string, string]> => {
+      ): Promise<[string, string] | null> => {
         if (base !== '/' && url.startsWith(base)) {
           url = url.replace(base, '/')
         }
@@ -236,6 +236,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const resolved = await this.resolve(url, importerFile)
+
+        if (resolved?.external) return null
 
         if (!resolved) {
           // in ssr, we should let node handle the missing modules
@@ -403,7 +405,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // normalize
-          const [url, resolvedId] = await normalizeUrl(specifier, start)
+          const normalized = await normalizeUrl(specifier, start)
+          if (!normalized) continue
+          const [url, resolvedId] = normalized
 
           // record as safe modules
           server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
@@ -578,7 +582,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             await Promise.all(
               [...pluginImports].map((id) => normalizeUrl(id, 0))
             )
-          ).forEach(([url]) => importedUrls.add(url))
+          ).forEach((normalized) => {
+            if (normalized) {
+              importedUrls.add(normalized[0])
+            }
+          })
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
         // never be injected. Avoid updating the `isSelfAccepting`

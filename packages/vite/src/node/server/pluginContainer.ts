@@ -139,6 +139,7 @@ export async function createPluginContainer(
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
+  const external = rollupOptions.external
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -524,6 +525,20 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
+      if (external && typeof external !== 'function') {
+        for (const item of arraify(external)) {
+          if (typeof item === 'string') {
+            if (item === rawId) {
+              return { id: rawId, external: true }
+            }
+          } else if (item instanceof RegExp) {
+            if (item.test(rawId)) {
+              return { id: rawId, external: true }
+            }
+          }
+        }
+      }
+
       const skip = options?.skip
       const ssr = options?.ssr
       const scan = !!options?.scan
@@ -578,6 +593,12 @@ export async function createPluginContainer(
               id
             )}`
           )
+        }
+      }
+
+      if (external && typeof external === 'function') {
+        if (external(id ?? rawId, importer, !!id)) {
+          return { id: id ?? rawId, external: true }
         }
       }
 

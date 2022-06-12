@@ -458,6 +458,15 @@ importers:
     dependencies:
       vue: 3.2.37
 
+  playground/external:
+    specifiers:
+      external-dep: file:./external-dep
+    dependencies:
+      external-dep: file:playground/external/external-dep
+
+  playground/external/external-dep:
+    specifiers: {}
+
   playground/file-delete-restore:
     specifiers:
       '@vitejs/plugin-react': workspace:*
@@ -8866,6 +8875,12 @@ packages:
     resolution: {directory: playground/dynamic-import/pkg, type: directory}
     name: pkg
     version: 1.0.0
+    dev: false
+
+  file:playground/external/external-dep:
+    resolution: {directory: playground/external/external-dep, type: directory}
+    name: external-dep
+    version: 0.0.0
     dev: false
 
   file:playground/json/json-module:

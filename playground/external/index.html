@@ -1,0 +1,10 @@
+<div class="external"></div>
+
+<script type="module">
+  import { hello } from 'external-dep'
+  text('.external', hello)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
