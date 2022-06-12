@@ -48,6 +48,11 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
+/**
+ * current test using vite inline config
+ * when using server.js is not possible to get the config
+ */
+export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -59,6 +64,14 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
+
+declare module 'vite' {
+  interface InlineConfig {
+    testConfig?: {
+      baseRoute: string
+    }
+  }
+}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -192,9 +205,9 @@ export async function startDefaultServe(): Promise<void> {
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    server = await (
-      await createServer(mergeConfig(options, config || {}))
-    ).listen()
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const base = server.config.base === '/' ? '' : server.config.base
     viteTestUrl = `http://localhost:${server.config.server.port}${base}`
@@ -209,7 +222,9 @@ export async function startDefaultServe(): Promise<void> {
       }
     })
     options.plugins = [resolvedPlugin()]
-    const rollupOutput = await build(mergeConfig(options, config || {}))
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    const rollupOutput = await build(testConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
@@ -243,14 +258,16 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, config?.build?.outDir || 'dist'), {
-    dev: !!config?.build?.watch
-  })
+  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
       res.end('pong')
     } else {
+      if (baseDir) {
+        req.url = path.join(baseDir, req.url)
+      }
       serve(req, res)
     }
   }))

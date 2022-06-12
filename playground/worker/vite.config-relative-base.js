@@ -25,6 +25,9 @@ module.exports = vite.defineConfig({
       }
     }
   },
+  testConfig: {
+    baseRoute: '/relative-base/'
+  },
   plugins: [
     {
       name: 'resolve-format-es',
