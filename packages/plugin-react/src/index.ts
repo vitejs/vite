@@ -363,8 +363,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
   const reactJsxRuntimeId = 'react/jsx-runtime'
   const reactJsxDevRuntimeId = 'react/jsx-dev-runtime'
-  const virtualReactJsxRuntimeId = '\0virtual:react/jsx-runtime'
-  const virtualReactJsxDevRuntimeId = '\0virtual:react/jsx-dev-runtime'
+  const virtualReactJsxRuntimeId = '\0' + reactJsxRuntimeId
+  const virtualReactJsxDevRuntimeId = '\0' + reactJsxDevRuntimeId
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
