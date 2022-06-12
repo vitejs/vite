@@ -342,9 +342,9 @@ export async function createServer(
     },
     async close() {
       if (!middlewareMode) {
-        process.once('SIGTERM', exitProcess)
+        process.off('SIGTERM', exitProcess)
         if (process.env.CI !== 'true') {
-          process.stdin.on('end', exitProcess)
+          process.stdin.off('end', exitProcess)
         }
       }
 
