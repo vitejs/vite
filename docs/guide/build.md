@@ -4,11 +4,12 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ESM script tag](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import). As a reference, Vite uses this [browserslist](https://github.com/browserslist/browserslist) query:
+The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta):
 
-```
-defaults and supports es6-module and supports es6-module-dynamic-import, not opera > 0, not samsung > 0, not and_qq > 0
-```
+- Chrome >=87
+- Firefox >=78
+- Safari >=13
+- Edge >=88
 
 You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
 
@@ -127,7 +128,8 @@ module.exports = defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
-      fileName: (format) => `my-lib.${format}.js`
+      // the proper extensions will be added
+      fileName: 'my-lib'
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
@@ -159,7 +161,7 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-[write] my-lib.es.js 0.08kb, brotli: 0.07kb
+[write] my-lib.mjs 0.08kb, brotli: 0.07kb
 [write] my-lib.umd.js 0.30kb, brotli: 0.16kb
 ```
 
@@ -170,10 +172,10 @@ Recommended `package.json` for your lib:
   "name": "my-lib",
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.es.js",
+  "module": "./dist/my-lib.mjs",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.es.js",
+      "import": "./dist/my-lib.mjs",
       "require": "./dist/my-lib.umd.js"
     }
   }

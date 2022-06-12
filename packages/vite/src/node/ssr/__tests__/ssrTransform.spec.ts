@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { traverseHtml } from '../../plugins/html'
 import { ssrTransform } from '../ssrTransform'

@@ -1,4 +1,4 @@
-import { relative, basename, join, dirname } from 'path'
+import { basename, dirname, join, relative } from 'path'
 import { parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
@@ -59,7 +59,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.push(`/${file}`)
+                      deps.push(join(config.base, file))
                     })
                     chunk.imports.forEach(addDeps)
                   }

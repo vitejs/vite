@@ -1,0 +1,37 @@
+<!-- the production demo page, copied into dist/ -->
+<div class="es"></div>
+<div class="umd"></div>
+<div class="iife"></div>
+<div class="dynamic-import-message"></div>
+
+<script>
+  // shim test preserve process.env.NODE_ENV
+  globalThis.process = {
+    env: {
+      NODE_ENV: 'production'
+    }
+  }
+</script>
+
+<script type="module">
+  import myLib from './my-lib-custom-filename.mjs'
+
+  myLib('.es')
+</script>
+
+<script type="module">
+  import message from './lib/dynamic-import-message.js'
+
+  message('.dynamic-import-message')
+</script>
+
+<script src="./my-lib-custom-filename.umd.js"></script>
+<script>
+  MyLib('.umd')
+  delete window.MyLib // so that it won't affect iife
+</script>
+
+<script src="./my-lib-custom-filename.iife.js"></script>
+<script>
+  MyLib('.iife')
+</script>

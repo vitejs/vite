@@ -1,0 +1,16 @@
+{
+  "name": "test-ssr-html",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "serve": "cross-env NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "express": "^4.18.1"
+  }
+}

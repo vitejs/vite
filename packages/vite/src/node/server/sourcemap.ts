@@ -1,8 +1,8 @@
 import path from 'path'
 import { promises as fs } from 'fs'
+import type { SourceMap } from 'rollup'
 import type { Logger } from '../logger'
 import { createDebugger } from '../utils'
-import type { SourceMap } from 'rollup'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
@@ -59,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-export function genSourceMapUrl(map: SourceMap | string | undefined) {
+export function genSourceMapUrl(map: SourceMap | string | undefined): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -70,7 +70,7 @@ export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
   map: SourceMap | null
-) {
+): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }

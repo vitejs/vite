@@ -1,6 +1,6 @@
-import { restoreJSX } from './restore-jsx'
 import * as babel from '@babel/core'
-import { parseReactAlias } from './restore-jsx'
+import { describe, expect, it } from 'vitest'
+import { parseReactAlias, restoreJSX } from './restore-jsx'
 
 describe('parseReactAlias', () => {
   it('handles cjs require', () => {

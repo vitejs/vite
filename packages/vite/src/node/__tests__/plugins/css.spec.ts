@@ -1,7 +1,8 @@
-import { cssUrlRE, cssPlugin, hoistAtRules } from '../../plugins/css'
-import { resolveConfig } from '../../config'
 import fs from 'fs'
 import path from 'path'
+import { describe, expect, test, vi } from 'vitest'
+import { resolveConfig } from '../../config'
+import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -69,9 +70,9 @@ describe('css path resolutions', () => {
 
     await buildStart.call({})
 
-    const mockFs = jest
+    const mockFs = vi
       .spyOn(fs, 'readFile')
-      // @ts-ignore jest.spyOn not recognize overrided `fs.readFile` definition.
+      // @ts-ignore vi.spyOn not recognize override `fs.readFile` definition.
       .mockImplementationOnce((p, encoding, callback) => {
         expect(p).toBe(path.join(mockedProjectPath, mockedBarCssRelativePath))
         expect(encoding).toBe('utf-8')
@@ -178,31 +179,29 @@ describe('hoist @ rules', () => {
 
   test('dont hoist @import and @charset in comments', async () => {
     const css = `
-      .foo{color:red;}
-      /*
-        @import "bla";
-      */
-      @charset "utf-8";
-      /*
-        @charset "utf-8";
-        @import "bar";
-      */
-      @import "baz";
-    `
+.foo{color:red;}
+/*
+  @import "bla";
+*/
+@charset "utf-8";
+/*
+  @charset "utf-8";
+  @import "bar";
+*/
+@import "baz";`
     const result = await hoistAtRules(css)
-    expect(result).toBe(
-      `@charset "utf-8";@import "baz";
+    expect(result).toMatchInlineSnapshot(`
+      "@charset \\"utf-8\\";@import \\"baz\\";
       .foo{color:red;}
       /*
-        @import "bla";
+        @import \\"bla\\";
       */
-      
+
       /*
-        @charset "utf-8";
-        @import "bar";
+        @charset \\"utf-8\\";
+        @import \\"bar\\";
       */
-      
-    `
-    )
+      "
+    `)
   })
 })

@@ -1,14 +1,14 @@
 /* eslint no-console: 0 */
 
-import colors from 'picocolors'
 import type { AddressInfo, Server } from 'net'
 import os from 'os'
 import readline from 'readline'
+import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { ResolvedConfig } from '.'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -144,16 +144,6 @@ export function createLogger(
   return logger
 }
 
-/**
- * @deprecated Use `server.printUrls()` instead
- */
-export function printHttpServerUrls(
-  server: Server,
-  config: ResolvedConfig
-): void {
-  printCommonServerUrls(server, config.server, config)
-}
-
 export function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -181,11 +171,21 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
+  const urls: Array<{ label: string; url: string }> = []
+
   if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
-    info(`  > Local: ${colors.cyan(url)}`)
+    urls.push({
+      label: 'Local',
+      url: colors.cyan(
+        `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+      )
+    })
+
     if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${colors.dim('use `--host` to expose')}`)
+      urls.push({
+        label: 'Network',
+        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
+      })
     }
   } else {
     Object.values(os.networkInterfaces())
@@ -199,14 +199,24 @@ function printServerUrls(
             // Node >= v18
             (typeof detail.family === 'number' && detail.family === 4))
       )
-      .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
+      .forEach((detail) => {
         const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${colors.bold(port)}${base}`
-        return `  > ${type} ${colors.cyan(url)}`
+        const label = detail.address.includes('127.0.0.1') ? 'Local' : 'Network'
+
+        urls.push({ label, url: colors.cyan(url) })
       })
-      .forEach((msg) => info(msg))
   }
+
+  const length = urls.reduce(
+    (length, { label }) => Math.max(length, label.length),
+    0
+  )
+  urls.forEach(({ label, url: text }) => {
+    info(
+      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
+        length - label.length
+      )}${text}`
+    )
+  })
 }
