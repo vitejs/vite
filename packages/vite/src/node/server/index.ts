@@ -341,9 +341,11 @@ export async function createServer(
       return startServer(server, port, isRestart)
     },
     async close() {
-      if (!middlewareMode && process.env.CI !== 'true') {
-        process.off('SIGTERM', exitProcess)
-        process.stdin.off('end', exitProcess)
+      if (!middlewareMode) {
+        process.once('SIGTERM', exitProcess)
+        if (process.env.CI !== 'true') {
+          process.stdin.on('end', exitProcess)
+        }
       }
 
       await Promise.all([
@@ -380,7 +382,7 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  if (!middlewareMode && process.env.CI !== 'true') {
+  if (!middlewareMode) {
     exitProcess = async () => {
       try {
         await server.close()
@@ -389,7 +391,9 @@ export async function createServer(
       }
     }
     process.once('SIGTERM', exitProcess)
-    process.stdin.on('end', exitProcess)
+    if (process.env.CI !== 'true') {
+      process.stdin.on('end', exitProcess)
+    }
   }
 
   const { packageCache } = config
