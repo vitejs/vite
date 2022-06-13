@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "vue": "^3.2.37",
-    "vue-router": "^4.0.15"
+    "vue-router": "^4.0.16"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
-    "terser": "^5.13.1"
+    "terser": "^5.14.1"
   }
 }
