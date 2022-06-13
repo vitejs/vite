@@ -511,7 +511,7 @@ By default, the worker script will be emitted as a separate chunk in the product
 import MyWorker from './worker?worker&inline'
 ```
 
-If you wish to inline the worker as url strings, add the `url` query:
+If you wish to retrieve the worker as a URL, add the `url` query:
 
 ```js
 import MyWorker from './worker?worker&url'
