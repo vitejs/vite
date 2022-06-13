@@ -11,7 +11,7 @@
     "react": "^17.0.2"
   },
   "devDependencies": {
-    "miniflare": "^1.4.1",
+    "miniflare": "^2.5.0",
     "resolve-linked": "workspace:*"
   }
 }
