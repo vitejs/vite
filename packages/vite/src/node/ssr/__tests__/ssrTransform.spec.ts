@@ -306,7 +306,7 @@ test('should declare variable for imported super class', async () => {
     class A extends Foo {}
     class B extends Foo {}
     Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: A });"
   `)
 })
 
@@ -338,7 +338,7 @@ test('should handle default export variants', async () => {
   ).toMatchInlineSnapshot(`
     "function foo() {}
     foo.prototype = Object.prototype;
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: foo });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: foo });"
   `)
   // default named classes
   expect(
@@ -353,7 +353,7 @@ test('should handle default export variants', async () => {
     "class A {}
     class B extends A {}
     Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: A });"
   `)
 })
 
