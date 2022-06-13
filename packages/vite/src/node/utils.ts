@@ -1021,9 +1021,7 @@ export function transformResult(
 
 export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
   do {
-    // @ts-ignore
-    arr = (await Promise.all(arr)).flat(Infinity)
-    // @ts-ignore
-  } while (arr.some((v) => !!v.then))
+    arr = (await Promise.all(arr)).flat(Infinity) as any
+  } while (arr.some((v: any) => !!v.then))
   return arr
 }
