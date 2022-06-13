@@ -1,16 +1,11 @@
 import fs from 'fs'
 import path from 'path'
-import type { Page } from 'playwright-chromium'
 import { test } from 'vitest'
 import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
-  await page.click('.ping')
   await untilUpdated(() => page.textContent('.pong'), 'pong')
-  await untilUpdated(
-    () => page.textContent('.mode'),
-    process.env.NODE_ENV // match workerImport.js
-  )
+  await untilUpdated(() => page.textContent('.mode'), process.env.NODE_ENV)
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
     'worker bundle with plugin success!'
@@ -18,44 +13,25 @@ test('normal', async () => {
 })
 
 test('TS output', async () => {
-  await page.click('.ping-ts-output')
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
 })
 
 test('inlined', async () => {
-  await page.click('.ping-inline')
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
-const waitSharedWorkerTick = (
-  (resolvedSharedWorkerCount: number) => async (page: Page) => {
-    await untilUpdated(async () => {
-      const count = await page.textContent('.tick-count')
-      // ignore the initial 0
-      return count === '1' ? 'page loaded' : ''
-    }, 'page loaded')
-    // test.concurrent sequential is not guaranteed
-    // force page to wait to ensure two pages overlap in time
-    resolvedSharedWorkerCount++
-    if (resolvedSharedWorkerCount < 2) return
-
-    await untilUpdated(() => {
-      return resolvedSharedWorkerCount === 2 ? 'all pages loaded' : ''
-    }, 'all pages loaded')
-  }
-)(0)
-
-test.each([[true], [false]])('shared worker', async (doTick) => {
-  if (doTick) {
-    await page.click('.tick-shared')
-  }
-  await waitSharedWorkerTick(page)
+test('shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count'), 'pong')
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  expect(await page.textContent('.nested-worker')).toMatch('/worker-nested')
-  expect(await page.textContent('.nested-worker-module')).toMatch('/sub-worker')
-  expect(await page.textContent('.nested-worker-constructor')).toMatch(
+  await untilUpdated(() => page.textContent('.nested-worker'), '/worker-nested')
+  await untilUpdated(
+    () => page.textContent('.nested-worker-module'),
+    '/sub-worker'
+  )
+  await untilUpdated(
+    () => page.textContent('.nested-worker-constructor'),
     '"type":"constructor"'
   )
 })
@@ -86,32 +62,42 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
-    expect(await page.textContent('.nested-worker-module')).toMatch(
+    await untilUpdated(
+      () => page.textContent('.nested-worker-module'),
       '"type":"module"'
     )
-    expect(await page.textContent('.nested-worker-constructor')).toMatch(
+    await untilUpdated(
+      () => page.textContent('.nested-worker-constructor'),
       '"type":"constructor"'
     )
   })
 })
 
 test('module worker', async () => {
-  expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
+  await untilUpdated(
+    () => page.textContent('.shared-worker-import-meta-url'),
     'A string'
   )
 })
 
 test('classic worker', async () => {
-  expect(await page.textContent('.classic-worker')).toMatch('A classic')
-  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+  await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  await untilUpdated(
+    () => page.textContent('.classic-shared-worker'),
+    'A classic'
+  )
 })
 
 test('url query worker', async () => {
-  expect(await page.textContent('.simple-worker-url')).toMatch(
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
     'Hello from simple worker!'
   )
 })
 
 test('import.meta.glob eager in worker', async () => {
-  expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
+  await untilUpdated(
+    () => page.textContent('.importMetaGlobEager-worker'),
+    '["'
+  )
 })
