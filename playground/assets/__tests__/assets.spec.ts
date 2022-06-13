@@ -218,6 +218,12 @@ describe('svg fragments', () => {
   })
 })
 
+test('Unknown extension assets import', async () => {
+  expect(await page.textContent('.unknown-ext')).toMatch(
+    isBuild ? 'data:application/octet-stream;' : '/nested/foo.unknown'
+  )
+})
+
 test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })

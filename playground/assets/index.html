@@ -166,6 +166,9 @@
   <img class="svg-frag-import" alt="" />
 </div>
 
+<h2>Unknown extension assets import</h2>
+<code class="unknown-ext"></code>
+
 <h2>?raw import</h2>
 <code class="raw"></code>
 
@@ -317,6 +320,9 @@
   import svgFrag from './nested/fragment.svg'
   text('.svg-frag-import-path', svgFrag)
   document.querySelector('.svg-frag-import').src = svgFrag + '#icon-heart-view'
+
+  import unknownExtUrl from './nested/foo.unknown'
+  text('.unknown-ext', unknownExtUrl)
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
