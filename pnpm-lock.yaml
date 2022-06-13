@@ -410,6 +410,9 @@ importers:
   playground/css/css-dep:
     specifiers: {}
 
+  playground/css-extract:
+    specifiers: {}
+
   playground/css/pkg-dep:
     specifiers: {}
 

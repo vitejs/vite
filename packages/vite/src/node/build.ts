@@ -92,6 +92,13 @@ export interface BuildOptions {
    */
   assetsInlineLimit?: number
   /**
+   * Whether to extract CSS. When disabled, CSS will be
+   * inlined as strings in the chunk, e.g. in lib mode, CSS will be inlined
+   * in the output file.
+   * @default true
+   */
+  cssExtract?: boolean
+  /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
    * style tags when the chunk is loaded.
@@ -236,6 +243,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
+    cssExtract: true,
     cssCodeSplit: !raw?.lib,
     cssTarget: false,
     sourcemap: false,
