@@ -182,8 +182,8 @@ export async function killProcess(
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { default: execa } = await import('execa')
-      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      const { execaCommandSync } = await import('execa')
+      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
     } catch (e) {
       console.error('failed to taskkill:', e)
     }

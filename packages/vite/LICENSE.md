@@ -682,7 +682,7 @@ Repository: chalk/ansi-regex
 
 > MIT License
 > 
-> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 > 
@@ -3477,7 +3477,7 @@ Repository: chalk/strip-ansi
 
 > MIT License
 > 
-> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+> Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 > 
@@ -3854,7 +3854,7 @@ License: ISC
 By: Eemeli Aro
 Repository: github:eemeli/yaml
 
-> Copyright 2018 Eemeli Aro <eemeli@gmail.com>
+> Copyright Eemeli Aro <eemeli@gmail.com>
 > 
 > Permission to use, copy, modify, and/or distribute this software for any purpose
 > with or without fee is hereby granted, provided that the above copyright notice

@@ -1,7 +1,7 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import execa from 'execa'
+import { execaCommand } from 'execa'
 import kill from 'kill-port'
 import {
   isBuild,
@@ -45,7 +45,7 @@ export async function serve() {
   if (isBuild) {
     const buildCommand = `${viteBinPath} build`
     try {
-      const buildProcess = execa.command(buildCommand, {
+      const buildProcess = execaCommand(buildCommand, {
         cwd: rootDir,
         stdio: 'pipe'
       })
@@ -67,7 +67,7 @@ export async function serve() {
     viteServerArgs.unshift('preview')
   }
   const serverCommand = `${viteBinPath} ${viteServerArgs.join(' ')}`
-  const serverProcess = execa.command(serverCommand, {
+  const serverProcess = execaCommand(serverCommand, {
     cwd: rootDir,
     stdio: 'pipe'
   })

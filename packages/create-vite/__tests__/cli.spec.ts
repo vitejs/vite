@@ -1,6 +1,6 @@
 import { join } from 'path'
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
-import { commandSync } from 'execa'
+import { execaCommandSync } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
@@ -13,7 +13,7 @@ const run = (
   args: string[],
   options: SyncOptions<string> = {}
 ): ExecaSyncReturnValue<string> => {
-  return commandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
 
 // Helper to create a non-empty directory
