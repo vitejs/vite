@@ -349,8 +349,9 @@ async function fileToBuiltUrl(
     (!file.endsWith('.svg') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {
+    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
     // base64 inlined as a string
-    url = `data:${mrmime.lookup(file)};base64,${content.toString('base64')}`
+    url = `data:${mimeType};base64,${content.toString('base64')}`
   } else {
     // emit as asset
     // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
