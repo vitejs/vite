@@ -35,13 +35,11 @@ export type FilterPattern =
   | string
   | RegExp
   | null
-export function createFilter(
+export const createFilter = _createFilter as (
   include?: FilterPattern,
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null }
-): (id: string | unknown) => boolean {
-  return _createFilter(include, exclude, options)
-}
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
