@@ -1,9 +1,13 @@
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
-import type { UserConfig, UserConfigExport } from '../config'
-import { resolveConfig } from '../config'
+import type { ConfigEnv, UserConfig, UserConfigExport } from '../config'
+import { loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../publicUtils'
+
+const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -264,5 +268,21 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: previewConfig()
     })
+  })
+})
+
+describe('loadConfigFromFile', () => {
+  const root = resolve(__dirname, './packages/config')
+  const configEnv: ConfigEnv = { command: 'serve', mode: 'development' }
+  test.each([
+    'vite.config.c.js',
+    'vite.config.m.js',
+    'vite.config.cjs',
+    // 'vite.config.mjs',
+    'vite.config.c.ts',
+    'vite.config.m.ts'
+  ])('test different extensions: %s', async (filename: string) => {
+    const result = await loadConfigFromFile(configEnv, [filename], root)
+    expect(result!.config).toMatchObject({ define: configEnv })
   })
 })
