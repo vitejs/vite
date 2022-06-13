@@ -27,7 +27,6 @@ import {
 } from './constants'
 import type { ResolvedConfig } from '.'
 
-
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
  */
