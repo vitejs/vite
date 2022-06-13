@@ -162,7 +162,6 @@ importers:
       '@babel/plugin-transform-react-jsx-development': ^7.16.7
       '@babel/plugin-transform-react-jsx-self': ^7.17.12
       '@babel/plugin-transform-react-jsx-source': ^7.16.7
-      '@rollup/pluginutils': ^4.2.1
       react-refresh: ^0.13.0
       vite: workspace:*
     dependencies:
@@ -171,7 +170,6 @@ importers:
       '@babel/plugin-transform-react-jsx-development': 7.16.7_@babel+core@7.18.2
       '@babel/plugin-transform-react-jsx-self': 7.17.12_@babel+core@7.18.2
       '@babel/plugin-transform-react-jsx-source': 7.16.7_@babel+core@7.18.2
-      '@rollup/pluginutils': 4.2.1
       react-refresh: 0.13.0
     devDependencies:
       vite: link:../vite
@@ -180,15 +178,12 @@ importers:
     specifiers:
       '@jridgewell/gen-mapping': ^0.3.1
       '@jridgewell/trace-mapping': ^0.3.13
-      '@rollup/pluginutils': ^4.2.1
       debug: ^4.3.4
       rollup: ^2.72.1
       slash: ^4.0.0
       source-map: ^0.6.1
       vite: workspace:*
       vue: ^3.2.37
-    dependencies:
-      '@rollup/pluginutils': 4.2.1
     devDependencies:
       '@jridgewell/gen-mapping': 0.3.1
       '@jridgewell/trace-mapping': 0.3.13
@@ -204,14 +199,12 @@ importers:
       '@babel/core': ^7.18.2
       '@babel/plugin-syntax-import-meta': ^7.10.4
       '@babel/plugin-transform-typescript': ^7.18.4
-      '@rollup/pluginutils': ^4.2.1
       '@vue/babel-plugin-jsx': ^1.1.1
       vite: workspace:*
     dependencies:
       '@babel/core': 7.18.2
       '@babel/plugin-syntax-import-meta': 7.10.4_@babel+core@7.18.2
       '@babel/plugin-transform-typescript': 7.18.4_@babel+core@7.18.2
-      '@rollup/pluginutils': 4.2.1
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.18.2
     devDependencies:
       vite: link:../vite
@@ -2168,6 +2161,7 @@ packages:
     dependencies:
       estree-walker: 2.0.2
       picomatch: 2.3.1
+    dev: true
 
   /@rushstack/node-core-library/3.45.5:
     resolution: {integrity: sha512-KbN7Hp9vH3bD3YJfv6RnVtzzTAwGYIBl7y2HQLY4WEQqRbvE3LgI78W9l9X+cTAXCX//p0EeoiUYNTFdqJrMZg==}

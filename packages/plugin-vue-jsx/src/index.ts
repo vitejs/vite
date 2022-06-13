@@ -5,7 +5,7 @@ import * as babel from '@babel/core'
 import jsx from '@vue/babel-plugin-jsx'
 // @ts-expect-error missing type
 import importMeta from '@babel/plugin-syntax-import-meta'
-import { createFilter, normalizePath } from '@rollup/pluginutils'
+import { createFilter, normalizePath } from 'vite'
 import type { ComponentOptions } from 'vue'
 import type { Plugin } from 'vite'
 import type { Options } from './types'

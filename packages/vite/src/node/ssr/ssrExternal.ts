@@ -1,12 +1,12 @@
 import fs from 'fs'
 import path from 'path'
 import { createRequire } from 'module'
-import { createFilter } from '@rollup/pluginutils'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
   bareImportRE,
   createDebugger,
+  createFilter,
   isBuiltin,
   isDefined,
   lookupFile,

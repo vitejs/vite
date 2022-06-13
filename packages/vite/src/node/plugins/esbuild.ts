@@ -9,13 +9,13 @@ import type {
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { SourceMap } from 'rollup'
-import { createFilter } from '@rollup/pluginutils'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
   combineSourcemaps,
   createDebugger,
+  createFilter,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter

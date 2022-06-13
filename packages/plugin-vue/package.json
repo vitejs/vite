@@ -47,8 +47,5 @@
     "source-map": "^0.6.1",
     "vite": "workspace:*",
     "vue": "^3.2.37"
-  },
-  "dependencies": {
-    "@rollup/pluginutils": "^4.2.1"
   }
 }

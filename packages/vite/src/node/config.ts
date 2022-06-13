@@ -5,7 +5,6 @@ import { performance } from 'perf_hooks'
 import { createRequire } from 'module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
-import { createFilter } from '@rollup/pluginutils'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
@@ -19,6 +18,7 @@ import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
   createDebugger,
+  createFilter,
   dynamicImport,
   isExternalUrl,
   isObject,

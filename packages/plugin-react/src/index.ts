@@ -1,8 +1,7 @@
 import path from 'path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter } from '@rollup/pluginutils'
-import { normalizePath } from 'vite'
+import { createFilter, normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,

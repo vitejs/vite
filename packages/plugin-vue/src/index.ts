@@ -1,6 +1,6 @@
 import fs from 'fs'
 import type { Plugin, ViteDevServer } from 'vite'
-import { createFilter } from '@rollup/pluginutils'
+import { createFilter } from 'vite'
 /* eslint-disable import/no-duplicates */
 import type {
   SFCBlock,

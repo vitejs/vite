@@ -16,6 +16,7 @@ import type { Alias, AliasOptions } from 'types/alias'
 import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
+import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -25,6 +26,20 @@ import {
   VALID_ID_PREFIX
 } from './constants'
 import type { ResolvedConfig } from '.'
+
+/**
+ * Inlined to keep `@rollup/pluginutils` in devDependencies
+ */
+export type FilterPattern =
+  | ReadonlyArray<string | RegExp>
+  | string
+  | RegExp
+  | null
+export const createFilter = _createFilter as (
+  include?: FilterPattern,
+  exclude?: FilterPattern,
+  options?: { resolve?: string | false | null }
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
