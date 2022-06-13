@@ -17,5 +17,6 @@ module.exports = {
     assetsInlineLimit: 8192, // 8kb
     manifest: true,
     watch: {}
-  }
+  },
+  cacheDir: 'node_modules/.vite/foo'
 }
