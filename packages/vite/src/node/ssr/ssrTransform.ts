@@ -188,7 +188,7 @@ async function ssrTransformScript(
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, value: ${name} });`
+            `{ enumerable: true, configurable: true, value: ${name} });`
         )
       } else {
         // anonymous default exports
