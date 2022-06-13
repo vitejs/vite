@@ -8,7 +8,7 @@ export {
   splitVendorChunkPlugin,
   splitVendorChunk
 } from './plugins/splitVendorChunk'
-export { normalizePath, mergeConfig, mergeAlias } from './utils'
+export { normalizePath, mergeConfig, mergeAlias, createFilter } from './utils'
 export { send } from './server/send'
 export { createLogger } from './logger'
 export { searchForWorkspaceRoot } from './server/searchRoot'
