@@ -8,6 +8,7 @@ import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { loopbackHosts, wildcardHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -164,13 +165,6 @@ export function printCommonServerUrls(
   }
 }
 
-const loopbackHosts = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-  '0000:0000:0000:0000:0000:0000:0000:0001'
-])
-
 function printServerUrls(
   hostname: Hostname,
   protocol: string,
@@ -227,11 +221,26 @@ function printServerUrls(
     (length, { label }) => Math.max(length, label.length),
     0
   )
-  urls.forEach(({ label, url: text }) => {
+  const print = (
+    iconWithColor: string,
+    label: string,
+    messageWithColor: string
+  ) => {
     info(
-      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
+      `  ${iconWithColor}  ${colors.bold(label)}: ${' '.repeat(
         length - label.length
-      )}${text}`
+      )}${messageWithColor}`
     )
+  }
+
+  urls.forEach(({ label, url: text }) => {
+    print(colors.green('➜'), label, text)
   })
+  if (!hostname.host || wildcardHosts.has(hostname.host)) {
+    print(
+      colors.bold(colors.blue('ⓘ')),
+      'Note',
+      colors.dim('You are using a wildcard host. Ports might be overriden.')
+    )
+  }
 }

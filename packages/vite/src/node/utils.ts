@@ -22,7 +22,8 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX
+  VALID_ID_PREFIX,
+  wildcardHosts
 } from './constants'
 import type { ResolvedConfig } from '.'
 
@@ -725,12 +726,6 @@ export interface Hostname {
   // resolve to localhost when possible
   name: string
 }
-
-const wildcardHosts = new Set([
-  '0.0.0.0',
-  '::',
-  '0000:0000:0000:0000:0000:0000:0000:0000'
-])
 
 export function resolveHostname(
   optionsHost: string | boolean | undefined
