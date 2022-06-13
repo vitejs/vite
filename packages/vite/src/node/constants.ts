@@ -67,6 +67,9 @@ export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
+  'jfif',
+  'pjpeg',
+  'pjp',
   'gif',
   'svg',
   'ico',
