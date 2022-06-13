@@ -356,12 +356,12 @@ async function fileToBuiltUrl(
     const postfix = (search || '') + (hash || '')
     const output = config.build?.rollupOptions?.output
 
-    // Steps to determine which assetFileNames will be actually used.
     const defaultAssetFileNames = path.posix.join(
       config.build.assetsDir,
       '[name].[hash][extname]'
-    )
-    // First, if output is an object, use assetFileNames in it.
+      )
+    // Steps to determine which assetFileNames will be actually used.
+    // First, if output is an object or string, use assetFileNames in it.
     // And a default assetFileNames as fallback.
     let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
       (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
@@ -369,32 +369,6 @@ async function fileToBuiltUrl(
     if (output && Array.isArray(output)) {
       // Second, if output is an array, adopt assetFileNames in the first object.
       assetFileNames = output[0].assetFileNames ?? assetFileNames
-      // Third, check if assetFileNames among output array return the same result.
-      // If not, log a warn and keep using the first assetFileNames.
-      const filenameSet = output.reduce(
-        (cumulate, { assetFileNames = defaultAssetFileNames }) => {
-          const filename =
-            typeof assetFileNames === 'string'
-              ? assetFileNames
-              : assetFileNames({
-                  type: 'asset',
-                  name: file,
-                  source: content
-                })
-          cumulate.add(filename)
-          return cumulate
-        },
-        new Set<string>()
-      )
-      if (filenameSet.size > 1) {
-        createLogger('warn').warn(
-          colors.yellow(`
-Found that you've configure multiple assetFileNames in build.rollupOptions.output, 
-and their return values are inconsistent. Vite has adopted the first assetFileNames in the array.
-If you expecting a different asset file name, change the first assetFileNames in the array.
-`)
-        )
-      }
     }
 
     const fileName = assetFileNamesToFileName(

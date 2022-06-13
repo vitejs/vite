@@ -8,7 +8,7 @@ import type { Alias, AliasOptions } from 'types/alias'
 import { createFilter } from '@rollup/pluginutils'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { RollupOptions } from 'rollup'
+import type { OutputOptions, RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type { BuildOptions, ResolvedBuildOptions } from './build'
 import { resolveBuildOptions } from './build'
@@ -564,6 +564,34 @@ export async function resolveConfig(
           `prefer Terser, set build.minify to "terser".`
       )
     )
+  }
+
+  // Check if all assetFileNames functions have the same reference.
+  // If not, display a warn for user.
+  const outputOption = config.build?.rollupOptions?.output ?? []
+  // Use isArray to narrow its type to array
+  if (Array.isArray(outputOption)) {
+    const assetFileNamesFunctions = outputOption
+      .map((output) => output.assetFileNames)
+      .filter(
+        (assetFileNames) => typeof assetFileNames === 'function'
+      ) as Exclude<
+      OutputOptions['assetFileNames'],
+      undefined | string
+    >[]
+    if (assetFileNamesFunctions.length > 1) {
+      const firstFunction = assetFileNamesFunctions[0]
+      const hasDifferentFunction = assetFileNamesFunctions
+        .slice(1)
+        .some((assetFileNames) => assetFileNames !== firstFunction)
+      if (hasDifferentFunction) {
+        resolved.logger.warn(colors.yellow(`
+It's recommended that all assetFileNames in function syntax have the same reference.
+In other words, every function1 === function2 should be true.
+Vite adopts the first assetFileNames if build.rollupOptions.output is an array.
+`))
+      }
+    }
   }
 
   return resolved
