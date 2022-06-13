@@ -8,7 +8,7 @@ const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
 
 let browserServer: BrowserServer | undefined
 
-export async function setup() {
+export async function setup(): Promise<void> {
   browserServer = await chromium.launchServer({
     headless: !process.env.VITE_DEBUG_SERVE,
     args: process.env.CI
@@ -41,7 +41,7 @@ export async function setup() {
     })
 }
 
-export async function teardown() {
+export async function teardown(): Promise<void> {
   browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
     fs.removeSync(path.resolve(__dirname, '../playground-temp'))

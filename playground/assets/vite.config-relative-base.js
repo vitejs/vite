@@ -8,7 +8,7 @@ module.exports = {
   base: './', // relative base to make dist portable
   build: {
     ...baseConfig.build,
-    outDir: 'dist',
+    outDir: 'dist/relative-base',
     watch: false,
     minify: false,
     assetsInlineLimit: 0,
@@ -19,5 +19,9 @@ module.exports = {
         assetFileNames: 'other-assets/[name].[hash][extname]'
       }
     }
-  }
+  },
+  testConfig: {
+    baseRoute: '/relative-base/'
+  },
+  cacheDir: 'node_modules/.vite/relative-base'
 }
