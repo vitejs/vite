@@ -1018,3 +1018,12 @@ export function transformResult(
     map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
   }
 }
+
+export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+  do {
+    // @ts-ignore
+    arr = (await Promise.all(arr)).flat(Infinity)
+    // @ts-ignore
+  } while (arr.some((v) => !!v.then))
+  return arr
+}
