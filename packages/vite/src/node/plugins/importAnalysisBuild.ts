@@ -19,7 +19,7 @@ import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
-import { transformCjsImport } from './importAnalysis'
+import { interopNamedImports } from './importAnalysis'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -283,31 +283,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 // config.logger.info(`${url} needs interop`)
-                if (isDynamicImport) {
-                  // rewrite `import('package')` to expose the default directly
-                  str().overwrite(
-                    expStart,
-                    expEnd,
-                    `import('${file}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
-                    { contentOnly: true }
-                  )
-                } else {
-                  const exp = source.slice(expStart, expEnd)
-                  const rewritten = transformCjsImport(
-                    exp,
-                    file,
-                    specifier,
-                    index
-                  )
-                  if (rewritten) {
-                    str().overwrite(expStart, expEnd, rewritten, {
-                      contentOnly: true
-                    })
-                  } else {
-                    // #1439 export * from '...'
-                    str().overwrite(start, end, file, { contentOnly: true })
-                  }
-                }
+                interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
               if (!rewriteDone) {

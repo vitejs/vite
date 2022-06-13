@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "jsx-entry": "file:./jsx-entry",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },

@@ -38,7 +38,6 @@
     "@babel/core": "^7.18.2",
     "@babel/plugin-syntax-import-meta": "^7.10.4",
     "@babel/plugin-transform-typescript": "^7.18.4",
-    "@rollup/pluginutils": "^4.2.1",
     "@vue/babel-plugin-jsx": "^1.1.1"
   },
   "devDependencies": {

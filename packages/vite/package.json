@@ -75,7 +75,7 @@
     "@rollup/plugin-dynamic-import-vars": "^1.4.3",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
-    "@rollup/plugin-typescript": "^8.3.2",
+    "@rollup/plugin-typescript": "^8.3.3",
     "@rollup/pluginutils": "^4.2.1",
     "@vue/compiler-dom": "^3.2.37",
     "acorn": "^8.7.1",
@@ -99,7 +99,7 @@
     "launch-editor-middleware": "^2.4.0",
     "magic-string": "^0.26.2",
     "micromatch": "^4.0.5",
-    "mrmime": "^1.0.0",
+    "mrmime": "^1.0.1",
     "node-forge": "^1.3.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
@@ -109,7 +109,7 @@
     "postcss-load-config": "^3.1.4",
     "postcss-modules": "^4.3.1",
     "resolve.exports": "^1.1.0",
-    "rollup-plugin-license": "^2.8.0",
+    "rollup-plugin-license": "^2.8.1",
     "sirv": "^2.0.2",
     "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",
@@ -119,7 +119,7 @@
     "tslib": "^2.4.0",
     "types": "link:./types",
     "ufo": "^0.8.4",
-    "ws": "^8.7.0"
+    "ws": "^8.8.0"
   },
   "peerDependencies": {
     "less": "*",
