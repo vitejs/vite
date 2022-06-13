@@ -407,7 +407,6 @@ async function doBuild(
   }
 
   const rollupOptions: RollupOptions = {
-    input,
     context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
@@ -415,6 +414,7 @@ async function doBuild(
       ? 'strict'
       : false,
     ...options.rollupOptions,
+    input,
     plugins,
     external,
     onwarn(warning, warn) {
