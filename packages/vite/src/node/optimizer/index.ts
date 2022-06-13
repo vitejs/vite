@@ -53,9 +53,15 @@ export interface DepsOptimizer {
     ssr?: boolean
   ) => OptimizedDepInfo
   run: () => void
+
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
+
+  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
+  registerWorkersSource: (id: string) => void
+  resetRegisteredIds: () => void
+
   options: DepOptimizationOptions
 }
 

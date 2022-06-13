@@ -37,7 +37,10 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
+  id
+    .replace(/[\/:]/g, '_')
+    .replace(/[\.]/g, '__')
+    .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -789,6 +792,18 @@ export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}
+
+export const requireResolveFromRootWithFallback = (
+  root: string,
+  id: string
+): string => {
+  // Search in the root directory first, and fallback to the default require paths.
+  const fallbackPaths = _require.resolve.paths?.(id) || []
+  const path = _require.resolve(id, {
+    paths: [root, ...fallbackPaths]
+  })
+  return path
 }
 
 // Based on node-graceful-fs

@@ -118,10 +118,6 @@ function createNodePlugins(
     // Shim them with eval() so rollup can skip these calls.
     isProduction &&
       shimDepsPlugin({
-        'plugins/terser.ts': {
-          src: `require.resolve('terser'`,
-          replacement: `require.resolve('vite/terser'`
-        },
         // chokidar -> fsevents
         'fsevents-handler.js': {
           src: `require('fsevents')`,
@@ -183,34 +179,13 @@ function createNodeConfig(isProduction: boolean) {
     ],
     plugins: createNodePlugins(
       isProduction,
-      false,
+      !isProduction,
       // in production we use api-extractor for dts generation
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : path.resolve(__dirname, 'dist/node')
     )
   })
 }
-
-/**
- * Terser needs to be run inside a worker, so it cannot be part of the main
- * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
- * use the production path during build.
- */
-const terserConfig = defineConfig({
-  ...sharedNodeOptions,
-  output: {
-    ...sharedNodeOptions.output,
-    entryFileNames: `node-cjs/[name].cjs`,
-    exports: 'default',
-    format: 'cjs',
-    sourcemap: false
-  },
-  input: {
-    // eslint-disable-next-line node/no-restricted-require
-    terser: require.resolve('terser')
-  },
-  plugins: [nodeResolve(), commonjs()]
-})
 
 function createCjsConfig(isProduction: boolean) {
   return defineConfig({
@@ -245,8 +220,7 @@ export default (commandLineArgs: any) => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
-    createCjsConfig(isProduction),
-    ...(isProduction ? [terserConfig] : [])
+    createCjsConfig(isProduction)
   ])
 }
 

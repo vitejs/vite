@@ -41,6 +41,8 @@ import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
+import type { ResolvedSSROptions, SSROptions } from './ssr'
+import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
@@ -228,29 +230,6 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
 }
 
-export type SSRTarget = 'node' | 'webworker'
-
-export type SSRFormat = 'esm' | 'cjs'
-
-export interface SSROptions {
-  external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[] | true
-  /**
-   * Define the target for the ssr build. The browser field in package.json
-   * is ignored for node but used if webworker is the target
-   * Default: 'node'
-   */
-  target?: SSRTarget
-  /**
-   * Define the format for the ssr build. Since Vite v3 the SSR build generates ESM by default.
-   * `'cjs'` can be selected to generate a CJS build, but it isn't recommended. This option is
-   * left marked as experimental to give users more time to update to ESM. CJS builds requires
-   * complex externalization heuristics that aren't present in the ESM format.
-   * @experimental
-   */
-  format?: SSRFormat
-}
-
 export interface ResolveWorkerOptions {
   format: 'es' | 'iife'
   plugins: Plugin[]
@@ -285,6 +264,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
+    ssr: ResolvedSSROptions | undefined
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -491,6 +471,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const ssr = resolveSSROptions(config.ssr)
 
   const optimizeDeps = config.optimizeDeps || {}
 
@@ -508,6 +489,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    ssr,
     isWorker: false,
     mainConfig: null,
     isProduction,
@@ -790,6 +772,7 @@ async function bundleConfigFile(
   fileName: string,
   isESM = false
 ): Promise<{ code: string; dependencies: string[] }> {
+  const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -800,6 +783,9 @@ async function bundleConfigFile(
     format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
+    define: {
+      'import.meta.url': importMetaUrlVarName
+    },
     plugins: [
       {
         name: 'externalize-deps',
@@ -815,22 +801,20 @@ async function bundleConfigFile(
         }
       },
       {
-        name: 'replace-import-meta',
+        name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
+            const injectValues =
+              `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
+              `const __filename = ${JSON.stringify(args.path)};` +
+              `const ${importMetaUrlVarName} = ${JSON.stringify(
+                pathToFileURL(args.path).href
+              )};`
+
             return {
               loader: args.path.endsWith('.ts') ? 'ts' : 'js',
-              contents: contents
-                .replace(
-                  /\bimport\.meta\.url\b/g,
-                  JSON.stringify(pathToFileURL(args.path).href)
-                )
-                .replace(
-                  /\b__dirname\b/g,
-                  JSON.stringify(path.dirname(args.path))
-                )
-                .replace(/\b__filename\b/g, JSON.stringify(args.path))
+              contents: injectValues + contents
             }
           })
         }
@@ -853,10 +837,9 @@ async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
 ): Promise<UserConfig> {
-  const extension = path.extname(fileName)
   const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions[extension]!
-  _require.extensions[extension] = (module: NodeModule, filename: string) => {
+  const defaultLoader = _require.extensions['.js']
+  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
     if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
@@ -866,9 +849,8 @@ async function loadConfigFromBundledFile(
   // clear cache in case of server restart
   delete _require.cache[_require.resolve(fileName)]
   const raw = _require(fileName)
-  const config = raw.__esModule ? raw.default : raw
-  _require.extensions[extension] = defaultLoader
-  return config
+  _require.extensions['.js'] = defaultLoader
+  return raw.__esModule ? raw.default : raw
 }
 
 export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {

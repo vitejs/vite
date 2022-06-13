@@ -261,7 +261,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
         const external = options.shouldExternalize?.(id)
-
         if (
           !external &&
           asSrc &&
@@ -338,15 +337,17 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
     load(id) {
       if (id.startsWith(browserExternalId)) {
-        return isProduction
-          ? `export default {}`
-          : `export default new Proxy({}, {
-  get() {
-    throw new Error('Module "${id.slice(
-      browserExternalId.length + 1
-    )}" has been externalized for browser compatibility and cannot be accessed in client code.')
+        if (isProduction) {
+          return `export default {}`
+        } else {
+          id = id.slice(browserExternalId.length + 1)
+          return `\
+export default new Proxy({}, {
+  get(_, key) {
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.\`)
   }
 })`
+        }
       }
     }
   }
@@ -636,8 +637,17 @@ export function tryNodeResolve(
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
-    const resolvedId =
-      isDeepImport && path.extname(id) !== resolvedExt ? id + resolvedExt : id
+    let resolvedId = id
+    if (isDeepImport) {
+      // check ext before externalizing - only externalize
+      // extension-less imports and explicit .js imports
+      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
+        return
+      }
+      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
+        resolvedId += resolvedExt
+      }
+    }
     return { ...resolved, id: resolvedId, external: true }
   }
 
