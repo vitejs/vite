@@ -1,14 +1,15 @@
 /* eslint no-console: 0 */
 
-import colors from 'picocolors'
 import type { AddressInfo, Server } from 'net'
 import os from 'os'
 import readline from 'readline'
+import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { ResolvedConfig } from '.'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { loopbackHosts, wildcardHosts } from './constants'
+import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -144,16 +145,6 @@ export function createLogger(
   return logger
 }
 
-/**
- * @deprecated Use `server.printUrls()` instead
- */
-export function printHttpServerUrls(
-  server: Server,
-  config: ResolvedConfig
-): void {
-  printCommonServerUrls(server, config.server, config)
-}
-
 export function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
@@ -181,24 +172,82 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
-  if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
-    info(`  > Local: ${colors.cyan(url)}`)
-    if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${colors.dim('use `--host` to expose')}`)
+  const urls: Array<{ label: string; url: string }> = []
+  const notes: Array<{ label: string; message: string }> = []
+
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+
+    urls.push({
+      label: 'Local',
+      url: colors.cyan(
+        `${protocol}://${hostnameName}:${colors.bold(port)}${base}`
+      )
+    })
+
+    if (hostname.name === 'localhost') {
+      notes.push({
+        label: 'Hint',
+        message: colors.dim(
+          `Use ${colors.white(colors.bold('--host'))} to expose to network.`
+        )
+      })
     }
   } else {
     Object.values(os.networkInterfaces())
       .flatMap((nInterface) => nInterface ?? [])
-      .filter((detail) => detail && detail.address && detail.family === 'IPv4')
-      .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
+      .filter(
+        (detail) =>
+          detail &&
+          detail.address &&
+          // Node < v18
+          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+            // Node >= v18
+            (typeof detail.family === 'number' && detail.family === 4))
+      )
+      .forEach((detail) => {
         const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${colors.bold(port)}${base}`
-        return `  > ${type} ${colors.cyan(url)}`
+        const label = detail.address.includes('127.0.0.1') ? 'Local' : 'Network'
+
+        urls.push({ label, url: colors.cyan(url) })
       })
-      .forEach((msg) => info(msg))
   }
+
+  if (!hostname.host || wildcardHosts.has(hostname.host)) {
+    notes.push({
+      label: 'Note',
+      message: colors.dim(
+        'You are using a wildcard host. Ports might be overriden.'
+      )
+    })
+  }
+
+  const length = Math.max(
+    ...[...urls, ...notes].map(({ label }) => label.length)
+  )
+  const print = (
+    iconWithColor: string,
+    label: string,
+    messageWithColor: string
+  ) => {
+    info(
+      `  ${iconWithColor}  ${colors.bold(label)}: ${' '.repeat(
+        length - label.length
+      )}${messageWithColor}`
+    )
+  }
+
+  urls.forEach(({ label, url: text }) => {
+    print(colors.green('➜'), label, text)
+  })
+  notes.forEach(({ label, message: text }) => {
+    print(colors.white('❖'), label, text)
+  })
 }

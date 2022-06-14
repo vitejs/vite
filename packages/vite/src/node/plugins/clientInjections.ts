@@ -2,7 +2,7 @@ import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { normalizePath, isObject } from '../utils'
+import { isObject, normalizePath } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -55,7 +55,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         // avoiding inconsistencies between dev and build
         return code.replace(
           /\bprocess\.env\.NODE_ENV\b/g,
-          JSON.stringify(config.mode)
+          config.define?.['process.env.NODE_ENV'] ||
+            JSON.stringify(process.env.NODE_ENV || config.mode)
         )
       }
     }

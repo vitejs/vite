@@ -1,12 +1,17 @@
-import type { UserConfig } from '../../node'
-import type { Plugin } from '../plugin'
 import type {
-  OutputOptions,
   GetManualChunk,
   GetManualChunkApi,
-  GetModuleInfo
+  GetModuleInfo,
+  OutputOptions
 } from 'rollup'
-import { isCSSRequest } from './css'
+import type { UserConfig } from '../../node'
+import type { Plugin } from '../plugin'
+
+// This file will be built for both ESM and CJS. Avoid relying on other modules as possible.
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangRE = new RegExp(cssLangs)
+export const isCSSRequest = (request: string): boolean =>
+  cssLangRE.test(request)
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
 // We don't recommend using this strategy as a general solution moving forward
@@ -22,7 +27,7 @@ export class SplitVendorChunkCache {
   constructor() {
     this.cache = new Map<string, boolean>()
   }
-  reset() {
+  reset(): void {
     this.cache = new Map<string, boolean>()
   }
 }

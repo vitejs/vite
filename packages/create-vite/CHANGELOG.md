@@ -1,3 +1,18 @@
+## <small>2.9.3 (2022-05-02)</small>
+
+* chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
+* feat(create-vite): scaffold directory with only .git (#7971) ([a5bdb9f](https://github.com/vitejs/vite/commit/a5bdb9f)), closes [#7971](https://github.com/vitejs/vite/issues/7971)
+
+
+
+## <small>2.9.2 (2022-04-19)</small>
+
+* chore: remove useless code in preact template (#7789) ([e5729be](https://github.com/vitejs/vite/commit/e5729be)), closes [#7789](https://github.com/vitejs/vite/issues/7789)
+* fix(create-vite): bump `vue-tsc` to `0.34.7` (#7760) ([9a93233](https://github.com/vitejs/vite/commit/9a93233)), closes [#7760](https://github.com/vitejs/vite/issues/7760)
+* fix(create-vite): set skipLibCheck true (#7726) ([54e9cdd](https://github.com/vitejs/vite/commit/54e9cdd)), closes [#7726](https://github.com/vitejs/vite/issues/7726)
+
+
+
 ## <small>2.9.1 (2022-04-13)</small>
 
 * chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)

@@ -1,30 +1,35 @@
 import path from 'path'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
 import type {
-  Message,
   Loader,
+  Message,
   TransformOptions,
   TransformResult
 } from 'esbuild'
 import { transform } from 'esbuild'
+import type { RawSourceMap } from '@ampproject/remapping'
+import type { SourceMap } from 'rollup'
+import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
+import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
+  combineSourcemaps,
   createDebugger,
+  createFilter,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
 } from '../utils'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
 import type { ResolvedConfig, ViteDevServer } from '..'
-import { createFilter } from '@rollup/pluginutils'
-import { combineSourcemaps } from '../utils'
-import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
-import { parse, findAll, TSConfckParseError } from 'tsconfck'
+import type { Plugin } from '../plugin'
 import { searchForWorkspaceRoot } from '..'
 
 const debug = createDebugger('vite:esbuild')
+
+const INJECT_HELPERS_IIFE_RE =
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/s
+const INJECT_HELPERS_UMD_RE =
+  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/s
 
 let server: ViteDevServer
 
@@ -254,6 +259,26 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
             }
           : undefined)
       })
+
+      if (config.build.lib) {
+        // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
+        // names are minified potentially causing collision with other globals.
+        // We use a regex to inject the helpers inside the wrappers.
+        // We don't need to create a MagicString here because both the helpers and
+        // the headers don't modify the sourcemap
+        const injectHelpers =
+          opts.format === 'umd'
+            ? INJECT_HELPERS_UMD_RE
+            : opts.format === 'iife'
+            ? INJECT_HELPERS_IIFE_RE
+            : undefined
+        if (injectHelpers) {
+          res.code = res.code.replace(
+            injectHelpers,
+            (_, helpers, header, rest) => header + helpers + rest
+          )
+        }
+      }
       return res
     }
   }

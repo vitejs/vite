@@ -8,19 +8,19 @@ import {
   unwrapId,
   usingDynamicImport
 } from '../utils'
-import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
-import {
-  ssrExportAllKey,
-  ssrModuleExportsKey,
-  ssrImportKey,
-  ssrImportMetaKey,
-  ssrDynamicImportKey
-} from './ssrTransform'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 import { NULL_BYTE_PLACEHOLDER } from '../constants'
+import {
+  ssrDynamicImportKey,
+  ssrExportAllKey,
+  ssrImportKey,
+  ssrImportMetaKey,
+  ssrModuleExportsKey
+} from './ssrTransform'
+import { rebindErrorStacktrace, ssrRewriteStacktrace } from './ssrStacktrace'
 
 interface SSRContext {
   global: typeof globalThis
@@ -77,10 +77,13 @@ async function instantiateModule(
   const { moduleGraph } = server
   const mod = await moduleGraph.ensureEntryFromUrl(url, true)
 
+  if (mod.ssrError) {
+    throw mod.ssrError
+  }
+
   if (mod.ssrModule) {
     return mod.ssrModule
   }
-
   const result =
     mod.ssrTransformResult ||
     (await transformRequest(url, server, { ssr: true }))
@@ -202,7 +205,8 @@ async function instantiateModule(
       ssrExportAll
     )
   } catch (e) {
-    if (e.stack && fixStacktrace !== false) {
+    mod.ssrError = e
+    if (e.stack && fixStacktrace) {
       const stacktrace = ssrRewriteStacktrace(e.stack, moduleGraph)
       rebindErrorStacktrace(e, stacktrace)
       server.config.logger.error(
@@ -282,6 +286,7 @@ async function nodeImport(
       importer,
       // Non-external modules can import ESM-only modules, but only outside
       // of test runs, because we use Node `require` in Jest to avoid segfault.
+      // @ts-expect-error
       typeof jest === 'undefined'
         ? { ...resolveOptions, tryEsmOnly: true }
         : resolveOptions

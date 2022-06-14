@@ -1,22 +1,31 @@
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
-import type { TransformResult } from '../server/transformRequest'
-import { parser } from '../server/pluginContainer'
 import type {
-  Identifier,
-  Node as _Node,
-  Property,
   Function as FunctionNode,
-  Pattern
+  Identifier,
+  Pattern,
+  Property,
+  Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
+// `eslint-plugin-node` doesn't support package without main
+// eslint-disable-next-line node/no-missing-import
 import { walk as eswalk } from 'estree-walker'
-import { combineSourcemaps } from '../utils'
 import type { RawSourceMap } from '@ampproject/remapping'
+import type { TransformResult } from '../server/transformRequest'
+import { parser } from '../server/pluginContainer'
+import { combineSourcemaps } from '../utils'
+import { isJSONRequest } from '../plugins/json'
 
 type Node = _Node & {
   start: number
   end: number
+}
+
+interface TransformOptions {
+  json?: {
+    stringify?: boolean
+  }
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -28,6 +37,30 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
+  url: string,
+  options?: TransformOptions
+): Promise<TransformResult | null> {
+  if (options?.json?.stringify && isJSONRequest(url)) {
+    return ssrTransformJSON(code, inMap)
+  }
+  return ssrTransformScript(code, inMap, url)
+}
+
+async function ssrTransformJSON(
+  code: string,
+  inMap: SourceMap | null
+): Promise<TransformResult> {
+  return {
+    code: code.replace('export default', `${ssrModuleExportsKey}.default =`),
+    map: inMap,
+    deps: [],
+    dynamicDeps: []
+  }
+}
+
+async function ssrTransformScript(
+  code: string,
+  inMap: SourceMap | null,
   url: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
@@ -37,7 +70,8 @@ export async function ssrTransform(
     ast = parser.parse(code, {
       sourceType: 'module',
       ecmaVersion: 'latest',
-      locations: true
+      locations: true,
+      allowHashBang: true
     })
   } catch (err) {
     if (!err.loc || !err.loc.line) throw err
@@ -156,7 +190,7 @@ export async function ssrTransform(
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, value: ${name} });`
+            `{ enumerable: true, configurable: true, value: ${name} });`
         )
       } else {
         // anonymous default exports
@@ -429,7 +463,7 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // class method name
-  if (parent.type === 'MethodDefinition') {
+  if (parent.type === 'MethodDefinition' && !parent.computed) {
     return false
   }
 

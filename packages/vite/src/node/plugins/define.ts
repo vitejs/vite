@@ -10,15 +10,23 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  const isBuildLib = isBuild && config.build.lib
 
-  const processNodeEnv: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
-    'global.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    ),
-    'globalThis.process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || config.mode
-    )
+  // ignore replace process.env in lib build
+  const processEnv: Record<string, string> = {}
+  const processNodeEnv: Record<string, string> = {}
+  if (!isBuildLib) {
+    const nodeEnv = process.env.NODE_ENV || config.mode
+    Object.assign(processEnv, {
+      'process.env.': `({}).`,
+      'global.process.env.': `({}).`,
+      'globalThis.process.env.': `({}).`
+    })
+    Object.assign(processNodeEnv, {
+      'process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv)
+    })
   }
 
   const userDefine: Record<string, string> = {}
@@ -27,7 +35,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     userDefine[key] = typeof val === 'string' ? val : JSON.stringify(val)
   }
 
-  // during dev, import.meta properties are handled by importAnalysis plugin
+  // during dev, import.meta properties are handled by importAnalysis plugin.
+  // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
   if (isBuild) {
     const env: Record<string, any> = {
@@ -47,37 +56,30 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   function generatePattern(
     ssr: boolean
   ): [Record<string, string | undefined>, RegExp | null] {
-    const processEnv: Record<string, string> = {}
-    const isNeedProcessEnv = !ssr || config.ssr?.target === 'webworker'
-
-    if (isNeedProcessEnv) {
-      Object.assign(processEnv, {
-        'process.env.': `({}).`,
-        'global.process.env.': `({}).`,
-        'globalThis.process.env.': `({}).`
-      })
-    }
+    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
 
     const replacements: Record<string, string> = {
-      ...(isNeedProcessEnv ? processNodeEnv : {}),
+      ...(replaceProcessEnv ? processNodeEnv : {}),
       ...userDefine,
       ...importMetaKeys,
-      ...processEnv
+      ...(replaceProcessEnv ? processEnv : {})
     }
 
     const replacementsKeys = Object.keys(replacements)
     const pattern = replacementsKeys.length
       ? new RegExp(
-          // Do not allow preceding '.', but do allow preceding '...' for spread operations
-          '(?<!(?<!\\.\\.)\\.)\\b(' +
+          // Mustn't be preceded by a char that can be part of an identifier
+          // or a '.' that isn't part of a spread operator
+          '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
             replacementsKeys
               .map((str) => {
                 return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
               })
               .join('|') +
-            // prevent trailing assignments
-            ')\\b(?!\\s*?=[^=])',
-          'g'
+            // Mustn't be followed by a char that can be part of an identifier
+            // or an assignment (but allow equality operators)
+            ')(?![\\p{L}\\p{N}_$]|\\s*?=[^=])',
+          'gu'
         )
       : null
 

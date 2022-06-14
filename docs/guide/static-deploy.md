@@ -42,7 +42,7 @@ $ npm run preview
 
 The `vite preview` command will boot up local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
 
-You may configure the port of the server py passing `--port` flag as an argument.
+You may configure the port of the server by passing `--port` flag as an argument.
 
 ```json
 {
@@ -266,12 +266,17 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
    # creates a new app with a specified name
    $ heroku apps:create example
-
-   # set buildpack for static sites
-   $ heroku buildpacks:set https://github.com/heroku/heroku-buildpack-static.git
    ```
 
-6. Deploy your site:
+6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
+
+   ```bash
+   # set buildpacks
+   $ heroku buildpacks:set heroku/nodejs
+   $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
+   ```
+
+7. Deploy your site:
 
    ```bash
    # publish site

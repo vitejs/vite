@@ -1,16 +1,19 @@
-import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
 import aliasPlugin from '@rollup/plugin-alias'
+import type { ResolvedConfig } from '../config'
+import { isDepsOptimizerEnabled } from '../config'
+import type { Plugin } from '../plugin'
+import { getDepsOptimizer } from '../optimizer'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
-import { optimizedDepsPlugin } from './optimizedDeps'
+import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
-import { wasmPlugin } from './wasm'
+import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
 import { preAliasPlugin } from './preAlias'
@@ -19,6 +22,8 @@ import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
+import { dynamicImportVarsPlugin } from './dynamicImportVars'
+import { importGlobPlugin } from './importMetaGlob'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -36,12 +41,19 @@ export async function resolvePlugins(
   return [
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    isBuild ? null : preAliasPlugin(),
+    isBuild ? null : preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
+    ...(isDepsOptimizerEnabled(config)
+      ? [
+          isBuild
+            ? optimizedDepsBuildPlugin(config)
+            : optimizedDepsPlugin(config)
+        ]
+      : []),
     resolvePlugin({
       ...config.resolve,
       root: config.root,
@@ -49,9 +61,13 @@ export async function resolvePlugins(
       isBuild,
       packageCache: config.packageCache,
       ssrConfig: config.ssr,
-      asSrc: true
+      asSrc: true,
+      getDepsOptimizer: () => getDepsOptimizer(config),
+      shouldExternalize:
+        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
+          ? (id) => shouldExternalizeForSSR(id, config)
+          : undefined
     }),
-    isBuild ? null : optimizedDepsPlugin(),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config.esbuild) : null,
@@ -62,16 +78,19 @@ export async function resolvePlugins(
       },
       isBuild
     ),
-    wasmPlugin(config),
+    wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
     ...normalPlugins,
+    wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
+    dynamicImportVarsPlugin(config),
+    importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else
