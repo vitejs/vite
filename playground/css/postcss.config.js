@@ -34,7 +34,7 @@ function testDirDep() {
         result.messages.push({
           type: 'dir-dependency',
           plugin: 'dir-dep',
-          dir: './glob-dep/nested (dir)',
+          dir: './glob-dep/nested (dir)', // includes special characters in glob
           glob: '*.css',
           parent: result.opts.from
         })
