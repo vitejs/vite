@@ -173,6 +173,7 @@ function printServerUrls(
   info: Logger['info']
 ): void {
   const urls: Array<{ label: string; url: string }> = []
+  const notes: Array<{ label: string; message: string }> = []
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
@@ -191,9 +192,11 @@ function printServerUrls(
     })
 
     if (hostname.name === 'localhost') {
-      urls.push({
-        label: 'Network',
-        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
+      notes.push({
+        label: 'Hint',
+        message: colors.dim(
+          `Use ${colors.white(colors.bold('--host'))} to expose to network.`
+        )
       })
     }
   } else {
@@ -217,9 +220,17 @@ function printServerUrls(
       })
   }
 
-  const length = urls.reduce(
-    (length, { label }) => Math.max(length, label.length),
-    0
+  if (!hostname.host || wildcardHosts.has(hostname.host)) {
+    notes.push({
+      label: 'Note',
+      message: colors.dim(
+        'You are using a wildcard host. Ports might be overriden.'
+      )
+    })
+  }
+
+  const length = Math.max(
+    ...[...urls, ...notes].map(({ label }) => label.length)
   )
   const print = (
     iconWithColor: string,
@@ -236,11 +247,7 @@ function printServerUrls(
   urls.forEach(({ label, url: text }) => {
     print(colors.green('➜'), label, text)
   })
-  if (!hostname.host || wildcardHosts.has(hostname.host)) {
-    print(
-      colors.bold(colors.blue('ⓘ')),
-      'Note',
-      colors.dim('You are using a wildcard host. Ports might be overriden.')
-    )
-  }
+  notes.forEach(({ label, message: text }) => {
+    print(colors.white('❖'), label, text)
+  })
 }
