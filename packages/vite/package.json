@@ -51,8 +51,8 @@
     "patch-types": "esno scripts/patchTypes.ts",
     "roll-types": "api-extractor run && rimraf temp",
     "check-dist-types": "tsc --project tsconfig.check.json",
-    "lint": "eslint --ext .ts src/**",
-    "format": "prettier --write --parser typescript \"src/**/*.ts\"",
+    "lint": "eslint --cache --ext .ts src/**",
+    "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
