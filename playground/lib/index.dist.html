@@ -4,6 +4,15 @@
 <div class="iife"></div>
 <div class="dynamic-import-message"></div>
 
+<script>
+  // shim test preserve process.env.NODE_ENV
+  globalThis.process = {
+    env: {
+      NODE_ENV: 'production'
+    }
+  }
+</script>
+
 <script type="module">
   import myLib from './my-lib-custom-filename.mjs'
 

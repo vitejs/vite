@@ -13,6 +13,10 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
+import type MagicString from 'magic-string'
+
+import type { TransformResult } from 'rollup'
+import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -21,6 +25,21 @@ import {
   FS_PREFIX,
   VALID_ID_PREFIX
 } from './constants'
+import type { ResolvedConfig } from '.'
+
+/**
+ * Inlined to keep `@rollup/pluginutils` in devDependencies
+ */
+export type FilterPattern =
+  | ReadonlyArray<string | RegExp>
+  | string
+  | RegExp
+  | null
+export const createFilter = _createFilter as (
+  include?: FilterPattern,
+  exclude?: FilterPattern,
+  options?: { resolve?: string | false | null }
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -33,7 +52,10 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
+  id
+    .replace(/[\/:]/g, '_')
+    .replace(/[\.]/g, '__')
+    .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -481,7 +503,7 @@ export function writeFile(
 }
 
 /**
- * Use instead of fs.existsSync(filename)
+ * Use fs.statSync(filename) instead of fs.existsSync(filename)
  * #2051 if we don't have read permission on a directory, existsSync() still
  * works and will result in massively slow subsequent checks (which are
  * unnecessary in the first place)
@@ -787,6 +809,18 @@ export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }
 
+export const requireResolveFromRootWithFallback = (
+  root: string,
+  id: string
+): string => {
+  // Search in the root directory first, and fallback to the default require paths.
+  const fallbackPaths = _require.resolve.paths?.(id) || []
+  const path = _require.resolve(id, {
+    paths: [root, ...fallbackPaths]
+  })
+  return path
+}
+
 // Based on node-graceful-fs
 
 // The ISC License
@@ -970,4 +1004,17 @@ function normalizeSingleAlias({
     alias.customResolver = customResolver
   }
   return alias
+}
+
+export function transformResult(
+  s: MagicString,
+  id: string,
+  config: ResolvedConfig
+): TransformResult {
+  const isBuild = config.command === 'build'
+  const needSourceMap = !isBuild || config.build.sourcemap
+  return {
+    code: s.toString(),
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+  }
 }

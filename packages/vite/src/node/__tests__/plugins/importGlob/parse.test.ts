@@ -269,7 +269,6 @@ describe('parse negatives', async () => {
   })
 
   it('template', async () => {
-    // eslint-disable-next-line no-template-curly-in-string
     expect(
       await runError('import.meta.glob(`hi ${hey}`)')
     ).toMatchInlineSnapshot(

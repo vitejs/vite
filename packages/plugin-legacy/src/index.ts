@@ -47,6 +47,8 @@ const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('d
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
+const _require = createRequire(import.meta.url)
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   const targets = options.targets || 'defaults'
@@ -61,12 +63,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
-  // System JS relies on the Promise interface. It needs to be polyfilled for IE 11. (array.iterator is mandatory for supporting Promise.all)
-  const DEFAULT_LEGACY_POLYFILL = [
-    'core-js/modules/es.promise',
-    'core-js/modules/es.array.iterator'
-  ]
-  const legacyPolyfills = new Set(DEFAULT_LEGACY_POLYFILL)
+  const legacyPolyfills = new Set<string>()
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
@@ -148,11 +145,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       // legacy bundle
       if (legacyPolyfills.size || genDynamicFallback) {
-        if (!legacyPolyfills.has('es.promise')) {
-          // check if the target needs Promise polyfill because SystemJS relies
-          // on it
-          await detectPolyfills(`Promise.resolve()`, targets, legacyPolyfills)
-        }
+        // check if the target needs Promise polyfill because SystemJS relies on it
+        // https://github.com/systemjs/systemjs#ie11-support
+        await detectPolyfills(
+          `Promise.resolve(); Promise.all();`,
+          targets,
+          legacyPolyfills
+        )
 
         isDebug &&
           console.log(
@@ -175,7 +174,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
-  const _require = createRequire(import.meta.url)
   const legacyPostPlugin: Plugin = {
     name: 'vite:legacy-post-process',
     enforce: 'post',
@@ -328,21 +326,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             'env',
-            {
-              targets,
-              modules: false,
-              bugfixes: true,
-              loose: false,
-              useBuiltIns: needPolyfills ? 'usage' : false,
-              corejs: needPolyfills
-                ? {
-                    version: _require('core-js/package.json').version,
-                    proposals: false
-                  }
-                : undefined,
-              shippedProposals: true,
+            createBabelPresetEnvOptions(targets, {
+              needPolyfills,
               ignoreBrowserslistConfig: options.ignoreBrowserslistConfig
-            }
+            })
           ]
         ]
       })
@@ -373,6 +360,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             type: 'module',
+            crossorigin: true,
             src: `${config.base}${modernPolyfillFilename}`
           }
         })
@@ -403,6 +391,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             nomodule: true,
+            crossorigin: true,
             id: legacyPolyfillId,
             src: `${config.base}${legacyPolyfillFilename}`
           },
@@ -419,15 +408,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         chunk.facadeModuleId
       )
       if (legacyEntryFilename) {
+        // `assets/foo.js` means importing "named register" in SystemJS
+        const nonBareBase = config.base === '' ? './' : config.base
         tags.push({
           tag: 'script',
           attrs: {
             nomodule: true,
+            crossorigin: true,
             // we set the entry path on the element as an attribute so that the
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': config.base + legacyEntryFilename
+            'data-src': nonBareBase + legacyEntryFilename
           },
           children: systemJSInlineCode,
           injectTo: 'body'
@@ -526,14 +518,7 @@ export async function detectPolyfills(
     presets: [
       [
         'env',
-        {
-          targets,
-          modules: false,
-          useBuiltIns: 'usage',
-          corejs: { version: 3, proposals: false },
-          shippedProposals: true,
-          ignoreBrowserslistConfig: true
-        }
+        createBabelPresetEnvOptions(targets, { ignoreBrowserslistConfig: true })
       ]
     ]
   })
@@ -547,6 +532,30 @@ export async function detectPolyfills(
         list.add(source)
       }
     }
+  }
+}
+
+function createBabelPresetEnvOptions(
+  targets: any,
+  {
+    needPolyfills = true,
+    ignoreBrowserslistConfig
+  }: { needPolyfills?: boolean; ignoreBrowserslistConfig?: boolean }
+) {
+  return {
+    targets,
+    bugfixes: true,
+    loose: false,
+    modules: false,
+    useBuiltIns: needPolyfills ? 'usage' : false,
+    corejs: needPolyfills
+      ? {
+          version: _require('core-js/package.json').version,
+          proposals: false
+        }
+      : undefined,
+    shippedProposals: true,
+    ignoreBrowserslistConfig
   }
 }
 

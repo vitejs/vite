@@ -132,7 +132,20 @@ module.exports = defineConfig({
         'node/no-extraneous-require': 'off',
         'node/no-missing-import': 'off',
         'node/no-missing-require': 'off',
-        'no-undef': 'off'
+        'no-undef': 'off',
+        // engine field doesn't exist in playgrounds
+        'node/no-unsupported-features/es-builtins': [
+          'error',
+          {
+            version: '>=14.6.0'
+          }
+        ],
+        'node/no-unsupported-features/node-builtins': [
+          'error',
+          {
+            version: '>=14.6.0'
+          }
+        ]
       }
     },
     {
@@ -142,7 +155,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['*.js'],
+      files: ['playground/**', '*.js'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
@@ -159,5 +172,6 @@ module.exports = defineConfig({
         'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     }
-  ]
+  ],
+  reportUnusedDisableDirectives: true
 })

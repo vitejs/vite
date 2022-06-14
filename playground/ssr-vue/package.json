@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "example-external-component": "file:example-external-component",
-    "vue": "^3.2.35",
-    "vue-router": "^4.0.15",
+    "vue": "^3.2.37",
+    "vue-router": "^4.0.16",
     "vuex": "^4.0.2"
   },
   "devDependencies": {
