@@ -2,7 +2,7 @@
 // React is the ultimate test of this because its dynamic exports assignments
 // are not statically detectable by @rollup/plugin-commonjs.
 import React, { useState } from 'react'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
 import { Socket } from 'phoenix'
 import clip from 'clipboard'
 

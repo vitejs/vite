@@ -4,7 +4,7 @@
 ;(async () => {
   const { useState } = await import('react')
   const React = (await import('react')).default
-  const ReactDOM = await import('react-dom')
+  const ReactDOM = await import('react-dom/client')
 
   const clip = await import('clipboard')
   if (typeof clip.default === 'function') {
