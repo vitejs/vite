@@ -67,10 +67,12 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-type Promisable<T> = T | Promise<T>
-
 export type PluginOption =
-  | Promisable<Plugin | false | null | undefined>
+  | Plugin
+  | false
+  | null
+  | undefined
+  | Promise<Plugin | false | null | undefined>
   | PluginOption[]
 
 export interface UserConfig {
