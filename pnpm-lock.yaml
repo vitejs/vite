@@ -53,7 +53,7 @@ importers:
       picocolors: ^1.0.0
       playwright-chromium: ^1.22.2
       pnpm: ^7.2.1
-      prettier: 2.6.2
+      prettier: 2.7.0
       prompts: ^2.4.2
       rimraf: ^3.0.2
       rollup: ^2.75.6
@@ -111,7 +111,7 @@ importers:
       picocolors: 1.0.0
       playwright-chromium: 1.22.2
       pnpm: 7.2.1
-      prettier: 2.6.2
+      prettier: 2.7.0
       prompts: 2.4.2
       rimraf: 3.0.2
       rollup: 2.75.6
@@ -7040,8 +7040,8 @@ packages:
     engines: {node: '>= 0.8.0'}
     dev: true
 
-  /prettier/2.6.2:
-    resolution: {integrity: sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==}
+  /prettier/2.7.0:
+    resolution: {integrity: sha512-nwoX4GMFgxoPC6diHvSwmK/4yU8FFH3V8XWtLQrbj4IBsK2pkYhG4kf/ljF/haaZ/aii+wNJqISrCDPgxGWDVQ==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
