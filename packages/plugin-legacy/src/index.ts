@@ -134,7 +134,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'es',
           opts,
-          false
+          true
         )
         return
       }
