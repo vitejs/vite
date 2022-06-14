@@ -167,7 +167,7 @@ async function getCertificate(cacheDir: string) {
 
     return content
   } catch {
-    const content = (await import('./certificate')).createCertificate()
+    const content = await (await import('./certificate')).createCertificate()
     fsp
       .mkdir(cacheDir, { recursive: true })
       .then(() => fsp.writeFile(cachePath, content))
