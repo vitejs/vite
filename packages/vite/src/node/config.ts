@@ -72,8 +72,8 @@ export type PluginOption =
   | false
   | null
   | undefined
-  | Promise<Plugin | false | null | undefined>
   | PluginOption[]
+  | Promise<Plugin | false | null | undefined | PluginOption[]>
 
 export interface UserConfig {
   /**
