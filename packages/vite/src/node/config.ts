@@ -576,15 +576,13 @@ export async function resolveConfig(
     )
     if (assetFileNamesList.length > 1) {
       const firstAssetFileNames = assetFileNamesList[0]
-      const hasDifferentReference = assetFileNamesList
-        .slice(1)
-        .some((assetFileNames) => assetFileNames !== firstAssetFileNames)
+      const hasDifferentReference = assetFileNamesList.some(
+        (assetFileNames) => assetFileNames !== firstAssetFileNames
+      )
       if (hasDifferentReference) {
         resolved.logger.warn(
           colors.yellow(`
-It's recommended that all assetFileNames have the same reference.
-In other words, every assetFileNames1 === assetFileNames2 should be true.
-Vite adopts the first assetFileNames if build.rollupOptions.output is an array.
+assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
 `)
         )
       }
