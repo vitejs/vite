@@ -37,7 +37,7 @@ test('inline variables', async () => {
 })
 
 test('NODE_ENV', async () => {
-  expect(await page.textContent('.node-env')).toBe(mode)
+  expect(await page.textContent('.node-env')).toBe(process.env.NODE_ENV)
 })
 
 test('env object', async () => {

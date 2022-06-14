@@ -10,6 +10,7 @@ export { resolvePackageData } from './packages'
 export * from './publicUtils'
 
 // additional types
+export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
   ViteDevServer,
@@ -36,8 +37,15 @@ export type {
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
-  OptimizedDeps
+  DepsOptimizer,
+  ExportsData
 } from './optimizer'
+export type {
+  ResolvedSSROptions,
+  SSROptions,
+  SSRFormat,
+  SSRTarget
+} from './ssr'
 export type { Plugin } from './plugin'
 export type { PackageCache, PackageData } from './packages'
 export type {

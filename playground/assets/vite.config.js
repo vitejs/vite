@@ -11,10 +11,12 @@ module.exports = {
       '@': path.resolve(__dirname, 'nested')
     }
   },
+  assetsInclude: ['**/*.unknown'],
   build: {
     outDir: 'dist/foo',
     assetsInlineLimit: 8192, // 8kb
     manifest: true,
     watch: {}
-  }
+  },
+  cacheDir: 'node_modules/.vite/foo'
 }

@@ -71,7 +71,7 @@ test('should load dynamic import with vars', async () => {
 test('should load dynamic import with vars alias', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-alias'),
-    'hello',
+    'hi',
     true
   )
 })

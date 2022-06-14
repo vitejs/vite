@@ -150,7 +150,7 @@ export async function untilUpdated(
   runInBuild = false
 ): Promise<void> {
   if (isBuild && !runInBuild) return
-  const maxTries = process.env.CI ? 100 : 50
+  const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
@@ -162,12 +162,12 @@ export async function untilUpdated(
   }
 }
 
-export const extractSourcemap = (content: string) => {
+export const extractSourcemap = (content: string): any => {
   const lines = content.trim().split('\n')
   return fromComment(lines[lines.length - 1]).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any) => {
+export const formatSourcemapForSnapshot = (map: any): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
@@ -182,8 +182,8 @@ export async function killProcess(
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { default: execa } = await import('execa')
-      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      const { execaCommandSync } = await import('execa')
+      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
     } catch (e) {
       console.error('failed to taskkill:', e)
     }

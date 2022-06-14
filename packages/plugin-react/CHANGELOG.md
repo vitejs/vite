@@ -1,3 +1,22 @@
+## 2.0.0-alpha.3 (2022-06-12)
+
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* fix(plugin-react): apply manual runtime interop (#8546) ([f09299c](https://github.com/vitejs/vite/commit/f09299c)), closes [#8546](https://github.com/vitejs/vite/issues/8546)
+* fix(plugin-react): support import namespace in `parseReactAlias` (#5313) ([05b91cd](https://github.com/vitejs/vite/commit/05b91cd)), closes [#5313](https://github.com/vitejs/vite/issues/5313)
+* refactor: remove hooks ssr param support (#8491) ([f59adf8](https://github.com/vitejs/vite/commit/f59adf8)), closes [#8491](https://github.com/vitejs/vite/issues/8491)
+
+
+
+## 2.0.0-alpha.2 (2022-05-26)
+
+* feat: non-blocking esbuild optimization at build time (#8280) ([909cf9c](https://github.com/vitejs/vite/commit/909cf9c)), closes [#8280](https://github.com/vitejs/vite/issues/8280)
+* feat(plugin-react): allow options.babel to be a function (#6238) ([f4d6262](https://github.com/vitejs/vite/commit/f4d6262)), closes [#6238](https://github.com/vitejs/vite/issues/6238)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+* fix(plugin-react): broken optimized deps dir check (#8255) ([9e2a1ea](https://github.com/vitejs/vite/commit/9e2a1ea)), closes [#8255](https://github.com/vitejs/vite/issues/8255)
+* chore: use `esno` to replace `ts-node` (#8162) ([c18a5f3](https://github.com/vitejs/vite/commit/c18a5f3)), closes [#8162](https://github.com/vitejs/vite/issues/8162)
+
+
+
 ## 2.0.0-alpha.1 (2022-05-19)
 
 * fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)

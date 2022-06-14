@@ -13,6 +13,10 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
+import type MagicString from 'magic-string'
+
+import type { TransformResult } from 'rollup'
+import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -21,6 +25,21 @@ import {
   FS_PREFIX,
   VALID_ID_PREFIX
 } from './constants'
+import type { ResolvedConfig } from '.'
+
+/**
+ * Inlined to keep `@rollup/pluginutils` in devDependencies
+ */
+export type FilterPattern =
+  | ReadonlyArray<string | RegExp>
+  | string
+  | RegExp
+  | null
+export const createFilter = _createFilter as (
+  include?: FilterPattern,
+  exclude?: FilterPattern,
+  options?: { resolve?: string | false | null }
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -33,7 +52,10 @@ export function unwrapId(id: string): string {
 }
 
 export const flattenId = (id: string): string =>
-  id.replace(/(\s*>\s*)/g, '__').replace(/[\/\.:]/g, '_')
+  id
+    .replace(/[\/:]/g, '_')
+    .replace(/[\.]/g, '__')
+    .replace(/(\s*>\s*)/g, '___')
 
 export const normalizeId = (id: string): string =>
   id.replace(/(\s*>\s*)/g, ' > ')
@@ -234,10 +256,10 @@ export const isJSRequest = (url: string): boolean => {
 
 const knownTsRE = /\.(ts|mts|cts|tsx)$/
 const knownTsOutputRE = /\.(js|mjs|cjs|jsx)$/
-export const isTsRequest = (url: string) => knownTsRE.test(url)
-export const isPossibleTsOutput = (url: string) =>
+export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
+export const isPossibleTsOutput = (url: string): boolean =>
   knownTsOutputRE.test(cleanUrl(url))
-export function getPotentialTsSrcPaths(filePath: string) {
+export function getPotentialTsSrcPaths(filePath: string): string[] {
   const [name, type, query = ''] = filePath.split(/(\.(?:[cm]?js|jsx))(\?.*)?$/)
   const paths = [name + type.replace('js', 'ts') + query]
   if (!type.endsWith('x')) {
@@ -481,7 +503,7 @@ export function writeFile(
 }
 
 /**
- * Use instead of fs.existsSync(filename)
+ * Use fs.statSync(filename) instead of fs.existsSync(filename)
  * #2051 if we don't have read permission on a directory, existsSync() still
  * works and will result in massively slow subsequent checks (which are
  * unnecessary in the first place)
@@ -504,14 +526,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
     if (skip?.includes(file)) {
       continue
     }
-    const abs = path.resolve(dir, file)
-    // baseline is Node 12 so can't use rmSync :(
-    if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
-      fs.rmdirSync(abs)
-    } else {
-      fs.unlinkSync(abs)
-    }
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 
@@ -532,13 +547,11 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
-export function removeDirSync(dir: string) {
-  if (fs.existsSync(dir)) {
-    const rmSync = fs.rmSync ?? fs.rmdirSync // TODO: Remove after support for Node 12 is dropped
-    rmSync(dir, { recursive: true })
-  }
-}
-
+export const removeDir = isWindows
+  ? promisify(gracefulRemoveDir)
+  : function removeDirSync(dir: string) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
 export const renameDir = isWindows ? promisify(gracefulRename) : fs.renameSync
 
 export function ensureWatchedFile(
@@ -790,10 +803,22 @@ export function parseRequest(id: string): Record<string, string> | null {
   return Object.fromEntries(new URLSearchParams(search))
 }
 
-export const blankReplacer = (match: string) => ' '.repeat(match.length)
+export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 export function getHash(text: Buffer | string): string {
   return createHash('sha256').update(text).digest('hex').substring(0, 8)
+}
+
+export const requireResolveFromRootWithFallback = (
+  root: string,
+  id: string
+): string => {
+  // Search in the root directory first, and fallback to the default require paths.
+  const fallbackPaths = _require.resolve.paths?.(id) || []
+  const path = _require.resolve(id, {
+    paths: [root, ...fallbackPaths]
+  })
+  return path
 }
 
 // Based on node-graceful-fs
@@ -834,7 +859,38 @@ function gracefulRename(
   })
 }
 
-export function emptyCssComments(raw: string) {
+const GRACEFUL_REMOVE_DIR_TIMEOUT = 5000
+function gracefulRemoveDir(
+  dir: string,
+  cb: (error: NodeJS.ErrnoException | null) => void
+) {
+  const start = Date.now()
+  let backoff = 0
+  fs.rm(dir, { recursive: true }, function CB(er) {
+    if (er) {
+      if (
+        (er.code === 'ENOTEMPTY' ||
+          er.code === 'EACCES' ||
+          er.code === 'EPERM') &&
+        Date.now() - start < GRACEFUL_REMOVE_DIR_TIMEOUT
+      ) {
+        setTimeout(function () {
+          fs.rm(dir, { recursive: true }, CB)
+        }, backoff)
+        if (backoff < 100) backoff += 10
+        return
+      }
+
+      if (er.code === 'ENOENT') {
+        er = null
+      }
+    }
+
+    if (cb) cb(er)
+  })
+}
+
+export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
@@ -948,4 +1004,17 @@ function normalizeSingleAlias({
     alias.customResolver = customResolver
   }
   return alias
+}
+
+export function transformResult(
+  s: MagicString,
+  id: string,
+  config: ResolvedConfig
+): TransformResult {
+  const isBuild = config.command === 'build'
+  const needSourceMap = !isBuild || config.build.sourcemap
+  return {
+    code: s.toString(),
+    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+  }
 }

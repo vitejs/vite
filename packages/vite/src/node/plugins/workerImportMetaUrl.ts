@@ -5,7 +5,14 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { cleanUrl, injectQuery, normalizePath, parseRequest } from '../utils'
+import {
+  cleanUrl,
+  injectQuery,
+  normalizePath,
+  parseRequest,
+  transformResult
+} from '../utils'
+import { getDepsOptimizer } from '../optimizer'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -113,9 +120,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const file = normalizePath(
             path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           )
+
           let url: string
           if (isBuild) {
-            url = await workerFileToUrl(this, config, file, query)
+            getDepsOptimizer(config)?.registerWorkersSource(id)
+            url = await workerFileToUrl(config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
@@ -127,10 +136,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
+          return transformResult(s, id, config)
         }
 
         return null

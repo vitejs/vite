@@ -7,7 +7,7 @@ import { isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-webworker']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   await kill(port)
 
   // we build first, regardless of whether it's prod/build mode
@@ -25,7 +25,7 @@ export async function serve() {
     }
   })
 
-  const { createServer } = require(path.resolve(rootDir, 'worker.js'))
+  const { createServer } = await import(path.resolve(rootDir, 'worker.js'))
   const { app } = await createServer(rootDir, isBuild)
 
   return new Promise((resolve, reject) => {

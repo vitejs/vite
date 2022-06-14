@@ -14,7 +14,7 @@ import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   isParentDirectory,
   mergeConfig,
@@ -22,14 +22,13 @@ import {
   resolveHostname
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
-import { resolveSSRExternal } from '../ssr/ssrExternal'
+import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
 import {
   rebindErrorStacktrace,
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { createOptimizedDeps } from '../optimizer/registerMissing'
-import type { OptimizedDeps } from '../optimizer'
+import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -64,10 +63,6 @@ import { searchForWorkspaceRoot } from './searchRoot'
 export { searchForWorkspaceRoot } from './searchRoot'
 
 export interface ServerOptions extends CommonServerOptions {
-  /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   */
-  force?: boolean
   /**
    * Configure HMR-specific options (port, host, path & protocol)
    */
@@ -237,10 +232,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _optimizedDeps: OptimizedDeps | null
-  /**
-   * @internal
-   */
   _importGlobMap: Map<string, string[][]>
   /**
    * Deps that are externalized
@@ -308,7 +299,6 @@ export async function createServer(
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  // eslint-disable-next-line prefer-const
   let exitProcess: () => void
 
   const server: ViteDevServer = {
@@ -329,18 +319,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (!server._ssrExternals) {
-        let knownImports: string[] = []
-        const optimizedDeps = server._optimizedDeps
-        if (optimizedDeps) {
-          await optimizedDeps.scanProcessing
-          knownImports = [
-            ...Object.keys(optimizedDeps.metadata.optimized),
-            ...Object.keys(optimizedDeps.metadata.discovered)
-          ]
-        }
-        server._ssrExternals = resolveSSRExternal(config, knownImports)
-      }
+      await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
         server,
@@ -362,10 +341,11 @@ export async function createServer(
       return startServer(server, port, isRestart)
     },
     async close() {
-      process.off('SIGTERM', exitProcess)
-
-      if (!middlewareMode && process.env.CI !== 'true') {
-        process.stdin.off('end', exitProcess)
+      if (!middlewareMode) {
+        process.off('SIGTERM', exitProcess)
+        if (process.env.CI !== 'true') {
+          process.stdin.off('end', exitProcess)
+        }
       }
 
       await Promise.all([
@@ -393,7 +373,6 @@ export async function createServer(
       return server._restartPromise
     },
 
-    _optimizedDeps: null,
     _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
@@ -403,18 +382,18 @@ export async function createServer(
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)
 
-  exitProcess = async () => {
-    try {
-      await server.close()
-    } finally {
-      process.exit()
+  if (!middlewareMode) {
+    exitProcess = async () => {
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
     }
-  }
-
-  process.once('SIGTERM', exitProcess)
-
-  if (!middlewareMode && process.env.CI !== 'true') {
-    process.stdin.on('end', exitProcess)
+    process.once('SIGTERM', exitProcess)
+    if (process.env.CI !== 'true') {
+      process.stdin.on('end', exitProcess)
+    }
   }
 
   const { packageCache } = config
@@ -498,7 +477,9 @@ export async function createServer(
   // this applies before the transform middleware so that these files are served
   // as-is without transforms.
   if (config.publicDir) {
-    middlewares.use(servePublicMiddleware(config.publicDir))
+    middlewares.use(
+      servePublicMiddleware(config.publicDir, config.server.headers)
+    )
   }
 
   // main transform middleware
@@ -508,8 +489,10 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
+  const isMiddlewareMode = middlewareMode && middlewareMode !== 'html'
+
   // spa fallback
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (config.spa && !isMiddlewareMode) {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -518,9 +501,12 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (!middlewareMode || middlewareMode === 'html') {
+  if (config.spa && !isMiddlewareMode) {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
+  }
+
+  if (!isMiddlewareMode) {
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
@@ -532,9 +518,9 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
 
-  const initOptimizer = () => {
-    if (!config.optimizeDeps.disabled) {
-      server._optimizedDeps = createOptimizedDeps(server)
+  const initOptimizer = async () => {
+    if (isDepsOptimizerEnabled(config)) {
+      await initDepsOptimizer(config, server)
     }
   }
 
@@ -546,7 +532,7 @@ export async function createServer(
       if (!isOptimized) {
         try {
           await container.buildStart({})
-          initOptimizer()
+          await initOptimizer()
           isOptimized = true
         } catch (e) {
           httpServer.emit('error', e)
@@ -557,7 +543,7 @@ export async function createServer(
     }) as any
   } else {
     await container.buildStart({})
-    initOptimizer()
+    await initOptimizer()
   }
 
   return server
@@ -759,4 +745,19 @@ async function restartServer(server: ViteDevServer) {
 
   // new server (the current server) can restart now
   newServer._restartPromise = null
+}
+
+async function updateCjsSsrExternals(server: ViteDevServer) {
+  if (!server._ssrExternals) {
+    let knownImports: string[] = []
+    const depsOptimizer = getDepsOptimizer(server.config)
+    if (depsOptimizer) {
+      await depsOptimizer.scanProcessing
+      knownImports = [
+        ...Object.keys(depsOptimizer.metadata.optimized),
+        ...Object.keys(depsOptimizer.metadata.discovered)
+      ]
+    }
+    server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
+  }
 }

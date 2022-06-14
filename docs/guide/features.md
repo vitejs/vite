@@ -14,7 +14,7 @@ The above will throw an error in the browser. Vite will detect such bare module 
 
 1. [Pre-bundle](./dep-pre-bundling) them to improve page loading speed and convert CommonJS / UMD modules to ESM. The pre-bundling step is performed with [esbuild](http://esbuild.github.io/) and makes Vite's cold start time significantly faster than any JavaScript-based bundler.
 
-2. Rewrite the imports to valid URLs like `/node_modules/.vite/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
+2. Rewrite the imports to valid URLs like `/node_modules/.vite/deps/my-dep.js?v=f3sf2ebd` so that the browser can import them properly.
 
 **Dependencies are Strongly Cached**
 
@@ -34,7 +34,7 @@ Vite only performs transpilation on `.ts` files and does **NOT** perform type ch
 
 Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
-Use the [Type-Only Imports and Export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax to avoid potential problems like type-only imports being incorrectly bundled. for example:
+Use the [Type-Only Imports and Export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax to avoid potential problems like type-only imports being incorrectly bundled, for example:
 
 ```ts
 import type { T } from 'only/types'
@@ -209,6 +209,15 @@ Vite improves `@import` resolving for Sass and Less so that Vite aliases are als
 `@import` alias and url rebasing are not supported for Stylus due to its API constraints.
 
 You can also use CSS modules combined with pre-processors by prepending `.module` to the file extension, for example `style.module.scss`.
+
+### Disabling CSS injection into the page
+
+The automatic injection of CSS contents can be turned off via the `?inline` query parameter. In this case, the processed CSS string is returned as the module's default export as usual, but the styles aren't injected to the page.
+
+```js
+import styles from './foo.css' // will be injected into the page
+import otherStyles from './bar.css?inline' // will not be injected into the page
+```
 
 ## Static Assets
 

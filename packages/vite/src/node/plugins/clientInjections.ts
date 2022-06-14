@@ -55,7 +55,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         // avoiding inconsistencies between dev and build
         return code.replace(
           /\bprocess\.env\.NODE_ENV\b/g,
-          JSON.stringify(config.mode)
+          config.define?.['process.env.NODE_ENV'] ||
+            JSON.stringify(process.env.NODE_ENV || config.mode)
         )
       }
     }

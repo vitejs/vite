@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v2.2.2
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v3
@@ -74,6 +74,9 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
+      - name: Test docs
+        run: pnpm run test-docs
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -84,7 +87,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v2.2.2
 
       - name: Set node version to 16
         uses: actions/setup-node@v3

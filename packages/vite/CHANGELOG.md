@@ -1,3 +1,115 @@
+## 3.0.0-alpha.10 (2022-06-10)
+
+* fix: deps optimizer idle logic for workers (fix #8479) (#8511) ([1e05548](https://github.com/vitejs/vite/commit/1e05548)), closes [#8479](https://github.com/vitejs/vite/issues/8479) [#8511](https://github.com/vitejs/vite/issues/8511)
+* fix: not match \n when injecting esbuild helpers (#8414) ([5a57626](https://github.com/vitejs/vite/commit/5a57626)), closes [#8414](https://github.com/vitejs/vite/issues/8414)
+* fix: respect optimize deps entries (#8489) ([fba82d0](https://github.com/vitejs/vite/commit/fba82d0)), closes [#8489](https://github.com/vitejs/vite/issues/8489)
+* fix(optimizer): encode `_` and `.` in different way (#8508) ([9065b37](https://github.com/vitejs/vite/commit/9065b37)), closes [#8508](https://github.com/vitejs/vite/issues/8508)
+* fix(optimizer): external require-import conversion (fixes #2492, #3409) (#8459) ([1061bbd](https://github.com/vitejs/vite/commit/1061bbd)), closes [#2492](https://github.com/vitejs/vite/issues/2492) [#3409](https://github.com/vitejs/vite/issues/3409) [#8459](https://github.com/vitejs/vite/issues/8459)
+* feat: better config `__dirname` support (#8442) ([51e9195](https://github.com/vitejs/vite/commit/51e9195)), closes [#8442](https://github.com/vitejs/vite/issues/8442)
+* feat: expose `version` (#8456) ([e992594](https://github.com/vitejs/vite/commit/e992594)), closes [#8456](https://github.com/vitejs/vite/issues/8456)
+* feat: handle named imports of builtin modules (#8338) ([e2e44ff](https://github.com/vitejs/vite/commit/e2e44ff)), closes [#8338](https://github.com/vitejs/vite/issues/8338)
+* feat: preserve process env vars in lib build (#8090) ([908c9e4](https://github.com/vitejs/vite/commit/908c9e4)), closes [#8090](https://github.com/vitejs/vite/issues/8090)
+* refactor!: make terser an optional dependency (#8049) ([164f528](https://github.com/vitejs/vite/commit/164f528)), closes [#8049](https://github.com/vitejs/vite/issues/8049)
+* chore: generate vite sourcemap when not production (#8453) ([129b499](https://github.com/vitejs/vite/commit/129b499)), closes [#8453](https://github.com/vitejs/vite/issues/8453)
+* chore: resolve ssr options (#8455) ([d97e402](https://github.com/vitejs/vite/commit/d97e402)), closes [#8455](https://github.com/vitejs/vite/issues/8455)
+* chore(deps): update all non-major dependencies (#8474) ([6d0ede7](https://github.com/vitejs/vite/commit/6d0ede7)), closes [#8474](https://github.com/vitejs/vite/issues/8474)
+* perf: disable postcss sourcemap when unused (#8451) ([64fc61c](https://github.com/vitejs/vite/commit/64fc61c)), closes [#8451](https://github.com/vitejs/vite/issues/8451)
+
+
+
+## 3.0.0-alpha.9 (2022-06-01)
+
+* fix: make array `acornInjectPlugins` work (fixes #8410) (#8415) ([08d594b](https://github.com/vitejs/vite/commit/08d594b)), closes [#8410](https://github.com/vitejs/vite/issues/8410) [#8415](https://github.com/vitejs/vite/issues/8415)
+* fix: SSR deep imports externalization (fixes #8420) (#8421) ([89d6711](https://github.com/vitejs/vite/commit/89d6711)), closes [#8420](https://github.com/vitejs/vite/issues/8420) [#8421](https://github.com/vitejs/vite/issues/8421)
+* chore: reapply #5930 (#8423) ([ab23e6e](https://github.com/vitejs/vite/commit/ab23e6e)), closes [#5930](https://github.com/vitejs/vite/issues/5930) [#8423](https://github.com/vitejs/vite/issues/8423)
+
+
+
+## 3.0.0-alpha.8 (2022-05-31)
+
+* feat: add ssr.format to force esm output for ssr (#6812) ([337b197](https://github.com/vitejs/vite/commit/337b197)), closes [#6812](https://github.com/vitejs/vite/issues/6812)
+* feat: default esm SSR build, simplified externalization (#8348) ([f8c92d1](https://github.com/vitejs/vite/commit/f8c92d1)), closes [#8348](https://github.com/vitejs/vite/issues/8348)
+* feat: derive proper js extension from package type (#8382) ([95cdd81](https://github.com/vitejs/vite/commit/95cdd81)), closes [#8382](https://github.com/vitejs/vite/issues/8382)
+* feat: ssr build using optimized deps (#8403) ([6a5a5b5](https://github.com/vitejs/vite/commit/6a5a5b5)), closes [#8403](https://github.com/vitejs/vite/issues/8403)
+* fix: `import.meta.accept()` -> `import.meta.hot.accept()` (#8361) ([c5185cf](https://github.com/vitejs/vite/commit/c5185cf)), closes [#8361](https://github.com/vitejs/vite/issues/8361)
+* fix: return type of `handleHMRUpdate` (#8367) ([79d5ce1](https://github.com/vitejs/vite/commit/79d5ce1)), closes [#8367](https://github.com/vitejs/vite/issues/8367)
+* fix: sourcemap source point to null (#8299) ([356b896](https://github.com/vitejs/vite/commit/356b896)), closes [#8299](https://github.com/vitejs/vite/issues/8299)
+* fix: ssr-manifest no base (#8371) ([37eb5b3](https://github.com/vitejs/vite/commit/37eb5b3)), closes [#8371](https://github.com/vitejs/vite/issues/8371)
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* chore: enable `@typescript-eslint/explicit-module-boundary-types` (#8372) ([104caf9](https://github.com/vitejs/vite/commit/104caf9)), closes [#8372](https://github.com/vitejs/vite/issues/8372)
+* chore: enable reportUnusedDisableDirectives (#8384) ([9a99bc4](https://github.com/vitejs/vite/commit/9a99bc4)), closes [#8384](https://github.com/vitejs/vite/issues/8384)
+* chore: improve jsdoc of library options (#8381) ([44dc27d](https://github.com/vitejs/vite/commit/44dc27d)), closes [#8381](https://github.com/vitejs/vite/issues/8381)
+* chore: improve public assets warning message (#6738) ([f6bd317](https://github.com/vitejs/vite/commit/f6bd317)), closes [#6738](https://github.com/vitejs/vite/issues/6738)
+* chore: update comments (#8394) ([3d14372](https://github.com/vitejs/vite/commit/3d14372)), closes [#8394](https://github.com/vitejs/vite/issues/8394)
+
+
+
+## 3.0.0-alpha.7 (2022-05-27)
+
+* fix: preserve annotations during build deps optimization (#8358) ([334cd9f](https://github.com/vitejs/vite/commit/334cd9f)), closes [#8358](https://github.com/vitejs/vite/issues/8358)
+* refactor: `ExportData.imports` to `ExportData.hasImports` (#8355) ([168de2d](https://github.com/vitejs/vite/commit/168de2d)), closes [#8355](https://github.com/vitejs/vite/issues/8355)
+
+
+
+## 3.0.0-alpha.6 (2022-05-27)
+
+* fix: missing types for `es-module-lexer` (fixes #8349) (#8352) ([df2cc3d](https://github.com/vitejs/vite/commit/df2cc3d)), closes [#8349](https://github.com/vitejs/vite/issues/8349) [#8352](https://github.com/vitejs/vite/issues/8352)
+* fix(optimizer): transpile before calling `transformGlobImport` (#8343) ([1dbc7cc](https://github.com/vitejs/vite/commit/1dbc7cc)), closes [#8343](https://github.com/vitejs/vite/issues/8343)
+* feat: scan free dev server (#8319) ([3f742b6](https://github.com/vitejs/vite/commit/3f742b6)), closes [#8319](https://github.com/vitejs/vite/issues/8319)
+* chore: remove unused dts from dist (#8346) ([de9f556](https://github.com/vitejs/vite/commit/de9f556)), closes [#8346](https://github.com/vitejs/vite/issues/8346)
+
+
+
+## 3.0.0-alpha.5 (2022-05-26)
+
+* feat: non-blocking esbuild optimization at build time (#8280) ([909cf9c](https://github.com/vitejs/vite/commit/909cf9c)), closes [#8280](https://github.com/vitejs/vite/issues/8280)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+
+
+
+## 3.0.0-alpha.4 (2022-05-25)
+
+* feat: non-blocking needs interop (#7568) ([531cd7b](https://github.com/vitejs/vite/commit/531cd7b)), closes [#7568](https://github.com/vitejs/vite/issues/7568)
+* fix: expose client dist in `exports` (#8324) ([689adc0](https://github.com/vitejs/vite/commit/689adc0)), closes [#8324](https://github.com/vitejs/vite/issues/8324)
+
+
+
+## 3.0.0-alpha.3 (2022-05-25)
+
+* fix(cjs): build cjs for `loadEnv` (#8305) ([80dd2df](https://github.com/vitejs/vite/commit/80dd2df)), closes [#8305](https://github.com/vitejs/vite/issues/8305)
+* refactor(cli): improve output aesthetics (#6997) ([809ab47](https://github.com/vitejs/vite/commit/809ab47)), closes [#6997](https://github.com/vitejs/vite/issues/6997)
+* dx: sourcemap combine debug utils (#8307) ([45dba50](https://github.com/vitejs/vite/commit/45dba50)), closes [#8307](https://github.com/vitejs/vite/issues/8307)
+* chore: cleanup now that we've dropped Node 12 (#8239) ([29659a0](https://github.com/vitejs/vite/commit/29659a0)), closes [#8239](https://github.com/vitejs/vite/issues/8239)
+* chore: use `esno` to replace `ts-node` (#8162) ([c18a5f3](https://github.com/vitejs/vite/commit/c18a5f3)), closes [#8162](https://github.com/vitejs/vite/issues/8162)
+
+
+
+## 3.0.0-alpha.2 (2022-05-23)
+
+* fix: correctly replace process.env.NODE_ENV (#8283) ([ec52baa](https://github.com/vitejs/vite/commit/ec52baa)), closes [#8283](https://github.com/vitejs/vite/issues/8283)
+* fix: dev sourcemap (#8269) ([505f75e](https://github.com/vitejs/vite/commit/505f75e)), closes [#8269](https://github.com/vitejs/vite/issues/8269)
+* fix: glob types (#8257) ([03b227e](https://github.com/vitejs/vite/commit/03b227e)), closes [#8257](https://github.com/vitejs/vite/issues/8257)
+* fix: srcset handling in html (#6419) ([a0ee4ff](https://github.com/vitejs/vite/commit/a0ee4ff)), closes [#6419](https://github.com/vitejs/vite/issues/6419)
+* fix: support set NODE_ENV in scripts when custom mode option (#8218) ([adcf041](https://github.com/vitejs/vite/commit/adcf041)), closes [#8218](https://github.com/vitejs/vite/issues/8218)
+* fix(hmr): catch thrown errors when connecting to hmr websocket (#7111) ([4bc9284](https://github.com/vitejs/vite/commit/4bc9284)), closes [#7111](https://github.com/vitejs/vite/issues/7111)
+* fix(plugin-legacy): respect `entryFileNames` for polyfill chunks (#8247) ([baa9632](https://github.com/vitejs/vite/commit/baa9632)), closes [#8247](https://github.com/vitejs/vite/issues/8247)
+* fix(plugin-react): broken optimized deps dir check (#8255) ([9e2a1ea](https://github.com/vitejs/vite/commit/9e2a1ea)), closes [#8255](https://github.com/vitejs/vite/issues/8255)
+* chore: include 2.9.9 changelog in main (#8250) ([48f03e0](https://github.com/vitejs/vite/commit/48f03e0)), closes [#8250](https://github.com/vitejs/vite/issues/8250)
+* chore: remove unneeded worker context param (#8268) ([30a7acc](https://github.com/vitejs/vite/commit/30a7acc)), closes [#8268](https://github.com/vitejs/vite/issues/8268)
+* chore: show ws port conflict error (#8209) ([c86329b](https://github.com/vitejs/vite/commit/c86329b)), closes [#8209](https://github.com/vitejs/vite/issues/8209)
+* chore: use 'new URL' instead of 'url.parse' (#8254) ([d98c8a7](https://github.com/vitejs/vite/commit/d98c8a7)), closes [#8254](https://github.com/vitejs/vite/issues/8254)
+* chore: use typescript for rollup configPlugin (#8290) ([fa538cf](https://github.com/vitejs/vite/commit/fa538cf)), closes [#8290](https://github.com/vitejs/vite/issues/8290)
+* feat: sourcemap for importAnalysis (#8258) ([a4e4d39](https://github.com/vitejs/vite/commit/a4e4d39)), closes [#8258](https://github.com/vitejs/vite/issues/8258)
+* feat: spa option, `preview` and `dev` for MPA and SSR apps (#8217) ([d7cba46](https://github.com/vitejs/vite/commit/d7cba46)), closes [#8217](https://github.com/vitejs/vite/issues/8217)
+* feat: vite connected logs changed to console.debug (#7733) ([9f00c41](https://github.com/vitejs/vite/commit/9f00c41)), closes [#7733](https://github.com/vitejs/vite/issues/7733)
+* feat: worker support query url (#7914) ([95297dd](https://github.com/vitejs/vite/commit/95297dd)), closes [#7914](https://github.com/vitejs/vite/issues/7914)
+* feat(wasm): new wasm plugin (`.wasm?init`) (#8219) ([75c3bf6](https://github.com/vitejs/vite/commit/75c3bf6)), closes [#8219](https://github.com/vitejs/vite/issues/8219)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+* feat!: migrate to ESM (#8178) ([76fdc27](https://github.com/vitejs/vite/commit/76fdc27)), closes [#8178](https://github.com/vitejs/vite/issues/8178)
+* fix!: do not fixStacktrace by default (#7995) ([23f8e08](https://github.com/vitejs/vite/commit/23f8e08)), closes [#7995](https://github.com/vitejs/vite/issues/7995)
+
+
+
 ## 3.0.0-alpha.1 (2022-05-18)
 
 * feat!: relative base (#7644) ([09648c2](https://github.com/vitejs/vite/commit/09648c2)), closes [#7644](https://github.com/vitejs/vite/issues/7644)
@@ -11,9 +123,7 @@
 
 * feat: allow any JS identifier in define, not ASCII-only (#5972) ([95eb45b](https://github.com/vitejs/vite/commit/95eb45b)), closes [#5972](https://github.com/vitejs/vite/issues/5972)
 * feat: enable `generatedCode: 'es2015'` for rollup build (#5018) ([46d5e67](https://github.com/vitejs/vite/commit/46d5e67)), closes [#5018](https://github.com/vitejs/vite/issues/5018)
-* feat: new hook `configurePreviewServer` (#7658) ([20ea999](https://github.com/vitejs/vite/commit/20ea999)), closes [#7658](https://github.com/vitejs/vite/issues/7658)
 * feat: rework `dynamic-import-vars` (#7756) ([80d113b](https://github.com/vitejs/vite/commit/80d113b)), closes [#7756](https://github.com/vitejs/vite/issues/7756)
-* feat: treat Astro file scripts as TS (#8151) ([559c952](https://github.com/vitejs/vite/commit/559c952)), closes [#8151](https://github.com/vitejs/vite/issues/8151)
 * feat: worker emit fileName with config (#7804) ([04c2edd](https://github.com/vitejs/vite/commit/04c2edd)), closes [#7804](https://github.com/vitejs/vite/issues/7804)
 * feat(glob-import): support `{ import: '*' }` (#8071) ([0b78b2a](https://github.com/vitejs/vite/commit/0b78b2a)), closes [#8071](https://github.com/vitejs/vite/issues/8071)
 * fix: add hash to lib chunk names (#7190) ([c81cedf](https://github.com/vitejs/vite/commit/c81cedf)), closes [#7190](https://github.com/vitejs/vite/issues/7190)
@@ -51,7 +161,6 @@
 * chore: using Unicode instead of unicode in doc and tests (#6852) ([c2bf62b](https://github.com/vitejs/vite/commit/c2bf62b)), closes [#6852](https://github.com/vitejs/vite/issues/6852)
 * chore(deps): update tsconfck to 2.0.0 built for node14+ (#8144) ([0513d13](https://github.com/vitejs/vite/commit/0513d13)), closes [#8144](https://github.com/vitejs/vite/issues/8144)
 * chore(deps): use `esno` to replace `ts-node` (#8152) ([2363bd3](https://github.com/vitejs/vite/commit/2363bd3)), closes [#8152](https://github.com/vitejs/vite/issues/8152)
-* chore(lint): sort for imports (#8113) ([43a58dd](https://github.com/vitejs/vite/commit/43a58dd)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
 * build!: remove node v12 support (#7833) ([eeac2d2](https://github.com/vitejs/vite/commit/eeac2d2)), closes [#7833](https://github.com/vitejs/vite/issues/7833)
 * feat!: rework `import.meta.glob` (#7537) ([330e0a9](https://github.com/vitejs/vite/commit/330e0a9)), closes [#7537](https://github.com/vitejs/vite/issues/7537)
 * feat!: vite dev default port is now 5173 (#8148) ([1cc2e2d](https://github.com/vitejs/vite/commit/1cc2e2d)), closes [#8148](https://github.com/vitejs/vite/issues/8148)
@@ -60,6 +169,30 @@
 * refactor: use `import.meta.glob` over `globEager` in tests (#8066) ([1878f46](https://github.com/vitejs/vite/commit/1878f46)), closes [#8066](https://github.com/vitejs/vite/issues/8066)
 * refactor: use node hash (#7975) ([5ce7c74](https://github.com/vitejs/vite/commit/5ce7c74)), closes [#7975](https://github.com/vitejs/vite/issues/7975)
 * test: migrate to vitest (#8076) ([8148f67](https://github.com/vitejs/vite/commit/8148f67)), closes [#8076](https://github.com/vitejs/vite/issues/8076)
+
+
+
+## <small>2.9.12 (2022-06-10)</small>
+
+* fix: outdated optimized dep removed from module graph (#8534) ([c0d6c60](https://github.com/vitejs/vite/commit/c0d6c60)), closes [#8534](https://github.com/vitejs/vite/issues/8534)
+
+
+
+## <small>2.9.11 (2022-06-10)</small>
+
+* fix: respect server.headers in static middlewares (#8481) ([ab7dc1c](https://github.com/vitejs/vite/commit/ab7dc1c)), closes [#8481](https://github.com/vitejs/vite/issues/8481)
+* fix(dev): avoid FOUC when swapping out link tag (fix #7973) (#8495) ([01fa807](https://github.com/vitejs/vite/commit/01fa807)), closes [#7973](https://github.com/vitejs/vite/issues/7973) [#8495](https://github.com/vitejs/vite/issues/8495)
+
+
+
+## <small>2.9.10 (2022-06-06)</small>
+
+* feat: treat Astro file scripts as TS (#8151) ([9fdd0a3](https://github.com/vitejs/vite/commit/9fdd0a3)), closes [#8151](https://github.com/vitejs/vite/issues/8151)
+* feat: new hook `configurePreviewServer` (#7658) (#8437) ([7b972bc](https://github.com/vitejs/vite/commit/7b972bc)), closes [#7658](https://github.com/vitejs/vite/issues/7658) [#8437](https://github.com/vitejs/vite/issues/8437)
+* fix: remove empty chunk css imports when using esnext (#8345) ([9fbc1a9](https://github.com/vitejs/vite/commit/9fbc1a9)), closes [#8345](https://github.com/vitejs/vite/issues/8345)
+* fix: EPERM error on Windows when processing dependencies (#8235) ([dfe4307](https://github.com/vitejs/vite/commit/dfe4307)), closes [#8235](https://github.com/vitejs/vite/issues/8235)
+* fix(css): remove `?used` hack (fixes #6421, #8245) (#8278) (#8471) ([8d7bac4](https://github.com/vitejs/vite/commit/8d7bac4)), closes [#6421](https://github.com/vitejs/vite/issues/6421) [#8245](https://github.com/vitejs/vite/issues/8245) [#8278](https://github.com/vitejs/vite/issues/8278) [#8471](https://github.com/vitejs/vite/issues/8471)
+* chore(lint): sort for imports (#8113) ([4bd1531](https://github.com/vitejs/vite/commit/4bd1531)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
 
 
 

@@ -1,12 +1,12 @@
 import fs from 'fs'
 import path from 'path'
-import { commandSync } from 'execa'
+import { execaCommandSync } from 'execa'
 import { isBuild, testDir, viteBinPath } from '~utils'
 
 const fromTestDir = (...p: string[]) => path.resolve(testDir, ...p)
 
 const build = (configName: string) => {
-  commandSync(`${viteBinPath} build`, { cwd: fromTestDir(configName) })
+  execaCommandSync(`${viteBinPath} build`, { cwd: fromTestDir(configName) })
 }
 
 const getDistFile = (configName: string, extension: string) => {

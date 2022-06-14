@@ -12,8 +12,10 @@ import { arraify } from '../utils'
 export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
+    !config.build.ssr ||
     !config.resolve.dedupe?.length ||
     config.ssr?.noExternal === true ||
+    config.ssr?.format !== 'cjs' ||
     isBuildOutputEsm(config)
   ) {
     return null

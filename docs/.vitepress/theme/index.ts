@@ -1,15 +1,15 @@
 import { h } from 'vue'
 import Theme from 'vitepress/theme'
-import SponsorsSidebar from './SponsorsSidebar.vue'
 import './styles/vars.css'
-import './styles/custom.css'
+import HomeSponsors from './components/HomeSponsors.vue'
+import AsideSponsors from './components/AsideSponsors.vue'
 
 export default {
   ...Theme,
   Layout() {
     return h(Theme.Layout, null, {
-      'sidebar-bottom': () =>
-        h('div', { class: 'sponsors sidebar' }, [h(SponsorsSidebar)])
+      'home-features-after': () => h(HomeSponsors),
+      'aside-ads-before': () => h(AsideSponsors)
     })
   }
 }

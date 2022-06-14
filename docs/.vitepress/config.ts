@@ -4,27 +4,7 @@ export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
 
-  head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
-
-    // TODO: This is neeeded to get smooth dark mode appearance on initial
-    // load. And this will be gone when VitePress figures out how to handle
-    // this in core.
-    [
-      'script',
-      {},
-      `
-        ;(() => {
-          const saved = localStorage.getItem('vitepress-theme-appearance')
-          const prefereDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-          if (!saved || saved === 'auto' ? prefereDark : saved === 'dark') {
-            document.documentElement.classList.add('dark')
-          }
-        })()
-      `
-    ]
-  ],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
 
   vue: {
     reactivityTransform: true
@@ -40,6 +20,12 @@ export default defineConfig({
       text: 'Suggest changes to this page'
     },
 
+    socialLinks: [
+      { icon: 'twitter', link: 'https://twitter.com/vite_js' },
+      { icon: 'discord', link: 'https://chat.vitejs.dev' },
+      { icon: 'github', link: 'https://github.com/vitejs/vite' }
+    ],
+
     algolia: {
       apiKey: 'b573aa848fd57fb47d693b531297403c',
       indexName: 'vitejs',
@@ -49,7 +35,7 @@ export default defineConfig({
     },
 
     carbonAds: {
-      carbon: 'CEBIEK3N',
+      code: 'CEBIEK3N',
       placement: 'vitejsdev'
     },
 
@@ -61,10 +47,15 @@ export default defineConfig({
       ]
     },
 
+    footer: {
+      message: 'Released under the MIT License.',
+      copyright: 'Copyright © 2019-present Evan You & Vite Contributors'
+    },
+
     nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'Config', link: '/config/' },
-      { text: 'Plugins', link: '/plugins/' },
+      { text: 'Guide', link: '/guide/', activeMatch: '/guide/' },
+      { text: 'Config', link: '/config/', activeMatch: '/config/' },
+      { text: 'Plugins', link: '/plugins/', activeMatch: '/plugins/' },
       {
         text: 'Links',
         items: [
@@ -106,7 +97,7 @@ export default defineConfig({
     ],
 
     sidebar: {
-      '/': [
+      '/guide/': [
         {
           text: 'Guide',
           items: [
@@ -159,7 +150,7 @@ export default defineConfig({
               link: '/guide/comparisons'
             },
             {
-              text: 'Migration from v1',
+              text: 'Migration from v2',
               link: '/guide/migration'
             }
           ]
@@ -182,6 +173,45 @@ export default defineConfig({
             {
               text: 'Config Reference',
               link: '/config/'
+            }
+          ]
+        }
+      ],
+      '/config/': [
+        {
+          text: 'Config',
+          items: [
+            {
+              text: 'Configuring Vite',
+              link: '/config/'
+            },
+            {
+              text: 'Shared Options',
+              link: '/config/shared-options'
+            },
+            {
+              text: 'Server Options',
+              link: '/config/server-options'
+            },
+            {
+              text: 'Build Options',
+              link: '/config/build-options'
+            },
+            {
+              text: 'Preview Options',
+              link: '/config/preview-options'
+            },
+            {
+              text: 'Dep Optimization Options',
+              link: '/config/dep-optimization-options'
+            },
+            {
+              text: 'SSR Options',
+              link: '/config/ssr-options'
+            },
+            {
+              text: 'Worker Options',
+              link: '/config/worker-options'
             }
           ]
         }

@@ -40,6 +40,7 @@ test('/', async () => {
 })
 
 test('hmr', async () => {
+  await page.goto(url)
   editFile('src/pages/Home.jsx', (code) =>
     code.replace('<h1>Home', '<h1>changed')
   )
@@ -47,6 +48,7 @@ test('hmr', async () => {
 })
 
 test('client navigation', async () => {
+  await page.goto(url)
   await untilUpdated(() => page.textContent('a[href="/about"]'), 'About')
   await page.click('a[href="/about"]')
   await untilUpdated(() => page.textContent('h1'), 'About')

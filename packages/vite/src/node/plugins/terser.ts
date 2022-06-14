@@ -1,26 +1,40 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
 import { Worker } from 'okie'
 import type { Terser } from 'types/terser'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
+import { requireResolveFromRootWithFallback } from '../utils'
 
-// TODO: use import()
-const _dirname = dirname(fileURLToPath(import.meta.url))
+let terserPath: string | undefined
+const loadTerserPath = (root: string) => {
+  if (terserPath) return terserPath
+  try {
+    terserPath = requireResolveFromRootWithFallback(root, 'terser')
+  } catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+      throw new Error(
+        'terser not found. Since Vite v3, terser has become an optional dependency. You need to install it.'
+      )
+    } else {
+      const message = new Error(`terser failed to load:\n${e.message}`)
+      message.stack = e.stack + '\n' + message.stack
+      throw message
+    }
+  }
+  return terserPath
+}
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const makeWorker = () =>
     new Worker(
-      async (basedir: string, code: string, options: Terser.MinifyOptions) => {
-        // when vite is linked, the worker thread won't share the same resolve
-        // root with vite itself, so we have to pass in the basedir and resolve
-        // terser first.
-        // eslint-disable-next-line node/no-restricted-require, no-restricted-globals
-        const terserPath = require.resolve('terser', {
-          paths: [basedir]
-        })
-        // eslint-disable-next-line no-restricted-globals
-        return require(terserPath).minify(code, options) as Terser.MinifyOutput
+      async (
+        terserPath: string,
+        code: string,
+        options: Terser.MinifyOptions
+      ) => {
+        // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
+        // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
+        const terser = require(terserPath)
+        return terser.minify(code, options) as Terser.MinifyOutput
       }
     )
 
@@ -50,7 +64,8 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       // Lazy load worker.
       worker ||= makeWorker()
 
-      const res = await worker.run(_dirname, code, {
+      const terserPath = loadTerserPath(config.root)
+      const res = await worker.run(terserPath, code, {
         safari10: true,
         ...config.build.terserOptions,
         sourceMap: !!outputOptions.sourcemap,

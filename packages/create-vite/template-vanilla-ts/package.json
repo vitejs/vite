@@ -2,6 +2,7 @@
   "name": "vite-typescript-starter",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -9,6 +10,6 @@
   },
   "devDependencies": {
     "typescript": "^4.6.4",
-    "vite": "^2.9.8"
+    "vite": "^2.9.12"
   }
 }
