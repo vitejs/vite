@@ -1,7 +1,6 @@
 import * as http from 'http'
-import { dirname, resolve } from 'path'
+import path, { dirname, resolve } from 'path'
 import os from 'os'
-import path from 'path'
 import sirv from 'sirv'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
@@ -25,7 +24,10 @@ export const workspaceRoot = path.resolve(__dirname, '../')
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
 export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(workspaceRoot, 'packages/vite/bin/vite.js')
+export const viteBinPath = path.posix.join(
+  workspaceRoot,
+  'packages/vite/bin/vite.js'
+)
 
 // #endregion
 
@@ -49,6 +51,11 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
+/**
+ * current test using vite inline config
+ * when using server.js is not possible to get the config
+ */
+export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -61,7 +68,17 @@ export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
 
-export function setViteUrl(url: string) {
+declare module 'vite' {
+  interface InlineConfig {
+    testConfig?: {
+      // relative base output use relative path
+      // rewrite the url to truth file path
+      baseRoute: string
+    }
+  }
+}
+
+export function setViteUrl(url: string): void {
   viteTestUrl = url
 }
 
@@ -156,7 +173,7 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe() {
+export async function startDefaultServe(): Promise<void> {
   const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
   let config: InlineConfig | undefined
   if (fs.existsSync(testCustomConfig)) {
@@ -193,9 +210,9 @@ export async function startDefaultServe() {
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    server = await (
-      await createServer(mergeConfig(options, config || {}))
-    ).listen()
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const base = server.config.base === '/' ? '' : server.config.base
     viteTestUrl = `http://localhost:${server.config.server.port}${base}`
@@ -210,7 +227,9 @@ export async function startDefaultServe() {
       }
     })
     options.plugins = [resolvedPlugin()]
-    const rollupOutput = await build(mergeConfig(options, config || {}))
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    const rollupOutput = await build(testConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
@@ -245,11 +264,15 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
 
   // start static file server
   const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
       res.end('pong')
     } else {
+      if (baseDir) {
+        req.url = path.posix.join(baseDir, req.url)
+      }
       serve(req, res)
     }
   }))
