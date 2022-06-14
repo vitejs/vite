@@ -248,6 +248,6 @@ function printServerUrls(
     print(colors.green('➜'), label, text)
   })
   notes.forEach(({ label, message: text }) => {
-    print(colors.blue('❖'), label, text)
+    print(colors.white('❖'), label, text)
   })
 }
