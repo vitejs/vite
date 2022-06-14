@@ -1,13 +1,14 @@
 import fs, { promises as fsp } from 'fs'
 import path from 'path'
 import type {
-  OutgoingHttpHeaders as HttpServerHeaders,
-  Server as HttpServer
+  Server as HttpServer,
+  OutgoingHttpHeaders as HttpServerHeaders
 } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
+import { promises as dns } from 'dns'
+import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
-import type { Connect } from 'types/connect'
 import type { Logger } from './logger'
 
 export interface CommonServerOptions {
@@ -94,29 +95,28 @@ export async function resolveHttpServer(
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
-  /*
-   * Some Node.js packages are known to be using this undocumented function,
-   * notably "compression" middleware.
-   */
-  app.prototype._implicitHeader = function _implicitHeader() {
-    this.writeHead(this.statusCode)
-  }
-
   if (!httpsOptions) {
-    return require('http').createServer(app)
+    const { createServer } = await import('http')
+    return createServer(app)
   }
 
+  // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(httpsOptions, app)
+    const { createServer } = await import('https')
+    return createServer(httpsOptions, app)
   } else {
-    return require('http2').createSecureServer(
+    const { createSecureServer } = await import('http2')
+    return createSecureServer(
       {
+        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+        // errors on large numbers of requests
+        maxSessionMemory: 1000,
         ...httpsOptions,
         allowHTTP1: true
       },
+      // @ts-expect-error TODO: is this correct?
       app
-    )
+    ) as unknown as HttpServer
   }
 }
 
@@ -185,9 +185,16 @@ export async function httpServerStart(
     logger: Logger
   }
 ): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let { port, strictPort, host, logger } = serverOptions
+  let { port, strictPort, host, logger } = serverOptions
 
+  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
+  // https://github.com/nodejs/node/pull/39987
+  if (host === 'localhost') {
+    const addr = await dns.lookup('localhost', { verbatim: true })
+    host = addr.address
+  }
+
+  return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         if (strictPort) {

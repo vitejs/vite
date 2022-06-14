@@ -1,8 +1,0 @@
-{
-  "name": "vite-playground",
-  "private": true,
-  "version": "1.0.0",
-  "devDependencies": {
-    "css-color-names": "^1.0.1"
-  }
-}

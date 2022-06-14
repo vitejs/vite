@@ -2,8 +2,6 @@ import path from 'path'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { chunkToEmittedCssFileMap } from './css'
-import { chunkToEmittedAssetsMap } from './asset'
 import { normalizePath } from '../utils'
 
 export type Manifest = Record<string, ManifestChunk>
@@ -39,7 +37,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)
-            name = name.slice(0, -ext.length) + `-legacy` + ext
+            const endPos = ext.length !== 0 ? -ext.length : undefined
+            name = name.slice(0, endPos) + `-legacy` + ext
           }
           return name.replace(/\0/g, '')
         } else {
@@ -90,13 +89,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const cssFiles = chunkToEmittedCssFileMap.get(chunk)
-        if (cssFiles) {
-          manifestChunk.css = [...cssFiles]
+        if (chunk.viteMetadata.importedCss.size) {
+          manifestChunk.css = [...chunk.viteMetadata.importedCss]
         }
-
-        const assets = chunkToEmittedAssetsMap.get(chunk)
-        if (assets) [(manifestChunk.assets = [...assets])]
+        if (chunk.viteMetadata.importedAssets.size) {
+          manifestChunk.assets = [...chunk.viteMetadata.importedAssets]
+        }
 
         return manifestChunk
       }

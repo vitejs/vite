@@ -1,0 +1,62 @@
+<h1>Define</h1>
+
+<p>Raw Expression <code class="exp"></code></p>
+<p>String <code class="string"></code></p>
+<p>Number <code class="number"></code></p>
+<p>Boolean <code class="boolean"></code></p>
+<p>Object <span class="pre object"></span></p>
+<p>Env Var <code class="env-var"></code></p>
+<p>process node env: <code class="process-node-env"></code></p>
+<p>process as property: <code class="process-as-property"></code></p>
+<p>spread object: <code class="spread-object"></code></p>
+<p>spread array: <code class="spread-array"></code></p>
+<p>dollar identifier: <code class="dollar-identifier"></code></p>
+<p>unicode identifier: <code class="unicode-identifier"></code></p>
+<p>no property: <code class="no-property"></code></p>
+<p>no identifier substring: <span class="no-identifier-substring"></span></p>
+<p>define variable in html: <code class="exp-define">__EXP__</code></p>
+<p>import json: <code class="import-json"></code></p>
+
+<script type="module">
+  const __VAR_NAME__ = true // ensure define doesn't replace var name
+  text('.exp', typeof __EXP__) // typeof __EXP__ would be `boolean` instead of `string`
+  text('.string', __STRING__)
+  text('.number', __NUMBER__)
+  text('.boolean', __BOOLEAN__)
+  text('.object', JSON.stringify(__OBJ__, null, 2))
+  text('.process-node-env', process.env.NODE_ENV)
+  text('.env-var', process.env.SOMEVAR)
+  text('.process-as-property', __OBJ__.process.env.SOMEVAR)
+  text(
+    '.spread-object',
+    JSON.stringify({
+      ...(process.env.SOMEVAR ? { SOMEVAR: `"${process.env.SOMEVAR}"` } : {})
+    })
+  )
+  text('.spread-array', JSON.stringify([...`"${__STRING__}"`]))
+  text('.dollar-identifier', $DOLLAR)
+  text('.unicode-identifier', ÖUNICODE_LETTERɵ)
+
+  // make sure these kinds of use are NOT replaced:
+  const obj = { [`${'_'}_EXP__`]: true }
+  text('.no-property', obj.__EXP__)
+
+  window[`${'_'}_EXP__SUBSTR__`] = true
+  text('.no-identifier-substring', __EXP__SUBSTR__)
+
+  import dataJson from './data.json'
+  text('.import-json', dataJson.foo)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
+
+<style>
+  .pre {
+    display: block;
+    unicode-bidi: embed;
+    font-family: monospace;
+    white-space: pre;
+  }
+</style>

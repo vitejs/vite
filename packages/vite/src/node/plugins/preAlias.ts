@@ -1,21 +1,24 @@
-import type { ViteDevServer } from '..'
+import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { bareImportRE } from '../utils'
+import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
 /**
  * A plugin to avoid an aliased AND optimized dep from being aliased in src
  */
-export function preAliasPlugin(): Plugin {
-  let server: ViteDevServer
+export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
-    configureServer(_server) {
-      server = _server
-    },
-    resolveId(id, importer, options) {
-      if (!options?.ssr && bareImportRE.test(id)) {
-        return tryOptimizedResolve(id, server, importer)
+    async resolveId(id, importer, options) {
+      const depsOptimizer = getDepsOptimizer(config)
+      if (
+        depsOptimizer &&
+        !options?.ssr &&
+        bareImportRE.test(id) &&
+        !options?.scan
+      ) {
+        return await tryOptimizedResolve(depsOptimizer, id, importer)
       }
     }
   }
