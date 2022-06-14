@@ -59,8 +59,9 @@ jobs:
       - name: Install deps
         run: pnpm install
 
+      # This could be removed when https://github.com/pnpm/pnpm/issues/4888 is resolved
       - name: Install Playwright
-        run: pnpm playwright install
+        run: pnpm playwright install chromium
 
       - name: Build
         run: pnpm run build
