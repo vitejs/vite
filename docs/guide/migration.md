@@ -52,6 +52,10 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 ## General Changes
 
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+- Terser is now an optional dependency. If you are using `build.minify: 'terser'`, you need to install it.
+  ```shell
+  npm add -D terser
+  ```
 
 ### `import.meta.glob`
 
@@ -95,6 +99,8 @@ There are some changes which only affects plugin/tool creators.
   - `printHttpServerUrls` is removed
   - `server.app`, `server.transformWithEsbuild` are removed
   - `import.meta.hot.acceptDeps` is removed
+- [[#6901] fix: sequential injection of tags in transformIndexHtml](https://github.com/vitejs/vite/pull/6901)
+  - `transformIndexHtml` now gets the correct content modified by earlier plugins, so the order of the injected tags now works as expected.
 - [[#7995] chore: do not fixStacktrace](https://github.com/vitejs/vite/pull/7995)
   - `ssrLoadModule`'s `fixStacktrace` option's default is now `false`
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
@@ -107,8 +113,12 @@ Also there are other breaking changes which only affect few users.
   - Transpile to ES5 is now necessary even if the user code only includes ES5.
 - [[#7877] fix: vite client types](https://github.com/vitejs/vite/pull/7877)
   - `/// <reference lib="dom" />` is removed from `vite/client.d.ts`. `{ "lib": ["dom"] }` or `{ "lib": ["webworker"] }` is necessary in `tsconfig.json`.
+- [[#8090] feat: preserve process env vars in lib build](https://github.com/vitejs/vite/pull/8090)
+  - `process.env.*` is now preserved in library mode
 - [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
   - `server.force` option was removed in favor of `force` option.
+- [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
+  - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
 
 ## Migration from v1
 
