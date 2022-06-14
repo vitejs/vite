@@ -729,12 +729,12 @@ importers:
       '@vitejs/plugin-react': workspace:*
       react: ^18.1.0
       react-dom: ^18.1.0
-      react-switch: ^6.1.0
+      react-switch: ^7.0.0
     dependencies:
       '@emotion/react': 11.9.3_react@18.1.0
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
-      react-switch: 6.1.0_ef5jwxihqo6n7gxfmzogljlgcm
+      react-switch: 7.0.0_ef5jwxihqo6n7gxfmzogljlgcm
     devDependencies:
       '@babel/plugin-proposal-pipeline-operator': 7.18.2
       '@emotion/babel-plugin': 11.9.2
@@ -6457,7 +6457,7 @@ packages:
     dev: false
 
   /object-assign/4.1.1:
-    resolution: {integrity: sha1-IQmtx5ZYh8/AXLvUQsrIv7s2CGM=}
+    resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
 
   /object-hash/2.2.0:
@@ -7260,8 +7260,8 @@ packages:
       react: 18.1.0
     dev: false
 
-  /react-switch/6.1.0_ef5jwxihqo6n7gxfmzogljlgcm:
-    resolution: {integrity: sha512-cOwQkxtHCOGtoK0KN3kZBPTQjt8P1TTpaor+TS0AJRLfFBIRkgjVIUCwAfvVlW32Bi1BK333rk9y/14suD38SA==}
+  /react-switch/7.0.0_ef5jwxihqo6n7gxfmzogljlgcm:
+    resolution: {integrity: sha512-KkDeW+cozZXI6knDPyUt3KBN1rmhoVYgAdCJqAh7st7tk8YE6N0iR89zjCWO8T8dUTeJGTR0KU+5CHCRMRffiA==}
     peerDependencies:
       react: ^15.3.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
       react-dom: ^15.3.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
