@@ -337,19 +337,19 @@ export async function resolveConfig(
   configEnv.mode = mode
 
   // resolve plugins
-  const rawUserPlugins = (await asyncFlatten(config.plugins || [])).filter(
-    (p: any) => {
-      if (!p) {
-        return false
-      } else if (!p.apply) {
-        return true
-      } else if (typeof p.apply === 'function') {
-        return p.apply({ ...config, mode }, configEnv)
-      } else {
-        return p.apply === command
-      }
+  const rawUserPlugins = (
+    (await asyncFlatten(config.plugins || [])) as Plugin[]
+  ).filter((p) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
     }
-  ) as Plugin[]
+  })
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
