@@ -1,0 +1,9 @@
+{
+  "name": "vite-playground",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "convert-source-map": "^1.8.0",
+    "css-color-names": "^1.0.1"
+  }
+}

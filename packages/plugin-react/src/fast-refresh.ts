@@ -1,10 +1,17 @@
-import type { types as t } from '@babel/core'
 import fs from 'fs'
+import path from 'path'
+import { createRequire } from 'module'
+import type { types as t } from '@babel/core'
 
 export const runtimePublicPath = '/@react-refresh'
 
-const runtimeFilePath = require.resolve(
-  'react-refresh/cjs/react-refresh-runtime.development.js'
+const _require = createRequire(import.meta.url)
+const reactRefreshDir = path.dirname(
+  _require.resolve('react-refresh/package.json')
+)
+const runtimeFilePath = path.join(
+  reactRefreshDir,
+  'cjs/react-refresh-runtime.development.js'
 )
 
 export const runtimeCode = `

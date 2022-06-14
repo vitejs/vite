@@ -1,0 +1,10 @@
+{
+  "name": "dep-linked",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "lodash-es": "^4.17.21"
+  }
+}

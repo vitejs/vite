@@ -1,16 +1,21 @@
 import path from 'path'
-import type { Loader, Plugin, ImportKind } from 'esbuild'
+import { promises as fs } from 'fs'
+import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'
 import {
-  isRunningWithYarnPnp,
   flattenId,
-  normalizePath,
   isExternalUrl,
-  moduleListContains
+  isRunningWithYarnPnp,
+  moduleListContains,
+  normalizePath
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
 import type { ExportsData } from '.'
+
+const externalWithConversionNamespace =
+  'vite:dep-pre-bundle:external-conversion'
+const convertedExternalPrefix = 'vite-dep-pre-bundle-external:'
 
 const externalTypes = [
   'css',
@@ -37,16 +42,23 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig,
-  ssr?: boolean
+  config: ResolvedConfig
 ): Plugin {
+  // remove optimizable extensions from `externalTypes` list
+  const allExternalTypes = config.optimizeDeps.extensions
+    ? externalTypes.filter(
+        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
+      )
+    : externalTypes
+
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({ asSrc: false })
+  const _resolve = config.createResolver({ asSrc: false, scan: true })
 
   // cjs resolver that prefers Node
   const _resolveRequire = config.createResolver({
     asSrc: false,
-    isRequire: true
+    isRequire: true,
+    scan: true
   })
 
   const resolve = (
@@ -65,24 +77,46 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined)
   }
 
   return {
     name: 'vite:dep-pre-bundle',
     setup(build) {
       // externalize assets and commonly known non-js file types
+      // See #8459 for more details about this require-import conversion
       build.onResolve(
         {
-          filter: new RegExp(`\\.(` + externalTypes.join('|') + `)(\\?.*)?$`)
+          filter: new RegExp(`\\.(` + allExternalTypes.join('|') + `)(\\?.*)?$`)
         },
         async ({ path: id, importer, kind }) => {
-          const resolved = await resolve(id, importer, kind)
-          if (resolved) {
+          // if the prefix exist, it is already converted to `import`, so set `external: true`
+          if (id.startsWith(convertedExternalPrefix)) {
             return {
-              path: resolved,
+              path: id.slice(convertedExternalPrefix.length),
               external: true
             }
+          }
+
+          const resolved = await resolve(id, importer, kind)
+          if (resolved) {
+            // here it is not set to `external: true` to convert `require` to `import`
+            return {
+              path: resolved,
+              namespace: externalWithConversionNamespace
+            }
+          }
+        }
+      )
+      build.onLoad(
+        { filter: /./, namespace: externalWithConversionNamespace },
+        (args) => {
+          // import itself with prefix (this is the actual part of require-import conversion)
+          return {
+            contents:
+              `export { default } from "${convertedExternalPrefix}${args.path}";` +
+              `export * from "${convertedExternalPrefix}${args.path}";`,
+            loader: 'js'
           }
         }
       )
@@ -163,28 +197,21 @@ export function esbuildDepPlugin(
         }
 
         let contents = ''
-        const data = exportsData[id]
-        const [imports, exports] = data
-        if (!imports.length && !exports.length) {
+        const { hasImports, exports, hasReExports } = exportsData[id]
+        if (!hasImports && !exports.length) {
           // cjs
           contents += `export default require("${relativePath}");`
         } else {
           if (exports.includes('default')) {
             contents += `import d from "${relativePath}";export default d;`
           }
-          if (
-            data.hasReExports ||
-            exports.length > 1 ||
-            exports[0] !== 'default'
-          ) {
+          if (hasReExports || exports.length > 1 || exports[0] !== 'default') {
             contents += `\nexport * from "${relativePath}"`
           }
         }
 
-        let ext = path.extname(entryFile).slice(1)
-        if (ext === 'mjs') ext = 'js'
         return {
-          loader: ext as Loader,
+          loader: 'js',
           contents,
           resolveDir: root
         }
@@ -192,15 +219,37 @@ export function esbuildDepPlugin(
 
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
-        ({ path: id }) => {
+        ({ path }) => {
           return {
-            contents:
-              `export default new Proxy({}, {
-  get() {
-    throw new Error('Module "${id}" has been externalized for ` +
-              `browser compatibility and cannot be accessed in client code.')
+            // Return in CJS to intercept named imports. Use `Object.create` to
+            // create the Proxy in the prototype to workaround esbuild issue. Why?
+            //
+            // In short, esbuild cjs->esm flow:
+            // 1. Create empty object using `Object.create(Object.getPrototypeOf(module.exports))`.
+            // 2. Assign props of `module.exports` to the object.
+            // 3. Return object for ESM use.
+            //
+            // If we do `module.exports = new Proxy({}, {})`, step 1 returns empty object,
+            // step 2 does nothing as there's no props for `module.exports`. The final object
+            // is just an empty object.
+            //
+            // Creating the Proxy in the prototype satisfies step 1 immediately, which means
+            // the returned object is a Proxy that we can intercept.
+            //
+            // Note: Skip keys that are accessed by esbuild and browser devtools.
+            contents: `\
+module.exports = Object.create(new Proxy({}, {
+  get(_, key) {
+    if (
+      key !== '__esModule' &&
+      key !== '__proto__' &&
+      key !== 'constructor' &&
+      key !== 'splice'
+    ) {
+      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+    }
   }
-})`
+}))`
           }
         }
       )
@@ -215,7 +264,7 @@ export function esbuildDepPlugin(
           })
         )
         build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await require('fs').promises.readFile(args.path),
+          contents: await fs.readFile(args.path),
           loader: 'default'
         }))
       }
