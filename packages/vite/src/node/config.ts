@@ -575,21 +575,20 @@ export async function resolveConfig(
       .map((output) => output.assetFileNames)
       .filter(
         (assetFileNames) => typeof assetFileNames === 'function'
-      ) as Exclude<
-      OutputOptions['assetFileNames'],
-      undefined | string
-    >[]
+      ) as Exclude<OutputOptions['assetFileNames'], undefined | string>[]
     if (assetFileNamesFunctions.length > 1) {
       const firstFunction = assetFileNamesFunctions[0]
       const hasDifferentFunction = assetFileNamesFunctions
         .slice(1)
         .some((assetFileNames) => assetFileNames !== firstFunction)
       if (hasDifferentFunction) {
-        resolved.logger.warn(colors.yellow(`
+        resolved.logger.warn(
+          colors.yellow(`
 It's recommended that all assetFileNames in function syntax have the same reference.
 In other words, every function1 === function2 should be true.
 Vite adopts the first assetFileNames if build.rollupOptions.output is an array.
-`))
+`)
+        )
       }
     }
   }
