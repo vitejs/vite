@@ -170,7 +170,7 @@ export async function createPluginContainer(
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const {
-    plugins, // TODO need to run worker.plugins in build command
+    plugins,
     logger,
     root,
     build: { rollupOptions }
