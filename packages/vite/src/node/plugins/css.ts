@@ -861,7 +861,9 @@ async function compileCSS(
       // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
       const { dir, glob: globPattern = '**' } = message
       const pattern =
-        normalizePath(path.resolve(path.dirname(id), dir)) + `/` + globPattern
+        glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
+        `/` +
+        globPattern
       const files = glob.sync(pattern, {
         ignore: ['**/node_modules/**']
       })
