@@ -123,11 +123,6 @@ function createNodePlugins(
           src: `require('fsevents')`,
           replacement: `__require('fsevents')`
         },
-        // cac re-assigns module.exports even in its mjs dist
-        'cac/dist/index.mjs': {
-          src: `if (typeof module !== "undefined") {`,
-          replacement: `if (false) {`
-        },
         // postcss-import -> sugarss
         'process-content.js': {
           src: 'require("sugarss")',
@@ -208,7 +203,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(55)]
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
   })
 }
 

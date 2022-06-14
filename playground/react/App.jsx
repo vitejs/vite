@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
+import Button from 'jsx-entry'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -26,6 +27,7 @@ function App() {
       </header>
 
       <Dummy />
+      <Button>button</Button>
     </div>
   )
 }

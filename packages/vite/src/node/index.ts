@@ -10,6 +10,7 @@ export { resolvePackageData } from './packages'
 export * from './publicUtils'
 
 // additional types
+export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
   ViteDevServer,

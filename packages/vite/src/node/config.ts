@@ -5,7 +5,6 @@ import { performance } from 'perf_hooks'
 import { createRequire } from 'module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
-import { createFilter } from '@rollup/pluginutils'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
@@ -19,6 +18,7 @@ import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
   createDebugger,
+  createFilter,
   dynamicImport,
   isExternalUrl,
   isObject,
@@ -840,10 +840,9 @@ async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
 ): Promise<UserConfig> {
-  const extension = path.extname(fileName)
   const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions[extension]!
-  _require.extensions[extension] = (module: NodeModule, filename: string) => {
+  const defaultLoader = _require.extensions['.js']
+  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
     if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
@@ -853,9 +852,8 @@ async function loadConfigFromBundledFile(
   // clear cache in case of server restart
   delete _require.cache[_require.resolve(fileName)]
   const raw = _require(fileName)
-  const config = raw.__esModule ? raw.default : raw
-  _require.extensions[extension] = defaultLoader
-  return config
+  _require.extensions['.js'] = defaultLoader
+  return raw.__esModule ? raw.default : raw
 }
 
 export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {

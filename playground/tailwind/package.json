@@ -12,7 +12,7 @@
     "autoprefixer": "^10.4.7",
     "tailwindcss": "^2.2.19",
     "vue": "^3.2.37",
-    "vue-router": "^4.0.15"
+    "vue-router": "^4.0.16"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
