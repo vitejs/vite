@@ -14,9 +14,7 @@ export default defineConfig({
     logo: '/logo.svg',
 
     editLink: {
-      repo: 'vitejs/vite',
-      branch: 'main',
-      dir: 'docs',
+      pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
       text: 'Suggest changes to this page'
     },
 
