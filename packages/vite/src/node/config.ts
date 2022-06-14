@@ -253,6 +253,7 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
@@ -522,7 +523,10 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  // flat config.worker.plugin
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
+  // @ts-ignore
   const rawWorkerUserPlugins = (config.worker?.plugins || [])
     .flat(Infinity)
     .filter((p) => {

@@ -23,7 +23,8 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX
+  VALID_ID_PREFIX,
+  wildcardHosts
 } from './constants'
 import type { ResolvedConfig } from '.'
 
@@ -747,7 +748,7 @@ export function resolveHostname(
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
-    host = '127.0.0.1'
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -755,14 +756,9 @@ export function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
+  // Set host name to localhost when possible
   const name =
-    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
-    host === '0.0.0.0' ||
-    host === '::' ||
-    host === undefined
-      ? 'localhost'
-      : host
+    host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
   return { host, name }
 }

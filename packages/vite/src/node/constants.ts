@@ -105,3 +105,15 @@ export const DEFAULT_ASSETS_RE = new RegExp(
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+
+export const loopbackHosts = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '0000:0000:0000:0000:0000:0000:0000:0001'
+])
+export const wildcardHosts = new Set([
+  '0.0.0.0',
+  '::',
+  '0000:0000:0000:0000:0000:0000:0000:0000'
+])
