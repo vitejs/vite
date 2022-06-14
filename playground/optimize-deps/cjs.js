@@ -28,7 +28,9 @@ function App() {
   )
 }
 
-ReactDOM.render(React.createElement(App), document.querySelector('.cjs'))
+ReactDOM.createRoot(document.querySelector('.cjs')).render(
+  React.createElement(App)
+)
 
 function text(el, text) {
   document.querySelector(el).textContent = text

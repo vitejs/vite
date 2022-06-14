@@ -20,4 +20,6 @@ function App() {
   )
 }
 
-ReactDOM.render(React.createElement(App), document.querySelector('.dedupe'))
+ReactDOM.createRoot(document.querySelector('.dedupe')).render(
+  React.createElement(App)
+)

@@ -42,9 +42,8 @@
     )
   }
 
-  ReactDOM.render(
-    React.createElement(App),
-    document.querySelector('.cjs-dynamic')
+  ReactDOM.createRoot(document.querySelector('.cjs-dynamic')).render(
+    React.createElement(App)
   )
 
   function text(el, text) {
