@@ -44,7 +44,7 @@ export interface Plugin extends RollupPlugin {
    * - undefined: internal plugin
    */
   /* @internal */
-  __plugin_type__?: 'user' | 'worker'
+  __plugin_type__?: 'worker' | undefined
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
