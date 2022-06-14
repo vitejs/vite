@@ -99,6 +99,9 @@ There are some changes which only affects plugin/tool creators.
   - `printHttpServerUrls` is removed
   - `server.app`, `server.transformWithEsbuild` are removed
   - `import.meta.hot.acceptDeps` is removed
+- [[#6901] fix: sequential injection of tags in transformIndexHtml](https://github.com/vitejs/vite/pull/6901)
+  - `transformIndexHtml` now gets the correct content modifed by plugins executed before
+  - The order of the tags injected by `transformIndexHtml` is now correct
 - [[#7995] chore: do not fixStacktrace](https://github.com/vitejs/vite/pull/7995)
   - `ssrLoadModule`'s `fixStacktrace` option's default is now `false`
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
