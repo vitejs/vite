@@ -332,17 +332,23 @@ export async function resolveConfig(
 
   // resolve plugins
   // @ts-ignore
-  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
-    if (!p) {
-      return false
-    } else if (!p.apply) {
-      return true
-    } else if (typeof p.apply === 'function') {
-      return p.apply({ ...config, mode }, configEnv)
-    } else {
-      return p.apply === command
-    }
-  }) as Plugin[]
+  const rawUserPlugins = (config.plugins || [])
+    .flat(Infinity)
+    .filter((p) => {
+      if (!p) {
+        return false
+      } else if (!p.apply) {
+        return true
+      } else if (typeof p.apply === 'function') {
+        return p.apply({ ...config, mode }, configEnv)
+      } else {
+        return p.apply === command
+      }
+    })
+    .map((p) => {
+      p.__type = 'user'
+      return p
+    }) as Plugin[]
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
@@ -523,9 +529,6 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
-  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
-  // So we need to separate the worker plugin from the plugin that vite needs to run.
   // @ts-ignore
   const rawWorkerUserPlugins = (config.worker?.plugins || [])
     .flat(Infinity)
@@ -541,22 +544,31 @@ export async function resolveConfig(
       }
     })
     .map((p) => {
-      p.__plugin_type__ = 'worker'
+      p.__type = 'worker'
       return p
     }) as Plugin[]
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(rawWorkerUserPlugins)
   const workerResolved: ResolvedConfig = {
     ...resolved,
     isWorker: true,
     mainConfig: resolved
   }
-  resolved.worker.plugins = await resolvePlugins(
-    workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins
-  )
+
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
+  if (command === 'build') {
+    const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+      sortUserPlugins(rawWorkerUserPlugins)
+    resolved.worker.plugins = await resolvePlugins(
+      workerResolved,
+      workerPrePlugins,
+      workerNormalPlugins,
+      workerPostPlugins
+    )
+  } else {
+    // serve mode doesn't bundle the worker so doesn't resolve plugin again
+    resolved.worker.plugins = rawWorkerUserPlugins
+  }
   // call configResolved worker plugins hooks
   await Promise.all(
     resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))

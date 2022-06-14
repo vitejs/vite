@@ -154,14 +154,12 @@ function callPluginHook<T extends keyof Plugin, P extends Required<Plugin>[T]>(
     return fn && fn.call(...args)
   }
 
-  const pluginType = plugin.__plugin_type__
+  const pluginType = plugin.__type
   const isWorker = isWorkerRE.test(id)
-  if (isWorker) {
-    return (
-      (pluginType === 'worker' || typeof pluginType === 'undefined') &&
-      fn &&
-      fn.call(...args)
-    )
+  if (pluginType === 'worker') {
+    return isWorker && fn && fn.call(...args)
+  } else if (pluginType === 'user') {
+    return !isWorker && fn && fn.call(...args)
   }
   return fn && fn.call(...args)
 }
