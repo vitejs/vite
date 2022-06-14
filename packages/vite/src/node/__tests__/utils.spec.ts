@@ -49,9 +49,9 @@ describe('injectQuery', () => {
 })
 
 describe('resolveHostname', () => {
-  test('defaults to 127.0.0.1', () => {
+  test('defaults to localhost', () => {
     expect(resolveHostname(undefined)).toEqual({
-      host: '127.0.0.1',
+      host: 'localhost',
       name: 'localhost'
     })
   })
@@ -59,6 +59,27 @@ describe('resolveHostname', () => {
   test('accepts localhost', () => {
     expect(resolveHostname('localhost')).toEqual({
       host: 'localhost',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0.0.0.0', () => {
+    expect(resolveHostname('0.0.0.0')).toEqual({
+      host: '0.0.0.0',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts ::', () => {
+    expect(resolveHostname('::')).toEqual({
+      host: '::',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', () => {
+    expect(resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')).toEqual({
+      host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost'
     })
   })
