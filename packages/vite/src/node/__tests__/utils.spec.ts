@@ -119,6 +119,11 @@ describe('asyncFlatten', () => {
     expect(arr).toEqual([1, 2, 3, 4, 5, 6])
   })
 
+  test('nested falsy array', async () => {
+    const arr = await asyncFlatten([1, 2, false, [4, null, undefined]])
+    expect(arr).toEqual([1, 2, false, 4, null, undefined])
+  })
+
   test('plain promise array', async () => {
     const arr = await asyncFlatten([1, 2, Promise.resolve(3)])
     expect(arr).toEqual([1, 2, 3])
