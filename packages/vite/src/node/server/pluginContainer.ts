@@ -149,19 +149,19 @@ function callPluginHook<T extends keyof Plugin, P extends Required<Plugin>[T]>(
   id?: string
 ): ReturnType<P> {
   const isBuild = config.command === 'build'
-  const fn = plugin[method]
+  const fn = plugin[method]!
   if (isBuild || !id) {
-    return fn && fn.call(...args)
+    return fn.call(...args)
   }
 
   const pluginType = plugin.__type
   const isWorker = isWorkerRE.test(id)
   if (pluginType === 'worker') {
-    return isWorker && fn && fn.call(...args)
+    return isWorker ? fn.call(...args) : undefined
   } else if (pluginType === 'user') {
-    return !isWorker && fn && fn.call(...args)
+    return !isWorker ? fn.call(...args) : undefined
   }
-  return fn && fn.call(...args)
+  return fn.call(...args)
 }
 
 export async function createPluginContainer(
@@ -170,13 +170,12 @@ export async function createPluginContainer(
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const {
-    plugins: userPlugin,
+    plugins, // TODO need to run worker.plugins in build command
     logger,
     root,
     build: { rollupOptions }
   } = config
   const isDebug = process.env.DEBUG
-  const plugins = userPlugin.concat(config.worker.plugins)
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
