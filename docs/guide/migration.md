@@ -31,6 +31,8 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
+Vite's default dev server host is now `localhost`. You can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1`.
+
 Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM and to reduce the number of modules the browser needs to request. In v3, the default strategy to discover and batch dependencies has changed. Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
 
 To get back the v2 strategy, you can use [`optimizeDeps.devScan`](../config/dep-optimization-options.md#optimizedepsdevscan).

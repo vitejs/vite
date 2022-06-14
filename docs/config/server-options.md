@@ -3,7 +3,7 @@
 ## server.host
 
 - **Type:** `string | boolean`
-- **Default:** `'127.0.0.1'`
+- **Default:** `'localhost'`
 
 Specify which IP addresses the server should listen on.
 Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
