@@ -4,12 +4,10 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
-import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, isRelativeBase, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { createLogger } from '../logger'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -359,7 +357,7 @@ async function fileToBuiltUrl(
     const defaultAssetFileNames = path.posix.join(
       config.build.assetsDir,
       '[name].[hash][extname]'
-      )
+    )
     // Steps to determine which assetFileNames will be actually used.
     // First, if output is an object or string, use assetFileNames in it.
     // And a default assetFileNames as fallback.
