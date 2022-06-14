@@ -133,12 +133,47 @@ type PluginContext = Omit<
 
 export let parser = acorn.Parser
 
+type FunctionThis<T extends (this: any, ...args: any) => any> = T extends (
+  this: infer P,
+  ...args: any
+) => any
+  ? P
+  : never
+const isWorkerRE = /(\?|&)worker_file\b/
+
+function callPluginHook<T extends keyof Plugin, P extends Required<Plugin>[T]>(
+  config: ResolvedConfig,
+  plugin: Plugin,
+  method: T,
+  args: [FunctionThis<P>, ...Parameters<P>],
+  id?: string
+): ReturnType<P> {
+  const isBuild = config.command === 'build'
+  const fn = plugin[method]
+  if (isBuild || !id) {
+    return fn && fn.call(...args)
+  }
+  const pluginType = plugin.__plugin_type__
+  const isWorker = isWorkerRE.test(id)
+  if (isWorker) {
+    return pluginType === 'worker' && fn && fn.call(...args)
+  }
+  return fn && fn.call(...args)
+}
+
 export async function createPluginContainer(
-  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
+  const {
+    plugins: userPlugin,
+    logger,
+    root,
+    build: { rollupOptions }
+  } = config
   const isDebug = process.env.DEBUG
+  const plugins = userPlugin.concat(config.worker.plugins)
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -494,7 +529,10 @@ export async function createPluginContainer(
       for (const plugin of plugins) {
         if (!plugin.options) continue
         options =
-          (await plugin.options.call(minimalContext, options)) || options
+          (await callPluginHook(config, plugin, 'options', [
+            minimalContext,
+            options
+          ])) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(
@@ -514,10 +552,10 @@ export async function createPluginContainer(
       await Promise.all(
         plugins.map((plugin) => {
           if (plugin.buildStart) {
-            return plugin.buildStart.call(
+            return callPluginHook(config, plugin, 'buildStart', [
               new Context(plugin) as any,
               container.options as NormalizedInputOptions
-            )
+            ])
           }
         })
       )
@@ -542,11 +580,12 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
 
         const pluginResolveStart = isDebug ? performance.now() : 0
-        const result = await plugin.resolveId.call(
-          ctx as any,
-          rawId,
-          importer,
-          { ssr, scan }
+        const result = await callPluginHook(
+          config,
+          plugin,
+          'resolveId',
+          [ctx as any, rawId, importer, { ssr, scan }],
+          rawId
         )
         if (!result) continue
 
@@ -596,7 +635,13 @@ export async function createPluginContainer(
       for (const plugin of plugins) {
         if (!plugin.load) continue
         ctx._activePlugin = plugin
-        const result = await plugin.load.call(ctx as any, id, { ssr })
+        const result = await callPluginHook(
+          config,
+          plugin,
+          'load',
+          [ctx as any, id, { ssr }],
+          id
+        )
         if (result != null) {
           if (isObject(result)) {
             updateModuleInfo(id, result)
@@ -620,7 +665,13 @@ export async function createPluginContainer(
         const start = isDebug ? performance.now() : 0
         let result: TransformResult | string | undefined
         try {
-          result = await plugin.transform.call(ctx as any, code, id, { ssr })
+          result = await callPluginHook(
+            config,
+            plugin,
+            'transform',
+            [ctx as any, code, id, { ssr }],
+            id
+          )
         } catch (e) {
           ctx.error(e)
         }

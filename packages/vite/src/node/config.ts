@@ -330,6 +330,7 @@ export async function resolveConfig(
   configEnv.mode = mode
 
   // resolve plugins
+  // @ts-ignore
   const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
     if (!p) {
       return false
@@ -522,8 +523,25 @@ export async function resolveConfig(
   }
 
   // flat config.worker.plugin
+  const rawWorkerUserPlugins = (config.worker?.plugins || [])
+    .flat(Infinity)
+    .filter((p) => {
+      if (!p) {
+        return false
+      } else if (!p.apply) {
+        return true
+      } else if (typeof p.apply === 'function') {
+        return p.apply({ ...config, mode }, configEnv)
+      } else {
+        return p.apply === command
+      }
+    })
+    .map((p) => {
+      p.__plugin_type__ = 'worker'
+      return p
+    }) as Plugin[]
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(config.worker?.plugins as Plugin[])
+    sortUserPlugins(rawWorkerUserPlugins)
   const workerResolved: ResolvedConfig = {
     ...resolved,
     isWorker: true,
