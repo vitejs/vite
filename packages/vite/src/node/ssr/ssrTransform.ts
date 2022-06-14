@@ -9,7 +9,7 @@ import type {
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
 // `eslint-plugin-node` doesn't support package without main
- 
+// eslint-disable-next-line node/no-missing-import
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { TransformResult } from '../server/transformRequest'
