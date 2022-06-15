@@ -16,7 +16,7 @@ function testDirDep() {
     AtRule(atRule, { result, Comment }) {
       if (atRule.name === 'test') {
         const pattern = normalizePath(
-          path.resolve(path.dirname(result.opts.from), './glob-dep/*.css')
+          path.resolve(path.dirname(result.opts.from), './glob-dep/**/*.css')
         )
         const files = glob.sync(pattern)
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
@@ -27,6 +27,14 @@ function testDirDep() {
           type: 'dir-dependency',
           plugin: 'dir-dep',
           dir: './glob-dep',
+          glob: '*.css',
+          parent: result.opts.from
+        })
+
+        result.messages.push({
+          type: 'dir-dependency',
+          plugin: 'dir-dep',
+          dir: './glob-dep/nested (dir)', // includes special characters in glob
           glob: '*.css',
           parent: result.opts.from
         })
