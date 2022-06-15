@@ -385,6 +385,7 @@ export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
+  const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build'
@@ -471,12 +472,10 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
-  const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
-  }
-  for (const key in config.define) {
-    const value = config.define[key]
-    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
+  const define = {
+    'process.env.NODE_ENV': isBuild
+      ? '__vite_process_env_NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || config.mode)
   }
 
   const start = performance.now()
@@ -485,6 +484,10 @@ export async function runOptimizeDeps(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
+    platform:
+      config.build.ssr && config.ssr?.target !== 'webworker'
+        ? 'node'
+        : undefined,
     format: 'esm',
     target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
@@ -492,7 +495,7 @@ export async function runOptimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: resolvedConfig.command !== 'build',
+    ignoreAnnotations: !isBuild,
     metafile: true,
     define,
     plugins: [
