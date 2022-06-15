@@ -385,7 +385,6 @@ export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
-  const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build'
@@ -472,19 +471,12 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
-  let define: Record<string, string> | undefined
-  if (!isBuild) {
-    // We only use define for dev optimized deps. During build we let the define keys
-    // unchanged as the define plugin will process them
-    define = {
-      'process.env.NODE_ENV': JSON.stringify(
-        process.env.NODE_ENV || config.mode
-      )
-    }
-    for (const key in config.define) {
-      const value = config.define[key]
-      define[key] = typeof value === 'string' ? value : JSON.stringify(value)
-    }
+  const define: Record<string, string> = {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
+  }
+  for (const key in config.define) {
+    const value = config.define[key]
+    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
   const start = performance.now()

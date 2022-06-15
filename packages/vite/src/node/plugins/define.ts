@@ -2,6 +2,7 @@ import MagicString from 'magic-string'
 import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { getDepsOptimizer } from '../optimizer'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -107,6 +108,15 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         isNonJsRequest(id) ||
         config.assetsInclude(id)
       ) {
+        return
+      }
+
+      if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
+        // The esbuild optimizer already replaced these variables
+        // Avoid re-processing for performance and also to avoid breaking
+        // with object values which end up generating a variable in esbuild
+        // that isn't removed in commonjs deps
+        //   "<define:__DEFINE_KEY__>"() {
         return
       }
 
