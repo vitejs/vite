@@ -569,37 +569,39 @@ export async function resolveConfig(
     )
   }
 
-  // Check if all assetFileNames have the same reference.
-  // If not, display a warn for user. (exclude lib mode, it will make all asset to base64)
-  const outputOption = config.build?.rollupOptions?.output ?? []
-  // Use isArray to narrow its type to array
-  if (!verifyRollupOutputOption(outputOption, 'assetFileNames')) {
-    resolved.logger.warn(
-      colors.yellow(
-        `assetFileNames isn't equal for every build.rollupOptions.output. ` +
-          `A single pattern across all outputs is supported by Vite.`
+  if (!config.build?.lib) {
+    // Check if all assetFileNames have the same reference.
+    // If not, display a warn for user. (exclude lib mode, it will make all asset to base64)
+    const outputOption = config.build?.rollupOptions?.output ?? []
+    // Use isArray to narrow its type to array
+    if (!verifyRollupOutputOption(outputOption, 'assetFileNames')) {
+      resolved.logger.warn(
+        colors.yellow(
+          `assetFileNames isn't equal for every build.rollupOptions.output. ` +
+            `A single pattern across all outputs is supported by Vite.`
+        )
       )
-    )
-  }
+    }
 
-  const workerOutputOption = config.worker?.rollupOptions?.output ?? []
-  const differentOpts = [
-    !verifyRollupOutputOption(workerOutputOption, 'assetFileNames') &&
-      'assetFileNames',
-    !verifyRollupOutputOption(workerOutputOption, 'chunkFileNames') &&
-      'chunkFileNames',
-    !verifyRollupOutputOption(workerOutputOption, 'entryFileNames') &&
-      'entryFileNames'
-  ].filter(Boolean)
-  if (differentOpts.length > 0) {
-    resolved.logger.warn(
-      colors.yellow(
-        `${differentOpts.join(
-          ','
-        )} isn't equal for every worker.rollupOptions.output. ` +
-          `A single pattern across all outputs is supported by Vite.`
+    const workerOutputOption = config.worker?.rollupOptions?.output ?? []
+    const differentOpts = [
+      !verifyRollupOutputOption(workerOutputOption, 'assetFileNames') &&
+        'assetFileNames',
+      !verifyRollupOutputOption(workerOutputOption, 'chunkFileNames') &&
+        'chunkFileNames',
+      !verifyRollupOutputOption(workerOutputOption, 'entryFileNames') &&
+        'entryFileNames'
+    ].filter(Boolean)
+    if (differentOpts.length > 0) {
+      resolved.logger.warn(
+        colors.yellow(
+          `${differentOpts.join(
+            ','
+          )} isn't equal for every worker.rollupOptions.output. ` +
+            `A single pattern across all outputs is supported by Vite.`
+        )
       )
-    )
+    }
   }
   return resolved
 }
