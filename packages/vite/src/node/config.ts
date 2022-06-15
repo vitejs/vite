@@ -570,10 +570,10 @@ export async function resolveConfig(
   }
 
   // Check if all assetFileNames have the same reference.
-  // If not, display a warn for user.
+  // If not, display a warn for user. (exclude lib mode, it will make all asset to base64)
   const outputOption = config.build?.rollupOptions?.output ?? []
   // Use isArray to narrow its type to array
-  if (Array.isArray(outputOption)) {
+  if (Array.isArray(outputOption) && !config.build?.lib) {
     const assetFileNamesList = outputOption.map(
       (output) => output.assetFileNames
     )
@@ -584,9 +584,10 @@ export async function resolveConfig(
       )
       if (hasDifferentReference) {
         resolved.logger.warn(
-          colors.yellow(`
-assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
-`)
+          colors.yellow(
+            `assetFileNames isn't equal for every build.rollupOptions.output. ` +
+              `A single pattern across all outputs is supported by Vite.`
+          )
         )
       }
     }
