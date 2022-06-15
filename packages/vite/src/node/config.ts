@@ -344,31 +344,21 @@ export async function resolveConfig(
       } else {
         return p.apply === command
       }
-    })
-    .map((p) => {
-      p.__type = 'worker'
-      return p
     }) as Plugin[]
 
   // resolve plugins
   // @ts-ignore
-  const rawUserPlugins = (config.plugins || [])
-    .flat(Infinity)
-    .filter((p) => {
-      if (!p) {
-        return false
-      } else if (!p.apply) {
-        return true
-      } else if (typeof p.apply === 'function') {
-        return p.apply({ ...config, mode }, configEnv)
-      } else {
-        return p.apply === command
-      }
-    })
-    .map((p) => {
-      p.__type = 'user'
-      return p
-    }) as Plugin[]
+  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  }) as Plugin[]
 
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
     rawUserPlugins.concat(command === 'build' ? [] : rawWorkerUserPlugins)

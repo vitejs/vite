@@ -39,14 +39,6 @@ import type { ConfigEnv, ResolvedConfig } from './'
  */
 export interface Plugin extends RollupPlugin {
   /**
-   * Distinguish plugin types, user plugins should not be applied to workers.
-   * - worker: worker plugin
-   * - user: user plugin
-   * - undefined: internal plugin
-   */
-  /* @internal */
-  __type?: 'user' | 'worker'
-  /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
    * Plugin invocation order:
