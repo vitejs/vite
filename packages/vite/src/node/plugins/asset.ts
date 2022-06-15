@@ -365,11 +365,22 @@ async function fileToBuiltUrl(
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
     const output = config.build?.rollupOptions?.output
-    const assetFileNames =
+
+    const defaultAssetFileNames = path.posix.join(
+      config.build.assetsDir,
+      '[name].[hash][extname]'
+    )
+    // Steps to determine which assetFileNames will be actually used.
+    // First, if output is an object or string, use assetFileNames in it.
+    // And a default assetFileNames as fallback.
+    let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
       (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
-      // defaults to '<assetsDir>/[name].[hash][extname]'
-      // slightly different from rollup's one ('assets/[name]-[hash][extname]')
-      path.posix.join(config.build.assetsDir, '[name].[hash][extname]')
+      defaultAssetFileNames
+    if (output && Array.isArray(output)) {
+      // Second, if output is an array, adopt assetFileNames in the first object.
+      assetFileNames = output[0].assetFileNames ?? assetFileNames
+    }
+
     const fileName = assetFileNamesToFileName(
       assetFileNames,
       file,

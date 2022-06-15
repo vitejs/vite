@@ -1,4 +1,5 @@
 import './style.css'
+import './vite.svg'
 
 async function run() {
   const { fn } = await import('./async.js')
