@@ -8,7 +8,7 @@
     "build:worker": "vite build --ssr src/entry-worker.jsx --outDir dist/worker"
   },
   "dependencies": {
-    "react": "^17.0.2"
+    "react": "^18.1.0"
   },
   "devDependencies": {
     "miniflare": "^1.4.1",

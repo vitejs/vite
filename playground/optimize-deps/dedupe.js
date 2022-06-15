@@ -1,5 +1,5 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
 
 // #1302: The linked package has a different version of React in its deps
 // and is itself optimized. Without `dedupe`, the linked package is optimized
@@ -20,4 +20,6 @@ function App() {
   )
 }
 
-ReactDOM.render(React.createElement(App), document.querySelector('.dedupe'))
+ReactDOM.createRoot(document.querySelector('.dedupe')).render(
+  React.createElement(App)
+)

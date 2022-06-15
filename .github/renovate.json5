@@ -19,8 +19,6 @@
     "typescript",
 
     // breaking changes
-    "react-router", // `react-router:v6.0.0+` has breaking changes
-    "react-router-dom", // `react-router-dom:v6.0.0+` has breaking changes
     "source-map", // `source-map:v0.7.0+` needs more investigation
     "dotenv-expand", // `dotenv-expand:6.0.0+` has breaking changes (#6858)
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
