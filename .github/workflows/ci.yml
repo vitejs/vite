@@ -4,6 +4,8 @@ env:
   # 7 GiB by default on GitHub, setting to 6 GiB
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NODE_OPTIONS: --max-old-space-size=6144
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
 on:
   push:
@@ -38,10 +40,6 @@ jobs:
             node_version: 16
       fail-fast: false
 
-    env:
-      # Install playwright's binray under node_modules so it will be cached together
-      PLAYWRIGHT_BROWSERS_PATH: "0"
-
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
@@ -59,8 +57,24 @@ jobs:
       - name: Install deps
         run: pnpm install
 
-      # This could be removed when https://github.com/pnpm/pnpm/issues/4888 is resolved
+      # Install playwright's binary under custom directory to cache
+      - name: Set Playwright path (non-windows)
+        if: runner.os != 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+      - name: Set Playwright path (windows)
+        if: runner.os == 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          # Playwright removes unused browsers automatically
+          # So does not need to add playwright version to key
+          key: ${{ runner.os }}-playwright-bin-v1
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
       - name: Install Playwright
+        # does not need to explictly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
         run: pnpm playwright install chromium
 
       - name: Build
@@ -98,8 +112,6 @@ jobs:
 
       - name: Install deps
         run: pnpm install
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
       - name: Build
         run: pnpm run build
