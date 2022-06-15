@@ -1,4 +1,5 @@
-import { scriptRE, commentRE, importsRE } from '../optimizer/scan'
+import { describe, expect, test } from 'vitest'
+import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
 describe('optimizer-scan:script-test', () => {

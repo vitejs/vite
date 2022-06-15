@@ -1,6 +1,0 @@
-{
-  "name": "dep-with-dynamic-import",
-  "private": true,
-  "version": "0.0.0",
-  "main": "index.js"
-}

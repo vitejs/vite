@@ -1,6 +1,7 @@
 import fs from 'fs'
 import type { Plugin, ViteDevServer } from 'vite'
-import { createFilter } from '@rollup/pluginutils'
+import { createFilter } from 'vite'
+/* eslint-disable import/no-duplicates */
 import type {
   SFCBlock,
   SFCScriptCompileOptions,
@@ -8,6 +9,7 @@ import type {
   SFCTemplateCompileOptions
 } from 'vue/compiler-sfc'
 import type * as _compiler from 'vue/compiler-sfc'
+/* eslint-enable import/no-duplicates */
 import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
@@ -18,7 +20,8 @@ import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
 import { EXPORT_HELPER_ID, helperCode } from './helper'
 
-export { parseVueRequest, VueQuery } from './utils/query'
+export { parseVueRequest } from './utils/query'
+export type { VueQuery } from './utils/query'
 
 export interface Options {
   include?: string | RegExp | (string | RegExp)[]
@@ -104,14 +107,6 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
 
-  // Temporal handling for 2.7 breaking change
-  const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
-    opt === undefined
-      ? false
-      : typeof opt === 'boolean'
-      ? opt
-      : opt?.ssr === true
-
   return {
     name: 'vite:vue',
 
@@ -166,7 +161,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       if (id === EXPORT_HELPER_ID) {
         return helperCode
       }
@@ -199,7 +194,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     transform(code, id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
       if (query.raw) {
         return
@@ -250,10 +245,3 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     }
   }
 }
-
-// overwrite for cjs require('...')() usage
-// The following lines are inserted by scripts/patchEsbuildDist.ts,
-// this doesn't bundle correctly after esbuild 0.14.4
-//
-// module.exports = vuePlugin
-// vuePlugin['default'] = vuePlugin

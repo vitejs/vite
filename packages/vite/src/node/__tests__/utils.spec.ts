@@ -1,4 +1,6 @@
+import { describe, expect, test } from 'vitest'
 import {
+  getHash,
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
@@ -33,13 +35,13 @@ describe('injectQuery', () => {
     )
   })
 
-  test('path with unicode', () => {
+  test('path with Unicode', () => {
     expect(injectQuery('/usr/vite/東京', 'direct')).toEqual(
       '/usr/vite/東京?direct'
     )
   })
 
-  test('path with unicode, space, and %', () => {
+  test('path with Unicode, space, and %', () => {
     expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
       '/usr/vite/東京 %20 hello?direct'
     )
@@ -47,9 +49,9 @@ describe('injectQuery', () => {
 })
 
 describe('resolveHostname', () => {
-  test('defaults to 127.0.0.1', () => {
+  test('defaults to localhost', () => {
     expect(resolveHostname(undefined)).toEqual({
-      host: '127.0.0.1',
+      host: 'localhost',
       name: 'localhost'
     })
   })
@@ -57,6 +59,27 @@ describe('resolveHostname', () => {
   test('accepts localhost', () => {
     expect(resolveHostname('localhost')).toEqual({
       host: 'localhost',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0.0.0.0', () => {
+    expect(resolveHostname('0.0.0.0')).toEqual({
+      host: '0.0.0.0',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts ::', () => {
+    expect(resolveHostname('::')).toEqual({
+      host: '::',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', () => {
+    expect(resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')).toEqual({
+      host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost'
     })
   })
@@ -96,4 +119,11 @@ test('ts import of file with .js and query param', () => {
     'test-file.js.ts?lee=123',
     'test-file.js.tsx?lee=123'
   ])
+})
+
+describe('getHash', () => {
+  test('8-digit hex', () => {
+    const hash = getHash(Buffer.alloc(0))
+    expect(hash).toMatch(/^[\da-f]{8}$/)
+  })
 })

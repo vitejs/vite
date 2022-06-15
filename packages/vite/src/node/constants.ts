@@ -1,4 +1,9 @@
-import path from 'path'
+import path, { resolve } from 'path'
+import { fileURLToPath } from 'url'
+// @ts-expect-error
+import { version } from '../../package.json'
+
+export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
   'module',
@@ -46,19 +51,28 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-// eslint-disable-next-line node/no-missing-require
-export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.mjs')
-// eslint-disable-next-line node/no-missing-require
-export const ENV_ENTRY = require.resolve('vite/dist/client/env.mjs')
+export const VITE_PACKAGE_DIR = resolve(
+  fileURLToPath(import.meta.url),
+  '../../..'
+)
+
+export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
+export const ENV_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/env.mjs')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
 // ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
 //   If you add an asset to `KNOWN_ASSET_TYPES`, make sure to also add it
-//   to the TypeScript declaration file `packages/vite/client.d.ts`.
+//   to the TypeScript declaration file `packages/vite/client.d.ts` and
+//   add a mime type to the `registerCustomMime` in
+//   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
+//   looked up by mrmime.
 export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
+  'jfif',
+  'pjpeg',
+  'pjp',
   'gif',
   'svg',
   'ico',
@@ -81,7 +95,6 @@ export const KNOWN_ASSET_TYPES = [
   'otf',
 
   // other
-  'wasm',
   'webmanifest',
   'pdf',
   'txt'
@@ -92,3 +105,15 @@ export const DEFAULT_ASSETS_RE = new RegExp(
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+
+export const loopbackHosts = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '0000:0000:0000:0000:0000:0000:0000:0001'
+])
+export const wildcardHosts = new Set([
+  '0.0.0.0',
+  '::',
+  '0000:0000:0000:0000:0000:0000:0000:0000'
+])

@@ -15,7 +15,7 @@ declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
-console.log('[vite] connecting...')
+console.debug('[vite] connecting...')
 
 // use server configuration, then fallback to inference
 const socketProtocol =
@@ -23,12 +23,29 @@ const socketProtocol =
 const socketHostname = `${__HMR_HOSTNAME__ || location.hostname}`
 const socketPort =
   __HMR_CLIENT_PORT__ || (location.port === '' ? location.port : __HMR_PORT__)
-const socket = new WebSocket(
-  `${socketProtocol}://${socketHostname}:${socketPort}${__HMR_BASE__}`,
-  'vite-hmr'
-)
+const socketHost = `${socketHostname}:${socketPort}${__HMR_BASE__}`
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
+
+let socket: WebSocket
+try {
+  socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
+
+  // Listen for messages
+  socket.addEventListener('message', async ({ data }) => {
+    handleMessage(JSON.parse(data))
+  })
+
+  // ping server
+  socket.addEventListener('close', async ({ wasClean }) => {
+    if (wasClean) return
+    console.log(`[vite] server connection lost. polling for restart...`)
+    await waitForSuccessfulPing()
+    location.reload()
+  })
+} catch (error) {
+  console.error(`[vite] failed to connect to websocket (${error}). `)
+}
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -47,17 +64,12 @@ function cleanUrl(pathname: string): string {
   return url.pathname + url.search
 }
 
-// Listen for messages
-socket.addEventListener('message', async ({ data }) => {
-  handleMessage(JSON.parse(data))
-})
-
 let isFirstUpdate = true
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.log(`[vite] connected.`)
+      console.debug(`[vite] connected.`)
       sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
@@ -94,7 +106,18 @@ async function handleMessage(payload: HMRPayload) {
             const newPath = `${base}${searchUrl.slice(1)}${
               searchUrl.includes('?') ? '&' : '?'
             }t=${timestamp}`
-            el.href = new URL(newPath, el.href).href
+
+            // rather than swapping the href on the existing tag, we will
+            // create a new link tag. Once the new stylesheet has loaded we
+            // will remove the existing link tag. This removes a Flash Of
+            // Unstyled Content that can occur when swapping out the tag href
+            // directly, as the new stylesheet has not yet been loaded.
+            const newLinkTag = el.cloneNode() as HTMLLinkElement
+            newLinkTag.href = new URL(newPath, el.href).href
+            const removeOldEl = () => el.remove()
+            newLinkTag.addEventListener('load', removeOldEl)
+            newLinkTag.addEventListener('error', removeOldEl)
+            el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
         }
@@ -113,6 +136,7 @@ async function handleMessage(payload: HMRPayload) {
         const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
+          payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
           location.reload()
@@ -207,26 +231,16 @@ async function waitForSuccessfulPing(ms = 1000) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      const pingResponse = await fetch(`${base}__vite_ping`)
-
-      // success - 2xx status code
-      if (pingResponse.ok) break
-      // failure - non-2xx status code
-      else throw new Error()
+      // A fetch on a websocket URL will return a successful promise with status 400,
+      // but will reject a networking error.
+      await fetch(`${location.protocol}//${socketHost}`)
+      break
     } catch (e) {
       // wait ms before attempting to ping again
       await new Promise((resolve) => setTimeout(resolve, ms))
     }
   }
 }
-
-// ping server
-socket.addEventListener('close', async ({ wasClean }) => {
-  if (wasClean) return
-  console.log(`[vite] server connection lost. polling for restart...`)
-  await waitForSuccessfulPing()
-  location.reload()
-})
 
 // https://wicg.github.io/construct-stylesheets
 const supportsConstructedSheet = (() => {
@@ -437,13 +451,6 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       } else {
         throw new Error(`invalid hot.accept() usage.`)
       }
-    },
-
-    acceptDeps() {
-      throw new Error(
-        `hot.acceptDeps() is deprecated. ` +
-          `Use hot.accept() with the same signature instead.`
-      )
     },
 
     dispose(cb) {

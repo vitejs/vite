@@ -1,6 +1,4 @@
 import path from 'path'
-import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import type {
   OutputAsset,
   OutputBundle,
@@ -8,35 +6,38 @@ import type {
   RollupError,
   SourceMapInput
 } from 'rollup'
+import MagicString from 'magic-string'
+import type {
+  AttributeNode,
+  CompilerError,
+  ElementNode,
+  NodeTransform,
+  TextNode
+} from '@vue/compiler-dom'
+import { NodeTypes } from '@vue/compiler-dom'
+import { stripLiteral } from 'strip-literal'
+import type { Plugin } from '../plugin'
+import type { ViteDevServer } from '../server'
 import {
   cleanUrl,
   generateCodeFrame,
+  getHash,
   isDataUrl,
   isExternalUrl,
+  isRelativeBase,
   normalizePath,
   processSrcSet,
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import MagicString from 'magic-string'
 import {
-  checkPublicFile,
   assetUrlRE,
-  urlToBuiltUrl,
+  checkPublicFile,
   getAssetFilename,
-  getAssetHash
+  urlToBuiltUrl
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import type {
-  AttributeNode,
-  NodeTransform,
-  ElementNode,
-  CompilerError,
-  TextNode
-} from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
-import { emptyString } from '../cleanString'
 
 interface ScriptAssetsUrl {
   start: number
@@ -64,7 +65,7 @@ export const htmlProxyMap = new WeakMap<
 
 // HTML Proxy Transform result are stored by config
 // `${hash(importer)}_${query.index}` -> transformed css code
-// PS: key like `hash(/vite/packages/playground/assets/index.html)_1`)
+// PS: key like `hash(/vite/playground/assets/index.html)_1`)
 export const htmlProxyResult = new Map<string, string>()
 
 export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
@@ -236,7 +237,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const publicPath = `/${slash(path.relative(config.root, id))}`
+        const relativeUrlPath = slash(path.relative(config.root, id))
+        const publicPath = `/${relativeUrlPath}`
+        const publicBase = getPublicBase(relativeUrlPath, config)
+
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
           path: publicPath,
@@ -247,6 +251,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const s = new MagicString(html)
         const assetUrls: AttributeNode[] = []
         const scriptUrls: ScriptAssetsUrl[] = []
+        const styleUrls: ScriptAssetsUrl[] = []
         let inlineModuleIndex = -1
 
         let everyScriptIsAsync = true
@@ -271,7 +276,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                `"${config.base + url.slice(1)}"`,
+                `"${normalizePublicPath(url, publicBase)}"`,
                 { contentOnly: true }
               )
             }
@@ -307,7 +312,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               }
             } else if (node.children.length) {
               const scriptNode = node.children.pop()! as TextNode
-              const cleanCode = emptyString(scriptNode.content)
+              const cleanCode = stripLiteral(scriptNode.content)
 
               let match: RegExpExecArray | null
               while ((match = inlineImportRE.exec(cleanCode))) {
@@ -339,8 +344,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (!isExcludedUrl(url)) {
                   if (node.tag === 'link' && isCSSRequest(url)) {
                     // CSS references, convert to import
-                    js += `\nimport ${JSON.stringify(url)}`
-                    shouldRemove = true
+                    const importExpression = `\nimport ${JSON.stringify(url)}`
+                    styleUrls.push({
+                      url,
+                      start: node.loc.start.offset,
+                      end: node.loc.end.offset
+                    })
+                    js += importExpression
                   } else {
                     assetUrls.push(p)
                   }
@@ -348,7 +358,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    `"${config.base + url.slice(1)}"`,
+                    `"${normalizePublicPath(url, publicBase)}"`,
                     { contentOnly: true }
                   )
                 }
@@ -374,7 +384,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, { code })
             // will transform with css plugin and cache result with css-post plugin
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
@@ -393,7 +403,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               code: styleNode.content
             })
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
-            const hash = getAssetHash(cleanUrl(id))
+            const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.overwrite(
               styleNode.loc.start.offset,
@@ -464,9 +474,28 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               { contentOnly: true }
             )
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, config.base + url.slice(1), {
+            s.overwrite(start, end, normalizePublicPath(url, publicBase), {
               contentOnly: true
             })
+          }
+        }
+
+        // ignore <link rel="stylesheet"> if its url can't be resolved
+        const resolvedStyleUrls = await Promise.all(
+          styleUrls.map(async (styleUrl) => ({
+            ...styleUrl,
+            resolved: await this.resolve(styleUrl.url, id)
+          }))
+        )
+        for (const { start, end, url, resolved } of resolvedStyleUrls) {
+          if (resolved == null) {
+            config.logger.warnOnce(
+              `\n${url} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            const importExpression = `\nimport ${JSON.stringify(url)}`
+            js = js.replace(importExpression, '')
+          } else {
+            s.remove(start, end)
           }
         }
 
@@ -506,6 +535,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const toScriptTag = (
         chunk: OutputChunk,
+        publicBase: string,
         isAsync: boolean
       ): HtmlTagDescriptor => ({
         tag: 'script',
@@ -513,20 +543,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ...(isAsync ? { async: true } : {}),
           type: 'module',
           crossorigin: true,
-          src: toPublicPath(chunk.fileName, config)
+          src: toPublicPath(chunk.fileName, publicBase)
         }
       })
 
-      const toPreloadTag = (chunk: OutputChunk): HtmlTagDescriptor => ({
+      const toPreloadTag = (
+        chunk: OutputChunk,
+        publicBase: string
+      ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
-          href: toPublicPath(chunk.fileName, config)
+          crossorigin: true,
+          href: toPublicPath(chunk.fileName, publicBase)
         }
       })
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
+        publicBase: string,
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
@@ -535,7 +570,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach((file) => {
             const importee = bundle[file]
             if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, seen))
+              tags.push(...getCssTagsForChunk(importee, publicBase, seen))
             }
           })
         }
@@ -547,7 +582,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'link',
               attrs: {
                 rel: 'stylesheet',
-                href: toPublicPath(file, config)
+                href: toPublicPath(file, publicBase)
               }
             })
           }
@@ -557,6 +592,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [id, html] of processedHtml) {
+        const relativeUrlPath = path.posix.relative(config.root, id)
+        const publicBase = getPublicBase(relativeUrlPath, config)
+
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
         let result = html
@@ -584,10 +622,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
           const assetTags = canInlineEntry
-            ? imports.map((chunk) => toScriptTag(chunk, isAsync))
-            : [toScriptTag(chunk, isAsync), ...imports.map(toPreloadTag)]
+            ? imports.map((chunk) => toScriptTag(chunk, publicBase, isAsync))
+            : [
+                toScriptTag(chunk, publicBase, isAsync),
+                ...imports.map((i) => toPreloadTag(i, publicBase))
+              ]
 
-          assetTags.push(...getCssTagsForChunk(chunk))
+          assetTags.push(...getCssTagsForChunk(chunk, publicBase))
 
           result = injectToHead(result, assetTags)
         }
@@ -603,7 +644,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
-                  href: toPublicPath(cssChunk.fileName, config)
+                  href: toPublicPath(cssChunk.fileName, publicBase)
                 }
               }
             ])
@@ -627,7 +668,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           result = s.toString()
         }
-        const relativeUrlPath = path.posix.relative(config.root, id)
         result = await applyHtmlTransforms(result, postHooks, {
           path: '/' + relativeUrlPath,
           filename: id,
@@ -636,7 +676,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return config.base + getAssetFilename(fileHash, config) + postfix
+          return publicBase + getAssetFilename(fileHash, config) + postfix
         })
 
         if (chunk && canInlineEntry) {
@@ -722,20 +762,11 @@ export function resolveHtmlTransforms(
   return [preHooks, postHooks]
 }
 
-export const maybeVirtualHtmlSet = new Set<string>()
-
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
   ctx: IndexHtmlTransformContext
 ): Promise<string> {
-  const headTags: HtmlTagDescriptor[] = []
-  const headPrependTags: HtmlTagDescriptor[] = []
-  const bodyTags: HtmlTagDescriptor[] = []
-  const bodyPrependTags: HtmlTagDescriptor[] = []
-
-  maybeVirtualHtmlSet.add(ctx.filename)
-
   for (const hook of hooks) {
     const res = await hook(html, ctx)
     if (!res) {
@@ -751,6 +782,12 @@ export async function applyHtmlTransforms(
         html = res.html || html
         tags = res.tags
       }
+
+      const headTags: HtmlTagDescriptor[] = []
+      const headPrependTags: HtmlTagDescriptor[] = []
+      const bodyTags: HtmlTagDescriptor[] = []
+      const bodyPrependTags: HtmlTagDescriptor[] = []
+
       for (const tag of tags) {
         if (tag.injectTo === 'body') {
           bodyTags.push(tag)
@@ -762,21 +799,12 @@ export async function applyHtmlTransforms(
           headPrependTags.push(tag)
         }
       }
-    }
-  }
 
-  // inject tags
-  if (headPrependTags.length) {
-    html = injectToHead(html, headPrependTags, true)
-  }
-  if (headTags.length) {
-    html = injectToHead(html, headTags)
-  }
-  if (bodyPrependTags.length) {
-    html = injectToBody(html, bodyPrependTags, true)
-  }
-  if (bodyTags.length) {
-    html = injectToBody(html, bodyTags)
+      html = injectToHead(html, headPrependTags, true)
+      html = injectToHead(html, headTags)
+      html = injectToBody(html, bodyPrependTags, true)
+      html = injectToBody(html, bodyTags)
+    }
   }
 
   return html
@@ -790,8 +818,21 @@ function isEntirelyImport(code: string) {
   return !code.replace(importRE, '').replace(commentRE, '').trim().length
 }
 
-function toPublicPath(filename: string, config: ResolvedConfig) {
-  return isExternalUrl(filename) ? filename : config.base + filename
+function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
+  return isRelativeBase(config.base)
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
+}
+
+function toPublicPath(filename: string, publicBase: string) {
+  return isExternalUrl(filename) ? filename : publicBase + filename
+}
+
+function normalizePublicPath(publicPath: string, publicBase: string) {
+  return publicBase + publicPath.slice(1)
 }
 
 const headInjectRE = /([ \t]*)<\/head>/i
@@ -810,6 +851,8 @@ function injectToHead(
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
+  if (tags.length === 0) return html
+
   if (prepend) {
     // inject as the first element of head
     if (headPrependInjectRE.test(html)) {
@@ -844,6 +887,8 @@ function injectToBody(
   tags: HtmlTagDescriptor[],
   prepend = false
 ) {
+  if (tags.length === 0) return html
+
   if (prepend) {
     // inject after body open
     if (bodyPrependInjectRE.test(html)) {

@@ -4,6 +4,8 @@ env:
   # 7 GiB by default on GitHub, setting to 6 GiB
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NODE_OPTIONS: --max-old-space-size=6144
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
 on:
   push:
@@ -13,6 +15,8 @@ on:
       - feat/*
       - fix/*
       - perf/*
+      - v1
+      - v2
   pull_request:
   workflow_dispatch:
 
@@ -27,17 +31,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [12, 14, 16, 17, 18]
+        node_version: [14, 16, 18]
         include:
+          # Active LTS + other OS
           - os: macos-latest
             node_version: 16
-          - os: macos-latest
-            node_version: 18
           - os: windows-latest
             node_version: 16
-          # Maybe bug with jest on windows and node-v18
-          # - os: windows-latest
-          #   node_version: 18
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
@@ -46,9 +46,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 6
+        uses: pnpm/action-setup@v2.2.2
 
       - name: Set node version to ${{ matrix.node_version }}
         uses: actions/setup-node@v3
@@ -59,20 +57,40 @@ jobs:
       - name: Install deps
         run: pnpm install
 
-      - name: Build vite
-        run: pnpm run ci-build-vite
+      # Install playwright's binary under custom directory to cache
+      - name: Set Playwright path (non-windows)
+        if: runner.os != 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+      - name: Set Playwright path (windows)
+        if: runner.os == 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
 
-      - name: Build plugin-vue
-        run: pnpm run build-plugin-vue
+      - name: Cache Playwright's binary
+        uses: actions/cache@v3
+        with:
+          # Playwright removes unused browsers automatically
+          # So does not need to add playwright version to key
+          key: ${{ runner.os }}-playwright-bin-v1
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
-      - name: Build plugin-react
-        run: pnpm run build-plugin-react
+      - name: Install Playwright
+        # does not need to explictly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
+        run: pnpm playwright install chromium
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Test unit
+        run: pnpm run test-unit
 
       - name: Test serve
-        run: pnpm run test-serve -- --runInBand
+        run: pnpm run test-serve
 
       - name: Test build
-        run: pnpm run test-build -- --runInBand
+        run: pnpm run test-build
+
+      - name: Test docs
+        run: pnpm run test-docs
 
   lint:
     timeout-minutes: 10
@@ -84,9 +102,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 6
+        uses: pnpm/action-setup@v2.2.2
 
       - name: Set node version to 16
         uses: actions/setup-node@v3
@@ -97,13 +113,14 @@ jobs:
       - name: Install deps
         run: pnpm install
 
-      - name: Prepare
-        run: |
-          pnpm run ci-build-vite
-          pnpm run build-plugin-vue
+      - name: Build
+        run: pnpm run build
 
       - name: Lint
         run: pnpm run lint
 
       - name: Check formatting
         run: pnpm prettier --check .
+
+      - name: Typecheck
+        run: pnpm run typecheck

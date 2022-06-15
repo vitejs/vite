@@ -1,0 +1,23 @@
+{
+  "name": "test-resolve",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.18.3",
+    "es5-ext": "0.10.61",
+    "normalize.css": "^8.0.1",
+    "require-pkg-with-module-field": "link:./require-pkg-with-module-field",
+    "resolve-browser-field": "link:./browser-field",
+    "resolve-custom-condition": "link:./custom-condition",
+    "resolve-custom-main-field": "link:./custom-main-field",
+    "resolve-exports-env": "link:./exports-env",
+    "resolve-exports-path": "link:./exports-path",
+    "resolve-linked": "workspace:*"
+  }
+}
