@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@emotion/react": "^11.9.3",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-switch": "^6.1.0"
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
+    "react-switch": "^7.0.0"
   },
   "devDependencies": {
     "@babel/plugin-proposal-pipeline-operator": "^7.18.2",
