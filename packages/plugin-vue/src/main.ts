@@ -192,6 +192,7 @@ export async function transformMain(
       // of the main module compile result, which has outdated sourcesContent.
       resolvedMap.sourcesContent = templateMap.sourcesContent
     } else {
+      // if one of `scriptMap` and `templateMap` is empty, use the other one
       resolvedMap = scriptMap ?? templateMap
     }
   }
