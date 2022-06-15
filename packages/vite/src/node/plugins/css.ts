@@ -600,12 +600,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         extractedCss = await finalizeCss(extractedCss, true, config)
 
         // lib mode should emit css each rollup.generate
-        if (config.build.lib) {
-          // if isn't css module don't need to emit
-          if (!cssModulesCache.get(config)!.size) {
-            return
-          }
-        } else {
+        if (!config.build.lib) {
           hasEmitted = true
         }
 
