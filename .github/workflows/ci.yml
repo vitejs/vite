@@ -42,7 +42,7 @@ jobs:
 
     env:
       # Install playwright's binary under custom directory to cache
-      PLAYWRIGHT_BROWSERS_PATH: "~/.cache/playwright-bin"
+      PLAYWRIGHT_BROWSERS_PATH: "/.cache/playwright-bin"
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
