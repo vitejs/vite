@@ -1,6 +1,5 @@
 module.exports = {
-  purge: [__dirname + '/frontend/**/*.{css,html,ts,js}'],
-  darkMode: false, // or 'media' or 'class'
+  content: ['./frontend/**/*.{css,html,ts,js}'],
   theme: {
     extend: {}
   },
