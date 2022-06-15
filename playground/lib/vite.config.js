@@ -12,21 +12,18 @@ module.exports = {
           format: 'es',
           banner: `/*!\nMayLib\n*/`,
           assetFileNames: `subdir/assets.[name].[ext]`,
-          entryFileNames: `subdir/entry.[name].js`,
           chunkFileNames: `subdir/chunk.[name].js`
         },
         {
-          format: 'es',
+          format: 'umd',
           banner: `/*!\nMayLib\n*/`,
           assetFileNames: `subdir2/assets.[name].[ext]`,
-          entryFileNames: `subdir2/entry.[name].js`,
           chunkFileNames: `subdir2/chunk.[name].js`
         },
         {
-          format: 'es',
+          format: 'iife',
           banner: `/*!\nMayLib\n*/`,
           assetFileNames: `subdir3/assets.[name].[ext]`,
-          entryFileNames: `subdir3/entry.[name].js`,
           chunkFileNames: `subdir3/chunk.[name].js`
         }
       ]
@@ -34,7 +31,6 @@ module.exports = {
     lib: {
       entry: path.resolve(__dirname, 'src/main.js'),
       name: 'MyLib',
-      formats: ['es', 'umd', 'iife'],
       fileName: 'my-lib-custom-filename'
     }
   },
