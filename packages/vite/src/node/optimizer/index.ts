@@ -888,9 +888,8 @@ export function getDepHash(config: ResolvedConfig): string {
   // only a subset of config options that can affect dep optimization
   content += JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
+      mode: (config.command !== 'build' && process.env.NODE_ENV) || config.mode,
       root: config.root,
-      define: config.define,
       resolve: config.resolve,
       buildTarget: config.build.target,
       assetsInclude: config.assetsInclude,
