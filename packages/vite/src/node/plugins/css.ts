@@ -547,7 +547,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async generateBundle(opts, bundle) {
       // @ts-ignore asset emits are skipped in legacy bundle
-      if (opts.__vite_skip_asset_emit__ || config.build.lib) {
+      if (opts.__vite_skip_asset_emit__) {
         return
       }
 

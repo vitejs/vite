@@ -7,7 +7,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { RollupOptions } from 'rollup'
+import type { OutputOptions, RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type { BuildOptions, ResolvedBuildOptions } from './build'
 import { resolveBuildOptions } from './build'
@@ -573,27 +573,46 @@ export async function resolveConfig(
   // If not, display a warn for user. (exclude lib mode, it will make all asset to base64)
   const outputOption = config.build?.rollupOptions?.output ?? []
   // Use isArray to narrow its type to array
-  if (Array.isArray(outputOption) && !config.build?.lib) {
-    const assetFileNamesList = outputOption.map(
-      (output) => output.assetFileNames
-    )
-    if (assetFileNamesList.length > 1) {
-      const firstAssetFileNames = assetFileNamesList[0]
-      const hasDifferentReference = assetFileNamesList.some(
-        (assetFileNames) => assetFileNames !== firstAssetFileNames
+  if (!verifyRollupOutputOption(outputOption, 'assetFileNames')) {
+    resolved.logger.warn(
+      colors.yellow(
+        `assetFileNames isn't equal for every build.rollupOptions.output. ` +
+          `A single pattern across all outputs is supported by Vite.`
       )
-      if (hasDifferentReference) {
-        resolved.logger.warn(
-          colors.yellow(
-            `assetFileNames isn't equal for every build.rollupOptions.output. ` +
-              `A single pattern across all outputs is supported by Vite.`
-          )
-        )
-      }
-    }
+    )
   }
 
+  const workerOutputOption = config.worker?.rollupOptions?.output ?? []
+  const differentOpts = [
+    !verifyRollupOutputOption(workerOutputOption, 'assetFileNames') &&
+      'assetFileNames',
+    !verifyRollupOutputOption(workerOutputOption, 'chunkFileNames') &&
+      'chunkFileNames',
+    !verifyRollupOutputOption(workerOutputOption, 'entryFileNames') &&
+      'entryFileNames'
+  ].filter(Boolean)
+  if (differentOpts.length > 0) {
+    resolved.logger.warn(
+      colors.yellow(
+        `${differentOpts.join(
+          ','
+        )} isn't equal for every worker.rollupOptions.output. ` +
+          `A single pattern across all outputs is supported by Vite.`
+      )
+    )
+  }
   return resolved
+}
+
+function verifyRollupOutputOption(
+  options: OutputOptions | OutputOptions[],
+  field: 'assetFileNames' | 'chunkFileNames' | 'entryFileNames'
+): boolean {
+  if (Array.isArray(options)) {
+    const names = options.map((option) => option[field])
+    return names.length > 1 && names.some((name) => name !== names[0])
+  }
+  return false
 }
 
 /**
