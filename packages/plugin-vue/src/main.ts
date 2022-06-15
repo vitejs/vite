@@ -158,9 +158,10 @@ export async function transformMain(
 
   let resolvedMap: RawSourceMap | undefined = undefined
   if (options.sourceMap) {
-    // if the template is inlined into the main module (indicated by the presence
-    // of templateMap, we need to concatenate the two source maps.
     if (scriptMap && templateMap) {
+      // if the template is inlined into the main module (indicated by the presence
+      // of templateMap, we need to concatenate the two source maps.
+
       const gen = fromMap(
         // version property of result.map is declared as string
         // but actually it is `3`
