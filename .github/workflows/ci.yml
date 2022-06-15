@@ -40,10 +40,6 @@ jobs:
             node_version: 16
       fail-fast: false
 
-    env:
-      # Install playwright's binary under custom directory to cache
-      PLAYWRIGHT_BROWSERS_PATH: "$HOME/.cache/playwright-bin"
-
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
@@ -60,6 +56,14 @@ jobs:
 
       - name: Install deps
         run: pnpm install
+
+      # Install playwright's binary under custom directory to cache
+      - name: Set Playwright path (non-windows)
+        if: runner.os != 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+      - name: Set Playwright path (windows)
+        if: runner.os == 'Windows'
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
         uses: actions/cache@v3
