@@ -1,5 +1,5 @@
 module.exports = {
-  content: ['./frontend/**/*.{css,html,ts,js}'],
+  content: [__dirname + '/frontend/**/*.{css,html,ts,js}'],
   theme: {
     extend: {}
   },
