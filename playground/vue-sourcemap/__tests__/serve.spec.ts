@@ -334,4 +334,54 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
       }
     `)
   })
+
+  test('no script', async () => {
+    const res = await page.request.get(
+      new URL('./NoScript.vue', page.url()).href
+    )
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": ";;;wBACE",
+        "sources": [
+          "/root/NoScript.vue",
+        ],
+        "sourcesContent": [
+          "<template>
+        <p>&lt;no-script&gt;</p>
+      </template>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('no template', async () => {
+    const res = await page.request.get(
+      new URL('./NoTemplate.vue', page.url()).href
+    )
+    const js = await res.text()
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "2IACA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC",
+        "sources": [
+          "/root/NoTemplate.vue",
+        ],
+        "sourcesContent": [
+          "<script>
+      console.log('script')
+      </script>
+
+      <script setup>
+      console.log('setup')
+      </script>
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
 })

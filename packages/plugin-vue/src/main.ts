@@ -1,6 +1,6 @@
 import path from 'path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
-import type { PluginContext, SourceMap, TransformPluginContext } from 'rollup'
+import type { PluginContext, TransformPluginContext } from 'rollup'
 import type { RawSourceMap } from 'source-map'
 import type { EncodedSourceMap as TraceEncodedSourceMap } from '@jridgewell/trace-mapping'
 import { TraceMap, eachMapping } from '@jridgewell/trace-mapping'
@@ -46,7 +46,7 @@ export async function transformMain(
   const hasScoped = descriptor.styles.some((s) => s.scoped)
 
   // script
-  const { code: scriptCode, map } = await genScriptCode(
+  const { code: scriptCode, map: scriptMap } = await genScriptCode(
     descriptor,
     options,
     pluginContext,
@@ -58,7 +58,7 @@ export async function transformMain(
     descriptor.template && !isUseInlineTemplate(descriptor, !devServer)
 
   let templateCode = ''
-  let templateMap: RawSourceMap | undefined
+  let templateMap: RawSourceMap | undefined = undefined
   if (hasTemplateImport) {
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
@@ -156,40 +156,46 @@ export async function transformMain(
     )
   }
 
-  // if the template is inlined into the main module (indicated by the presence
-  // of templateMap, we need to concatenate the two source maps.
-  let resolvedMap = options.sourceMap ? map : undefined
-  if (resolvedMap && templateMap) {
-    const gen = fromMap(
-      // version property of result.map is declared as string
-      // but actually it is `3`
-      map as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
-    )
-    const tracer = new TraceMap(
-      // same above
-      templateMap as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
-    )
-    const offset = (scriptCode.match(/\r?\n/g)?.length ?? 0) + 1
-    eachMapping(tracer, (m) => {
-      if (m.source == null) return
-      addMapping(gen, {
-        source: m.source,
-        original: { line: m.originalLine, column: m.originalColumn },
-        generated: {
-          line: m.generatedLine + offset,
-          column: m.generatedColumn
-        }
-      })
-    })
+  let resolvedMap: RawSourceMap | undefined = undefined
+  if (options.sourceMap) {
+    if (scriptMap && templateMap) {
+      // if the template is inlined into the main module (indicated by the presence
+      // of templateMap, we need to concatenate the two source maps.
 
-    // same above
-    resolvedMap = toEncodedMap(gen) as Omit<
-      GenEncodedSourceMap,
-      'version'
-    > as RawSourceMap
-    // if this is a template only update, we will be reusing a cached version
-    // of the main module compile result, which has outdated sourcesContent.
-    resolvedMap.sourcesContent = templateMap.sourcesContent
+      const gen = fromMap(
+        // version property of result.map is declared as string
+        // but actually it is `3`
+        scriptMap as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
+      )
+      const tracer = new TraceMap(
+        // same above
+        templateMap as Omit<RawSourceMap, 'version'> as TraceEncodedSourceMap
+      )
+      const offset = (scriptCode.match(/\r?\n/g)?.length ?? 0) + 1
+      eachMapping(tracer, (m) => {
+        if (m.source == null) return
+        addMapping(gen, {
+          source: m.source,
+          original: { line: m.originalLine, column: m.originalColumn },
+          generated: {
+            line: m.generatedLine + offset,
+            column: m.generatedColumn
+          }
+        })
+      })
+
+      // same above
+      resolvedMap = toEncodedMap(gen) as Omit<
+        GenEncodedSourceMap,
+        'version'
+      > as RawSourceMap
+      // if this is a template only update, we will be reusing a cached version
+      // of the main module compile result, which has outdated sourcesContent.
+      resolvedMap.sourcesContent = templateMap.sourcesContent
+    } else {
+      // if one of `scriptMap` and `templateMap` is empty, use the other one
+      resolvedMap = scriptMap ?? templateMap
+    }
   }
 
   if (!attachedProps.length) {
@@ -287,10 +293,10 @@ async function genScriptCode(
   ssr: boolean
 ): Promise<{
   code: string
-  map: RawSourceMap
+  map: RawSourceMap | undefined
 }> {
   let scriptCode = `const _sfc_main = {}`
-  let map: RawSourceMap | SourceMap | undefined
+  let map: RawSourceMap | undefined
 
   const script = resolveScript(descriptor, options, ssr)
   if (script) {
@@ -322,7 +328,7 @@ async function genScriptCode(
   }
   return {
     code: scriptCode,
-    map: map as any
+    map
   }
 }
 
