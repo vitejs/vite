@@ -358,7 +358,7 @@ describe.runIf(isServe)('serve:vue-sourcemap', () => {
     `)
   })
 
-  test.only('no template', async () => {
+  test('no template', async () => {
     const res = await page.request.get(
       new URL('./NoTemplate.vue', page.url()).href
     )
