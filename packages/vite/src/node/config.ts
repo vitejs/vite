@@ -232,6 +232,7 @@ export interface ExperimentalOptions {
    * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
    *
    * @experimental
+   * @deprecated
    * @default false
    */
   devDepsScanner?: boolean
@@ -239,6 +240,7 @@ export interface ExperimentalOptions {
    * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
    *
    * @experimental
+   * @deprecated
    * @default false
    */
   buildRollupPluginCommonjs?: boolean
@@ -246,6 +248,7 @@ export interface ExperimentalOptions {
    * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
    *
    * @experimental
+   * @deprecated
    * @default false
    */
   buildSsrCjsExternalHeuristics?: boolean

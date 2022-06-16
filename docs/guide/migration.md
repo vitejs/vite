@@ -27,7 +27,19 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
   - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
   - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
 
-## Dev Server Changes
+## Optimized deps and SSR changes
+
+These are the biggest architecture changes in Vite v3. To allow projects to migrate from v2 in case of a compat issue, options have been added to revert to the Vite v2 strategies.
+
+:::warning
+These options are marked as experimental and deprecated. They may be removed in a future v3 minor.
+
+- `experimental.devDepsScanner`
+- `experimental.buildRollupPluginCommonjs`
+- `experimental.buildSsrCjsExternalHeuristics`
+  :::
+
+### Dev Server Changes
 
 Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
@@ -37,13 +49,13 @@ Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM an
 
 To get back the v2 strategy, you can use [`experimental.devDepsScanner`](../config/dep-optimization-options.md#optimizedepsdevscan).
 
-## Build Changes
+### Build Changes
 
 In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it removes one of the most significant differences between dev and prod present in v2. Because esbuild converts CJS-only dependencies to ESM, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer used.
 
 If you need to get back to the v2 strategy, you can use [`experimental.buildRollupPluginCommonjs: true`](../config/dep-optimization-options.md#experimental-buildrollupplugincommonjs).
 
-## SSR Changes
+### SSR Changes
 
 Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle.
 
