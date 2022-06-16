@@ -423,6 +423,12 @@ importers:
     specifiers: {}
 
   playground/define:
+    specifiers:
+      dep: file:./commonjs-dep
+    dependencies:
+      dep: file:playground/define/commonjs-dep
+
+  playground/define/commonjs-dep:
     specifiers: {}
 
   playground/dynamic-import:
@@ -8655,6 +8661,12 @@ packages:
     resolution: {directory: playground/alias/dir/module, type: directory}
     name: '@vite/aliased-module'
     version: 0.0.0
+    dev: false
+
+  file:playground/define/commonjs-dep:
+    resolution: {directory: playground/define/commonjs-dep, type: directory}
+    name: commonjs-dep
+    version: 1.0.0
     dev: false
 
   file:playground/dynamic-import/pkg:

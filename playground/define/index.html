@@ -16,6 +16,7 @@
 <p>no identifier substring: <span class="no-identifier-substring"></span></p>
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
+<p>define in dep: <code class="define-in-dep"></code></p>
 
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
@@ -50,6 +51,9 @@
   function text(el, text) {
     document.querySelector(el).textContent = text
   }
+
+  import { defined } from 'dep'
+  text('.define-in-dep', JSON.stringify(defined))
 </script>
 
 <style>

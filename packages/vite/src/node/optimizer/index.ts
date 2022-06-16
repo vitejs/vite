@@ -385,6 +385,7 @@ export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>
 ): Promise<DepOptimizationResult> {
+  const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build'
@@ -471,20 +472,15 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
-  const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
-  }
-  for (const key in config.define) {
-    const value = config.define[key]
-    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
-  }
-
   const start = performance.now()
 
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
+    // Ensure resolution is handled by esbuildDepPlugin and
+    // avoid replacing `process.env.NODE_ENV` for 'browser'
+    platform: 'neutral',
     format: 'esm',
     target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
@@ -492,9 +488,8 @@ export async function runOptimizeDeps(
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: resolvedConfig.command !== 'build',
+    ignoreAnnotations: !isBuild,
     metafile: true,
-    define,
     plugins: [
       ...plugins,
       esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
@@ -887,7 +882,6 @@ export function getDepHash(config: ResolvedConfig): string {
     {
       mode: process.env.NODE_ENV || config.mode,
       root: config.root,
-      define: config.define,
       resolve: config.resolve,
       buildTarget: config.build.target,
       assetsInclude: config.assetsInclude,
