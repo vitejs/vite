@@ -1,3 +1,19 @@
+## 3.0.0-alpha.12 (2022-06-16)
+
+* chore: correct typo in console message (#8618) ([13d05bd](https://github.com/vitejs/vite/commit/13d05bd)), closes [#8618](https://github.com/vitejs/vite/issues/8618)
+* chore: enable eslint and prettier cache (#8585) ([d7beaeb](https://github.com/vitejs/vite/commit/d7beaeb)), closes [#8585](https://github.com/vitejs/vite/issues/8585)
+* chore: tweak server start output (#8582) ([3439132](https://github.com/vitejs/vite/commit/3439132)), closes [#8582](https://github.com/vitejs/vite/issues/8582)
+* fix: allow cache overlap in parallel builds (#8592) ([2dd0b49](https://github.com/vitejs/vite/commit/2dd0b49)), closes [#8592](https://github.com/vitejs/vite/issues/8592)
+* fix: avoid replacing defines and NODE_ENV in optimized deps (fix #8593) (#8606) ([739175b](https://github.com/vitejs/vite/commit/739175b)), closes [#8593](https://github.com/vitejs/vite/issues/8593) [#8606](https://github.com/vitejs/vite/issues/8606)
+* fix: sequential injection of tags in transformIndexHtml (#5851) (#6901) ([649c7f6](https://github.com/vitejs/vite/commit/649c7f6)), closes [#5851](https://github.com/vitejs/vite/issues/5851) [#6901](https://github.com/vitejs/vite/issues/6901)
+* fix(asset): respect assetFileNames if rollupOptions.output is an array (#8561) ([4e6c26f](https://github.com/vitejs/vite/commit/4e6c26f)), closes [#8561](https://github.com/vitejs/vite/issues/8561)
+* fix(css): escape pattern chars from base path in postcss dir-dependency messages (#7081) ([5151e74](https://github.com/vitejs/vite/commit/5151e74)), closes [#7081](https://github.com/vitejs/vite/issues/7081)
+* fix(optimizer): browser mapping for yarn pnp (#6493) ([c1c7af3](https://github.com/vitejs/vite/commit/c1c7af3)), closes [#6493](https://github.com/vitejs/vite/issues/6493)
+* feat: 500 response if the node proxy request fails (#7398) ([73e1775](https://github.com/vitejs/vite/commit/73e1775)), closes [#7398](https://github.com/vitejs/vite/issues/7398)
+* docs: worker related notes (#8554) ([c0c5e1a](https://github.com/vitejs/vite/commit/c0c5e1a)), closes [#8554](https://github.com/vitejs/vite/issues/8554)
+
+
+
 ## 3.0.0-alpha.11 (2022-06-14)
 
 * fix: add missed JPEG file extensions to `KNOWN_ASSET_TYPES` (#8565) ([2dfc015](https://github.com/vitejs/vite/commit/2dfc015)), closes [#8565](https://github.com/vitejs/vite/issues/8565)
