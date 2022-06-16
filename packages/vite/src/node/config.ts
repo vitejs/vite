@@ -228,6 +228,13 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+  /**
+   * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
+   *
+   * @experimental
+   * @default false
+   */
+  buildRollupPluginCommonjs?: boolean
 }
 
 export interface ResolveWorkerOptions {
@@ -520,6 +527,15 @@ export async function resolveConfig(
     },
     worker: resolvedWorkerOptions,
     spa: config.spa ?? true
+  }
+
+  if (resolved.experimental?.buildRollupPluginCommonjs) {
+    const optimizerDisabled = resolved.optimizeDeps.disabled
+    if (!optimizerDisabled) {
+      resolved.optimizeDeps.disabled = 'build'
+    } else if (optimizerDisabled === 'dev') {
+      resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
   }
 
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).

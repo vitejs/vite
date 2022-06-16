@@ -41,7 +41,7 @@ To get back the v2 strategy, you can use [`optimizeDeps.devScan`](../config/dep-
 
 In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it removes one of the most significant differences between dev and prod present in v2. Because esbuild converts CJS-only dependencies to ESM, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer used.
 
-If you need to get back to the v2 strategy, you can use [`optimizeDeps.disabled: 'build'`](../config/dep-optimization-options.md#optimizedepsdisabled).
+If you need to get back to the v2 strategy, you can use [`experimental.buildRollupPluginCommonjs: true`](../config/dep-optimization-options.md#experimental-buildrollupplugincommonjs).
 
 ## SSR Changes
 

@@ -306,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!isDepsOptimizerEnabled(config)
+      ...(config.experimental?.buildRollupPluginCommonjs
         ? [commonjsPlugin(options.commonjsOptions)]
         : []),
       dataURIPlugin(),
