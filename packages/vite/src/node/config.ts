@@ -242,6 +242,13 @@ export interface ExperimentalOptions {
    * @default false
    */
   buildRollupPluginCommonjs?: boolean
+  /**
+   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
+   *
+   * @experimental
+   * @default false
+   */
+  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions {

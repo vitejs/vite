@@ -47,7 +47,7 @@ If you need to get back to the v2 strategy, you can use [`experimental.buildRoll
 
 Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle.
 
-If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'cjs'` to generate a CJS bundle. In this case, the same externalization strategy of Vite v2 will be used.
+If using ESM for SSR isn't possible in your project, you can set `experimental.buildSsrCjsExternalHeuristics: true` to generate a CJS bundle using the same externalization strategy of Vite v2.
 
 ## General Changes
 
