@@ -21,9 +21,6 @@ module.exports = vite.defineConfig((sourcemap) => {
         }
       }
     },
-    cacheDir: `node_modules/.vite/iife-${
-      typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
-    }`,
     build: {
       outDir: `dist/iife-${
         typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
