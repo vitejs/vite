@@ -229,6 +229,13 @@ export interface ExperimentalOptions {
    */
   importGlobRestoreExtension?: boolean
   /**
+   * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
+   *
+   * @experimental
+   * @default false
+   */
+  devDepsScanner?: boolean
+  /**
    * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
    *
    * @experimental

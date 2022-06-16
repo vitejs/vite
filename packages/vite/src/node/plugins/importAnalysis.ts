@@ -623,7 +623,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (depsOptimizer && !config.optimizeDeps.devScan) {
+          if (depsOptimizer && !config.experimental?.devDepsScanner) {
             depsOptimizer.delayDepsOptimizerUntil(id, () => request)
           }
         })
