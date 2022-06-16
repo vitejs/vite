@@ -224,7 +224,7 @@ function printServerUrls(
     notes.push({
       label: 'Note',
       message: colors.dim(
-        'You are using a wildcard host. Ports might be overriden.'
+        'You are using a wildcard host. Ports might be overridden.'
       )
     })
   }
