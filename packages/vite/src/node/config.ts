@@ -598,7 +598,7 @@ export async function resolveConfig(
     resolved.logger.warn(
       colors.yellow(
         `${differentOpts.join(
-          ','
+          ', '
         )} isn't equal for every worker.rollupOptions.output. ` +
           `A single pattern across all outputs is supported by Vite.`
       )
