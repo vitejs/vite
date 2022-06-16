@@ -58,7 +58,7 @@ export async function transformMain(
     descriptor.template && !isUseInlineTemplate(descriptor, !devServer)
 
   let templateCode = ''
-  let templateMap: RawSourceMap | undefined
+  let templateMap: RawSourceMap | undefined = undefined
   if (hasTemplateImport) {
     ;({ code: templateCode, map: templateMap } = await genTemplateCode(
       descriptor,
