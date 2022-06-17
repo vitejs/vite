@@ -7,7 +7,7 @@
  */
 export interface RollupCommonJSOptions {
   /**
-   * A minimatch pattern, or array of patterns, which specifies the files in
+   * A picomatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should operate on. By default, all files with
    * extension `".cjs"` or those in `extensions` are included, but you can narrow
    * this list by only including specific files. These files will be analyzed
@@ -17,7 +17,7 @@ export interface RollupCommonJSOptions {
    */
   include?: string | RegExp | readonly (string | RegExp)[]
   /**
-   * A minimatch pattern, or array of patterns, which specifies the files in
+   * A picomatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should _ignore_. By default, all files with
    * extensions other than those in `extensions` or `".cjs"` are ignored, but you
    * can exclude additional files. See also the `include` option.
@@ -42,6 +42,18 @@ export interface RollupCommonJSOptions {
    */
   sourceMap?: boolean
   /**
+   * Some `require` calls cannot be resolved statically to be translated to
+   * imports.
+   * When this option is set to `false`, the generated code will either
+   * directly throw an error when such a call is encountered or, when
+   * `dynamicRequireTargets` is used, when such a call cannot be resolved with a
+   * configured dynamic require target.
+   * Setting this option to `true` will instead leave the `require` call in the
+   * code or use it as a fallback for `dynamicRequireTargets`.
+   * @default false
+   */
+  ignoreDynamicRequires?: boolean
+  /**
    * Instructs the plugin whether to enable mixed module transformations. This
    * is useful in scenarios with modules that contain a mix of ES `import`
    * statements and CommonJS `require` expressions. Set to `true` if `require`
@@ -59,6 +71,26 @@ export interface RollupCommonJSOptions {
    * @default []
    */
   ignore?: ReadonlyArray<string> | ((id: string) => boolean)
+  /**
+   * In most cases, where `require` calls are inside a `try-catch` clause,
+   * they should be left unconverted as it requires an optional dependency
+   * that may or may not be installed beside the rolled up package.
+   * Due to the conversion of `require` to a static `import` - the call is hoisted
+   * to the top of the file, outside of the `try-catch` clause.
+   *
+   * - `true`: All `require` calls inside a `try` will be left unconverted.
+   * - `false`: All `require` calls inside a `try` will be converted as if the `try-catch` clause is not there.
+   * - `remove`: Remove all `require` calls from inside any `try` block.
+   * - `string[]`: Pass an array containing the IDs to left unconverted.
+   * - `((id: string) => boolean|'remove')`: Pass a function that control individual IDs.
+   *
+   * @default false
+   */
+  ignoreTryCatch?:
+    | boolean
+    | 'remove'
+    | ReadonlyArray<string>
+    | ((id: string) => boolean | 'remove')
   /**
    * Controls how to render imports from external dependencies. By default,
    * this plugin assumes that all external dependencies are CommonJS. This

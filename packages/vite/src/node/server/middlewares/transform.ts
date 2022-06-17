@@ -1,27 +1,40 @@
-import { ViteDevServer } from '..'
-import { Connect } from 'types/connect'
+import { promises as fs } from 'fs'
+import path from 'path'
+import type { Connect } from 'types/connect'
+import colors from 'picocolors'
+import type { ViteDevServer } from '..'
 import {
   cleanUrl,
   createDebugger,
+  ensureVolumeInPath,
+  fsPathFromId,
   injectQuery,
   isImportRequest,
   isJSRequest,
+  normalizePath,
   prettifyUrl,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  unwrapId
 } from '../../utils'
 import { send } from '../send'
 import { transformRequest } from '../transformRequest'
 import { isHTMLProxy } from '../../plugins/html'
-import chalk from 'chalk'
 import {
-  CLIENT_PUBLIC_PATH,
-  DEP_CACHE_DIR,
   DEP_VERSION_RE,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  FS_PREFIX,
+  NULL_BYTE_PLACEHOLDER
 } from '../../constants'
-import { isCSSRequest, isDirectCSSRequest } from '../../plugins/css'
+import {
+  isCSSRequest,
+  isDirectCSSRequest,
+  isDirectRequest
+} from '../../plugins/css'
+import {
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP
+} from '../../plugins/optimizedDeps'
+import { getDepsOptimizer } from '../../optimizer'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -36,56 +49,101 @@ export function transformMiddleware(
     moduleGraph
   } = server
 
-  return async (req, res, next) => {
-    if (
-      req.method !== 'GET' ||
-      req.headers.accept?.includes('text/html') ||
-      knownIgnoreList.has(req.url!)
-    ) {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return async function viteTransformMiddleware(req, res, next) {
+    if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
 
-    if (
-      server._pendingReload &&
-      // always allow vite client requests so that it can trigger page reload
-      !req.url?.startsWith(CLIENT_PUBLIC_PATH) &&
-      !req.url?.includes('vite/dist/client')
-    ) {
-      // missing dep pending reload, hold request until reload happens
-      server._pendingReload.then(() => res.end())
-      return
+    let url: string
+    try {
+      url = decodeURI(removeTimestampQuery(req.url!)).replace(
+        NULL_BYTE_PLACEHOLDER,
+        '\0'
+      )
+    } catch (e) {
+      return next(e)
     }
 
-    let url = decodeURI(removeTimestampQuery(req.url!)).replace(
-      NULL_BYTE_PLACEHOLDER,
-      '\0'
-    )
     const withoutQuery = cleanUrl(url)
 
     try {
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const originalUrl = url.replace(/\.map($|\?)/, '$1')
-        const map = (await moduleGraph.getModuleByUrl(originalUrl))
-          ?.transformResult?.map
-        if (map) {
-          return send(req, res, JSON.stringify(map), 'json')
+        if (getDepsOptimizer(server.config)?.isOptimizedDepUrl(url)) {
+          // If the browser is requesting a source map for an optimized dep, it
+          // means that the dependency has already been pre-bundled and loaded
+          const mapFile = url.startsWith(FS_PREFIX)
+            ? fsPathFromId(url)
+            : normalizePath(
+                ensureVolumeInPath(path.resolve(root, url.slice(1)))
+              )
+          try {
+            const map = await fs.readFile(mapFile, 'utf-8')
+            return send(req, res, map, 'json', {
+              headers: server.config.server.headers
+            })
+          } catch (e) {
+            // Outdated source map request for optimized deps, this isn't an error
+            // but part of the normal flow when re-optimizing after missing deps
+            // Send back an empty source map so the browser doesn't issue warnings
+            const dummySourceMap = {
+              version: 3,
+              file: mapFile.replace(/\.map$/, ''),
+              sources: [],
+              sourcesContent: [],
+              names: [],
+              mappings: ';;;;;;;;;'
+            }
+            return send(req, res, JSON.stringify(dummySourceMap), 'json', {
+              cacheControl: 'no-cache',
+              headers: server.config.server.headers
+            })
+          }
         } else {
-          return next()
+          const originalUrl = url.replace(/\.map($|\?)/, '$1')
+          const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
+            ?.transformResult?.map
+          if (map) {
+            return send(req, res, JSON.stringify(map), 'json', {
+              headers: server.config.server.headers
+            })
+          } else {
+            return next()
+          }
         }
       }
 
-      // warn explicit /public/ paths
-      if (url.startsWith('/public/')) {
-        logger.warn(
-          chalk.yellow(
-            `files in the public directory are served at the root path.\n` +
-              `Instead of ${chalk.cyan(url)}, use ${chalk.cyan(
-                url.replace(/^\/public\//, '/')
+      // check if public dir is inside root dir
+      const publicDir = normalizePath(server.config.publicDir)
+      const rootDir = normalizePath(server.config.root)
+      if (publicDir.startsWith(rootDir)) {
+        const publicPath = `${publicDir.slice(rootDir.length)}/`
+        // warn explicit public paths
+        if (url.startsWith(publicPath)) {
+          let warning: string
+
+          if (isImportRequest(url)) {
+            const rawUrl = removeImportQuery(url)
+
+            warning =
+              'Assets in public cannot be imported from JavaScript.\n' +
+              `Instead of ${colors.cyan(
+                rawUrl
+              )}, put the file in the src directory, and use ${colors.cyan(
+                rawUrl.replace(publicPath, '/src/')
+              )} instead.`
+          } else {
+            warning =
+              `files in the public directory are served at the root path.\n` +
+              `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+                url.replace(publicPath, '/')
               )}.`
-          )
-        )
+          }
+
+          logger.warn(colors.yellow(warning))
+        }
       }
 
       if (
@@ -96,16 +154,17 @@ export function transformMiddleware(
       ) {
         // strip ?import
         url = removeImportQuery(url)
-
-        // Strip valid id prefix. This is preprended to resolved Ids that are
+        // Strip valid id prefix. This is prepended to resolved Ids that are
         // not valid browser import specifiers by the importAnalysis plugin.
-        if (url.startsWith(VALID_ID_PREFIX)) {
-          url = url.slice(VALID_ID_PREFIX.length)
-        }
+        url = unwrapId(url)
 
         // for CSS, we need to differentiate between normal CSS requests and
         // imports
-        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
+        if (
+          isCSSRequest(url) &&
+          !isDirectRequest(url) &&
+          req.headers.accept?.includes('text/css')
+        ) {
           url = injectQuery(url, 'direct')
         }
 
@@ -113,8 +172,8 @@ export function transformMiddleware(
         const ifNoneMatch = req.headers['if-none-match']
         if (
           ifNoneMatch &&
-          (await moduleGraph.getModuleByUrl(url))?.transformResult?.etag ===
-            ifNoneMatch
+          (await moduleGraph.getModuleByUrl(url, false))?.transformResult
+            ?.etag === ifNoneMatch
         ) {
           isDebug && debugCache(`[304] ${prettifyUrl(url, root)}`)
           res.statusCode = 304
@@ -122,25 +181,48 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(url, server)
+        const result = await transformRequest(url, server, {
+          html: req.headers.accept?.includes('text/html')
+        })
         if (result) {
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) ||
-            url.includes(`node_modules/${DEP_CACHE_DIR}`)
-          return send(
-            req,
-            res,
-            result.code,
-            type,
-            result.etag,
+            getDepsOptimizer(server.config)?.isOptimizedDepUrl(url)
+          return send(req, res, result.code, type, {
+            etag: result.etag,
             // allow browser to cache npm deps!
-            isDep ? 'max-age=31536000,immutable' : 'no-cache',
-            result.map
-          )
+            cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
+            headers: server.config.server.headers,
+            map: result.map
+          })
         }
       }
     } catch (e) {
+      if (e?.code === ERR_OPTIMIZE_DEPS_PROCESSING_ERROR) {
+        // Skip if response has already been sent
+        if (!res.writableEnded) {
+          res.statusCode = 504 // status code request timeout
+          res.end()
+        }
+        // This timeout is unexpected
+        logger.error(e.message)
+        return
+      }
+      if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+        // Skip if response has already been sent
+        if (!res.writableEnded) {
+          res.statusCode = 504 // status code request timeout
+          res.end()
+        }
+        // We don't need to log an error in this case, the request
+        // is outdated because new dependencies were discovered and
+        // the new pre-bundle dependendencies have changed.
+        // A full-page reload has been issued, and these old requests
+        // can't be properly fullfilled. This isn't an unexpected
+        // error but a normal part of the missing deps discovery flow
+        return
+      }
       return next(e)
     }
 

@@ -1,0 +1,10 @@
+packages/*/CHANGELOG.md
+playground-temp/
+dist/
+temp/
+LICENSE.md
+pnpm-lock.yaml
+pnpm-workspace.yaml
+playground/tsconfig-json-load-error/has-error/tsconfig.json
+playground/html/invalid.html
+playground/worker/classic-worker.js

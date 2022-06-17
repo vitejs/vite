@@ -6,7 +6,8 @@
 
 Messages must be matched by the following regex:
 
-``` js
+<!-- prettier-ignore -->
+```js
 /^(revert: )?(feat|fix|docs|dx|refactor|perf|test|workflow|build|ci|chore|types|wip|release|deps)(\(.+\))?: .{1,50}/
 ```
 
@@ -44,7 +45,7 @@ This reverts commit 667ecc1654a317a13331b17617d973392f415f02.
 
 ### Full Message Format
 
-A commit message consists of a **header**, **body** and **footer**.  The header has a **type**, **scope** and **subject**:
+A commit message consists of a **header**, **body** and **footer**. The header has a **type**, **scope** and **subject**:
 
 ```
 <type>(<scope>): <subject>
@@ -74,9 +75,9 @@ The scope could be anything specifying the place of the commit change. For examp
 
 The subject contains a succinct description of the change:
 
-* use the imperative, present tense: "change" not "changed" nor "changes"
-* don't capitalize the first letter
-* no dot (.) at the end
+- use the imperative, present tense: "change" not "changed" nor "changes"
+- don't capitalize the first letter
+- no dot (.) at the end
 
 ### Body
 

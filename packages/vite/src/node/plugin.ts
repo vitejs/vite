@@ -1,18 +1,20 @@
-import { UserConfig } from './config'
-import {
+import type {
   CustomPluginOptions,
   LoadResult,
-  Plugin as RollupPlugin,
   PluginContext,
   ResolveIdResult,
+  Plugin as RollupPlugin,
   TransformPluginContext,
   TransformResult
 } from 'rollup'
-import { ServerHook } from './server'
-import { IndexHtmlTransform } from './plugins/html'
-import { ModuleNode } from './server/moduleGraph'
-import { ResolvedConfig } from './'
-import { HmrContext } from './server/hmr'
+export type { PluginContext } from 'rollup'
+import type { UserConfig } from './config'
+import type { ServerHook } from './server'
+import type { IndexHtmlTransform } from './plugins/html'
+import type { ModuleNode } from './server/moduleGraph'
+import type { HmrContext } from './server/hmr'
+import type { PreviewServerHook } from './preview'
+import type { ConfigEnv, ResolvedConfig } from './'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -50,9 +52,9 @@ export interface Plugin extends RollupPlugin {
    */
   enforce?: 'pre' | 'post'
   /**
-   * Apply the plugin only for serve or for build.
+   * Apply the plugin only for serve or build, or on certain conditions.
    */
-  apply?: 'serve' | 'build'
+  apply?: 'serve' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be
@@ -61,11 +63,14 @@ export interface Plugin extends RollupPlugin {
    * Note: User plugins are resolved before running this hook so injecting other
    * plugins inside  the `config` hook will have no effect.
    */
-  config?: (config: UserConfig) => UserConfig | null | void
+  config?: (
+    config: UserConfig,
+    env: ConfigEnv
+  ) => UserConfig | null | void | Promise<UserConfig | null | void>
   /**
    * Use this hook to read and store the final resolved vite config.
    */
-  configResolved?: (config: ResolvedConfig) => void
+  configResolved?: (config: ResolvedConfig) => void | Promise<void>
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
@@ -76,6 +81,15 @@ export interface Plugin extends RollupPlugin {
    * are applied. Hook can be async functions and will be called in series.
    */
   configureServer?: ServerHook
+  /**
+   * Configure the preview server. The hook receives the connect server and
+   * its underlying http server.
+   *
+   * The hooks are called before other middlewares are applied. A hook can
+   * return a post hook that will be called after other middlewares are
+   * applied. Hooks can be async functions and will be called in series.
+   */
+  configurePreviewServer?: PreviewServerHook
   /**
    * Transform index.html.
    * The hook receives the following arguments:
@@ -118,18 +132,24 @@ export interface Plugin extends RollupPlugin {
     this: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: CustomPluginOptions },
-    ssr?: boolean
+    options: {
+      custom?: CustomPluginOptions
+      ssr?: boolean
+      /**
+       * @internal
+       */
+      scan?: boolean
+    }
   ): Promise<ResolveIdResult> | ResolveIdResult
   load?(
     this: PluginContext,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<LoadResult> | LoadResult
   transform?(
     this: TransformPluginContext,
     code: string,
     id: string,
-    ssr?: boolean
+    options?: { ssr?: boolean }
   ): Promise<TransformResult> | TransformResult
 }

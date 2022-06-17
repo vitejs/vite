@@ -1,0 +1,15 @@
+{
+  "name": "resolve-exports-env",
+  "private": true,
+  "version": "1.0.0",
+  "exports": {
+    "import": {
+      "browser": {
+        "production": "./browser.prod.mjs",
+        "development": "./browser.mjs"
+      }
+    },
+    "browser": "./browser.js",
+    "default": "./fallback.umd.js"
+  }
+}

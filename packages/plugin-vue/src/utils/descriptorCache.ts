@@ -1,7 +1,15 @@
+import fs from 'fs'
 import path from 'path'
+import { createHash } from 'crypto'
 import slash from 'slash'
-import hash from 'hash-sum'
-import { parse, SFCDescriptor } from '@vue/compiler-sfc'
+import type { CompilerError, SFCDescriptor } from 'vue/compiler-sfc'
+import type { ResolvedOptions, VueQuery } from '..'
+
+// compiler-sfc should be exported so it can be re-used
+export interface SFCParseResult {
+  descriptor: SFCDescriptor
+  errors: Array<CompilerError | SyntaxError>
+}
 
 const cache = new Map<string, SFCDescriptor>()
 const prevCache = new Map<string, SFCDescriptor | undefined>()
@@ -9,43 +17,78 @@ const prevCache = new Map<string, SFCDescriptor | undefined>()
 export function createDescriptor(
   filename: string,
   source: string,
-  root: string,
-  isProduction: boolean | undefined
-) {
-  const { descriptor, errors } = parse(source, {
+  { root, isProduction, sourceMap, compiler }: ResolvedOptions
+): SFCParseResult {
+  const { descriptor, errors } = compiler.parse(source, {
     filename,
-    sourceMap: true
+    sourceMap
   })
 
   // ensure the path is normalized in a way that is consistent inside
   // project (relative to root) and on different systems.
   const normalizedPath = slash(path.normalize(path.relative(root, filename)))
-  descriptor.id = hash(normalizedPath + (isProduction ? source : ''))
+  descriptor.id = getHash(normalizedPath + (isProduction ? source : ''))
 
   cache.set(filename, descriptor)
   return { descriptor, errors }
 }
 
-export function getPrevDescriptor(filename: string) {
+export function getPrevDescriptor(filename: string): SFCDescriptor | undefined {
   return prevCache.get(filename)
 }
 
-export function setPrevDescriptor(filename: string, entry: SFCDescriptor) {
+export function setPrevDescriptor(
+  filename: string,
+  entry: SFCDescriptor
+): void {
   prevCache.set(filename, entry)
 }
 
-export function getDescriptor(filename: string, errorOnMissing = true) {
+export function getDescriptor(
+  filename: string,
+  options: ResolvedOptions,
+  createIfNotFound = true
+): SFCDescriptor | undefined {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
-  if (errorOnMissing) {
-    throw new Error(
-      `${filename} has no corresponding SFC entry in the cache. ` +
-        `This is a @vitejs/plugin-vue internal error, please open an issue.`
+  if (createIfNotFound) {
+    const { descriptor, errors } = createDescriptor(
+      filename,
+      fs.readFileSync(filename, 'utf-8'),
+      options
     )
+    if (errors.length) {
+      throw errors[0]
+    }
+    return descriptor
   }
 }
 
-export function setDescriptor(filename: string, entry: SFCDescriptor) {
+export function getSrcDescriptor(
+  filename: string,
+  query: VueQuery
+): SFCDescriptor {
+  if (query.scoped) {
+    return cache.get(`${filename}?src=${query.src}`)!
+  }
+  return cache.get(filename)!
+}
+
+export function setSrcDescriptor(
+  filename: string,
+  entry: SFCDescriptor,
+  scoped?: boolean
+): void {
+  if (scoped) {
+    // if multiple Vue files use the same src file, they will be overwritten
+    // should use other key
+    cache.set(`${filename}?src=${entry.id}`, entry)
+    return
+  }
   cache.set(filename, entry)
+}
+
+function getHash(text: string): string {
+  return createHash('sha256').update(text).digest('hex').substring(0, 8)
 }

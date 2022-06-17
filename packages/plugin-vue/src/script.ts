@@ -1,6 +1,6 @@
-import { compileScript, SFCDescriptor, SFCScriptBlock } from '@vue/compiler-sfc'
-import { ResolvedOptions } from '.'
+import type { SFCDescriptor, SFCScriptBlock } from 'vue/compiler-sfc'
 import { resolveTemplateCompilerOptions } from './template'
+import type { ResolvedOptions } from '.'
 
 // ssr and non ssr builds would output different script content
 const clientCache = new WeakMap<SFCDescriptor, SFCScriptBlock | null>()
@@ -17,15 +17,25 @@ export function setResolvedScript(
   descriptor: SFCDescriptor,
   script: SFCScriptBlock,
   ssr: boolean
-) {
+): void {
   ;(ssr ? ssrCache : clientCache).set(descriptor, script)
+}
+
+// Check if we can use compile template as inlined render function
+// inside <script setup>. This can only be done for build because
+// inlined template cannot be individually hot updated.
+export function isUseInlineTemplate(
+  descriptor: SFCDescriptor,
+  isProd: boolean
+): boolean {
+  return isProd && !!descriptor.scriptSetup && !descriptor.template?.src
 }
 
 export function resolveScript(
   descriptor: SFCDescriptor,
   options: ResolvedOptions,
   ssr: boolean
-) {
+): SFCScriptBlock | null {
   if (!descriptor.script && !descriptor.scriptSetup) {
     return null
   }
@@ -38,12 +48,14 @@ export function resolveScript(
 
   let resolved: SFCScriptBlock | null = null
 
-  resolved = compileScript(descriptor, {
+  resolved = options.compiler.compileScript(descriptor, {
     ...options.script,
     id: descriptor.id,
     isProd: options.isProduction,
-    inlineTemplate: !options.devServer,
-    templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr)
+    inlineTemplate: isUseInlineTemplate(descriptor, !options.devServer),
+    reactivityTransform: options.reactivityTransform !== false,
+    templateOptions: resolveTemplateCompilerOptions(descriptor, options, ssr),
+    sourceMap: options.sourceMap
   })
 
   cacheToUse.set(descriptor, resolved)

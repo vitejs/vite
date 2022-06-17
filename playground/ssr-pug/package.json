@@ -1,0 +1,16 @@
+{
+  "name": "test-ssr-pug",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "serve": "cross-env NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "express": "^4.18.1",
+    "pug": "^3.0.2"
+  }
+}

@@ -1,14 +1,15 @@
 import fs from 'fs'
 import path from 'path'
-import { createServer, ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
-import { ModuleNode } from './moduleGraph'
-import chalk from 'chalk'
-import slash from 'slash'
-import { Update } from 'types/hmrPayload'
+import type { Server } from 'http'
+import colors from 'picocolors'
+import type { Update } from 'types/hmrPayload'
+import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { RollupError } from 'rollup'
-import match from 'minimatch'
+import { createDebugger, normalizePath, unique } from '../utils'
+import type { ViteDevServer } from '..'
+import { isCSSRequest } from '../plugins/css'
+import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -18,9 +19,11 @@ export interface HmrOptions {
   protocol?: string
   host?: string
   port?: number
+  clientPort?: number
   path?: string
   timeout?: number
   overlay?: boolean
+  server?: Server
 }
 
 export interface HmrContext {
@@ -31,29 +34,43 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
-function getShortName(file: string, root: string) {
+export function getShortName(file: string, root: string): string {
   return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
 }
 
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
-): Promise<any> {
+): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
+  const fileName = path.basename(file)
 
-  if (file === config.configFile || file.endsWith('.env')) {
-    // TODO auto restart server
-    debugHmr(`[config change] ${chalk.dim(shortFile)}`)
+  const isConfig = file === config.configFile
+  const isConfigDependency = config.configFileDependencies.some(
+    (name) => file === name
+  )
+  const isEnv =
+    config.inlineConfig.envFile !== false &&
+    (fileName === '.env' || fileName.startsWith('.env.'))
+  if (isConfig || isConfigDependency || isEnv) {
+    // auto restart server
+    debugHmr(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
-      chalk.green('config or .env file changed, restarting server...'),
+      colors.green(
+        `${path.relative(process.cwd(), file)} changed, restarting server...`
+      ),
       { clear: true, timestamp: true }
     )
-    await restartServer(server)
+    try {
+      await server.restart()
+    } catch (e) {
+      config.logger.error(colors.red(e))
+    }
     return
   }
 
-  debugHmr(`[file change] ${chalk.dim(shortFile)}`)
+  debugHmr(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(normalizedClientDir)) {
@@ -88,7 +105,7 @@ export async function handleHMRUpdate(
   if (!hmrContext.modules.length) {
     // html file cannot be hot updated
     if (file.endsWith('.html')) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(shortFile), {
+      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
         clear: true,
         timestamp: true
       })
@@ -96,11 +113,11 @@ export async function handleHMRUpdate(
         type: 'full-reload',
         path: config.server.middlewareMode
           ? '*'
-          : '/' + slash(path.relative(config.root, file))
+          : '/' + normalizePath(path.relative(config.root, file))
       })
     } else {
       // loaded but not in the module graph, probably not js
-      debugHmr(`[no modules matched] ${chalk.dim(shortFile)}`)
+      debugHmr(`[no modules matched] ${colors.dim(shortFile)}`)
     }
     return
   }
@@ -108,31 +125,30 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-function updateModules(
+export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
   { config, ws }: ViteDevServer
-) {
+): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
+  let needFullReload = false
 
   for (const mod of modules) {
+    invalidate(mod, timestamp, invalidatedModules)
+    if (needFullReload) {
+      continue
+    }
+
     const boundaries = new Set<{
       boundary: ModuleNode
       acceptedVia: ModuleNode
     }>()
-    invalidate(mod, timestamp, invalidatedModules)
-    const hasDeadEnd = propagateUpdate(mod, timestamp, boundaries)
+    const hasDeadEnd = propagateUpdate(mod, boundaries)
     if (hasDeadEnd) {
-      config.logger.info(chalk.green(`page reload `) + chalk.dim(file), {
-        clear: true,
-        timestamp: true
-      })
-      ws.send({
-        type: 'full-reload'
-      })
-      return
+      needFullReload = true
+      continue
     }
 
     updates.push(
@@ -145,64 +161,89 @@ function updateModules(
     )
   }
 
-  config.logger.info(
-    updates
-      .map(({ path }) => chalk.green(`hmr update `) + chalk.dim(path))
-      .join('\n'),
-    { clear: true, timestamp: true }
-  )
-
-  ws.send({
-    type: 'update',
-    updates
-  })
+  if (needFullReload) {
+    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
+      clear: true,
+      timestamp: true
+    })
+    ws.send({
+      type: 'full-reload'
+    })
+  } else {
+    config.logger.info(
+      updates
+        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
+        .join('\n'),
+      { clear: true, timestamp: true }
+    )
+    ws.send({
+      type: 'update',
+      updates
+    })
+  }
 }
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer,
-  isUnlink = false
-) {
-  if (isUnlink && file in server._globImporters) {
-    delete server._globImporters[file]
-  } else {
-    const modules = []
-    for (const i in server._globImporters) {
-      const { module, base, pattern } = server._globImporters[i]
-      const relative = path.relative(base, file)
-      if (match(relative, pattern)) {
-        modules.push(module)
-      }
-    }
-    if (modules.length > 0) {
-      updateModules(
-        getShortName(file, server.config.root),
-        modules,
-        Date.now(),
-        server
-      )
-    }
+  server: ViteDevServer
+): Promise<void> {
+  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  modules.push(...getAffectedGlobModules(file, server))
+
+  if (modules.length > 0) {
+    updateModules(
+      getShortName(file, server.config.root),
+      unique(modules),
+      Date.now(),
+      server
+    )
   }
 }
 
 function propagateUpdate(
   node: ModuleNode,
-  timestamp: number,
   boundaries: Set<{
     boundary: ModuleNode
     acceptedVia: ModuleNode
   }>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  // #7561
+  // if the imports of `node` have not been analyzed, then `node` has not
+  // been loaded in the browser and we should stop propagation.
+  if (node.id && node.isSelfAccepting === undefined) {
+    return false
+  }
+
   if (node.isSelfAccepting) {
     boundaries.add({
       boundary: node,
       acceptedVia: node
     })
+
+    // additionally check for CSS importers, since a PostCSS plugin like
+    // Tailwind JIT may register any file as a dependency to a CSS file.
+    for (const importer of node.importers) {
+      if (isCSSRequest(importer.url) && !currentChain.includes(importer)) {
+        propagateUpdate(importer, boundaries, currentChain.concat(importer))
+      }
+    }
+
     return false
   }
 
   if (!node.importers.size) {
+    return true
+  }
+
+  // #3716, #3913
+  // For a non-CSS file, if all of its importers are CSS files (registered via
+  // PostCSS plugins) it should be considered a dead end and force full reload.
+  if (
+    !isCSSRequest(node.url) &&
+    [...node.importers].every((i) => isCSSRequest(i.url))
+  ) {
     return true
   }
 
@@ -221,7 +262,7 @@ function propagateUpdate(
       return true
     }
 
-    if (propagateUpdate(importer, timestamp, boundaries, subChain)) {
+    if (propagateUpdate(importer, boundaries, subChain)) {
       return true
     }
   }
@@ -235,20 +276,27 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   seen.add(mod)
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
-  mod.importers.forEach((importer) => invalidate(importer, timestamp, seen))
+  mod.ssrModule = null
+  mod.ssrError = null
+  mod.ssrTransformResult = null
+  mod.importers.forEach((importer) => {
+    if (!importer.acceptedHmrDeps.has(mod)) {
+      invalidate(importer, timestamp, seen)
+    }
+  })
 }
 
 export function handlePrunedModules(
   mods: Set<ModuleNode>,
   { ws }: ViteDevServer
-) {
+): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
   // and without the timestamp the browser will not re-import it!
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
-    debugHmr(`[dispose] ${chalk.dim(mod.file)}`)
+    debugHmr(`[dispose] ${colors.dim(mod.file)}`)
   })
   ws.send({
     type: 'prune',
@@ -377,7 +425,7 @@ export function lexAcceptedHmrDeps(
 
 function error(pos: number) {
   const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
+    `import.meta.hot.accept() can only accept string literals or an ` +
       `Array of string literals.`
   ) as RollupError
   err.pos = pos
@@ -407,22 +455,5 @@ async function readModifiedFile(file: string): Promise<string> {
     return fs.readFileSync(file, 'utf-8')
   } else {
     return content
-  }
-}
-
-async function restartServer(server: ViteDevServer) {
-  await server.close()
-  ;(global as any).__vite_start_time = Date.now()
-  const newServer = await createServer(server.config.inlineConfig)
-  for (const key in newServer) {
-    if (key !== 'app') {
-      // @ts-ignore
-      server[key] = newServer[key]
-    }
-  }
-  if (!server.config.server.middlewareMode) {
-    await server.listen()
-  } else {
-    server.config.logger.info('server restarted.', { timestamp: true })
   }
 }

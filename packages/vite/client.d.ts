@@ -1,55 +1,4 @@
-/// <reference lib="dom" />
-
-interface ImportMeta {
-  url: string
-
-  readonly hot?: {
-    readonly data: any
-
-    accept(): void
-    accept(cb: (mod: any) => void): void
-    accept(dep: string, cb: (mod: any) => void): void
-    accept(deps: readonly string[], cb: (mods: any[]) => void): void
-
-    /**
-     * @deprecated
-     */
-    acceptDeps(): never
-
-    dispose(cb: (data: any) => void): void
-    decline(): void
-    invalidate(): void
-
-    on(event: string, cb: (...args: any[]) => void): void
-  }
-
-  readonly env: ImportMetaEnv
-
-  glob(
-    pattern: string
-  ): Record<
-    string,
-    () => Promise<{
-      [key: string]: any
-    }>
-  >
-
-  globEager(
-    pattern: string
-  ): Record<
-    string,
-    {
-      [key: string]: any
-    }
-  >
-}
-interface ImportMetaEnv {
-  [key: string]: string | boolean | undefined
-  BASE_URL: string
-  MODE: string
-  DEV: boolean
-  PROD: boolean
-}
+/// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
@@ -75,6 +24,10 @@ declare module '*.module.styl' {
   export default classes
 }
 declare module '*.module.stylus' {
+  const classes: CSSModuleClasses
+  export default classes
+}
+declare module '*.module.pcss' {
   const classes: CSSModuleClasses
   export default classes
 }
@@ -104,6 +57,10 @@ declare module '*.stylus' {
   const css: string
   export default css
 }
+declare module '*.pcss' {
+  const css: string
+  export default css
+}
 
 // Built-in asset types
 // see `src/constants.ts`
@@ -114,6 +71,18 @@ declare module '*.jpg' {
   export default src
 }
 declare module '*.jpeg' {
+  const src: string
+  export default src
+}
+declare module '*.jfif' {
+  const src: string
+  export default src
+}
+declare module '*.pjpeg' {
+  const src: string
+  export default src
+}
+declare module '*.pjp' {
   const src: string
   export default src
 }
@@ -134,6 +103,10 @@ declare module '*.ico' {
   export default src
 }
 declare module '*.webp' {
+  const src: string
+  export default src
+}
+declare module '*.avif' {
   const src: string
   export default src
 }
@@ -190,6 +163,26 @@ declare module '*.otf' {
   export default src
 }
 
+// other
+declare module '*.wasm?init' {
+  const initWasm: (
+    options: WebAssembly.Imports
+  ) => Promise<WebAssembly.Instance>
+  export default initWasm
+}
+declare module '*.webmanifest' {
+  const src: string
+  export default src
+}
+declare module '*.pdf' {
+  const src: string
+  export default src
+}
+declare module '*.txt' {
+  const src: string
+  export default src
+}
+
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
@@ -205,12 +198,24 @@ declare module '*?worker&inline' {
   export default workerConstructor
 }
 
+declare module '*?sharedworker' {
+  const sharedWorkerConstructor: {
+    new (): SharedWorker
+  }
+  export default sharedWorkerConstructor
+}
+
 declare module '*?raw' {
   const src: string
   export default src
 }
 
 declare module '*?url' {
+  const src: string
+  export default src
+}
+
+declare module '*?inline' {
   const src: string
   export default src
 }

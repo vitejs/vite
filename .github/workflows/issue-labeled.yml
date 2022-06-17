@@ -1,0 +1,40 @@
+name: Issue Labeled
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  reply-labeled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: contribution welcome
+        if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "create-comment, remove-labels"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Hello @${{ github.event.issue.user.login }}. We like your proposal/feedback and would appreciate a contribution via a Pull Request by you or another community member. We thank you in advance for your contribution and are looking forward to reviewing it!
+          labels: "pending triage, need reproduction"
+
+      - name: remove pending
+        if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug' || (contains(github.event.label.name, 'pending triage') == false && startsWith(github.event.label.name, 'bug:') == true)
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "remove-labels"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: "pending triage"
+
+      - name: need reproduction
+        if: github.event.label.name == 'need reproduction'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "create-comment, remove-labels"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with `need reproduction` will be closed if they have no activity within 3 days.
+          labels: "pending triage"

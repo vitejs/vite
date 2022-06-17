@@ -4,6 +4,8 @@
 Vite aims to provide out-of-the-box support for common web development patterns. Before searching for a Vite or Compatible Rollup plugin, check out the [Features Guide](../guide/features.md). A lot of the cases where a plugin would be needed in a Rollup project are already covered in Vite.
 :::
 
+Check out [Using Plugins](../guide/using-plugins) for information on how to use plugins.
+
 ## Official Plugins
 
 ### [@vitejs/plugin-vue](https://github.com/vitejs/vite/tree/main/packages/plugin-vue)
@@ -14,9 +16,9 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 - Provides Vue 3 JSX support (via [dedicated Babel transform](https://github.com/vuejs/jsx-next)).
 
-### [@vitejs/plugin-react-refresh](https://github.com/vitejs/vite/tree/main/packages/plugin-react-refresh)
+### [@vitejs/plugin-react](https://github.com/vitejs/vite/tree/main/packages/plugin-react)
 
-- Provides React Fast Refresh Support.
+- Provides all-in-one React Support.
 
 ### [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)
 
@@ -24,7 +26,7 @@ Vite aims to provide out-of-the-box support for common web development patterns.
 
 ## Community Plugins
 
-Check out [awesome-vite](https://github.com/vitejs/awesome-vite) - you can also submit a PR to list your plugins there.
+Check out [awesome-vite](https://github.com/vitejs/awesome-vite#plugins) - you can also submit a PR to list your plugins there.
 
 ## Rollup Plugins
 

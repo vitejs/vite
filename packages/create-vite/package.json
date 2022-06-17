@@ -1,0 +1,33 @@
+{
+  "name": "create-vite",
+  "version": "2.9.3",
+  "type": "module",
+  "license": "MIT",
+  "author": "Evan You",
+  "bin": {
+    "create-vite": "index.js",
+    "cva": "index.js"
+  },
+  "files": [
+    "index.js",
+    "template-*"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=14.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitejs/vite.git",
+    "directory": "packages/create-vite"
+  },
+  "bugs": {
+    "url": "https://github.com/vitejs/vite/issues"
+  },
+  "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
+  "dependencies": {
+    "kolorist": "^1.5.1",
+    "minimist": "^1.2.6",
+    "prompts": "^2.4.2"
+  }
+}

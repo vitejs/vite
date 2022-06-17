@@ -1,12 +1,16 @@
 # Backend Integration
 
-If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, here's what you can do:
+:::tip Note
+If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) but use Vite for serving assets, check for existing integrations listed in [Awesome Vite](https://github.com/vitejs/awesome-vite#integrations-with-backends).
+
+If you need a custom integration, you can follow the steps in this guide to configure it manually
+:::
 
 1. In your Vite config, configure the entry and enable build manifest:
 
    ```js
    // vite.config.js
-   export default {
+   export default defineConfig({
      build: {
        // generate manifest.json in outDir
        manifest: true,
@@ -15,25 +19,41 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
          input: '/path/to/main.js'
        }
      }
-   }
+   })
    ```
 
-   Also remember to add the [dynamic import polyfill](/config/#build-polyfilldynamicimport) to your entry, since it will no longer be auto-injected:
+   If you haven't disabled the [module preload polyfill](/config/#build-polyfillmodulepreload), you also need to import the polyfill in your entry
 
    ```js
    // add the beginning of your app entry
-   import 'vite/dynamic-import-polyfill'
+   import 'vite/modulepreload-polyfill'
    ```
 
-2. For development, inject the following in your server's HTML template (substitute `http://localhost:3000` with the local URL Vite is running at):
+2. For development, inject the following in your server's HTML template (substitute `http://localhost:5173` with the local URL Vite is running at):
 
    ```html
    <!-- if development -->
-   <script type="module" src="http://localhost:3000/@vite/client"></script>
-   <script type="module" src="http://localhost:3000/main.js"></script>
+   <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
-   Also make sure the server is configured to serve static assets in the Vite working directory, otherwise assets such as images won't be loaded properly.
+   In order to properly serve assets, you have two options:
+
+   - Make sure the server is configured to proxy static assets requests to the Vite server
+   - Set [`server.origin`](https://vitejs.dev/config/#server-origin) so that generated asset URLs will be resolved using the back-end server URL instead of a relative path
+
+   This is needed for assets such as images to load properly.
+
+   Note if you are using React with `@vitejs/plugin-react`, you'll also need to add this before the above scripts, since the plugin is not able to modify the HTML you are serving:
+
+   ```html
+   <script type="module">
+     import RefreshRuntime from 'http://localhost:5173/@react-refresh'
+     RefreshRuntime.injectIntoGlobalHook(window)
+     window.$RefreshReg$ = () => {}
+     window.$RefreshSig$ = () => (type) => type
+     window.__vite_plugin_react_preamble_installed__ = true
+   </script>
+   ```
 
 3. For production: after running `vite build`, a `manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
@@ -44,7 +64,7 @@ If you want to serve the HTML using a traditional backend (e.g. Rails, Laravel) 
        "src": "main.js",
        "isEntry": true,
        "dynamicImports": ["views/foo.js"],
-       "css": "assets/main.b82dbe22.css",
+       "css": ["assets/main.b82dbe22.css"],
        "assets": ["assets/asset.0ab0f9cd.png"]
      },
      "views/foo.js": {

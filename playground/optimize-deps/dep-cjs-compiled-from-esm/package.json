@@ -1,0 +1,6 @@
+{
+  "name": "dep-cjs-compiled-from-esm",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}

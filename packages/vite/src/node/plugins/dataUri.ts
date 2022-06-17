@@ -1,8 +1,8 @@
 // This is based on @rollup/plugin-data-uri
 // MIT Licensed https://github.com/rollup/plugins/blob/master/LICENSE
 // ref https://github.com/vitejs/vite/issues/1428#issuecomment-757033808
-import { Plugin } from '../plugin'
 import { URL } from 'url'
+import type { Plugin } from '../plugin'
 
 const dataUriRE = /^([^/]+\/[^;,]+)(;base64)?,([\s\S]*)$/
 
@@ -12,12 +12,17 @@ const dataUriPrefix = `/@data-uri/`
  * Build only, since importing from a data URI works natively.
  */
 export function dataURIPlugin(): Plugin {
-  const resolved: {
+  let resolved: {
     [key: string]: string
-  } = {}
+  }
 
   return {
     name: 'vite:data-uri',
+
+    buildStart() {
+      resolved = {}
+    },
+
     resolveId(id) {
       if (!dataUriRE.test(id)) {
         return null

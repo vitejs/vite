@@ -1,0 +1,9 @@
+import { defineComponent } from 'vue'
+
+const Default = defineComponent(() => {
+  return () => (
+    <p class="other-ext">Other Ext</p>
+  )
+})
+
+export default Default

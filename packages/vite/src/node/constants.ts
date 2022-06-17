@@ -1,12 +1,30 @@
-import path from 'path'
+import path, { resolve } from 'path'
+import { fileURLToPath } from 'url'
+// @ts-expect-error
+import { version } from '../../package.json'
 
-export const SUPPORTED_EXTS = ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+export const VERSION = version as string
 
-export const JS_TYPES_RE = /\.(j|t)sx?$|\.mjs$/
+export const DEFAULT_MAIN_FIELDS = [
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext'
+]
 
-export const SPECIAL_QUERY_RE = /[\?&](worker|raw|url)\b/
+export const DEFAULT_EXTENSIONS = [
+  '.mjs',
+  '.js',
+  '.ts',
+  '.jsx',
+  '.tsx',
+  '.json'
+]
 
-export const DEP_CACHE_DIR = `.vite`
+export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
+
+export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
+
+export const SPECIAL_QUERY_RE = /[\?&](?:worker|sharedworker|raw|url)\b/
 
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
@@ -19,24 +37,42 @@ export const FS_PREFIX = `/@fs/`
 export const VALID_ID_PREFIX = `/@id/`
 
 /**
- * Some Rollup plugins use ids that starts with the null byte \0 to avoid
- * collisions, but it is not permitted in import URLs so we have to replace
- * them.
+ * Plugins that use 'virtual modules' (e.g. for helper functions), prefix the
+ * module ID with `\0`, a convention from the rollup ecosystem.
+ * This prevents other plugins from trying to process the id (like node resolution),
+ * and core features like sourcemaps can use this info to differentiate between
+ * virtual modules and regular files.
+ * `\0` is not a permitted char in import URLs so we have to replace them during
+ * import analysis. The id will be decoded back before entering the plugins pipeline.
+ * These encoded virtual ids are also prefixed by the VALID_ID_PREFIX, so virtual
+ * modules in the browser end up encoded as `/@id/__x00__{id}`
  */
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
-// eslint-disable-next-line
-export const CLIENT_ENTRY = require.resolve('vite/dist/client/client.js')
-// eslint-disable-next-line
-export const ENV_ENTRY = require.resolve('vite/dist/client/env.js')
+export const VITE_PACKAGE_DIR = resolve(
+  fileURLToPath(import.meta.url),
+  '../../..'
+)
+
+export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
+export const ENV_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/env.mjs')
 export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
+// ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
+//   If you add an asset to `KNOWN_ASSET_TYPES`, make sure to also add it
+//   to the TypeScript declaration file `packages/vite/client.d.ts` and
+//   add a mime type to the `registerCustomMime` in
+//   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
+//   looked up by mrmime.
 export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
+  'jfif',
+  'pjpeg',
+  'pjp',
   'gif',
   'svg',
   'ico',
@@ -59,7 +95,9 @@ export const KNOWN_ASSET_TYPES = [
   'otf',
 
   // other
-  'wasm'
+  'webmanifest',
+  'pdf',
+  'txt'
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
@@ -67,3 +105,15 @@ export const DEFAULT_ASSETS_RE = new RegExp(
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+
+export const loopbackHosts = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '0000:0000:0000:0000:0000:0000:0000:0001'
+])
+export const wildcardHosts = new Set([
+  '0.0.0.0',
+  '::',
+  '0000:0000:0000:0000:0000:0000:0000:0000'
+])
