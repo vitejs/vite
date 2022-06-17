@@ -9,6 +9,7 @@
 import { dataToEsm } from '@rollup/pluginutils'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
+import { stripBomTag } from '../utils'
 
 export interface JsonOptions {
   /**
@@ -42,6 +43,8 @@ export function jsonPlugin(
     transform(json, id) {
       if (!jsonExtRE.test(id)) return null
       if (SPECIAL_QUERY_RE.test(id)) return null
+
+      json = stripBomTag(json)
 
       try {
         if (options.stringify) {

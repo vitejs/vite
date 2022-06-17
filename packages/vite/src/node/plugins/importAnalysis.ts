@@ -36,6 +36,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  stripBomTag,
   timeFrom,
   transformResult,
   unwrapId
@@ -142,10 +143,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
-      // strip UTF-8 BOM
-      if (source.charCodeAt(0) === 0xfeff) {
-        source = source.slice(1)
-      }
+      source = stripBomTag(source)
       try {
         imports = parseImports(source)[0]
       } catch (e: any) {
