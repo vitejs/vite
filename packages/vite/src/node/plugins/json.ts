@@ -44,7 +44,6 @@ export function jsonPlugin(
       if (!jsonExtRE.test(id)) return null
       if (SPECIAL_QUERY_RE.test(id)) return null
 
-      // strip UTF-8 BOM
       json = stripBomTag(json)
 
       try {
