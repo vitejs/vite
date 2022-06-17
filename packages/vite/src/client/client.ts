@@ -248,7 +248,10 @@ const supportsConstructedSheet = (() => {
   return false
 })()
 
-const sheetsMap = new Map()
+const sheetsMap = new Map<
+  string,
+  HTMLStyleElement | CSSStyleSheet | undefined
+>()
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
@@ -260,10 +263,12 @@ export function updateStyle(id: string, content: string): void {
 
     if (!style) {
       style = new CSSStyleSheet()
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
       // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
     }
   } else {
