@@ -143,7 +143,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
-      // strip UTF-8 BOM
       source = stripBomTag(source)
       try {
         imports = parseImports(source)[0]
