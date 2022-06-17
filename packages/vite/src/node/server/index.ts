@@ -488,7 +488,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
-  if (config.appType === 'spa' && !middlewareMode) {
+  if (config.appType === 'spa') {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -497,7 +497,7 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (config.appType !== 'custom' && !middlewareMode) {
+  if (config.appType !== 'custom') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
   }
