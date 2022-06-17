@@ -1,5 +1,5 @@
 import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
@@ -313,7 +313,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     return
   }
 
-  const moduleMap = new Map()
+  const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
   // make sure we only import each dep once
@@ -343,7 +343,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       const [path, query] = dep.split(`?`)
       try {
-        const newMod = await import(
+        const newMod: ModuleNamespace = await import(
           /* @vite-ignore */
           base +
             path.slice(1) +
@@ -380,7 +380,7 @@ interface HotModule {
 interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
-  fn: (modules: object[]) => void
+  fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
 const hotModulesMap = new Map<string, HotModule>()
