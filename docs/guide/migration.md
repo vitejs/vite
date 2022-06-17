@@ -37,7 +37,7 @@ These options are marked as experimental and deprecated. They may be removed in 
 - `legacy.devDepsScanner`
 - `legacy.buildRollupPluginCommonjs`
 - `legacy.buildSsrCjsExternalHeuristics`
-  :::
+:::
 
 ### Dev Server Changes
 
