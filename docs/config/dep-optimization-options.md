@@ -50,4 +50,4 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 - **Type:** `boolean`
 
-Set to `true` to force dependency pre-bundling.
+Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
