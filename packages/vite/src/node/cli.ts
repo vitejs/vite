@@ -87,6 +87,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
+        optimizeDeps: { force: options.force },
         server: cleanOptions(options)
       })
 
@@ -174,7 +175,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        force: options.force,
+        optimizeDeps: { force: options.force },
         build: buildOptions
       })
     } catch (e) {

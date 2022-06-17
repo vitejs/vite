@@ -147,11 +147,6 @@ export interface UserConfig {
    */
   preview?: PreviewOptions
   /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   * @experimental
-   */
-  force?: boolean
-  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions

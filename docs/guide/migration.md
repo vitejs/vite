@@ -116,7 +116,7 @@ Also there are other breaking changes which only affect few users.
 - [[#8090] feat: preserve process env vars in lib build](https://github.com/vitejs/vite/pull/8090)
   - `process.env.*` is now preserved in library mode
 - [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
-  - `server.force` option was removed in favor of `force` option.
+  - `server.force` option was removed in favor of `optimizeDeps.force` option.
 - [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
   - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
 
