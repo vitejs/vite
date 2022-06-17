@@ -55,7 +55,9 @@ export interface ConfigEnv {
 
 /**
  * spa: include SPA fallback middleware and configure sirv with `single: true` in preview
+ *
  * mpa: only include non-SPA HTML middlewares
+ *
  * custom: don't include HTML middlewares
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
