@@ -40,4 +40,7 @@ test('string', async () => {
   // html would't need to define replacement
   expect(await page.textContent('.exp-define')).toBe('__EXP__')
   expect(await page.textContent('.import-json')).toBe('__EXP__')
+  expect(await page.textContent('.define-in-dep')).toBe(
+    defines.__STRINGIFIED_OBJ__
+  )
 })

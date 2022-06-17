@@ -31,6 +31,8 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
+Vite's default dev server host is now `localhost`. You can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1`.
+
 Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM and to reduce the number of modules the browser needs to request. In v3, the default strategy to discover and batch dependencies has changed. Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
 
 To get back the v2 strategy, you can use [`optimizeDeps.devScan`](../config/dep-optimization-options.md#optimizedepsdevscan).
@@ -50,6 +52,10 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 ## General Changes
 
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+- Terser is now an optional dependency. If you are using `build.minify: 'terser'`, you need to install it.
+  ```shell
+  npm add -D terser
+  ```
 
 ### `import.meta.glob`
 
@@ -93,6 +99,8 @@ There are some changes which only affects plugin/tool creators.
   - `printHttpServerUrls` is removed
   - `server.app`, `server.transformWithEsbuild` are removed
   - `import.meta.hot.acceptDeps` is removed
+- [[#6901] fix: sequential injection of tags in transformIndexHtml](https://github.com/vitejs/vite/pull/6901)
+  - `transformIndexHtml` now gets the correct content modified by earlier plugins, so the order of the injected tags now works as expected.
 - [[#7995] chore: do not fixStacktrace](https://github.com/vitejs/vite/pull/7995)
   - `ssrLoadModule`'s `fixStacktrace` option's default is now `false`
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
@@ -105,8 +113,12 @@ Also there are other breaking changes which only affect few users.
   - Transpile to ES5 is now necessary even if the user code only includes ES5.
 - [[#7877] fix: vite client types](https://github.com/vitejs/vite/pull/7877)
   - `/// <reference lib="dom" />` is removed from `vite/client.d.ts`. `{ "lib": ["dom"] }` or `{ "lib": ["webworker"] }` is necessary in `tsconfig.json`.
+- [[#8090] feat: preserve process env vars in lib build](https://github.com/vitejs/vite/pull/8090)
+  - `process.env.*` is now preserved in library mode
 - [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
   - `server.force` option was removed in favor of `force` option.
+- [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
+  - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
 
 ## Migration from v1
 

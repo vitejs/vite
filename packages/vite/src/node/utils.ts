@@ -16,15 +16,31 @@ import type { Alias, AliasOptions } from 'types/alias'
 import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
+import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX
+  VALID_ID_PREFIX,
+  wildcardHosts
 } from './constants'
 import type { ResolvedConfig } from '.'
+
+/**
+ * Inlined to keep `@rollup/pluginutils` in devDependencies
+ */
+export type FilterPattern =
+  | ReadonlyArray<string | RegExp>
+  | string
+  | RegExp
+  | null
+export const createFilter = _createFilter as (
+  include?: FilterPattern,
+  exclude?: FilterPattern,
+  options?: { resolve?: string | false | null }
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -732,7 +748,7 @@ export function resolveHostname(
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
-    host = '127.0.0.1'
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -740,14 +756,9 @@ export function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
+  // Set host name to localhost when possible
   const name =
-    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
-    host === '0.0.0.0' ||
-    host === '::' ||
-    host === undefined
-      ? 'localhost'
-      : host
+    host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
   return { host, name }
 }
@@ -1002,4 +1013,13 @@ export function transformResult(
     code: s.toString(),
     map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
   }
+}
+
+// strip UTF-8 BOM
+export function stripBomTag(content: string): string {
+  if (content.charCodeAt(0) === 0xfeff) {
+    return content.slice(1)
+  }
+
+  return content
 }

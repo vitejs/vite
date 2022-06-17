@@ -1,63 +1,48 @@
 import fs from 'fs'
 import path from 'path'
-import type { Page } from 'playwright-chromium'
 import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
-  await page.click('.ping')
-  await untilUpdated(() => page.textContent('.pong'), 'pong')
+  await untilUpdated(() => page.textContent('.pong'), 'pong', true)
   await untilUpdated(
     () => page.textContent('.mode'),
-    process.env.NODE_ENV // match workerImport.js
+    process.env.NODE_ENV,
+    true
   )
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
-    'worker bundle with plugin success!'
+    'worker bundle with plugin success!',
+    true
   )
 })
 
 test('TS output', async () => {
-  await page.click('.ping-ts-output')
-  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
 })
 
 test('inlined', async () => {
-  await page.click('.ping-inline')
-  await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
+  await untilUpdated(() => page.textContent('.pong-inline'), 'pong', true)
 })
 
-const waitSharedWorkerTick = (
-  (resolvedSharedWorkerCount: number) => async (page: Page) => {
-    await untilUpdated(async () => {
-      const count = await page.textContent('.tick-count')
-      // ignore the initial 0
-      return count === '1' ? 'page loaded' : ''
-    }, 'page loaded')
-    // test.concurrent sequential is not guaranteed
-    // force page to wait to ensure two pages overlap in time
-    resolvedSharedWorkerCount++
-    if (resolvedSharedWorkerCount < 2) return
-
-    await untilUpdated(() => {
-      return resolvedSharedWorkerCount === 2 ? 'all pages loaded' : ''
-    }, 'all pages loaded')
-  }
-)(0)
-
-test.each([[true], [false]])('shared worker', async (doTick) => {
-  if (doTick) {
-    await page.click('.tick-shared')
-  }
-  await waitSharedWorkerTick(page)
+test('shared worker', async () => {
+  await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
 })
 
 test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  expect(await page.textContent('.nested-worker')).toMatch(
-    'worker-nested-worker'
+  await untilUpdated(
+    () => page.textContent('.nested-worker'),
+    'worker-nested-worker',
+    true
   )
-  expect(await page.textContent('.nested-worker-module')).toMatch('sub-worker')
-  expect(await page.textContent('.nested-worker-constructor')).toMatch(
-    '"type":"constructor"'
+  await untilUpdated(
+    () => page.textContent('.nested-worker-module'),
+    'sub-worker',
+    true
+  )
+  await untilUpdated(
+    () => page.textContent('.nested-worker-constructor'),
+    '"type":"constructor"',
+    true
   )
 })
 
@@ -87,45 +72,73 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
-    expect(await page.textContent('.nested-worker-module')).toMatch(
-      '"type":"module"'
+    await untilUpdated(
+      () => page.textContent('.nested-worker-module'),
+      '"type":"module"',
+      true
     )
-    expect(await page.textContent('.nested-worker-constructor')).toMatch(
-      '"type":"constructor"'
+    await untilUpdated(
+      () => page.textContent('.nested-worker-constructor'),
+      '"type":"constructor"',
+      true
     )
   })
 })
 
 test('module worker', async () => {
-  expect(await page.textContent('.shared-worker-import-meta-url')).toMatch(
-    'A string'
+  await untilUpdated(
+    () => page.textContent('.shared-worker-import-meta-url'),
+    'A string',
+    true
   )
 })
 
 test('classic worker', async () => {
-  expect(await page.textContent('.classic-worker')).toMatch('A classic')
-  expect(await page.textContent('.classic-shared-worker')).toMatch('A classic')
+  await untilUpdated(
+    () => page.textContent('.classic-worker'),
+    'A classic',
+    true
+  )
+  await untilUpdated(
+    () => page.textContent('.classic-shared-worker'),
+    'A classic',
+    true
+  )
 })
 
 test('emit chunk', async () => {
-  expect(await page.textContent('.emit-chunk-worker')).toMatch(
-    '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]'
+  await untilUpdated(
+    () => page.textContent('.emit-chunk-worker'),
+    '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]',
+    true
   )
-  expect(await page.textContent('.emit-chunk-dynamic-import-worker')).toMatch(
-    '"A string/es/"'
+  await untilUpdated(
+    () => page.textContent('.emit-chunk-dynamic-import-worker'),
+    '"A string/es/"',
+    true
   )
 })
 
 test('url query worker', async () => {
-  expect(await page.textContent('.simple-worker-url')).toMatch(
-    'Hello from simple worker!'
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
+    'Hello from simple worker!',
+    true
   )
 })
 
 test('import.meta.glob in worker', async () => {
-  expect(await page.textContent('.importMetaGlob-worker')).toMatch('["')
+  await untilUpdated(
+    () => page.textContent('.importMetaGlob-worker'),
+    '["',
+    true
+  )
 })
 
 test('import.meta.glob with eager in worker', async () => {
-  expect(await page.textContent('.importMetaGlobEager-worker')).toMatch('["')
+  await untilUpdated(
+    () => page.textContent('.importMetaGlobEager-worker'),
+    '["',
+    true
+  )
 })

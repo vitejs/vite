@@ -22,6 +22,9 @@
 <h2>JSON Module</h2>
 <pre class="module"></pre>
 
+<h2>Has BOM Tag</h2>
+<pre class="bom"></pre>
+
 <script type="module">
   import json, { hello } from './test.json'
   import deepJson, { name } from 'vue/package.json'
@@ -51,6 +54,9 @@
 
   import moduleJSON from 'json-module'
   text('.module', JSON.stringify(moduleJSON))
+
+  import hasBomJson from './json-bom/has-bom.json'
+  text('.bom', JSON.stringify(hasBomJson))
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

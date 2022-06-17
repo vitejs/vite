@@ -407,7 +407,6 @@ async function doBuild(
   }
 
   const rollupOptions: RollupOptions = {
-    input,
     context: 'globalThis',
     preserveEntrySignatures: ssr
       ? 'allow-extension'
@@ -415,6 +414,7 @@ async function doBuild(
       ? 'strict'
       : false,
     ...options.rollupOptions,
+    input,
     plugins,
     external,
     onwarn(warning, warn) {
@@ -460,6 +460,9 @@ async function doBuild(
         exports: cjsSsrBuild ? 'named' : 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        // es2015 enables `generatedCode.symbols`
+        // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
+        // - #1048 add `Symbol.toStringTag` for module default export
         generatedCode: 'es2015',
         entryFileNames: ssr
           ? `[name].${jsExt}`
@@ -472,9 +475,6 @@ async function doBuild(
         assetFileNames: libOptions
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
-        // #764 add `Symbol.toStringTag` when build es module into cjs chunk
-        // #1048 add `Symbol.toStringTag` for module default export
-        namespaceToStringTag: true,
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||

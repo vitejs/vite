@@ -4,9 +4,10 @@ import { msg as msgFromDep } from 'dep-to-optimize'
 
 self.onmessage = (e) => {
   if (e.data === 'ping') {
-    self.postMessage({ msg, mode, bundleWithPlugin, msgFromDep })
+    self.postMessage({ msg, mode, bundleWithPlugin })
   }
 }
+self.postMessage({ msg, mode, bundleWithPlugin, msgFromDep })
 
 // for sourcemap
 console.log('my-worker.js')

@@ -317,9 +317,11 @@ test('treeshaken async chunk', async () => {
 test('PostCSS dir-dependency', async () => {
   const el1 = await page.$('.dir-dep')
   const el2 = await page.$('.dir-dep-2')
+  const el3 = await page.$('.dir-dep-3')
 
   expect(await getColor(el1)).toBe('grey')
   expect(await getColor(el2)).toBe('grey')
+  expect(await getColor(el3)).toBe('grey')
 
   if (!isBuild) {
     editFile('glob-dep/foo.css', (code) =>
@@ -333,6 +335,13 @@ test('PostCSS dir-dependency', async () => {
     )
     await untilUpdated(() => getColor(el2), 'red')
     expect(await getColor(el1)).toBe('blue')
+
+    editFile('glob-dep/nested (dir)/baz.css', (code) =>
+      code.replace('color: grey', 'color: green')
+    )
+    await untilUpdated(() => getColor(el3), 'green')
+    expect(await getColor(el1)).toBe('blue')
+    expect(await getColor(el2)).toBe('red')
 
     // test add/remove
     removeFile('glob-dep/bar.css')

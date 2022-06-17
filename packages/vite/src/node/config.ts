@@ -5,7 +5,6 @@ import { performance } from 'perf_hooks'
 import { createRequire } from 'module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
-import { createFilter } from '@rollup/pluginutils'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
@@ -19,6 +18,7 @@ import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
   createDebugger,
+  createFilter,
   dynamicImport,
   isExternalUrl,
   isObject,
@@ -253,6 +253,7 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
@@ -521,7 +522,9 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  // flat config.worker.plugin
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
   const workerResolved: ResolvedConfig = {
@@ -564,6 +567,29 @@ export async function resolveConfig(
           `prefer Terser, set build.minify to "terser".`
       )
     )
+  }
+
+  // Check if all assetFileNames have the same reference.
+  // If not, display a warn for user.
+  const outputOption = config.build?.rollupOptions?.output ?? []
+  // Use isArray to narrow its type to array
+  if (Array.isArray(outputOption)) {
+    const assetFileNamesList = outputOption.map(
+      (output) => output.assetFileNames
+    )
+    if (assetFileNamesList.length > 1) {
+      const firstAssetFileNames = assetFileNamesList[0]
+      const hasDifferentReference = assetFileNamesList.some(
+        (assetFileNames) => assetFileNames !== firstAssetFileNames
+      )
+      if (hasDifferentReference) {
+        resolved.logger.warn(
+          colors.yellow(`
+assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+`)
+        )
+      }
+    }
   }
 
   return resolved
