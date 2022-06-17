@@ -157,11 +157,18 @@ export interface UserConfig {
   /**
    * Experimental features
    *
-   * Features under this field are addressed to be changed that might NOT follow semver.
+   * Features under this field could change in the future and might NOT follow semver.
    * Please be careful and always pin Vite's version when using them.
    * @experimental
    */
   experimental?: ExperimentalOptions
+  /**
+   * Legacy options
+   *
+   * Features under this field only follow semver for patches, they could be removed in a
+   * future minor version. Please always pin Vite's version to a minor when using them.
+   */
+  legacy?: LegacyOptions
   /**
    * Log level.
    * Default: 'info'
@@ -223,6 +230,33 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+}
+
+export interface LegacyOptions {
+  /**
+   * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  devDepsScanner?: boolean
+  /**
+   * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  buildRollupPluginCommonjs?: boolean
+  /**
+   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions {
@@ -467,7 +501,11 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr)
+  let ssr = resolveSSROptions(config.ssr)
+  if (config.legacy?.buildSsrCjsExternalHeuristics) {
+    if (ssr) ssr.format = 'cjs'
+    else ssr = { target: 'node', format: 'cjs' }
+  }
 
   const optimizeDeps = config.optimizeDeps || {}
 
@@ -515,6 +553,15 @@ export async function resolveConfig(
     },
     worker: resolvedWorkerOptions,
     spa: config.spa ?? true
+  }
+
+  if (resolved.legacy?.buildRollupPluginCommonjs) {
+    const optimizerDisabled = resolved.optimizeDeps.disabled
+    if (!optimizerDisabled) {
+      resolved.optimizeDeps.disabled = 'build'
+    } else if (optimizerDisabled === 'dev') {
+      resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
   }
 
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).

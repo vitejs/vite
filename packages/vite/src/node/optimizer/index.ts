@@ -73,13 +73,6 @@ export interface DepOptimizationOptions {
    */
   entries?: string | string[]
   /**
-   * Enable esbuild based scan phase, to get back to the optimized deps discovery
-   * strategy used in Vite v2
-   * @default false
-   * @experimental
-   */
-  devScan?: boolean
-  /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
    */

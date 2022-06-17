@@ -167,8 +167,8 @@ function createIsSsrExternal(
   }
 }
 
-// When ssr.format is 'cjs', this function is used reverting to the Vite 2.9
-// SSR externalization heuristics
+// When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
+// is used reverting to the Vite 2.9 SSR externalization heuristics
 function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,
