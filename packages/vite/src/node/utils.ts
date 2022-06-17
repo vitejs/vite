@@ -1014,3 +1014,12 @@ export function transformResult(
     map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
   }
 }
+
+// strip UTF-8 BOM
+export function stripBomTag(content: string): string {
+  if (content.charCodeAt(0) === 0xfeff) {
+    return content.slice(1)
+  }
+
+  return content
+}
