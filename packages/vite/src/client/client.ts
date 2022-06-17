@@ -383,15 +383,14 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
+type CustomListenersMap = Map<string, ((data: any) => void)[]>
+
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((data: any) => void)[]>()
-const ctxToListenersMap = new Map<
-  string,
-  Map<string, ((data: any) => void)[]>
->()
+const customListenersMap: CustomListenersMap = new Map()
+const ctxToListenersMap = new Map<string, CustomListenersMap>()
 
 export function createHotContext(ownerPath: string): ViteHotContext {
   if (!dataMap.has(ownerPath)) {
@@ -419,7 +418,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     }
   }
 
-  const newListeners = new Map()
+  const newListeners: CustomListenersMap = new Map()
   ctxToListenersMap.set(ownerPath, newListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
