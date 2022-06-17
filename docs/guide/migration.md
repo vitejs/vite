@@ -29,7 +29,7 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 ## Achitecture changes and legacy Options
 
-This section describes the biggest architecture changes in Vite v3. To allow projects to migrate from v2 in case of a compat issue, lecagy options have been added to revert to the Vite v2 strategies.
+This section describes the biggest architecture changes in Vite v3. To allow projects to migrate from v2 in case of a compat issue, legacy options have been added to revert to the Vite v2 strategies.
 
 :::warning
 These options are marked as experimental and deprecated. They may be removed in a future v3 minor without respecting semver. Please pin the Vite version when using them.
