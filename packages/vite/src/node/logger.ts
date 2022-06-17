@@ -224,7 +224,7 @@ function printServerUrls(
     notes.push({
       label: 'Note',
       message: colors.dim(
-        'You are using a wildcard host. Ports might be overridden.'
+        'Other server might respond instead. More information: https://vitejs.dev/config/server-options.html#server-host'
       )
     })
   }

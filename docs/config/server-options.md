@@ -10,6 +10,13 @@ Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and pu
 
 This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
+::: tip NOTE
+
+When wildcard hosts (cf. `0.0.0.0`) is used, other servers might respond instead of Vite.
+This is because servers listening on explicit hosts take priority over those listening on wildcard hosts.
+
+:::
+
 ## server.port
 
 - **Type:** `number`
