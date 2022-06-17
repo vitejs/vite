@@ -194,7 +194,7 @@ function printServerUrls(
     if (hostname.name === 'localhost') {
       urls.push({
         label: 'Network',
-        url: `Use ${colors.white(colors.bold('--host'))} to expose`,
+        url: `use ${colors.white(colors.bold('--host'))} to expose`,
         disabled: true
       })
     }
@@ -229,17 +229,17 @@ function printServerUrls(
   }
 
   const length = Math.max(
-    ...[...urls, ...notes].map(({ label }) => label?.length ?? 0)
+    ...[...urls, ...notes].map(({ label }) => label.length)
   )
   const print = (
     iconWithColor: string,
-    label: string | undefined,
+    label: string,
     messageWithColor: string,
     disabled?: boolean
   ) => {
     const message = `  ${iconWithColor}  ${
       label ? colors.bold(label) + ':' : ' '
-    } ${' '.repeat(length - (label?.length ?? 0))}${messageWithColor}`
+    } ${' '.repeat(length - label.length)}${messageWithColor}`
     info(disabled ? colors.dim(message) : message)
   }
 
