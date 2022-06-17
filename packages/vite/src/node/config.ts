@@ -501,7 +501,11 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr)
+  let ssr = resolveSSROptions(config.ssr)
+  if (config.legacy?.buildSsrCjsExternalHeuristics) {
+    if (ssr) ssr.format = 'cjs'
+    else ssr = { target: 'node', format: 'cjs' }
+  }
 
   const optimizeDeps = config.optimizeDeps || {}
 
