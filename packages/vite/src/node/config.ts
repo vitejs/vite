@@ -162,11 +162,18 @@ export interface UserConfig {
   /**
    * Experimental features
    *
-   * Features under this field are addressed to be changed that might NOT follow semver.
+   * Features under this field could change in the future and might NOT follow semver.
    * Please be careful and always pin Vite's version when using them.
    * @experimental
    */
   experimental?: ExperimentalOptions
+  /**
+   * Legacy options
+   *
+   * Features under this field only follow semver for patches, they could be removed in a
+   * future minor version. Please always pin Vite's version to a minor when using them.
+   */
+  legacy?: LegacyOptions
   /**
    * Log level.
    * Default: 'info'
@@ -228,6 +235,9 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+}
+
+export interface LegacyOptions {
   /**
    * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
    *
@@ -546,7 +556,7 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  if (resolved.experimental?.buildRollupPluginCommonjs) {
+  if (resolved.legacy?.buildRollupPluginCommonjs) {
     const optimizerDisabled = resolved.optimizeDeps.disabled
     if (!optimizerDisabled) {
       resolved.optimizeDeps.disabled = 'build'

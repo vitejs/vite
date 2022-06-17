@@ -372,7 +372,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // skip ssr external
           if (ssr) {
-            if (config.experimental?.buildSsrCjsExternalHeuristics) {
+            if (config.legacy?.buildSsrCjsExternalHeuristics) {
               if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)) {
                 continue
               }
@@ -623,7 +623,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (depsOptimizer && !config.experimental?.devDepsScanner) {
+          if (depsOptimizer && !config.legacy?.devDepsScanner) {
             depsOptimizer.delayDepsOptimizerUntil(id, () => request)
           }
         })

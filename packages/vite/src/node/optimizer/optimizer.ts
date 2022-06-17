@@ -50,7 +50,7 @@ export async function initDepsOptimizer(
   const { logger } = config
   const isBuild = config.command === 'build'
 
-  const scan = config.command !== 'build' && config.experimental?.devDepsScanner
+  const scan = config.command !== 'build' && config.legacy?.devDepsScanner
 
   const sessionTimestamp = Date.now().toString()
 
