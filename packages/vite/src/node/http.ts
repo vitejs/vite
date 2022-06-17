@@ -187,10 +187,8 @@ export async function httpServerStart(
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
 
-  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
-  // https://github.com/nodejs/node/pull/39987
   if (host === 'localhost') {
-    const addr = await dns.lookup('localhost', { verbatim: true })
+    const addr = await dns.lookup('localhost')
     host = addr.address
   }
 
