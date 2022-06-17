@@ -8,7 +8,7 @@ import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
-import { loopbackHosts, wildcardHosts } from './constants'
+import { loopbackHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -218,15 +218,6 @@ function printServerUrls(
 
         urls.push({ label, url: colors.cyan(url) })
       })
-  }
-
-  if (!hostname.host || wildcardHosts.has(hostname.host)) {
-    notes.push({
-      label: 'Note',
-      message: colors.dim(
-        'Other server might respond instead. More information: https://vitejs.dev/config/server-options.html#server-host'
-      )
-    })
   }
 
   const length = Math.max(
