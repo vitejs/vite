@@ -1,6 +1,8 @@
 import colors from 'picocolors'
 import _debug from 'debug'
+import glob from 'fast-glob'
 import { getHash } from '../utils'
+import { transformRequest } from '../server/transformRequest'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addOptimizedDepInfo,
@@ -65,6 +67,9 @@ export async function initDepsOptimizer(
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
+    registerWorkersSource,
+    delayDepsOptimizerUntil,
+    resetRegisteredIds,
     options: config.optimizeDeps
   }
 
@@ -101,8 +106,12 @@ export async function initDepsOptimizer(
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
 
+  // Only pretransform optimizeDeps.entries on cold start
+  let optimizeDepsEntriesVisited = !!cachedMetadata
+
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
+
   if (!cachedMetadata) {
     if (!scan) {
       // Initialize discovered deps with manually added optimizeDeps.include info
@@ -126,9 +135,7 @@ export async function initDepsOptimizer(
 
       setTimeout(async () => {
         try {
-          debug(colors.green(`scanning for dependencies...`), {
-            timestamp: true
-          })
+          debug(colors.green(`scanning for dependencies...`))
 
           const { metadata } = depsOptimizer
 
@@ -148,10 +155,7 @@ export async function initDepsOptimizer(
           debug(
             colors.green(
               `dependencies found: ${depsLogString(Object.keys(discovered))}`
-            ),
-            {
-              timestamp: true
-            }
+            )
           )
 
           scanPhaseProcessing.resolve()
@@ -316,9 +320,7 @@ export async function initDepsOptimizer(
             logNewlyDiscoveredDeps()
           }, 2 * debounceMs)
         } else {
-          debug(colors.green(`✨ optimized dependencies unchanged`), {
-            timestamp: true
-          })
+          debug(colors.green(`✨ optimized dependencies unchanged`))
         }
       } else {
         if (newDepsDiscovered) {
@@ -331,10 +333,7 @@ export async function initDepsOptimizer(
           debug(
             colors.green(
               `✨ delaying reload as new dependencies have been found...`
-            ),
-            {
-              timestamp: true
-            }
+            )
           )
         } else {
           await commitProcessing()
@@ -403,9 +402,7 @@ export async function initDepsOptimizer(
     // optimizeDeps processing is finished
     const deps = Object.keys(depsOptimizer.metadata.discovered)
     const depsString = depsLogString(deps)
-    debug(colors.green(`new dependencies found: ${depsString}`), {
-      timestamp: true
-    })
+    debug(colors.green(`new dependencies found: ${depsString}`))
     runOptimizer()
   }
 
@@ -496,5 +493,91 @@ export async function initDepsOptimizer(
     }, timeout)
   }
 
+  const runOptimizerIfIdleAfterMs = 100
+
+  let registeredIds: { id: string; done: () => Promise<any> }[] = []
+  let seenIds = new Set<string>()
+  let workersSources = new Set<string>()
+  let waitingOn: string | undefined
+
+  function resetRegisteredIds() {
+    registeredIds = []
+    seenIds = new Set<string>()
+    workersSources = new Set<string>()
+    waitingOn = undefined
+  }
+
+  function registerWorkersSource(id: string): void {
+    workersSources.add(id)
+    // Avoid waiting for this id, as it may be blocked by the rollup
+    // bundling process of the worker that also depends on the optimizer
+    registeredIds = registeredIds.filter((registered) => registered.id !== id)
+    if (waitingOn === id) {
+      waitingOn = undefined
+      runOptimizerWhenIdle()
+    }
+  }
+
+  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
+    if (!depsOptimizer.isOptimizedDepFile(id) && !seenIds.has(id)) {
+      seenIds.add(id)
+      registeredIds.push({ id, done })
+      runOptimizerWhenIdle()
+    }
+    if (server && !optimizeDepsEntriesVisited) {
+      optimizeDepsEntriesVisited = true
+      preTransformOptimizeDepsEntries(server)
+    }
+  }
+
+  function runOptimizerWhenIdle() {
+    if (!waitingOn) {
+      const next = registeredIds.pop()
+      if (next) {
+        waitingOn = next.id
+        const afterLoad = () => {
+          waitingOn = undefined
+          if (!workersSources.has(next.id)) {
+            if (registeredIds.length > 0) {
+              runOptimizerWhenIdle()
+            } else {
+              getDepsOptimizer(config)?.run()
+            }
+          }
+        }
+        next
+          .done()
+          .then(() => {
+            setTimeout(
+              afterLoad,
+              registeredIds.length > 0 ? 0 : runOptimizerIfIdleAfterMs
+            )
+          })
+          .catch(afterLoad)
+      }
+    }
+  }
+
   return depsOptimizer
+}
+
+export async function preTransformOptimizeDepsEntries(
+  server: ViteDevServer
+): Promise<void> {
+  const { config } = server
+  const { entries } = config.optimizeDeps
+  if (entries) {
+    const explicitEntries = await glob(entries, {
+      cwd: config.root,
+      ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
+      absolute: true
+    })
+    // TODO: should we restrict the entries to JS and HTML like the
+    // scanner did? I think we can let the user chose any entry
+    for (const entry of explicitEntries) {
+      transformRequest(entry, server, { ssr: false }).catch((e) => {
+        config.logger.error(e.message)
+      })
+    }
+  }
 }

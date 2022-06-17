@@ -24,14 +24,14 @@ vite --config my-config.js
 ```
 
 ::: tip NOTE
-Vite will replace `__filename`, `__dirname`, and `import.meta.url` in config files and its deps. Using these as variable names or passing as a parameter to a function with string double quote (example `console.log`) will result in an error:
+Vite will inject `__filename`, `__dirname` in config files and its deps. Declaring these variables at top level will result in an error:
 
 ```js
-const __filename = "value"
-// will be transformed to
-const "path/vite.config.js" = "value"
+const __filename = 'value' // SyntaxError: Identifier '__filename' has already been declared
 
-console.log("import.meta.url") // break error on build
+const func = () => {
+  const __filename = 'value' // no error
+}
 ```
 
 :::
@@ -41,14 +41,10 @@ console.log("import.meta.url") // break error on build
 Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:
 
 ```js
-/**
- * @type {import('vite').UserConfig}
- */
-const config = {
+/** @type {import('vite').UserConfig} */
+export default {
   // ...
 }
-
-export default config
 ```
 
 Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:

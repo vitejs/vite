@@ -24,7 +24,10 @@ export const workspaceRoot = path.resolve(__dirname, '../')
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
 export const isWindows = process.platform === 'win32'
-export const viteBinPath = path.join(workspaceRoot, 'packages/vite/bin/vite.js')
+export const viteBinPath = path.posix.join(
+  workspaceRoot,
+  'packages/vite/bin/vite.js'
+)
 
 // #endregion
 
@@ -48,6 +51,11 @@ export let testDir: string
  * Test folder name
  */
 export let testName: string
+/**
+ * current test using vite inline config
+ * when using server.js is not possible to get the config
+ */
+export let viteConfig: InlineConfig | undefined
 
 export const serverLogs: string[] = []
 export const browserLogs: string[] = []
@@ -59,6 +67,16 @@ export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
 export let watcher: RollupWatcher | undefined = undefined
+
+declare module 'vite' {
+  interface InlineConfig {
+    testConfig?: {
+      // relative base output use relative path
+      // rewrite the url to truth file path
+      baseRoute: string
+    }
+  }
+}
 
 export function setViteUrl(url: string): void {
   viteTestUrl = url
@@ -181,7 +199,9 @@ export async function startDefaultServe(): Promise<void> {
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
       // skip transpilation during tests to make it faster
-      target: 'esnext'
+      target: 'esnext',
+      // tests are flaky when `emptyOutDir` is `true`
+      emptyOutDir: false
     },
     customLogger: createInMemoryLogger(serverLogs)
   }
@@ -190,9 +210,9 @@ export async function startDefaultServe(): Promise<void> {
 
   if (!isBuild) {
     process.env.VITE_INLINE = 'inline-serve'
-    server = await (
-      await createServer(mergeConfig(options, config || {}))
-    ).listen()
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const devBase = server.config.base
     viteTestUrl = `http://localhost:${server.config.server.port}${
@@ -209,7 +229,9 @@ export async function startDefaultServe(): Promise<void> {
       }
     })
     options.plugins = [resolvedPlugin()]
-    const rollupOutput = await build(mergeConfig(options, config || {}))
+    const testConfig = mergeConfig(options, config || {})
+    viteConfig = testConfig
+    const rollupOutput = await build(testConfig)
     const isWatch = !!resolvedConfig!.build.watch
     // in build watch,call startStaticServer after the build is complete
     if (isWatch) {
@@ -244,11 +266,15 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
 
   // start static file server
   const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
       res.end('pong')
     } else {
+      if (baseDir) {
+        req.url = path.posix.join(baseDir, req.url)
+      }
       serve(req, res)
     }
   }))

@@ -41,12 +41,42 @@ if (import.meta.hot) {
         update.type === 'css-update' && update.path.match('global.css')
     )
     if (cssUpdate) {
-      const el = document.querySelector('#global-css') as HTMLLinkElement
-      text('.css-prev', el.href)
-      // We don't have a vite:afterUpdate event, but updates are currently sync
-      setTimeout(() => {
-        text('.css-post', el.href)
-      }, 0)
+      text(
+        '.css-prev',
+        (document.querySelector('.global-css') as HTMLLinkElement).href
+      )
+
+      // We don't have a vite:afterUpdate event.
+      // We need to wait until the tag has been swapped out, which
+      // includes the time taken to download and parse the new stylesheet.
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              (node as Element).tagName === 'LINK'
+            ) {
+              text('.link-tag-added', 'yes')
+            }
+          })
+          mutation.removedNodes.forEach((node) => {
+            if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              (node as Element).tagName === 'LINK'
+            ) {
+              text('.link-tag-removed', 'yes')
+              text(
+                '.css-post',
+                (document.querySelector('.global-css') as HTMLLinkElement).href
+              )
+            }
+          })
+        })
+      })
+
+      observer.observe(document.querySelector('#style-tags-wrapper'), {
+        childList: true
+      })
     }
   })
 

@@ -5,7 +5,6 @@ import { performance } from 'perf_hooks'
 import { createRequire } from 'module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
-import { createFilter } from '@rollup/pluginutils'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
@@ -19,6 +18,7 @@ import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
   createDebugger,
+  createFilter,
   dynamicImport,
   isExternalUrl,
   isObject,
@@ -41,6 +41,8 @@ import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
+import type { ResolvedSSROptions, SSROptions } from './ssr'
+import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
@@ -230,29 +232,6 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
 }
 
-export type SSRTarget = 'node' | 'webworker'
-
-export type SSRFormat = 'esm' | 'cjs'
-
-export interface SSROptions {
-  external?: string[]
-  noExternal?: string | RegExp | (string | RegExp)[] | true
-  /**
-   * Define the target for the ssr build. The browser field in package.json
-   * is ignored for node but used if webworker is the target
-   * Default: 'node'
-   */
-  target?: SSRTarget
-  /**
-   * Define the format for the ssr build. Since Vite v3 the SSR build generates ESM by default.
-   * `'cjs'` can be selected to generate a CJS build, but it isn't recommended. This option is
-   * left marked as experimental to give users more time to update to ESM. CJS builds requires
-   * complex externalization heuristics that aren't present in the ESM format.
-   * @experimental
-   */
-  format?: SSRFormat
-}
-
 export interface ResolveWorkerOptions {
   format: 'es' | 'iife'
   plugins: Plugin[]
@@ -276,6 +255,7 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
@@ -287,6 +267,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
+    ssr: ResolvedSSROptions | undefined
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -512,6 +493,7 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
+  const ssr = resolveSSROptions(config.ssr)
 
   const optimizeDeps = config.optimizeDeps || {}
 
@@ -531,6 +513,7 @@ export async function resolveConfig(
     cacheDir,
     command,
     mode,
+    ssr,
     isWorker: false,
     mainConfig: null,
     isProduction,
@@ -562,7 +545,9 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  // flat config.worker.plugin
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
   const workerResolved: ResolvedConfig = {
@@ -605,6 +590,29 @@ export async function resolveConfig(
           `prefer Terser, set build.minify to "terser".`
       )
     )
+  }
+
+  // Check if all assetFileNames have the same reference.
+  // If not, display a warn for user.
+  const outputOption = config.build?.rollupOptions?.output ?? []
+  // Use isArray to narrow its type to array
+  if (Array.isArray(outputOption)) {
+    const assetFileNamesList = outputOption.map(
+      (output) => output.assetFileNames
+    )
+    if (assetFileNamesList.length > 1) {
+      const firstAssetFileNames = assetFileNamesList[0]
+      const hasDifferentReference = assetFileNamesList.some(
+        (assetFileNames) => assetFileNames !== firstAssetFileNames
+      )
+      if (hasDifferentReference) {
+        resolved.logger.warn(
+          colors.yellow(`
+assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+`)
+        )
+      }
+    }
   }
 
   return resolved
@@ -812,6 +820,7 @@ async function bundleConfigFile(
   fileName: string,
   isESM = false
 ): Promise<{ code: string; dependencies: string[] }> {
+  const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
@@ -822,6 +831,9 @@ async function bundleConfigFile(
     format: isESM ? 'esm' : 'cjs',
     sourcemap: 'inline',
     metafile: true,
+    define: {
+      'import.meta.url': importMetaUrlVarName
+    },
     plugins: [
       {
         name: 'externalize-deps',
@@ -837,22 +849,20 @@ async function bundleConfigFile(
         }
       },
       {
-        name: 'replace-import-meta',
+        name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
+            const injectValues =
+              `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
+              `const __filename = ${JSON.stringify(args.path)};` +
+              `const ${importMetaUrlVarName} = ${JSON.stringify(
+                pathToFileURL(args.path).href
+              )};`
+
             return {
               loader: args.path.endsWith('.ts') ? 'ts' : 'js',
-              contents: contents
-                .replace(
-                  /\bimport\.meta\.url\b/g,
-                  JSON.stringify(pathToFileURL(args.path).href)
-                )
-                .replace(
-                  /\b__dirname\b/g,
-                  JSON.stringify(path.dirname(args.path))
-                )
-                .replace(/\b__filename\b/g, JSON.stringify(args.path))
+              contents: injectValues + contents
             }
           })
         }
@@ -875,10 +885,9 @@ async function loadConfigFromBundledFile(
   fileName: string,
   bundledCode: string
 ): Promise<UserConfig> {
-  const extension = path.extname(fileName)
   const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions[extension]!
-  _require.extensions[extension] = (module: NodeModule, filename: string) => {
+  const defaultLoader = _require.extensions['.js']
+  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
     if (filename === realFileName) {
       ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
     } else {
@@ -888,9 +897,8 @@ async function loadConfigFromBundledFile(
   // clear cache in case of server restart
   delete _require.cache[_require.resolve(fileName)]
   const raw = _require(fileName)
-  const config = raw.__esModule ? raw.default : raw
-  _require.extensions[extension] = defaultLoader
-  return config
+  _require.extensions['.js'] = defaultLoader
+  return raw.__esModule ? raw.default : raw
 }
 
 export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {

@@ -7,8 +7,8 @@ import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import { onRollupWarning, resolveBuildBaseOptions } from '../build'
+import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
-import { registerWorkersSource } from './optimizedDeps'
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
@@ -264,7 +264,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        registerWorkersSource(config, id)
+        getDepsOptimizer(config)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
@@ -276,7 +276,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new ${workerConstructor}(objURL${workerOptions}) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }

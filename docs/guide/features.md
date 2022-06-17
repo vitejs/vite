@@ -34,7 +34,7 @@ Vite only performs transpilation on `.ts` files and does **NOT** perform type ch
 
 Vite uses [esbuild](https://github.com/evanw/esbuild) to transpile TypeScript into JavaScript which is about 20~30x faster than vanilla `tsc`, and HMR updates can reflect in the browser in under 50ms.
 
-Use the [Type-Only Imports and Export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax to avoid potential problems like type-only imports being incorrectly bundled. for example:
+Use the [Type-Only Imports and Export](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax to avoid potential problems like type-only imports being incorrectly bundled, for example:
 
 ```ts
 import type { T } from 'only/types'
@@ -509,6 +509,12 @@ By default, the worker script will be emitted as a separate chunk in the product
 
 ```js
 import MyWorker from './worker?worker&inline'
+```
+
+If you wish to retrieve the worker as a URL, add the `url` query:
+
+```js
+import MyWorker from './worker?worker&url'
 ```
 
 See [Worker Options](/config/#worker-options) for details on configuring the bundling of all workers.
