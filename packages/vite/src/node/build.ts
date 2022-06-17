@@ -447,10 +447,11 @@ async function doBuild(
         )
       }
 
+      const ssrWorkerBuild = ssr && config.ssr?.target !== 'webworker'
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
-        (ssr && config.ssr?.target !== 'webworker') || libOptions
+        ssrWorkerBuild || libOptions
           ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
       return {
@@ -478,7 +479,7 @@ async function doBuild(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssr && typeof input === 'string'),
+          (ssrWorkerBuild && typeof input === 'string'),
         ...output
       }
     }
