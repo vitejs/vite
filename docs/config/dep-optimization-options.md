@@ -45,3 +45,9 @@ Certain options are omitted since changing them would not be compatible with Vit
 
 - `external` is also omitted, use Vite's `optimizeDeps.exclude` option
 - `plugins` are merged with Vite's dep plugin
+
+## optimizeDeps.force
+
+- **Type:** `boolean`
+
+Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
