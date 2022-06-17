@@ -173,7 +173,7 @@ function printServerUrls(
   info: Logger['info']
 ): void {
   const urls: Array<{ label: string; url: string }> = []
-  const notes: Array<{ label: string; message: string }> = []
+  const notes: Array<{ label?: string; message: string }> = []
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
     let hostnameName = hostname.name
@@ -193,9 +193,8 @@ function printServerUrls(
 
     if (hostname.name === 'localhost') {
       notes.push({
-        label: 'Hint',
         message: colors.dim(
-          `Use ${colors.white(colors.bold('--host'))} to expose to network.`
+          `Use ${colors.white(colors.bold('--host'))} to expose to network`
         )
       })
     }
@@ -230,17 +229,17 @@ function printServerUrls(
   }
 
   const length = Math.max(
-    ...[...urls, ...notes].map(({ label }) => label.length)
+    ...[...urls, ...notes].map(({ label }) => label?.length ?? 0)
   )
   const print = (
     iconWithColor: string,
-    label: string,
+    label: string | undefined,
     messageWithColor: string
   ) => {
     info(
-      `  ${iconWithColor}  ${colors.bold(label)}: ${' '.repeat(
-        length - label.length
-      )}${messageWithColor}`
+      `  ${iconWithColor}  ${
+        label ? colors.bold(label) + ':' : ' '
+      } ${' '.repeat(length - (label?.length ?? 0))}${messageWithColor}`
     )
   }
 
