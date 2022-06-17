@@ -7,6 +7,8 @@
   <SassWithImport />
   <Less />
   <SrcImport />
+  <NoScript />
+  <NoTemplate />
 </template>
 
 <script setup lang="ts">
@@ -17,4 +19,6 @@ import Sass from './Sass.vue'
 import SassWithImport from './SassWithImport.vue'
 import Less from './Less.vue'
 import SrcImport from './src-import/SrcImport.vue'
+import NoScript from './NoScript.vue'
+import NoTemplate from './NoTemplate.vue'
 </script>

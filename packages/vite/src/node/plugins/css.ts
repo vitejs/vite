@@ -40,7 +40,8 @@ import {
   isRelativeBase,
   normalizePath,
   parseRequest,
-  processSrcSet
+  processSrcSet,
+  requireResolveFromRootWithFallback
 } from '../utils'
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
@@ -837,15 +838,19 @@ async function compileCSS(
       ...postcssOptions,
       to: id,
       from: id,
-      map: {
-        inline: false,
-        annotation: false,
-        // postcss may return virtual files
-        // we cannot obtain content of them, so this needs to be enabled
-        sourcesContent: true
-        // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-        // prev: preprocessorMap,
-      }
+      ...(devSourcemap
+        ? {
+            map: {
+              inline: false,
+              annotation: false,
+              // postcss may return virtual files
+              // we cannot obtain content of them, so this needs to be enabled
+              sourcesContent: true
+              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+              // prev: preprocessorMap,
+            }
+          }
+        : {})
     })
 
   // record CSS dependencies from @imports
@@ -856,7 +861,9 @@ async function compileCSS(
       // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
       const { dir, glob: globPattern = '**' } = message
       const pattern =
-        normalizePath(path.resolve(path.dirname(id), dir)) + `/` + globPattern
+        glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
+        `/` +
+        globPattern
       const files = glob.sync(pattern, {
         ignore: ['**/node_modules/**']
       })
@@ -1292,10 +1299,7 @@ function loadPreprocessor(lang: PreprocessLang, root: string): any {
     return loadedPreprocessors[lang]
   }
   try {
-    // Search for the preprocessor in the root directory first, and fall back
-    // to the default require paths.
-    const fallbackPaths = _require.resolve.paths?.(lang) || []
-    const resolved = _require.resolve(lang, { paths: [root, ...fallbackPaths] })
+    const resolved = requireResolveFromRootWithFallback(root, lang)
     return (loadedPreprocessors[lang] = _require(resolved))
   } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') {

@@ -8,6 +8,8 @@ import type {
   Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
+// `eslint-plugin-node` doesn't support package without main
+// eslint-disable-next-line node/no-missing-import
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { TransformResult } from '../server/transformRequest'
@@ -188,7 +190,7 @@ async function ssrTransformScript(
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
         s.append(
           `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, value: ${name} });`
+            `{ enumerable: true, configurable: true, value: ${name} });`
         )
       } else {
         // anonymous default exports
