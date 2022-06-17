@@ -23,5 +23,6 @@ module.exports = vite.defineConfig({
         entryFileNames: 'assets/[name].js'
       }
     }
-  }
+  },
+  cacheDir: 'node_modules/.vite/iife'
 })

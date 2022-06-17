@@ -40,5 +40,6 @@ module.exports = vite.defineConfig({
         }
       }
     }
-  ]
+  ],
+  cacheDir: 'node_modules/.vite/relative-base'
 })
