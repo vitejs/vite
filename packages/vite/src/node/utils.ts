@@ -737,11 +737,11 @@ export function unique<T>(arr: T[]): T[] {
 }
 
 /**
- * Returns localhost address when `dns.lookup` result differs from DNS
+ * Returns resolved localhost address when `dns.lookup` result differs from DNS
  *
  * `dns.lookup` result is same when defaultResultOrder is `verbatim`.
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
- * For example, IPv6 is not supported on that machine/network.
+ * For example, when IPv6 is not supported on that machine/network.
  */
 export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
   string | undefined
