@@ -87,7 +87,7 @@ export interface InternalResolveOptions extends ResolveOptions {
 }
 
 export function resolvePlugin(
-  advancedBaseOptions: InternalResolveOptions
+  resolveOptions: InternalResolveOptions
 ): Plugin {
   const {
     root,
@@ -96,7 +96,7 @@ export function resolvePlugin(
     asSrc,
     ssrConfig,
     preferRelative = false
-  } = advancedBaseOptions
+  } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
@@ -106,7 +106,7 @@ export function resolvePlugin(
     async resolveId(id, importer, resolveOpts) {
       // We need to delay depsOptimizer until here instead of passing it as an option
       // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = advancedBaseOptions.getDepsOptimizer?.()
+      const depsOptimizer = resolveOptions.getDepsOptimizer?.()
 
       const ssr = resolveOpts?.ssr === true
 
@@ -127,8 +127,8 @@ export function resolvePlugin(
 
       const options: InternalResolveOptions = {
         isRequire,
-        ...advancedBaseOptions,
-        scan: resolveOpts?.scan ?? advancedBaseOptions.scan
+        ...resolveOptions,
+        scan: resolveOpts?.scan ?? resolveOptions.scan
       }
 
       if (importer) {

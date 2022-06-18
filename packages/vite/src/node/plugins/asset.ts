@@ -43,7 +43,7 @@ export function registerCustomMime(): void {
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
-  const { advancedBaseOptions } = config.build
+  const { buildAdvancedBaseOptions } = config.experimental
 
   registerCustomMime()
 
@@ -131,7 +131,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const filename = file + postfix
         const replacement = toOutputFilePathInString(
           filename,
-          advancedBaseOptions.assets
+          buildAdvancedBaseOptions.assets
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
@@ -147,7 +147,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
         const replacement = toOutputFilePathInString(
           publicUrl,
-          advancedBaseOptions.public
+          buildAdvancedBaseOptions.public
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
@@ -323,7 +323,7 @@ export function publicFileToBuiltUrl(
   config: ResolvedConfig
 ): string {
   if (config.command !== 'build') {
-    // We don't need relative base or build.advancedBaseOptions support during dev
+    // We don't need relative base or buildAdvancedBaseOptions support during dev
     return config.base + url.slice(1)
   }
   const hash = getHash(url)

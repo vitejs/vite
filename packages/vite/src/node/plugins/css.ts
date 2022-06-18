@@ -450,7 +450,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const { advancedBaseOptions } = config.build
+      const { buildAdvancedBaseOptions } = config.experimental
 
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
@@ -458,7 +458,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
         const assetsBase = resolveBuildBaseOptions(
-          advancedBaseOptions.assets,
+          buildAdvancedBaseOptions.assets,
           config
         )
         const cssAssetDirname =

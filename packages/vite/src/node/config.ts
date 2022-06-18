@@ -9,8 +9,8 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
-import type { BuildOptions, ResolvedBuildOptions } from './build'
-import { resolveBuildOptions } from './build'
+import type { BuildOptions, ResolvedBuildOptions, BuildAdvancedBaseConfig } from './build'
+import { resolveBuildOptions, resolveBuildAdvancedBaseConfig } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -232,7 +232,14 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+  /**
+   * Build advanced base options. Allow finegrain contol over assets and public files base
+   * @experimental
+   */
+  buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
 }
+
+export type ResolvedExperimentalOptions = Required<ExperimentalOptions>
 
 export interface LegacyOptions {
   /**
@@ -305,6 +312,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     spa: boolean
+    experimental: ResolvedExperimentalOptions
   }
 >
 
@@ -440,22 +448,28 @@ export async function resolveConfig(
 
   // resolve public base url
   const isBuild = command === 'build'
+
+  const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
+    config.experimental?.buildAdvancedBaseOptions,
+    isBuild,
+    logger
+  )
+
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
     isBuild,
     logger
   )
   const relativeBaseShortcut = config.base === '' || config.base === './'
-  // TODO:base should we deprecate the relative base shortcut?
   const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
   let resolvedBase = relativeBaseShortcut
     ? base
     : resolveBaseUrl(base, isBuild, logger, 'base')
   if (relativeBaseShortcut && isBuild) {
-    resolvedBuildOptions.advancedBaseOptions.relative = true
+    resolvedBuildAdvancedBaseOptions.relative = true
   }
   if (
-    resolvedBuildOptions.advancedBaseOptions.relative &&
+    resolvedBuildAdvancedBaseOptions.relative &&
     config.base === undefined
   ) {
     resolvedBase = './'
@@ -575,7 +589,12 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    spa: config.spa ?? true
+    spa: config.spa ?? true,
+    experimental: {
+      importGlobRestoreExtension: false,
+      ...config.experimental,
+      buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
+    }
   }
 
   if (resolved.legacy?.buildRollupPluginCommonjs) {

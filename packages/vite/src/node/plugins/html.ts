@@ -833,7 +833,7 @@ function getBaseInHTML(
 function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
   return getBaseInHTML(
     urlRelativePath,
-    config.build.advancedBaseOptions.public,
+    config.experimental.buildAdvancedBaseOptions.public,
     config
   )
 }
@@ -841,7 +841,7 @@ function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
 function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
   return getBaseInHTML(
     urlRelativePath,
-    config.build.advancedBaseOptions.assets,
+    config.experimental.buildAdvancedBaseOptions.assets,
     config
   )
 }

@@ -49,91 +49,6 @@ import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { VERSION } from './constants'
 
-/*
- * If defined, these functions will be called for assets and public files
- * paths which are generated in JS assets. Examples:
- *
- *   assets: { runtime: (url: string) => `window.__assetsPath(${url})` }
- *   public: { runtime: (url: string) => `window.__publicPath + ${url}` }
- *
- * For assets and public files paths in CSS or HTML, the corresponding
- * `assets.url` and `public.url` base urls or global base will be used.
- *
- * When using relative base, the assets.runtime function isn't needed as
- * all the asset paths will be computed using import.meta.url
- * The public.runtime function is still useful if the public files aren't
- * deployed in the same base as the hashed assets
- */
-
-export interface BuildAdvancedBaseOptions {
-  /**
-   * Relative base. If true, every generated URL is relative and the dist folder
-   * can be deployed to any base or subdomain. Use this option when the base
-   * is unkown at build time
-   * @default false
-   */
-  relative?: boolean
-  url?: string
-  runtime?: (filename: string) => string
-}
-
-export type BuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
-  /**
-   * Base for assets and public files in case they should be different
-   */
-  assets?: string | BuildAdvancedBaseOptions
-  public?: string | BuildAdvancedBaseOptions
-}
-
-export function resolveBuildBaseOptions(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): BuildAdvancedBaseOptions {
-  return {
-    relative: resolveBuildBaseRelative(options, config),
-    url: resolveBuildBaseUrl(options, config),
-    runtime: resolveBuildBaseRuntime(options, config)
-  }
-}
-
-export function resolveBuildBaseRelative(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): boolean {
-  let baseRelative = typeof options === 'object' ? options?.relative : undefined
-  if (!baseRelative) {
-    baseRelative = config.build.advancedBaseOptions.relative ?? false
-  }
-  return baseRelative
-}
-
-export function resolveBuildBaseUrl(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): string | undefined {
-  let baseUrl =
-    options && (typeof options === 'string' ? options : options?.url)
-  if (!baseUrl) {
-    baseUrl = config.build.advancedBaseOptions.url
-  }
-  if (!baseUrl && config.base !== './' && config.base !== '') {
-    // Default non-relative base
-    baseUrl = config.base
-  }
-  return baseUrl
-}
-
-export function resolveBuildBaseRuntime(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): ((filename: string) => string) | undefined {
-  let baseRuntime = typeof options === 'object' ? options?.runtime : undefined
-  if (!baseRuntime) {
-    baseRuntime = config.build.advancedBaseOptions.runtime
-  }
-  return baseRuntime
-}
-
 export interface BuildOptions {
   /**
    * Compatibility transform target. The transform is performed with esbuild
@@ -170,10 +85,6 @@ export interface BuildOptions {
    * @default 'assets'
    */
   assetsDir?: string
-  /**
-   * Build base options.
-   */
-  advancedBaseOptions?: BuildAdvancedBaseConfig
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
    * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
@@ -354,12 +265,7 @@ export function resolveBuildOptions(
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    },
-    advancedBaseOptions: resolveBuildAdvancedBaseConfig(
-      raw?.advancedBaseOptions,
-      isBuild,
-      logger
-    )
+    }
   }
 
   // handle special build targets
@@ -924,11 +830,97 @@ function injectSsrFlag<T extends Record<string, any>>(
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
 
+
+/*
+ * If defined, these functions will be called for assets and public files
+ * paths which are generated in JS assets. Examples:
+ *
+ *   assets: { runtime: (url: string) => `window.__assetsPath(${url})` }
+ *   public: { runtime: (url: string) => `window.__publicPath + ${url}` }
+ *
+ * For assets and public files paths in CSS or HTML, the corresponding
+ * `assets.url` and `public.url` base urls or global base will be used.
+ *
+ * When using relative base, the assets.runtime function isn't needed as
+ * all the asset paths will be computed using import.meta.url
+ * The public.runtime function is still useful if the public files aren't
+ * deployed in the same base as the hashed assets
+ */
+
+export interface BuildAdvancedBaseOptions {
+  /**
+   * Relative base. If true, every generated URL is relative and the dist folder
+   * can be deployed to any base or subdomain. Use this option when the base
+   * is unkown at build time
+   * @default false
+   */
+  relative?: boolean
+  url?: string
+  runtime?: (filename: string) => string
+}
+
+export type BuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
+  /**
+   * Base for assets and public files in case they should be different
+   */
+  assets?: string | BuildAdvancedBaseOptions
+  public?: string | BuildAdvancedBaseOptions
+}
+
+export function resolveBuildBaseOptions(
+  options: string | BuildAdvancedBaseOptions | undefined,
+  config: ResolvedConfig
+): BuildAdvancedBaseOptions {
+  return {
+    relative: resolveBuildBaseRelative(options, config),
+    url: resolveBuildBaseUrl(options, config),
+    runtime: resolveBuildBaseRuntime(options, config)
+  }
+}
+
+export function resolveBuildBaseRelative(
+  options: string | BuildAdvancedBaseOptions | undefined,
+  config: ResolvedConfig
+): boolean {
+  let baseRelative = typeof options === 'object' ? options?.relative : undefined
+  if (!baseRelative) {
+    baseRelative = config.experimental.buildAdvancedBaseOptions.relative ?? false
+  }
+  return baseRelative
+}
+
+export function resolveBuildBaseUrl(
+  options: string | BuildAdvancedBaseOptions | undefined,
+  config: ResolvedConfig
+): string | undefined {
+  let baseUrl =
+    options && (typeof options === 'string' ? options : options?.url)
+  if (!baseUrl) {
+    baseUrl = config.experimental.buildAdvancedBaseOptions.url
+  }
+  if (!baseUrl && config.base !== './' && config.base !== '') {
+    // Default non-relative base
+    baseUrl = config.base
+  }
+  return baseUrl
+}
+
+export function resolveBuildBaseRuntime(
+  options: string | BuildAdvancedBaseOptions | undefined,
+  config: ResolvedConfig
+): ((filename: string) => string) | undefined {
+  let baseRuntime = typeof options === 'object' ? options?.runtime : undefined
+  if (!baseRuntime) {
+    baseRuntime = config.experimental.buildAdvancedBaseOptions.runtime
+  }
+  return baseRuntime
+}
+
 /**
  * Resolve base. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBuildAdvancedBaseConfig(
+export function resolveBuildAdvancedBaseConfig(
   baseConfig: BuildAdvancedBaseConfig | undefined,
   isBuild: boolean,
   logger: Logger
@@ -948,7 +940,7 @@ function resolveBuildAdvancedBaseConfig(
         baseConfig?.url,
         isBuild,
         logger,
-        'build.advancedBaseOptions.url'
+        'experimental.buildAdvancedBaseOptions.url'
       ),
     assets: resolveBuildBaseSeparateOptions(
       baseConfig?.assets,
@@ -971,7 +963,7 @@ function resolveBuildBaseSeparateOptions(
   logger: Logger,
   optionName: string
 ): BuildAdvancedBaseOptions | string | undefined {
-  const configPath = `build.advancedBaseOptions.${optionName}`
+  const configPath = `experimental.buildAdvancedBaseOptions.${optionName}`
   if (typeof options === 'string') {
     return resolveBaseUrl(options, isBuild, logger, configPath)
   }

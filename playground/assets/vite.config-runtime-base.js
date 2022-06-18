@@ -23,17 +23,6 @@ module.exports = {
         chunkFileNames: 'chunks/[name].[hash].js',
         assetFileNames: 'other-assets/[name].[hash][extname]'
       }
-    },
-    advancedBaseOptions: {
-      relative: true,
-      assets: {
-        url: '/',
-        runtime: (url) => `globalThis.__toAssetUrl(${url})`
-      },
-      public: {
-        url: '/',
-        runtime: (url) => `globalThis.__publicBase+${url}`
-      }
     }
   },
   plugins: [
@@ -52,5 +41,18 @@ module.exports = {
         }
       }
     }
-  ]
+  ],
+  experimental: {
+    buildAdvancedBaseOptions: {
+      relative: true,
+      assets: {
+        url: '/',
+        runtime: (url) => `globalThis.__toAssetUrl(${url})`
+      },
+      public: {
+        url: '/',
+        runtime: (url) => `globalThis.__publicBase+${url}`
+      }
+    }
+  }
 }

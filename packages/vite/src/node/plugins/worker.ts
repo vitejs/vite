@@ -175,8 +175,8 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-  const { advancedBaseOptions } = config.build
-  const assetsBase = resolveBuildBaseOptions(advancedBaseOptions.assets, config)
+  const { buildAdvancedBaseOptions } = config.experimental
+  const assetsBase = resolveBuildBaseOptions(buildAdvancedBaseOptions.assets, config)
   return assetsBase.relative || assetsBase.runtime
     ? encodeWorkerAssetFileName(fileName, workerMap)
     : assetsBase.url + fileName
@@ -328,9 +328,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
-        const { advancedBaseOptions } = config.build
+        const { buildAdvancedBaseOptions } = config.experimental
         const assetsBase = resolveBuildBaseOptions(
-          advancedBaseOptions.assets,
+          buildAdvancedBaseOptions.assets,
           config
         )
 
