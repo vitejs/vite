@@ -5,7 +5,7 @@
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the location of the config file itself.
+Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the current working directory.
 
 See [Project Root](/guide/#index-html-and-project-root) for more details.
 
