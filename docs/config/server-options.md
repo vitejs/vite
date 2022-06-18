@@ -12,8 +12,26 @@ This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 ::: tip NOTE
 
-When wildcard hosts (cf. `0.0.0.0`) is used, other servers might respond instead of Vite.
-This is because servers listening on explicit hosts take priority over those listening on wildcard hosts.
+There are cases when other servers might respond instead of Vite.
+
+The first case is when `localhost` is used. Node.js below v17 reorders the result of resolved address by default. This means the resolved address might differ from the original result from DNS. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening.
+
+You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import dns from 'dns'
+
+dns.setDefaultResultOrder('verbatim')
+
+export default defineConfig({
+  // omit
+})
+```
+
+The second case is when wildcard hosts (cf. `0.0.0.0`) is used.
+This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
 
 :::
 
