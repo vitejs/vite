@@ -13,7 +13,6 @@ import {
   isExternalUrl,
   moduleListContains
 } from '../utils'
-import { resolveBuildBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -110,8 +109,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const { buildAdvancedBaseOptions } = config.experimental
-  const assetsBase = resolveBuildBaseOptions(buildAdvancedBaseOptions.assets, config)
+  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
   const relativePreloadUrls = !(assetsBase.url || assetsBase.runtime)
 
   const scriptRel = config.build.polyfillModulePreload
@@ -122,7 +120,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     : `function(dep) { return ${
         assetsBase.runtime
           ? assetsBase.runtime('dep')
-          : `${JSON.stringify(assetsBase.url)}+dep`
+          : `${JSON.stringify(assetsBase.url ?? config.base)}+dep`
       }}`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 

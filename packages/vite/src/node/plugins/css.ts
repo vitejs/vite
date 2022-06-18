@@ -43,7 +43,6 @@ import {
   requireResolveFromRootWithFallback
 } from '../utils'
 import type { Logger } from '../logger'
-import { resolveBuildBaseOptions } from '../build'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -450,17 +449,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const { buildAdvancedBaseOptions } = config.experimental
-
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
-        const assetsBase = resolveBuildBaseOptions(
-          buildAdvancedBaseOptions.assets,
-          config
-        )
+        const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
         const cssAssetDirname =
           encodedPublicUrls || assetsBase.relative
             ? getCssAssetDirname(cssAssetName)
@@ -480,7 +474,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             if (assetsBase.runtime) {
               // config.logger.error('Error TODO:base')... absolute + runtime
             }
-            return assetsBase.url + filename
+            return (assetsBase.url ?? config.base) + filename
           }
         })
         // resolve public URL from CSS paths, TODO:base

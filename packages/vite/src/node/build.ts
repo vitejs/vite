@@ -830,7 +830,6 @@ function injectSsrFlag<T extends Record<string, any>>(
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
 
-
 /*
  * If defined, these functions will be called for assets and public files
  * paths which are generated in JS assets. Examples:
@@ -867,53 +866,9 @@ export type BuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
   public?: string | BuildAdvancedBaseOptions
 }
 
-export function resolveBuildBaseOptions(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): BuildAdvancedBaseOptions {
-  return {
-    relative: resolveBuildBaseRelative(options, config),
-    url: resolveBuildBaseUrl(options, config),
-    runtime: resolveBuildBaseRuntime(options, config)
-  }
-}
-
-export function resolveBuildBaseRelative(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): boolean {
-  let baseRelative = typeof options === 'object' ? options?.relative : undefined
-  if (!baseRelative) {
-    baseRelative = config.experimental.buildAdvancedBaseOptions.relative ?? false
-  }
-  return baseRelative
-}
-
-export function resolveBuildBaseUrl(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): string | undefined {
-  let baseUrl =
-    options && (typeof options === 'string' ? options : options?.url)
-  if (!baseUrl) {
-    baseUrl = config.experimental.buildAdvancedBaseOptions.url
-  }
-  if (!baseUrl && config.base !== './' && config.base !== '') {
-    // Default non-relative base
-    baseUrl = config.base
-  }
-  return baseUrl
-}
-
-export function resolveBuildBaseRuntime(
-  options: string | BuildAdvancedBaseOptions | undefined,
-  config: ResolvedConfig
-): ((filename: string) => string) | undefined {
-  let baseRuntime = typeof options === 'object' ? options?.runtime : undefined
-  if (!baseRuntime) {
-    baseRuntime = config.experimental.buildAdvancedBaseOptions.runtime
-  }
-  return baseRuntime
+export type ResolvedBuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
+  assets: BuildAdvancedBaseOptions
+  public: BuildAdvancedBaseOptions
 }
 
 /**
@@ -922,34 +877,39 @@ export function resolveBuildBaseRuntime(
  */
 export function resolveBuildAdvancedBaseConfig(
   baseConfig: BuildAdvancedBaseConfig | undefined,
+  resolvedBase: string,
   isBuild: boolean,
   logger: Logger
-): BuildAdvancedBaseConfig {
+): ResolvedBuildAdvancedBaseConfig {
   baseConfig ??= {}
-  const relative = !!baseConfig?.relative
-  if (relative && !isBuild) {
-    return {
-      relative: true
-    }
-  }
-  return {
-    relative,
+
+  const relativeBaseShortcut = resolvedBase === '' || resolvedBase === './'
+
+  const resolved = {
+    relative: baseConfig?.relative ?? relativeBaseShortcut,
     url:
-      baseConfig?.url &&
+      baseConfig?.url ?
       resolveBaseUrl(
         baseConfig?.url,
         isBuild,
         logger,
         'experimental.buildAdvancedBaseOptions.url'
-      ),
-    assets: resolveBuildBaseSeparateOptions(
+      ): undefined,
+    runtime: baseConfig?.runtime
+  }
+
+  return {
+    ...resolved,
+    assets: resolveBuildBaseSpecificOptions(
       baseConfig?.assets,
+      resolved,
       isBuild,
       logger,
       'assets'
     ),
-    public: resolveBuildBaseSeparateOptions(
+    public: resolveBuildBaseSpecificOptions(
       baseConfig?.public,
+      resolved,
       isBuild,
       logger,
       'public'
@@ -957,21 +917,22 @@ export function resolveBuildAdvancedBaseConfig(
   }
 }
 
-function resolveBuildBaseSeparateOptions(
+function resolveBuildBaseSpecificOptions(
   options: BuildAdvancedBaseOptions | string | undefined,
+  parent: BuildAdvancedBaseOptions,
   isBuild: boolean,
   logger: Logger,
   optionName: string
-): BuildAdvancedBaseOptions | string | undefined {
-  const configPath = `experimental.buildAdvancedBaseOptions.${optionName}`
+): BuildAdvancedBaseOptions {
+  const urlConfigPath = `experimental.buildAdvancedBaseOptions.${optionName}.url`
   if (typeof options === 'string') {
-    return resolveBaseUrl(options, isBuild, logger, configPath)
+    options = { url: options }
   }
-  if (typeof options === 'object' && options.url) {
-    return {
-      ...options,
-      url: resolveBaseUrl(options.url, isBuild, logger, configPath + '.url')
-    }
+  return {
+    relative: options?.relative ?? parent.relative,
+    url: options?.url
+      ? resolveBaseUrl(options?.url, isBuild, logger, urlConfigPath)
+      : parent.url,
+    runtime: options?.runtime ?? parent.runtime
   }
-  return options
 }

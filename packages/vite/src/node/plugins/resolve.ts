@@ -86,9 +86,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
-export function resolvePlugin(
-  resolveOptions: InternalResolveOptions
-): Plugin {
+export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   const {
     root,
     isBuild,

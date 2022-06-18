@@ -9,7 +9,12 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
-import type { BuildOptions, ResolvedBuildOptions, BuildAdvancedBaseConfig } from './build'
+import type {
+  BuildOptions,
+  ResolvedBuildOptions,
+  BuildAdvancedBaseConfig,
+  ResolvedBuildAdvancedBaseConfig
+} from './build'
 import { resolveBuildOptions, resolveBuildAdvancedBaseConfig } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
@@ -239,7 +244,9 @@ export interface ExperimentalOptions {
   buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
 }
 
-export type ResolvedExperimentalOptions = Required<ExperimentalOptions>
+export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
+  buildAdvancedBaseOptions: ResolvedBuildAdvancedBaseConfig
+}
 
 export interface LegacyOptions {
   /**
@@ -448,9 +455,21 @@ export async function resolveConfig(
 
   // resolve public base url
   const isBuild = command === 'build'
+  const relativeBaseShortcut = config.base === '' || config.base === './'
+  const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
+  let resolvedBase = relativeBaseShortcut
+    ? base
+    : resolveBaseUrl(base, isBuild, logger, 'base')
+  if (
+    config.experimental?.buildAdvancedBaseOptions?.relative &&
+    config.base === undefined
+  ) {
+    resolvedBase = './'
+  }
 
   const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
     config.experimental?.buildAdvancedBaseOptions,
+    resolvedBase,
     isBuild,
     logger
   )
@@ -460,20 +479,6 @@ export async function resolveConfig(
     isBuild,
     logger
   )
-  const relativeBaseShortcut = config.base === '' || config.base === './'
-  const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
-  let resolvedBase = relativeBaseShortcut
-    ? base
-    : resolveBaseUrl(base, isBuild, logger, 'base')
-  if (relativeBaseShortcut && isBuild) {
-    resolvedBuildAdvancedBaseOptions.relative = true
-  }
-  if (
-    resolvedBuildAdvancedBaseOptions.relative &&
-    config.base === undefined
-  ) {
-    resolvedBase = './'
-  }
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })

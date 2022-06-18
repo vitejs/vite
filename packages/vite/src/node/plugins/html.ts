@@ -29,7 +29,6 @@ import {
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import { resolveBuildBaseUrl } from '../build'
 import type { BuildAdvancedBaseOptions } from '../build'
 import {
   assetUrlRE,
@@ -39,6 +38,7 @@ import {
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
+import { config } from 'dotenv'
 
 interface ScriptAssetsUrl {
   start: number
@@ -821,12 +821,19 @@ function isEntirelyImport(code: string) {
 
 function getBaseInHTML(
   urlRelativePath: string,
-  basePath: BuildAdvancedBaseOptions | string | undefined,
+  baseOptions: BuildAdvancedBaseOptions,
   config: ResolvedConfig
 ) {
+  // Prefer explicit URL if defined for linking to assets and public files from HTML,
+  // even when base relative is specified
   return (
-    resolveBuildBaseUrl(basePath, config) ??
-    path.posix.join(path.posix.relative(urlRelativePath, '').slice(0, -2), './')
+    baseOptions.url ??
+    (baseOptions.relative
+      ? path.posix.join(
+          path.posix.relative(urlRelativePath, '').slice(0, -2),
+          './'
+        )
+      : config.base)
   )
 }
 

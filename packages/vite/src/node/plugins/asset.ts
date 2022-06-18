@@ -4,7 +4,6 @@ import fs, { promises as fsp } from 'fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext } from 'rollup'
 import MagicString from 'magic-string'
-import { resolveBuildBaseOptions } from '../build'
 import type { BuildAdvancedBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -43,7 +42,6 @@ export function registerCustomMime(): void {
 export function assetPlugin(config: ResolvedConfig): Plugin {
   // assetHashToFilenameMap initialization in buildStart causes getAssetFilename to return undefined
   assetHashToFilenameMap.set(config, new Map())
-  const { buildAdvancedBaseOptions } = config.experimental
 
   registerCustomMime()
 
@@ -103,14 +101,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       const toOutputFilePathInString = (
         filename: string,
-        basePath: BuildAdvancedBaseOptions | string | undefined
+        base: BuildAdvancedBaseOptions
       ) => {
-        const assetsBase = resolveBuildBaseOptions(basePath, config)
-        return assetsBase.runtime
-          ? `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
-          : assetsBase.relative
+        return base.runtime
+          ? `"+${base.runtime(JSON.stringify(filename))}+"`
+          : base.relative
           ? absoluteUrlPathInterpolation(filename)
-          : JSON.stringify(assetsBase.url + filename).slice(1, -1)
+          : JSON.stringify((base.url ?? config.base) + filename).slice(1, -1)
       }
 
       // Urls added with JS using e.g.
@@ -131,7 +128,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const filename = file + postfix
         const replacement = toOutputFilePathInString(
           filename,
-          buildAdvancedBaseOptions.assets
+          config.experimental.buildAdvancedBaseOptions.assets
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
@@ -147,7 +144,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
         const replacement = toOutputFilePathInString(
           publicUrl,
-          buildAdvancedBaseOptions.public
+          config.experimental.buildAdvancedBaseOptions.public
         )
         s.overwrite(match.index, match.index + full.length, replacement, {
           contentOnly: true
