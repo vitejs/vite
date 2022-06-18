@@ -17,26 +17,25 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:client-inject',
     transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
-        let options = config.server.hmr
-        options = options && typeof options !== 'boolean' ? options : {}
-        const host = options.host || null
-        const protocol = options.protocol || null
-        const timeout = options.timeout || 30000
-        const overlay = options.overlay !== false
+        let hmrConfig = config.server.hmr
+        hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
+        const host = hmrConfig?.host || null
+        const protocol = hmrConfig?.protocol || null
+        const timeout = hmrConfig?.timeout || 30000
+        const overlay = hmrConfig?.overlay !== false
 
         // hmr.clientPort -> hmr.port
         // -> (24678 if middleware mode) -> new URL(import.meta.url).port
-        let port: string | null = null
-        if (isObject(config.server.hmr)) {
-          port = String(config.server.hmr.clientPort || config.server.hmr.port)
-        }
+        let port = hmrConfig
+          ? String(hmrConfig.clientPort || hmrConfig.port)
+          : null
         if (config.server.middlewareMode) {
           port ||= '24678'
         }
 
         let hmrBase = config.base
-        if (options.path) {
-          hmrBase = path.posix.join(hmrBase, options.path)
+        if (hmrConfig?.path) {
+          hmrBase = path.posix.join(hmrBase, hmrConfig.path)
         }
 
         return code
