@@ -733,7 +733,7 @@ async function cjsSsrResolveExternal(
 ): Promise<ExternalOption> {
   // see if we have cached deps data available
   let knownImports: string[] | undefined
-  const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+  const dataPath = path.join(getDepsCacheDir(config, false), '_metadata.json')
   try {
     const data = JSON.parse(
       fs.readFileSync(dataPath, 'utf-8')

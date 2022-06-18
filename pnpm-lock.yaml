@@ -811,6 +811,7 @@ importers:
       define-property-exports: file:./define-property-exports
       express: ^4.18.1
       forwarded-export: file:./forwarded-export
+      no-external-cjs: file:./no-external-cjs
       object-assigned-exports: file:./object-assigned-exports
       only-object-assigned-exports: file:./only-object-assigned-exports
       primitive-export: file:./primitive-export
@@ -822,6 +823,7 @@ importers:
       define-properties-exports: file:playground/ssr-deps/define-properties-exports
       define-property-exports: file:playground/ssr-deps/define-property-exports
       forwarded-export: file:playground/ssr-deps/forwarded-export
+      no-external-cjs: file:playground/ssr-deps/no-external-cjs
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
       only-object-assigned-exports: file:playground/ssr-deps/only-object-assigned-exports
       primitive-export: file:playground/ssr-deps/primitive-export
@@ -843,6 +845,9 @@ importers:
       object-assigned-exports: file:../object-assigned-exports
     dependencies:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
+
+  playground/ssr-deps/no-external-cjs:
+    specifiers: {}
 
   playground/ssr-deps/object-assigned-exports:
     specifiers: {}
@@ -3808,7 +3813,7 @@ packages:
     dev: true
 
   /encodeurl/1.0.2:
-    resolution: {integrity: sha1-rT/0yG7C0CkyL1oCw6mmBslbP1k=}
+    resolution: {integrity: sha512-TPJXq8JqFaVYm2CWmPvnP2Iyo4ZSM7/QKcSmuMLDObfpH5fi7RUGmd/rTDf+rut/saiDiQEeVTNgAmJEdAOx0w==}
     engines: {node: '>= 0.8'}
     dev: true
 
@@ -4468,7 +4473,7 @@ packages:
     engines: {node: '>=6'}
 
   /escape-html/1.0.3:
-    resolution: {integrity: sha1-Aljq5NPQwJdN4cFpGI7wBR0dGYg=}
+    resolution: {integrity: sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow==}
     dev: true
 
   /escape-string-regexp/1.0.5:
@@ -6021,7 +6026,7 @@ packages:
     engines: {node: '>= 8'}
 
   /methods/1.1.2:
-    resolution: {integrity: sha1-VSmk1nZUE07cxSZmVoNbD4Ua/O4=}
+    resolution: {integrity: sha512-iclAHeNqNm68zFtnZ0e+1L2yUIdvzNoauKU4WBA3VvH/vPFieF7qfRlwUZU+DA9P9bPXIS90ulxoUoCH23sV2w==}
     engines: {node: '>= 0.6'}
     dev: true
 
@@ -6387,10 +6392,6 @@ packages:
     resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
     engines: {node: '>= 6'}
     dev: false
-
-  /object-inspect/1.12.0:
-    resolution: {integrity: sha512-Ho2z80bVIvJloH+YzRmpZVQe87+qASmBUKZDWgx9cu+KDrX2ZDH/3tMy+gXbZETVGs2M8YdxObOh7XAtim9Y0g==}
-    dev: true
 
   /object-inspect/1.12.2:
     resolution: {integrity: sha512-z+cPxW0QGUp0mcqcsgQyLVRDoXFQbXOwBaqyF7VIgI4TWNQsDHrBpUQslRmIfAoYWdYzs6UlKJtB2XJpTaNSpQ==}
@@ -7544,7 +7545,7 @@ packages:
     dependencies:
       call-bind: 1.0.2
       get-intrinsic: 1.1.1
-      object-inspect: 1.12.0
+      object-inspect: 1.12.2
     dev: true
 
   /signal-exit/3.0.7:
@@ -8793,6 +8794,12 @@ packages:
     version: 0.0.0
     dependencies:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
+    dev: false
+
+  file:playground/ssr-deps/no-external-cjs:
+    resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
+    name: primitive-export
+    version: 0.0.0
     dev: false
 
   file:playground/ssr-deps/object-assigned-exports:

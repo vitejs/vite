@@ -72,3 +72,8 @@ test('msg from only object assigned exports', async () => {
     'Hello World!'
   )
 })
+
+test('msg from no external cjs', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.no-external-cjs-msg')).toMatch('Hello World!')
+})

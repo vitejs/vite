@@ -89,7 +89,6 @@ export interface InternalResolveOptions extends ResolveOptions {
 export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
   const {
     root,
-    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
@@ -187,7 +186,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
             const browserHash = optimizedDepInfoFromFile(
-              depsOptimizer.metadata,
+              depsOptimizer.metadata({ ssr }),
               normalizedFsPath
             )?.browserHash
             if (browserHash) {
@@ -266,9 +265,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           !external &&
           asSrc &&
           depsOptimizer &&
-          (isBuild || !ssr) &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
+          (res = await tryOptimizedResolve(depsOptimizer, ssr, id, importer))
         ) {
           return res
         }
@@ -542,6 +540,8 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
+  ssr ??= false
+
   // split id by last '>' for nested selected packages, for example:
   // 'foo > bar > baz' => 'foo > bar' & 'baz'
   // 'foo'             => ''          & 'foo'
@@ -687,7 +687,7 @@ export function tryNodeResolve(
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = depsOptimizer.metadata.browserHash
+      const versionHash = depsOptimizer.metadata({ ssr }).browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -695,7 +695,7 @@ export function tryNodeResolve(
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
+    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved, ssr)
     resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
   }
 
@@ -713,12 +713,18 @@ export function tryNodeResolve(
 
 export async function tryOptimizedResolve(
   depsOptimizer: DepsOptimizer,
+  ssr: boolean,
   id: string,
   importer?: string
 ): Promise<string | undefined> {
   await depsOptimizer.scanProcessing
 
-  const depInfo = optimizedDepInfoFromId(depsOptimizer.metadata, id)
+  const metadata = depsOptimizer.metadata({ ssr })
+  if (!metadata) {
+    return
+  }
+
+  const depInfo = optimizedDepInfoFromId(metadata, id)
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }
@@ -728,7 +734,7 @@ export async function tryOptimizedResolve(
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
-  for (const optimizedData of depsOptimizer.metadata.depInfoList) {
+  for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
     const pkgPath = optimizedData.id
