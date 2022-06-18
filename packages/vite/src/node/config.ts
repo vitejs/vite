@@ -484,6 +484,8 @@ export async function resolveConfig(
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
   const ssr = resolveSSROptions(config.ssr)
 
+  const middlewareMode = config?.server?.middlewareMode
+
   const optimizeDeps = config.optimizeDeps || {}
 
   const resolved: ResolvedConfig = {
@@ -529,10 +531,22 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType:
-      config.appType ?? config?.server?.middlewareMode === 'ssr'
-        ? 'custom'
-        : 'spa'
+    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa'
+  }
+
+  if (middlewareMode === 'ssr') {
+    logger.warn(
+      colors.yellow(
+        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true and appType 'custom'`
+      )
+    )
+  }
+  if (middlewareMode === 'html') {
+    logger.warn(
+      colors.yellow(
+        `server.middlewareMode 'html' is now deprecated, use server.middlewareMode true`
+      )
+    )
   }
 
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
