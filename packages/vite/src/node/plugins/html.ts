@@ -38,7 +38,6 @@ import {
 } from './asset'
 import { isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
-import { config } from 'dotenv'
 
 interface ScriptAssetsUrl {
   start: number
