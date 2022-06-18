@@ -107,13 +107,6 @@ Configure CORS for the dev server. This is enabled by default and allows any ori
 
 Specify server response headers.
 
-## server.force
-
-- **Type:** `boolean`
-- **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
-
-Set to `true` to force dependency pre-bundling.
-
 ## server.hmr
 
 - **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
