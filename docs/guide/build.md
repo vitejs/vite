@@ -192,6 +192,7 @@ This feature is experimental, the API may change in a future minor without follo
 
 For advanced use cases, the deployed assets and public files may be in different paths, for example to use different cache strategies.
 A user may choose to deploy in three different paths:
+
 - The generated entry HTML files (which may be processed during SSR)
 - The generated hashed assets (JS, CSS, and other file types like images)
 - The copied [public files](assets.md#the-public-directory)
@@ -203,13 +204,13 @@ A single static [base](#public-base-path) isn't enough in these scenarios. Vite 
     buildAdvancedBaseOptions: {
       // Same as base: './'
       // type: boolean, default: false
-      relative: true 
+      relative: true
       // Static base
       // type: string, default: undefined
       url: 'https:/cdn.domain.com/'
       // Dynamic base to be used for paths inside JS
       // type: (url: string) => string, default: undefined
-      runtime: (url: string) => `window.__toCdnUrl(${url})` 
+      runtime: (url: string) => `window.__toCdnUrl(${url})`
     },
   }
 ```
@@ -226,12 +227,12 @@ If the hashed assets and public files aren't deployed together, options for each
       assets: {
         relative: true
         url: 'https:/cdn.domain.com/assets',
-        runtime: (url: string) => `window.__assetsPath(${url})` 
+        runtime: (url: string) => `window.__assetsPath(${url})`
       },
       public: {
         relative: false
         url: 'https:/www.domain.com/',
-        runtime: (url: string) => `window.__publicPath + ${url}` 
+        runtime: (url: string) => `window.__publicPath + ${url}`
       }
     }
   }

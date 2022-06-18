@@ -887,14 +887,14 @@ export function resolveBuildAdvancedBaseConfig(
 
   const resolved = {
     relative: baseConfig?.relative ?? relativeBaseShortcut,
-    url:
-      baseConfig?.url ?
-      resolveBaseUrl(
-        baseConfig?.url,
-        isBuild,
-        logger,
-        'experimental.buildAdvancedBaseOptions.url'
-      ): undefined,
+    url: baseConfig?.url
+      ? resolveBaseUrl(
+          baseConfig?.url,
+          isBuild,
+          logger,
+          'experimental.buildAdvancedBaseOptions.url'
+        )
+      : undefined,
     runtime: baseConfig?.runtime
   }
 
