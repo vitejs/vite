@@ -22,7 +22,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
@@ -33,6 +33,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
         port: hmrPort
       }
     },
+    appType: 'custom',
     ssr: {
       noExternal: ['no-external-cjs']
     }

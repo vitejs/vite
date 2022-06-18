@@ -74,13 +74,12 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode. This disables Vite's own HTML
-  // serving logic and let the parent server take control.
-  //
-  // In middleware mode, if you want to use Vite's own HTML serving logic
-  // use `'html'` as the `middlewareMode` (ref https://vitejs.dev/config/#server-middlewaremode)
+  // Create Vite server in middleware mode and configure the app type as
+  // 'custom', disabling Vite's own HTML serving logic so parent server
+  // can take control
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom'
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -267,11 +266,8 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 
 ## Vite CLI
 
-The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps:
+The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps. You can add your SSR middlewares to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
 
-1. Add your SSR middleware to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
-   :::tip Note
-   Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
-   :::
-
-2. Set `config.spa` to `false`. This switches the development and preview server from SPA mode to SSR/MPA mode.
+:::tip Note
+Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
+:::
