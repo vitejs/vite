@@ -17,6 +17,7 @@ import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
+  asyncFlatten,
   createDebugger,
   createFilter,
   dynamicImport,
@@ -75,7 +76,13 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption = Plugin | false | null | undefined | PluginOption[]
+export type PluginOption =
+  | Plugin
+  | false
+  | null
+  | undefined
+  | PluginOption[]
+  | Promise<Plugin | false | null | undefined | PluginOption[]>
 
 export interface UserConfig {
   /**
@@ -370,7 +377,9 @@ export async function resolveConfig(
   configEnv.mode = mode
 
   // resolve plugins
-  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
+  const rawUserPlugins = (
+    (await asyncFlatten(config.plugins || [])) as Plugin[]
+  ).filter((p) => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -380,7 +389,7 @@ export async function resolveConfig(
     } else {
       return p.apply === command
     }
-  }) as Plugin[]
+  })
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
