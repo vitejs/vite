@@ -5,7 +5,6 @@ import type {
   OutgoingHttpHeaders as HttpServerHeaders
 } from 'http'
 import type { ServerOptions as HttpsServerOptions } from 'https'
-import { promises as dns } from 'dns'
 import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -186,13 +185,6 @@ export async function httpServerStart(
   }
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
-
-  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
-  // https://github.com/nodejs/node/pull/39987
-  if (host === 'localhost') {
-    const addr = await dns.lookup('localhost', { verbatim: true })
-    host = addr.address
-  }
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {

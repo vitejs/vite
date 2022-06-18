@@ -306,7 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!isDepsOptimizerEnabled(config)
+      ...(config.legacy?.buildRollupPluginCommonjs
         ? [commonjsPlugin(options.commonjsOptions)]
         : []),
       dataURIPlugin(),
@@ -398,7 +398,7 @@ async function doBuild(
   // In CJS, we can pass the externals to rollup as is. In ESM, we need to
   // do it in the resolve plugin so we can add the resolved extension for
   // deep node_modules imports
-  if (ssr && config.ssr?.format === 'cjs') {
+  if (ssr && config.legacy?.buildSsrCjsExternalHeuristics) {
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
