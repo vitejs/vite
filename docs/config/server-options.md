@@ -172,9 +172,9 @@ async function createServer() {
 
   app.use('*', async (req, res) => {
     // Since `appType` is `'custom'`, should serve response here.
-    // Note: if `appType` is `'spa'` or `'mpa'`, vite includes middlewares to handle
-    // HTML requests and the `vite404Middleware` so user middlewares should be added
-    // before these to take effect instead
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
+    // HTML requests and 404s so user middlewares should be added
+    // before Vite's middlewares to take effect instead
   })
 }
 
