@@ -172,7 +172,7 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
-  const urls: Array<{ label: string; url: string }> = []
+  const urls: Array<{ label: string; url: string; disabled?: boolean }> = []
   const notes: Array<{ label: string; message: string }> = []
 
   if (hostname.host && loopbackHosts.has(hostname.host)) {
@@ -192,11 +192,10 @@ function printServerUrls(
     })
 
     if (hostname.name === 'localhost') {
-      notes.push({
-        label: 'Hint',
-        message: colors.dim(
-          `Use ${colors.white(colors.bold('--host'))} to expose to network.`
-        )
+      urls.push({
+        label: 'Network',
+        url: `use ${colors.white(colors.bold('--host'))} to expose`,
+        disabled: true
       })
     }
   } else {
@@ -235,17 +234,17 @@ function printServerUrls(
   const print = (
     iconWithColor: string,
     label: string,
-    messageWithColor: string
+    messageWithColor: string,
+    disabled?: boolean
   ) => {
-    info(
-      `  ${iconWithColor}  ${colors.bold(label)}: ${' '.repeat(
-        length - label.length
-      )}${messageWithColor}`
-    )
+    const message = `  ${iconWithColor}  ${
+      label ? colors.bold(label) + ':' : ' '
+    } ${' '.repeat(length - label.length)}${messageWithColor}`
+    info(disabled ? colors.dim(message) : message)
   }
 
-  urls.forEach(({ label, url: text }) => {
-    print(colors.green('➜'), label, text)
+  urls.forEach(({ label, url: text, disabled }) => {
+    print(colors.green('➜'), label, text, disabled)
   })
   notes.forEach(({ label, message: text }) => {
     print(colors.white('❖'), label, text)
