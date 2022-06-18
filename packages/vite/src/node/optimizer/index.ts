@@ -73,13 +73,6 @@ export interface DepOptimizationOptions {
    */
   entries?: string | string[]
   /**
-   * Enable esbuild based scan phase, to get back to the optimized deps discovery
-   * strategy used in Vite v2
-   * @default false
-   * @experimental
-   */
-  devScan?: boolean
-  /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
    */
@@ -137,6 +130,11 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   * @experimental
+   */
+  force?: boolean
 }
 
 export interface DepOptimizationResult {
@@ -209,7 +207,7 @@ export interface DepOptimizationMetadata {
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.force,
+  force = config.optimizeDeps.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -265,7 +263,7 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
-  force = config.force,
+  force = config.optimizeDeps.force,
   asCommand = false
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
