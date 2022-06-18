@@ -6,6 +6,7 @@ import { promisify } from 'util'
 import { URL, URLSearchParams, pathToFileURL } from 'url'
 import { builtinModules, createRequire } from 'module'
 import { performance } from 'perf_hooks'
+import { promises as dns } from 'dns'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -735,16 +736,36 @@ export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
 }
 
-export interface Hostname {
-  // undefined sets the default behaviour of server.listen
-  host: string | undefined
-  // resolve to localhost when possible
-  name: string
+/**
+ * Returns localhost address when `dns.lookup` result differs from DNS
+ *
+ * `dns.lookup` result is same when defaultResultOrder is `verbatim`.
+ * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
+ * For example, IPv6 is not supported on that machine/network.
+ */
+async function getLocalhostAddressIfDiffersFromDNS() {
+  const [nodeResult, dnsResult] = await Promise.all([
+    dns.lookup('localhost'),
+    dns.lookup('localhost', { verbatim: true })
+  ])
+  const isSame =
+    nodeResult.family === dnsResult.family &&
+    nodeResult.address === dnsResult.address
+  return isSame ? undefined : nodeResult.address
 }
 
-export function resolveHostname(
+export interface Hostname {
+  /** undefined sets the default behaviour of server.listen */
+  host: string | undefined
+  /** resolve to localhost when possible */
+  name: string
+  /** if it is using the default behavior */
+  implicit: boolean
+}
+
+export async function resolveHostname(
   optionsHost: string | boolean | undefined
-): Hostname {
+): Promise<Hostname> {
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
@@ -757,10 +778,17 @@ export function resolveHostname(
   }
 
   // Set host name to localhost when possible
-  const name =
-    host === undefined || wildcardHosts.has(host) ? 'localhost' : host
+  let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
-  return { host, name }
+  if (host === 'localhost') {
+    // See #8647 for more details.
+    const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
+    if (localhostAddr) {
+      name = localhostAddr
+    }
+  }
+
+  return { host, name, implicit: optionsHost === undefined }
 }
 
 export function arraify<T>(target: T | T[]): T[] {

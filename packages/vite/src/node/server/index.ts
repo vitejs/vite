@@ -222,7 +222,7 @@ export interface ViteDevServer {
   /**
    * Print server urls
    */
-  printUrls(): void
+  printUrls(): Promise<void>
   /**
    * Restart the server.
    *
@@ -355,9 +355,9 @@ export async function createServer(
         closeHttpServer()
       ])
     },
-    printUrls() {
+    async printUrls() {
       if (httpServer) {
-        printCommonServerUrls(httpServer, config.server, config)
+        await printCommonServerUrls(httpServer, config.server, config)
       } else {
         throw new Error('cannot print server URLs in middleware mode.')
       }
@@ -561,7 +561,7 @@ async function startServer(
 
   const options = server.config.server
   const port = inlinePort ?? options.port ?? 5173
-  const hostname = resolveHostname(options.host)
+  const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
