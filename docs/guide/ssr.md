@@ -74,11 +74,9 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode. This disables Vite's own HTML
-  // serving logic and let the parent server take control.
-  //
-  // In middleware mode, if you want to use Vite's own HTML serving logic
-  // use `appType: 'spa' | 'mpa'`
+  // Create Vite server in middleware mode and configure the app type as
+  // 'custom', disabling Vite's own HTML serving logic so parent server
+  // can take control
   const vite = await createViteServer({
     server: { middlewareMode: true },
     appType: 'custom'

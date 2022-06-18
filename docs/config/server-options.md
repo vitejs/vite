@@ -169,18 +169,19 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode.
+  // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom'
+    appType: 'custom' // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `appType` is `'custom'`, should serve response here.
-    // If `appType` is `'spa'` or `'mpa'`, there is no need to serve `index.html`
-    // because Vite will do that.
+    // Since `appType` is `'custom'`, should serve response here.
+    // Note: if `appType` is `'spa'` or `'mpa'`, vite includes middlewares to handle
+    // HTML requests and the `vite404Middleware` so user middlewares should be added
+    // before these to take effect instead
   })
 }
 
