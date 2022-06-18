@@ -9,6 +9,7 @@ import definePropertiesExports from 'define-properties-exports'
 import definePropertyExports from 'define-property-exports'
 import onlyObjectAssignedExports from 'only-object-assigned-exports'
 import requireAbsolute from 'require-absolute'
+import noExternalCjs from 'no-external-cjs'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -44,6 +45,9 @@ export async function render(url, rootDir) {
 
   const requireAbsoluteMessage = requireAbsolute.hello()
   html += `\n<p class="require-absolute-msg">message from require-absolute: ${requireAbsoluteMessage}</p>`
+
+  const noExternalCjsMessage = noExternalCjs.hello()
+  html += `\n<p class="no-external-cjs-msg">message from no-external-cjs: ${noExternalCjsMessage}</p>`
 
   return html + '\n'
 }
