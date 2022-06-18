@@ -10,6 +10,13 @@ Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and pu
 
 This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
+::: tip NOTE
+
+There are cases when other servers might respond instead of Vite.
+See [`server.host`](./server-options#server-host) for more details.
+
+:::
+
 ## preview.port
 
 - **Type:** `number`

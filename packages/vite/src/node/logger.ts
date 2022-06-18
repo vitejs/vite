@@ -8,7 +8,7 @@ import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
-import { loopbackHosts, wildcardHosts } from './constants'
+import { loopbackHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -217,15 +217,6 @@ function printServerUrls(
 
         urls.push({ label, url: colors.cyan(url) })
       })
-  }
-
-  if (!hostname.host || wildcardHosts.has(hostname.host)) {
-    notes.push({
-      label: 'Note',
-      message: colors.dim(
-        'You are using a wildcard host. Ports might be overridden.'
-      )
-    })
   }
 
   const length = Math.max(
