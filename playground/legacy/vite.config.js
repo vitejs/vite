@@ -16,7 +16,7 @@ module.exports = {
     manifest: true,
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, 'index.html'),
+        index: path.resolve(__dirname, 'index.html'),
         nested: path.resolve(__dirname, 'nested/index.html')
       },
       output: {
