@@ -146,14 +146,12 @@ export default defineConfig({
 
 ## server.middlewareMode
 
-- **Type:** `'ssr' | 'html'`
+- **Type:** `boolean`
+- **Default:** `false`
 
-Create Vite server in middleware mode. (without a HTTP server)
+Create Vite server in middleware mode.
 
-- `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
-- `'html'` will enable Vite's own HTML serving logic.
-
-- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+- **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
 
@@ -164,17 +162,19 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode.
+  // Create Vite server in middleware mode
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom' // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
-    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
-    // because Vite will do that.
+    // Since `appType` is `'custom'`, should serve response here.
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
+    // HTML requests and 404s so user middlewares should be added
+    // before Vite's middlewares to take effect instead
   })
 }
 

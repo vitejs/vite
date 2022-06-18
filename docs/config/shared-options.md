@@ -336,9 +336,15 @@ Env variables starts with `envPrefix` will be exposed to your client source code
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
 :::
 
-## spa
+## appType
 
-- **Type:** `boolean`
-- **Default:** `true`
+- **Type:** `'spa' | 'mpa' | 'custom'`
+- **Default:** `'spa'`
 
-Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
+Whether your application is a Single Page Application (SPA), a [Multi Page Application (MPA)](../guide/build#multi-page-app), or Custom Application (SSR and frameworks with custom HTML handling):
+
+- `'spa'`: include SPA fallback middleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
+- `'mpa'`: only include non-SPA HTML middlewares
+- `'custom'`: don't include HTML middlewares
+
+Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#servermiddlewaremode).
