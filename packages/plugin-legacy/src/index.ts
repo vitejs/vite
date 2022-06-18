@@ -3,9 +3,10 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
-import { build } from 'vite'
+import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
+  BuildAdvancedBaseOptions,
   BuildOptions,
   HtmlTagDescriptor,
   Plugin,
@@ -31,14 +32,38 @@ async function loadBabel() {
   return babel
 }
 
-// TODO:base
-function toAssetPathFromHtml(filename: string, config: ResolvedConfig): string {
-  const nonBareBase = config.base === '' ? './' : config.base
-  return nonBareBase + filename
-  /*
-  const { buildAdvancedBaseOptions } = config.experimental.buildAdvancedBaseOptions
-  return buildAdvancedBaseOptions.relative ? 'TODO:base' : `${base.assets}${filename}`
-  */
+function getBaseInHTML(
+  urlRelativePath: string,
+  baseOptions: BuildAdvancedBaseOptions,
+  config: ResolvedConfig
+) {
+  // Prefer explicit URL if defined for linking to assets and public files from HTML,
+  // even when base relative is specified
+  return (
+    baseOptions.url ??
+    (baseOptions.relative
+      ? path.posix.join(
+          path.posix.relative(urlRelativePath, '').slice(0, -2),
+          './'
+        )
+      : config.base)
+  )
+}
+
+function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
+  return getBaseInHTML(
+    urlRelativePath,
+    config.experimental.buildAdvancedBaseOptions.assets,
+    config
+  )
+}
+function toAssetPathFromHtml(
+  filename: string,
+  htmlPath: string,
+  config: ResolvedConfig
+): string {
+  const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
+  return getAssetsBase(relativeUrlPath, config) + filename
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
@@ -365,13 +390,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const modernPolyfillFilename = facadeToModernPolyfillMap.get(
         chunk.facadeModuleId
       )
+
       if (modernPolyfillFilename) {
         tags.push({
           tag: 'script',
           attrs: {
             type: 'module',
             crossorigin: true,
-            src: toAssetPathFromHtml(modernPolyfillFilename, config)
+            src: toAssetPathFromHtml(
+              modernPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           }
         })
       } else if (modernPolyfills.size) {
@@ -403,7 +433,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             nomodule: true,
             crossorigin: true,
             id: legacyPolyfillId,
-            src: toAssetPathFromHtml(legacyPolyfillFilename, config)
+            src: toAssetPathFromHtml(
+              legacyPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           injectTo: 'body'
         })
@@ -428,7 +462,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': toAssetPathFromHtml(legacyEntryFilename, config)
+            'data-src': toAssetPathFromHtml(
+              legacyEntryFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           children: systemJSInlineCode,
           injectTo: 'body'
