@@ -27,10 +27,11 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     // The logic to register an id to wait until it is processed
     // is in importAnalysis, see call to delayDepsOptimizerUntil
 
-    async load(id) {
+    async load(id, options) {
+      const ssr = options?.ssr ?? false
       const depsOptimizer = getDepsOptimizer(config)
       if (depsOptimizer?.isOptimizedDepFile(id)) {
-        const metadata = depsOptimizer?.metadata
+        const metadata = depsOptimizer?.metadata({ ssr })
         if (metadata) {
           const file = cleanUrl(id)
           const versionMatch = id.match(DEP_VERSION_RE)
@@ -54,7 +55,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
               throwProcessingError(id)
               return
             }
-            const newMetadata = depsOptimizer.metadata
+            const newMetadata = depsOptimizer.metadata({ ssr })
             if (metadata !== newMetadata) {
               const currentInfo = optimizedDepInfoFromFile(newMetadata!, file)
               if (info.browserHash !== currentInfo?.browserHash) {
@@ -100,9 +101,10 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       })
     },
 
-    async load(id) {
+    async load(id, options) {
+      const ssr = options?.ssr ?? false
       const depsOptimizer = getDepsOptimizer(config)
-      const metadata = depsOptimizer?.metadata
+      const metadata = depsOptimizer?.metadata({ ssr })
       if (!metadata || !depsOptimizer?.isOptimizedDepFile(id)) {
         return
       }

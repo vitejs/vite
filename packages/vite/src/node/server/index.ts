@@ -100,6 +100,7 @@ export interface ServerOptions extends CommonServerOptions {
 
 export interface ResolvedServerOptions extends ServerOptions {
   fs: Required<FileSystemServeOptions>
+  middlewareMode: boolean
 }
 
 export interface FileSystemServeOptions {
@@ -268,10 +269,7 @@ export async function createServer(
     config.server.https,
     config.cacheDir
   )
-  let { middlewareMode } = serverConfig
-  if (middlewareMode === true) {
-    middlewareMode = 'ssr'
-  }
+  const { middlewareMode } = serverConfig
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -490,10 +488,8 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  const isMiddlewareMode = middlewareMode && middlewareMode !== 'html'
-
   // spa fallback
-  if (config.spa && !isMiddlewareMode) {
+  if (config.appType === 'spa') {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
@@ -502,12 +498,10 @@ export async function createServer(
   // serve custom content instead of index.html.
   postHooks.forEach((fn) => fn && fn())
 
-  if (config.spa && !isMiddlewareMode) {
+  if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
     middlewares.use(indexHtmlMiddleware(server))
-  }
 
-  if (!isMiddlewareMode) {
     // handle 404s
     // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
     middlewares.use(function vite404Middleware(_, res) {
@@ -517,7 +511,7 @@ export async function createServer(
   }
 
   // error handler
-  middlewares.use(errorMiddleware(server, !!middlewareMode))
+  middlewares.use(errorMiddleware(server, middlewareMode))
 
   const initOptimizer = async () => {
     if (isDepsOptimizerEnabled(config)) {
@@ -655,7 +649,8 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    ...(raw as ResolvedServerOptions)
+    ...(raw as ResolvedServerOptions),
+    middlewareMode: !!raw?.middlewareMode
   }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
@@ -750,13 +745,15 @@ async function restartServer(server: ViteDevServer) {
 
 async function updateCjsSsrExternals(server: ViteDevServer) {
   if (!server._ssrExternals) {
+    // We use the non-ssr optimized deps to find known imports
     let knownImports: string[] = []
     const depsOptimizer = getDepsOptimizer(server.config)
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
+      const metadata = depsOptimizer.metadata({ ssr: false })
       knownImports = [
-        ...Object.keys(depsOptimizer.metadata.optimized),
-        ...Object.keys(depsOptimizer.metadata.discovered)
+        ...Object.keys(metadata.optimized),
+        ...Object.keys(metadata.discovered)
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)

@@ -22,6 +22,7 @@ import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
+  asyncFlatten,
   createDebugger,
   createFilter,
   dynamicImport,
@@ -60,6 +61,15 @@ export interface ConfigEnv {
   mode: string
 }
 
+/**
+ * spa: include SPA fallback middleware and configure sirv with `single: true` in preview
+ *
+ * mpa: only include non-SPA HTML middlewares
+ *
+ * custom: don't include HTML middlewares
+ */
+export type AppType = 'spa' | 'mpa' | 'custom'
+
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
 export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
 
@@ -73,7 +83,13 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption = Plugin | false | null | undefined | PluginOption[]
+export type PluginOption =
+  | Plugin
+  | false
+  | null
+  | undefined
+  | PluginOption[]
+  | Promise<Plugin | false | null | undefined | PluginOption[]>
 
 export interface UserConfig {
   /**
@@ -222,11 +238,12 @@ export interface UserConfig {
     >
   }
   /**
-   * Whether your application is a Single Page Application (SPA). Set to `false`
-   * for other kinds of apps like MPAs.
-   * @default true
+   * Whether your application is a Single Page Application (SPA),
+   * a Multi-Page Application (MPA), or Custom Application (SSR
+   * and frameworks with custom HTML handling)
+   * @default 'spa'
    */
-  spa?: boolean
+  appType?: AppType
 }
 
 export interface ExperimentalOptions {
@@ -318,7 +335,7 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
-    spa: boolean
+    appType: AppType
     experimental: ResolvedExperimentalOptions
   }
 >
@@ -377,7 +394,9 @@ export async function resolveConfig(
   configEnv.mode = mode
 
   // resolve plugins
-  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
+  const rawUserPlugins = (
+    (await asyncFlatten(config.plugins || [])) as Plugin[]
+  ).filter((p) => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -387,7 +406,7 @@ export async function resolveConfig(
     } else {
       return p.apply === command
     }
-  }) as Plugin[]
+  })
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
@@ -547,6 +566,8 @@ export async function resolveConfig(
     else ssr = { target: 'node', format: 'cjs' }
   }
 
+  const middlewareMode = config?.server?.middlewareMode
+
   const optimizeDeps = config.optimizeDeps || {}
 
   const BASE_URL = resolvedBase
@@ -594,12 +615,27 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    spa: config.spa ?? true,
+    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
     experimental: {
       importGlobRestoreExtension: false,
       ...config.experimental,
       buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
     }
+  }
+
+  if (middlewareMode === 'ssr') {
+    logger.warn(
+      colors.yellow(
+        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true and appType 'custom'`
+      )
+    )
+  }
+  if (middlewareMode === 'html') {
+    logger.warn(
+      colors.yellow(
+        `server.middlewareMode 'html' is now deprecated, use server.middlewareMode true`
+      )
+    )
   }
 
   if (resolved.legacy?.buildRollupPluginCommonjs) {
