@@ -743,7 +743,9 @@ export function unique<T>(arr: T[]): T[] {
  * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
  * For example, IPv6 is not supported on that machine/network.
  */
-async function getLocalhostAddressIfDiffersFromDNS() {
+export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
+  string | undefined
+> {
   const [nodeResult, dnsResult] = await Promise.all([
     dns.lookup('localhost'),
     dns.lookup('localhost', { verbatim: true })
