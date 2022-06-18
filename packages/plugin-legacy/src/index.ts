@@ -134,7 +134,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'es',
           opts,
-          options.externalSystemJS
+          true
         )
         return
       }
@@ -566,7 +566,7 @@ async function buildPolyfillChunk(
   buildOptions: BuildOptions,
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
-  externalSystemJS?: boolean
+  excludeSystemJS?: boolean
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
@@ -575,7 +575,7 @@ async function buildPolyfillChunk(
     root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
     logLevel: 'error',
-    plugins: [polyfillsPlugin(imports, externalSystemJS)],
+    plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
       target: false,
@@ -614,7 +614,7 @@ const polyfillId = '\0vite/legacy-polyfills'
 
 function polyfillsPlugin(
   imports: Set<string>,
-  externalSystemJS?: boolean
+  excludeSystemJS?: boolean
 ): Plugin {
   return {
     name: 'vite:legacy-polyfills',
@@ -627,7 +627,7 @@ function polyfillsPlugin(
       if (id === polyfillId) {
         return (
           [...imports].map((i) => `import "${i}";`).join('') +
-          (externalSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
+          (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
     }

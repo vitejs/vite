@@ -154,11 +154,6 @@ export interface UserConfig {
    */
   preview?: PreviewOptions
   /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   * @experimental
-   */
-  force?: boolean
-  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -169,11 +164,18 @@ export interface UserConfig {
   /**
    * Experimental features
    *
-   * Features under this field are addressed to be changed that might NOT follow semver.
+   * Features under this field could change in the future and might NOT follow semver.
    * Please be careful and always pin Vite's version when using them.
    * @experimental
    */
   experimental?: ExperimentalOptions
+  /**
+   * Legacy options
+   *
+   * Features under this field only follow semver for patches, they could be removed in a
+   * future minor version. Please always pin Vite's version to a minor when using them.
+   */
+  legacy?: LegacyOptions
   /**
    * Log level.
    * Default: 'info'
@@ -237,6 +239,33 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
 }
 
+export interface LegacyOptions {
+  /**
+   * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  devDepsScanner?: boolean
+  /**
+   * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  buildRollupPluginCommonjs?: boolean
+  /**
+   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  buildSsrCjsExternalHeuristics?: boolean
+}
+
 export interface ResolveWorkerOptions {
   format: 'es' | 'iife'
   plugins: Plugin[]
@@ -260,6 +289,7 @@ export type ResolvedConfig = Readonly<
     command: 'build' | 'serve'
     mode: string
     isWorker: boolean
+    // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
     isProduction: boolean
@@ -480,7 +510,11 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr)
+  let ssr = resolveSSROptions(config.ssr)
+  if (config.legacy?.buildSsrCjsExternalHeuristics) {
+    if (ssr) ssr.format = 'cjs'
+    else ssr = { target: 'node', format: 'cjs' }
+  }
 
   const optimizeDeps = config.optimizeDeps || {}
 
@@ -530,7 +564,18 @@ export async function resolveConfig(
     spa: config.spa ?? true
   }
 
-  // flat config.worker.plugin
+  if (resolved.legacy?.buildRollupPluginCommonjs) {
+    const optimizerDisabled = resolved.optimizeDeps.disabled
+    if (!optimizerDisabled) {
+      resolved.optimizeDeps.disabled = 'build'
+    } else if (optimizerDisabled === 'dev') {
+      resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
+  }
+
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(config.worker?.plugins as Plugin[])
   const workerResolved: ResolvedConfig = {
@@ -573,6 +618,29 @@ export async function resolveConfig(
           `prefer Terser, set build.minify to "terser".`
       )
     )
+  }
+
+  // Check if all assetFileNames have the same reference.
+  // If not, display a warn for user.
+  const outputOption = config.build?.rollupOptions?.output ?? []
+  // Use isArray to narrow its type to array
+  if (Array.isArray(outputOption)) {
+    const assetFileNamesList = outputOption.map(
+      (output) => output.assetFileNames
+    )
+    if (assetFileNamesList.length > 1) {
+      const firstAssetFileNames = assetFileNamesList[0]
+      const hasDifferentReference = assetFileNamesList.some(
+        (assetFileNames) => assetFileNames !== firstAssetFileNames
+      )
+      if (hasDifferentReference) {
+        resolved.logger.warn(
+          colors.yellow(`
+assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+`)
+        )
+      }
+    }
   }
 
   return resolved

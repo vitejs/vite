@@ -36,6 +36,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  stripBomTag,
   timeFrom,
   transformResult,
   unwrapId
@@ -48,7 +49,7 @@ import {
 } from '../ssr/ssrExternal'
 import { transformRequest } from '../server/transformRequest'
 import {
-  getDepsCacheDir,
+  getDepsCacheDirPrefix,
   getDepsOptimizer,
   optimizedDepNeedsInterop
 } from '../optimizer'
@@ -142,10 +143,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
-      // strip UTF-8 BOM
-      if (source.charCodeAt(0) === 0xfeff) {
-        source = source.slice(1)
-      }
+      source = stripBomTag(source)
       try {
         imports = parseImports(source)[0]
       } catch (e: any) {
@@ -226,7 +224,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata({ ssr })
+              .depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importerModule.file) {
                 importerFile = optimizedModule.src
@@ -260,7 +259,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // in root: infer short absolute path from root
           url = resolved.id.slice(root.length)
         } else if (
-          resolved.id.startsWith(getDepsCacheDir(config)) ||
+          resolved.id.startsWith(getDepsCacheDirPrefix(config)) ||
           fs.existsSync(cleanUrl(resolved.id))
         ) {
           // an optimized deps may not yet exists in the filesystem, or
@@ -372,7 +371,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // skip ssr external
           if (ssr) {
-            if (config.ssr?.format === 'cjs') {
+            if (config.legacy?.buildSsrCjsExternalHeuristics) {
               if (cjsShouldExternalizeForSSR(specifier, server._ssrExternals)) {
                 continue
               }
@@ -422,7 +421,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                depsOptimizer.metadata,
+                depsOptimizer.metadata({ ssr }),
                 file,
                 config
               )
@@ -623,7 +622,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (depsOptimizer && !config.optimizeDeps.devScan) {
+          if (depsOptimizer && !config.legacy?.devDepsScanner) {
             depsOptimizer.delayDepsOptimizerUntil(id, () => request)
           }
         })

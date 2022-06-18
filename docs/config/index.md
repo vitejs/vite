@@ -41,14 +41,10 @@ const func = () => {
 Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:
 
 ```js
-/**
- * @type {import('vite').UserConfig}
- */
-const config = {
+/** @type {import('vite').UserConfig} */
+export default {
   // ...
 }
-
-export default config
 ```
 
 Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
