@@ -578,7 +578,8 @@ async function buildPolyfillChunk(
     plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
-      target: false,
+      // if a value above 'es5' is set, esbuild injects helper functions which uses es2015 features
+      target: 'es5',
       minify,
       assetsDir,
       rollupOptions: {
