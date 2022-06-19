@@ -23,7 +23,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=14.6.0"
+    "node": ">=14.18.0"
   },
   "repository": {
     "type": "git",
