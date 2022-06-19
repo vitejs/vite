@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
+// no node: protocol intentionally
+import { readFileSync } from 'fs'
+import path from 'path'
 
 // access from named import
 try {
