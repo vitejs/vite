@@ -43,14 +43,6 @@ import('./immutable-chunk.js')
     text('#assets', assets.join('\n'))
   })
 
-// dynamic css
-document
-  .querySelector('#dynamic-css-button')
-  .addEventListener('click', async () => {
-    await import('./dynamic.css')
-    text('#dynamic-css', 'dynamic import css')
-  })
-
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
