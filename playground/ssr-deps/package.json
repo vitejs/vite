@@ -2,6 +2,7 @@
   "name": "test-ssr-deps",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "node server",
     "serve": "cross-env NODE_ENV=production node server",
@@ -17,7 +18,8 @@
     "primitive-export": "file:./primitive-export",
     "read-file-content": "file:./read-file-content",
     "require-absolute": "file:./require-absolute",
-    "ts-transpiled-exports": "file:./ts-transpiled-exports"
+    "ts-transpiled-exports": "file:./ts-transpiled-exports",
+    "no-external-cjs": "file:./no-external-cjs"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

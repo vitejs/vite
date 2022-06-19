@@ -3,6 +3,7 @@ import type { ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
+import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
@@ -61,7 +62,11 @@ export async function resolvePlugins(
       packageCache: config.packageCache,
       ssrConfig: config.ssr,
       asSrc: true,
-      getDepsOptimizer: () => getDepsOptimizer(config)
+      getDepsOptimizer: () => getDepsOptimizer(config),
+      shouldExternalize:
+        isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
+          ? (id) => shouldExternalizeForSSR(id, config)
+          : undefined
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),

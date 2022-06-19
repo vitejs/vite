@@ -3,7 +3,6 @@ import InlineWorker from '../my-worker?worker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
-import ImportMetaGlobEagerWorker from '../importMetaGlobEager.worker?worker'
 import { mode } from '../modules/workerImport'
 
 function text(el, text) {
@@ -13,44 +12,29 @@ function text(el, text) {
 document.querySelector('.mode-true').textContent = mode
 
 const worker = new myWorker()
+worker.postMessage('ping')
 worker.addEventListener('message', (e) => {
   text('.pong', e.data.msg)
   text('.mode', e.data.mode)
   text('.bundle-with-plugin', e.data.bundleWithPlugin)
 })
 
-document.querySelector('.ping').addEventListener('click', () => {
-  worker.postMessage('ping')
-})
-
 const inlineWorker = new InlineWorker()
+inlineWorker.postMessage('ping')
 inlineWorker.addEventListener('message', (e) => {
   text('.pong-inline', e.data.msg)
 })
 
-document.querySelector('.ping-inline').addEventListener('click', () => {
-  console.log('111')
-  inlineWorker.postMessage('ping')
-})
-
 const sharedWorker = new mySharedWorker()
-document.querySelector('.tick-shared').addEventListener('click', () => {
-  sharedWorker.port.postMessage('tick')
-})
-
 sharedWorker.port.addEventListener('message', (event) => {
   text('.tick-count', event.data)
 })
-
 sharedWorker.port.start()
 
 const tsOutputWorker = new TSOutputWorker()
+tsOutputWorker.postMessage('ping')
 tsOutputWorker.addEventListener('message', (e) => {
   text('.pong-ts-output', e.data.msg)
-})
-
-document.querySelector('.ping-ts-output').addEventListener('click', () => {
-  tsOutputWorker.postMessage('ping')
 })
 
 const nestedWorker = new NestedWorker()
@@ -63,6 +47,8 @@ nestedWorker.addEventListener('message', (ev) => {
       text('.nested-worker-module', JSON.stringify(ev.data))
     } else if (data.type === 'constructor') {
       text('.nested-worker-constructor', JSON.stringify(ev.data))
+    } else if (data.type === 'importMetaGlobEager') {
+      text('.importMetaGlobEager-worker', JSON.stringify(ev.data))
     }
   }
 })
@@ -91,11 +77,3 @@ w2.port.addEventListener('message', (ev) => {
   text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
 })
 w2.port.start()
-
-const importMetaGlobEagerWorker = new ImportMetaGlobEagerWorker()
-
-importMetaGlobEagerWorker.postMessage('1')
-
-importMetaGlobEagerWorker.addEventListener('message', (e) => {
-  text('.importMetaGlobEager-worker', JSON.stringify(e.data))
-})

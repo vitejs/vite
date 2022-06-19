@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  asyncFlatten,
   getHash,
   getPotentialTsSrcPaths,
   injectQuery,
@@ -49,9 +50,9 @@ describe('injectQuery', () => {
 })
 
 describe('resolveHostname', () => {
-  test('defaults to 127.0.0.1', () => {
+  test('defaults to localhost', () => {
     expect(resolveHostname(undefined)).toEqual({
-      host: '127.0.0.1',
+      host: 'localhost',
       name: 'localhost'
     })
   })
@@ -59,6 +60,27 @@ describe('resolveHostname', () => {
   test('accepts localhost', () => {
     expect(resolveHostname('localhost')).toEqual({
       host: 'localhost',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0.0.0.0', () => {
+    expect(resolveHostname('0.0.0.0')).toEqual({
+      host: '0.0.0.0',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts ::', () => {
+    expect(resolveHostname('::')).toEqual({
+      host: '::',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', () => {
+    expect(resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')).toEqual({
+      host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost'
     })
   })
@@ -104,5 +126,47 @@ describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
     expect(hash).toMatch(/^[\da-f]{8}$/)
+  })
+})
+
+describe('asyncFlatten', () => {
+  test('plain array', async () => {
+    const arr = await asyncFlatten([1, 2, 3])
+    expect(arr).toEqual([1, 2, 3])
+  })
+
+  test('nested array', async () => {
+    const arr = await asyncFlatten([1, 2, 3, [4, 5, 6]])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  test('nested falsy array', async () => {
+    const arr = await asyncFlatten([1, 2, false, [4, null, undefined]])
+    expect(arr).toEqual([1, 2, false, 4, null, undefined])
+  })
+
+  test('plain promise array', async () => {
+    const arr = await asyncFlatten([1, 2, Promise.resolve(3)])
+    expect(arr).toEqual([1, 2, 3])
+  })
+
+  test('nested promise array', async () => {
+    const arr = await asyncFlatten([
+      1,
+      2,
+      Promise.resolve(3),
+      Promise.resolve([4, 5, 6])
+    ])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  test('2x nested promise array', async () => {
+    const arr = await asyncFlatten([
+      1,
+      2,
+      Promise.resolve(3),
+      Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])])
+    ])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 })

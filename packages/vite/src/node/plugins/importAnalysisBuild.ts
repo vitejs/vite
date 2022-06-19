@@ -19,7 +19,7 @@ import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import { removedPureCssFilesCache } from './css'
-import { transformCjsImport } from './importAnalysis'
+import { interopNamedImports } from './importAnalysis'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -172,7 +172,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata({ ssr })
+              .depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importer) {
                 importerFile = optimizedModule.src
@@ -263,7 +264,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                depsOptimizer.metadata,
+                depsOptimizer.metadata({ ssr }),
                 file,
                 config
               )
@@ -283,31 +284,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 }
               } else if (needsInterop) {
                 // config.logger.info(`${url} needs interop`)
-                if (isDynamicImport) {
-                  // rewrite `import('package')` to expose the default directly
-                  str().overwrite(
-                    expStart,
-                    expEnd,
-                    `import('${file}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))`,
-                    { contentOnly: true }
-                  )
-                } else {
-                  const exp = source.slice(expStart, expEnd)
-                  const rewritten = transformCjsImport(
-                    exp,
-                    file,
-                    specifier,
-                    index
-                  )
-                  if (rewritten) {
-                    str().overwrite(expStart, expEnd, rewritten, {
-                      contentOnly: true
-                    })
-                  } else {
-                    // #1439 export * from '...'
-                    str().overwrite(start, end, file, { contentOnly: true })
-                  }
-                }
+                interopNamedImports(str(), imports[index], url, index)
                 rewriteDone = true
               }
               if (!rewriteDone) {

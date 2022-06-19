@@ -17,11 +17,12 @@ async function createServer(root = process.cwd(), hmrPort) {
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       hmr: {
         port: hmrPort
       }
-    }
+    },
+    appType: 'custom'
   })
   app.use(vite.middlewares)
 

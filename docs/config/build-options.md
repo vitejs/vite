@@ -147,6 +147,12 @@ Set to `false` to disable minification, or specify the minifier to use. The defa
 
 Note the `build.minify` option is not available when using the `'es'` format in lib mode.
 
+Terser must be installed when it is set to `'terser'`.
+
+```sh
+npm add -D terser
+```
+
 ## build.terserOptions
 
 - **Type:** `TerserOptions`

@@ -1,15 +1,17 @@
 // @ts-check
-const fs = require('fs')
-const path = require('path')
-const express = require('express')
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import express from 'express'
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
 
-async function createServer(
+export async function createServer(
   root = process.cwd(),
   isProd = process.env.NODE_ENV === 'production',
   hmrPort
 ) {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
   const resolve = (p) => path.resolve(__dirname, p)
 
   const indexProd = isProd
@@ -18,7 +20,7 @@ async function createServer(
 
   const manifest = isProd
     ? // @ts-ignore
-      require('./dist/client/ssr-manifest.json')
+      (await import('./dist/client/ssr-manifest.json')).default
     : {}
 
   const app = express()
@@ -28,11 +30,14 @@ async function createServer(
    */
   let vite
   if (!isProd) {
-    vite = await require('vite').createServer({
+    vite = await (
+      await import('vite')
+    ).createServer({
+      base: '/test/',
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {
-        middlewareMode: 'ssr',
+        middlewareMode: true,
         watch: {
           // During tests we edit the files too fast and sometimes chokidar
           // misses change events, so enforce polling for consistency
@@ -42,14 +47,16 @@ async function createServer(
         hmr: {
           port: hmrPort
         }
-      }
+      },
+      appType: 'custom'
     })
     // use vite's connect instance as middleware
     app.use(vite.middlewares)
   } else {
-    app.use(require('compression')())
+    app.use((await import('compression')).default())
     app.use(
-      require('serve-static')(resolve('dist/client'), {
+      '/test/',
+      (await import('serve-static')).default(resolve('dist/client'), {
         index: false
       })
     )
@@ -57,7 +64,7 @@ async function createServer(
 
   app.use('*', async (req, res) => {
     try {
-      const url = req.originalUrl
+      const url = req.originalUrl.replace('/test/', '/')
 
       let template, render
       if (!isProd) {
@@ -68,7 +75,7 @@ async function createServer(
       } else {
         template = indexProd
         // @ts-ignore
-        render = require('./dist/server/entry-server.js').render
+        render = (await import('./dist/server/entry-server.js')).render
       }
 
       const [appHtml, preloadLinks] = await render(url, manifest)
@@ -90,11 +97,8 @@ async function createServer(
 
 if (!isTest) {
   createServer().then(({ app }) =>
-    app.listen(5173, () => {
-      console.log('http://localhost:5173')
+    app.listen(6173, () => {
+      console.log('http://localhost:6173')
     })
   )
 }
-
-// for test use
-exports.createServer = createServer

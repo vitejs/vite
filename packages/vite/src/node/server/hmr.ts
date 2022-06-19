@@ -34,14 +34,14 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
-export function getShortName(file: string, root: string) {
+export function getShortName(file: string, root: string): string {
   return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
 }
 
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
-): Promise<any> {
+): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
@@ -130,7 +130,7 @@ export function updateModules(
   modules: ModuleNode[],
   timestamp: number,
   { config, ws }: ViteDevServer
-) {
+): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false

@@ -3,12 +3,36 @@
 ## server.host
 
 - **Type:** `string | boolean`
-- **Default:** `'127.0.0.1'`
+- **Default:** `'localhost'`
 
 Specify which IP addresses the server should listen on.
 Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
 
 This can be set via the CLI using `--host 0.0.0.0` or `--host`.
+
+::: tip NOTE
+
+There are cases when other servers might respond instead of Vite.
+
+The first case is when `localhost` is used. Node.js below v17 reorders the result of DNS-resolved address by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening.
+
+You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import dns from 'dns'
+
+dns.setDefaultResultOrder('verbatim')
+
+export default defineConfig({
+  // omit
+})
+```
+
+The second case is when wildcard hosts (e.g. `0.0.0.0`) is used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
+
+:::
 
 ## server.port
 
@@ -107,13 +131,6 @@ Configure CORS for the dev server. This is enabled by default and allows any ori
 
 Specify server response headers.
 
-## server.force
-
-- **Type:** `boolean`
-- **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
-
-Set to `true` to force dependency pre-bundling.
-
 ## server.hmr
 
 - **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
@@ -153,14 +170,12 @@ export default defineConfig({
 
 ## server.middlewareMode
 
-- **Type:** `'ssr' | 'html'`
+- **Type:** `boolean`
+- **Default:** `false`
 
-Create Vite server in middleware mode. (without a HTTP server)
+Create Vite server in middleware mode.
 
-- `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
-- `'html'` will enable Vite's own HTML serving logic.
-
-- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+- **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
 
@@ -171,17 +186,19 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode.
+  // Create Vite server in middleware mode
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom' // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
-    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
-    // because Vite will do that.
+    // Since `appType` is `'custom'`, should serve response here.
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
+    // HTML requests and 404s so user middlewares should be added
+    // before Vite's middlewares to take effect instead
   })
 }
 

@@ -5,7 +5,7 @@ import { ports, rootDir } from '~utils'
 
 export const port = ports['legacy/ssr']
 
-export async function serve() {
+export async function serve(): Promise<{ close(): Promise<void> }> {
   const { build } = await import('vite')
   await build({
     root: rootDir,
@@ -22,7 +22,7 @@ export async function serve() {
 
   app.use('/', async (_req, res) => {
     const { render } = await import(
-      path.resolve(rootDir, './dist/server/entry-server.js')
+      path.resolve(rootDir, './dist/server/entry-server.mjs')
     )
     const html = await render()
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)

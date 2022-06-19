@@ -8,6 +8,7 @@ import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { loopbackHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -171,20 +172,30 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
-  const urls: Array<{ label: string; url: string }> = []
+  const urls: Array<{ label: string; url: string; disabled?: boolean }> = []
+  const notes: Array<{ label: string; message: string }> = []
 
-  if (hostname.host === '127.0.0.1') {
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+
     urls.push({
       label: 'Local',
       url: colors.cyan(
-        `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+        `${protocol}://${hostnameName}:${colors.bold(port)}${base}`
       )
     })
 
-    if (hostname.name !== '127.0.0.1') {
+    if (hostname.name === 'localhost') {
       urls.push({
         label: 'Network',
-        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
+        url: `use ${colors.white(colors.bold('--host'))} to expose`,
+        disabled: true
       })
     }
   } else {
@@ -208,15 +219,25 @@ function printServerUrls(
       })
   }
 
-  const length = urls.reduce(
-    (length, { label }) => Math.max(length, label.length),
-    0
+  const length = Math.max(
+    ...[...urls, ...notes].map(({ label }) => label.length)
   )
-  urls.forEach(({ label, url: text }) => {
-    info(
-      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
-        length - label.length
-      )}${text}`
-    )
+  const print = (
+    iconWithColor: string,
+    label: string,
+    messageWithColor: string,
+    disabled?: boolean
+  ) => {
+    const message = `  ${iconWithColor}  ${
+      label ? colors.bold(label) + ':' : ' '
+    } ${' '.repeat(length - label.length)}${messageWithColor}`
+    info(disabled ? colors.dim(message) : message)
+  }
+
+  urls.forEach(({ label, url: text, disabled }) => {
+    print(colors.green('➜'), label, text, disabled)
+  })
+  notes.forEach(({ label, message: text }) => {
+    print(colors.white('❖'), label, text)
   })
 }
