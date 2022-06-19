@@ -206,7 +206,7 @@ async function untilBrowserLog(
           return remainingTargets.length === 0
         }
       } else {
-        let remainingMatchers = target.map(isMatch)
+        const remainingMatchers = target.map(isMatch)
         processMsg = (text: string) => {
           const nextIndex = remainingMatchers.findIndex(
             (matcher) => !matcher(text)
