@@ -57,6 +57,12 @@ test('correctly emits styles', async () => {
   expect(await getColor('#app')).toBe('red')
 })
 
+// dynamic import css
+test('should load dynamic import with css', async () => {
+  await page.click('#dynamic-css-button')
+  await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
+})
+
 describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
