@@ -19,13 +19,13 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 - The following options that were already deprecated in v2 have been removed:
 
-  - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolvealias))
-  - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolvededupe))
+  - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolve-alias))
+  - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolve-dedupe))
   - `build.base` (switch to [`base`](../config/shared-options.md#base))
   - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
   - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
   - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
-  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
+  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedeps-esbuildoptions))
 
 ## Achitecture changes and legacy Options
 
@@ -58,7 +58,7 @@ If you need to get back to the v2 strategy, you can use `legacy.buildRollupPlugi
 
 ### SSR Changes
 
-Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle.
+Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssr-noexternal) to control what dependencies to include in the SSR bundle.
 
 If using ESM for SSR isn't possible in your project, you can set `legacy.buildSsrCjsExternalHeuristics` to generate a CJS bundle using the same externalization strategy of Vite v2.
 

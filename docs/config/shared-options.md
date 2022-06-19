@@ -347,4 +347,4 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'mpa'`: only include non-SPA HTML middlewares
 - `'custom'`: don't include HTML middlewares
 
-Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#servermiddlewaremode).
+Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).

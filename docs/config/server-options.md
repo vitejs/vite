@@ -16,7 +16,7 @@ There are cases when other servers might respond instead of Vite.
 
 The first case is when `localhost` is used. Node.js below v17 reorders the result of DNS-resolved address by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening.
 
-You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/docs/latest-v18.x/api/dns.html#dnssetdefaultresultorderorder) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
+You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
 
 ```js
 // vite.config.js
