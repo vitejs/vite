@@ -146,6 +146,7 @@ If specifying `server.hmr.server`, Vite will process HMR connection requests thr
 ::: tip NOTE
 
 By default configuration, reverse proxies in front of Vite is expected to support proxying WebSocket. Especially in this case, when Vite HMR client fails to connect WebSocket, the client fallbacks to connect WebSocket directly to the Vite HMR server bypassing reverse proxies.
+
 Browser will show an error when the fallback happened but it could be ignored. If you want to completely remove this error, you could either:
 
 - set `server.strictPort = true` and set `server.hmr.clientPort` to the same value with `server.port`
