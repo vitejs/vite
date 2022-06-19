@@ -217,7 +217,7 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Counter 1')
   })
 
-  describe.skip('acceptExports', () => {
+  describe('acceptExports', () => {
     const HOT_UPDATED = /hot updated/
     const CONNECTED = /connected/
 
