@@ -60,12 +60,7 @@ test('correctly emits styles', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('#dynamic-css-button')
-  await untilUpdated(
-    () =>
-      page.$eval('#dynamic-css', (node) => window.getComputedStyle(node).color),
-    'rgb(255, 0, 0)',
-    true
-  )
+  await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
 })
 
 describe.runIf(isBuild)('build', () => {
