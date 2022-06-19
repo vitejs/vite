@@ -1,3 +1,23 @@
+## 2.0.0-alpha.2 (2022-06-19)
+
+* fix(build): use crossorigin for nomodule (#8322) ([7f59989](https://github.com/vitejs/vite/commit/7f59989)), closes [#8322](https://github.com/vitejs/vite/issues/8322)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* fix(plugin-legacy): disable babel.compact when minify is disabled (#8244) ([742188c](https://github.com/vitejs/vite/commit/742188c)), closes [#8244](https://github.com/vitejs/vite/issues/8244)
+* fix(plugin-legacy): don't include SystemJS in modern polyfills (#6902) ([eb47b1e](https://github.com/vitejs/vite/commit/eb47b1e)), closes [#6902](https://github.com/vitejs/vite/issues/6902)
+* fix(plugin-legacy): empty base makes import fail (fixes #4212) (#8387) ([1a16f12](https://github.com/vitejs/vite/commit/1a16f12)), closes [#4212](https://github.com/vitejs/vite/issues/4212) [#8387](https://github.com/vitejs/vite/issues/8387)
+* fix(plugin-legacy): modern polyfill latest features (fixes #8399) (#8408) ([ed25817](https://github.com/vitejs/vite/commit/ed25817)), closes [#8399](https://github.com/vitejs/vite/issues/8399) [#8408](https://github.com/vitejs/vite/issues/8408)
+* fix(plugin-legacy): prevent failed to load module (#8285) ([d671811](https://github.com/vitejs/vite/commit/d671811)), closes [#8285](https://github.com/vitejs/vite/issues/8285)
+* fix(plugin-legacy): respect `entryFileNames` for polyfill chunks (#8247) ([baa9632](https://github.com/vitejs/vite/commit/baa9632)), closes [#8247](https://github.com/vitejs/vite/issues/8247)
+* chore: enable `@typescript-eslint/explicit-module-boundary-types` (#8372) ([104caf9](https://github.com/vitejs/vite/commit/104caf9)), closes [#8372](https://github.com/vitejs/vite/issues/8372)
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use `esno` to replace `ts-node` (#8162) ([c18a5f3](https://github.com/vitejs/vite/commit/c18a5f3)), closes [#8162](https://github.com/vitejs/vite/issues/8162)
+* chore(deps): update all non-major dependencies (#8474) ([6d0ede7](https://github.com/vitejs/vite/commit/6d0ede7)), closes [#8474](https://github.com/vitejs/vite/issues/8474)
+* refactor!: make terser an optional dependency (#8049) ([164f528](https://github.com/vitejs/vite/commit/164f528)), closes [#8049](https://github.com/vitejs/vite/issues/8049)
+* refactor(plugin-legacy): improve default polyfill (#8312) ([4370d91](https://github.com/vitejs/vite/commit/4370d91)), closes [#8312](https://github.com/vitejs/vite/issues/8312)
+
+
+
 ## 2.0.0-alpha.1 (2022-05-19)
 
 * fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)
