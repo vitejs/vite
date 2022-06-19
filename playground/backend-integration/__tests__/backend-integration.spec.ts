@@ -32,8 +32,12 @@ describe.runIf(isBuild)('build', () => {
   test('manifest', async () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
+    const cssAssetEntry = manifest['global.css']
+    const imgAssetEntry = manifest['../images/logo.png']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
+    expect(cssAssetEntry?.file).not.toBeUndefined()
+    expect(imgAssetEntry?.file).not.toBeUndefined()
   })
 })
 
@@ -52,7 +56,7 @@ describe.runIf(isServe)('serve', () => {
     await untilUpdated(() => getColor('body'), 'red') // successful HMR
 
     // Verify that the base (/dev/) was added during the css-update
-    const link = await page.$('link[rel="stylesheet"]')
+    const link = await page.$('link[rel="stylesheet"]:last-of-type')
     expect(await link.getAttribute('href')).toContain('/dev/global.css?t=')
   })
 

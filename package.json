@@ -14,13 +14,14 @@
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "format": "prettier --write .",
-    "lint": "eslint packages/*/{src,types}/** playground/**/__tests__/**/*.ts scripts/**",
+    "format": "prettier --write --cache .",
+    "lint": "eslint --cache packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
     "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
     "test-unit": "vitest run",
+    "test-docs": "pnpm run docs-build",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
     "debug-build": "cross-env VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
     "docs": "vitepress dev docs",
@@ -33,8 +34,9 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.23.1",
-    "@rollup/plugin-typescript": "^8.3.2",
+    "@babel/types": "^7.18.4",
+    "@microsoft/api-extractor": "^7.25.0",
+    "@rollup/plugin-typescript": "^8.3.3",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^1.5.2",
@@ -48,47 +50,47 @@
     "@types/micromatch": "^4.0.2",
     "@types/mime": "^2.0.3",
     "@types/minimist": "^1.2.2",
-    "@types/node": "^17.0.31",
+    "@types/node": "^17.0.42",
     "@types/prompts": "^2.4.0",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",
     "@types/semver": "^7.3.9",
-    "@types/stylus": "^0.48.37",
+    "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.22.0",
-    "@typescript-eslint/parser": "^5.22.0",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "@typescript-eslint/parser": "^5.27.1",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.14.38",
-    "eslint": "^8.15.0",
-    "eslint-define-config": "^1.4.0",
+    "esbuild": "^0.14.43",
+    "eslint": "^8.17.0",
+    "eslint-define-config": "^1.5.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "esno": "^0.16.3",
-    "execa": "^5.1.1",
+    "execa": "^6.1.0",
     "fs-extra": "^10.1.0",
     "kill-port": "^1.6.1",
-    "lint-staged": "^12.4.1",
+    "lint-staged": "^13.0.1",
     "minimist": "^1.2.6",
-    "node-fetch": "^2.6.7",
+    "node-fetch": "^3.2.6",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.21.1",
-    "pnpm": "^7.1.2",
-    "prettier": "2.6.2",
+    "playwright-chromium": "^1.22.2",
+    "pnpm": "^7.2.1",
+    "prettier": "2.7.0",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
-    "rollup": "^2.72.1",
+    "rollup": "^2.75.6",
     "semver": "^7.3.7",
-    "simple-git-hooks": "^2.7.0",
+    "simple-git-hooks": "^2.8.0",
     "sirv": "^2.0.2",
     "tslib": "^2.4.0",
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-draft.4",
-    "vitest": "^0.12.4",
-    "vue": "^3.2.33"
+    "vitepress": "^1.0.0-alpha.2",
+    "vitest": "^0.14.2",
+    "vue": "^3.2.37"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
@@ -96,19 +98,19 @@
   },
   "lint-staged": {
     "*": [
-      "prettier --write --ignore-unknown"
+      "prettier --write --cache --ignore-unknown"
     ],
     "packages/*/{src,types}/**/*.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ],
     "packages/**/*.d.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ],
     "playground/**/__tests__/**/*.ts": [
-      "eslint --fix"
+      "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.0.1",
+  "packageManager": "pnpm@7.2.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",

@@ -8,6 +8,7 @@ import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { loopbackHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -171,11 +172,31 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
-  if (hostname.host === '127.0.0.1') {
-    const url = `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
-    info(`  > Local: ${colors.cyan(url)}`)
-    if (hostname.name !== '127.0.0.1') {
-      info(`  > Network: ${colors.dim('use `--host` to expose')}`)
+  const urls: Array<{ label: string; url: string; disabled?: boolean }> = []
+  const notes: Array<{ label: string; message: string }> = []
+
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+
+    urls.push({
+      label: 'Local',
+      url: colors.cyan(
+        `${protocol}://${hostnameName}:${colors.bold(port)}${base}`
+      )
+    })
+
+    if (hostname.name === 'localhost') {
+      urls.push({
+        label: 'Network',
+        url: `use ${colors.white(colors.bold('--host'))} to expose`,
+        disabled: true
+      })
     }
   } else {
     Object.values(os.networkInterfaces())
@@ -189,14 +210,34 @@ function printServerUrls(
             // Node >= v18
             (typeof detail.family === 'number' && detail.family === 4))
       )
-      .map((detail) => {
-        const type = detail.address.includes('127.0.0.1')
-          ? 'Local:   '
-          : 'Network: '
+      .forEach((detail) => {
         const host = detail.address.replace('127.0.0.1', hostname.name)
         const url = `${protocol}://${host}:${colors.bold(port)}${base}`
-        return `  > ${type} ${colors.cyan(url)}`
+        const label = detail.address.includes('127.0.0.1') ? 'Local' : 'Network'
+
+        urls.push({ label, url: colors.cyan(url) })
       })
-      .forEach((msg) => info(msg))
   }
+
+  const length = Math.max(
+    ...[...urls, ...notes].map(({ label }) => label.length)
+  )
+  const print = (
+    iconWithColor: string,
+    label: string,
+    messageWithColor: string,
+    disabled?: boolean
+  ) => {
+    const message = `  ${iconWithColor}  ${
+      label ? colors.bold(label) + ':' : ' '
+    } ${' '.repeat(length - label.length)}${messageWithColor}`
+    info(disabled ? colors.dim(message) : message)
+  }
+
+  urls.forEach(({ label, url: text, disabled }) => {
+    print(colors.green('➜'), label, text, disabled)
+  })
+  notes.forEach(({ label, message: text }) => {
+    print(colors.white('❖'), label, text)
+  })
 }

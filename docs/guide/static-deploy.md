@@ -2,7 +2,7 @@
 
 The following guides are based on some shared assumptions:
 
-- You are using the default build output location (`dist`). This location [can be changed using `build.outDir`](https://vitejs.dev/config/#build-outdir), and you can extrapolate instructions from these guides in that case.
+- You are using the default build output location (`dist`). This location [can be changed using `build.outDir`](/config/build-options.md#build-outdir), and you can extrapolate instructions from these guides in that case.
 - You are using npm. You can use equivalent commands to run the scripts if you are using Yarn or other package managers.
 - Vite is installed as a local dev dependency in your project, and you have setup the following npm scripts:
 
@@ -266,12 +266,17 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
 
    # creates a new app with a specified name
    $ heroku apps:create example
-
-   # set buildpack for static sites
-   $ heroku buildpacks:set https://github.com/heroku/heroku-buildpack-static.git
    ```
 
-6. Deploy your site:
+6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
+
+   ```bash
+   # set buildpacks
+   $ heroku buildpacks:set heroku/nodejs
+   $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
+   ```
+
+7. Deploy your site:
 
    ```bash
    # publish site

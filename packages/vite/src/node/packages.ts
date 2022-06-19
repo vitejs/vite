@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { createFilter } from '@rollup/pluginutils'
-import { createDebugger, resolveFrom } from './utils'
+import { createDebugger, createFilter, resolveFrom } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'
 

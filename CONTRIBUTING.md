@@ -214,6 +214,8 @@ Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it sh
 
 To get around this, we inline some of these dependencies' types in `packages/vite/types`. This way we can still expose the typing but bundle the dependency's source code.
 
+Use `pnpm run check-dist-types` to check bundled types does not rely on types in `devDependencies`. If you are adding `dependencies`, make sure to configure `tsconfig.check.json`.
+
 ### Think before adding yet another option
 
 We already have many config options, and we should avoid fixing an issue by adding yet another one. Before adding an option, try to think about:

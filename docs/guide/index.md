@@ -6,7 +6,7 @@
 
 ## Overview
 
-Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padding:3px;border-radius:4px" id="play-vite-audio" onclick="document.getElementById('vite-audio').play();"><img src="/voice.svg" height="15"></button>, like "veet") is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
+Vite (French word for "quick", pronounced `/vit/`<button style="border:none;padding:3px;border-radius:4px;vertical-align:bottom" id="play-vite-audio" onclick="document.getElementById('vite-audio').play();"><svg style="height:2em;width:2em"><use href="/voice.svg#voice" /></svg></button>, like "veet") is a build tool that aims to provide a faster and leaner development experience for modern web projects. It consists of two major parts:
 
 - A dev server that provides [rich feature enhancements](./features) over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), for example extremely fast [Hot Module Replacement (HMR)](./features#hot-module-replacement).
 
@@ -116,7 +116,7 @@ Running `vite` starts the dev server using the current working directory as root
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here are the default npm scripts in a scaffolded Vite project:
 
 <!-- prettier-ignore -->
-```json5
+```json
 {
   "scripts": {
     "dev": "vite", // start dev server, aliases: `vite dev`, `vite serve`

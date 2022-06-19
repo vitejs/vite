@@ -14,9 +14,7 @@ export default defineConfig({
     logo: '/logo.svg',
 
     editLink: {
-      repo: 'vitejs/vite',
-      branch: 'main',
-      dir: 'docs',
+      pattern: 'https://github.com/vitejs/vite/edit/main/docs/:path',
       text: 'Suggest changes to this page'
     },
 
@@ -35,7 +33,7 @@ export default defineConfig({
     },
 
     carbonAds: {
-      carbon: 'CEBIEK3N',
+      code: 'CEBIEK3N',
       placement: 'vitejsdev'
     },
 
@@ -53,9 +51,9 @@ export default defineConfig({
     },
 
     nav: [
-      { text: 'Guide', link: '/guide/' },
-      { text: 'Config', link: '/config/' },
-      { text: 'Plugins', link: '/plugins/' },
+      { text: 'Guide', link: '/guide/', activeMatch: '/guide/' },
+      { text: 'Config', link: '/config/', activeMatch: '/config/' },
+      { text: 'Plugins', link: '/plugins/', activeMatch: '/plugins/' },
       {
         text: 'Links',
         items: [
@@ -150,7 +148,7 @@ export default defineConfig({
               link: '/guide/comparisons'
             },
             {
-              text: 'Migration from v1',
+              text: 'Migration from v2',
               link: '/guide/migration'
             }
           ]

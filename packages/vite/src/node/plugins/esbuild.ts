@@ -9,13 +9,13 @@ import type {
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { SourceMap } from 'rollup'
-import { createFilter } from '@rollup/pluginutils'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
   cleanUrl,
   combineSourcemaps,
   createDebugger,
+  createFilter,
   ensureWatchedFile,
   generateCodeFrame,
   toUpperCaseDriveLetter
@@ -27,9 +27,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/
+  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/s
 const INJECT_HELPERS_UMD_RE =
-  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/
+  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/s
 
 let server: ViteDevServer
 

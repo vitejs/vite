@@ -86,7 +86,11 @@ const sharedNodeOptions = defineConfig({
   }
 })
 
-function createNodePlugins(isProduction: boolean, sourceMap = true): Plugin[] {
+function createNodePlugins(
+  isProduction: boolean,
+  sourceMap: boolean,
+  declarationDir: string | false
+): Plugin[] {
   return [
     alias({
       // packages with "module" field that doesn't play well with cjs bundles
@@ -105,17 +109,8 @@ function createNodePlugins(isProduction: boolean, sourceMap = true): Plugin[] {
       exclude: ['src/**/__tests__/**'],
       esModuleInterop: true,
       sourceMap,
-      // in production we use api-extractor for dts generation
-      // in development we need to rely on the rollup ts plugin
-      ...(isProduction
-        ? {
-            declaration: false,
-            sourceMap: false
-          }
-        : {
-            declaration: true,
-            declarationDir: path.resolve(__dirname, 'dist/node')
-          })
+      declaration: declarationDir !== false,
+      declarationDir: declarationDir !== false ? declarationDir : undefined
     }),
 
     // Some deps have try...catch require of optional deps, but rollup will
@@ -123,19 +118,10 @@ function createNodePlugins(isProduction: boolean, sourceMap = true): Plugin[] {
     // Shim them with eval() so rollup can skip these calls.
     isProduction &&
       shimDepsPlugin({
-        'plugins/terser.ts': {
-          src: `require.resolve('terser'`,
-          replacement: `require.resolve('vite/terser'`
-        },
         // chokidar -> fsevents
         'fsevents-handler.js': {
           src: `require('fsevents')`,
           replacement: `__require('fsevents')`
-        },
-        // cac re-assigns module.exports even in its mjs dist
-        'cac/dist/index.mjs': {
-          src: `if (typeof module !== "undefined") {`,
-          replacement: `if (false) {`
         },
         // postcss-import -> sugarss
         'process-content.js': {
@@ -186,30 +172,15 @@ function createNodeConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: createNodePlugins(isProduction)
+    plugins: createNodePlugins(
+      isProduction,
+      !isProduction,
+      // in production we use api-extractor for dts generation
+      // in development we need to rely on the rollup ts plugin
+      isProduction ? false : path.resolve(__dirname, 'dist/node')
+    )
   })
 }
-
-/**
- * Terser needs to be run inside a worker, so it cannot be part of the main
- * bundle. We produce a separate bundle for it and shims plugin/terser.ts to
- * use the production path during build.
- */
-const terserConfig = defineConfig({
-  ...sharedNodeOptions,
-  output: {
-    ...sharedNodeOptions.output,
-    entryFileNames: `node-cjs/[name].cjs`,
-    exports: 'default',
-    format: 'cjs',
-    sourcemap: false
-  },
-  input: {
-    // eslint-disable-next-line node/no-restricted-require
-    terser: require.resolve('terser')
-  },
-  plugins: [nodeResolve(), commonjs()]
-})
 
 function createCjsConfig(isProduction: boolean) {
   return defineConfig({
@@ -232,7 +203,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: [...createNodePlugins(false, false), bundleSizeLimit(50)]
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
   })
 }
 
@@ -244,8 +215,7 @@ export default (commandLineArgs: any) => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
-    createCjsConfig(isProduction),
-    ...(isProduction ? [terserConfig] : [])
+    createCjsConfig(isProduction)
   ])
 }
 

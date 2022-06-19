@@ -13,6 +13,7 @@ import {
   parseRequest
 } from '../utils'
 import { onRollupWarning } from '../build'
+import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
 interface WorkerCache {
@@ -268,6 +269,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
+        getDepsOptimizer(config)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
@@ -279,7 +281,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper() {
               const objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
               try {
-                return objURL ? new ${workerConstructor}(objURL${workerOptions}) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
+                return objURL ? new ${workerConstructor}(objURL) : new ${workerConstructor}("data:application/javascript;base64," + encodedJs${workerOptions});
               } finally {
                 objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
               }

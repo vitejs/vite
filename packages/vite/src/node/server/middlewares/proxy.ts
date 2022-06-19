@@ -43,11 +43,16 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
-    proxy.on('error', (err) => {
+    proxy.on('error', (err, req, res) => {
       config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
         timestamp: true,
         error: err
       })
+      res
+        .writeHead(500, {
+          'Content-Type': 'text/plain'
+        })
+        .end()
     })
 
     if (opts.configure) {

@@ -184,9 +184,9 @@ export async function httpServerStart(
     logger: Logger
   }
 ): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let { port, strictPort, host, logger } = serverOptions
+  let { port, strictPort, host, logger } = serverOptions
 
+  return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         if (strictPort) {

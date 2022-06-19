@@ -62,11 +62,17 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 
 // ** READ THIS ** before editing `KNOWN_ASSET_TYPES`.
 //   If you add an asset to `KNOWN_ASSET_TYPES`, make sure to also add it
-//   to the TypeScript declaration file `packages/vite/client.d.ts`.
+//   to the TypeScript declaration file `packages/vite/client.d.ts` and
+//   add a mime type to the `registerCustomMime` in
+//   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
+//   looked up by mrmime.
 export const KNOWN_ASSET_TYPES = [
   // images
   'png',
   'jpe?g',
+  'jfif',
+  'pjpeg',
+  'pjp',
   'gif',
   'svg',
   'ico',
@@ -99,3 +105,15 @@ export const DEFAULT_ASSETS_RE = new RegExp(
 )
 
 export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+
+export const loopbackHosts = new Set([
+  'localhost',
+  '127.0.0.1',
+  '::1',
+  '0000:0000:0000:0000:0000:0000:0000:0001'
+])
+export const wildcardHosts = new Set([
+  '0.0.0.0',
+  '::',
+  '0000:0000:0000:0000:0000:0000:0000:0000'
+])
