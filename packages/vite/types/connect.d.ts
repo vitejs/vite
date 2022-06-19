@@ -8,7 +8,7 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /// <reference types="node" />
-import * as http from 'http'
+import * as http from 'node:http'
 
 export namespace Connect {
   export type ServerHandle = HandleFunction | http.Server

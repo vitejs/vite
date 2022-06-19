@@ -1,5 +1,5 @@
-import path from 'path'
-import { promises as fs } from 'fs'
+import path from 'node:path'
+import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'

@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'

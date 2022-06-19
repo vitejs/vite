@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import JSON5 from 'json5'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rollup'

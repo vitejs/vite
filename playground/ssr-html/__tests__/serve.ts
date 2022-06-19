@@ -1,7 +1,7 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import path from 'path'
+import path from 'node:path'
 import kill from 'kill-port'
 import { hmrPorts, ports, rootDir } from '~utils'
 

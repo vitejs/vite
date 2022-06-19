@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import { createServer } from 'vite'
 import { getBgColor, getColor, page, ports } from '~utils'
 

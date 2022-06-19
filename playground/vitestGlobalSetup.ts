@@ -1,5 +1,5 @@
-import os from 'os'
-import path from 'path'
+import os from 'node:os'
+import path from 'node:path'
 import fs from 'fs-extra'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'

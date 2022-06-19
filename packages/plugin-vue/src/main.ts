@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { SFCBlock, SFCDescriptor } from 'vue/compiler-sfc'
 import type { PluginContext, TransformPluginContext } from 'rollup'
 import type { RawSourceMap } from 'source-map'

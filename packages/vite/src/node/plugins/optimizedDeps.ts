@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs'
+import { promises as fs } from 'node:fs'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'

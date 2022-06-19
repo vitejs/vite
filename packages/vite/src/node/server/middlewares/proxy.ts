@@ -1,4 +1,4 @@
-import type * as http from 'http'
+import type * as http from 'node:http'
 import httpProxy from 'http-proxy'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'

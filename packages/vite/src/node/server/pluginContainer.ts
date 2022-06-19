@@ -29,10 +29,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import fs from 'fs'
-import { join, resolve } from 'path'
-import { performance } from 'perf_hooks'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import { join, resolve } from 'node:path'
+import { performance } from 'node:perf_hooks'
+import { createRequire } from 'node:module'
 import type {
   EmittedFile,
   InputOptions,

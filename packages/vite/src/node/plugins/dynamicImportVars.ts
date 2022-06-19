@@ -1,4 +1,4 @@
-import { posix } from 'path'
+import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'

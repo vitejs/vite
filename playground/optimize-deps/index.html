@@ -145,12 +145,14 @@
 
 <script type="module">
   // should error on builtin modules (named import)
+  // no node: protocol intentionally
   import { Buffer } from 'buffer'
   // named imports error immediately
 </script>
 
 <script type="module">
   // should error on builtin modules (default import)
+  // no node: protocol intentionally
   import cp from 'child_process'
   // must access property to error
   if (import.meta.env.DEV) {

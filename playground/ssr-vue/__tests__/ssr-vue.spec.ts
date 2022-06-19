@@ -1,4 +1,4 @@
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 import fetch from 'node-fetch'
 import { port } from './serve'
 import {

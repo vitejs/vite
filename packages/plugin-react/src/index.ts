@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter, normalizePath } from 'vite'

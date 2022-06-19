@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
-import type { AddressInfo, Server } from 'net'
-import os from 'os'
+import type { AddressInfo, Server } from 'node:net'
+import os from 'node:os'
 import readline from 'readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'

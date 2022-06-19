@@ -1,8 +1,8 @@
 /* eslint-disable node/no-extraneous-import */
-import path from 'path'
-import { createHash } from 'crypto'
-import { createRequire } from 'module'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 import MagicString from 'magic-string'
 import type {

@@ -1,4 +1,8 @@
-import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'http'
+import type {
+  IncomingMessage,
+  OutgoingHttpHeaders,
+  ServerResponse
+} from 'node:http'
 import getEtag from 'etag'
 import type { SourceMap } from 'rollup'
 import { getCodeWithSourcemap } from './sourcemap'

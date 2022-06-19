@@ -1,5 +1,5 @@
-import path, { resolve } from 'path'
-import { fileURLToPath } from 'url'
+import path, { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 // @ts-expect-error
 import { version } from '../../package.json'
 

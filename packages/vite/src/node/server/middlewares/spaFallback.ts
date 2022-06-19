@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import history from 'connect-history-api-fallback'
 import type { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'

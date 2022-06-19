@@ -1,5 +1,5 @@
-import { extname } from 'path'
-import { parse as parseUrl } from 'url'
+import { extname } from 'node:path'
+import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import { isHTMLRequest } from '../plugins/html'

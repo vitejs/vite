@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import type { Connect } from 'types/connect'
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'

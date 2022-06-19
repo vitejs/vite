@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {

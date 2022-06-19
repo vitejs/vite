@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import readFileContent from 'read-file-content'
 import primitiveExport from 'primitive-export'
 import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'

@@ -5,7 +5,7 @@ declare module 'vue/compiler-sfc' {
   }
 }
 
-import { createRequire } from 'module'
+import { createRequire } from 'node:module'
 import type * as _compiler from 'vue/compiler-sfc'
 
 export function resolveCompiler(root: string): typeof _compiler {

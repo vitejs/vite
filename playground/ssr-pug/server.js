@@ -1,5 +1,5 @@
 // @ts-check
-import path from 'path'
+import path from 'node:path'
 import { fileURLToPath } from 'url'
 import pug from 'pug'
 import express from 'express'

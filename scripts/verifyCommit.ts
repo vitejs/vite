@@ -1,6 +1,6 @@
 // Invoked on the commit-msg git hook by simple-git-hooks.
 
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import colors from 'picocolors'
 
 // get $1 from commit-msg script

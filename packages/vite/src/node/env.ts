@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 import { arraify, lookupFile } from './utils'

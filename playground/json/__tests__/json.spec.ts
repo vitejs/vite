@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import testJson from '../test.json'
 import { isBuild, page } from '~utils'
 
