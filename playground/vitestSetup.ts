@@ -1,5 +1,5 @@
 import * as http from 'node:http'
-import path, { dirname, resolve } from 'node:path'
+import path, { dirname, join, resolve } from 'node:path'
 import os from 'node:os'
 import sirv from 'sirv'
 import fs from 'fs-extra'
