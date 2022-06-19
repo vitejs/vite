@@ -53,7 +53,8 @@ import {
   getAssetFilename,
   publicAssetUrlCache,
   publicAssetUrlRE,
-  publicFileToBuiltUrl
+  publicFileToBuiltUrl,
+  resolveAssetFileNames
 } from './asset'
 
 // const debug = createDebugger('vite:css')
@@ -508,20 +509,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
-          const output = config.build?.rollupOptions?.output
-          const assetFileNames =
-            (output && !Array.isArray(output)
-              ? output.assetFileNames
-              : undefined) ??
-            // defaults to '<assetsDir>/[name].[hash][extname]'
-            // slightly different from rollup's one ('assets/[name]-[hash][extname]')
-            path.posix.join(config.build.assetsDir, '[name].[hash][extname]')
-
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: cssAssetName,
             fileName: assetFileNamesToFileName(
-              assetFileNames,
+              resolveAssetFileNames(config),
               cssAssetName,
               getHash(chunkCSS),
               chunkCSS
