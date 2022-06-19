@@ -555,7 +555,12 @@ export async function runOptimizeDeps(
       ...plugins,
       esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
     ],
-    ...esbuildOptions
+    ...esbuildOptions,
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   })
 
   const meta = result.metafile!
