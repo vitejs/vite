@@ -492,11 +492,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (
-          opts.format === 'es' ||
-          opts.format === 'cjs' ||
-          opts.format === 'system'
-        ) {
+        if (opts.format === 'es' || opts.format === 'cjs') {
           const cssAssetName = chunk.name + '.css'
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
@@ -558,7 +554,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es' || opts.format === 'system'
+          opts.format === 'es'
             ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
           'g'
