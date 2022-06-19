@@ -22,8 +22,8 @@ If you have questions, the community is usually helpful at [Vite Discord's #ssr 
 
 Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
 
-- [Vue 3](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-vue)
-- [React](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-react)
+- [Vue 3](https://github.com/vitejs/vite/tree/main/playground/ssr-vue)
+- [React](https://github.com/vitejs/vite/tree/main/playground/ssr-react)
 
 ## Source Structure
 
@@ -74,13 +74,12 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode. This disables Vite's own HTML
-  // serving logic and let the parent server take control.
-  //
-  // In middleware mode, if you want to use Vite's own HTML serving logic
-  // use `'html'` as the `middlewareMode` (ref https://vitejs.dev/config/#server-middlewaremode)
+  // Create Vite server in middleware mode and configure the app type as
+  // 'custom', disabling Vite's own HTML serving logic so parent server
+  // can take control
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom'
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
@@ -89,7 +88,7 @@ async function createServer() {
     // serve index.html - we will tackle this next
   })
 
-  app.listen(3000)
+  app.listen(5173)
 }
 
 createServer()
@@ -169,7 +168,7 @@ Our scripts in `package.json` will look like this:
 
 Note the `--ssr` flag which indicates this is an SSR build. It should also specify the SSR entry.
 
-Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
+Then, in `server.js` we need to add some production specific logic by checking `process.env.`<wbr>`NODE_ENV`:
 
 - Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
 
@@ -177,7 +176,7 @@ Then, in `server.js` we need to add some production specific logic by checking `
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 
-Refer to the [Vue](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-vue) and [React](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-react) demos for working setup.
+Refer to the [Vue](https://github.com/vitejs/vite/tree/main/playground/ssr-vue) and [React](https://github.com/vitejs/vite/tree/main/playground/ssr-react) demos for working setup.
 
 ## Generating Preload Directives
 
@@ -201,11 +200,11 @@ const html = await vueServerRenderer.renderToString(app, ctx)
 // ctx.modules is now a Set of module IDs that were used during the render
 ```
 
-In the production branch of `server.js` we need to read and pass the manifest to the `render` function exported by `src/entry-server.js`. This would provide us with enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/src/entry-server.js) for full example.
+In the production branch of `server.js` we need to read and pass the manifest to the `render` function exported by `src/entry-server.js`. This would provide us with enough information to render preload directives for files used by async routes! See [demo source](https://github.com/vitejs/vite/blob/main/playground/ssr-vue/src/entry-server.js) for full example.
 
 ## Pre-Rendering / SSG
 
-If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This can also be considered a form of Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite/blob/main/packages/playground/ssr-vue/prerender.js) for working example.
+If the routes and the data needed for certain routes are known ahead of time, we can pre-render these routes into static HTML using the same logic as production SSR. This can also be considered a form of Static-Site Generation (SSG). See [demo pre-render script](https://github.com/vitejs/vite/blob/main/playground/ssr-vue/prerender.js) for working example.
 
 ## SSR Externals
 
@@ -264,3 +263,11 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
+
+## Vite CLI
+
+The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps. You can add your SSR middlewares to the development server with [`configureServer`](/guide/api-plugin#configureserver) and to the preview server with [`configurePreviewServer`](/guide/api-plugin#configurepreviewserver).
+
+:::tip Note
+Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
+:::

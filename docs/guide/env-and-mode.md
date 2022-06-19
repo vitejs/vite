@@ -6,7 +6,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.MODE`**: {string} the [mode](#modes) the app is running in.
 
-- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/#base).
+- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/shared-options.md#base).
 
 - **`import.meta.env.PROD`**: {boolean} whether the app is running in production.
 
@@ -16,15 +16,15 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
 
-It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. You may see errors like `Missing Semicolon` or `Unexpected token` in this case, for example when `"process.env.NODE_ENV: "` is transformed to `""development": "`. There are ways to work around this behavior:
+It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. You may see errors like `Missing Semicolon` or `Unexpected token` in this case, for example when `"process.env.`<wbr>`NODE_ENV"` is transformed to `""development": "`. There are ways to work around this behavior:
 
-- For JavaScript strings, you can break the string up with a unicode zero-width space, e.g. `'import.meta\u200b.env.MODE'`.
+- For JavaScript strings, you can break the string up with a Unicode zero-width space, e.g. `'import.meta\u200b.env.MODE'`.
 
 - For Vue templates or other HTML that gets compiled into JavaScript strings, you can use the [`<wbr>` tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr), e.g. `import.meta.<wbr>env.MODE`.
 
 ## `.env` Files
 
-Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir):
+Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/shared-options.md#envdir):
 
 ```
 .env                # loaded in all cases
@@ -42,7 +42,7 @@ In addition, environment variables that already exist when Vite is executed have
 `.env` files are loaded at the start of Vite. Restart the server after making changes.
 :::
 
-Loaded env variables are also exposed to your client source code via `import.meta.env`.
+Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
 
@@ -78,6 +78,14 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv
+}
+```
+
+If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/lib/lib.dom.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/lib/lib.webworker.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
+
+```json
+{
+  "lib": ["WebWorker"]
 }
 ```
 

@@ -1,7 +1,7 @@
 # Static Asset Handling
 
 - Related: [Public Base Path](./build#public-base-path)
-- Related: [`assetsInclude` config option](/config/#assetsinclude)
+- Related: [`assetsInclude` config option](/config/shared-options.md#assetsinclude)
 
 ## Importing Asset as URL
 
@@ -20,11 +20,11 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 
 - If using the Vue plugin, asset references in Vue SFC templates are automatically converted into imports.
 
-- Common image, media, and font filetypes are detected as assets automatically. You can extend the internal list using the [`assetsInclude` option](/config/#assetsinclude).
+- Common image, media, and font filetypes are detected as assets automatically. You can extend the internal list using the [`assetsInclude` option](/config/shared-options.md#assetsinclude).
 
 - Referenced assets are included as part of the build assets graph, will get hashed file names, and can be processed by plugins for optimization.
 
-- Assets smaller in bytes than the [`assetsInlineLimit` option](/config/#build-assetsinlinelimit) will be inlined as base64 data URLs.
+- Assets smaller in bytes than the [`assetsInlineLimit` option](/config/build-options.md#build-assetsinlinelimit) will be inlined as base64 data URLs.
 
 ### Explicit URL Imports
 
@@ -76,7 +76,7 @@ If you have assets that are:
 
 Then you can place the asset in a special `public` directory under your project root. Assets in this directory will be served at root path `/` during dev, and copied to the root of the dist directory as-is.
 
-The directory defaults to `<root>/public`, but can be configured via the [`publicDir` option](/config/#publicdir).
+The directory defaults to `<root>/public`, but can be configured via the [`publicDir` option](/config/shared-options.md#publicdir).
 
 Note that:
 
@@ -114,6 +114,6 @@ const imgUrl = new URL(imagePath, import.meta.url).href
 This pattern does not work if you are using Vite for Server-Side Rendering, because `import.meta.url` have different semantics in browsers vs. Node.js. The server bundle also cannot determine the client host URL ahead of time.
 :::
 
-::: warning Esbuild target config is necessary
-This pattern needs esbuild target to be set to `es2020` or higher. `vite@2.x` use `es2019` as default target. Set [build-target](https://vitejs.dev/config/#build-target) and [optimizedeps.esbuildoptions.target](https://vitejs.dev/config/#optimizedeps-esbuildoptions) to `es2020` or higher if you intend to use this partten.
+::: warning `target` needs to be `es2020` or higher
+This pattern will not work if [build-target](/config/build-options.md#build-target) or [optimizedeps.esbuildoptions.target](/config/dep-optimization-options.md#optimizedeps-esbuildoptions) is set to a value lower than `es2020`.
 :::

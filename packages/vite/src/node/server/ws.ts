@@ -1,8 +1,9 @@
+import type { Server } from 'node:http'
+import { STATUS_CODES } from 'node:http'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
+import { createServer as createHttpsServer } from 'node:https'
+import type { Socket } from 'node:net'
 import colors from 'picocolors'
-import type { Server } from 'http'
-import { STATUS_CODES } from 'http'
-import type { ServerOptions as HttpsServerOptions } from 'https'
-import { createServer as createHttpsServer } from 'https'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'types/ws'
@@ -10,7 +11,6 @@ import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { Socket } from 'net'
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -149,7 +149,7 @@ export function createWebSocketServer(
       if (!parsed || parsed.type !== 'custom' || !parsed.event) return
       const listeners = customListeners.get(parsed.event)
       if (!listeners?.size) return
-      const client = getSocketClent(socket)
+      const client = getSocketClient(socket)
       listeners.forEach((listener) => listener(parsed.data, client))
     })
     socket.send(JSON.stringify({ type: 'connected' }))
@@ -160,7 +160,12 @@ export function createWebSocketServer(
   })
 
   wss.on('error', (e: Error & { code: string }) => {
-    if (e.code !== 'EADDRINUSE') {
+    if (e.code === 'EADDRINUSE') {
+      config.logger.error(
+        colors.red(`WebSocket server error: Port is already in use`),
+        { error: e }
+      )
+    } else {
       config.logger.error(
         colors.red(`WebSocket server error:\n${e.stack || e.message}`),
         { error: e }
@@ -170,7 +175,7 @@ export function createWebSocketServer(
 
   // Provide a wrapper to the ws client so we can send messages in JSON format
   // To be consistent with server.ws.send
-  function getSocketClent(socket: WebSocketRaw) {
+  function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
         send: (...args) => {
@@ -217,7 +222,7 @@ export function createWebSocketServer(
     }) as WebSocketServer['off'],
 
     get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClent))
+      return new Set(Array.from(wss.clients).map(getSocketClient))
     },
 
     send(...args: any[]) {

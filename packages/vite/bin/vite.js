@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-const { performance } = require('perf_hooks')
+import { performance } from 'node:perf_hooks'
 
-if (!__dirname.includes('node_modules')) {
+if (!import.meta.url.includes('node_modules')) {
   try {
     // only available as dev dependency
-    require('source-map-support').install()
+    await import('source-map-support').then((r) => r.default.install())
   } catch (e) {}
 }
 
@@ -41,7 +41,7 @@ if (debugIndex > 0) {
 }
 
 function start() {
-  require('../dist/node/cli')
+  return import('../dist/node/cli.js')
 }
 
 if (profileIndex > 0) {
@@ -50,7 +50,7 @@ if (profileIndex > 0) {
   if (next && !next.startsWith('-')) {
     process.argv.splice(profileIndex, 1)
   }
-  const inspector = require('inspector')
+  const inspector = await import('inspector').then((r) => r.default)
   const session = (global.__vite_profile_session = new inspector.Session())
   session.connect()
   session.post('Profiler.enable', () => {

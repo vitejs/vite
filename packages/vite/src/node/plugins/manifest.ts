@@ -1,5 +1,5 @@
-import path from 'path'
-import type { OutputChunk } from 'rollup'
+import path from 'node:path'
+import type { OutputAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
@@ -37,7 +37,8 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           )
           if (format === 'system' && !chunk.name.includes('-legacy')) {
             const ext = path.extname(name)
-            name = name.slice(0, -ext.length) + `-legacy` + ext
+            const endPos = ext.length !== 0 ? -ext.length : undefined
+            name = name.slice(0, endPos) + `-legacy` + ext
           }
           return name.replace(/\0/g, '')
         } else {
@@ -98,10 +99,19 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         return manifestChunk
       }
 
+      function createAsset(chunk: OutputAsset): ManifestChunk {
+        return {
+          file: chunk.fileName,
+          src: chunk.name
+        }
+      }
+
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
+        } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
+          manifest[chunk.name] = createAsset(chunk)
         }
       }
 

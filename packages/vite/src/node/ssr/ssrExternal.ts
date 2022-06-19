@@ -1,23 +1,26 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
+  bareImportRE,
   createDebugger,
+  createFilter,
+  isBuiltin,
   isDefined,
   lookupFile,
   normalizePath,
   resolveFrom
 } from '../utils'
 import type { Logger, ResolvedConfig } from '..'
-import { createFilter } from '@rollup/pluginutils'
 
 const debug = createDebugger('vite:ssr-external')
 
 /**
  * Converts "parent > child" syntax to just "child"
  */
-export function stripNesting(packages: string[]) {
+export function stripNesting(packages: string[]): string[] {
   return packages.map((s) => {
     const arr = s.split('>')
     return arr[arr.length - 1].trim()
@@ -28,7 +31,7 @@ export function stripNesting(packages: string[]) {
  * Heuristics for determining whether a dependency should be externalized for
  * server-side rendering.
  */
-export function resolveSSRExternal(
+export function cjsSsrResolveExternals(
   config: ResolvedConfig,
   knownImports: string[]
 ): string[] {
@@ -48,7 +51,7 @@ export function resolveSSRExternal(
     seen.add(id)
   })
 
-  collectExternals(
+  cjsSsrCollectExternals(
     config.root,
     config.resolve.preserveSymlinks,
     ssrExternals,
@@ -82,8 +85,91 @@ export function resolveSSRExternal(
 const CJS_CONTENT_RE =
   /\bmodule\.exports\b|\bexports[.\[]|\brequire\s*\(|\bObject\.(defineProperty|defineProperties|assign)\s*\(\s*exports\b/
 
-// do we need to do this ahead of time or could we do it lazily?
-function collectExternals(
+// TODO: use import()
+const _require = createRequire(import.meta.url)
+
+const isSsrExternalCache = new WeakMap<
+  ResolvedConfig,
+  (id: string) => boolean | undefined
+>()
+
+export function shouldExternalizeForSSR(
+  id: string,
+  config: ResolvedConfig
+): boolean | undefined {
+  let isSsrExternal = isSsrExternalCache.get(config)
+  if (!isSsrExternal) {
+    isSsrExternal = createIsSsrExternal(config)
+    isSsrExternalCache.set(config, isSsrExternal)
+  }
+  return isSsrExternal(id)
+}
+
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const processedIds = new Map<string, boolean | undefined>()
+
+  const { ssr, root } = config
+
+  const noExternal = ssr?.noExternal
+  const noExternalFilter =
+    noExternal !== 'undefined' &&
+    typeof noExternal !== 'boolean' &&
+    createFilter(undefined, noExternal, { resolve: false })
+
+  const isConfiguredAsExternal = (id: string) => {
+    const { ssr } = config
+    if (!ssr || ssr.external?.includes(id)) {
+      return true
+    }
+    if (typeof noExternal === 'boolean') {
+      return !noExternal
+    }
+    if (noExternalFilter) {
+      return noExternalFilter(id)
+    }
+    return true
+  }
+
+  const resolveOptions: InternalResolveOptions = {
+    root,
+    preserveSymlinks: config.resolve.preserveSymlinks,
+    isProduction: false,
+    isBuild: true
+  }
+
+  const isValidPackageEntry = (id: string) => {
+    if (!bareImportRE.test(id) || id.includes('\0')) {
+      return false
+    }
+    return !!tryNodeResolve(
+      id,
+      undefined,
+      resolveOptions,
+      ssr?.target === 'webworker',
+      undefined,
+      true,
+      true // try to externalize, will return undefined if not possible
+    )
+  }
+
+  return (id: string) => {
+    if (processedIds.has(id)) {
+      return processedIds.get(id)
+    }
+    const external =
+      !id.startsWith('.') &&
+      !path.isAbsolute(id) &&
+      (isBuiltin(id) || (isConfiguredAsExternal(id) && isValidPackageEntry(id)))
+    processedIds.set(id, external)
+    return external
+  }
+}
+
+// When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
+// is used reverting to the Vite 2.9 SSR externalization heuristics
+function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,
   ssrExternals: Set<string>,
@@ -116,6 +202,7 @@ function collectExternals(
 
     let esmEntry: string | undefined
     let requireEntry: string
+
     try {
       esmEntry = tryNodeResolve(
         id,
@@ -127,7 +214,7 @@ function collectExternals(
       )?.id
       // normalizePath required for windows. tryNodeResolve uses normalizePath
       // which returns with '/', require.resolve returns with '\\'
-      requireEntry = normalizePath(require.resolve(id, { paths: [root] }))
+      requireEntry = normalizePath(_require.resolve(id, { paths: [root] }))
     } catch (e) {
       try {
         // no main entry, but deep imports may be allowed
@@ -187,14 +274,23 @@ function collectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    collectExternals(depRoot, preserveSymlinks, ssrExternals, seen, logger)
+    cjsSsrCollectExternals(
+      depRoot,
+      preserveSymlinks,
+      ssrExternals,
+      seen,
+      logger
+    )
   }
 }
 
-export function shouldExternalizeForSSR(
+export function cjsShouldExternalizeForSSR(
   id: string,
-  externals: string[]
+  externals: string[] | null
 ): boolean {
+  if (!externals) {
+    return false
+  }
   const should = externals.some((e) => {
     if (id === e) {
       return true

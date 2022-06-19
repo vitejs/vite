@@ -1,9 +1,8 @@
-import path from 'path'
-import { promises as fs } from 'fs'
-import type { Logger } from '../logger'
-import { createDebugger, normalizePath } from '../utils'
+import path from 'node:path'
+import { promises as fs } from 'node:fs'
 import type { SourceMap } from 'rollup'
-import { maybeVirtualHtmlSet } from '../plugins/html'
+import type { Logger } from '../logger'
+import { createDebugger } from '../utils'
 
 const isDebug = !!process.env.DEBUG
 const debug = createDebugger('vite:sourcemap', {
@@ -43,7 +42,6 @@ export async function injectSourcesContent(
           sourcePath = path.resolve(sourceRoot, sourcePath)
         }
         return fs.readFile(sourcePath, 'utf-8').catch(() => {
-          if (maybeVirtualHtmlSet.has(normalizePath(sourcePath))) return null
           missingSources.push(sourcePath)
           return null
         })
@@ -61,7 +59,7 @@ export async function injectSourcesContent(
   }
 }
 
-function genSourceMapUrl(map: SourceMap | string | undefined) {
+export function genSourceMapUrl(map: SourceMap | string | undefined): string {
   if (typeof map !== 'string') {
     map = JSON.stringify(map)
   }
@@ -72,7 +70,7 @@ export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
   map: SourceMap | null
-) {
+): string {
   if (isDebug) {
     code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
   }

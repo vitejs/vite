@@ -1,3 +1,28 @@
+## <small>2.9.3 (2022-05-02)</small>
+
+* chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
+* feat(create-vite): scaffold directory with only .git (#7971) ([a5bdb9f](https://github.com/vitejs/vite/commit/a5bdb9f)), closes [#7971](https://github.com/vitejs/vite/issues/7971)
+
+
+
+## <small>2.9.2 (2022-04-19)</small>
+
+* chore: remove useless code in preact template (#7789) ([e5729be](https://github.com/vitejs/vite/commit/e5729be)), closes [#7789](https://github.com/vitejs/vite/issues/7789)
+* fix(create-vite): bump `vue-tsc` to `0.34.7` (#7760) ([9a93233](https://github.com/vitejs/vite/commit/9a93233)), closes [#7760](https://github.com/vitejs/vite/issues/7760)
+* fix(create-vite): set skipLibCheck true (#7726) ([54e9cdd](https://github.com/vitejs/vite/commit/54e9cdd)), closes [#7726](https://github.com/vitejs/vite/issues/7726)
+
+
+
+## <small>2.9.1 (2022-04-13)</small>
+
+* chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)
+* chore: update @types/react version (#7655) ([eb57627](https://github.com/vitejs/vite/commit/eb57627)), closes [#7655](https://github.com/vitejs/vite/issues/7655)
+* chore: update vue template setup api doc url (#7628) ([4433df4](https://github.com/vitejs/vite/commit/4433df4)), closes [#7628](https://github.com/vitejs/vite/issues/7628)
+* chore(create-vite-app): upgrade react to 18 (#7597) ([8b21029](https://github.com/vitejs/vite/commit/8b21029)), closes [#7597](https://github.com/vitejs/vite/issues/7597)
+* chore(create-vite): add isolatedModules (#7697) ([8f28350](https://github.com/vitejs/vite/commit/8f28350)), closes [#7697](https://github.com/vitejs/vite/issues/7697)
+
+
+
 ## 2.9.0 (2022-03-30)
 
 * chore: add isolatedModules to create-vite > template-vue-ts > tsconfig (#7304) ([21990ea](https://github.com/vitejs/vite/commit/21990ea)), closes [#7304](https://github.com/vitejs/vite/issues/7304)

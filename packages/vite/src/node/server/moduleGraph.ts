@@ -1,7 +1,8 @@
-import { extname } from 'path'
+import { extname } from 'node:path'
+import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
-import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
+import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -9,6 +10,7 @@ import {
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
+import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
@@ -33,12 +35,19 @@ export class ModuleNode {
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
 
   constructor(url: string) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
+    // #7870
+    // The `isSelfAccepting` value is set by importAnalysis, but some
+    // assets don't go through importAnalysis.
+    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
+      this.isSelfAccepting = false
+    }
   }
 }
 
@@ -48,6 +57,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   }
   seen.add(mod)
   mod.ssrModule = null
+  mod.ssrError = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
 

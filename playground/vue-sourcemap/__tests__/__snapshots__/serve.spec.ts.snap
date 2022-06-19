@@ -1,0 +1,25 @@
+// Vitest Snapshot v1
+
+exports[`serve:vue-sourcemap > js 1`] = `
+{
+  "mappings": "mIAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
+  "sources": [
+    "/root/Js.vue",
+  ],
+  "sourcesContent": [
+    "<template>
+  <p>&lt;js&gt;</p>
+</template>
+
+<script>
+console.log('script')
+</script>
+
+<script setup>
+console.log('setup')
+</script>
+",
+  ],
+  "version": 3,
+}
+`;

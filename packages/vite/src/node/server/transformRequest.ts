@@ -1,24 +1,24 @@
-import { promises as fs } from 'fs'
-import path from 'path'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
-import type { ViteDevServer } from '..'
 import colors from 'picocolors'
+import type { ViteDevServer } from '..'
 import {
-  createDebugger,
   cleanUrl,
+  createDebugger,
+  ensureWatchedFile,
+  isObject,
   prettifyUrl,
   removeTimestampQuery,
-  timeFrom,
-  ensureWatchedFile,
-  isObject
+  timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
-import { performance } from 'perf_hooks'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -238,7 +238,9 @@ async function doTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url)
+    ? await ssrTransform(code, map as SourceMap, url, {
+        json: { stringify: !!server.config.json?.stringify }
+      })
     : ({
         code,
         map,

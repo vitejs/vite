@@ -14,11 +14,6 @@ export interface ViteHotContext {
     cb: (mod: any) => void
   ): void
 
-  /**
-   * @deprecated
-   */
-  acceptDeps(): never
-
   dispose(cb: (data: any) => void): void
   decline(): void
   invalidate(): void

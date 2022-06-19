@@ -1,13 +1,15 @@
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ParseResult } from '@babel/parser'
 import { parse } from '@babel/parser'
 import type { File } from '@babel/types'
 import colors from 'picocolors'
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import MagicString from 'magic-string'
-import { dirname, relative, resolve } from 'path'
 
-const tempDir = resolve(__dirname, '../temp/node')
-const typesDir = resolve(__dirname, '../types')
+const dir = dirname(fileURLToPath(import.meta.url))
+const tempDir = resolve(dir, '../temp/node')
+const typesDir = resolve(dir, '../types')
 
 // walk through the temp dts dir, find all import/export of types/*
 // and rewrite them into relative imports - so that api-extractor actually

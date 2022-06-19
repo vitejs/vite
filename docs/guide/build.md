@@ -4,13 +4,14 @@ When it is time to deploy your app for production, simply run the `vite build` c
 
 ## Browser Compatibility
 
-The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ESM script tag](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import). As a reference, Vite uses this [browserslist](https://github.com/browserslist/browserslist) query:
+The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta):
 
-```
-defaults and supports es6-module and supports es6-module-dynamic-import, not opera > 0, not samsung > 0, not and_qq > 0
-```
+- Chrome >=87
+- Firefox >=78
+- Safari >=13
+- Edge >=88
 
-You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
+You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
@@ -20,7 +21,7 @@ Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/
 
 - Related: [Asset Handling](./assets)
 
-If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
+If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/shared-options.md#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
 
 JS-imported asset URLs, CSS `url()` references, and asset references in your `.html` files are all automatically adjusted to respect this option during build.
 
@@ -28,7 +29,7 @@ The exception is when you need to dynamically concatenate URLs on the fly. In th
 
 ## Customizing the Build
 
-The build can be customized via various [build config options](/config/#build-options). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
+The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
 
 ```js
 // vite.config.js
@@ -115,7 +116,7 @@ If you specify a different root, remember that `__dirname` will still be the fol
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
+When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
 // vite.config.js
@@ -127,7 +128,8 @@ module.exports = defineConfig({
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
-      fileName: (format) => `my-lib.${format}.js`
+      // the proper extensions will be added
+      fileName: 'my-lib'
     },
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
@@ -159,7 +161,7 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-[write] my-lib.es.js 0.08kb, brotli: 0.07kb
+[write] my-lib.mjs 0.08kb, brotli: 0.07kb
 [write] my-lib.umd.js 0.30kb, brotli: 0.16kb
 ```
 
@@ -170,10 +172,10 @@ Recommended `package.json` for your lib:
   "name": "my-lib",
   "files": ["dist"],
   "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.es.js",
+  "module": "./dist/my-lib.mjs",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.es.js",
+      "import": "./dist/my-lib.mjs",
       "require": "./dist/my-lib.umd.js"
     }
   }

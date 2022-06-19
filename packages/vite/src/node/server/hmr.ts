@@ -1,15 +1,15 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
+import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
-import type { ModuleNode } from './moduleGraph'
 import type { Update } from 'types/hmrPayload'
-import { CLIENT_DIR } from '../constants'
 import type { RollupError } from 'rollup'
-import { isMatch } from 'micromatch'
-import type { Server } from 'http'
+import { CLIENT_DIR } from '../constants'
+import { createDebugger, normalizePath, unique } from '../utils'
+import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
+import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -35,14 +35,14 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
-function getShortName(file: string, root: string) {
+export function getShortName(file: string, root: string): string {
   return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
 }
 
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
-): Promise<any> {
+): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
   const fileName = path.basename(file)
@@ -126,12 +126,12 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-function updateModules(
+export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
   { config, ws }: ViteDevServer
-) {
+): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
@@ -186,33 +186,16 @@ function updateModules(
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer,
-  isUnlink = false
+  server: ViteDevServer
 ): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
-  if (isUnlink && file in server._globImporters) {
-    delete server._globImporters[file]
-  } else {
-    for (const i in server._globImporters) {
-      const { module, importGlobs } = server._globImporters[i]
-      for (const { base, pattern } of importGlobs) {
-        if (
-          isMatch(file, pattern) ||
-          isMatch(path.relative(base, file), pattern)
-        ) {
-          modules.push(module)
-          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
-          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-          server.moduleGraph.onFileChange(module.file!)
-          break
-        }
-      }
-    }
-  }
+  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  modules.push(...getAffectedGlobModules(file, server))
+
   if (modules.length > 0) {
     updateModules(
       getShortName(file, server.config.root),
-      modules,
+      unique(modules),
       Date.now(),
       server
     )
@@ -329,6 +312,7 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
   mod.ssrModule = null
+  mod.ssrError = null
   mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {
@@ -489,7 +473,7 @@ export function lexAcceptedHmrExports(
 
 function error(pos: number) {
   const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
+    `import.meta.hot.accept() can only accept string literals or an ` +
       `Array of string literals.`
   ) as RollupError
   err.pos = pos

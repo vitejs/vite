@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { traverseHtml } from '../../plugins/html'
 import { ssrTransform } from '../ssrTransform'
@@ -305,7 +306,7 @@ test('should declare variable for imported super class', async () => {
     class A extends Foo {}
     class B extends Foo {}
     Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: A });"
   `)
 })
 
@@ -337,7 +338,7 @@ test('should handle default export variants', async () => {
   ).toMatchInlineSnapshot(`
     "function foo() {}
     foo.prototype = Object.prototype;
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: foo });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: foo });"
   `)
   // default named classes
   expect(
@@ -352,7 +353,7 @@ test('should handle default export variants', async () => {
     "class A {}
     class B extends A {}
     Object.defineProperty(__vite_ssr_exports__, \\"B\\", { enumerable: true, configurable: true, get(){ return B }});
-    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, value: A });"
+    Object.defineProperty(__vite_ssr_exports__, \\"default\\", { enumerable: true, configurable: true, value: A });"
   `)
 })
 
@@ -370,7 +371,7 @@ test('overwrite bindings', async () => {
           `const a = { inject }\n` +
           `const b = { test: inject }\n` +
           `function c() { const { test: inject } = { test: true }; console.log(inject) }\n` +
-          `const d = inject \n` +
+          `const d = inject\n` +
           `function f() {  console.log(inject) }\n` +
           `function e() { const { inject } = { inject: true } }\n` +
           `function g() { const f = () => { const inject = true }; console.log(inject) }\n`,
@@ -383,7 +384,7 @@ test('overwrite bindings', async () => {
     const a = { inject: __vite_ssr_import_0__.inject }
     const b = { test: __vite_ssr_import_0__.inject }
     function c() { const { test: inject } = { test: true }; console.log(inject) }
-    const d = __vite_ssr_import_0__.inject 
+    const d = __vite_ssr_import_0__.inject
     function f() {  console.log(__vite_ssr_import_0__.inject) }
     function e() { const { inject } = { inject: true } }
     function g() { const f = () => { const inject = true }; console.log(__vite_ssr_import_0__.inject) }
@@ -545,6 +546,45 @@ class A {
   `)
 })
 
+test('class methods', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `
+import foo from 'foo'
+
+const bar = 'bar'
+
+class A {
+  foo() {}
+  [foo]() {}
+  [bar]() {}
+  #foo() {}
+  bar(foo) {}
+}
+`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+
+    const bar = 'bar'
+
+    class A {
+      foo() {}
+      [__vite_ssr_import_0__.default]() {}
+      [bar]() {}
+      #foo() {}
+      bar(foo) {}
+    }
+    "
+  `)
+})
+
 test('declare scope', async () => {
   expect(
     (
@@ -655,5 +695,45 @@ export function fn1() {
     }
     Object.defineProperty(__vite_ssr_exports__, \\"fn2\\", { enumerable: true, configurable: true, get(){ return fn2 }});
             "
+  `)
+})
+
+// https://github.com/vitest-dev/vitest/issues/1141
+test('export default expression', async () => {
+  // esbuild transform result of following TS code
+  // export default <MyFn> function getRandom() {
+  //   return Math.random()
+  // }
+  const code = `
+export default (function getRandom() {
+  return Math.random();
+});
+`.trim()
+
+  expect((await ssrTransform(code, null, null)).code).toMatchInlineSnapshot(`
+    "__vite_ssr_exports__.default = (function getRandom() {
+      return Math.random();
+    });"
+  `)
+
+  expect(
+    (await ssrTransform(`export default (class A {});`, null, null)).code
+  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = (class A {});"`)
+})
+
+// #8002
+test('with hashbang', async () => {
+  expect(
+    (
+      await ssrTransform(
+        `#!/usr/bin/env node
+console.log("it can parse the hashbang")`,
+        null,
+        null
+      )
+    ).code
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    console.log(\\"it can parse the hashbang\\")"
   `)
 })
