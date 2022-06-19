@@ -2,7 +2,7 @@ import path from 'path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { isObject, normalizePath } from '../utils'
+import { isObject, normalizePath, resolveHostname } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -33,6 +33,11 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port ||= '24678'
         }
 
+        let directTarget =
+          hmrConfig?.host || resolveHostname(config.server.host).name
+        directTarget += `:${hmrConfig?.port || config.server.port!}`
+        directTarget += config.base
+
         let hmrBase = config.base
         if (hmrConfig?.path) {
           hmrBase = path.posix.join(hmrBase, hmrConfig.path)
@@ -45,6 +50,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
+          .replace(`__HMR_DIRECT_TARGET__`, JSON.stringify(directTarget))
           .replace(`__HMR_BASE__`, JSON.stringify(hmrBase))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
