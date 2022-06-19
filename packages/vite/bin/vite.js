@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { performance } from 'perf_hooks'
+import { performance } from 'node:perf_hooks'
 
 if (!import.meta.url.includes('node_modules')) {
   try {

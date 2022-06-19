@@ -8,8 +8,8 @@
  *
  */
 
-import { join } from 'path'
-import { execSync } from 'child_process'
+import { join } from 'node:path'
+import { execSync } from 'node:child_process'
 import open from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
