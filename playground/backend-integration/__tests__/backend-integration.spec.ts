@@ -32,8 +32,12 @@ describe.runIf(isBuild)('build', () => {
   test('manifest', async () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
+    const cssAssetEntry = manifest['global.css']
+    const imgAssetEntry = manifest['../images/logo.png']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
+    expect(cssAssetEntry?.file).not.toBeUndefined()
+    expect(imgAssetEntry?.file).not.toBeUndefined()
   })
 })
 
