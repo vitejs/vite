@@ -90,7 +90,7 @@ declare module 'vite' {
 
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
-  let base = '/'
+  let devBase = '/'
   let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
   let isProduction = true
@@ -129,7 +129,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       }
     },
     configResolved(config) {
-      base = config.base
+      devBase = config.base
       projectRoot = config.root
       resolvedCacheDir = normalizePath(path.resolve(config.cacheDir))
       filter = createFilter(opts.include, opts.exclude, {
@@ -365,7 +365,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           {
             tag: 'script',
             attrs: { type: 'module' },
-            children: preambleCode.replace(`__BASE__`, base)
+            children: preambleCode.replace(`__BASE__`, devBase)
           }
         ]
     }

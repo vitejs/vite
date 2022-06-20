@@ -214,8 +214,10 @@ export async function startDefaultServe(): Promise<void> {
     viteConfig = testConfig
     server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
-    const base = server.config.base === '/' ? '' : server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+    const devBase = server.config.base
+    viteTestUrl = `http://localhost:${server.config.server.port}${
+      devBase === '/' ? '' : devBase
+    }`
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'

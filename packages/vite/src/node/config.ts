@@ -9,8 +9,13 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
-import type { BuildOptions, ResolvedBuildOptions } from './build'
-import { resolveBuildOptions } from './build'
+import type {
+  BuildAdvancedBaseConfig,
+  BuildOptions,
+  ResolvedBuildAdvancedBaseConfig,
+  ResolvedBuildOptions
+} from './build'
+import { resolveBuildAdvancedBaseConfig, resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -46,6 +51,8 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
+
+export type { BuildAdvancedBaseOptions, BuildAdvancedBaseConfig } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
@@ -247,7 +254,12 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
-
+  /**
+   * Build advanced base options. Allow finegrain contol over assets and public files base
+   *
+   * @experimental
+   */
+  buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
   /**
    * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
    *
@@ -255,6 +267,10 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
+}
+
+export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
+  buildAdvancedBaseOptions: ResolvedBuildAdvancedBaseConfig
 }
 
 export interface LegacyOptions {
@@ -328,6 +344,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
+    experimental: ResolvedExperimentalOptions
   }
 >
 
@@ -464,8 +481,31 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const isBuild = command === 'build'
+  const relativeBaseShortcut = config.base === '' || config.base === './'
+  const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
+  let resolvedBase = relativeBaseShortcut
+    ? base
+    : resolveBaseUrl(base, isBuild, logger, 'base')
+  if (
+    config.experimental?.buildAdvancedBaseOptions?.relative &&
+    config.base === undefined
+  ) {
+    resolvedBase = './'
+  }
+
+  const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
+    config.experimental?.buildAdvancedBaseOptions,
+    resolvedBase,
+    isBuild,
+    logger
+  )
+
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    isBuild,
+    logger
+  )
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -538,6 +578,8 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
+  const BASE_URL = resolvedBase
+
   const resolved: ResolvedConfig = {
     ...config,
     configFile: configFile ? normalizePath(configFile) : undefined,
@@ -546,7 +588,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: BASE_URL,
+    base: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -581,7 +623,13 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa'
+    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
+    experimental: {
+      importGlobRestoreExtension: false,
+      hmrPartialAccept: false,
+      ...config.experimental,
+      buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
+    }
   }
 
   if (middlewareMode === 'ssr') {
@@ -682,23 +730,20 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 }
 
 /**
- * Resolve base. Note that some users use Vite to build for non-web targets like
+ * Resolve base url. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBaseUrl(
+export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger
+  logger: Logger,
+  optionName: string
 ): string {
-  // #1669 special treatment for empty for same dir relative base
-  if (base === '' || base === './') {
-    return isBuild ? base : '/'
-  }
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+          `(!) invalid "${optionName}" option: ${base}. The value can only be an absolute ` +
             `URL, ./, or an empty string.`
         )
       )
@@ -718,7 +763,7 @@ function resolveBaseUrl(
     if (!base.startsWith('/')) {
       logger.warn(
         colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
+          colors.bold(`(!) "${optionName}" option should start with a slash.`)
         )
       )
       base = '/' + base
@@ -728,7 +773,9 @@ function resolveBaseUrl(
   // ensure ending slash
   if (!base.endsWith('/')) {
     logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+      colors.yellow(
+        colors.bold(`(!) "${optionName}" option should end with a slash.`)
+      )
     )
     base += '/'
   }

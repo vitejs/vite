@@ -27,6 +27,8 @@ JS-imported asset URLs, CSS `url()` references, and asset references in your `.h
 
 The exception is when you need to dynamically concatenate URLs on the fly. In this case, you can use the globally injected `import.meta.env.BASE_URL` variable which will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
 
+For advanced base path control, check out [Advanced Base Options](#advanced-base-options).
+
 ## Customizing the Build
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
@@ -181,3 +183,59 @@ Recommended `package.json` for your lib:
   }
 }
 ```
+
+## Advanced Base Options
+
+::: warning
+This feature is experimental, the API may change in a future minor without following semver. Please fix the minor version of Vite when using it.
+:::
+
+For advanced use cases, the deployed assets and public files may be in different paths, for example to use different cache strategies.
+A user may choose to deploy in three different paths:
+
+- The generated entry HTML files (which may be processed during SSR)
+- The generated hashed assets (JS, CSS, and other file types like images)
+- The copied [public files](assets.md#the-public-directory)
+
+A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.buildAdvancedBaseOptions`.
+
+```js
+  experimental: {
+    buildAdvancedBaseOptions: {
+      // Same as base: './'
+      // type: boolean, default: false
+      relative: true
+      // Static base
+      // type: string, default: undefined
+      url: 'https:/cdn.domain.com/'
+      // Dynamic base to be used for paths inside JS
+      // type: (url: string) => string, default: undefined
+      runtime: (url: string) => `window.__toCdnUrl(${url})`
+    },
+  }
+```
+
+When `runtime` is defined, it will be used for hashed assets and public files paths inside JS assets. Inside CSS and HTML generated files, paths will use `url` if defined or fallback to `config.base`.
+
+If `relative` is true and `url` is defined, relative paths will be prefered for assets inside the same group (for example a hashed image referenced from a JS file). And `url` will be used for the paths in HTML entries and for paths between different groups (a public file referenced from a CSS file).
+
+If the hashed assets and public files aren't deployed together, options for each group can be defined independently:
+
+```js
+  experimental: {
+    buildAdvancedBaseOptions: {
+      assets: {
+        relative: true
+        url: 'https:/cdn.domain.com/assets',
+        runtime: (url: string) => `window.__assetsPath(${url})`
+      },
+      public: {
+        relative: false
+        url: 'https:/www.domain.com/',
+        runtime: (url: string) => `window.__publicPath + ${url}`
+      }
+    }
+  }
+```
+
+Any option that isn't defined in the `public` or `assets` entry will be inherited from the main `buildAdvancedBaseOptions` config.

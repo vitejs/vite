@@ -5,13 +5,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import {
-  cleanUrl,
-  getHash,
-  injectQuery,
-  isRelativeBase,
-  parseRequest
-} from '../utils'
+import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import { onRollupWarning } from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
@@ -181,10 +175,10 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-
-  return isRelativeBase(config.base)
+  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
+  return assetsBase.relative || assetsBase.runtime
     ? encodeWorkerAssetFileName(fileName, workerMap)
-    : config.base + fileName
+    : (assetsBase.url ?? config.base) + fileName
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -333,18 +327,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
+        const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let outputFilepath = path.posix.relative(
-            path.dirname(chunk.fileName),
-            filename
-          )
-          if (!outputFilepath.startsWith('.')) {
-            outputFilepath = './' + outputFilepath
+          let replacement: string
+          if (assetsBase.runtime) {
+            replacement = `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
+          } else {
+            // Relative base
+            let outputFilepath: string
+            if (assetsBase.relative) {
+              outputFilepath = path.posix.relative(
+                path.dirname(chunk.fileName),
+                filename
+              )
+              if (!outputFilepath.startsWith('.')) {
+                outputFilepath = './' + outputFilepath
+              }
+            } else {
+              outputFilepath = (assetsBase.url ?? config.base) + filename
+            }
+            replacement = JSON.stringify(outputFilepath).slice(1, -1)
           }
-          const replacement = JSON.stringify(outputFilepath).slice(1, -1)
           s.overwrite(match.index, match.index + full.length, replacement, {
             contentOnly: true
           })
