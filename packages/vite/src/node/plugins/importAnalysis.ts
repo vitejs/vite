@@ -34,7 +34,6 @@ import {
   isDataUrl,
   isExternalUrl,
   isJSRequest,
-  isObject,
   moduleListContains,
   normalizePath,
   prettifyUrl,
