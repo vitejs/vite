@@ -1,8 +1,8 @@
 // Pre-render the app into static HTML.
 // run `npm run generate` and then `dist/static` can be served as a static site.
 
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 const toAbsolute = (p) => path.resolve(__dirname, p)
 

@@ -1,8 +1,8 @@
 /**
  * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
-import { existsSync, readdirSync, writeFileSync } from 'fs'
-import path from 'path'
+import { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
 import { execa } from 'execa'

@@ -1,4 +1,4 @@
-import { basename } from 'path'
+import { basename } from 'node:path'
 import { renderToString } from 'vue/server-renderer'
 import { createApp } from './main'
 

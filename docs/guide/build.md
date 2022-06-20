@@ -11,7 +11,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 - Safari >=13
 - Edge >=88
 
-You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
+You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
@@ -21,7 +21,7 @@ Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/
 
 - Related: [Asset Handling](./assets)
 
-If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
+If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/shared-options.md#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
 
 JS-imported asset URLs, CSS `url()` references, and asset references in your `.html` files are all automatically adjusted to respect this option during build.
 
@@ -29,7 +29,7 @@ The exception is when you need to dynamically concatenate URLs on the fly. In th
 
 ## Customizing the Build
 
-The build can be customized via various [build config options](/config/#build-options). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
+The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
 
 ```js
 // vite.config.js
@@ -116,7 +116,7 @@ If you specify a different root, remember that `__dirname` will still be the fol
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
+When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
 // vite.config.js

@@ -5,8 +5,8 @@
 // TODO: explicitly import APIs and remove this
 /// <reference types="vitest/globals"/>
 
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import colors from 'css-color-names'
 import type { ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'

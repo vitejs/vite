@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
 import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
