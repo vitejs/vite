@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@emotion/react": "^11.9.3",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-switch": "^7.0.0"
   },
   "devDependencies": {
