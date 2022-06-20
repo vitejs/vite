@@ -14,6 +14,13 @@ export interface ViteHotContext {
     deps: readonly string[],
     cb: (mods: Array<ModuleNamespace | undefined>) => void
   ): void
+
+  acceptExports(exportNames: string | readonly string[]): void
+  acceptExports(
+    exportNames: string | readonly string[],
+    cb: (mod: ModuleNamespace | undefined) => void
+  ): void
+
   dispose(cb: (data: any) => void): void
   decline(): void
   invalidate(): void

@@ -7,6 +7,7 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
+import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { ViteDevServer } from '..'
 import {
@@ -20,7 +21,8 @@ import {
 import {
   debugHmr,
   handlePrunedModules,
-  lexAcceptedHmrDeps
+  lexAcceptedHmrDeps,
+  lexAcceptedHmrExports
 } from '../server/hmr'
 import {
   cleanUrl,
@@ -84,6 +86,48 @@ function markExplicitImport(url: string) {
   return url
 }
 
+async function extractImportedBindings(
+  id: string,
+  source: string,
+  importSpec: ImportSpecifier,
+  importedBindings: Map<string, Set<string>>
+) {
+  let bindings = importedBindings.get(id)
+  if (!bindings) {
+    bindings = new Set<string>()
+    importedBindings.set(id, bindings)
+  }
+
+  const isDynamic = importSpec.d > -1
+  const isMeta = importSpec.d === -2
+  if (isDynamic || isMeta) {
+    // this basically means the module will be impacted by any change in its dep
+    bindings.add('*')
+    return
+  }
+
+  const exp = source.slice(importSpec.ss, importSpec.se)
+  const [match0] = findStaticImports(exp)
+  if (!match0) {
+    return
+  }
+  const parsed = parseStaticImport(match0)
+  if (!parsed) {
+    return
+  }
+  if (parsed.namespacedImport) {
+    bindings.add('*')
+  }
+  if (parsed.defaultImport) {
+    bindings.add('default')
+  }
+  if (parsed.namedImports) {
+    for (const name of Object.keys(parsed.namedImports)) {
+      bindings.add(name)
+    }
+  }
+}
+
 /**
  * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
@@ -116,6 +160,7 @@ function markExplicitImport(url: string) {
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
+  const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
 
   return {
@@ -143,9 +188,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
+      let exports: readonly string[] = []
       source = stripBomTag(source)
       try {
-        imports = parseImports(source)[0]
+        ;[imports, exports] = parseImports(source)
       } catch (e: any) {
         const isVue = importer.endsWith('.vue')
         const maybeJSX = !isVue && isJSRequest(importer)
@@ -204,6 +250,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         start: number
         end: number
       }>()
+      let isPartiallySelfAccepting = false
+      const acceptedExports = new Set<string>()
+      const importedBindings = enablePartialAccept
+        ? new Map<string, Set<string>>()
+        : null
       const toAbsoluteUrl = (url: string) =>
         path.posix.resolve(path.posix.dirname(importerModule.url), url)
 
@@ -344,7 +395,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             hasHMR = true
             if (source.slice(end + 4, end + 11) === '.accept') {
               // further analyze accepted modules
-              if (
+              if (source.slice(end + 4, end + 18) === '.acceptExports') {
+                lexAcceptedHmrExports(
+                  source,
+                  source.indexOf('(', end + 18) + 1,
+                  acceptedExports
+                )
+                isPartiallySelfAccepting = true
+              } else if (
                 lexAcceptedHmrDeps(
                   source,
                   source.indexOf('(', end + 11) + 1,
@@ -464,6 +522,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // make sure to normalize away base
           const urlWithoutBase = url.replace(base, '/')
           importedUrls.add(urlWithoutBase)
+
+          if (enablePartialAccept && importedBindings) {
+            extractImportedBindings(
+              resolvedId,
+              source,
+              imports[index],
+              importedBindings
+            )
+          }
+
           if (!isDynamicImport) {
             // for pre-transforming
             staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
@@ -531,6 +599,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           `${
             isSelfAccepting
               ? `[self-accepts]`
+              : isPartiallySelfAccepting
+              ? `[accepts-exports]`
               : acceptedUrls.size
               ? `[accepts-deps]`
               : `[detected api usage]`
@@ -585,10 +655,22 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (ssr && importerModule.isSelfAccepting) {
           isSelfAccepting = true
         }
+        // a partially accepted module that accepts all its exports
+        // behaves like a self-accepted module in practice
+        if (
+          !isSelfAccepting &&
+          isPartiallySelfAccepting &&
+          acceptedExports.size >= exports.length &&
+          exports.every((name) => acceptedExports.has(name))
+        ) {
+          isSelfAccepting = true
+        }
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
+          importedBindings,
           normalizedAcceptedUrls,
+          isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
           ssr
         )
