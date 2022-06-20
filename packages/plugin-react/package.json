@@ -44,7 +44,7 @@
     "@babel/plugin-transform-react-jsx-development": "^7.16.7",
     "@babel/plugin-transform-react-jsx-self": "^7.17.12",
     "@babel/plugin-transform-react-jsx-source": "^7.16.7",
-    "react-refresh": "^0.13.0"
+    "react-refresh": "^0.14.0"
   },
   "peerDependencies": {
     "vite": "^3.0.0-alpha.11"
