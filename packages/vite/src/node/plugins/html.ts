@@ -24,12 +24,12 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
-  isRelativeBase,
   normalizePath,
   processSrcSet,
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
+import type { BuildAdvancedBaseOptions } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -535,7 +535,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const toScriptTag = (
         chunk: OutputChunk,
-        publicBase: string,
+        assetsBase: string,
         isAsync: boolean
       ): HtmlTagDescriptor => ({
         tag: 'script',
@@ -543,25 +543,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ...(isAsync ? { async: true } : {}),
           type: 'module',
           crossorigin: true,
-          src: toPublicPath(chunk.fileName, publicBase)
+          src: toPublicPath(chunk.fileName, assetsBase)
         }
       })
 
       const toPreloadTag = (
         chunk: OutputChunk,
-        publicBase: string
+        assetsBase: string
       ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
           crossorigin: true,
-          href: toPublicPath(chunk.fileName, publicBase)
+          href: toPublicPath(chunk.fileName, assetsBase)
         }
       })
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
-        publicBase: string,
+        assetsBase: string,
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
@@ -570,7 +570,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach((file) => {
             const importee = bundle[file]
             if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, publicBase, seen))
+              tags.push(...getCssTagsForChunk(importee, assetsBase, seen))
             }
           })
         }
@@ -582,7 +582,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'link',
               attrs: {
                 rel: 'stylesheet',
-                href: toPublicPath(file, publicBase)
+                href: toPublicPath(file, assetsBase)
               }
             })
           }
@@ -593,7 +593,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       for (const [id, html] of processedHtml) {
         const relativeUrlPath = path.posix.relative(config.root, id)
-        const publicBase = getPublicBase(relativeUrlPath, config)
+        const assetsBase = getAssetsBase(relativeUrlPath, config)
 
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
@@ -622,13 +622,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
           const assetTags = canInlineEntry
-            ? imports.map((chunk) => toScriptTag(chunk, publicBase, isAsync))
+            ? imports.map((chunk) => toScriptTag(chunk, assetsBase, isAsync))
             : [
-                toScriptTag(chunk, publicBase, isAsync),
-                ...imports.map((i) => toPreloadTag(i, publicBase))
+                toScriptTag(chunk, assetsBase, isAsync),
+                ...imports.map((i) => toPreloadTag(i, assetsBase))
               ]
 
-          assetTags.push(...getCssTagsForChunk(chunk, publicBase))
+          assetTags.push(...getCssTagsForChunk(chunk, assetsBase))
 
           result = injectToHead(result, assetTags)
         }
@@ -644,7 +644,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
-                  href: toPublicPath(cssChunk.fileName, publicBase)
+                  href: toPublicPath(cssChunk.fileName, assetsBase)
                 }
               }
             ])
@@ -676,7 +676,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return publicBase + getAssetFilename(fileHash, config) + postfix
+          return assetsBase + getAssetFilename(fileHash, config) + postfix
         })
 
         if (chunk && canInlineEntry) {
@@ -818,13 +818,38 @@ function isEntirelyImport(code: string) {
   return !code.replace(importRE, '').replace(commentRE, '').trim().length
 }
 
+function getBaseInHTML(
+  urlRelativePath: string,
+  baseOptions: BuildAdvancedBaseOptions,
+  config: ResolvedConfig
+) {
+  // Prefer explicit URL if defined for linking to assets and public files from HTML,
+  // even when base relative is specified
+  return (
+    baseOptions.url ??
+    (baseOptions.relative
+      ? path.posix.join(
+          path.posix.relative(urlRelativePath, '').slice(0, -2),
+          './'
+        )
+      : config.base)
+  )
+}
+
 function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
-  return isRelativeBase(config.base)
-    ? path.posix.join(
-        path.posix.relative(urlRelativePath, '').slice(0, -2),
-        './'
-      )
-    : config.base
+  return getBaseInHTML(
+    urlRelativePath,
+    config.experimental.buildAdvancedBaseOptions.public,
+    config
+  )
+}
+
+function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
+  return getBaseInHTML(
+    urlRelativePath,
+    config.experimental.buildAdvancedBaseOptions.assets,
+    config
+  )
 }
 
 function toPublicPath(filename: string, publicBase: string) {

@@ -79,12 +79,13 @@ const processNodeUrl = (
       url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
     }
   }
+  const devBase = config.base
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base (dev only, base is never relative)
     s.overwrite(
       node.value!.loc.start.offset,
       node.value!.loc.end.offset,
-      `"${config.base + url.slice(1)}"`,
+      `"${devBase + url.slice(1)}"`,
       { contentOnly: true }
     )
   } else if (
@@ -95,8 +96,8 @@ const processNodeUrl = (
   ) {
     const replacer = (url: string) =>
       path.posix.join(
-        config.base,
-        path.posix.relative(originalUrl, config.base),
+        devBase,
+        path.posix.relative(originalUrl, devBase),
         url.slice(1)
       )
 

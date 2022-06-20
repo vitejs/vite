@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",
     "build:relative-base": "vite --config ./vite.config-relative-base.js build",
-    "preview:relative-base": "vite --config ./vite.config-relative-base.js preview"
+    "preview:relative-base": "vite --config ./vite.config-relative-base.js preview",
+    "dev:dynamic-base": "vite --config ./vite.config-dynamic-base.js dev",
+    "build:dynamic-base": "vite --config ./vite.config-dynamic-base.js build",
+    "preview:dynamic-base": "vite --config ./vite.config-dynamic-base.js preview"
   }
 }

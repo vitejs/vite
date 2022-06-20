@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { isDepsOptimizerEnabled, resolveBaseUrl, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -229,7 +229,11 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<BuildOptions>
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  raw: BuildOptions | undefined,
+  isBuild: boolean,
+  logger: Logger
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -825,4 +829,111 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+}
+
+/*
+ * If defined, these functions will be called for assets and public files
+ * paths which are generated in JS assets. Examples:
+ *
+ *   assets: { runtime: (url: string) => `window.__assetsPath(${url})` }
+ *   public: { runtime: (url: string) => `window.__publicPath + ${url}` }
+ *
+ * For assets and public files paths in CSS or HTML, the corresponding
+ * `assets.url` and `public.url` base urls or global base will be used.
+ *
+ * When using relative base, the assets.runtime function isn't needed as
+ * all the asset paths will be computed using import.meta.url
+ * The public.runtime function is still useful if the public files aren't
+ * deployed in the same base as the hashed assets
+ */
+
+export interface BuildAdvancedBaseOptions {
+  /**
+   * Relative base. If true, every generated URL is relative and the dist folder
+   * can be deployed to any base or subdomain. Use this option when the base
+   * is unkown at build time
+   * @default false
+   */
+  relative?: boolean
+  url?: string
+  runtime?: (filename: string) => string
+}
+
+export type BuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
+  /**
+   * Base for assets and public files in case they should be different
+   */
+  assets?: string | BuildAdvancedBaseOptions
+  public?: string | BuildAdvancedBaseOptions
+}
+
+export type ResolvedBuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
+  assets: BuildAdvancedBaseOptions
+  public: BuildAdvancedBaseOptions
+}
+
+/**
+ * Resolve base. Note that some users use Vite to build for non-web targets like
+ * electron or expects to deploy
+ */
+export function resolveBuildAdvancedBaseConfig(
+  baseConfig: BuildAdvancedBaseConfig | undefined,
+  resolvedBase: string,
+  isBuild: boolean,
+  logger: Logger
+): ResolvedBuildAdvancedBaseConfig {
+  baseConfig ??= {}
+
+  const relativeBaseShortcut = resolvedBase === '' || resolvedBase === './'
+
+  const resolved = {
+    relative: baseConfig?.relative ?? relativeBaseShortcut,
+    url: baseConfig?.url
+      ? resolveBaseUrl(
+          baseConfig?.url,
+          isBuild,
+          logger,
+          'experimental.buildAdvancedBaseOptions.url'
+        )
+      : undefined,
+    runtime: baseConfig?.runtime
+  }
+
+  return {
+    ...resolved,
+    assets: resolveBuildBaseSpecificOptions(
+      baseConfig?.assets,
+      resolved,
+      isBuild,
+      logger,
+      'assets'
+    ),
+    public: resolveBuildBaseSpecificOptions(
+      baseConfig?.public,
+      resolved,
+      isBuild,
+      logger,
+      'public'
+    )
+  }
+}
+
+function resolveBuildBaseSpecificOptions(
+  options: BuildAdvancedBaseOptions | string | undefined,
+  parent: BuildAdvancedBaseOptions,
+  isBuild: boolean,
+  logger: Logger,
+  optionName: string
+): BuildAdvancedBaseOptions {
+  const urlConfigPath = `experimental.buildAdvancedBaseOptions.${optionName}.url`
+  if (typeof options === 'string') {
+    options = { url: options }
+  }
+  return {
+    relative: options?.relative ?? parent.relative,
+    url: options?.url
+      ? resolveBaseUrl(options?.url, isBuild, logger, urlConfigPath)
+      : parent.url,
+    runtime: options?.runtime ?? parent.runtime
+  }
 }

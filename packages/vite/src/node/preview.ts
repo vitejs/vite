@@ -97,10 +97,13 @@ export async function preview(
 
   app.use(compression())
 
+  const previewBase =
+    config.base === './' || config.base === '' ? '/' : config.base
+
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
   app.use(
-    config.base,
+    previewBase,
     sirv(distDir, {
       etag: true,
       dev: true,
@@ -116,7 +119,6 @@ export async function preview(
   const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
-  const base = config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -126,7 +128,7 @@ export async function preview(
   })
 
   if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : base
+    const path = typeof options.open === 'string' ? options.open : previewBase
     openBrowser(
       path.startsWith('http')
         ? path

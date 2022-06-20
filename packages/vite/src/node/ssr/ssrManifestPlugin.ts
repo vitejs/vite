@@ -10,7 +10,7 @@ import { normalizePath } from '../utils'
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
-  const base = config.base
+  const base = config.base // TODO:base
 
   return {
     name: 'vite:ssr-manifest',
@@ -59,7 +59,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.push(join(config.base, file))
+                      deps.push(join(base, file)) // TODO:base
                     })
                     chunk.imports.forEach(addDeps)
                   }

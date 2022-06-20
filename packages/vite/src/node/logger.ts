@@ -155,13 +155,8 @@ export async function printCommonServerUrls(
   if (isAddressInfo(address)) {
     const hostname = await resolveHostname(options.host)
     const protocol = options.https ? 'https' : 'http'
-    printServerUrls(
-      hostname,
-      protocol,
-      address.port,
-      config.base,
-      config.logger.info
-    )
+    const base = config.base === './' || config.base === '' ? '/' : config.base
+    printServerUrls(hostname, protocol, address.port, base, config.logger.info)
   }
 }
 

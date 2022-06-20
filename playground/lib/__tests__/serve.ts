@@ -42,8 +42,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
       })
     ).listen()
     // use resolved port/base from server
-    const base = viteServer.config.base === '/' ? '' : viteServer.config.base
-    setViteUrl(`http://localhost:${viteServer.config.server.port}${base}`)
+    const devBase = viteServer.config.base === '/' ? '' : viteServer.config.base
+    setViteUrl(`http://localhost:${viteServer.config.server.port}${devBase}`)
     await page.goto(viteTestUrl)
 
     return viteServer
