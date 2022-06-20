@@ -512,7 +512,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => page.goto(`${viteTestUrl}/${testDir}/`),
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:all:a0b0c0default0')
               expect(logs).toContain('all >>>>>> a0, b0, c0')
