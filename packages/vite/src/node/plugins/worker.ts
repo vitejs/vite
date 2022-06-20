@@ -338,7 +338,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           } else {
             // Relative base
             let outputFilepath: string
-            if (assetsBase.relative) {
+            if (assetsBase.relative && !config.build.ssr) {
               outputFilepath = path.posix.relative(
                 path.dirname(chunk.fileName),
                 filename

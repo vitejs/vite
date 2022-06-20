@@ -469,7 +469,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (assetsBase.relative) {
+          if (assetsBase.relative && !config.build.ssr) {
             // relative base + extracted CSS
             const relativePath = path.posix.relative(cssAssetDirname!, filename)
             return relativePath.startsWith('.')
@@ -488,7 +488,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!
-            if (publicBase.relative) {
+            if (publicBase.relative && !config.build.ssr) {
               return relativePathToPublicFromCSS + publicUrl
             } else {
               // publicBase.runtime has no effect for assets in CSS

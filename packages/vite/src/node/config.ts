@@ -483,7 +483,15 @@ export async function resolveConfig(
   // resolve public base url
   const isBuild = command === 'build'
   const relativeBaseShortcut = config.base === '' || config.base === './'
-  const base = relativeBaseShortcut && !isBuild ? '/' : config.base ?? '/'
+
+  // During dev, we ignore relative base and fallback to '/'
+  // For the SSR build, relative base isn't possible by means
+  // of import.meta.url. The user will be able to work out a setup
+  // using experimental.buildAdvancedBaseOptions
+  const base =
+    relativeBaseShortcut && (!isBuild || config.build?.ssr)
+      ? '/'
+      : config.base ?? '/'
   let resolvedBase = relativeBaseShortcut
     ? base
     : resolveBaseUrl(base, isBuild, logger, 'base')
