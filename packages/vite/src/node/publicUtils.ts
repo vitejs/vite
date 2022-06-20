@@ -4,6 +4,7 @@
  * Please control the side-effects by checking the ./dist/node-cjs/publicUtils.cjs bundle
  */
 export { VERSION as version } from './constants'
+export { version as esbuildVersion } from 'esbuild'
 export {
   splitVendorChunkPlugin,
   splitVendorChunk
