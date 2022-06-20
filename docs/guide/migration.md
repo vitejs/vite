@@ -2,7 +2,7 @@
 
 ## Node Support
 
-Vite no longer supports Node v12, which reached its EOL. Node 14.6+ is now required.
+Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 
 ## Modern Browser Baseline change
 
