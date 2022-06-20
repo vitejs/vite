@@ -1,10 +1,10 @@
-import fs, { promises as fsp } from 'fs'
-import path from 'path'
+import fs, { promises as fsp } from 'node:fs'
+import path from 'node:path'
 import type {
   Server as HttpServer,
   OutgoingHttpHeaders as HttpServerHeaders
-} from 'http'
-import type { ServerOptions as HttpsServerOptions } from 'https'
+} from 'node:http'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'

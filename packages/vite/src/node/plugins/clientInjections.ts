@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
@@ -15,7 +15,7 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
-    transform(code, id, options) {
+    async transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         let hmrConfig = config.server.hmr
         hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
@@ -33,19 +33,20 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           port ||= '24678'
         }
 
+        const devBase = config.base
         let directTarget =
-          hmrConfig?.host || resolveHostname(config.server.host).name
+          hmrConfig?.host || (await resolveHostname(config.server.host)).name
         directTarget += `:${hmrConfig?.port || config.server.port!}`
-        directTarget += config.base
+        directTarget += devBase
 
-        let hmrBase = config.base
+        let hmrBase = devBase
         if (hmrConfig?.path) {
           hmrBase = path.posix.join(hmrBase, hmrConfig.path)
         }
 
         return code
           .replace(`__MODE__`, JSON.stringify(config.mode))
-          .replace(`__BASE__`, JSON.stringify(config.base))
+          .replace(`__BASE__`, JSON.stringify(devBase))
           .replace(`__DEFINES__`, serializeDefine(config.define || {}))
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))

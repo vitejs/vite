@@ -1,5 +1,5 @@
-import path from 'path'
-import type { OutgoingHttpHeaders, ServerResponse } from 'http'
+import path from 'node:path'
+import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'

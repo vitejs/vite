@@ -23,7 +23,10 @@ export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
-  ResolvedBuildOptions
+  ResolvedBuildOptions,
+  BuildAdvancedBaseConfig,
+  ResolvedBuildAdvancedBaseConfig,
+  BuildAdvancedBaseOptions
 } from './build'
 export type {
   PreviewOptions,

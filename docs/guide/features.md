@@ -116,7 +116,7 @@ Vite provides first-class Vue support:
 
 Vue users should use the official [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx) plugin, which provides Vue 3 specific features including HMR, global component resolving, directives and slots.
 
-If not using JSX with React or Vue, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/#esbuild). For example for Preact:
+If not using JSX with React or Vue, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/shared-options.md#esbuild). For example for Preact:
 
 ```js
 // vite.config.js
@@ -175,7 +175,7 @@ import classes from './example.module.css'
 document.getElementById('foo').className = classes.red
 ```
 
-CSS modules behavior can be configured via the [`css.modules` option](/config/#css-modules).
+CSS modules behavior can be configured via the [`css.modules` option](/config/shared-options.md#css-modules).
 
 If `css.modules.localsConvention` is set to enable camelCase locals (e.g. `localsConvention: 'camelCaseOnly'`), you can also use named imports:
 
@@ -428,7 +428,7 @@ const modules = {
 Note that:
 
 - This is a Vite-only feature and is not a web or ES standard.
-- The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root) or an alias path (see [`resolve.alias` option](/config/#resolve-alias)).
+- The glob patterns are treated like import specifiers: they must be either relative (start with `./`) or absolute (start with `/`, resolved relative to project root) or an alias path (see [`resolve.alias` option](/config/shared-options.md#resolve-alias)).
 - The glob matching is done via [`fast-glob`](https://github.com/mrmlnc/fast-glob) - check out its documentation for [supported glob patterns](https://github.com/mrmlnc/fast-glob#pattern-syntax).
 - You should also be aware that all the arguments in the `import.meta.glob` must be **passed as literals**. You can NOT use variables or expressions in them.
 
@@ -517,7 +517,7 @@ If you wish to retrieve the worker as a URL, add the `url` query:
 import MyWorker from './worker?worker&url'
 ```
 
-See [Worker Options](/config/#worker-options) for details on configuring the bundling of all workers.
+See [Worker Options](/config/worker-options.md) for details on configuring the bundling of all workers.
 
 ## Build Optimizations
 
@@ -527,7 +527,7 @@ See [Worker Options](/config/#worker-options) for details on configuring the bun
 
 Vite automatically extracts the CSS used by modules in an async chunk and generates a separate file for it. The CSS file is automatically loaded via a `<link>` tag when the associated async chunk is loaded, and the async chunk is guaranteed to only be evaluated after the CSS is loaded to avoid [FOUC](https://en.wikipedia.org/wiki/Flash_of_unstyled_content#:~:text=A%20flash%20of%20unstyled%20content,before%20all%20information%20is%20retrieved.).
 
-If you'd rather have all the CSS extracted into a single file, you can disable CSS code splitting by setting [`build.cssCodeSplit`](/config/#build-csscodesplit) to `false`.
+If you'd rather have all the CSS extracted into a single file, you can disable CSS code splitting by setting [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) to `false`.
 
 ### Preload Directives Generation
 
