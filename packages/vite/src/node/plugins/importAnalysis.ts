@@ -161,8 +161,7 @@ async function extractImportedBindings(
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const enablePartialAccept =
-    isObject(config.server.hmr) && config.server.hmr.partialAccept
+  const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
 
   return {

@@ -1,10 +1,8 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  server: {
-    hmr: {
-      partialAccept: true
-    }
+  experimental: {
+    hmrPartialAccept: true
   },
   plugins: [
     {
