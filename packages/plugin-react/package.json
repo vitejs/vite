@@ -47,7 +47,7 @@
     "react-refresh": "^0.13.0"
   },
   "peerDependencies": {
-    "vite": "^3.0.0-alpha"
+    "vite": "^3.0.0-alpha.11"
   },
   "devDependencies": {
     "vite": "workspace:*"

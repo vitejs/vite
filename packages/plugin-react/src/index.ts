@@ -117,6 +117,17 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
+    config() {
+      if (opts.jsxRuntime === 'classic') {
+        return {
+          esbuild: {
+            logOverride: {
+              'this-is-undefined-in-esm': 'silent'
+            }
+          }
+        }
+      }
+    },
     configResolved(config) {
       base = config.base
       projectRoot = config.root
