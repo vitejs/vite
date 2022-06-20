@@ -208,8 +208,8 @@ async function untilBrowserLog(
       } else {
         const remainingMatchers = target.map(isMatch)
         processMsg = (text: string) => {
-          const nextIndex = remainingMatchers.findIndex(
-            (matcher) => !matcher(text)
+          const nextIndex = remainingMatchers.findIndex((matcher) =>
+            matcher(text)
           )
           if (nextIndex >= 0) {
             remainingMatchers.splice(nextIndex, 1)
