@@ -201,6 +201,18 @@ export async function handleFileAddUnlink(
   }
 }
 
+function areAllImportsAccepted(
+  importedBindings: Set<string>,
+  acceptedExports: Set<string>
+) {
+  for (const binding of importedBindings) {
+    if (!acceptedExports.has(binding)) {
+      return false
+    }
+  }
+  return true
+}
+
 function propagateUpdate(
   node: ModuleNode,
   boundaries: Set<{
@@ -233,18 +245,30 @@ function propagateUpdate(
     return false
   }
 
-  if (!node.importers.size) {
-    return true
-  }
+  // A partially accepted module with no importers is considered self accepting,
+  // because the deal is "there are parts of myself I can't self accept if they
+  // are used outside of me".
+  // Also, the imported module (this one) must be updated before the importers,
+  // so that they do get the fresh imported module when/if they are reloaded.
+  if (node.acceptedHmrExports) {
+    boundaries.add({
+      boundary: node,
+      acceptedVia: node
+    })
+  } else {
+    if (!node.importers.size) {
+      return true
+    }
 
-  // #3716, #3913
-  // For a non-CSS file, if all of its importers are CSS files (registered via
-  // PostCSS plugins) it should be considered a dead end and force full reload.
-  if (
-    !isCSSRequest(node.url) &&
-    [...node.importers].every((i) => isCSSRequest(i.url))
-  ) {
-    return true
+    // #3716, #3913
+    // For a non-CSS file, if all of its importers are CSS files (registered via
+    // PostCSS plugins) it should be considered a dead end and force full reload.
+    if (
+      !isCSSRequest(node.url) &&
+      [...node.importers].every((i) => isCSSRequest(i.url))
+    ) {
+      return true
+    }
   }
 
   for (const importer of node.importers) {
@@ -255,6 +279,16 @@ function propagateUpdate(
         acceptedVia: node
       })
       continue
+    }
+
+    if (node.id && node.acceptedHmrExports && importer.importedBindings) {
+      const importedBindingsFromNode = importer.importedBindings.get(node.id)
+      if (
+        importedBindingsFromNode &&
+        areAllImportsAccepted(importedBindingsFromNode, node.acceptedHmrExports)
+      ) {
+        continue
+      }
     }
 
     if (currentChain.includes(importer)) {
@@ -421,6 +455,19 @@ export function lexAcceptedHmrDeps(
     }
   }
   return false
+}
+
+export function lexAcceptedHmrExports(
+  code: string,
+  start: number,
+  exportNames: Set<string>
+): boolean {
+  const urls = new Set<{ url: string; start: number; end: number }>()
+  lexAcceptedHmrDeps(code, start, urls)
+  for (const { url } of urls) {
+    exportNames.add(url)
+  }
+  return urls.size > 0
 }
 
 function error(pos: number) {

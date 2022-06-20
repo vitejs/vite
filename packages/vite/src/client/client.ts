@@ -452,6 +452,12 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       }
     },
 
+    // export names (first arg) are irrelevant on the client side, they're
+    // extracted in the server for propagation
+    acceptExports(_: string | readonly string[], callback?: any) {
+      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
+    },
+
     dispose(cb) {
       disposeMap.set(ownerPath, cb)
     },
