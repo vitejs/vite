@@ -2,7 +2,7 @@
 
 ## Node Support
 
-Vite no longer supports Node v12, which reached its EOL. Node 14.6+ is now required.
+Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 
 ## Modern Browser Baseline change
 
@@ -134,6 +134,8 @@ Also there are other breaking changes which only affect few users.
   - `server.force` option was removed in favor of `optimizeDeps.force` option.
 - [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
   - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
+- [[#8647] feat: print resolved address for localhost](https://github.com/vitejs/vite/pull/8647)
+  - `server.printUrls` and `previewServer.printUrls` are now async
 
 ## Migration from v1
 
