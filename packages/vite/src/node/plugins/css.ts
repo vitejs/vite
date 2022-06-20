@@ -458,7 +458,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
-        const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
+        const { assets: assetsBase, public: publicBase } =
+          config.experimental.buildAdvancedBaseOptions
         const cssAssetDirname =
           encodedPublicUrls || assetsBase.relative
             ? getCssAssetDirname(cssAssetName)
@@ -475,23 +476,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               ? relativePath
               : './' + relativePath
           } else {
-            if (assetsBase.runtime) {
-              // config.logger.error('Error TODO:base')... absolute + runtime
-            }
+            // assetsBase.runtime has no effect for assets in CSS
             return (assetsBase.url ?? config.base) + filename
           }
         })
-        // resolve public URL from CSS paths, TODO:base
+        // resolve public URL from CSS paths
         if (encodedPublicUrls) {
           const relativePathToPublicFromCSS = path.posix.relative(
             cssAssetDirname!,
             ''
           )
-          chunkCSS = chunkCSS.replace(
-            publicAssetUrlRE,
-            (_, hash) =>
-              relativePathToPublicFromCSS + publicAssetUrlMap.get(hash)!
-          )
+          chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
+            const publicUrl = publicAssetUrlMap.get(hash)!
+            if (publicBase.relative) {
+              return relativePathToPublicFromCSS + publicUrl
+            } else {
+              // publicBase.runtime has no effect for assets in CSS
+              return (publicBase.url ?? config.base) + publicUrl.slice(1)
+            }
+          })
         }
         return chunkCSS
       }
