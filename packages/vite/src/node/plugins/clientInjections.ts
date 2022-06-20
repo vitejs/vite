@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
-import { isObject, normalizePath } from '../utils'
+import { isObject, normalizePath, resolveHostname } from '../utils'
 
 // ids in transform are normalized to unix style
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
@@ -15,30 +15,33 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:client-inject',
-    transform(code, id, options) {
+    async transform(code, id, options) {
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
-        let options = config.server.hmr
-        options = options && typeof options !== 'boolean' ? options : {}
-        const host = options.host || null
-        const protocol = options.protocol || null
-        const timeout = options.timeout || 30000
-        const overlay = options.overlay !== false
-        let port: number | string | undefined
-        if (isObject(config.server.hmr)) {
-          port = config.server.hmr.clientPort || config.server.hmr.port
-        }
+        let hmrConfig = config.server.hmr
+        hmrConfig = isObject(hmrConfig) ? hmrConfig : undefined
+        const host = hmrConfig?.host || null
+        const protocol = hmrConfig?.protocol || null
+        const timeout = hmrConfig?.timeout || 30000
+        const overlay = hmrConfig?.overlay !== false
+
+        // hmr.clientPort -> hmr.port
+        // -> (24678 if middleware mode) -> new URL(import.meta.url).port
+        let port = hmrConfig
+          ? String(hmrConfig.clientPort || hmrConfig.port)
+          : null
         if (config.server.middlewareMode) {
-          port = String(port || 24678)
-        } else {
-          port = String(port || options.port || config.server.port!)
+          port ||= '24678'
         }
+
         const devBase = config.base
+        let directTarget =
+          hmrConfig?.host || (await resolveHostname(config.server.host)).name
+        directTarget += `:${hmrConfig?.port || config.server.port!}`
+        directTarget += devBase
+
         let hmrBase = devBase
-        if (options.path) {
-          hmrBase = path.posix.join(hmrBase, options.path)
-        }
-        if (hmrBase !== '/') {
-          port = path.posix.normalize(`${port}${hmrBase}`)
+        if (hmrConfig?.path) {
+          hmrBase = path.posix.join(hmrBase, hmrConfig.path)
         }
 
         return code
@@ -48,6 +51,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_PROTOCOL__`, JSON.stringify(protocol))
           .replace(`__HMR_HOSTNAME__`, JSON.stringify(host))
           .replace(`__HMR_PORT__`, JSON.stringify(port))
+          .replace(`__HMR_DIRECT_TARGET__`, JSON.stringify(directTarget))
+          .replace(`__HMR_BASE__`, JSON.stringify(hmrBase))
           .replace(`__HMR_TIMEOUT__`, JSON.stringify(timeout))
           .replace(`__HMR_ENABLE_OVERLAY__`, JSON.stringify(overlay))
       } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
