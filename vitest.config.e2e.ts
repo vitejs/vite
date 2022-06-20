@@ -18,7 +18,11 @@ export default defineConfig({
     globals: true,
     reporters: 'dot',
     onConsoleLog(log) {
-      if (log.match(/experimental|jit engine|emitted file|tailwind/i))
+      if (
+        log.match(
+          /experimental|jit engine|emitted file|tailwind|non-existent export/i
+        )
+      )
         return false
     }
   },
