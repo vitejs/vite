@@ -105,7 +105,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       ) => {
         return base.runtime
           ? `"+${base.runtime(JSON.stringify(filename))}+"`
-          : base.relative
+          : base.relative && !config.build.ssr
           ? absoluteUrlPathInterpolation(filename)
           : JSON.stringify((base.url ?? config.base) + filename).slice(1, -1)
       }
