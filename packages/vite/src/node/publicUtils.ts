@@ -5,6 +5,7 @@
  */
 export { VERSION as version } from './constants'
 export { version as esbuildVersion } from 'esbuild'
+export { VERSION as rollupVersion } from 'rollup'
 export {
   splitVendorChunkPlugin,
   splitVendorChunk
