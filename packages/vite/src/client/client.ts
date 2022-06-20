@@ -43,7 +43,7 @@ try {
         'open',
         () => {
           console.info(
-            '[vite] falled back to connect websocket directly. ignore the connection error above. more details: https://vitejs.dev/config/server-options.html#server-hmr'
+            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.'
           )
         },
         { once: true }

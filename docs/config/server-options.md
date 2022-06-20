@@ -141,18 +141,20 @@ Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
 `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on.
 
-If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+When `server.hmr.server` is defined, Vite will process the HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
 ::: tip NOTE
 
-By default configuration, reverse proxies in front of Vite is expected to support proxying WebSocket. Especially in this case, when Vite HMR client fails to connect WebSocket, the client fallbacks to connect WebSocket directly to the Vite HMR server bypassing reverse proxies.
+With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fallback to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
 
-Browser will show an error when the fallback happened but it could be ignored. If you want to completely remove this error, you could either:
+```
+Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.
+```
+
+The error that appears in the Browser when the fallback happens can be ignored. To avoid the error by directly bypassing reverse proxies, you could either:
 
 - set `server.strictPort = true` and set `server.hmr.clientPort` to the same value with `server.port`
 - set `server.hmr.port` to a different value from `server.port`
-
-then Vite will bypass reverse proxies from the beginning.
 
 :::
 
