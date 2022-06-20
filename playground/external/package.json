@@ -1,0 +1,18 @@
+{
+  "name": "external-test",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dep-that-imports-vue": "file:./dep-that-imports-vue"
+  },
+  "devDependencies": {
+    "vite": "workspace:*",
+    "vue": "^3.2.37"
+  }
+}
