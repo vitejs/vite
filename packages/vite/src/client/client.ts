@@ -1,5 +1,5 @@
 import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
@@ -248,7 +248,10 @@ const supportsConstructedSheet = (() => {
   return false
 })()
 
-const sheetsMap = new Map()
+const sheetsMap = new Map<
+  string,
+  HTMLStyleElement | CSSStyleSheet | undefined
+>()
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
@@ -260,10 +263,12 @@ export function updateStyle(id: string, content: string): void {
 
     if (!style) {
       style = new CSSStyleSheet()
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
       // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
     }
   } else {
@@ -308,7 +313,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     return
   }
 
-  const moduleMap = new Map()
+  const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
   // make sure we only import each dep once
@@ -338,7 +343,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       const [path, query] = dep.split(`?`)
       try {
-        const newMod = await import(
+        const newMod: ModuleNamespace = await import(
           /* @vite-ignore */
           base +
             path.slice(1) +
@@ -375,18 +380,17 @@ interface HotModule {
 interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
-  fn: (modules: object[]) => void
+  fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
+
+type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((data: any) => void)[]>()
-const ctxToListenersMap = new Map<
-  string,
-  Map<string, ((data: any) => void)[]>
->()
+const customListenersMap: CustomListenersMap = new Map()
+const ctxToListenersMap = new Map<string, CustomListenersMap>()
 
 export function createHotContext(ownerPath: string): ViteHotContext {
   if (!dataMap.has(ownerPath)) {
@@ -414,7 +418,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     }
   }
 
-  const newListeners = new Map()
+  const newListeners: CustomListenersMap = new Map()
   ctxToListenersMap.set(ownerPath, newListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
