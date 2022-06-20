@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'

@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter, normalizePath } from 'vite'
@@ -117,6 +117,17 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
+    config() {
+      if (opts.jsxRuntime === 'classic') {
+        return {
+          esbuild: {
+            logOverride: {
+              'this-is-undefined-in-esm': 'silent'
+            }
+          }
+        }
+      }
+    },
     configResolved(config) {
       devBase = config.base
       projectRoot = config.root

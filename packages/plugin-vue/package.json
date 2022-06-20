@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0-alpha.2",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -23,7 +23,7 @@
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=14.6.0"
+    "node": ">=14.18.0"
   },
   "repository": {
     "type": "git",

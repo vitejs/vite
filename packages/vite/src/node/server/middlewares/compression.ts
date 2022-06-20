@@ -4,7 +4,7 @@
 
 // This is based on https://github.com/preactjs/wmr/blob/main/packages/wmr/src/lib/polkompress.js
 // MIT Licensed https://github.com/preactjs/wmr/blob/main/LICENSE
-import zlib from 'zlib'
+import zlib from 'node:zlib'
 
 /* global Buffer */
 

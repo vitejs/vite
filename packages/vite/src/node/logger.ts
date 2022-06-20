@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
-import type { AddressInfo, Server } from 'net'
-import os from 'os'
+import type { AddressInfo, Server } from 'node:net'
+import os from 'node:os'
 import readline from 'readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
@@ -145,15 +145,15 @@ export function createLogger(
   return logger
 }
 
-export function printCommonServerUrls(
+export async function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
   config: ResolvedConfig
-): void {
+): Promise<void> {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(options.host)
+    const hostname = await resolveHostname(options.host)
     const protocol = options.https ? 'https' : 'http'
     const base = config.base === './' || config.base === '' ? '/' : config.base
     printServerUrls(hostname, protocol, address.port, base, config.logger.info)
@@ -186,7 +186,7 @@ function printServerUrls(
       )
     })
 
-    if (hostname.name === 'localhost') {
+    if (hostname.implicit) {
       urls.push({
         label: 'Network',
         url: `use ${colors.white(colors.bold('--host'))} to expose`,

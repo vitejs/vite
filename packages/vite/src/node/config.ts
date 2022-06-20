@@ -1,8 +1,8 @@
-import fs from 'fs'
-import path from 'path'
-import { parse as parseUrl, pathToFileURL } from 'url'
-import { performance } from 'perf_hooks'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { performance } from 'node:perf_hooks'
+import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
@@ -10,12 +10,12 @@ import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
-  BuildOptions,
-  ResolvedBuildOptions,
   BuildAdvancedBaseConfig,
-  ResolvedBuildAdvancedBaseConfig
+  BuildOptions,
+  ResolvedBuildAdvancedBaseConfig,
+  ResolvedBuildOptions
 } from './build'
-import { resolveBuildOptions, resolveBuildAdvancedBaseConfig } from './build'
+import { resolveBuildAdvancedBaseConfig, resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -256,9 +256,17 @@ export interface ExperimentalOptions {
   importGlobRestoreExtension?: boolean
   /**
    * Build advanced base options. Allow finegrain contol over assets and public files base
+   *
    * @experimental
    */
   buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
+  /**
+   * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
+   *
+   * @experimental
+   * @default false
+   */
+  hmrPartialAccept?: boolean
 }
 
 export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
@@ -618,6 +626,7 @@ export async function resolveConfig(
     appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
     experimental: {
       importGlobRestoreExtension: false,
+      hmrPartialAccept: false,
       ...config.experimental,
       buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
     }

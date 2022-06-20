@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative } from 'path'
+import { basename, dirname, join, relative } from 'node:path'
 import { parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'

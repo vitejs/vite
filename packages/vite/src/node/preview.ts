@@ -1,5 +1,5 @@
-import path from 'path'
-import type * as http from 'http'
+import path from 'node:path'
+import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'
@@ -50,7 +50,7 @@ export interface PreviewServer {
   /**
    * Print server urls
    */
-  printUrls: () => void
+  printUrls: () => Promise<void>
 }
 
 export type PreviewServerHook = (server: {
@@ -115,7 +115,7 @@ export async function preview(
   postHooks.forEach((fn) => fn && fn())
 
   const options = config.preview
-  const hostname = resolveHostname(options.host)
+  const hostname = await resolveHostname(options.host)
   const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
@@ -141,8 +141,8 @@ export async function preview(
   return {
     config,
     httpServer,
-    printUrls() {
-      printCommonServerUrls(httpServer, config.preview, config)
+    async printUrls() {
+      await printCommonServerUrls(httpServer, config.preview, config)
     }
   }
 }

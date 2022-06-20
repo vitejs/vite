@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -401,9 +401,9 @@ function licensePlugin() {
  */
 function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
-import { fileURLToPath as __cjs_fileURLToPath } from 'url';
-import { dirname as __cjs_dirname } from 'path';
-import { createRequire as __cjs_createRequire } from 'module';
+import { fileURLToPath as __cjs_fileURLToPath } from 'node:url';
+import { dirname as __cjs_dirname } from 'node:path';
+import { createRequire as __cjs_createRequire } from 'node:module';
 
 const __filename = __cjs_fileURLToPath(import.meta.url);
 const __dirname = __cjs_dirname(__filename);

@@ -1,4 +1,4 @@
-import { isAbsolute, posix } from 'path'
+import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type {

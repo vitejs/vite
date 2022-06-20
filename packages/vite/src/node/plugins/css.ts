@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -45,13 +45,15 @@ import {
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
+  assetFileNamesToFileName,
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
   getAssetFilename,
   publicAssetUrlCache,
   publicAssetUrlRE,
-  publicFileToBuiltUrl
+  publicFileToBuiltUrl,
+  resolveAssetFileNames
 } from './asset'
 
 // const debug = createDebugger('vite:css')
@@ -257,9 +259,11 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             moduleGraph.updateModuleInfo(
               thisModule,
               depModules,
+              null,
               // The root CSS proxy module is self-accepting and should not
               // have an explicit accept list
               new Set(),
+              null,
               isSelfAccepting,
               ssr
             )
@@ -492,17 +496,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return chunkCSS
       }
 
+      function ensureFileExt(name: string, ext: string) {
+        return path.format({ ...path.parse(name), base: undefined, ext })
+      }
+
       if (config.build.cssCodeSplit) {
         if (isPureCssChunk) {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (
-          opts.format === 'es' ||
-          opts.format === 'cjs' ||
-          opts.format === 'system'
-        ) {
-          const cssAssetName = chunk.name + '.css'
+        if (opts.format === 'es' || opts.format === 'cjs') {
+          const cssAssetName = ensureFileExt(
+            chunk.facadeModuleId
+              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+              : chunk.name,
+            '.css'
+          )
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
@@ -510,6 +519,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // emit corresponding css file
           const fileHandle = this.emitFile({
             name: cssAssetName,
+            fileName: assetFileNamesToFileName(
+              resolveAssetFileNames(config),
+              cssAssetName,
+              getHash(chunkCSS),
+              chunkCSS
+            ),
             type: 'asset',
             source: chunkCSS
           })
@@ -563,7 +578,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .join('|')
           .replace(/\./g, '\\.')
         const emptyChunkRE = new RegExp(
-          opts.format === 'es' || opts.format === 'system'
+          opts.format === 'es'
             ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
           'g'

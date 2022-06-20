@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'

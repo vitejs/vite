@@ -1,8 +1,8 @@
-import path from 'path'
-import { parse as parseUrl } from 'url'
-import fs, { promises as fsp } from 'fs'
+import path from 'node:path'
+import { parse as parseUrl } from 'node:url'
+import fs, { promises as fsp } from 'node:fs'
 import * as mrmime from 'mrmime'
-import type { OutputOptions, PluginContext } from 'rollup'
+import type { OutputOptions, PluginContext, PreRenderedAsset } from 'rollup'
 import MagicString from 'magic-string'
 import type { BuildAdvancedBaseOptions } from '../build'
 import type { Plugin } from '../plugin'
@@ -231,6 +231,27 @@ export function getAssetFilename(
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
+export function resolveAssetFileNames(
+  config: ResolvedConfig
+): string | ((chunkInfo: PreRenderedAsset) => string) {
+  const output = config.build?.rollupOptions?.output
+  const defaultAssetFileNames = path.posix.join(
+    config.build.assetsDir,
+    '[name].[hash][extname]'
+  )
+  // Steps to determine which assetFileNames will be actually used.
+  // First, if output is an object or string, use assetFileNames in it.
+  // And a default assetFileNames as fallback.
+  let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
+    (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
+    defaultAssetFileNames
+  if (output && Array.isArray(output)) {
+    // Second, if output is an array, adopt assetFileNames in the first object.
+    assetFileNames = output[0].assetFileNames ?? assetFileNames
+  }
+  return assetFileNames
+}
+
 /**
  * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
  * this function imitates the behavior of rollup.js. \
@@ -379,25 +400,9 @@ async function fileToBuiltUrl(
     const contentHash = getHash(content)
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
-    const output = config.build?.rollupOptions?.output
-
-    const defaultAssetFileNames = path.posix.join(
-      config.build.assetsDir,
-      '[name].[hash][extname]'
-    )
-    // Steps to determine which assetFileNames will be actually used.
-    // First, if output is an object or string, use assetFileNames in it.
-    // And a default assetFileNames as fallback.
-    let assetFileNames: Exclude<OutputOptions['assetFileNames'], undefined> =
-      (output && !Array.isArray(output) ? output.assetFileNames : undefined) ??
-      defaultAssetFileNames
-    if (output && Array.isArray(output)) {
-      // Second, if output is an array, adopt assetFileNames in the first object.
-      assetFileNames = output[0].assetFileNames ?? assetFileNames
-    }
 
     const fileName = assetFileNamesToFileName(
-      assetFileNames,
+      resolveAssetFileNames(config),
       file,
       contentHash,
       content
