@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "dep-that-imports-vue": "file:./dep-that-imports-vue"
+    "@vitejs/dep-that-imports-vue": "file:./dep-that-imports-vue"
   },
   "devDependencies": {
     "vite": "workspace:*",

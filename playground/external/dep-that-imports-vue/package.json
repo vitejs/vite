@@ -1,5 +1,5 @@
 {
-  "name": "dep-that-imports-vue",
+  "name": "@vitejs/dep-that-imports-vue",
   "version": "0.0.1",
   "dependencies": {
     "vue": "^3.2.37"

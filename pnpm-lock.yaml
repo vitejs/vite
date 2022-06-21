@@ -457,11 +457,11 @@ importers:
 
   playground/external:
     specifiers:
-      dep-that-imports-vue: file:./dep-that-imports-vue
+      '@vitejs/dep-that-imports-vue': file:./dep-that-imports-vue
       vite: workspace:*
       vue: ^3.2.37
     dependencies:
-      dep-that-imports-vue: file:playground/external/dep-that-imports-vue
+      '@vitejs/dep-that-imports-vue': file:playground/external/dep-that-imports-vue
     devDependencies:
       vite: link:../../packages/vite
       vue: 3.2.37
