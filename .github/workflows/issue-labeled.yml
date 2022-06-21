@@ -28,6 +28,15 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           labels: "pending triage"
 
+      - name: remove enhancement pending
+        if: "(github.event.label.name == 'enhancement' || startsWith(github.event.label.name, 'p:') == true) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage') == true"
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: "remove-labels"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: "enhancement: pending triage"
+
       - name: need reproduction
         if: github.event.label.name == 'need reproduction'
         uses: actions-cool/issues-helper@v3
