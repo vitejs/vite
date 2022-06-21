@@ -50,8 +50,9 @@ body:
         Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
 
         1. Run `vite` or `vite build` with the `--debug` flag.
-        2. Provide the error log here.
-      value: |
+        2. Provide the error log here in the format below.
+
+        ````
         <details>
         <summary>Click to expand!</summary>
 
@@ -59,6 +60,7 @@ body:
         // paste the log text here
         ```
         </details>
+        ````
   - type: checkboxes
     id: checkboxes
     attributes:
