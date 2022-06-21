@@ -204,6 +204,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       })
     },
 
+    shouldTransformCachedModule({ id }) {
+      if (isBuild) {
+        const parsedQuery = parseRequest(id)
+        if (
+          parsedQuery &&
+          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
+        ) {
+          return true
+        }
+      }
+      return false
+    },
+
     load(id) {
       if (isBuild) {
         const parsedQuery = parseRequest(id)

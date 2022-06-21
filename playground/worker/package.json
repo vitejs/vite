@@ -6,6 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "dev:lib": "vite --config ./vite.config-lib.js build --watch",
+    "build:lib": "vite --config ./vite.config-lib.js build",
     "dev:es": "vite --config ./vite.config-es.js dev",
     "build:es": "vite --config ./vite.config-es.js build",
     "preview:es": "vite --config ./vite.config-es.js preview",
