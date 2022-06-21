@@ -37,7 +37,8 @@ import type { ConfigEnv, ResolvedConfig } from './'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  */
-export interface Plugin extends RollupPlugin {
+export interface Plugin
+  extends Omit<RollupPlugin, 'resolveId' | 'load' | 'transform'> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
