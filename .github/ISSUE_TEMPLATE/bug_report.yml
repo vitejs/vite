@@ -55,7 +55,7 @@ body:
         <details>
         <summary>Click to expand!</summary>
 
-        ```
+        ```shell
         // paste the log text here
         ```
         </details>
