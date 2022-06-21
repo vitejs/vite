@@ -20,7 +20,7 @@ jobs:
           labels: "pending triage, need reproduction"
 
       - name: remove pending
-        if: contains(github.event.label.description, '(priority)') == true && contains(github.event.issue.labels.*.name, 'pending triage') == true
+        if: contains(github.event.label.description, '(priority)') && contains(github.event.issue.labels.*.name, 'pending triage')
         uses: actions-cool/issues-helper@v3
         with:
           actions: "remove-labels"
@@ -29,7 +29,7 @@ jobs:
           labels: "pending triage"
 
       - name: remove enhancement pending
-        if: "(github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)') == true) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage') == true"
+        if: "(github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage')"
         uses: actions-cool/issues-helper@v3
         with:
           actions: "remove-labels"
