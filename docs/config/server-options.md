@@ -153,8 +153,9 @@ Direct websocket connection fallback. Check out https://vitejs.dev/config/server
 
 The error that appears in the Browser when the fallback happens can be ignored. To avoid the error by directly bypassing reverse proxies, you could either:
 
-- set `server.strictPort = true` and set `server.hmr.clientPort` to the same value with `server.port`
-- set `server.hmr.port` to a different value from `server.port`
+- configure the reverse proxy to proxy WebSocket too
+- set [`server.strictPort = true`](#server-strictport) and set `server.hmr.clientPort` to the same value with `server.port`
+- set `server.hmr.port` to a different value from [`server.port`](#server-port)
 
 :::
 
