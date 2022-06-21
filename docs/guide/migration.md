@@ -121,6 +121,8 @@ There are some changes which only affects plugin/tool creators.
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
   - `formatPostcssSourceMap` is now async
   - `resolvePackageEntry`, `resolvePackageData` are no longer available from CJS build (dynamic import is needed to use in CJS)
+- [[#8626] refactor: type client maps](https://github.com/vitejs/vite/pull/8626)
+  - Type of callback of `import.meta.hot.accept` is now stricter. It is now `(mod: (Record<string, any> & { [Symbol.toStringTag]: 'Module' }) | undefined) => void` (was `(mod: any) => void`).
 
 Also there are other breaking changes which only affect few users.
 
