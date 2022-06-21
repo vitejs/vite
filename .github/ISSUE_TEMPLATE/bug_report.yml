@@ -51,7 +51,14 @@ body:
 
         1. Run `vite` or `vite build` with the `--debug` flag.
         2. Provide the error log here.
-      render: shell
+      value: |
+        <details>
+        <summary>Click to expand!</summary>
+
+        ```
+        // paste the log text here
+        ```
+        </details>
   - type: checkboxes
     id: checkboxes
     attributes:
