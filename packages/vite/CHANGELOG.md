@@ -1,3 +1,8 @@
+## 3.0.0-beta.0 (2022-06-21)
+
+
+
+
 ## 3.0.0-alpha.14 (2022-06-20)
 
 * fix: disable inlineDynamicImports for ssr.target = node (#8641) ([3b41a8e](https://github.com/vitejs/vite/commit/3b41a8e)), closes [#8641](https://github.com/vitejs/vite/issues/8641)
