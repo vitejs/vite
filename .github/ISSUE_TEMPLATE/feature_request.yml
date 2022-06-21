@@ -18,7 +18,7 @@ body:
     id: suggested-solution
     attributes:
       label: Suggested solution
-      placeholder: "In module [xy] we could provide following implementation..."
+      description: "In module [xy] we could provide following implementation..."
     validations:
       required: true
   - type: textarea
