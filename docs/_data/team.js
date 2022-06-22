@@ -120,7 +120,7 @@ export const core = [
   },
   {
     avatar: 'https://github.com/Niputi.png',
-    name: 'green',
+    name: 'Niputi',
     title: 'Developer',
     org: 'Computershare Denmark',
     desc: 'weeb/javascript lover.',
