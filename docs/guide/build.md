@@ -207,7 +207,7 @@ A single static [base](#public-base-path) isn't enough in these scenarios. Vite 
       relative: true
       // Static base
       // type: string, default: undefined
-      url: 'https:/cdn.domain.com/'
+      url: 'https://cdn.domain.com/'
       // Dynamic base to be used for paths inside JS
       // type: (url: string) => string, default: undefined
       runtime: (url: string) => `window.__toCdnUrl(${url})`
@@ -226,12 +226,12 @@ If the hashed assets and public files aren't deployed together, options for each
     buildAdvancedBaseOptions: {
       assets: {
         relative: true
-        url: 'https:/cdn.domain.com/assets',
+        url: 'https://cdn.domain.com/assets',
         runtime: (url: string) => `window.__assetsPath(${url})`
       },
       public: {
         relative: false
-        url: 'https:/www.domain.com/',
+        url: 'https://www.domain.com/',
         runtime: (url: string) => `window.__publicPath + ${url}`
       }
     }
