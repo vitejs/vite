@@ -47,15 +47,15 @@ export function setPrevDescriptor(
 export function getDescriptor(
   filename: string,
   options: ResolvedOptions,
-  createIfNotFound = true
+  readFile: (() => string) | undefined
 ): SFCDescriptor | undefined {
   if (cache.has(filename)) {
     return cache.get(filename)!
   }
-  if (createIfNotFound) {
+  if (readFile) {
     const { descriptor, errors } = createDescriptor(
       filename,
-      fs.readFileSync(filename, 'utf-8'),
+      readFile(),
       options
     )
     if (errors.length) {

@@ -172,7 +172,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename, options)!
+        const descriptor = getDescriptor(filename, options, () =>
+          fs.readFileSync(filename, 'utf-8')
+        )!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -196,6 +198,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     transform(code, id, opt) {
       const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
+      if (filter(filename) && Object.keys(query).length === 0) {
+        // pre-cache sfc file from load() result from other plugins without fs.readFileSync
+        getDescriptor(filename, options, () => code)
+      }
       if (query.raw) {
         return
       }
@@ -227,7 +233,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         // sub block request
         const descriptor = query.src
           ? getSrcDescriptor(filename, query)!
-          : getDescriptor(filename, options)!
+          : getDescriptor(filename, options, () =>
+              fs.readFileSync(filename, 'utf-8')
+            )!
 
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
