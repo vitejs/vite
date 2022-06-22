@@ -57,7 +57,7 @@ export const core = [
     title: 'Maintainer',
     org: 'Faker',
     orgLink: 'https://fakerjs.dev',
-    desc: 'Frontend developer who loves Material Design and Vue.',
+    desc: 'Passionate TypeScript enthusiast working extensively with Vue SPA and pug.',
     links: [
       { icon: 'github', link: 'https://github.com/Shinigami92' },
       { icon: 'twitter', link: 'https://twitter.com/Shini_92' }
