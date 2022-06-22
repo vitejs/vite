@@ -71,13 +71,13 @@ export function esbuildDepPlugin(
     // explicit resolveDir - this is passed only during yarn pnp resolve for
     // entries
     if (resolveDir) {
-      _importer = normalizePath(path.join(resolveDir, '*'))
+      _importer = path.join(resolveDir, '*')
     } else {
       // map importer ids to file paths for correct resolution
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined)
+    return resolver(id, normalizePath(_importer), undefined)
   }
 
   const resolveResult = (id: string, resolved: string) => {
