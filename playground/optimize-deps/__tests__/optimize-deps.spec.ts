@@ -77,6 +77,10 @@ test('import from dep with .notjs files', async () => {
   expect(await page.textContent('.not-js')).toMatch(`[success]`)
 })
 
+test('Import from dependency which uses relative path which needs to be resolved by main field', async () => {
+  expect(await page.textContent('.relative-to-main')).toMatch(`[success]`)
+})
+
 test('dep with dynamic import', async () => {
   expect(await page.textContent('.dep-with-dynamic-import')).toMatch(
     `[success]`
