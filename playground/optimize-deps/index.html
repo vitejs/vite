@@ -50,6 +50,12 @@
 <h2>Import from dependency with .notjs files</h2>
 <div class="not-js"></div>
 
+<h2>
+  Import from dependency which uses relative path which needs to be resolved by
+  main field
+</h2>
+<div class="relative-to-main"></div>
+
 <h2>Import from dependency with dynamic import</h2>
 <div class="dep-with-dynamic-import"></div>
 
@@ -108,6 +114,9 @@
 
   import { notjsValue } from 'dep-not-js'
   text('.not-js', notjsValue)
+
+  import foo from 'dep-relative-to-main/entry'
+  text('.relative-to-main', foo)
 
   import { lazyFoo } from 'dep-with-dynamic-import'
   lazyFoo().then((foo) => {
