@@ -533,15 +533,26 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
+  const define = {
+    'process.env.NODE_ENV': isBuild
+      ? '__vite_process_env_NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || config.mode)
+  }
+
   const start = performance.now()
 
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    // Ensure resolution is handled by esbuildDepPlugin and
-    // avoid replacing `process.env.NODE_ENV` for 'browser'
-    platform: 'neutral',
+    // We can't use platform 'neutral', as esbuild has custom handling
+    // when the platform is 'node' or 'browser' that can be emulated
+    // by using mainFields and conditions
+    platform:
+      config.build.ssr && config.ssr?.target !== 'webworker'
+        ? 'node'
+        : 'browser',
+    define,
     format: 'esm',
     target: config.build.target || undefined,
     external: config.optimizeDeps?.exclude,
