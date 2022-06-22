@@ -607,6 +607,7 @@ importers:
       dep-linked-include: link:./dep-linked-include
       dep-node-env: file:./dep-node-env
       dep-not-js: file:./dep-not-js
+      dep-relative-to-main: file:./dep-relative-to-main
       dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:./dep-with-builtin-module-esm
       dep-with-dynamic-import: file:./dep-with-dynamic-import
@@ -633,6 +634,7 @@ importers:
       dep-linked-include: link:dep-linked-include
       dep-node-env: file:playground/optimize-deps/dep-node-env
       dep-not-js: file:playground/optimize-deps/dep-not-js
+      dep-relative-to-main: file:playground/optimize-deps/dep-relative-to-main
       dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:playground/optimize-deps/dep-with-builtin-module-esm
       dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
@@ -681,6 +683,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-not-js:
+    specifiers: {}
+
+  playground/optimize-deps/dep-relative-to-main:
     specifiers: {}
 
   playground/optimize-deps/dep-with-builtin-module-cjs:
@@ -8780,6 +8785,12 @@ packages:
   file:playground/optimize-deps/dep-not-js:
     resolution: {directory: playground/optimize-deps/dep-not-js, type: directory}
     name: dep-not-js
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-relative-to-main:
+    resolution: {directory: playground/optimize-deps/dep-relative-to-main, type: directory}
+    name: dep-relative-to-main
     version: 1.0.0
     dev: false
 
