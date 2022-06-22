@@ -149,35 +149,35 @@ export function esbuildDepPlugin(
         }
       }
 
-      build.onResolve(
-        { filter: /^[\w@][^:]/ },
-        async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
-            return {
-              path: id,
-              external: true
-            }
-          }
-
-          // ensure esbuild uses our resolved entries
-          let entry: { path: string; namespace: string } | undefined
-          // if this is an entry, return entry namespace resolve result
-          if (!importer) {
-            if ((entry = resolveEntry(id))) return entry
-            // check if this is aliased to an entry - also return entry namespace
-            const aliased = await _resolve(id, undefined, true)
-            if (aliased && (entry = resolveEntry(aliased))) {
-              return entry
-            }
-          }
-
-          // use vite's own resolver
-          const resolved = await resolve(id, importer, kind)
-          if (resolved) {
-            return resolveResult(id, resolved)
+      build.onResolve({ filter: /./ }, async ({ path: id, importer, kind }) => {
+        if (
+          /^[\w@][^:]/.test(id) &&
+          moduleListContains(config.optimizeDeps?.exclude, id)
+        ) {
+          return {
+            path: id,
+            external: true
           }
         }
-      )
+
+        // ensure esbuild uses our resolved entries
+        let entry: { path: string; namespace: string } | undefined
+        // if this is an entry, return entry namespace resolve result
+        if (!importer) {
+          if ((entry = resolveEntry(id))) return entry
+          // check if this is aliased to an entry - also return entry namespace
+          const aliased = await _resolve(id, undefined, true)
+          if (aliased && (entry = resolveEntry(aliased))) {
+            return entry
+          }
+        }
+
+        // use vite's own resolver
+        const resolved = await resolve(id, importer, kind)
+        if (resolved) {
+          return resolveResult(id, resolved)
+        }
+      })
 
       // For entry files, we'll read it ourselves and construct a proxy module
       // to retain the entry's raw id instead of file path so that esbuild
