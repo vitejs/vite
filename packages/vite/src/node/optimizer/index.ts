@@ -535,7 +535,7 @@ export async function runOptimizeDeps(
 
   // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
   // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
-  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be 
+  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
   // later replaced by the define plugin
   const define = {
     'process.env.NODE_ENV': isBuild
