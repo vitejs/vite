@@ -105,7 +105,7 @@ export const core = [
     org: 'Tokyo Institute of Technology',
     desc: 'tech19 JC, raP SysAd. My name is "Midori".',
     links: [
-      { icon: 'github', link: 'hhttps://github.com/sapphi-red' },
+      { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'twitter', link: 'https://twitter.com/sapphi_red' }
     ]
   },
@@ -114,7 +114,7 @@ export const core = [
     name: 'ygj6',
     title: 'Developer',
     desc: '...?',
-    links: [{ icon: 'github', link: 'hhttps://github.com/ygj6' }]
+    links: [{ icon: 'github', link: 'https://github.com/ygj6' }]
   },
   {
     avatar: 'https://github.com/Niputi.png',
@@ -123,7 +123,7 @@ export const core = [
     org: 'Computershare Denmark',
     desc: 'weeb/javascript lover.',
     links: [
-      { icon: 'github', link: 'hhttps://github.com/Niputi' },
+      { icon: 'github', link: 'https://github.com/Niputi' },
       { icon: 'twitter', link: 'https://twitter.com/Niputi_' }
     ]
   }
@@ -134,20 +134,20 @@ export const emeriti = [
     avatar: 'https://github.com/underfin.png',
     name: 'underfin',
     title: 'Developer',
-    links: [{ icon: 'github', link: 'hhttps://github.com/underfin' }]
+    links: [{ icon: 'github', link: 'https://github.com/underfin' }]
   },
   {
     avatar: 'https://github.com/GrygrFlzr.png',
     name: 'GrygrFlzr',
     title: 'Developer',
-    links: [{ icon: 'github', link: 'hhttps://github.com/GrygrFlzr' }]
+    links: [{ icon: 'github', link: 'https://github.com/GrygrFlzr' }]
   },
   {
     avatar: 'https://github.com/nihalgonsalves.png',
-    name: 'GrygrFlzr',
+    name: 'Nihal Gonsalves',
     title: 'Senior Software Engineer',
     org: 'Delivery Hero',
     orgLink: 'https://www.deliveryhero.com',
-    links: [{ icon: 'github', link: 'hhttps://github.com/nihalgonsalves' }]
+    links: [{ icon: 'github', link: 'https://github.com/nihalgonsalves' }]
   }
 ]
