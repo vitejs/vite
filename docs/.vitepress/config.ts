@@ -1,10 +1,26 @@
 import { defineConfig } from 'vitepress'
 
+const ogDescription = 'Vite, Next Generation Frontend Tooling'
+const ogImage = 'https://main.vitejs.dev/og-image.png'
+const ogTitle = 'Vite'
+const ogUrl = 'https://main.vitejs.dev'
+
 export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
 
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: ogTitle }],
+    ['meta', { property: 'og:image', content: ogImage }],
+    ['meta', { property: 'og:url', content: ogUrl }],
+    ['meta', { property: 'twitter:description', content: ogDescription }],
+    ['meta', { property: 'twitter:title', content: ogTitle }],
+    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { property: 'twitter:image', content: ogImage }],
+    ['meta', { property: 'twitter:url', content: ogUrl }]
+  ],
 
   vue: {
     reactivityTransform: true
