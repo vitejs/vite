@@ -87,10 +87,14 @@ export interface BuildOptions {
   assetsDir?: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings. Default limit is `4096` (4kb). Set to `0` to disable.
+   * base64 strings. Default limit is `6144` (6kb). Set to `0` to disable.
+   * Can also implement a function that return boolean if it should bundled.
+   * Passes the `filePath`, `contentSize` and currently accrued bundled size `totalBundledSize`
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit?:
+    | number
+    | ((filePath: string, size: number, totalBundledSize: number) => boolean)
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -239,7 +243,7 @@ export function resolveBuildOptions(
     polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: 6144,
     cssCodeSplit: !raw?.lib,
     cssTarget: false,
     sourcemap: false,

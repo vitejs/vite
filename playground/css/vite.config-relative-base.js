@@ -2,6 +2,7 @@
  * @type {import('vite').UserConfig}
  */
 
+let totalSize = 0
 const baseConfig = require('./vite.config.js')
 module.exports = {
   ...baseConfig,
@@ -11,7 +12,10 @@ module.exports = {
     outDir: 'dist/relative-base',
     watch: false,
     minify: false,
-    assetsInlineLimit: 0,
+    assetsInlineLimit: (_file, fileSize, combinedSize) => {
+      totalSize += fileSize
+      return true && totalSize === combinedSize + fileSize
+    },
     rollupOptions: {
       output: {
         entryFileNames: 'entries/[name].js',

@@ -137,7 +137,7 @@ cli
   )
   .option(
     '--assetsInlineLimit <number>',
-    `[number] static asset base64 inline threshold in bytes (default: 4096)`
+    `[number] static asset base64 inline threshold in bytes (default: 6144)`
   )
   .option(
     '--ssr [entry]',

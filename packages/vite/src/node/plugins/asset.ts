@@ -15,7 +15,10 @@ export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
-const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+const assetCache = new WeakMap<
+  ResolvedConfig,
+  Map<string, { url: string; size: number }>
+>()
 
 const assetHashToFilenameMap = new WeakMap<
   ResolvedConfig,
@@ -356,6 +359,11 @@ export function publicFileToBuiltUrl(
   return `__VITE_PUBLIC_ASSET__${hash}__`
 }
 
+const byteSizeOf = (function () {
+  const encoder = new TextEncoder()
+  const encode = encoder.encode.bind(encoder)
+  return (input: string) => encode(input).length
+})()
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -373,60 +381,95 @@ async function fileToBuiltUrl(
   const cache = assetCache.get(config)!
   const cached = cache.get(id)
   if (cached) {
-    return cached
+    return cached.url
   }
 
   const file = cleanUrl(id)
   const content = await fsp.readFile(file)
-
   let url: string
-  if (
-    config.build.lib ||
-    (!file.endsWith('.svg') &&
-      content.length < Number(config.build.assetsInlineLimit))
-  ) {
-    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-    // base64 inlined as a string
-    url = `data:${mimeType};base64,${content.toString('base64')}`
-  } else {
-    // emit as asset
-    // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
-    // that uses runtime url sniffing and it can be verbose when targeting
-    // non-module format. It also fails to cascade the asset content change
-    // into the chunk's hash, so we have to do our own content hashing here.
-    // https://bundlers.tooling.report/hashing/asset-cascade/
-    // https://github.com/rollup/rollup/issues/3415
-    const map = assetHashToFilenameMap.get(config)!
-    const contentHash = getHash(content)
-    const { search, hash } = parseUrl(id)
-    const postfix = (search || '') + (hash || '')
+  let size: number
 
-    const fileName = assetFileNamesToFileName(
-      resolveAssetFileNames(config),
-      file,
-      contentHash,
-      content
-    )
-    if (!map.has(contentHash)) {
-      map.set(contentHash, fileName)
-    }
-    const emittedSet = emittedHashMap.get(config)!
-    if (!emittedSet.has(contentHash)) {
-      const name = normalizePath(path.relative(config.root, file))
-      pluginContext.emitFile({
-        name,
-        fileName,
-        type: 'asset',
-        source: content
-      })
-      emittedSet.add(contentHash)
-    }
+  /*
+  lib should always inlined
+  svg should never be inlined (unless lib)
+  */
+  if (config.build.lib) {
+    url = fileToInlinedAsset(file, content)
+    size = 0
+  } else if (file.endsWith('.svg') === false) {
+    const inlinedURL = fileToInlinedAsset(file, content)
+    const inlinedSize: number = byteSizeOf(inlinedURL)
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
+    const assetInlineLimit = config.build.assetsInlineLimit ?? 0
+
+    const shouldInline =
+      typeof assetInlineLimit === 'number'
+        ? inlinedSize < Number(assetInlineLimit)
+        : assetInlineLimit(
+            file,
+            inlinedSize,
+            [...cache.values()].reduce((memo, { size }) => memo + size, 0)
+          )
+
+    if (shouldInline) {
+      size = inlinedSize
+      url = inlinedURL
+    }
   }
 
-  cache.set(id, url)
+  url ??= fileToLinkedAsset(id, config, pluginContext, file, content)
+  size ||= 0
+
+  cache.set(id, { url, size })
   return url
+}
+
+function fileToInlinedAsset(file: string, content: Buffer): string {
+  const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+  return `data:${mimeType};base64,${content.toString('base64')}`
+}
+
+function fileToLinkedAsset(
+  id: string,
+  config: ResolvedConfig,
+  pluginContext: PluginContext,
+  file: string,
+  content: Buffer
+): string {
+  // emit as asset
+  // rollup supports `import.meta.ROLLUP_FILE_URL_*`, but it generates code
+  // that uses runtime url sniffing and it can be verbose when targeting
+  // non-module format. It also fails to cascade the asset content change
+  // into the chunk's hash, so we have to do our own content hashing here.
+  // https://bundlers.tooling.report/hashing/asset-cascade/
+  // https://github.com/rollup/rollup/issues/3415
+  const map = assetHashToFilenameMap.get(config)!
+  const contentHash = getHash(content)
+  const { search, hash } = parseUrl(id)
+  const postfix = (search || '') + (hash || '')
+
+  const fileName = assetFileNamesToFileName(
+    resolveAssetFileNames(config),
+    file,
+    contentHash,
+    content
+  )
+  if (!map.has(contentHash)) {
+    map.set(contentHash, fileName)
+  }
+  const emittedSet = emittedHashMap.get(config)!
+  if (!emittedSet.has(contentHash)) {
+    const name = normalizePath(path.relative(config.root, file))
+    pluginContext.emitFile({
+      name,
+      fileName,
+      type: 'asset',
+      source: content
+    })
+    emittedSet.add(contentHash)
+  }
+
+  return `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
 }
 
 export async function urlToBuiltUrl(

@@ -48,10 +48,12 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 
 ## build.assetsInlineLimit
 
-- **Type:** `number`
-- **Default:** `4096` (4kb)
+- **Type:** `number` | `((filePath: string, size: number, totalBundledSize: number) => boolean)`
+- **Default:** `6144` (6kb)
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
+Can also implement a function that return boolean if it should bundled.
+Passes the `filePath: string`, `contentSize: number` and currently accrued bundled size `totalBundledSize: number`
 
 ::: tip Note
 If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size.
