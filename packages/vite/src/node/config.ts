@@ -7,6 +7,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type { BuildOptions, ResolvedBuildOptions } from './build'
@@ -968,6 +969,33 @@ export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
   )
 }
 
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
+    }
+  }
+}
+
 // Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
 function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
   // Only affects the build command
@@ -1011,8 +1039,8 @@ function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
       exclude: normalizedExternal as string[],
       esbuildOptions: {
         plugins: [
-          // TODO: configure `optimizeDeps.esbuildOptions.plugins`
-          // TODO: maybe it can be added unconditionally?
+          // TODO: maybe it can be added globally/unconditionally?
+          esbuildCjsExternalPlugin(normalizedExternal as string[])
         ]
       }
     }
