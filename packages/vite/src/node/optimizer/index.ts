@@ -546,7 +546,7 @@ export async function runOptimizeDeps(
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
     // We can't use platform 'neutral', as esbuild has custom handling
-    // when the platform is 'node' or 'browser' that can be emulated
+    // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
     platform:
       config.build.ssr && config.ssr?.target !== 'webworker'
