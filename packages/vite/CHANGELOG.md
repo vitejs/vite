@@ -1,12 +1,31 @@
 ## 3.0.0-beta.1 (2022-06-22)
 
-* fix: respect `rollupOptions.external` for transitive dependencies (#8679) ([4f9097b](https://github.com/vitejs/vite/commit/4f9097b)), closes [#8679](https://github.com/vitejs/vite/issues/8679)
-* fix: use esbuild platform browser/node instead of neutral (#8714) ([a201cd4](https://github.com/vitejs/vite/commit/a201cd4)), closes [#8714](https://github.com/vitejs/vite/issues/8714)
-* chore: collapse alpha version in v3 beta changelog (#8697) ([83286dd](https://github.com/vitejs/vite/commit/83286dd)), closes [#8697](https://github.com/vitejs/vite/issues/8697)
+### Main Changes
 
-
-
-## [3.0.0-beta.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-beta.0) (2022-06-21)
+- New docs theme using [VitePress](https://vitepress.vuejs.org/) v1 alpha: https://main.vitejs.dev
+- Vite CLI
+  - The default dev server port is now 5173, with the preview server starting at 4173.
+  - The default dev server host is now `localhost` instead of `127.0.0.1`.
+- Compatibility
+  - Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
+  - Vite is now published as ESM, with a CJS proxy to the ESM entry for compatibility.
+  - The Modern Browser Baseline now targets browsers which support the [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta).
+  - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+- Architecture changes
+  - Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
+  - Vite now uses esbuild to optimize dependencies avoiding the need of[`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs), removing one of the most significant differences between dev and prod present in v2.
+  - Vite uses ESM for the SSR build by default, and previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed.
+- `import.meta.glob` has been improved, read about the new features in the [Glob Import Guide](https://main.vitejs.dev/guide/features.html#glob-import)
+- The WebAssembly import API has been revised to avoid collisions with future standards. Read more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.html#webassembly)
+- Improved support for relative base.
+- Experimental Features
+  - [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options)
+  - [HMR Partial Accept](https://github.com/vitejs/vite/pull/7324)
+- Terser is now an optional dependency to reduce the bundle size. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`)
+- Options that were [already deprecated in v2](https://main.vitejs.dev/guide/migration.html#config-options-changes) have been removed. 
+  
+> **Note**
+> Before updating, check out the [migration guide from v2](https://main.vitejs.dev/guide/migration)
 
 ### Features
 
@@ -64,6 +83,8 @@
 
 ### Bug Fixes
 
+* fix: respect `rollupOptions.external` for transitive dependencies (#8679) ([4f9097b](https://github.com/vitejs/vite/commit/4f9097b)), closes [#8679](https://github.com/vitejs/vite/issues/8679)
+* fix: use esbuild platform browser/node instead of neutral (#8714) ([a201cd4](https://github.com/vitejs/vite/commit/a201cd4)), closes [#8714](https://github.com/vitejs/vite/issues/8714)
 * fix: disable inlineDynamicImports for ssr.target = node (#8641) ([3b41a8e](https://github.com/vitejs/vite/commit/3b41a8e)), closes [#8641](https://github.com/vitejs/vite/issues/8641)
 * fix: infer hmr ws target by client location (#8650) ([4061ee0](https://github.com/vitejs/vite/commit/4061ee0)), closes [#8650](https://github.com/vitejs/vite/issues/8650)
 * fix: non-relative base public paths in CSS files (#8682) ([d11d6ea](https://github.com/vitejs/vite/commit/d11d6ea)), closes [#8682](https://github.com/vitejs/vite/issues/8682)
@@ -141,7 +162,11 @@
 * fix(lib)!: remove format prefixes for cjs and esm (#8107) ([ad8c3b1](https://github.com/vitejs/vite/commit/ad8c3b1)), closes [#8107](https://github.com/vitejs/vite/issues/8107)
 
 
-### Alpha Changelogs
+### Previous Changelogs
+
+#### [3.0.0-beta.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-beta.0) (2022-06-21)
+
+See [3.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/3.0.0-beta.0/packages/vite/CHANGELOG.md)
 
 #### [3.0.0-alpha.14](https://github.com/vitejs/vite/compare/v3.0.0-alpha.13...v3.0.0-alpha.14) (2022-06-20)
 
