@@ -17,9 +17,13 @@
   - Vite uses ESM for the SSR build by default, and previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed.
 - `import.meta.glob` has been improved, read about the new features in the [Glob Import Guide](https://main.vitejs.dev/guide/features.html#glob-import)
 - The WebAssembly import API has been revised to avoid collisions with future standards. Read more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.html#webassembly)
+- Improved support for relative base.
+- Experimental Features
+  - [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options)
+  - [HMR Partial Accept](https://github.com/vitejs/vite/pull/7324)
 - Terser is now an optional dependency to reduce the bundle size. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`)
-- Options that were [already deprecated in v2](https://main.vitejs.dev/guide/migration.html#config-options-changes) have been removed.
-
+- Options that were [already deprecated in v2](https://main.vitejs.dev/guide/migration.html#config-options-changes) have been removed. 
+  
 > **Note**
 > Before updating, check out the [migration guide from v2](https://main.vitejs.dev/guide/migration)
 
