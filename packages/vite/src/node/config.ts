@@ -528,6 +528,7 @@ export async function resolveConfig(
 
   const middlewareMode = config?.server?.middlewareMode
 
+  config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
 
   const resolved: ResolvedConfig = {
@@ -965,4 +966,57 @@ export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && optimizeDeps.disabled === 'dev')
   )
+}
+
+// Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
+function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
+  // Only affects the build command
+  if (command !== 'build') {
+    return {}
+  }
+
+  // Skip if using Rollup CommonJS plugin
+  if (
+    config.legacy?.buildRollupPluginCommonjs ||
+    config.optimizeDeps?.disabled === 'build'
+  ) {
+    return {}
+  }
+
+  // Skip if no `external` configured
+  const external = config?.build?.rollupOptions?.external
+  if (!external) {
+    return {}
+  }
+
+  let normalizedExternal = external
+  if (typeof external === 'string') {
+    normalizedExternal = [external]
+  }
+
+  // TODO: decide whether to support RegExp and function options
+  // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
+  if (
+    !Array.isArray(normalizedExternal) ||
+    normalizedExternal.some((ext) => typeof ext !== 'string')
+  ) {
+    throw new Error(
+      `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
+        `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+    )
+  }
+
+  const additionalConfig: UserConfig = {
+    optimizeDeps: {
+      exclude: normalizedExternal as string[],
+      esbuildOptions: {
+        plugins: [
+          // TODO: configure `optimizeDeps.esbuildOptions.plugins`
+          // TODO: maybe it can be added unconditionally?
+        ]
+      }
+    }
+  }
+
+  return additionalConfig
 }
