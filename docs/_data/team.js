@@ -78,17 +78,15 @@ export const core = [
   {
     avatar: 'https://github.com/bluwy.png',
     name: 'Bjorn Lu',
-    title: 'Frontend Web Developer',
+    title: 'Frontend Developer',
     org: 'Opslock',
-    desc: 'Web dev. svelte and vite team member. Something something opinions.',
+    orgLink: 'https://opslock.com',
+    desc: 'Svelte and Vite team member. Something something opinions.',
     links: [
-      { icon: 'github', link: 'hhttps://github.com/bluwy' },
-      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
-      {
-        icon: 'linkedin',
-        link: 'https://www.linkedin.com/in/bjorn-lu-3302a31b5'
-      }
-    ]
+      { icon: 'github', link: 'https://github.com/bluwy' },
+      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' }
+    ],
+    sponsor: 'https://bjornlu.com/sponsor'
   },
   {
     avatar: 'https://github.com/poyoho.png',
