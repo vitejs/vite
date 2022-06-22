@@ -198,7 +198,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       const { filename, query } = parseVueRequest(id)
       if (filter(filename) && Object.keys(query).length === 0) {
         // pre-cache sfc file from load() result from other plugins without fs.readFileSync
-        getDescriptor(filename, options, () => code)
+        getDescriptor(filename, options, true, () => code)
       }
       if (query.raw) {
         return
