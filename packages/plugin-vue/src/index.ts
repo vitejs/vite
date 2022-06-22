@@ -172,9 +172,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         if (query.src) {
           return fs.readFileSync(filename, 'utf-8')
         }
-        const descriptor = getDescriptor(filename, options, () =>
-          fs.readFileSync(filename, 'utf-8')
-        )!
+        const descriptor = getDescriptor(filename, options)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
           // handle <scrip> + <script setup> merge via compileScript()
@@ -233,9 +231,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         // sub block request
         const descriptor = query.src
           ? getSrcDescriptor(filename, query)!
-          : getDescriptor(filename, options, () =>
-              fs.readFileSync(filename, 'utf-8')
-            )!
+          : getDescriptor(filename, options)!
 
         if (query.type === 'template') {
           return transformTemplateAsModule(code, descriptor, options, this, ssr)
