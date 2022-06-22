@@ -1,3 +1,11 @@
+## 3.0.0-beta.1 (2022-06-22)
+
+* fix: respect `rollupOptions.external` for transitive dependencies (#8679) ([4f9097b](https://github.com/vitejs/vite/commit/4f9097b)), closes [#8679](https://github.com/vitejs/vite/issues/8679)
+* fix: use esbuild platform browser/node instead of neutral (#8714) ([a201cd4](https://github.com/vitejs/vite/commit/a201cd4)), closes [#8714](https://github.com/vitejs/vite/issues/8714)
+* chore: collapse alpha version in v3 beta changelog (#8697) ([83286dd](https://github.com/vitejs/vite/commit/83286dd)), closes [#8697](https://github.com/vitejs/vite/issues/8697)
+
+
+
 ## [3.0.0-beta.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-beta.0) (2022-06-21)
 
 ### Features
