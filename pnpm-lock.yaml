@@ -457,6 +457,31 @@ importers:
     dependencies:
       vue: 3.2.37
 
+  playground/external:
+    specifiers:
+      '@vitejs/dep-that-imports-vue': file:./dep-that-imports-vue
+      '@vitejs/dep-that-requires-vue': file:./dep-that-requires-vue
+      vite: workspace:*
+      vue: ^3.2.37
+    dependencies:
+      '@vitejs/dep-that-imports-vue': file:playground/external/dep-that-imports-vue
+      '@vitejs/dep-that-requires-vue': file:playground/external/dep-that-requires-vue
+    devDependencies:
+      vite: link:../../packages/vite
+      vue: 3.2.37
+
+  playground/external/dep-that-imports-vue:
+    specifiers:
+      vue: ^3.2.37
+    dependencies:
+      vue: 3.2.37
+
+  playground/external/dep-that-requires-vue:
+    specifiers:
+      vue: ^3.2.37
+    dependencies:
+      vue: 3.2.37
+
   playground/file-delete-restore:
     specifiers:
       '@vitejs/plugin-react': workspace:*
@@ -8692,6 +8717,22 @@ packages:
     resolution: {directory: playground/dynamic-import/pkg, type: directory}
     name: pkg
     version: 1.0.0
+    dev: false
+
+  file:playground/external/dep-that-imports-vue:
+    resolution: {directory: playground/external/dep-that-imports-vue, type: directory}
+    name: '@vitejs/dep-that-imports-vue'
+    version: 0.0.1
+    dependencies:
+      vue: 3.2.37
+    dev: false
+
+  file:playground/external/dep-that-requires-vue:
+    resolution: {directory: playground/external/dep-that-requires-vue, type: directory}
+    name: '@vitejs/dep-that-requires-vue'
+    version: 0.0.1
+    dependencies:
+      vue: 3.2.37
     dev: false
 
   file:playground/json/json-module:

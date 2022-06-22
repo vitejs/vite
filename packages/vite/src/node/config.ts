@@ -7,6 +7,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
@@ -584,6 +585,7 @@ export async function resolveConfig(
 
   const middlewareMode = config?.server?.middlewareMode
 
+  config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
 
   const BASE_URL = resolvedBase
@@ -1028,4 +1030,84 @@ export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && optimizeDeps.disabled === 'dev')
   )
+}
+
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
+    }
+  }
+}
+
+// Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
+function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
+  // Only affects the build command
+  if (command !== 'build') {
+    return {}
+  }
+
+  // Skip if using Rollup CommonJS plugin
+  if (
+    config.legacy?.buildRollupPluginCommonjs ||
+    config.optimizeDeps?.disabled === 'build'
+  ) {
+    return {}
+  }
+
+  // Skip if no `external` configured
+  const external = config?.build?.rollupOptions?.external
+  if (!external) {
+    return {}
+  }
+
+  let normalizedExternal = external
+  if (typeof external === 'string') {
+    normalizedExternal = [external]
+  }
+
+  // TODO: decide whether to support RegExp and function options
+  // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
+  if (
+    !Array.isArray(normalizedExternal) ||
+    normalizedExternal.some((ext) => typeof ext !== 'string')
+  ) {
+    throw new Error(
+      `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
+        `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+    )
+  }
+
+  const additionalConfig: UserConfig = {
+    optimizeDeps: {
+      exclude: normalizedExternal as string[],
+      esbuildOptions: {
+        plugins: [
+          // TODO: maybe it can be added globally/unconditionally?
+          esbuildCjsExternalPlugin(normalizedExternal as string[])
+        ]
+      }
+    }
+  }
+
+  return additionalConfig
 }
