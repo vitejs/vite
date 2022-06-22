@@ -101,9 +101,8 @@ export const core = [
   {
     avatar: 'https://github.com/sapphi-red.png',
     name: 'green',
-    title: 'Developer',
-    org: 'Tokyo Institute of Technology',
-    desc: 'tech19 JC, raP SysAd. My name is "Midori".',
+    title: 'Web Developer',
+    desc: 'Vite team member. Call me sapphi or green or midori ;)',
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'twitter', link: 'https://twitter.com/sapphi_red' }
