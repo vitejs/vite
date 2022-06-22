@@ -20,6 +20,15 @@ export const DEFAULT_EXTENSIONS = [
   '.json'
 ]
 
+export const DEFAULT_CONFIG_FILES = [
+  { filename: 'vite.config.js', isESM: 'auto', isTS: false },
+  { filename: 'vite.config.mjs', isESM: true, isTS: false },
+  { filename: 'vite.config.ts', isESM: 'auto', isTS: true },
+  { filename: 'vite.config.cjs', isESM: false, isTS: false },
+  { filename: 'vite.config.mts', isESM: true, isTS: true },
+  { filename: 'vite.config.cts', isESM: false, isTS: true }
+] as const
+
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/

@@ -37,7 +37,12 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from './constants'
+import {
+  CLIENT_ENTRY,
+  DEFAULT_ASSETS_RE,
+  DEFAULT_CONFIG_FILES,
+  ENV_ENTRY
+} from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
@@ -826,56 +831,39 @@ export async function loadConfigFromFile(
 
   let resolvedPath: string | undefined
   let isTS = false
-  let isESM = false
+  let isESM: boolean | 'auto' = 'auto'
   let dependencies: string[] = []
-
-  // check package.json for type: "module" and set `isMjs` to true
-  try {
-    const pkg = lookupFile(configRoot, ['package.json'])
-    if (pkg && JSON.parse(pkg).type === 'module') {
-      isESM = true
-    }
-  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    isTS = configFile.endsWith('.ts')
+    isTS = /\.[cm]?ts$/.test(configFile)
 
-    if (configFile.endsWith('.mjs')) {
+    if (/\.m[jt]s$/.test(configFile)) {
       isESM = true
+    } else if (/\.c[jt]s$/.test(configFile)) {
+      isESM = false
     }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
+    for (const file of DEFAULT_CONFIG_FILES) {
+      const filePath = path.resolve(configRoot, file.filename)
+      if (!fs.existsSync(filePath)) continue
 
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
-        isESM = true
-      }
+      resolvedPath = filePath
+      isESM = file.isESM
+      isTS = file.isTS
+      break
     }
+  }
 
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
-        isTS = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
-      if (fs.existsSync(cjsConfigFile)) {
-        resolvedPath = cjsConfigFile
-        isESM = false
-      }
-    }
+  // check package.json for type: "module" and set `isMjs` to true
+  if (isESM === 'auto') {
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+    } catch (e) {}
   }
 
   if (!resolvedPath) {
@@ -895,10 +883,10 @@ export async function loadConfigFromFile(
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
+        fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
+        userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
           .default
-        fs.unlinkSync(resolvedPath + '.js')
+        fs.unlinkSync(resolvedPath + '.mjs')
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
         // using Function to avoid this from being compiled away by TS/Rollup
