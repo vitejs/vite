@@ -218,7 +218,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     shouldTransformCachedModule({ id }) {
-      return load(id)
+      return config.build.lib && load(id)
     },
 
     load(id) {
