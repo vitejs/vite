@@ -145,8 +145,6 @@ export const emeriti = [
     avatar: 'https://github.com/nihalgonsalves.png',
     name: 'Nihal Gonsalves',
     title: 'Senior Software Engineer',
-    org: 'Delivery Hero',
-    orgLink: 'https://www.deliveryhero.com',
     links: [{ icon: 'github', link: 'https://github.com/nihalgonsalves' }]
   }
 ]
