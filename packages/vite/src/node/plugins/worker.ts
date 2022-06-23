@@ -1,16 +1,25 @@
+import { existsSync, promises as fsp } from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { EmittedAsset, OutputChunk } from 'rollup'
+import type { EmittedAsset, OutputChunk, RollupCache } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
+import {
+  cleanUrl,
+  getDepsCacheSuffix,
+  getHash,
+  injectQuery,
+  parseRequest
+} from '../utils'
 import { onRollupWarning } from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
 interface WorkerCache {
+  cache?: RollupCache
+
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
 
@@ -37,6 +46,16 @@ function saveEmitWorkerAsset(
   workerMap.assets.set(fileName, asset)
 }
 
+function mergeRollupCache(
+  o?: RollupCache,
+  n?: RollupCache
+): RollupCache | undefined {
+  return {
+    modules: (o?.modules || []).concat(n?.modules || []),
+    plugins: Object.assign({}, o?.plugins, n?.plugins)
+  }
+}
+
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
@@ -45,8 +64,10 @@ export async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
+  const workerMap = workerCache.get(config.mainConfig || config)!
   const bundle = await rollup({
     ...rollupOptions,
+    cache: workerMap.cache,
     input: cleanUrl(id),
     plugins,
     onwarn(warning, warn) {
@@ -54,6 +75,7 @@ export async function bundleWorkerEntry(
     },
     preserveEntrySignatures: false
   })
+  workerMap.cache = mergeRollupCache(workerMap.cache, bundle.cache)
   let chunk: OutputChunk
   try {
     const workerOutputConfig = config.worker.rollupOptions.output
@@ -185,6 +207,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let server: ViteDevServer
   const isWorker = config.isWorker
+  const cacheFilePath = path.join(
+    config.cacheDir,
+    getDepsCacheSuffix(config, !!config.build.ssr) + '_worker_cache.json'
+  )
 
   return {
     name: 'vite:worker',
@@ -193,15 +219,29 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       server = _server
     },
 
-    buildStart() {
+    async buildStart() {
       if (isWorker) {
         return
       }
+      let cache = undefined
+      if (existsSync(cacheFilePath)) {
+        cache = JSON.parse(
+          await fsp.readFile(cacheFilePath, { encoding: 'utf-8' })
+        )
+      }
       workerCache.set(config, {
+        cache,
         assets: new Map(),
         bundle: new Map(),
         fileNameHash: new Map()
       })
+    },
+
+    async buildEnd() {
+      await fsp.writeFile(
+        cacheFilePath,
+        JSON.stringify(workerCache.get(config)?.cache || '')
+      )
     },
 
     load(id) {

@@ -1056,3 +1056,21 @@ export function stripBomTag(content: string): string {
 
   return content
 }
+
+export function getDepsCacheSuffix(
+  config: ResolvedConfig,
+  ssr: boolean
+): string {
+  let suffix = ''
+  if (config.command === 'build') {
+    // Differentiate build caches depending on outDir to allow parallel builds
+    const { outDir } = config.build
+    const buildId =
+      outDir.length > 8 || outDir.includes('/') ? getHash(outDir) : outDir
+    suffix += `_build-${buildId}`
+  }
+  if (ssr) {
+    suffix += '_ssr'
+  }
+  return suffix
+}
