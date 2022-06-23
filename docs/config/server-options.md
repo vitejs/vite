@@ -45,7 +45,7 @@ Specify server port. Note if the port is already being used, Vite will automatic
 
 - **Type:** `boolean`
 
-Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+Set to `true` to exit if port is already in use, instead of automatically trying the next available port.
 
 ## server.https
 
