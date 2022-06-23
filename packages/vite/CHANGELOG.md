@@ -166,81 +166,81 @@
 
 #### [3.0.0-beta.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-beta.0) (2022-06-21)
 
-See [3.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/3.0.0-beta.0/packages/vite/CHANGELOG.md)
+See [3.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-beta.0/packages/vite/CHANGELOG.md)
 
 #### [3.0.0-alpha.14](https://github.com/vitejs/vite/compare/v3.0.0-alpha.13...v3.0.0-alpha.14) (2022-06-20)
 
-See [3.0.0-alpha.14 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.14/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.14 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.14/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.13](https://github.com/vitejs/vite/compare/v3.0.0-alpha.12...v3.0.0-alpha.13) (2022-06-19)
 
-See [3.0.0-alpha.13 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.13/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.13 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.13/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.12](https://github.com/vitejs/vite/compare/v3.0.0-alpha.11...v3.0.0-alpha.12) (2022-06-16)
 
-See [3.0.0-alpha.12 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.12/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.12 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.12/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.11](https://github.com/vitejs/vite/compare/v3.0.0-alpha.10...v3.0.0-alpha.11) (2022-06-14)
 
-See [3.0.0-alpha.11 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.11/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.11 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.11/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.10](https://github.com/vitejs/vite/compare/v3.0.0-alpha.9...v3.0.0-alpha.10) (2022-06-10)
 
-See [3.0.0-alpha.10 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.10/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.10 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.10/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.9](https://github.com/vitejs/vite/compare/v3.0.0-alpha.8...v3.0.0-alpha.9) (2022-06-01)
 
-See [3.0.0-alpha.9 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.9/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.9 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.9/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.8](https://github.com/vitejs/vite/compare/v3.0.0-alpha.7...v3.0.0-alpha.8) (2022-05-31)
 
-See [3.0.0-alpha.8 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.8/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.8 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.8/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.7](https://github.com/vitejs/vite/compare/v3.0.0-alpha.6...v3.0.0-alpha.7) (2022-05-27)
 
-See [3.0.0-alpha.7 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.7/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.7 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.7/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.6](https://github.com/vitejs/vite/compare/v3.0.0-alpha.5...v3.0.0-alpha.6) (2022-05-27)
 
-See [3.0.0-alpha.6 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.6/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.6 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.6/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.5](https://github.com/vitejs/vite/compare/v3.0.0-alpha.4...v3.0.0-alpha.5) (2022-05-26)
 
-See [3.0.0-alpha.5 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.5/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.5 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.5/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.4](https://github.com/vitejs/vite/compare/v3.0.0-alpha.3...v3.0.0-alpha.4) (2022-05-25)
 
-See [3.0.0-alpha.4 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.4/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.4 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.4/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.3](https://github.com/vitejs/vite/compare/v3.0.0-alpha.2...v3.0.0-alpha.3) (2022-05-25)
 
-See [3.0.0-alpha.3 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.3/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.3 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.3/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.2](https://github.com/vitejs/vite/compare/v3.0.0-alpha.1...v3.0.0-alpha.2) (2022-05-23)
 
-See [3.0.0-alpha.2 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.2/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.2 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.2/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.1](https://github.com/vitejs/vite/compare/v3.0.0-alpha.0...v3.0.0-alpha.1) (2022-05-18)
 
-See [3.0.0-alpha.1 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.1/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.1 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.1/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-alpha.0) (2022-05-13)
 
-See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.0/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.0/packages/vite/CHANGELOG.md)
 
 
 
