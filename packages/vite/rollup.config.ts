@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import fs from 'node:fs'
 import path from 'node:path'
+import url from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -294,7 +295,7 @@ function buildTimeImportMetaUrl(): Plugin {
     name: 'buildTimeImportMetaUrl',
     resolveImportMeta: (property, chunk) => {
       if (property === 'url') {
-        return `'file://${chunk.moduleId}'`
+        return `'${url.pathToFileURL(chunk.moduleId).href}'`
       }
     }
   }
