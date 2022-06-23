@@ -237,12 +237,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const target = config.build.target
-      const minify =
-        config.build.minify === 'esbuild' &&
-        // Do not minify ES lib output since that would remove pure annotations
-        // and break tree-shaking
-        // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
-        !(config.build.lib && opts.format === 'es')
+      const minify = config.build.minify === 'esbuild'
 
       if ((!target || target === 'esnext') && !minify) {
         return null
@@ -253,7 +248,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         target: target || undefined,
         ...(minify
           ? {
-              minify,
+              // Do not minify ES lib output since that would remove pure annotations
+              // and break tree-shaking
+              // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
+              minify: !(config.build.lib && opts.format === 'es'),
               treeShaking: true,
               format: rollupToEsbuildFormatMap[opts.format]
             }
