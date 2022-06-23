@@ -37,8 +37,7 @@ import type { ConfigEnv, ResolvedConfig } from './'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  */
-export interface Plugin
-  extends Omit<RollupPlugin, 'resolveId' | 'load' | 'transform'> {
+export interface Plugin extends RollupPlugin {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
    *
@@ -129,7 +128,7 @@ export interface Plugin
   /**
    * extend hooks with ssr flag
    */
-  resolveId?(
+  resolveId?: (
     this: PluginContext,
     source: string,
     importer: string | undefined,
@@ -140,17 +139,18 @@ export interface Plugin
        * @internal
        */
       scan?: boolean
+      isEntry: boolean
     }
-  ): Promise<ResolveIdResult> | ResolveIdResult
-  load?(
+  ) => Promise<ResolveIdResult> | ResolveIdResult
+  load?: (
     this: PluginContext,
     id: string,
     options?: { ssr?: boolean }
-  ): Promise<LoadResult> | LoadResult
-  transform?(
+  ) => Promise<LoadResult> | LoadResult
+  transform?: (
     this: TransformPluginContext,
     code: string,
     id: string,
     options?: { ssr?: boolean }
-  ): Promise<TransformResult> | TransformResult
+  ) => Promise<TransformResult> | TransformResult
 }
