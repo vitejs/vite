@@ -718,7 +718,7 @@ async function restartServer(server: ViteDevServer) {
       // prevent new server `restart` function from calling
       // @ts-ignore
       newServer[key] = server[key]
-    } else if (key !== 'app') {
+    } else {
       // @ts-ignore
       server[key] = newServer[key]
     }
