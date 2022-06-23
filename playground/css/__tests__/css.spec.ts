@@ -426,3 +426,32 @@ test('PostCSS source.input.from includes query', async () => {
   // should resolve assets
   expect(code).toContain('/postcss-source-input.css?query=foo')
 })
+
+test('async css modules', async () => {
+  const green = await page.$('.async-modules-green')
+  const blue2 = await page.$('.async-modules-blue2')
+  const red = await page.$('.async-modules-red')
+  const blue = await page.$('.async-modules-blue')
+
+  const _black = await page.$('.async-modules-and-css-black')
+  const _blue = await page.$('.async-modules-and-css-blue')
+
+  expect(await getColor(green)).toBe('green')
+  expect(await getColor(blue2)).toBe('blue')
+
+  expect(await getColor(_black)).toBe('black')
+  expect(await getColor(_blue)).toBe('blue')
+
+  // because that loaded blue > red first
+  // and can't change the style order
+  expect(await getColor(blue)).toBe('black')
+  expect(await getColor(red)).toBe('black')
+})
+
+test('async css modules with normal css', async () => {
+  const black = await page.$('.async-modules-and-css-black')
+  const blue = await page.$('.async-modules-and-css-blue')
+
+  expect(await getColor(black)).toBe('black')
+  expect(await getColor(blue)).toBe('blue')
+})

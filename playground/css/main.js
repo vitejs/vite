@@ -92,3 +92,12 @@ text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'
 text('.postcss-source-input', postcssSourceInput)
+
+// async css modules
+import('./async-modules/blue')
+import('./async-modules/red')
+import('./async-modules/green')
+
+// async css module with normal css
+import('./async-modules-and-css/black')
+import('./async-modules-and-css/blue')
