@@ -2,7 +2,7 @@
 
 ## Node Support
 
-Vite no longer supports Node v12, which reached its EOL. Node 14.6+ is now required.
+Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 
 ## Modern Browser Baseline change
 
@@ -121,6 +121,8 @@ There are some changes which only affects plugin/tool creators.
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
   - `formatPostcssSourceMap` is now async
   - `resolvePackageEntry`, `resolvePackageData` are no longer available from CJS build (dynamic import is needed to use in CJS)
+- [[#8626] refactor: type client maps](https://github.com/vitejs/vite/pull/8626)
+  - Type of callback of `import.meta.hot.accept` is now stricter. It is now `(mod: (Record<string, any> & { [Symbol.toStringTag]: 'Module' }) | undefined) => void` (was `(mod: any) => void`).
 
 Also there are other breaking changes which only affect few users.
 
@@ -134,6 +136,8 @@ Also there are other breaking changes which only affect few users.
   - `server.force` option was removed in favor of `optimizeDeps.force` option.
 - [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
   - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
+- [[#8647] feat: print resolved address for localhost](https://github.com/vitejs/vite/pull/8647)
+  - `server.printUrls` and `previewServer.printUrls` are now async
 
 ## Migration from v1
 

@@ -179,8 +179,14 @@ describe('css url() references', () => {
     expect(bg).toMatch(assetMatch)
   })
 
-  test.runIf(isBuild)('preserve postfix query/hash', () => {
-    expect(findAssetFile(/\.css$/, 'foo')).toMatch(`woff2?#iefix`)
+  test.runIf(isBuild)('generated paths in CSS', () => {
+    const css = findAssetFile(/\.css$/, 'foo')
+
+    // preserve postfix query/hash
+    expect(css).toMatch(`woff2?#iefix`)
+
+    // generate non-relative base for public path in CSS
+    expect(css).not.toMatch(`../icon.png`)
   })
 })
 

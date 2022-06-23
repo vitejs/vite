@@ -1,5 +1,5 @@
-import { createHash } from 'crypto'
-import path from 'path'
+import { createHash } from 'node:crypto'
+import path from 'node:path'
 import type { types } from '@babel/core'
 import * as babel from '@babel/core'
 import jsx from '@vue/babel-plugin-jsx'

@@ -1,8 +1,8 @@
-import fs from 'fs'
-import path from 'path'
-import type * as net from 'net'
-import type * as http from 'http'
-import { performance } from 'perf_hooks'
+import fs from 'node:fs'
+import path from 'node:path'
+import type * as net from 'node:net'
+import type * as http from 'node:http'
+import { performance } from 'node:perf_hooks'
 import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
@@ -223,7 +223,7 @@ export interface ViteDevServer {
   /**
    * Print server urls
    */
-  printUrls(): void
+  printUrls(): Promise<void>
   /**
    * Restart the server.
    *
@@ -353,9 +353,9 @@ export async function createServer(
         closeHttpServer()
       ])
     },
-    printUrls() {
+    async printUrls() {
       if (httpServer) {
-        printCommonServerUrls(httpServer, config.server, config)
+        await printCommonServerUrls(httpServer, config.server, config)
       } else {
         throw new Error('cannot print server URLs in middleware mode.')
       }
@@ -464,7 +464,8 @@ export async function createServer(
   }
 
   // base
-  if (config.base !== '/') {
+  const devBase = config.base
+  if (devBase !== '/') {
     middlewares.use(baseMiddleware(server))
   }
 
@@ -555,11 +556,11 @@ async function startServer(
 
   const options = server.config.server
   const port = inlinePort ?? options.port ?? 5173
-  const hostname = resolveHostname(options.host)
+  const hostname = await resolveHostname(options.host)
 
   const protocol = options.https ? 'https' : 'http'
   const info = server.config.logger.info
-  const base = server.config.base
+  const devBase = server.config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -588,7 +589,7 @@ async function startServer(
   }
 
   if (options.open && !isRestart) {
-    const path = typeof options.open === 'string' ? options.open : base
+    const path = typeof options.open === 'string' ? options.open : devBase
     openBrowser(
       path.startsWith('http')
         ? path

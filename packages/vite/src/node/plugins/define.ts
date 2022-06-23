@@ -25,7 +25,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv)
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
     })
   }
 
@@ -63,6 +64,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...userDefine,
       ...importMetaKeys,
       ...(replaceProcessEnv ? processEnv : {})
+    }
+
+    if (isBuild && !replaceProcessEnv) {
+      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
     }
 
     const replacementsKeys = Object.keys(replacements)

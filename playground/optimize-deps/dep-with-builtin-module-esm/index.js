@@ -1,3 +1,4 @@
+// no node: protocol intentionally
 import { readFileSync } from 'fs'
 import path from 'path'
 

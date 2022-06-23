@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
   getHash,
+  getLocalhostAddressIfDiffersFromDNS,
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
@@ -50,38 +51,49 @@ describe('injectQuery', () => {
 })
 
 describe('resolveHostname', () => {
-  test('defaults to localhost', () => {
-    expect(resolveHostname(undefined)).toEqual({
+  test('defaults to localhost', async () => {
+    const resolved = await getLocalhostAddressIfDiffersFromDNS()
+
+    expect(await resolveHostname(undefined)).toEqual({
       host: 'localhost',
-      name: 'localhost'
+      name: resolved ?? 'localhost',
+      implicit: true
     })
   })
 
-  test('accepts localhost', () => {
-    expect(resolveHostname('localhost')).toEqual({
+  test('accepts localhost', async () => {
+    const resolved = await getLocalhostAddressIfDiffersFromDNS()
+
+    expect(await resolveHostname('localhost')).toEqual({
       host: 'localhost',
-      name: 'localhost'
+      name: resolved ?? 'localhost',
+      implicit: false
     })
   })
 
-  test('accepts 0.0.0.0', () => {
-    expect(resolveHostname('0.0.0.0')).toEqual({
+  test('accepts 0.0.0.0', async () => {
+    expect(await resolveHostname('0.0.0.0')).toEqual({
       host: '0.0.0.0',
-      name: 'localhost'
+      name: 'localhost',
+      implicit: false
     })
   })
 
-  test('accepts ::', () => {
-    expect(resolveHostname('::')).toEqual({
+  test('accepts ::', async () => {
+    expect(await resolveHostname('::')).toEqual({
       host: '::',
-      name: 'localhost'
+      name: 'localhost',
+      implicit: false
     })
   })
 
-  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', () => {
-    expect(resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')).toEqual({
+  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', async () => {
+    expect(
+      await resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')
+    ).toEqual({
       host: '0000:0000:0000:0000:0000:0000:0000:0000',
-      name: 'localhost'
+      name: 'localhost',
+      implicit: false
     })
   })
 })

@@ -1,4 +1,4 @@
-import { isAbsolute, posix } from 'path'
+import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
 import type {
@@ -64,7 +64,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         id,
         config.root,
         (im) => this.resolve(im, id).then((i) => i?.id || im),
-        config.experimental?.importGlobRestoreExtension
+        config.experimental.importGlobRestoreExtension
       )
       if (result) {
         if (server) {

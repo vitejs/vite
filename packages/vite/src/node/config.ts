@@ -1,16 +1,22 @@
-import fs from 'fs'
-import path from 'path'
-import { parse as parseUrl, pathToFileURL } from 'url'
-import { performance } from 'perf_hooks'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { performance } from 'node:perf_hooks'
+import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
+import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
-import type { BuildOptions, ResolvedBuildOptions } from './build'
-import { resolveBuildOptions } from './build'
+import type {
+  BuildAdvancedBaseConfig,
+  BuildOptions,
+  ResolvedBuildAdvancedBaseConfig,
+  ResolvedBuildOptions
+} from './build'
+import { resolveBuildAdvancedBaseConfig, resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -46,6 +52,8 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
+
+export type { BuildAdvancedBaseOptions, BuildAdvancedBaseConfig } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
@@ -247,6 +255,23 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+  /**
+   * Build advanced base options. Allow finegrain contol over assets and public files base
+   *
+   * @experimental
+   */
+  buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
+  /**
+   * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
+   *
+   * @experimental
+   * @default false
+   */
+  hmrPartialAccept?: boolean
+}
+
+export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
+  buildAdvancedBaseOptions: ResolvedBuildAdvancedBaseConfig
 }
 
 export interface LegacyOptions {
@@ -320,6 +345,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
+    experimental: ResolvedExperimentalOptions
   }
 >
 
@@ -456,8 +482,39 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const isBuild = command === 'build'
+  const relativeBaseShortcut = config.base === '' || config.base === './'
+
+  // During dev, we ignore relative base and fallback to '/'
+  // For the SSR build, relative base isn't possible by means
+  // of import.meta.url. The user will be able to work out a setup
+  // using experimental.buildAdvancedBaseOptions
+  const base =
+    relativeBaseShortcut && (!isBuild || config.build?.ssr)
+      ? '/'
+      : config.base ?? '/'
+  let resolvedBase = relativeBaseShortcut
+    ? base
+    : resolveBaseUrl(base, isBuild, logger, 'base')
+  if (
+    config.experimental?.buildAdvancedBaseOptions?.relative &&
+    config.base === undefined
+  ) {
+    resolvedBase = './'
+  }
+
+  const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
+    config.experimental?.buildAdvancedBaseOptions,
+    resolvedBase,
+    isBuild,
+    logger
+  )
+
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    isBuild,
+    logger
+  )
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -528,7 +585,10 @@ export async function resolveConfig(
 
   const middlewareMode = config?.server?.middlewareMode
 
+  config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
+
+  const BASE_URL = resolvedBase
 
   const resolved: ResolvedConfig = {
     ...config,
@@ -538,7 +598,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: BASE_URL,
+    base: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -573,7 +633,13 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa'
+    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
+    experimental: {
+      importGlobRestoreExtension: false,
+      hmrPartialAccept: false,
+      ...config.experimental,
+      buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
+    }
   }
 
   if (middlewareMode === 'ssr') {
@@ -674,23 +740,20 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 }
 
 /**
- * Resolve base. Note that some users use Vite to build for non-web targets like
+ * Resolve base url. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBaseUrl(
+export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger
+  logger: Logger,
+  optionName: string
 ): string {
-  // #1669 special treatment for empty for same dir relative base
-  if (base === '' || base === './') {
-    return isBuild ? base : '/'
-  }
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
+          `(!) invalid "${optionName}" option: ${base}. The value can only be an absolute ` +
             `URL, ./, or an empty string.`
         )
       )
@@ -710,7 +773,7 @@ function resolveBaseUrl(
     if (!base.startsWith('/')) {
       logger.warn(
         colors.yellow(
-          colors.bold(`(!) "base" option should start with a slash.`)
+          colors.bold(`(!) "${optionName}" option should start with a slash.`)
         )
       )
       base = '/' + base
@@ -720,7 +783,9 @@ function resolveBaseUrl(
   // ensure ending slash
   if (!base.endsWith('/')) {
     logger.warn(
-      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
+      colors.yellow(
+        colors.bold(`(!) "${optionName}" option should end with a slash.`)
+      )
     )
     base += '/'
   }
@@ -965,4 +1030,84 @@ export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && optimizeDeps.disabled === 'dev')
   )
+}
+
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
+    }
+  }
+}
+
+// Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
+function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
+  // Only affects the build command
+  if (command !== 'build') {
+    return {}
+  }
+
+  // Skip if using Rollup CommonJS plugin
+  if (
+    config.legacy?.buildRollupPluginCommonjs ||
+    config.optimizeDeps?.disabled === 'build'
+  ) {
+    return {}
+  }
+
+  // Skip if no `external` configured
+  const external = config?.build?.rollupOptions?.external
+  if (!external) {
+    return {}
+  }
+
+  let normalizedExternal = external
+  if (typeof external === 'string') {
+    normalizedExternal = [external]
+  }
+
+  // TODO: decide whether to support RegExp and function options
+  // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
+  if (
+    !Array.isArray(normalizedExternal) ||
+    normalizedExternal.some((ext) => typeof ext !== 'string')
+  ) {
+    throw new Error(
+      `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
+        `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+    )
+  }
+
+  const additionalConfig: UserConfig = {
+    optimizeDeps: {
+      exclude: normalizedExternal as string[],
+      esbuildOptions: {
+        plugins: [
+          // TODO: maybe it can be added globally/unconditionally?
+          esbuildCjsExternalPlugin(normalizedExternal as string[])
+        ]
+      }
+    }
+  }
+
+  return additionalConfig
 }
