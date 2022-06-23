@@ -136,11 +136,6 @@ function createNodePlugins(
         'postcss-load-config/src/index.js': {
           src: `require(configFile)`,
           replacement: `__require(configFile)`
-        },
-        // @rollup/plugin-commonjs uses incorrect esm
-        '@rollup/plugin-commonjs/dist/index.es.js': {
-          src: `import { sync } from 'resolve';`,
-          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
         }
       }),
     commonjs({
