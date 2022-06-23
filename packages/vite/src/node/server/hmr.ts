@@ -63,7 +63,17 @@ export async function handleHMRUpdate(
       { clear: true, timestamp: true }
     )
     try {
+      const { port: prevPort, host: prevHost } = config.server
       await server.restart()
+      const {
+        logger,
+        server: { port, host }
+      } = server.config
+      logger.info('server restarted.', { timestamp: true })
+      if (port !== prevPort || host !== prevHost) {
+        logger.info('')
+        server.printUrls()
+      }
     } catch (e) {
       config.logger.error(colors.red(e))
     }
