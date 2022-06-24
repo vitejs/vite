@@ -588,6 +588,13 @@ export async function resolveConfig(
   config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
 
+  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
+    config.legacy = {
+      ...config.legacy,
+      buildRollupPluginCommonjs: true
+    }
+  }
+
   const BASE_URL = resolvedBase
 
   const resolved: ResolvedConfig = {
@@ -639,13 +646,6 @@ export async function resolveConfig(
       hmrPartialAccept: false,
       ...config.experimental,
       buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
-    }
-  }
-
-  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
-    config.legacy = {
-      ...config.legacy,
-      buildRollupPluginCommonjs: true
     }
   }
 
