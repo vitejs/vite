@@ -14,7 +14,9 @@
       // indirect: postcss depends on it
       "source-map-js": ["./node_modules/source-map-js/source-map.d.ts"]
     },
-    "typeRoots": []
+    "typeRoots": [],
+    "strict": true,
+    "exactOptionalPropertyTypes": true
   },
   "include": ["dist/**/*.d.ts"]
 }

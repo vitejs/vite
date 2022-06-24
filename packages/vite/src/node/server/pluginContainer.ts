@@ -97,6 +97,7 @@ export interface PluginContainer {
        * @internal
        */
       scan?: boolean
+      isEntry?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -527,6 +528,7 @@ export async function createPluginContainer(
       const skip = options?.skip
       const ssr = options?.ssr
       const scan = !!options?.scan
+      const isEntry = !!options?.isEntry
       const ctx = new Context()
       ctx.ssr = !!ssr
       ctx._scan = scan
@@ -546,7 +548,7 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr, scan }
+          { ssr, scan, isEntry }
         )
         if (!result) continue
 
