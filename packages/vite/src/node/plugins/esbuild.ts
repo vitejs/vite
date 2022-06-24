@@ -255,7 +255,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const isEsLibBuild = config.build.lib && opts.format === 'es'
-      const options: TransformOptions = {
+      let options: TransformOptions = {
         ...config.esbuild,
         target: target || undefined,
         format: rollupToEsbuildFormatMap[opts.format]
@@ -268,29 +268,38 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
           options.minifySyntax === true ||
           options.minifyWhitespace === true
         ) {
-          options.treeShaking = true
+          options = { ...options, treeShaking: true }
           // Do not minify whitespace for ES lib output since that would remove
           // pure annotations and break tree-shaking
           // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
           if (isEsLibBuild) {
-            options.minifyWhitespace = false
+            options = { ...options, minifyWhitespace: true }
           }
         } else if (isEsLibBuild) {
           // Enable all minify except whitespace, which doesn't work
-          options.minify = false
-          options.minifyIdentifiers = true
-          options.minifySyntax = true
-          options.treeShaking = true
+          options = {
+            ...options,
+            minify: false,
+            minifyIdentifiers: true,
+            minifySyntax: true,
+            treeShaking: true
+          }
         } else {
-          options.minify = true
-          options.treeShaking = true
+          options = {
+            ...options,
+            minify: true,
+            treeShaking: true
+          }
         }
       } else {
-        options.minify = false
-        options.minifyIdentifiers = false
-        options.minifySyntax = false
-        options.minifyWhitespace = false
-        options.treeShaking = false
+        options = {
+          ...options,
+          minify: false,
+          minifyIdentifiers: false,
+          minifySyntax: false,
+          minifyWhitespace: false,
+          treeShaking: false
+        }
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, options)
