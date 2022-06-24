@@ -72,7 +72,7 @@ module.exports = {
       apply: 'build',
       enforce: 'pre',
       load(id) {
-        if (id === '__vite-browser-external:fs') {
+        if (id === '__vite-browser-external') {
           return `export default {}; export function readFileSync() {}`
         }
       }

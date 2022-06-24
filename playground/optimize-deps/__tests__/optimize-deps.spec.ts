@@ -103,11 +103,16 @@ test('vue + vuex', async () => {
   expect(await page.textContent('.vue')).toMatch(`[success]`)
 })
 
-test('esbuild-plugin', async () => {
-  expect(await page.textContent('.esbuild-plugin')).toMatch(
-    `Hello from an esbuild plugin`
-  )
-})
+// When we use the Rollup CommonJS plugin instead of esbuild prebundling,
+// the esbuild plugins won't apply to dependencies
+test.skipIf(isBuild && process.env.VITE_TEST_LEGACY_CJS_PLUGIN)(
+  'esbuild-plugin',
+  async () => {
+    expect(await page.textContent('.esbuild-plugin')).toMatch(
+      `Hello from an esbuild plugin`
+    )
+  }
+)
 
 test('import from hidden dir', async () => {
   expect(await page.textContent('.hidden-dir')).toBe('hello!')
