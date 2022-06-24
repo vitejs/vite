@@ -89,9 +89,6 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
-      - name: Test build with CJS plugin
-        run: pnpm run test-build-legacy-cjs
-
       - name: Test docs
         run: pnpm run test-docs
 
