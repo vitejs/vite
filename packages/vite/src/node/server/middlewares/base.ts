@@ -14,16 +14,6 @@ export function baseMiddleware({
     const parsed = new URL(url, 'http://vitejs.dev')
     const path = parsed.pathname || '/'
 
-    // fix #8770
-    if (!parsed.pathname.endsWith('/') && parsed.pathname + '/' === devBase) {
-      // redirect root visit to based url with search and hash
-      res.writeHead(302, {
-        Location: devBase + parsed.search + parsed.hash
-      })
-      res.end()
-      return
-    }
-
     if (path.startsWith(devBase)) {
       // rewrite url to remove base.. this ensures that other middleware does
       // not need to consider base being prepended or not
@@ -36,7 +26,12 @@ export function baseMiddleware({
       return next()
     }
 
-    if (path === '/' || path === '/index.html') {
+    if (
+      // fix #8770
+      (!parsed.pathname.endsWith('/') && parsed.pathname + '/' === devBase) ||
+      path === '/' ||
+      path === '/index.html'
+    ) {
       // redirect root visit to based url with search and hash
       res.writeHead(302, {
         Location: devBase + parsed.search + parsed.hash
