@@ -1,5 +1,6 @@
+const __CONFIG_LOADED__: boolean = true
 export default {
-  define: { __CONFIG_LOADED__: true },
+  define: { __CONFIG_LOADED__ },
   logLevel: 'silent',
   build: {
     minify: false,

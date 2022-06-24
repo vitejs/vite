@@ -5,7 +5,7 @@ import path from 'node:path'
 import fs from 'fs-extra'
 import { isBuild, rootDir } from '~utils'
 
-const configNames = ['js', 'cjs', 'mjs', 'ts']
+const configNames = ['js', 'cjs', 'mjs', 'ts', 'mts', 'cts']
 
 export async function serve() {
   if (!isBuild) return
@@ -18,14 +18,20 @@ export async function serve() {
     const pathToConf = fromTestDir(configName, `vite.config.${configName}`)
 
     await fs.copy(fromTestDir('root'), fromTestDir(configName))
-    await fs.rename(fromTestDir(configName, 'vite.config.js'), pathToConf)
+    await fs.rename(fromTestDir(configName, 'vite.config.ts'), pathToConf)
 
-    if (configName === 'cjs') {
+    if (['cjs', 'cts'].includes(configName)) {
       const conf = await fs.readFile(pathToConf, 'utf8')
       await fs.writeFile(
         pathToConf,
         conf.replace('export default', 'module.exports = ')
       )
+    }
+
+    // Remove TS annotation for plain JavaScript file.
+    if (configName.endsWith('js')) {
+      const conf = await fs.readFile(pathToConf, 'utf8')
+      await fs.writeFile(pathToConf, conf.replace(': boolean', ''))
     }
 
     // copy directory and add package.json with "type": "module"
