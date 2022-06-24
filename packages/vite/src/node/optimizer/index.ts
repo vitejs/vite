@@ -575,7 +575,6 @@ export async function runOptimizeDeps(
     supported: {
       'dynamic-import': true,
       'import-meta': true,
-      'top-level-await': true,
       ...esbuildOptions.supported
     }
   })
