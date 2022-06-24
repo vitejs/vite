@@ -5,6 +5,9 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: ['vue']
+    },
+    commonjsOptions: {
+      esmExternals: ['vue']
     }
   }
 })
