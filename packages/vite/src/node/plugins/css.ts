@@ -517,7 +517,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
             : ensureFileExt(chunk.name, '.css')
 
-          if (chunk.isEntry) cssEntryFiles.add(cssAssetName)
+          if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
