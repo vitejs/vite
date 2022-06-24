@@ -86,10 +86,11 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       if (!config.isWorker) {
         getDepsOptimizer(config)?.resetRegisteredIds()
+        getDepsOptimizer(config)?.queueFirstOptimizerRun()
       }
     },
 
-    async resolveId(id) {
+    resolveId(id) {
       if (getDepsOptimizer(config)?.isOptimizedDepFile(id)) {
         return id
       }

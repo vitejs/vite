@@ -47,6 +47,9 @@ export function getDepsOptimizer(
   return depsOptimizerMap.get(config.mainConfig || config)
 }
 
+const dummyId = Symbol('dummy id for first optimizer run')
+type DummyId = typeof dummyId
+
 export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
@@ -81,6 +84,7 @@ export async function initDepsOptimizer(
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       isBuild ? depInfo.file : `${depInfo.file}?v=${depInfo.browserHash}`,
     registerWorkersSource,
+    queueFirstOptimizerRun,
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     options: config.optimizeDeps
@@ -517,16 +521,21 @@ export async function initDepsOptimizer(
 
   const runOptimizerIfIdleAfterMs = 100
 
-  let registeredIds: { id: string; done: () => Promise<any> }[] = []
+  let registeredIds: { id: string | DummyId; done: () => Promise<any> }[] = []
   let seenIds = new Set<string>()
   let workersSources = new Set<string>()
-  let waitingOn: string | undefined
+  let waitingOn: string | DummyId | undefined
 
   function resetRegisteredIds() {
     registeredIds = []
     seenIds = new Set<string>()
     workersSources = new Set<string>()
     waitingOn = undefined
+  }
+
+  function queueFirstOptimizerRun() {
+    registeredIds.push({ id: dummyId, done: async () => {} })
+    runOptimizerWhenIdle()
   }
 
   function registerWorkersSource(id: string): void {
@@ -559,7 +568,7 @@ export async function initDepsOptimizer(
         waitingOn = next.id
         const afterLoad = () => {
           waitingOn = undefined
-          if (!workersSources.has(next.id)) {
+          if (next.id === dummyId || !workersSources.has(next.id)) {
             if (registeredIds.length > 0) {
               runOptimizerWhenIdle()
             } else {

@@ -58,6 +58,7 @@ export interface DepsOptimizer {
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
 
+  queueFirstOptimizerRun: () => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
