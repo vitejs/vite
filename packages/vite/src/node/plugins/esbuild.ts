@@ -170,6 +170,17 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     options.exclude || /\.js$/
   )
 
+  // Remove optimization options for dev as we only need to transpile them,
+  // and for build as the final optimization is in `buildEsbuildPlugin`
+  options = {
+    ...options,
+    minify: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
+    treeShaking: false
+  }
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
@@ -243,20 +254,43 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, {
+      const isEsLibBuild = config.build.lib && opts.format === 'es'
+      const options: TransformOptions = {
         ...config.esbuild,
         target: target || undefined,
-        ...(minify
-          ? {
-              // Do not minify ES lib output since that would remove pure annotations
-              // and break tree-shaking
-              // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
-              minify: !(config.build.lib && opts.format === 'es'),
-              treeShaking: true,
-              format: rollupToEsbuildFormatMap[opts.format]
-            }
-          : undefined)
-      })
+        format: rollupToEsbuildFormatMap[opts.format]
+      }
+
+      if (minify) {
+        // If user enable fine-grain minify options, minify with their options instead
+        if (
+          options.minifyIdentifiers === true ||
+          options.minifySyntax === true ||
+          options.minifyWhitespace === true
+        ) {
+          options.treeShaking = true
+          // Do not minify whitespace for ES lib output since that would remove
+          // pure annotations and break tree-shaking
+          // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
+          if (isEsLibBuild) {
+            options.minifyWhitespace = false
+          }
+        } else if (isEsLibBuild) {
+          // Enable all minify except whitespace, which doesn't work
+          options.minify = false
+          options.minifyIdentifiers = true
+          options.minifySyntax = true
+        } else {
+          options.minify = true
+        }
+      } else {
+        options.minify = false
+        options.minifyIdentifiers = false
+        options.minifySyntax = false
+        options.minifyWhitespace = false
+      }
+
+      const res = await transformWithEsbuild(code, chunk.fileName, options)
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
