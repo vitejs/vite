@@ -29,6 +29,7 @@ import {
   dynamicImport,
   isExternalUrl,
   isObject,
+  isTS,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -37,7 +38,12 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from './constants'
+import {
+  CLIENT_ENTRY,
+  DEFAULT_ASSETS_RE,
+  DEFAULT_CONFIG_FILES,
+  ENV_ENTRY
+} from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
@@ -825,62 +831,39 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let isTS = false
-  let isESM = false
   let dependencies: string[] = []
-
-  // check package.json for type: "module" and set `isMjs` to true
-  try {
-    const pkg = lookupFile(configRoot, ['package.json'])
-    if (pkg && JSON.parse(pkg).type === 'module') {
-      isESM = true
-    }
-  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    isTS = configFile.endsWith('.ts')
-
-    if (configFile.endsWith('.mjs')) {
-      isESM = true
-    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
+    for (const filename of DEFAULT_CONFIG_FILES) {
+      const filePath = path.resolve(configRoot, filename)
+      if (!fs.existsSync(filePath)) continue
 
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
-        isESM = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
-        isTS = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
-      if (fs.existsSync(cjsConfigFile)) {
-        resolvedPath = cjsConfigFile
-        isESM = false
-      }
+      resolvedPath = filePath
+      break
     }
   }
 
   if (!resolvedPath) {
     debug('no config file found.')
     return null
+  }
+
+  let isESM = false
+  if (/\.m[jt]s$/.test(resolvedPath)) {
+    isESM = true
+  } else if (/\.c[jt]s$/.test(resolvedPath)) {
+    isESM = false
+  } else {
+    // check package.json for type: "module" and set `isESM` to true
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+    } catch (e) {}
   }
 
   try {
@@ -890,15 +873,16 @@ export async function loadConfigFromFile(
       const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
-      if (isTS) {
+
+      if (isTS(resolvedPath)) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
+        fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
+        userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
           .default
-        fs.unlinkSync(resolvedPath + '.js')
+        fs.unlinkSync(resolvedPath + '.mjs')
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
         // using Function to avoid this from being compiled away by TS/Rollup
@@ -972,7 +956,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         setup(build) {
-          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
               `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
@@ -982,7 +966,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              loader: isTS(args.path) ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })
