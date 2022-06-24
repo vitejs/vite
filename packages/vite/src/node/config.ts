@@ -830,45 +830,39 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let isTS = false
-  let isESM: boolean | 'auto' = 'auto'
   let dependencies: string[] = []
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    isTS = /\.[cm]?ts$/.test(configFile)
-
-    if (/\.m[jt]s$/.test(configFile)) {
-      isESM = true
-    } else if (/\.c[jt]s$/.test(configFile)) {
-      isESM = false
-    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    for (const file of DEFAULT_CONFIG_FILES) {
-      const filePath = path.resolve(configRoot, file.filename)
+    for (const filename of DEFAULT_CONFIG_FILES) {
+      const filePath = path.resolve(configRoot, filename)
       if (!fs.existsSync(filePath)) continue
 
       resolvedPath = filePath
-      isESM = file.isESM
-      isTS = file.isTS
       break
     }
-  }
-
-  // check package.json for type: "module" and set `isMjs` to true
-  if (isESM === 'auto') {
-    try {
-      const pkg = lookupFile(configRoot, ['package.json'])
-      isESM = !!pkg && JSON.parse(pkg).type === 'module'
-    } catch (e) {}
   }
 
   if (!resolvedPath) {
     debug('no config file found.')
     return null
+  }
+
+  let isESM = false
+  if (/\.m[jt]s$/.test(resolvedPath)) {
+    isESM = true
+  } else if (/\.c[jt]s$/.test(resolvedPath)) {
+    isESM = false
+  } else {
+    // check package.json for type: "module" and set `isMjs` to true
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+    } catch (e) {}
   }
 
   try {
@@ -878,6 +872,8 @@ export async function loadConfigFromFile(
       const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
+
+      const isTS = /\.[cm]?ts$/.test(resolvedPath)
       if (isTS) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
