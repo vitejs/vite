@@ -759,6 +759,17 @@ importers:
     devDependencies:
       '@vitejs/plugin-react': link:../../packages/plugin-react
 
+  playground/react-classic:
+    specifiers:
+      '@vitejs/plugin-react': workspace:*
+      react: ^18.1.0
+      react-dom: ^18.1.0
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    devDependencies:
+      '@vitejs/plugin-react': link:../../packages/plugin-react
+
   playground/react-emotion:
     specifiers:
       '@babel/plugin-proposal-pipeline-operator': ^7.18.2
