@@ -277,7 +277,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
           // pure annotations and break tree-shaking
           // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
           if (isEsLibBuild) {
-            options = { ...options, minifyWhitespace: true }
+            options = { ...options, minifyWhitespace: false }
           }
         } else if (isEsLibBuild) {
           // Enable all minify except whitespace, which doesn't work
