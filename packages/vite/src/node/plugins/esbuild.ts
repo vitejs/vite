@@ -280,14 +280,17 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
           options.minify = false
           options.minifyIdentifiers = true
           options.minifySyntax = true
+          options.treeShaking = true
         } else {
           options.minify = true
+          options.treeShaking = true
         }
       } else {
         options.minify = false
         options.minifyIdentifiers = false
         options.minifySyntax = false
         options.minifyWhitespace = false
+        options.treeShaking = false
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, options)
