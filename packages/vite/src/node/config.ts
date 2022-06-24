@@ -29,6 +29,7 @@ import {
   dynamicImport,
   isExternalUrl,
   isObject,
+  isTS,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -873,8 +874,7 @@ export async function loadConfigFromFile(
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
 
-      const isTS = /\.[cm]?ts$/.test(resolvedPath)
-      if (isTS) {
+      if (isTS(resolvedPath)) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
@@ -956,7 +956,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         setup(build) {
-          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
               `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
@@ -966,7 +966,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              loader: isTS(args.path) ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })

@@ -1056,3 +1056,5 @@ export function stripBomTag(content: string): string {
 
   return content
 }
+
+export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)
