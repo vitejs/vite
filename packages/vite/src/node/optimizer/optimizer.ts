@@ -530,11 +530,13 @@ export async function initDepsOptimizer(
     // If all the inputs are dependencies, we aren't going to get any
     // delayDepsOptimizerUntil(id) calls. We need to guard against this
     // by forcing a rerun if no deps have been registered
-    setTimeout(() => {
-      if (!firstRunCalled && registeredIds.length === 0) {
-        getDepsOptimizer(config)?.run()
-      }
-    }, runOptimizerIfIdleAfterMs)
+    if (isBuild) {
+      setTimeout(() => {
+        if (!firstRunCalled && registeredIds.length === 0) {
+          getDepsOptimizer(config)?.run()
+        }
+      }, runOptimizerIfIdleAfterMs)
+    }
   }
 
   function registerWorkersSource(id: string): void {
