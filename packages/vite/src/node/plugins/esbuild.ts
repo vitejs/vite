@@ -268,9 +268,9 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       if (minify) {
         // If user enable fine-grain minify options, minify with their options instead
         if (
-          options.minifyIdentifiers === true ||
-          options.minifySyntax === true ||
-          options.minifyWhitespace === true
+          options.minifyIdentifiers ||
+          options.minifySyntax ||
+          options.minifyWhitespace
         ) {
           options = { ...options, treeShaking: true }
           // Do not minify whitespace for ES lib output since that would remove
