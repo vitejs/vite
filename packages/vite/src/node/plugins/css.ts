@@ -515,7 +515,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (opts.format === 'es' || opts.format === 'cjs') {
           const cssAssetName = chunk.facadeModuleId
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-            : ensureFileExt(chunk.name, '.css')
+            : chunk.name
+
+          const lang = path.extname(cssAssetName).slice(1)
+          const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
 
@@ -524,10 +527,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: cssAssetName,
+            name: isPreProcessor(lang) ? cssAssetName : cssFileName,
             fileName: assetFileNamesToFileName(
               resolveAssetFileNames(config),
-              ensureFileExt(cssAssetName, '.css'),
+              cssFileName,
               getHash(chunkCSS),
               chunkCSS
             ),
