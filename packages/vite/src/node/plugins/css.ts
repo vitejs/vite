@@ -143,6 +143,8 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
+export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null
@@ -179,6 +181,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
+      cssEntryFilesCache.set(config, new Set())
     },
 
     async transform(raw, id, options) {
@@ -453,6 +456,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const cssEntryFiles = cssEntryFilesCache.get(config)!
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
@@ -509,13 +513,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk.fileName)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
-          const cssAssetName = ensureFileExt(
-            chunk.facadeModuleId
-              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-              : chunk.name,
-            (chunk.facadeModuleId && path.extname(chunk.facadeModuleId)) ||
-              '.css'
-          )
+          const cssAssetName = chunk.facadeModuleId
+            ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+            : ensureFileExt(chunk.name, '.css')
+
+          if (chunk.isEntry) cssEntryFiles.add(cssAssetName)
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)

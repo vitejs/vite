@@ -38,9 +38,12 @@ describe.runIf(isBuild)('build', () => {
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
+    expect(cssAssetEntry?.isEntry).toEqual(true)
     expect(scssAssetEntry?.file).not.toBeUndefined()
     expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
+    expect(scssAssetEntry?.isEntry).toEqual(true)
     expect(imgAssetEntry?.file).not.toBeUndefined()
+    expect(imgAssetEntry?.isEntry).toBeUndefined()
   })
 })
 
