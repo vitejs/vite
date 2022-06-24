@@ -642,6 +642,13 @@ export async function resolveConfig(
     }
   }
 
+  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
+    config.legacy = {
+      ...config.legacy,
+      buildRollupPluginCommonjs: true
+    }
+  }
+
   if (middlewareMode === 'ssr') {
     logger.warn(
       colors.yellow(
