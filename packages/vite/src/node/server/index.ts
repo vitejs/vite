@@ -227,9 +227,9 @@ export interface ViteDevServer {
   /**
    * Restart the server.
    *
-   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   * @param overwritesConfig - configurations that need to be overridden
    */
-  restart(forceOptimize?: boolean): Promise<void>
+  restart(overwritesConfig?: InlineConfig): Promise<void>
   /**
    * @internal
    */
@@ -243,10 +243,6 @@ export interface ViteDevServer {
    * @internal
    */
   _restartPromise: Promise<void> | null
-  /**
-   * @internal
-   */
-  _forceOptimizeOnRestart: boolean
   /**
    * @internal
    */
@@ -360,12 +356,13 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       }
     },
-    async restart(forceOptimize?: boolean) {
+    async restart(overwritesConfig?: InlineConfig) {
       if (!server._restartPromise) {
-        server._forceOptimizeOnRestart = !!forceOptimize
-        server._restartPromise = restartServer(server).finally(() => {
+        server._restartPromise = restartServer(
+          server,
+          overwritesConfig
+        ).finally(() => {
           server._restartPromise = null
-          server._forceOptimizeOnRestart = false
         })
       }
       return server._restartPromise
@@ -374,7 +371,6 @@ export async function createServer(
     _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
-    _forceOptimizeOnRestart: false,
     _pendingRequests: new Map()
   }
 
@@ -687,25 +683,21 @@ export function resolveServerOptions(
   return server
 }
 
-async function restartServer(server: ViteDevServer) {
+async function restartServer(
+  server: ViteDevServer,
+  overwritesConfig: InlineConfig = {}
+) {
   // @ts-ignore
   global.__vite_start_time = performance.now()
   const { port: prevPort, host: prevHost } = server.config.server
 
   await server.close()
 
-  let inlineConfig = server.config.inlineConfig
-  if (server._forceOptimizeOnRestart) {
-    inlineConfig = mergeConfig(inlineConfig, {
-      server: {
-        force: true
-      }
-    })
-  }
+  const newConfig = mergeConfig(server.config.inlineConfig, overwritesConfig)
 
   let newServer = null
   try {
-    newServer = await createServer(inlineConfig)
+    newServer = await createServer(newConfig)
   } catch (err: any) {
     server.config.logger.error(err.message, {
       timestamp: true

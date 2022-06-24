@@ -111,9 +111,9 @@ interface ViteDevServer {
   /**
    * Restart the server.
    *
-   * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
+   * @param overwritesConfig - configurations that need to be overridden
    */
-  restart(forceOptimize?: boolean): Promise<void>
+  restart(overwritesConfig?: InlineConfig): Promise<void>
   /**
    * Stop the server.
    */
