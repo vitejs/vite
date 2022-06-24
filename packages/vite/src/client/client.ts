@@ -9,7 +9,7 @@ import '@vite/env'
 declare const __BASE__: string
 declare const __HMR_PROTOCOL__: string | null
 declare const __HMR_HOSTNAME__: string | null
-declare const __HMR_PORT__: string | null
+declare const __HMR_PORT__: number | null
 declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
