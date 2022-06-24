@@ -4,6 +4,10 @@ test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Hello Vite + React')
 })
 
+test('should exclude Exclude component', async () => {
+  expect(await page.textContent('span')).toContain('React.createElement')
+})
+
 test('should update', async () => {
   expect(await page.textContent('button')).toMatch('count is: 0')
   await page.click('button')

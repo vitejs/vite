@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
+import Exclude from './components/Exclude'
 import Button from 'jsx-entry'
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
 
       <Dummy />
       <Button>button</Button>
+
+      <span>{Exclude.toString()}</span>
     </div>
   )
 }

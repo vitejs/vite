@@ -92,7 +92,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let devBase = '/'
   let resolvedCacheDir: string
-  let filter = createFilter(opts.include, opts.exclude)
+  let filter: (id: string | unknown) => boolean
   let isProduction = true
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
@@ -175,6 +175,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       }
     },
     async transform(code, id, options) {
+      if (!filter(id)) {
+        return
+      }
+
       const ssr = options?.ssr === true
       // File extension could be mocked/overridden in querystring.
       const [filepath, querystring = ''] = id.split('?')
@@ -207,7 +211,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         if (!skipFastRefresh && !ssr && !isNodeModules) {
           // Modules with .js or .ts extension must import React.
           const isReactModule = isJSX || importReactRE.test(code)
-          if (isReactModule && filter(id)) {
+          if (isReactModule) {
             useFastRefresh = true
             plugins.push([
               await loadPlugin('react-refresh/babel'),

@@ -3,7 +3,11 @@ import type { UserConfig } from 'vite'
 
 const config: UserConfig = {
   mode: 'development',
-  plugins: [react()],
+  plugins: [
+    react({
+      exclude: /Exclude/
+    })
+  ],
   build: {
     // to make tests faster
     minify: false
