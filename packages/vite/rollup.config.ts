@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import fs from 'node:fs'
 import path from 'node:path'
+import url from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -134,15 +135,13 @@ function createNodePlugins(
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          src: `require(configFile)`,
-          replacement: `__require(configFile)`
-        },
-        // @rollup/plugin-commonjs uses incorrect esm
-        '@rollup/plugin-commonjs/dist/index.es.js': {
-          src: `import { sync } from 'resolve';`,
-          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
+          pattern: /require(?=\((configFile|'ts-node')\))/g,
+          replacement: `eval('require')`
         }
       }),
+
+    buildTimeImportMetaUrl(),
+
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -282,6 +281,21 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             )
           }
         }
+      }
+    }
+  }
+}
+
+// The use of `import.meta.url` in source code is not reliable after bundling.
+// For example, it is affected by the `isEntry` bug brought in by the Rollup CJS plugin
+// https://github.com/rollup/plugins/pull/1180
+// The better way is to resolve it at build time.
+function buildTimeImportMetaUrl(): Plugin {
+  return {
+    name: 'buildTimeImportMetaUrl',
+    resolveImportMeta: (property, chunk) => {
+      if (property === 'url') {
+        return `'${url.pathToFileURL(chunk.moduleId).href}'`
       }
     }
   }

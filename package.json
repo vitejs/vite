@@ -20,6 +20,7 @@
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
     "test-build": "cross-env VITE_TEST_BUILD=1 vitest run -c vitest.config.e2e.ts",
+    "test-build-legacy-cjs": "cross-env VITE_TEST_LEGACY_CJS_PLUGIN=1 pnpm test-build",
     "test-unit": "vitest run",
     "test-docs": "pnpm run docs-build",
     "debug-serve": "cross-env VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
