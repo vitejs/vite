@@ -128,7 +128,7 @@ export interface Plugin extends RollupPlugin {
   /**
    * extend hooks with ssr flag
    */
-  resolveId?(
+  resolveId?: (
     this: PluginContext,
     source: string,
     importer: string | undefined,
@@ -139,17 +139,18 @@ export interface Plugin extends RollupPlugin {
        * @internal
        */
       scan?: boolean
+      isEntry: boolean
     }
-  ): Promise<ResolveIdResult> | ResolveIdResult
-  load?(
+  ) => Promise<ResolveIdResult> | ResolveIdResult
+  load?: (
     this: PluginContext,
     id: string,
     options?: { ssr?: boolean }
-  ): Promise<LoadResult> | LoadResult
-  transform?(
+  ) => Promise<LoadResult> | LoadResult
+  transform?: (
     this: TransformPluginContext,
     code: string,
     id: string,
     options?: { ssr?: boolean }
-  ): Promise<TransformResult> | TransformResult
+  ) => Promise<TransformResult> | TransformResult
 }
