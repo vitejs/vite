@@ -1209,10 +1209,17 @@ UrlRewritePostcssPlugin.postcss = true
 
 function rewriteCssUrls(
   css: string,
-  replacer: CssUrlReplacer
+  replacer: CssUrlReplacer,
+  file?: string
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
     const [matched, rawUrl] = match
+    const inLess = file?.endsWith('.less')
+    const inSass = file?.endsWith('.sass')
+    const inScss = file?.endsWith('.scss')
+    if (inLess && rawUrl.startsWith('@') || (inSass || inScss) && rawUrl.startsWith('$')) {
+      return `url('${rawUrl}')`
+    }
     return await doUrlReplace(rawUrl, matched, replacer)
   })
 }
@@ -1621,7 +1628,7 @@ async function rebaseUrls(
   }
 
   if (hasUrls) {
-    rebased = await rewriteCssUrls(rebased || content, rebaseFn)
+    rebased = await rewriteCssUrls(rebased || content, rebaseFn, file)
   }
 
   if (hasDataUris) {
