@@ -842,3 +842,5 @@ function gracefulRemoveDir(
 export function emptyCssComments(raw: string) {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
+
+export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)

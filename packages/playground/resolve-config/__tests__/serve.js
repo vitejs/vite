@@ -8,7 +8,7 @@ const { testDir } = require('../../testUtils')
 
 const fromTestDir = (/** @type{string[]} */ ...p) => path.resolve(testDir, ...p)
 
-const configNames = ['js', 'cjs', 'mjs', 'ts']
+const configNames = ['js', 'cjs', 'mjs', 'ts', 'mts', 'cts']
 
 /** @param {string} root @param {boolean} isProd */
 exports.serve = async function serve(root, isProd) {
@@ -20,14 +20,20 @@ exports.serve = async function serve(root, isProd) {
     const pathToConf = fromTestDir(configName, `vite.config.${configName}`)
 
     await fs.copy(fromTestDir('root'), fromTestDir(configName))
-    await fs.rename(fromTestDir(configName, 'vite.config.js'), pathToConf)
+    await fs.rename(fromTestDir(configName, 'vite.config.ts'), pathToConf)
 
-    if (configName === 'cjs') {
+    if (['cjs', 'cts'].includes(configName)) {
       const conf = await fs.readFile(pathToConf, 'utf8')
       await fs.writeFile(
         pathToConf,
         conf.replace('export default', 'module.exports = ')
       )
+    }
+
+    // Remove TS annotation for plain JavaScript file.
+    if (configName.endsWith('js')) {
+      const conf = await fs.readFile(pathToConf, 'utf8')
+      await fs.writeFile(pathToConf, conf.replace(': boolean', ''))
     }
 
     // copy directory and add package.json with "type": "module"
