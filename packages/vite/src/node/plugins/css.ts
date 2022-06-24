@@ -1109,7 +1109,10 @@ function rewriteCssUrls(
     const inLess = file?.endsWith('.less')
     const inSass = file?.endsWith('.sass')
     const inScss = file?.endsWith('.scss')
-    if (inLess && rawUrl.startsWith('@') || (inSass || inScss) && rawUrl.startsWith('$')) {
+    if (
+      (inLess && rawUrl.startsWith('@')) ||
+      ((inSass || inScss) && rawUrl.startsWith('$'))
+    ) {
       return `url('${rawUrl}')`
     }
     return await doUrlReplace(rawUrl, matched, replacer)
