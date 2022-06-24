@@ -858,7 +858,7 @@ export async function loadConfigFromFile(
   } else if (/\.c[jt]s$/.test(resolvedPath)) {
     isESM = false
   } else {
-    // check package.json for type: "module" and set `isMjs` to true
+    // check package.json for type: "module" and set `isESM` to true
     try {
       const pkg = lookupFile(configRoot, ['package.json'])
       isESM = !!pkg && JSON.parse(pkg).type === 'module'
