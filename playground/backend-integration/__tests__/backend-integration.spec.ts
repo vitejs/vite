@@ -33,13 +33,13 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
     const cssAssetEntry = manifest['global.css']
-    const scssAssetEntry = manifest['blue.scss']
+    const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
     expect(scssAssetEntry?.file).not.toBeUndefined()
-    expect(scssAssetEntry?.src).toEqual('blue.scss')
+    expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
     expect(imgAssetEntry?.file).not.toBeUndefined()
   })
 })

@@ -513,7 +513,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             chunk.facadeModuleId
               ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
               : chunk.name,
-            '.css'
+            (chunk.facadeModuleId && path.extname(chunk.facadeModuleId)) ||
+              '.css'
           )
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
@@ -524,7 +525,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: cssAssetName,
             fileName: assetFileNamesToFileName(
               resolveAssetFileNames(config),
-              cssAssetName,
+              ensureFileExt(cssAssetName, '.css'),
               getHash(chunkCSS),
               chunkCSS
             ),
