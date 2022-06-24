@@ -89,7 +89,6 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-
       treeShaking: true
     })
   })
