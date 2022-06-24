@@ -5,16 +5,10 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  injectQuery,
-  normalizePath,
-  parseRequest,
-  transformResult
-} from '../utils'
+import { cleanUrl, injectQuery, normalizePath, transformResult } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
-import type { WorkerType } from './worker'
-import { WORKER_FILE_ID, workerFileToUrl } from './worker'
+import type { WorkerFormat, WorkerType } from './worker'
+import { WORKER_FILE_ID, parseWorkerQuery, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
 
 const ignoreFlagRE = /\/\*\s*@vite-ignore\s*\*\//
@@ -69,6 +63,19 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   return 'classic'
 }
 
+function workerTypeToFormat(
+  config: ResolvedConfig,
+  type: WorkerType
+): WorkerFormat {
+  return (
+    ({
+      module: 'es',
+      classic: 'iife',
+      ignore: config.worker.format
+    }[type] as WorkerFormat) || config.worker.format
+  )
+}
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
 
@@ -76,7 +83,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const query = parseRequest(id)
+      const query = parseWorkerQuery(id)
       let s: MagicString | undefined
       if (
         (code.includes('new Worker') || code.includes('new SharedWorker')) &&
@@ -112,11 +119,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(
-            code,
-            cleanString,
-            index + allExp.length
-          )
+          query.type = getWorkerType(code, cleanString, index + allExp.length)
           const file = normalizePath(
             path.resolve(path.dirname(id), rawUrl.slice(1, -1))
           )
@@ -124,11 +127,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let url: string
           if (isBuild) {
             getDepsOptimizer(config)?.registerWorkersSource(id)
-            url = await workerFileToUrl(config, file, query)
+            query.type === 'module'
+            url = await workerFileToUrl(config, file, {
+              inline: query.inline,
+              format: workerTypeToFormat(config, query.type)
+            })
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)
             url = injectQuery(url, WORKER_FILE_ID)
-            url = injectQuery(url, `type=${workerType}`)
+            url = injectQuery(url, `type=${query.type}`)
           }
           s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
             contentOnly: true

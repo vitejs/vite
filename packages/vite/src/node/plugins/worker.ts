@@ -24,9 +24,37 @@ interface WorkerCache {
 }
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
+export type WorkerFormat = 'es' | 'iife'
+
+interface WorkerQueryOptions {
+  type?: WorkerType
+  inline: boolean
+  worker_file: boolean
+  worker: boolean
+  sharedworker: boolean
+  url: boolean
+}
+
+interface WorkerBundleOptions {
+  format: WorkerFormat
+  inline: boolean
+}
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+export function parseWorkerQuery(id: string): WorkerQueryOptions {
+  const parsedQuery = parseRequest(id) as unknown as WorkerQueryOptions
+  if (!parsedQuery) {
+    return {} as WorkerQueryOptions
+  }
+  parsedQuery.inline = parsedQuery.inline != null
+  parsedQuery.worker_file = parsedQuery.worker_file != null
+  parsedQuery.worker = parsedQuery.worker != null
+  parsedQuery.sharedworker = parsedQuery.sharedworker != null
+  parsedQuery.url = parsedQuery.url != null
+  return parsedQuery
+}
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
@@ -40,11 +68,11 @@ function saveEmitWorkerAsset(
 export async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: WorkerBundleOptions
 ): Promise<OutputChunk> {
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
-  const { plugins, rollupOptions, format } = config.worker
+  const { plugins, rollupOptions } = config.worker
   const bundle = await rollup({
     ...rollupOptions,
     input: cleanUrl(id),
@@ -78,7 +106,7 @@ export async function bundleWorkerEntry(
         '[name].[hash].[ext]'
       ),
       ...workerConfig,
-      format,
+      format: query.format,
       sourcemap: config.build.sourcemap
     })
     chunk = outputChunk
@@ -101,7 +129,7 @@ export async function bundleWorkerEntry(
 
 function emitSourcemapForWorkerEntry(
   config: ResolvedConfig,
-  query: Record<string, string> | null,
+  query: WorkerBundleOptions,
   chunk: OutputChunk
 ): OutputChunk {
   const { map: sourcemap } = chunk
@@ -132,10 +160,9 @@ function emitSourcemapForWorkerEntry(
       if (config.build.sourcemap === true) {
         // inline web workers need to use the full sourcemap path
         // non-inline web workers can use a relative path
-        const sourceMapUrl =
-          query?.inline != null
-            ? mapFileName
-            : path.relative(config.build.assetsDir, mapFileName)
+        const sourceMapUrl = query.inline
+          ? mapFileName
+          : path.relative(config.build.assetsDir, mapFileName)
         chunk.code += `//# sourceMappingURL=${sourceMapUrl}`
       }
     }
@@ -161,7 +188,7 @@ function encodeWorkerAssetFileName(
 export async function workerFileToUrl(
   config: ResolvedConfig,
   id: string,
-  query: Record<string, string> | null
+  query: WorkerBundleOptions
 ): Promise<string> {
   const workerMap = workerCache.get(config.mainConfig || config)!
   let fileName = workerMap.bundle.get(id)
@@ -206,22 +233,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (isBuild) {
-        const parsedQuery = parseRequest(id)
-        if (
-          parsedQuery &&
-          (parsedQuery.worker ?? parsedQuery.sharedworker) != null
-        ) {
+        const parsedQuery = parseWorkerQuery(id)
+        if (parsedQuery.worker || parsedQuery.sharedworker) {
           return ''
         }
       }
     },
 
     async transform(raw, id) {
-      const query = parseRequest(id)
-      if (query && query[WORKER_FILE_ID] != null) {
+      const query = parseWorkerQuery(id)
+      if (query[WORKER_FILE_ID]) {
         // if import worker by worker constructor will had query.type
         // other type will be import worker by esm
-        const workerType = query['type']! as WorkerType
+        const workerType = query.type
         let injectEnv = ''
 
         if (workerType === 'classic') {
@@ -244,18 +268,15 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           code: injectEnv + raw
         }
       }
-      if (
-        query == null ||
-        (query && (query.worker ?? query.sharedworker) == null)
-      ) {
+
+      if (!query.worker && !query.sharedworker) {
         return
       }
 
       // stringified url or `new URL(...)`
       let url: string
       const { format } = config.worker
-      const workerConstructor =
-        query.sharedworker != null ? 'SharedWorker' : 'Worker'
+      const workerConstructor = query.sharedworker ? 'SharedWorker' : 'Worker'
       const workerType = isBuild
         ? format === 'es'
           ? 'module'
@@ -264,8 +285,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
         getDepsOptimizer(config)?.registerWorkersSource(id)
-        if (query.inline != null) {
-          const chunk = await bundleWorkerEntry(config, id, query)
+        if (query.inline) {
+          const chunk = await bundleWorkerEntry(config, id, {
+            inline: query.inline,
+            format
+          })
           // inline as blob data url
           return {
             code: `const encodedJs = "${Buffer.from(chunk.code).toString(
@@ -285,7 +309,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' }
           }
         } else {
-          url = await workerFileToUrl(config, id, query)
+          url = await workerFileToUrl(config, id, {
+            inline: query.inline,
+            format
+          })
         }
       } else {
         url = await fileToUrl(cleanUrl(id), config, this)
@@ -293,9 +320,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         url = injectQuery(url, `type=${workerType}`)
       }
 
-      if (query.url != null) {
+      if (query.url) {
         return {
-          code: `export default ${JSON.stringify(url)}`,
+          code: `export default ${JSON.stringify(url)};`,
           map: { mappings: '' } // Empty sourcemap to suppress Rollup warning
         }
       }
