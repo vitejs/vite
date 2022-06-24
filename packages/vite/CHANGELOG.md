@@ -1,3 +1,17 @@
+## 3.0.0-beta.2 (2022-06-24)
+
+* feat: enable tree-shaking for lib es (#8737) ([5dc0f72](https://github.com/vitejs/vite/commit/5dc0f72)), closes [#8737](https://github.com/vitejs/vite/issues/8737)
+* feat: supports cts and mts config (#8729) ([c2b09db](https://github.com/vitejs/vite/commit/c2b09db)), closes [#8729](https://github.com/vitejs/vite/issues/8729)
+* fix: avoid type mismatch with Rollup (fix #7843) (#8701) ([87e51f7](https://github.com/vitejs/vite/commit/87e51f7)), closes [#7843](https://github.com/vitejs/vite/issues/7843) [#8701](https://github.com/vitejs/vite/issues/8701)
+* fix: optimizeDeps.entries transformRequest url (fix #8719) (#8748) ([9208c3b](https://github.com/vitejs/vite/commit/9208c3b)), closes [#8719](https://github.com/vitejs/vite/issues/8719) [#8748](https://github.com/vitejs/vite/issues/8748)
+* fix(hmr): __HMR_PORT__ should not be `'undefined'` (#8761) ([3271266](https://github.com/vitejs/vite/commit/3271266)), closes [#8761](https://github.com/vitejs/vite/issues/8761)
+* perf(lib): improve helper inject regex (#8741) ([19fc7e5](https://github.com/vitejs/vite/commit/19fc7e5)), closes [#8741](https://github.com/vitejs/vite/issues/8741)
+* refactor: remove unnecessary condition (#8742) ([2ae269e](https://github.com/vitejs/vite/commit/2ae269e)), closes [#8742](https://github.com/vitejs/vite/issues/8742)
+* docs: fix alpha changelog links (#8736) ([31348b5](https://github.com/vitejs/vite/commit/31348b5)), closes [#8736](https://github.com/vitejs/vite/issues/8736)
+* chore: v3 beta release notes (#8718) ([7e899d0](https://github.com/vitejs/vite/commit/7e899d0)), closes [#8718](https://github.com/vitejs/vite/issues/8718)
+
+
+
 ## 3.0.0-beta.1 (2022-06-22)
 
 ### Main Changes
