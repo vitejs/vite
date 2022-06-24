@@ -859,7 +859,7 @@ export function toOutputFilePathInString(
         return { runtime: result.runtime }
       }
       if (typeof result.relative === 'boolean') {
-        relative = true
+        relative = result.relative
       }
     } else if (result) {
       return result
@@ -896,7 +896,7 @@ export function toOutputFilePathWithoutRuntime(
         )
       }
       if (typeof result.relative === 'boolean') {
-        relative = true
+        relative = result.relative
       }
     } else if (result) {
       return result

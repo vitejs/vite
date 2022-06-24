@@ -33,7 +33,7 @@ async function loadBabel() {
 
 // Duplicated from build.ts in Vite Core, at least while the feature is experimental
 // We should later expose this helper for other plugins to use
-export function toOutputFilePathInHtml(
+function toOutputFilePathInHtml(
   filename: string,
   type: 'asset' | 'public',
   importer: string,
