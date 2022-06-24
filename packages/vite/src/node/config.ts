@@ -11,8 +11,8 @@ import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
-  RenderBuiltAssetUrl,
   BuildOptions,
+  RenderBuiltAssetUrl,
   ResolvedBuildOptions
 } from './build'
 import { resolveBuildOptions } from './build'
