@@ -37,6 +37,10 @@ export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
   jsxInject?: string
+  /**
+   * This option is not respected. Use `build.minify` instead.
+   */
+  minify?: never
 }
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
@@ -172,7 +176,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
-  options = {
+  const transformOptions: TransformOptions = {
     ...options,
     minify: false,
     minifyIdentifiers: false,
@@ -199,7 +203,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, options)
+        const result = await transformWithEsbuild(code, id, transformOptions)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
