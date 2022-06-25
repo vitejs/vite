@@ -887,9 +887,12 @@ export async function loadConfigFromFile(
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
         fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
-          .default
-        fs.unlinkSync(resolvedPath + '.mjs')
+        try {
+          userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
+            .default
+        } finally {
+          fs.unlinkSync(resolvedPath + '.mjs')
+        }
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
         // using Function to avoid this from being compiled away by TS/Rollup
