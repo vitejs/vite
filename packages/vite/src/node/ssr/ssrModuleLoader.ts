@@ -1,13 +1,7 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { ViteDevServer } from '../server'
-import {
-  bareImportRE,
-  dynamicImport,
-  isBuiltin,
-  unwrapId,
-  usingDynamicImport
-} from '../utils'
+import { bareImportRE, dynamicImport, isBuiltin, unwrapId } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -281,19 +275,9 @@ async function nodeImport(
   if (id.startsWith('node:') || isBuiltin(id)) {
     url = id
   } else {
-    url = viteResolve(
-      id,
-      importer,
-      // Non-external modules can import ESM-only modules, but only outside
-      // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error
-      typeof jest === 'undefined'
-        ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions
-    )
-    if (usingDynamicImport) {
-      url = pathToFileURL(url).toString()
-    }
+    url = pathToFileURL(
+      viteResolve(id, importer, { ...resolveOptions, tryEsmOnly: true })
+    ).toString()
   }
 
   try {
