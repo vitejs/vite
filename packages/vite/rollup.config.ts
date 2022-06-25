@@ -140,8 +140,6 @@ function createNodePlugins(
         }
       }),
 
-    buildTimeImportMetaUrl(),
-
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -281,21 +279,6 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             )
           }
         }
-      }
-    }
-  }
-}
-
-// The use of `import.meta.url` in source code is not reliable after bundling.
-// For example, it is affected by the `isEntry` bug brought in by the Rollup CJS plugin
-// https://github.com/rollup/plugins/pull/1180
-// The better way is to resolve it at build time.
-function buildTimeImportMetaUrl(): Plugin {
-  return {
-    name: 'buildTimeImportMetaUrl',
-    resolveImportMeta: (property, chunk) => {
-      if (property === 'url') {
-        return `'${url.pathToFileURL(chunk.moduleId).href}'`
       }
     }
   }
