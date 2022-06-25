@@ -14,6 +14,7 @@
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "postinstall": "simple-git-hooks",
     "format": "prettier --write --cache .",
     "lint": "eslint --cache packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
@@ -30,8 +31,8 @@
     "docs-serve": "vitepress serve docs",
     "build": "pnpm -r --filter=./packages/* run build",
     "dev": "pnpm -r --parallel --filter=./packages/* run dev",
-    "release": "esno scripts/release.ts",
-    "ci-publish": "esno scripts/publishCI.ts",
+    "release": "tsx scripts/release.ts",
+    "ci-publish": "tsx scripts/publishCI.ts",
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
@@ -67,7 +68,6 @@
     "eslint-define-config": "^1.5.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
-    "esno": "^0.16.3",
     "execa": "^6.1.0",
     "fs-extra": "^10.1.0",
     "kill-port": "^1.6.1",
@@ -86,6 +86,7 @@
     "simple-git-hooks": "^2.8.0",
     "sirv": "^2.0.2",
     "tslib": "^2.4.0",
+    "tsx": "^3.6.0",
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
@@ -95,7 +96,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
-    "commit-msg": "pnpm exec esno scripts/verifyCommit.ts $1"
+    "commit-msg": "pnpm exec tsx scripts/verifyCommit.ts $1"
   },
   "lint-staged": {
     "*": [
