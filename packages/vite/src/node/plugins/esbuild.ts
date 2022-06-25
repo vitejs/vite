@@ -8,7 +8,7 @@ import type {
 } from 'esbuild'
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
+import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
@@ -37,6 +37,10 @@ export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
   jsxInject?: string
+  /**
+   * This option is not respected. Use `build.minify` instead.
+   */
+  minify?: never
 }
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
@@ -170,6 +174,17 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     options.exclude || /\.js$/
   )
 
+  // Remove optimization options for dev as we only need to transpile them,
+  // and for build as the final optimization is in `buildEsbuildPlugin`
+  const transformOptions: TransformOptions = {
+    ...options,
+    minify: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
+    treeShaking: false
+  }
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
@@ -188,7 +203,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, options)
+        const result = await transformWithEsbuild(code, id, transformOptions)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -236,27 +251,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
-      const target = config.build.target
-      const minify = config.build.minify === 'esbuild'
+      const options = resolveEsbuildTranspileOptions(config, opts.format)
 
-      if ((!target || target === 'esnext') && !minify) {
+      if (!options) {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, {
-        ...config.esbuild,
-        target: target || undefined,
-        ...(minify
-          ? {
-              // Do not minify ES lib output since that would remove pure annotations
-              // and break tree-shaking
-              // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
-              minify: !(config.build.lib && opts.format === 'es'),
-              treeShaking: true,
-              format: rollupToEsbuildFormatMap[opts.format]
-            }
-          : undefined)
-      })
+      const res = await transformWithEsbuild(code, chunk.fileName, options)
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
@@ -278,6 +279,82 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         }
       }
       return res
+    }
+  }
+}
+
+export function resolveEsbuildTranspileOptions(
+  config: ResolvedConfig,
+  format: InternalModuleFormat
+): TransformOptions | null {
+  const target = config.build.target
+  const minify = config.build.minify === 'esbuild'
+
+  if ((!target || target === 'esnext') && !minify) {
+    return null
+  }
+
+  // Do not minify whitespace for ES lib output since that would remove
+  // pure annotations and break tree-shaking
+  // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
+  const isEsLibBuild = config.build.lib && format === 'es'
+  const options: TransformOptions = {
+    ...config.esbuild,
+    target: target || undefined,
+    format: rollupToEsbuildFormatMap[format]
+  }
+
+  // If no minify, disable all minify options
+  if (!minify) {
+    return {
+      ...options,
+      minify: false,
+      minifyIdentifiers: false,
+      minifySyntax: false,
+      minifyWhitespace: false,
+      treeShaking: false
+    }
+  }
+
+  // If user enable fine-grain minify options, minify with their options instead
+  if (
+    options.minifyIdentifiers ||
+    options.minifySyntax ||
+    options.minifyWhitespace
+  ) {
+    if (isEsLibBuild) {
+      // Disable minify whitespace as it breaks tree-shaking
+      return {
+        ...options,
+        minify: false,
+        minifyWhitespace: false,
+        treeShaking: true
+      }
+    } else {
+      return {
+        ...options,
+        minify: false,
+        treeShaking: true
+      }
+    }
+  }
+
+  // Else apply default minify options
+  if (isEsLibBuild) {
+    // Minify all except whitespace as it breaks tree-shaking
+    return {
+      ...options,
+      minify: false,
+      minifyIdentifiers: true,
+      minifySyntax: true,
+      minifyWhitespace: false,
+      treeShaking: true
+    }
+  } else {
+    return {
+      ...options,
+      minify: true,
+      treeShaking: true
     }
   }
 }
