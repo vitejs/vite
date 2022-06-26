@@ -24,7 +24,9 @@ export default function ReporterPlugin(): Plugin {
         const end = Date.now()
 
         if (result != null && filter(id)) {
-          transformMap[id] ||= { hooks: 'transform', timing: 0 }
+          if (!transformMap[id]) {
+            transformMap[id] = { hooks: 'transform', timing: 0 }
+          }
           transformMap[id].timing += end - start
         }
 
@@ -41,7 +43,9 @@ export default function ReporterPlugin(): Plugin {
         const end = Date.now()
 
         if (result != null && filter(id)) {
-          transformMap[id] ||= { hooks: 'load', timing: 0 }
+          if (!transformMap[id]) {
+            transformMap[id] = { hooks: 'load', timing: 0 }
+          }
           transformMap[id].timing += end - start
         }
 
@@ -64,17 +68,7 @@ export default function ReporterPlugin(): Plugin {
 }
 
 process.on('exit', () => {
-  writeFileSync(
-    path.join(__dirname, '../report.md'),
-    '<!--report-->\n' +
-      '## Top 10' +
-      '|hooks|file|timing|\n' +
-      '|-----|----|------|\n' +
-      Object.entries(res)
-        .sort((a, b) => b[1].timing - a[1].timing)
-        .slice(0, 10)
-        .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
-        .join('\n'),
-    { encoding: 'utf8' }
-  )
+  writeFileSync(path.join(__dirname, '../report.md'), 'hello', {
+    encoding: 'utf8'
+  })
 })
