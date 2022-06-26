@@ -1,13 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import {
-  extractSourcemap,
-  formatSourcemapForSnapshot,
-  isBuild,
-  isServe,
-  page,
-  testDir
-} from '~utils'
+import { isBuild, testDir } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
@@ -117,16 +110,6 @@ describe.runIf(isBuild)('build', () => {
     expect(workerNestedWorkerContent).toMatch(
       `new Worker("/iife-sourcemap/assets/sub-worker`
     )
-  })
-})
-
-describe.runIf(isServe)('serve:worker-sourcemap', () => {
-  test('nested worker', async () => {
-    const res = await page.request.get(
-      new URL('./possible-ts-output-worker.mjs?worker_file', page.url()).href
-    )
-    const map = extractSourcemap(await res.text())
-    expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
   })
 })
 

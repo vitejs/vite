@@ -10,7 +10,7 @@ import {
   injectQuery,
   normalizePath,
   parseRequest,
-  transformResult
+  transformStableResult
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import type { WorkerType } from './worker'
@@ -136,7 +136,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (s) {
-          return transformResult(s, id, config)
+          return transformStableResult(s, id, config)
         }
 
         return null

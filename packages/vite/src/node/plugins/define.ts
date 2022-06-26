@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
-import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -144,11 +144,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const result: TransformResult = { code: s.toString() }
-      if (config.build.sourcemap) {
-        result.map = s.generateMap({ hires: true })
-      }
-      return result
+      return transformStableResult(s, id, config)
     }
   }
 }

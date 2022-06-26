@@ -40,7 +40,7 @@ import {
   removeImportQuery,
   stripBomTag,
   timeFrom,
-  transformResult,
+  transformStableResult,
   unwrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -711,7 +711,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return transformResult(s, importer, config)
+        return transformStableResult(s, importer, config)
       } else {
         return source
       }

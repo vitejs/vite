@@ -3,7 +3,7 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { transformResult } from '../utils'
+import { transformStableResult } from '../utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 
@@ -81,7 +81,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           )
         }
         if (s) {
-          return transformResult(s, id, config)
+          return transformStableResult(s, id, config)
         }
       }
       return null
