@@ -68,7 +68,16 @@ export default function ReporterPlugin(): Plugin {
 }
 
 process.on('exit', () => {
-  writeFileSync(path.join(__dirname, '../report.md'), 'hello', {
-    encoding: 'utf8'
-  })
+  writeFileSync(
+    path.join(__dirname, '../report.md'),
+    '<!--report-->\n' +
+      '## Top 10\n' +
+      '|hooks|file|timing|\n' +
+      '|-----|----|------|\n' +
+      Object.entries(res)
+        .sort((a, b) => b[1].timing - a[1].timing)
+        .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
+        .join('\n'),
+    { encoding: 'utf8' }
+  )
 })
