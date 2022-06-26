@@ -86,12 +86,6 @@ jobs:
       - name: Test serve
         run: pnpm run test-serve
 
-      - name: Test build
-        run: pnpm run test-build
-
-      - name: Test docs
-        run: pnpm run test-docs
-
       - name: reporter
         uses: actions/github-script@v6
         if: matrix.node_version == '16' && matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
@@ -119,12 +113,19 @@ jobs:
             }
             if (commentId) {
               await github.rest.issues.updateComment({
-                comment_id: commentId,
+                comment_id,
                 ...comment
               })
             } else {
+              console.log(comment)
               await github.rest.issues.createComment(comment)
             }
+
+      - name: Test build
+        run: pnpm run test-build
+
+      - name: Test docs
+        run: pnpm run test-docs
 
   lint:
     timeout-minutes: 10
