@@ -96,6 +96,7 @@ jobs:
         uses: actions/github-script@v6
         if: matrix.node_version == '16' && matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs')
             const path = require('path')
@@ -121,7 +122,7 @@ jobs:
                 ...comment
               })
             } else {
-             await github.rest.issues.createComment(comment)
+              await github.rest.issues.createComment(comment)
             }
 
   lint:
