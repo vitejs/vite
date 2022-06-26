@@ -10,10 +10,6 @@ interface ReportInfo {
 const res = {} as Record<string, ReportInfo>
 
 export default function ReporterPlugin(): Plugin {
-  const transformMap: Record<string, ReportInfo> = {}
-  const loadMap: Record<string, ReportInfo> = {}
-  const filter = (id: string) => !id.includes('node_modules')
-
   function injectTimeCollect(plugin: Plugin) {
     if (plugin.transform) {
       const _transform = plugin.transform
@@ -23,11 +19,11 @@ export default function ReporterPlugin(): Plugin {
         const result = await _transform.apply(this, args)
         const end = Date.now()
 
-        if (result != null && filter(id)) {
-          if (!transformMap[id]) {
-            transformMap[id] = { hooks: 'transform', timing: 0 }
+        if (result != null) {
+          if (!res[id]) {
+            res[id] = { hooks: 'transform', timing: 0 }
           }
-          transformMap[id].timing += end - start
+          res[id].timing += end - start
         }
 
         return result
@@ -42,11 +38,11 @@ export default function ReporterPlugin(): Plugin {
         const result = await _load.apply(this, args)
         const end = Date.now()
 
-        if (result != null && filter(id)) {
-          if (!transformMap[id]) {
-            transformMap[id] = { hooks: 'load', timing: 0 }
+        if (result != null) {
+          if (!res[id]) {
+            res[id] = { hooks: 'load', timing: 0 }
           }
-          transformMap[id].timing += end - start
+          res[id].timing += end - start
         }
 
         return result
@@ -59,10 +55,6 @@ export default function ReporterPlugin(): Plugin {
     apply: 'serve',
     configResolved(config) {
       config.plugins.forEach(injectTimeCollect)
-    },
-
-    async buildEnd() {
-      Object.assign(res, transformMap, loadMap)
     }
   }
 }
