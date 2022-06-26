@@ -92,6 +92,22 @@ jobs:
       - name: Test docs
         run: pnpm run test-docs
 
+      - name: reporter
+        uses: actions/github-script@v6
+        if: matrix.node_version == '16' && matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const comment = fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
+            console.log(comment)
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            })
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
