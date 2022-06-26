@@ -118,10 +118,16 @@ export function esbuildDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            // here it is not set to `external: true` to convert `require` to `import`
+            if (kind === 'require-call') {
+              // here it is not set to `external: true` to convert `require` to `import`
+              return {
+                path: resolved,
+                namespace: externalWithConversionNamespace
+              }
+            }
             return {
               path: resolved,
-              namespace: externalWithConversionNamespace
+              external: true
             }
           }
         }
