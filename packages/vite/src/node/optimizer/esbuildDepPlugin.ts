@@ -138,8 +138,12 @@ export function esbuildDepPlugin(
           // import itself with prefix (this is the actual part of require-import conversion)
           return {
             contents:
-              `export { default } from "${convertedExternalPrefix}${args.path}";` +
-              `export * from "${convertedExternalPrefix}${args.path}";`,
+              `import * as namespace from "${convertedExternalPrefix}${args.path}";` +
+              // `export * from "path"` requires esbuild helper functions
+              // but module.exports does not require any helper function other than `__commonJS`
+              // and this function will be already used since it is in CJS context
+              // this will reduce optimize reload happening
+              `module.exports = namespace`,
             loader: 'js'
           }
         }
