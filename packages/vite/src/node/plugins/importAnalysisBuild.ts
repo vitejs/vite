@@ -10,8 +10,7 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
-  moduleListContains,
-  transformStableResult
+  moduleListContains
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
