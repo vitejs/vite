@@ -68,6 +68,7 @@ process.on('exit', () => {
       '|-----|----|------|\n' +
       Object.entries(res)
         .sort((a, b) => b[1].timing - a[1].timing)
+        .slice(0, 10)
         .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
         .join('\n'),
     { encoding: 'utf8' }
