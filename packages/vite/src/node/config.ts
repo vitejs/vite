@@ -710,7 +710,7 @@ export async function resolveConfig(
   await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
 
   if (process.env.DEBUG) {
-    debug(`using resolved config: %O`, {
+    debug(`using resolved config: 0%`, {
       ...resolved,
       plugins: resolved.plugins.map((p) => p.name)
     })
