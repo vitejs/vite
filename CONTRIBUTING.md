@@ -180,11 +180,17 @@ You can set the `DEBUG` environment variable to turn on debugging logs. E.g. `DE
 
 ### Issue Triaging Workflow
 
-![issue-workflow](./.github/issue-workflow.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/issue-workflow-dark.png">
+  <img src="./.github/issue-workflow.png">
+</picture>
 
 ### Pull Request Review Workflow
 
-![issue-workflow](./.github/pr-workflow.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/pr-workflow-dark.png">
+  <img src="./.github/pr-workflow.png">
+</picture>
 
 ## Notes on Dependencies
 
