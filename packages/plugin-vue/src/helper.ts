@@ -1,4 +1,4 @@
-export const EXPORT_HELPER_ID = 'plugin-vue:export-helper'
+export const EXPORT_HELPER_ID = '\0plugin-vue:export-helper'
 
 export const helperCode = `
 export default (sfc, props) => {
