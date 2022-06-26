@@ -120,16 +120,6 @@ describe.runIf(isBuild)('build', () => {
   })
 })
 
-describe.runIf(isServe)('serve:worker-sourcemap', () => {
-  test('nested worker', async () => {
-    const res = await page.request.get(
-      new URL('./possible-ts-output-worker.mjs?worker_file', page.url()).href
-    )
-    const map = extractSourcemap(await res.text())
-    expect(formatSourcemapForSnapshot(map)).toMatchSnapshot()
-  })
-})
-
 function getSourceMapUrl(code: string): string {
   const regex = /\/\/[#@]\s(?:source(?:Mapping)?URL)=\s*(\S+)/g
   const results = regex.exec(code)
