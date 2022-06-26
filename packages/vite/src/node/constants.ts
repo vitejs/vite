@@ -30,6 +30,15 @@ export const DEFAULT_EXTENSIONS = [
   '.json'
 ]
 
+export const DEFAULT_CONFIG_FILES = [
+  'vite.config.js',
+  'vite.config.mjs',
+  'vite.config.ts',
+  'vite.config.cjs',
+  'vite.config.mts',
+  'vite.config.cts'
+]
+
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
 export const OPTIMIZABLE_ENTRY_RE = /\.(?:m?js|ts)$/
@@ -62,6 +71,7 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
+  // import.meta.url is `dist/node/constants.js` after bundle
   fileURLToPath(import.meta.url),
   '../../..'
 )

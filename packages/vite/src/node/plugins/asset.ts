@@ -383,6 +383,7 @@ async function fileToBuiltUrl(
   if (
     config.build.lib ||
     (!file.endsWith('.svg') &&
+      !file.endsWith('.html') &&
       content.length < Number(config.build.assetsInlineLimit))
   ) {
     const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'

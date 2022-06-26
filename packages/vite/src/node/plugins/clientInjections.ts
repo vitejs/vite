@@ -26,11 +26,9 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
 
         // hmr.clientPort -> hmr.port
         // -> (24678 if middleware mode) -> new URL(import.meta.url).port
-        let port = hmrConfig
-          ? String(hmrConfig.clientPort || hmrConfig.port)
-          : null
+        let port = hmrConfig?.clientPort || hmrConfig?.port || null
         if (config.server.middlewareMode) {
-          port ||= '24678'
+          port ||= 24678
         }
 
         const devBase = config.base

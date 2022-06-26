@@ -1,6 +1,8 @@
+import path from 'node:path'
 import colors from 'picocolors'
 import _debug from 'debug'
 import glob from 'fast-glob'
+import { FS_PREFIX } from '../constants'
 import { getHash } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { ResolvedConfig, ViteDevServer } from '..'
@@ -81,6 +83,7 @@ export async function initDepsOptimizer(
     registerWorkersSource,
     delayDepsOptimizerUntil,
     resetRegisteredIds,
+    ensureFirstRun,
     options: config.optimizeDeps
   }
 
@@ -519,12 +522,28 @@ export async function initDepsOptimizer(
   let seenIds = new Set<string>()
   let workersSources = new Set<string>()
   let waitingOn: string | undefined
+  let firstRunEnsured = false
 
   function resetRegisteredIds() {
     registeredIds = []
     seenIds = new Set<string>()
     workersSources = new Set<string>()
     waitingOn = undefined
+    firstRunEnsured = false
+  }
+
+  // If all the inputs are dependencies, we aren't going to get any
+  // delayDepsOptimizerUntil(id) calls. We need to guard against this
+  // by forcing a rerun if no deps have been registered
+  function ensureFirstRun() {
+    if (!firstRunEnsured && !firstRunCalled && registeredIds.length === 0) {
+      setTimeout(() => {
+        if (!firstRunCalled && registeredIds.length === 0) {
+          getDepsOptimizer(config)?.run()
+        }
+      }, runOptimizerIfIdleAfterMs)
+    }
+    firstRunEnsured = true
   }
 
   function registerWorkersSource(id: string): void {
@@ -557,7 +576,7 @@ export async function initDepsOptimizer(
         waitingOn = next.id
         const afterLoad = () => {
           waitingOn = undefined
-          if (!workersSources.has(next.id)) {
+          if (!firstRunCalled && !workersSources.has(next.id)) {
             if (registeredIds.length > 0) {
               runOptimizerWhenIdle()
             } else {
@@ -585,17 +604,21 @@ export async function preTransformOptimizeDepsEntries(
   server: ViteDevServer
 ): Promise<void> {
   const { config } = server
+  const { root } = config
   const { entries } = config.optimizeDeps
   if (entries) {
     const explicitEntries = await glob(entries, {
-      cwd: config.root,
+      cwd: root,
       ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
       absolute: true
     })
     // TODO: should we restrict the entries to JS and HTML like the
     // scanner did? I think we can let the user chose any entry
     for (const entry of explicitEntries) {
-      transformRequest(entry, server, { ssr: false }).catch((e) => {
+      const url = entry.startsWith(root + '/')
+        ? entry.slice(root.length)
+        : path.posix.join(FS_PREFIX + entry)
+      transformRequest(url, server, { ssr: false }).catch((e) => {
         config.logger.error(e.message)
       })
     }

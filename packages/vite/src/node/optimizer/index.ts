@@ -62,6 +62,7 @@ export interface DepsOptimizer {
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
+  ensureFirstRun: () => void
 
   options: DepOptimizationOptions
 }

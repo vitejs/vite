@@ -276,7 +276,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           !(isProjectFile && babelOptions.babelrc)
 
         if (shouldSkip) {
-          return // Avoid parsing if no plugins exist.
+          // Avoid parsing if no plugins exist.
+          return {
+            code
+          }
         }
 
         const parserPlugins: typeof babelOptions.parserOpts.plugins = [
