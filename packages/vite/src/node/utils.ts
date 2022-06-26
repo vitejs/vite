@@ -1028,16 +1028,21 @@ function normalizeSingleAlias({
   return alias
 }
 
-export function transformResult(
+/**
+ * Transforms transpiled code result where line numbers aren't altered,
+ * so we can skip sourcemap generation during dev
+ */
+export function transformStableResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
 ): TransformResult {
-  const isBuild = config.command === 'build'
-  const needSourceMap = !isBuild || config.build.sourcemap
   return {
     code: s.toString(),
-    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
 }
 
