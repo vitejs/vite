@@ -315,7 +315,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return transformStableResult(s, importer, config)
+        return {
+          code: s.toString(),
+          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
+        }
       }
     },
 
