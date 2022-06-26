@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
+import ReporterPlugin from './scripts/reporter'
 
 const timeout = process.env.CI ? 50000 : 30000
 
@@ -9,6 +10,7 @@ export default defineConfig({
       '~utils': resolve(__dirname, './playground/test-utils')
     }
   },
+  plugins: [ReporterPlugin()],
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
     setupFiles: ['./playground/vitestSetup.ts'],
