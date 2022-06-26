@@ -1,13 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import {
-  extractSourcemap,
-  formatSourcemapForSnapshot,
-  isBuild,
-  isServe,
-  page,
-  testDir
-} from '~utils'
+import { isBuild, testDir } from '~utils'
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
