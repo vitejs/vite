@@ -10,7 +10,8 @@ import {
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
-  moduleListContains
+  moduleListContains,
+  transformStableResult
 } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -314,10 +315,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (s) {
-        return {
-          code: s.toString(),
-          map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-        }
+        return transformStableResult(s, importer, config)
       }
     },
 
