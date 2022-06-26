@@ -99,14 +99,31 @@ jobs:
           script: |
             const fs = require('fs')
             const path = require('path')
-            const comment = fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
-            console.log(comment)
-            await github.rest.issues.createComment({
+            const comment = {
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: comment
+              body: fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
+            }
+            const comments = github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number
             })
+            let commentId;
+            for (const issue of comments) {
+              if (c.user.type === 'Bot' && c.body.includes('<!--report-->')) {
+                commentId = c.id;
+                break;
+              }
+            }
+            if (commentId) {
+              await github.rest.issues.updateComment({
+                comment_id: commentId,
+                ...comment
+              })
+            } else {
+              await github.rest.issues.createComment(comment)
+            }
 
   lint:
     timeout-minutes: 10
