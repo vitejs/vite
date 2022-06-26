@@ -103,27 +103,29 @@ jobs:
             let commentId
             const comments = (await github.rest.issues.listComments(commentInfo)).data
             for (const c of comments) {
-              if (c.user.type === 'Bot' && c.body.includes('<!--report-->')) {
+              if (c.user.type === 'Bot' && c.body.includes('**report**')) {
                 commentId = c.id;
                 break;
               }
             }
-            if (commentId) {
-              await github.rest.issues.updateComment({
-                comment_id,
-                ...commentInfo
-              })
-            } else {
-              try {
-                await github.rest.issues.createComment(commentInfo)
-              } catch {
-                await github.rest.pulls.createReview({
-                  ...commentInfo,
-                  event: 'COMMENT',
-                  pull_number: context.issue.number,
-                });
+            setTimeout(() => {
+              if (commentId) {
+                await github.rest.issues.updateComment({
+                  comment_id,
+                  ...commentInfo
+                })
+              } else {
+                try {
+                  await github.rest.issues.createComment(commentInfo)
+                } catch {
+                  await github.rest.pulls.createReview({
+                    ...commentInfo,
+                    event: 'COMMENT',
+                    pull_number: context.issue.number,
+                  });
+                }
               }
-            }
+            }, 1000)
 
       - name: Test build
         run: pnpm run test-build

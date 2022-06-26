@@ -62,7 +62,7 @@ export default function ReporterPlugin(): Plugin {
 process.on('exit', () => {
   writeFileSync(
     path.join(__dirname, '../report.md'),
-    '<!--report-->\n' +
+    '**report**\n' +
       '## Top 10\n' +
       '|hooks|file|timing|\n' +
       '|-----|----|------|\n' +
