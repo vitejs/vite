@@ -100,9 +100,8 @@ jobs:
             const fs = require('fs')
             const path = require('path')
             const comment = {
+              ...context.repo,
               issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
               body: fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
             }
             let commentId
