@@ -19,7 +19,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'types/alias'
-import type { TransformOptions } from 'esbuild';
+import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
@@ -1237,14 +1237,14 @@ function resolveEsbuildMinifyOptions(
   options: ESBuildOptions
 ): TransformOptions {
   if (
-    options.minifyIdentifiers ||
-    options.minifySyntax ||
-    options.minifyWhitespace
+    options.minifyIdentifiers != null ||
+    options.minifySyntax != null ||
+    options.minifyWhitespace != null
   ) {
     return {
-      minifyIdentifiers: options.minifyIdentifiers,
-      minifySyntax: options.minifySyntax,
-      minifyWhitespace: options.minifyWhitespace
+      minifyIdentifiers: options.minifyIdentifiers ?? true,
+      minifySyntax: options.minifySyntax ?? true,
+      minifyWhitespace: options.minifyWhitespace ?? true
     }
   } else {
     return { minify: true }

@@ -41,6 +41,31 @@ describe('resolveEsbuildTranspileOptions', () => {
     expect(options).toEqual(null)
   })
 
+  test('resolve specific minify options', () => {
+    const options = resolveEsbuildTranspileOptions(
+      defineResolvedConfig({
+        build: {
+          minify: 'esbuild'
+        },
+        esbuild: {
+          keepNames: true,
+          minifyIdentifiers: false
+        }
+      }),
+      'es'
+    )
+    expect(options).toEqual({
+      target: undefined,
+      format: 'esm',
+      keepNames: true,
+      minify: false,
+      minifyIdentifiers: false,
+      minifySyntax: true,
+      minifyWhitespace: true,
+      treeShaking: true
+    })
+  })
+
   test('resolve no minify', () => {
     const options = resolveEsbuildTranspileOptions(
       defineResolvedConfig({
@@ -140,6 +165,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       keepNames: true,
       minify: false,
       minifyIdentifiers: true,
+      minifySyntax: true,
       minifyWhitespace: false,
       treeShaking: true
     })
@@ -157,7 +183,7 @@ describe('resolveEsbuildTranspileOptions', () => {
         esbuild: {
           keepNames: true,
           minifyIdentifiers: true,
-          minifyWhitespace: true,
+          minifySyntax: false,
           treeShaking: true
         }
       }),
@@ -169,6 +195,7 @@ describe('resolveEsbuildTranspileOptions', () => {
       keepNames: true,
       minify: false,
       minifyIdentifiers: true,
+      minifySyntax: false,
       minifyWhitespace: true,
       treeShaking: true
     })
