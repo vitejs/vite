@@ -63,9 +63,9 @@ process.on('exit', () => {
   writeFileSync(
     path.join(__dirname, '../report.md'),
     '<!--report-->\n' +
-      '## Top 10 (change in each commit)\n' +
-      '|hooks|file|timing|\n' +
-      '|-----|----|------|\n' +
+      '## Top 10\n' +
+      '|hooks|file|timing(ms)|\n' +
+      '|-----|----|:------:|\n' +
       Object.entries(res)
         .sort((a, b) => b[1].timing - a[1].timing)
         .slice(0, 10)
