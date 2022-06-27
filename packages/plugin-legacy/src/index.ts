@@ -57,7 +57,7 @@ function toOutputFilePathInHtml(
         )
       }
       if (typeof result.relative === 'boolean') {
-        relative = true
+        relative = result.relative
       }
     } else if (result) {
       return result
