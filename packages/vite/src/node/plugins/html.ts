@@ -248,6 +248,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             url.slice(1),
             'public',
             relativeUrlPath,
+            'html',
             config,
             publicToRelative
           )
@@ -613,6 +614,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               filename,
               'asset',
               relativeUrlPath,
+              'html',
               config,
               (filename: string, importer: string) => assetsBase + filename
             )

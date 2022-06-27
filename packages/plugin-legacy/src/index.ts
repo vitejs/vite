@@ -36,14 +36,17 @@ async function loadBabel() {
 function toOutputFilePathInHtml(
   filename: string,
   type: 'asset' | 'public',
-  importer: string,
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
   toRelative: (filename: string, importer: string) => string
 ): string {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
-    const result = renderBuiltUrl(filename, importer, {
+    const result = renderBuiltUrl(filename, { 
+      hostId, 
+      hostType,
       type,
       ssr: !!config.build.ssr
     })
@@ -52,9 +55,7 @@ function toOutputFilePathInHtml(
         throw new Error(
           `{ runtime: "${
             result.runtime
-          }" } is not supported for assets in ${path.extname(
-            importer
-          )} files: ${filename}`
+          }" } is not supported for assets in ${hostType} files: ${filename}`
         )
       }
       if (typeof result.relative === 'boolean') {
@@ -65,7 +66,7 @@ function toOutputFilePathInHtml(
     }
   }
   if (relative && !config.build.ssr) {
-    return toRelative(filename, importer)
+    return toRelative(filename, hostId)
   } else {
     return config.base + filename
   }
@@ -87,9 +88,9 @@ function toAssetPathFromHtml(
   config: ResolvedConfig
 ): string {
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
-  const toRelative = (filename: string, importer: string) =>
+  const toRelative = (filename: string, hostId: string) =>
     getBaseInHTML(relativeUrlPath, config) + filename
-  return toOutputFilePathInHtml(filename, 'asset', htmlPath, config, toRelative)
+  return toOutputFilePathInHtml(filename, 'asset', htmlPath, 'html', config, toRelative)
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc

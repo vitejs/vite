@@ -45,15 +45,15 @@ module.exports = {
     }
   ],
   experimental: {
-    renderBuiltUrl(filename, importer, { type }) {
+    renderBuiltUrl(filename, { hostType, type }) {
       if (type === 'asset') {
-        if (path.extname(importer) === '.js') {
+        if (hostType === 'js') {
           return {
             runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`
           }
         }
       } else if (type === 'public') {
-        if (path.extname(importer) === '.js') {
+        if (hostType === 'js') {
           return {
             runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`
           }

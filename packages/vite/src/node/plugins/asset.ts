@@ -122,6 +122,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           filename,
           'asset',
           chunk.fileName,
+          'js',
           config,
           toRelative
         )
@@ -145,6 +146,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           publicUrl,
           'public',
           chunk.fileName,
+          'js',
           config,
           toRelative
         )

@@ -341,6 +341,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             filename,
             'asset',
             chunk.fileName,
+            'js',
             config,
             toStaticRelativePath
           )

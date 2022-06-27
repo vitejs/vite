@@ -482,6 +482,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             filename,
             'asset',
             cssAssetName,
+            'css',
             config,
             toRelative
           )
@@ -498,6 +499,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               publicUrl,
               'public',
               cssAssetName,
+              'css',
               config,
               () => `${relativePathToPublicFromCSS}/${publicUrl}`
             )

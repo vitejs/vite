@@ -833,24 +833,31 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 export type RenderBuiltAssetUrl = (
   filename: string,
-  importer: string,
-  type: { type: 'asset' | 'public'; ssr: boolean }
+  type: { 
+    type: 'asset' | 'public'
+    hostId: string,
+    hostType: 'js' | 'css' | 'html'
+    ssr: boolean 
+  }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
 export function toOutputFilePathInString(
   filename: string,
   type: 'asset' | 'public',
-  importer: string,
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
   toRelative: (
     filename: string,
-    importer: string
+    hostType: string
   ) => string | { runtime: string }
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
-    const result = renderBuiltUrl(filename, importer, {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
       type,
       ssr: !!config.build.ssr
     })
@@ -866,7 +873,7 @@ export function toOutputFilePathInString(
     }
   }
   if (relative && !config.build.ssr) {
-    return toRelative(filename, importer)
+    return toRelative(filename, hostId)
   }
   return config.base + filename
 }
@@ -874,14 +881,17 @@ export function toOutputFilePathInString(
 export function toOutputFilePathWithoutRuntime(
   filename: string,
   type: 'asset' | 'public',
-  importer: string,
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
-  toRelative: (filename: string, importer: string) => string
+  toRelative: (filename: string, hostId: string) => string
 ): string {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
-    const result = renderBuiltUrl(filename, importer, {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
       type,
       ssr: !!config.build.ssr
     })
@@ -890,9 +900,7 @@ export function toOutputFilePathWithoutRuntime(
         throw new Error(
           `{ runtime: "${
             result.runtime
-          } }" is not supported for assets in ${path.extname(
-            importer
-          )} files: ${filename}`
+          } }" is not supported for assets in ${hostType} files: ${filename}`
         )
       }
       if (typeof result.relative === 'boolean') {
@@ -903,7 +911,7 @@ export function toOutputFilePathWithoutRuntime(
     }
   }
   if (relative && !config.build.ssr) {
-    return toRelative(filename, importer)
+    return toRelative(filename, hostId)
   } else {
     return config.base + filename
   }

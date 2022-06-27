@@ -65,9 +65,6 @@ export default defineConfig({
     // Example of a plugin that injects a helper from a virtual module that can
     // be used in renderBuiltUrl
     (function () {
-      const queryRE = /\?.*$/s
-      const hashRE = /#.*$/s
-      const cleanUrl = (url) => url.replace(hashRE, '').replace(queryRE, '')
       let config
 
       const virtualId = '\0virtual:ssr-vue-built-url'
@@ -108,8 +105,8 @@ export default defineConfig({
     })()
   ],
   experimental: {
-    renderBuiltUrl(filename, importer, { type, ssr }) {
-      if (type === 'asset' && ssr && path.extname(importer) === '.js') {
+    renderBuiltUrl(filename, { hostType, type, ssr }) {
+      if (ssr && type === 'asset' && hostType === 'js') {
         return {
           runtime: `__ssr_vue_processAssetPath(${JSON.stringify(filename)})`
         }
