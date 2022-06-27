@@ -1063,3 +1063,9 @@ export function stripBomTag(content: string): string {
 }
 
 export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)
+
+export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
+  if (!isWindows) return p.startsWith('/')
+
+  return /^[A-Za-z]:[/\\]/.test(p)
+}
