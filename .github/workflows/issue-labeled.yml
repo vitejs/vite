@@ -47,3 +47,16 @@ jobs:
           body: |
             Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with `need reproduction` will be closed if they have no activity within 3 days.
           labels: "pending triage"
+
+      - name: "hello"
+        if: github.event.label.name == 'hello'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'hello'
+            })
