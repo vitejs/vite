@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import type { Plugin } from 'vite'
+import type { Plugin, ResolvedConfig } from 'vite'
 
 interface ReportInfo {
   hooks: string
@@ -10,11 +10,11 @@ interface ReportInfo {
 const res = {} as Record<string, ReportInfo>
 
 export default function ReporterPlugin(): Plugin {
-  function injectTimeCollect(plugin: Plugin) {
+  function injectTimeCollect(plugin: Plugin, config: ResolvedConfig) {
     if (plugin.transform) {
       const _transform = plugin.transform
       plugin.transform = async function (...args) {
-        const id = args[1]
+        const id = args[1].replace(config.root, '')
         const start = Date.now()
         const result = await _transform.apply(this, args)
         const end = Date.now()
@@ -33,7 +33,7 @@ export default function ReporterPlugin(): Plugin {
     if (plugin.load) {
       const _load = plugin.load
       plugin.load = async function (...args) {
-        const id = args[0]
+        const id = args[0].replace(config.root, '')
         const start = Date.now()
         const result = await _load.apply(this, args)
         const end = Date.now()
@@ -54,7 +54,7 @@ export default function ReporterPlugin(): Plugin {
     name: 'vite-plugin-inspect',
     apply: 'serve',
     configResolved(config) {
-      config.plugins.forEach(injectTimeCollect)
+      config.plugins.forEach((plugin) => injectTimeCollect(plugin, config))
     }
   }
 }
