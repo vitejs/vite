@@ -92,7 +92,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const action = require("../report-script")
+            const action = require("./scripts/action-script")
             action(github, context)
 
       - name: Test build
