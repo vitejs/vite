@@ -1,3 +1,10 @@
+## <small>2.9.13 (2022-06-27)</small>
+
+* fix: backport #8804, /@fs/ dir traversal with escaped chars (fixes #8498) (#8805) ([e109d64](https://github.com/vitejs/vite/commit/e109d64)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8805](https://github.com/vitejs/vite/issues/8805)
+* fix(wasm): support decoding data URL in Node < v16 (#8668) ([1afc1c2](https://github.com/vitejs/vite/commit/1afc1c2)), closes [#8668](https://github.com/vitejs/vite/issues/8668)
+
+
+
 ## <small>2.9.12 (2022-06-10)</small>
 
 * fix: backport outdated optimized dep removed from module graph (#8534) ([c0d6c60](https://github.com/vitejs/vite/commit/c0d6c60)), closes [#8534](https://github.com/vitejs/vite/issues/8534)
