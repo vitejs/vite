@@ -134,15 +134,11 @@ function createNodePlugins(
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          src: `require(configFile)`,
-          replacement: `__require(configFile)`
-        },
-        // @rollup/plugin-commonjs uses incorrect esm
-        '@rollup/plugin-commonjs/dist/index.es.js': {
-          src: `import { sync } from 'resolve';`,
-          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
+          pattern: /require(?=\((configFile|'ts-node')\))/g,
+          replacement: `eval('require')`
         }
       }),
+
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
