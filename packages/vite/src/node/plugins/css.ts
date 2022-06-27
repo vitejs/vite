@@ -19,6 +19,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'types/alias'
+import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
@@ -55,6 +56,7 @@ import {
   publicFileToBuiltUrl,
   resolveAssetFileNames
 } from './asset'
+import type { ESBuildOptions } from './esbuild'
 
 // const debug = createDebugger('vite:css')
 
@@ -1211,8 +1213,8 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
   try {
     const { code, warnings } = await transform(css, {
       loader: 'css',
-      minify: true,
-      target: config.build.cssTarget || undefined
+      target: config.build.cssTarget || undefined,
+      ...resolveEsbuildMinifyOptions(config.esbuild || {})
     })
     if (warnings.length) {
       const msgs = await formatMessages(warnings, { kind: 'warning' })
@@ -1228,6 +1230,24 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
       e.loc = e.errors[0].location
     }
     throw e
+  }
+}
+
+function resolveEsbuildMinifyOptions(
+  options: ESBuildOptions
+): TransformOptions {
+  if (
+    options.minifyIdentifiers != null ||
+    options.minifySyntax != null ||
+    options.minifyWhitespace != null
+  ) {
+    return {
+      minifyIdentifiers: options.minifyIdentifiers ?? true,
+      minifySyntax: options.minifySyntax ?? true,
+      minifyWhitespace: options.minifyWhitespace ?? true
+    }
+  } else {
+    return { minify: true }
   }
 }
 

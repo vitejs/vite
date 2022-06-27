@@ -280,7 +280,7 @@ export default defineConfig({
 })
 ```
 
-When [`build.minify`](./build-options.md#build-minify) is `true`, you can configure to only minify [certain aspects](https://esbuild.github.io/api/#minify) of the code by setting either of `esbuild.minifyIdentifiers`, `esbuild.minifySyntax`, and `esbuild.minifyWhitespace` to `true`. Note the `esbuild.minify` option can't be used to override `build.minify`.
+When [`build.minify`](./build-options.md#build-minify) is `true`, all minify optimizations are applied by default. To disable [certain aspects](https://esbuild.github.io/api/#minify) of it, set any of `esbuild.minifyIdentifiers`, `esbuild.minifySyntax`, or `esbuild.minifyWhitespace` options to `false`. Note the `esbuild.minify` option can't be used to override `build.minify`.
 
 Set to `false` to disable esbuild transforms.
 

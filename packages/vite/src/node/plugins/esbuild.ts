@@ -318,15 +318,17 @@ export function resolveEsbuildTranspileOptions(
 
   // If user enable fine-grain minify options, minify with their options instead
   if (
-    options.minifyIdentifiers ||
-    options.minifySyntax ||
-    options.minifyWhitespace
+    options.minifyIdentifiers != null ||
+    options.minifySyntax != null ||
+    options.minifyWhitespace != null
   ) {
     if (isEsLibBuild) {
       // Disable minify whitespace as it breaks tree-shaking
       return {
         ...options,
         minify: false,
+        minifyIdentifiers: options.minifyIdentifiers ?? true,
+        minifySyntax: options.minifySyntax ?? true,
         minifyWhitespace: false,
         treeShaking: true
       }
@@ -334,6 +336,9 @@ export function resolveEsbuildTranspileOptions(
       return {
         ...options,
         minify: false,
+        minifyIdentifiers: options.minifyIdentifiers ?? true,
+        minifySyntax: options.minifySyntax ?? true,
+        minifyWhitespace: options.minifyWhitespace ?? true,
         treeShaking: true
       }
     }
