@@ -27,6 +27,8 @@
 <h2>Unsafe /@fs/ Fetch</h2>
 <pre class="unsafe-fs-fetch-status"></pre>
 <pre class="unsafe-fs-fetch"></pre>
+<pre class="unsafe-fs-fetch-8498-status"></pre>
+<pre class="unsafe-fs-fetch-8498"></pre>
 
 <h2>Nested Entry</h2>
 <pre class="nested-entry"></pre>
@@ -104,6 +106,16 @@
     })
     .catch((e) => {
       console.error(e)
+    })
+
+  // outside root with special characters #8498
+  fetch('/@fs/' + ROOT + '/root/src/%2e%2e%2f%2e%2e%2funsafe%2ejson')
+    .then((r) => {
+      text('.unsafe-fs-fetch-8498-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-8498', JSON.stringify(data))
     })
 
   // not imported before, inside root with special characters, treated as safe
