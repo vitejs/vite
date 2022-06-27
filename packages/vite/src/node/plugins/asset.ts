@@ -347,7 +347,7 @@ export function publicFileToBuiltUrl(
   config: ResolvedConfig
 ): string {
   if (config.command !== 'build') {
-    // We don't need relative base or renderBuiltAssetUrl support during dev
+    // We don't need relative base or renderBuiltUrl support during dev
     return config.base + url.slice(1)
   }
   const hash = getHash(url)
@@ -428,7 +428,7 @@ async function fileToBuiltUrl(
       emittedSet.add(contentHash)
     }
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }
 
   cache.set(id, url)

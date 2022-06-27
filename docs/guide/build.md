@@ -197,11 +197,11 @@ A user may choose to deploy in three different paths:
 - The generated hashed assets (JS, CSS, and other file types like images)
 - The copied [public files](assets.md#the-public-directory)
 
-A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltAssetUrl`.
+A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
 ```js
 experimental: {
-  renderBuiltAssetUrl: (filename: string, importer: string) => {
+  renderBuiltUrl: (filename: string, importer: string) => {
     if (path.extname(importer) === '.js') {
       return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
     } else {
@@ -215,7 +215,7 @@ If the hashed assets and public files aren't deployed together, options for each
 
 ```js
   experimental: {
-    renderBuiltAssetUrl(filename: string, importer: string, { type: 'public' | 'asset' }) {
+    renderBuiltUrl(filename: string, importer: string, { type: 'public' | 'asset' }) {
       if (type === 'public') {
         return 'https://www.domain.com/' + filename
       }

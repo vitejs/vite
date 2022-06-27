@@ -45,7 +45,7 @@ module.exports = {
     }
   ],
   experimental: {
-    renderBuiltAssetUrl(filename, importer, { type }) {
+    renderBuiltUrl(filename, importer, { type }) {
       if (type === 'asset') {
         if (path.extname(importer) === '.js') {
           return {

@@ -40,10 +40,10 @@ function toOutputFilePathInHtml(
   config: ResolvedConfig,
   toRelative: (filename: string, importer: string) => string
 ): string {
-  const { renderBuiltAssetUrl } = config.experimental
+  const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
-  if (renderBuiltAssetUrl) {
-    const result = renderBuiltAssetUrl(filename, importer, {
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, importer, {
       type,
       ssr: !!config.build.ssr
     })

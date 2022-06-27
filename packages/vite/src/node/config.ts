@@ -259,7 +259,7 @@ export interface ExperimentalOptions {
    *
    * @experimental
    */
-  renderBuiltAssetUrl?: RenderBuiltAssetUrl
+  renderBuiltUrl?: RenderBuiltAssetUrl
   /**
    * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
    *
