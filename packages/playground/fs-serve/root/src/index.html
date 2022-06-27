@@ -17,6 +17,8 @@
 <h2>Unsafe Fetch</h2>
 <pre class="unsafe-fetch-status"></pre>
 <pre class="unsafe-fetch"></pre>
+<pre class="unsafe-fetch-8498-status"></pre>
+<pre class="unsafe-fetch-8498"></pre>
 
 <h2>Safe /@fs/ Fetch</h2>
 <pre class="safe-fs-fetch-status"></pre>
@@ -80,6 +82,19 @@
     })
     .then((data) => {
       text('.unsafe-fetch', data)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // outside of allowed dir with special characters #8498
+  fetch('/src/%2e%2e%2funsafe%2etxt')
+    .then((r) => {
+      text('.unsafe-fetch-8498-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.unsafe-fetch-8498', data)
     })
     .catch((e) => {
       console.error(e)

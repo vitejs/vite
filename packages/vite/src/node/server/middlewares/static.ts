@@ -78,7 +78,7 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = decodeURI(req.url!)
+    const url = decodeURIComponent(req.url!)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
