@@ -44,8 +44,8 @@ function toOutputFilePathInHtml(
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
-    const result = renderBuiltUrl(filename, { 
-      hostId, 
+    const result = renderBuiltUrl(filename, {
+      hostId,
       hostType,
       type,
       ssr: !!config.build.ssr
@@ -53,9 +53,7 @@ function toOutputFilePathInHtml(
     if (typeof result === 'object') {
       if (result.runtime) {
         throw new Error(
-          `{ runtime: "${
-            result.runtime
-          }" } is not supported for assets in ${hostType} files: ${filename}`
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`
         )
       }
       if (typeof result.relative === 'boolean') {
@@ -90,7 +88,14 @@ function toAssetPathFromHtml(
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
   const toRelative = (filename: string, hostId: string) =>
     getBaseInHTML(relativeUrlPath, config) + filename
-  return toOutputFilePathInHtml(filename, 'asset', htmlPath, 'html', config, toRelative)
+  return toOutputFilePathInHtml(
+    filename,
+    'asset',
+    htmlPath,
+    'html',
+    config,
+    toRelative
+  )
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc

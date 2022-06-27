@@ -833,11 +833,11 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 export type RenderBuiltAssetUrl = (
   filename: string,
-  type: { 
+  type: {
     type: 'asset' | 'public'
-    hostId: string,
+    hostId: string
     hostType: 'js' | 'css' | 'html'
-    ssr: boolean 
+    ssr: boolean
   }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
@@ -898,9 +898,7 @@ export function toOutputFilePathWithoutRuntime(
     if (typeof result === 'object') {
       if (result.runtime) {
         throw new Error(
-          `{ runtime: "${
-            result.runtime
-          } }" is not supported for assets in ${hostType} files: ${filename}`
+          `{ runtime: "${result.runtime} }" is not supported for assets in ${hostType} files: ${filename}`
         )
       }
       if (typeof result.relative === 'boolean') {
