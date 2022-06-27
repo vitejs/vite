@@ -143,6 +143,8 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
+export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null
@@ -179,6 +181,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
+      cssEntryFilesCache.set(config, new Set())
     },
 
     async transform(raw, id, options) {
@@ -453,6 +456,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const cssEntryFiles = cssEntryFilesCache.get(config)!
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
@@ -509,22 +513,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk.fileName)
         }
         if (opts.format === 'es' || opts.format === 'cjs') {
-          const cssAssetName = ensureFileExt(
-            chunk.facadeModuleId
-              ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
-              : chunk.name,
-            '.css'
-          )
+          const cssAssetName = chunk.facadeModuleId
+            ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
+            : chunk.name
+
+          const lang = path.extname(cssAssetName).slice(1)
+          const cssFileName = ensureFileExt(cssAssetName, '.css')
+
+          if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
 
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
           const fileHandle = this.emitFile({
-            name: cssAssetName,
+            name: isPreProcessor(lang) ? cssAssetName : cssFileName,
             fileName: assetFileNamesToFileName(
               resolveAssetFileNames(config),
-              cssAssetName,
+              cssFileName,
               getHash(chunkCSS),
               chunkCSS
             ),
