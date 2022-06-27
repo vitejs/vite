@@ -1,12 +1,50 @@
+/* eslint-disable node/no-missing-require */
 const fs = require('fs')
 const path = require('path')
 
+function formatComment(record) {
+  const formatJSON = (json) => {
+    return Object.entries(record.serve)
+      .sort((a, b) => b[1].timing - a[1].timing)
+      .slice(0, 10)
+      .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
+      .join('\n')
+  }
+
+  const total = (json) => {
+    return Object.values(record.serve).reduce(
+      (sum, info) => (sum += info.timing),
+      0
+    )
+  }
+
+  return [
+    '<!--report-->',
+    `total(serve): ${total(record.serve)}ms`,
+    `total(build): ${total(record.build)}ms`,
+    `<details><summary> Toggle detail... </summary>`,
+    '\n## Top 10 (server)\n',
+    '|hooks|file|timing|',
+    '|-----|----|------|',
+    formatJSON(record.serve),
+    '\n## Top 10 (build)\n',
+    '|hooks|file|timing|',
+    '|-----|----|------|',
+    formatJSON(record.build),
+    `\n</details>`
+  ].join('\n')
+}
+
 module.exports = async function action(github, context) {
+  const res = {
+    serve: require('../report.serve.json'),
+    build: require('../report.build.json')
+  }
   const comment = {
     issue_number: context.issue.number,
     owner: context.repo.owner,
     repo: context.repo.repo,
-    body: fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
+    body: formatComment(res)
   }
   let commentId
   const comments = (

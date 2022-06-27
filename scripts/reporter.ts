@@ -60,17 +60,10 @@ export default function ReporterPlugin(): Plugin {
 }
 
 process.on('exit', () => {
+  const type = process.env.VITE_TEST_BUILD ? 'build' : 'serve'
   writeFileSync(
-    path.join(__dirname, '../report.md'),
-    '<!--report-->\n' +
-      '## Top 10 (change in each commit)\n' +
-      '|hooks|file|timing|\n' +
-      '|-----|----|------|\n' +
-      Object.entries(res)
-        .sort((a, b) => b[1].timing - a[1].timing)
-        .slice(0, 10)
-        .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
-        .join('\n'),
+    path.join(__dirname, `../report.${type}.json`),
+    JSON.stringify(res),
     { encoding: 'utf8' }
   )
 })

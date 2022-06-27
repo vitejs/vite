@@ -14,3 +14,5 @@ playground-temp
 temp
 TODOs.md
 .eslintcache
+report.build.json
+report.serve.json
