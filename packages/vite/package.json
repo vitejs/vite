@@ -31,7 +31,7 @@
     "types"
   ],
   "engines": {
-    "node": ">=14.18.0"
+    "node": ">=14.19.0"
   },
   "repository": {
     "type": "git",
