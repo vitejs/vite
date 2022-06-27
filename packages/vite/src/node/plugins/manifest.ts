@@ -3,6 +3,7 @@ import type { OutputAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
+import { cssEntryFilesCache } from './css'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -100,11 +101,17 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       function createAsset(chunk: OutputAsset): ManifestChunk {
-        return {
+        const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
           src: chunk.name
         }
+
+        if (cssEntryFiles.has(chunk.name!)) manifestChunk.isEntry = true
+
+        return manifestChunk
       }
+
+      const cssEntryFiles = cssEntryFilesCache.get(config)!
 
       for (const file in bundle) {
         const chunk = bundle[file]
