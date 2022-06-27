@@ -100,30 +100,25 @@ jobs:
               repo: context.repo.repo,
               body: fs.readFileSync(path.resolve('./report.md'), { encoding: 'utf-8' })
             }
-            async function action() {
-              let commentId
-              const comments = (await github.rest.issues.listComments({
-                ...context.repo,
-                issue_number: context.issue.number
-              })).data
-              for (const c of comments) {
-                if (c.user.type === 'Bot' && c.body.includes('<!--report-->')) {
-                  commentId = c.id;
-                  break;
-                }
+            let commentId
+            const comments = (await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number
+            })).data
+            for (const c of comments) {
+              if (c.user.type === 'Bot' && c.body.includes('<!--report-->')) {
+                commentId = c.id;
+                break;
               }
-              setTimeout(async () => {
-                if (commentId) {
-                  await github.rest.issues.updateComment({
-                    comment_id: commentId,
-                    ...comment
-                  })
-                } else {
-                  await github.rest.issues.createComment(comment)
-                }
-              }, 1000)
             }
-            action()
+            if (commentId) {
+              await github.rest.issues.updateComment({
+                comment_id: commentId,
+                ...comment
+              })
+            } else {
+              await github.rest.issues.createComment(comment)
+            }
 
       - name: Test build
         run: pnpm run test-build
