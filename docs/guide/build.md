@@ -197,45 +197,34 @@ A user may choose to deploy in three different paths:
 - The generated hashed assets (JS, CSS, and other file types like images)
 - The copied [public files](assets.md#the-public-directory)
 
-A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.buildAdvancedBaseOptions`.
+A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
 ```js
-  experimental: {
-    buildAdvancedBaseOptions: {
-      // Same as base: './'
-      // type: boolean, default: false
-      relative: true
-      // Static base
-      // type: string, default: undefined
-      url: 'https://cdn.domain.com/'
-      // Dynamic base to be used for paths inside JS
-      // type: (url: string) => string, default: undefined
-      runtime: (url: string) => `window.__toCdnUrl(${url})`
-    },
+experimental: {
+  renderBuiltUrl: (filename: string, { hostType: 'js' | 'css' | 'html' }) => {
+    if (hostType === 'js') {
+      return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
+    } else {
+      return { relative: true }
+    }
   }
+}
 ```
 
-When `runtime` is defined, it will be used for hashed assets and public files paths inside JS assets. Inside CSS and HTML generated files, paths will use `url` if defined or fallback to `config.base`.
-
-If `relative` is true and `url` is defined, relative paths will be prefered for assets inside the same group (for example a hashed image referenced from a JS file). And `url` will be used for the paths in HTML entries and for paths between different groups (a public file referenced from a CSS file).
-
-If the hashed assets and public files aren't deployed together, options for each group can be defined independently:
+If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the third `context` param given to the function.
 
 ```js
   experimental: {
-    buildAdvancedBaseOptions: {
-      assets: {
-        relative: true
-        url: 'https://cdn.domain.com/assets',
-        runtime: (url: string) => `window.__assetsPath(${url})`
-      },
-      public: {
-        relative: false
-        url: 'https://www.domain.com/',
-        runtime: (url: string) => `window.__publicPath + ${url}`
+    renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
+      if (type === 'public') {
+        return 'https://www.domain.com/' + filename
+      }
+      else if (path.extname(importer) === '.js') {
+        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+      }
+      else {
+        return 'https://cdn.domain.com/assets/' + filename
       }
     }
   }
 ```
-
-Any option that isn't defined in the `public` or `assets` entry will be inherited from the main `buildAdvancedBaseOptions` config.

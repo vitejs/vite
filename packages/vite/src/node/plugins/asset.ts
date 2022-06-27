@@ -4,7 +4,7 @@ import fs, { promises as fsp } from 'node:fs'
 import * as mrmime from 'mrmime'
 import type { OutputOptions, PluginContext, PreRenderedAsset } from 'rollup'
 import MagicString from 'magic-string'
-import type { BuildAdvancedBaseOptions } from '../build'
+import { toOutputFilePathInString } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
@@ -94,20 +94,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
-      const absoluteUrlPathInterpolation = (filename: string) =>
-        `"+new URL(${JSON.stringify(
-          path.posix.relative(path.dirname(chunk.fileName), filename)
-        )},import.meta.url).href+"`
-
-      const toOutputFilePathInString = (
-        filename: string,
-        base: BuildAdvancedBaseOptions
-      ) => {
-        return base.runtime
-          ? `"+${base.runtime(JSON.stringify(filename))}+"`
-          : base.relative && !config.build.ssr
-          ? absoluteUrlPathInterpolation(filename)
-          : JSON.stringify((base.url ?? config.base) + filename).slice(1, -1)
+      const toRelative = (filename: string, importer: string) => {
+        return {
+          runtime: `new URL(${JSON.stringify(
+            path.posix.relative(path.dirname(importer), filename)
+          )},import.meta.url).href`
+        }
       }
 
       // Urls added with JS using e.g.
@@ -128,9 +120,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const filename = file + postfix
         const replacement = toOutputFilePathInString(
           filename,
-          config.experimental.buildAdvancedBaseOptions.assets
+          'asset',
+          chunk.fileName,
+          'js',
+          config,
+          toRelative
         )
-        s.overwrite(match.index, match.index + full.length, replacement, {
+        const replacementString =
+          typeof replacement === 'string'
+            ? JSON.stringify(replacement).slice(1, -1)
+            : `"+${replacement.runtime}+"`
+        s.overwrite(match.index, match.index + full.length, replacementString, {
           contentOnly: true
         })
       }
@@ -144,9 +144,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
         const replacement = toOutputFilePathInString(
           publicUrl,
-          config.experimental.buildAdvancedBaseOptions.public
+          'public',
+          chunk.fileName,
+          'js',
+          config,
+          toRelative
         )
-        s.overwrite(match.index, match.index + full.length, replacement, {
+        const replacementString =
+          typeof replacement === 'string'
+            ? JSON.stringify(replacement).slice(1, -1)
+            : `"+${replacement.runtime}+"`
+        s.overwrite(match.index, match.index + full.length, replacementString, {
           contentOnly: true
         })
       }
@@ -341,7 +349,7 @@ export function publicFileToBuiltUrl(
   config: ResolvedConfig
 ): string {
   if (config.command !== 'build') {
-    // We don't need relative base or buildAdvancedBaseOptions support during dev
+    // We don't need relative base or renderBuiltUrl support during dev
     return config.base + url.slice(1)
   }
   const hash = getHash(url)
@@ -423,7 +431,7 @@ async function fileToBuiltUrl(
       emittedSet.add(contentHash)
     }
 
-    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}`
+    url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }
 
   cache.set(id, url)

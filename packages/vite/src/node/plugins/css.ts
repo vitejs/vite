@@ -25,6 +25,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
+import { toOutputFilePathInCss } from '../build'
 import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -464,27 +465,33 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       // resolve asset URL placeholders to their built file URLs
       function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
-        const { assets: assetsBase, public: publicBase } =
-          config.experimental.buildAdvancedBaseOptions
+
+        const relative = config.base === './' || config.base === ''
         const cssAssetDirname =
-          encodedPublicUrls || assetsBase.relative
+          encodedPublicUrls || relative
             ? getCssAssetDirname(cssAssetName)
             : undefined
+
+        const toRelative = (filename: string, importer: string) => {
+          // relative base + extracted CSS
+          const relativePath = path.posix.relative(cssAssetDirname!, filename)
+          return relativePath.startsWith('.')
+            ? relativePath
+            : './' + relativePath
+        }
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = getAssetFilename(fileHash, config) + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
-          if (assetsBase.relative && !config.build.ssr) {
-            // relative base + extracted CSS
-            const relativePath = path.posix.relative(cssAssetDirname!, filename)
-            return relativePath.startsWith('.')
-              ? relativePath
-              : './' + relativePath
-          } else {
-            // assetsBase.runtime has no effect for assets in CSS
-            return (assetsBase.url ?? config.base) + filename
-          }
+          return toOutputFilePathInCss(
+            filename,
+            'asset',
+            cssAssetName,
+            'css',
+            config,
+            toRelative
+          )
         })
         // resolve public URL from CSS paths
         if (encodedPublicUrls) {
@@ -493,13 +500,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             ''
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
-            const publicUrl = publicAssetUrlMap.get(hash)!
-            if (publicBase.relative && !config.build.ssr) {
-              return relativePathToPublicFromCSS + publicUrl
-            } else {
-              // publicBase.runtime has no effect for assets in CSS
-              return (publicBase.url ?? config.base) + publicUrl.slice(1)
-            }
+            const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+            return toOutputFilePathInCss(
+              publicUrl,
+              'public',
+              cssAssetName,
+              'css',
+              config,
+              () => `${relativePathToPublicFromCSS}/${publicUrl}`
+            )
           })
         }
         return chunkCSS

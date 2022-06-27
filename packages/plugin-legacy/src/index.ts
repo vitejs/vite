@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
-  BuildAdvancedBaseOptions,
   BuildOptions,
   HtmlTagDescriptor,
   Plugin,
@@ -32,38 +31,71 @@ async function loadBabel() {
   return babel
 }
 
-function getBaseInHTML(
-  urlRelativePath: string,
-  baseOptions: BuildAdvancedBaseOptions,
-  config: ResolvedConfig
-) {
+// Duplicated from build.ts in Vite Core, at least while the feature is experimental
+// We should later expose this helper for other plugins to use
+function toOutputFilePathInHtml(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, importer: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`
+        )
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
+  }
+}
+function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
   // Prefer explicit URL if defined for linking to assets and public files from HTML,
   // even when base relative is specified
-  return (
-    baseOptions.url ??
-    (baseOptions.relative
-      ? path.posix.join(
-          path.posix.relative(urlRelativePath, '').slice(0, -2),
-          './'
-        )
-      : config.base)
-  )
+  return config.base === './' || config.base === ''
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
 }
 
-function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(
-    urlRelativePath,
-    config.experimental.buildAdvancedBaseOptions.assets,
-    config
-  )
-}
 function toAssetPathFromHtml(
   filename: string,
   htmlPath: string,
   config: ResolvedConfig
 ): string {
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
-  return getAssetsBase(relativeUrlPath, config) + filename
+  const toRelative = (filename: string, hostId: string) =>
+    getBaseInHTML(relativeUrlPath, config) + filename
+  return toOutputFilePathInHtml(
+    filename,
+    'asset',
+    htmlPath,
+    'html',
+    config,
+    toRelative
+  )
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc

@@ -11,12 +11,11 @@ import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
-  BuildAdvancedBaseConfig,
   BuildOptions,
-  ResolvedBuildAdvancedBaseConfig,
+  RenderBuiltAssetUrl,
   ResolvedBuildOptions
 } from './build'
-import { resolveBuildAdvancedBaseConfig, resolveBuildOptions } from './build'
+import { resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -59,7 +58,7 @@ import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
-export type { BuildAdvancedBaseOptions, BuildAdvancedBaseConfig } from './build'
+export type { RenderBuiltAssetUrl } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
@@ -262,11 +261,11 @@ export interface ExperimentalOptions {
    */
   importGlobRestoreExtension?: boolean
   /**
-   * Build advanced base options. Allow finegrain contol over assets and public files base
+   * Allow finegrain contol over assets and public files paths
    *
    * @experimental
    */
-  buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
+  renderBuiltUrl?: RenderBuiltAssetUrl
   /**
    * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
    *
@@ -274,10 +273,6 @@ export interface ExperimentalOptions {
    * @default false
    */
   hmrPartialAccept?: boolean
-}
-
-export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
-  buildAdvancedBaseOptions: ResolvedBuildAdvancedBaseConfig
 }
 
 export interface LegacyOptions {
@@ -351,7 +346,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
-    experimental: ResolvedExperimentalOptions
+    experimental: ExperimentalOptions
   }
 >
 
@@ -493,28 +488,12 @@ export async function resolveConfig(
 
   // During dev, we ignore relative base and fallback to '/'
   // For the SSR build, relative base isn't possible by means
-  // of import.meta.url. The user will be able to work out a setup
-  // using experimental.buildAdvancedBaseOptions
-  const base =
-    relativeBaseShortcut && (!isBuild || config.build?.ssr)
+  // of import.meta.url.
+  const resolvedBase = relativeBaseShortcut
+    ? !isBuild || config.build?.ssr
       ? '/'
-      : config.base ?? '/'
-  let resolvedBase = relativeBaseShortcut
-    ? base
-    : resolveBaseUrl(base, isBuild, logger, 'base')
-  if (
-    config.experimental?.buildAdvancedBaseOptions?.relative &&
-    config.base === undefined
-  ) {
-    resolvedBase = './'
-  }
-
-  const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
-    config.experimental?.buildAdvancedBaseOptions,
-    resolvedBase,
-    isBuild,
-    logger
-  )
+      : './'
+    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
@@ -650,8 +629,7 @@ export async function resolveConfig(
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
-      ...config.experimental,
-      buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
+      ...config.experimental
     }
   }
 
@@ -759,14 +737,13 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger,
-  optionName: string
+  logger: Logger
 ): string {
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "${optionName}" option: ${base}. The value can only be an absolute ` +
+          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
             `URL, ./, or an empty string.`
         )
       )
@@ -786,7 +763,7 @@ export function resolveBaseUrl(
     if (!base.startsWith('/')) {
       logger.warn(
         colors.yellow(
-          colors.bold(`(!) "${optionName}" option should start with a slash.`)
+          colors.bold(`(!) "base" option should start with a slash.`)
         )
       )
       base = '/' + base
@@ -796,9 +773,7 @@ export function resolveBaseUrl(
   // ensure ending slash
   if (!base.endsWith('/')) {
     logger.warn(
-      colors.yellow(
-        colors.bold(`(!) "${optionName}" option should end with a slash.`)
-      )
+      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
     )
     base += '/'
   }
