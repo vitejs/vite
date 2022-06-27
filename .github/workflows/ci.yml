@@ -112,7 +112,7 @@ jobs:
                   break;
                 }
               }
-              setTimeout(() => {
+              setTimeout(async () => {
                 if (commentId) {
                   await github.rest.issues.updateComment({
                     comment_id: commentId,
