@@ -65,6 +65,9 @@ export default defineConfig({
     // Example of a plugin that injects a helper from a virtual module that can
     // be used in renderBuiltUrl
     (function () {
+      const queryRE = /\?.*$/s
+      const hashRE = /#.*$/s
+      const cleanUrl = (url) => url.replace(hashRE, '').replace(queryRE, '')
       let config
 
       const virtualId = '\0virtual:ssr-vue-built-url'
