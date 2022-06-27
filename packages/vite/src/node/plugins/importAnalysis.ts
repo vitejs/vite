@@ -696,7 +696,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             NULL_BYTE_PLACEHOLDER,
             '\0'
           )
-          const request = transformRequest(url, server, { ssr }).catch((e) => {
+          transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
               return
@@ -704,9 +704,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // Unexpected error, log the issue but avoid an unhandled exception
             config.logger.error(e.message)
           })
-          if (depsOptimizer && !config.legacy?.devDepsScanner) {
-            depsOptimizer.delayDepsOptimizerUntil(id, () => request)
-          }
         })
       }
 
