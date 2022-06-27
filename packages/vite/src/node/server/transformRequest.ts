@@ -141,7 +141,9 @@ async function doTransform(
 
   // resolve
   const id =
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+    (module && module.id) ||
+    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id ||
+    url
   const file = cleanUrl(id)
 
   let code: string | null = null

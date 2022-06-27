@@ -7,9 +7,10 @@ import {
   cleanUrl,
   normalizePath,
   removeImportQuery,
-  removeTimestampQuery
+  removeTimestampQuery,
+  unwrapId
 } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { FS_PREFIX, NULL_BYTE_PLACEHOLDER } from '../constants'
 import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 import type { TransformResult } from './transformRequest'
 
@@ -225,8 +226,11 @@ export class ModuleGraph {
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const resolved = await this.resolveId(url, !!ssr)
-    const resolvedId = resolved?.id || url
+
+    const unwrappedUrl = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    const resolved = await this.resolveId(unwrappedUrl, !!ssr)
+    const resolvedId = resolved?.id || unwrappedUrl
+
     const ext = extname(cleanUrl(resolvedId))
     const { pathname, search, hash } = parseUrl(url)
     if (ext && !pathname!.endsWith(ext)) {
