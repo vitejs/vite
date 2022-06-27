@@ -50,9 +50,9 @@ function toOutputFilePathInHtml(
     if (typeof result === 'object') {
       if (result.runtime) {
         throw new Error(
-          `{ runtime: ${
+          `{ runtime: "${
             result.runtime
-          } } is not supported for assets in ${path.extname(
+          }" } is not supported for assets in ${path.extname(
             importer
           )} files: ${filename}`
         )
