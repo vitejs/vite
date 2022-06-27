@@ -6,7 +6,7 @@ function formatComment(record) {
   const formatJSON = (json) => {
     return Object.entries(record.serve)
       .sort((a, b) => b[1].timing - a[1].timing)
-      .slice(0, 10)
+      .slice(0, 5)
       .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
       .join('\n')
   }
@@ -23,11 +23,11 @@ function formatComment(record) {
     `total(serve): ${total(record.serve)}ms`,
     `total(build): ${total(record.build)}ms`,
     `<details><summary> Toggle detail... </summary>`,
-    '\n## Top 10 (server)\n',
+    '\n## Top 5 (server)\n',
     '|hooks|file|timing|',
     '|-----|----|------|',
     formatJSON(record.serve),
-    '\n## Top 10 (build)\n',
+    '\n## Top 5 (build)\n',
     '|hooks|file|timing|',
     '|-----|----|------|',
     formatJSON(record.build),
