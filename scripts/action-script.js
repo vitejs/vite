@@ -20,14 +20,15 @@ function formatComment(record) {
 
   return [
     '<!--report-->',
+    '## ⏰ unit test used vite time',
     `total(serve): ${total(record.serve)}ms`,
     `total(build): ${total(record.build)}ms`,
     `<details><summary> Toggle detail... </summary>`,
-    '\n## Top 5 (server)\n',
+    '\n### 🗒️ Top 5 (server)\n',
     '|hooks|file|timing|',
     '|-----|----|------|',
     formatJSON(record.serve),
-    '\n## Top 5 (build)\n',
+    '\n### 🗒️ Top 5 (build)\n',
     '|hooks|file|timing|',
     '|-----|----|------|',
     formatJSON(record.build),
