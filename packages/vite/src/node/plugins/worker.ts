@@ -6,7 +6,7 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning } from '../build'
+import { onRollupWarning, toOutputFilePathInString } from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -144,6 +144,15 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
+// TODO:base review why we aren't using import.meta.url here
+function toStaticRelativePath(filename: string, importer: string) {
+  let outputFilepath = path.posix.relative(path.dirname(importer), filename)
+  if (!outputFilepath.startsWith('.')) {
+    outputFilepath = './' + outputFilepath
+  }
+  return outputFilepath
+}
+
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
@@ -175,10 +184,7 @@ export async function workerFileToUrl(
     })
     workerMap.bundle.set(id, fileName)
   }
-  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
-  return assetsBase.relative || assetsBase.runtime
-    ? encodeWorkerAssetFileName(fileName, workerMap)
-    : (assetsBase.url ?? config.base) + fileName
+  return encodeWorkerAssetFileName(fileName, workerMap)
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
@@ -327,33 +333,30 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
         const { fileNameHash } = workerMap
-        const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
 
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          let replacement: string
-          if (assetsBase.runtime) {
-            replacement = `"+${assetsBase.runtime(JSON.stringify(filename))}+"`
-          } else {
-            // Relative base
-            let outputFilepath: string
-            if (assetsBase.relative && !config.build.ssr) {
-              outputFilepath = path.posix.relative(
-                path.dirname(chunk.fileName),
-                filename
-              )
-              if (!outputFilepath.startsWith('.')) {
-                outputFilepath = './' + outputFilepath
-              }
-            } else {
-              outputFilepath = (assetsBase.url ?? config.base) + filename
+          const replacement = toOutputFilePathInString(
+            filename,
+            'asset',
+            chunk.fileName,
+            'js',
+            config,
+            toStaticRelativePath
+          )
+          const replacementString =
+            typeof replacement === 'string'
+              ? JSON.stringify(replacement).slice(1, -1)
+              : `"+${replacement.runtime}+"`
+          s.overwrite(
+            match.index,
+            match.index + full.length,
+            replacementString,
+            {
+              contentOnly: true
             }
-            replacement = JSON.stringify(outputFilepath).slice(1, -1)
-          }
-          s.overwrite(match.index, match.index + full.length, replacement, {
-            contentOnly: true
-          })
+          )
         }
 
         // TODO: check if this should be removed

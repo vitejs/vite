@@ -108,19 +108,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
-  const relativePreloadUrls = !(assetsBase.url || assetsBase.runtime)
+  const relativePreloadUrls = config.base === './' || config.base === ''
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
-    : `function(dep) { return ${
-        assetsBase.runtime
-          ? assetsBase.runtime('dep')
-          : `${JSON.stringify(assetsBase.url ?? config.base)}+dep`
-      }}`
+    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
