@@ -21,7 +21,7 @@ export default function ReporterPlugin(): Plugin {
 
         if (result != null) {
           if (!res[id]) {
-            res[id] = { hooks: 'transform', timing: 0 }
+            res[id] = { hooks: 'transform', timing: 100 }
           }
           res[id].timing += end - start
         }

@@ -1039,7 +1039,10 @@ export function transformStableResult(
 ): TransformResult {
   return {
     code: s.toString(),
-    map: s.generateMap({ hires: true, source: id })
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
 }
 
