@@ -2,43 +2,43 @@
 layout: home
 
 title: Vite
-titleTemplate: Next Generation Frontend Tooling
+titleTemplate: Ferramenta de Frontend de próxima geração
 
 hero:
   name: Vite
-  text: Next Generation Frontend Tooling
-  tagline: Get ready for a development environment that can finally catch up with you.
+  text: Ferramenta de Frontend de próxima geração
+  tagline: Prepare-se para um ambiente de desenvolvimento que pode finalmente alcançá-lo.
   image:
     src: /logo-with-shadow.png
     alt: Vite
   actions:
     - theme: brand
-      text: Get Started
+      text: Começar
       link: /guide/
     - theme: alt
-      text: Why Vite?
+      text: Porque o Vite?
       link: /guide/why
     - theme: alt
-      text: View on GitHub
+      text: Ver no GitHub
       link: https://github.com/vitejs/vite
 
 features:
   - icon: 💡
-    title: Instant Server Start
-    details: On demand file serving over native ESM, no bundling required!
+    title: Inicio do Servidor Instantâneo
+    details: Ficheiros sob demanda servindo sobre ESM nativo, sem necessidade de build!
   - icon: ⚡️
-    title: Lightning Fast HMR
-    details: Hot Module Replacement (HMR) that stays fast regardless of app size.
+    title: Hot Module Replacement ultra-rápido
+    details: Hot Module Replacement (HMR) que permanece rápido independentemente do tamanho da aplicação.
   - icon: 🛠️
-    title: Rich Features
-    details: Out-of-the-box support for TypeScript, JSX, CSS and more.
+    title: Recursos Avançados
+    details: Suporte "fora da caixa" para TypeScript, JSX, CSS e muito mais.
   - icon: 📦
-    title: Optimized Build
-    details: Pre-configured Rollup build with multi-page and library mode support.
+    title: Build Otimizado
+    details: Build pré-configurado com suporte para múltiplas páginas e modo biblioteca.
   - icon: 🔩
-    title: Universal Plugins
-    details: Rollup-superset plugin interface shared between dev and build.
+    title: Plugins Universais
+    details: Interface de plugin rollup-superset partilhada entre desenvolvimento e build.
   - icon: 🔑
-    title: Fully Typed APIs
-    details: Flexible programmatic APIs with full TypeScript typing.
+    title: APIs totalmente tipadas
+    details: APIs flexíveis totalmente tipadas com TypeScript.
 ---
