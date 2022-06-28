@@ -530,7 +530,7 @@ function tryResolveFile(
 export const idToPkgMap = new Map<string, PackageData>()
 
 export function tryNodeResolve(
-  id: string,
+  nodeId: string,
   importer: string | null | undefined,
   options: InternalResolveOptions,
   targetWeb: boolean,
@@ -538,6 +538,7 @@ export function tryNodeResolve(
   ssr?: boolean,
   externalize?: boolean
 ): PartialResolvedId | undefined {
+  const [id, idSurfix] = nodeId.split('?')
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   ssr ??= false
@@ -630,6 +631,9 @@ export function tryNodeResolve(
   }
   if (!resolved) {
     return
+  }
+  if (idSurfix) {
+    resolved = injectQuery(resolved, idSurfix)
   }
 
   const processResult = (resolved: PartialResolvedId) => {
