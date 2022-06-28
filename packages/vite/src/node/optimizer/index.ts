@@ -22,6 +22,7 @@ import {
   writeFile
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
+import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
@@ -559,7 +560,7 @@ export async function runOptimizeDeps(
         : 'browser',
     define,
     format: 'esm',
-    target: config.build.target || undefined,
+    target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
@@ -571,7 +572,12 @@ export async function runOptimizeDeps(
       ...plugins,
       esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
     ],
-    ...esbuildOptions
+    ...esbuildOptions,
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   })
 
   const meta = result.metafile!

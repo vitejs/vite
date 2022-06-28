@@ -47,7 +47,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { VERSION } from './constants'
+import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 
 export interface BuildOptions {
   /**
@@ -270,15 +270,7 @@ export function resolveBuildOptions(
 
   // handle special build targets
   if (resolved.target === 'modules') {
-    // Support browserslist
-    // "defaults and supports es6-module and supports es6-module-dynamic-import",
-    resolved.target = [
-      'es2020', // support import.meta.url
-      'edge88',
-      'firefox78',
-      'chrome87',
-      'safari13' // transpile nullish coalescing
-    ]
+    resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2021 so it can be minified by terser
     resolved.target = 'es2021'
