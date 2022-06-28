@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "strict": false,
-    "declaration": false,
-    "resolveJsonModule": true
-  },
-  "include": ["./rollup.config.ts"]
-}
