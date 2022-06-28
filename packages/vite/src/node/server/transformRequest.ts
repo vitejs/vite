@@ -17,6 +17,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
@@ -118,9 +119,8 @@ async function doTransform(
 ) {
   url = removeTimestampQuery(url)
 
-  const { config, pluginContainer, moduleGraph, watcher } = server
-  const { root, logger } = config
-  const prettyUrl = isDebug ? prettifyUrl(url, root) : ''
+  const { config, pluginContainer } = server
+  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   const module = await server.moduleGraph.getModuleByUrl(url, ssr)
@@ -142,6 +142,29 @@ async function doTransform(
   // resolve
   const id =
     (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+
+  const result = loadAndTransform(id, url, server, options, timestamp)
+
+  const depsOptimizer = getDepsOptimizer(config)
+  if (depsOptimizer && !config.legacy?.devDepsScanner) {
+    depsOptimizer.delayDepsOptimizerUntil(id, () => result)
+  }
+
+  return result
+}
+
+async function loadAndTransform(
+  id: string,
+  url: string,
+  server: ViteDevServer,
+  options: TransformOptions,
+  timestamp: number
+) {
+  const { config, pluginContainer, moduleGraph, watcher } = server
+  const { root, logger } = config
+  const prettyUrl = isDebug ? prettifyUrl(url, config.root) : ''
+  const ssr = !!options.ssr
+
   const file = cleanUrl(id)
 
   let code: string | null = null
