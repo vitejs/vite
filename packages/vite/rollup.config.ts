@@ -89,12 +89,7 @@ function createNodePlugins(
     }),
     nodeResolve({ preferBuiltins: true }),
     typescript({
-      tsconfig: 'src/node/tsconfig.json',
-      module: 'esnext',
-      target: 'es2020',
-      include: ['src/**/*.ts', 'types/**'],
-      exclude: ['src/**/__tests__/**'],
-      esModuleInterop: true,
+      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
       sourceMap,
       declaration: declarationDir !== false,
       declarationDir: declarationDir !== false ? declarationDir : undefined
