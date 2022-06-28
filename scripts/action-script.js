@@ -7,9 +7,8 @@ const path = require('path')
  */
 function formatComment(oRecord, nRecord) {
   /** @param {Record<string, {timing: number, hooks: string}} record */
-  const total = (record) => {
-    return Object.values(record).reduce((sum, info) => (sum += info.timing), 0)
-  }
+  const total = (record) =>
+    Object.values(record).reduce((sum, info) => (sum += info.timing), 0)
 
   /**
    * @param {Record<string, {timing: number, hooks: string}} o
@@ -59,7 +58,7 @@ function formatComment(oRecord, nRecord) {
     '\n### 🗒️ Top 5 (build diff)\n',
     '|hooks|file|timing(ms)|diff(ms)|',
     '|-----|----|----------|--------|',
-    formatTable(oRecord.serve, nRecord.build, (a, b) => b.diff - a.diff),
+    formatTable(oRecord.build, nRecord.build, (a, b) => b.diff - a.diff),
     `\n</details>`
   ].join('\n')
 }
