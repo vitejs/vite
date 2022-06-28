@@ -98,9 +98,9 @@ export interface ServerOptions extends CommonServerOptions {
   preTransformRequests?: boolean
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
-   * Use optimizeDeps.force instead, this option may be removed in a future
-   * minor version without following semver
-   * @deprecated
+   *
+   * @deprecated Use optimizeDeps.force instead, this option may be removed
+   * in a future minor version without following semver
    */
   force?: boolean
 }
