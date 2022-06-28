@@ -1,0 +1,12 @@
+name: "\U0001F680 Translation"
+description: Working on new translation from Vite
+labels: ["enhancement: pending triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "Describe witch page you will translate"
+      placeholder: Home page
+    validations:
+      required: true
