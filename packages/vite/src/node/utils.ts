@@ -1064,11 +1064,13 @@ export function stripBomTag(content: string): string {
 
 export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)
 
+const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
+
 /**
  * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
  * this function returns false for them but true for absolute paths (e.g. C:/something)
  */
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
-  return /^[A-Za-z]:[/\\]/.test(p)
+  return windowsDrivePathPrefixRE.test(p)
 }
