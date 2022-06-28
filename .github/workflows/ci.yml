@@ -105,7 +105,7 @@ jobs:
 
       - name: Cache report
         uses: actions/cache@v3
-        if: env.REPORT == 'report'
+        if: env.REPORT == 'report' && env.GITHUB_REF_NAME == 'main'
         with:
           key: report-cache
           path: |
