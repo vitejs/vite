@@ -554,10 +554,7 @@ export async function runOptimizeDeps(
     // We can't use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
-    platform:
-      config.build.ssr && config.ssr?.target !== 'webworker'
-        ? 'node'
-        : 'browser',
+    platform: ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser',
     define,
     format: 'esm',
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
