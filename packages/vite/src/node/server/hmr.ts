@@ -151,14 +151,25 @@ export function updateModules(
       continue
     }
 
-    updates.push(
-      ...[...boundaries].map(({ boundary, acceptedVia }) => ({
+    [...boundaries].forEach(({ boundary, acceptedVia }) => {
+      const update = {
         type: `${boundary.type}-update` as Update['type'],
         timestamp,
         path: boundary.url,
         acceptedPath: acceptedVia.url
-      }))
-    )
+      }
+      if (
+        !updates.some(
+          ({ type, timestamp, path, acceptedPath }) =>
+            update.type === type &&
+            update.timestamp === timestamp &&
+            update.path === path &&
+            update.acceptedPath === acceptedPath
+        )
+      ) {
+        updates.push(update)
+      }
+    })
   }
 
   if (needFullReload) {
