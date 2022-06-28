@@ -11,6 +11,16 @@ export const DEFAULT_MAIN_FIELDS = [
   'jsnext'
 ]
 
+// Support browserslist
+// "defaults and supports es6-module and supports es6-module-dynamic-import",
+export const ESBUILD_MODULES_TARGET = [
+  'es2020', // support import.meta.url
+  'edge88',
+  'firefox78',
+  'chrome87',
+  'safari13' // transpile nullish coalescing
+]
+
 export const DEFAULT_EXTENSIONS = [
   '.mjs',
   '.js',

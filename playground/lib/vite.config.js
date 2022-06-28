@@ -5,6 +5,12 @@ const path = require('path')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  esbuild: {
+    supported: {
+      // Force esbuild inject helpers to test regex
+      'object-rest-spread': false
+    }
+  },
   build: {
     rollupOptions: {
       output: {
