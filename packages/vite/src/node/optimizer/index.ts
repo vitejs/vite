@@ -14,6 +14,7 @@ import {
   emptyDir,
   flattenId,
   getHash,
+  isOptimizable,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -258,7 +259,7 @@ export async function optimizeServerSsrDeps(
   const noExternal = config.ssr?.noExternal
   if (noExternal) {
     alsoInclude = arraify(noExternal).filter(
-      (ne) => typeof ne === 'string'
+      (ne) => typeof ne === 'string' && isOptimizable(ne, config.optimizeDeps)
     ) as string[]
     noExternalFilter =
       noExternal === true
