@@ -24,6 +24,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isFileReadable,
+  isNonDriveRelativeAbsolutePath,
   isObject,
   isPossibleTsOutput,
   isTsRequest,
@@ -172,8 +173,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id.startsWith('.') ||
-        (preferRelative && /^\w/.test(id)) ||
-        importer?.endsWith('.html')
+        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
@@ -239,7 +239,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       // absolute fs paths
-      if (path.isAbsolute(id) && (res = tryFsResolve(id, options))) {
+      if (
+        isNonDriveRelativeAbsolutePath(id) &&
+        (res = tryFsResolve(id, options))
+      ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return res
       }
