@@ -13,6 +13,7 @@ import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
 import { NULL_BYTE_PLACEHOLDER } from '../constants'
+import { isCSSRequest } from '../plugins/css'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -135,7 +136,10 @@ async function instantiateModule(
 
   const ssrImport = async (dep: string) => {
     if (dep[0] !== '.' && dep[0] !== '/') {
-      return nodeImport(dep, mod.file!, resolveOptions)
+      const imported = await nodeImport(dep, mod.file!, resolveOptions)
+      if (imported !== undefined) {
+        return imported
+      }
     }
     dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
@@ -297,8 +301,10 @@ async function nodeImport(
   }
 
   try {
-    const mod = await dynamicImport(url)
-    return proxyESM(mod)
+    if (!isCSSRequest(url)) {
+      const mod = await dynamicImport(url)
+      return proxyESM(mod)
+    }
   } finally {
     unhookNodeResolve()
   }
