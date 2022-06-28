@@ -70,7 +70,7 @@ export interface CSSOptions {
   postcss?:
     | string
     | (PostCSS.ProcessOptions & {
-        plugins?: PostCSS.Plugin[]
+        plugins?: PostCSS.AcceptedPlugin[]
       })
   /**
    * Enables css sourcemaps during dev
@@ -833,7 +833,7 @@ async function compileCSS(
     UrlRewritePostcssPlugin({
       replacer: urlReplacer,
       logger: config.logger
-    }) as PostCSS.Plugin
+    })
   )
 
   if (isModule) {
@@ -1009,7 +1009,7 @@ async function finalizeCss(
 
 interface PostCSSConfigResult {
   options: PostCSS.ProcessOptions
-  plugins: PostCSS.Plugin[]
+  plugins: PostCSS.AcceptedPlugin[]
 }
 
 async function resolvePostcssConfig(

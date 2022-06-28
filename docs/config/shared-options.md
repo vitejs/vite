@@ -198,7 +198,7 @@ Configure CSS modules behavior. The options are passed on to [postcss-modules](h
 
 ## css.postcss
 
-- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
+- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.AcceptedPlugin[] })`
 
 Inline PostCSS config or a custom directory to search PostCSS config from (default is project root).
 
