@@ -1,3 +1,4 @@
+/* eslint-disable-file node/no-missing-require */
 const fs = require('fs')
 const path = require('path')
 
