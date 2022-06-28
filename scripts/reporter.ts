@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
 
@@ -61,8 +61,15 @@ export default function ReporterPlugin(): Plugin {
 
 process.on('exit', () => {
   const type = process.env.VITE_TEST_BUILD ? 'build' : 'serve'
+  // from https://docs.github.com/en/actions/learn-github-actions/environment-variables
+  const branch = process.env.GITHUB_REF_NAME || ''
+  const filePath = path.join(__dirname, `../report.${type}.json`)
+  if (!existsSync(filePath) || branch === 'main') {
+    console.log('[!] write cache report file')
+    writeFileSync(filePath, JSON.stringify(res), { encoding: 'utf8' })
+  }
   writeFileSync(
-    path.join(__dirname, `../report.${type}.json`),
+    path.join(__dirname, `../new.report.${type}.json`),
     JSON.stringify(res),
     { encoding: 'utf8' }
   )

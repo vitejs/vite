@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config'
 import ReporterPlugin from './scripts/reporter'
 
 const timeout = process.env.CI ? 50000 : 30000
+// setting from .github/workflows/ci.yml
+const needReport = process.env.REPORT === 'report'
 
 export default defineConfig({
   resolve: {
@@ -10,7 +12,7 @@ export default defineConfig({
       '~utils': resolve(__dirname, './playground/test-utils')
     }
   },
-  plugins: [ReporterPlugin()],
+  plugins: [needReport && ReporterPlugin()],
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
     setupFiles: ['./playground/vitestSetup.ts'],

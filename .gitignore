@@ -16,3 +16,5 @@ TODOs.md
 .eslintcache
 report.build.json
 report.serve.json
+new.report.build.json
+new.report.serve.json

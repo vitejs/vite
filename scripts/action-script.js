@@ -1,51 +1,83 @@
-/* eslint-disable node/no-missing-require */
 const fs = require('fs')
 const path = require('path')
 
-function formatComment(record) {
-  const formatJSON = (json) => {
-    return Object.entries(record.serve)
-      .sort((a, b) => b[1].timing - a[1].timing)
+/**
+ * @param {{timing: number, hooks: string}[]} oRecord
+ * @param {{timing: number, hooks: string}[]} nRecord
+ */
+function formatComment(oRecord, nRecord) {
+  /** @param {Record<string, {timing: number, hooks: string}} record */
+  const total = (record) => {
+    return Object.values(record).reduce((sum, info) => (sum += info.timing), 0)
+  }
+
+  /**
+   * @param {Record<string, {timing: number, hooks: string}} o
+   * @param {Record<string, {timing: number, hooks: string}} n
+   * @return {[string, {timing: number, hooks: string, diff: number}][]}
+   */
+  const diffRecord = (o, n) => {
+    return Object.entries(n).map(([key, val]) => {
+      val.diff = val.timing - (o[key].timing || 0)
+      return [key, val]
+    })
+  }
+
+  const formatDiff = (diff) => `${diff > 0 ? `+` : `-`}${diff}`
+
+  /**
+   * @param {Record<string, {timing: number, hooks: string}} o
+   * @param {Record<string, {timing: number, hooks: string}} n
+   * @param {(a: {timing: number diff: number}, b: {timing: number diff: number}) => boolean} sortFn
+   */
+  const formatTable = (o, n, sortFn) => {
+    return diffRecord(o, n)
+      .sort((a, b) => sortFn(a[1], b[1]))
       .slice(0, 5)
-      .map((dat) => `|${dat[1].hooks}|${dat[0]}|${dat[1].timing}|`)
+      .map(
+        ([key, val]) =>
+          `|${val.hooks}|${key}|${val.timing}|${formatDiff(val.diff)}|`
+      )
       .join('\n')
   }
 
-  const total = (json) => {
-    return Object.values(record.serve).reduce(
-      (sum, info) => (sum += info.timing),
-      0
-    )
-  }
+  const nTotalServe = total(nRecord.serve)
+  const nTotalBuild = total(nRecord.build)
 
   return [
     '<!--report-->',
     '## ⏰ unit test used vite time',
-    `total(serve): ${total(record.serve)}ms`,
-    `total(build): ${total(record.build)}ms`,
-    `<details><summary> Toggle detail... </summary>`,
-    '\n### 🗒️ Top 5 (server)\n',
-    '|hooks|file|timing|',
-    '|-----|----|------|',
-    formatJSON(record.serve),
-    '\n### 🗒️ Top 5 (build)\n',
-    '|hooks|file|timing|',
-    '|-----|----|------|',
-    formatJSON(record.build),
+    `serve total: ${nTotalServe}ms`,
+    `build total: ${nTotalBuild}ms`,
+    `serve total diff: ${formatDiff(nTotalServe - total(oRecord.serve))}ms`,
+    `build total diff: ${formatDiff(nTotalBuild - total(oRecord.build))}ms`,
+    `\n<details><summary> Toggle detail... </summary>`,
+    '\n### 🗒️ Top 5 (server diff)\n',
+    '|hooks|file|timing(ms)|diff(ms)|',
+    '|-----|----|----------|--------|',
+    formatTable(oRecord.serve, nRecord.serve, (a, b) => b.diff - a.diff),
+    '\n### 🗒️ Top 5 (build diff)\n',
+    '|hooks|file|timing(ms)|diff(ms)|',
+    '|-----|----|----------|--------|',
+    formatTable(oRecord.serve, nRecord.build, (a, b) => b.diff - a.diff),
     `\n</details>`
   ].join('\n')
 }
 
 module.exports = async function action(github, context) {
-  const res = {
+  const cache = {
     serve: require('../report.serve.json'),
     build: require('../report.build.json')
+  }
+  const res = {
+    serve: require('../new.report.serve.json'),
+    build: require('../new.report.build.json')
   }
   const comment = {
     issue_number: context.issue.number,
     owner: context.repo.owner,
     repo: context.repo.repo,
-    body: formatComment(res)
+    body: formatComment(cache, res)
   }
   let commentId
   const comments = (

@@ -68,6 +68,10 @@ jobs:
         if: runner.os == 'Windows'
         run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
 
+      - name: Set Report env
+        if: matrix.node_version == '16' && matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        run: echo "REPORT=report" >> $GITHUB_ENV
+
       - name: Cache Playwright's binary
         uses: actions/cache@v3
         with:
@@ -87,17 +91,30 @@ jobs:
         run: pnpm run test-unit
 
       - name: Test serve
+        env:
+          REPORT: ${{ env.REPORT }}
         run: pnpm run test-serve
 
       - name: Test build
+        env:
+          REPORT: ${{ env.REPORT }}
         run: pnpm run test-build
 
       - name: Test docs
         run: pnpm run test-docs
 
-      - name: reporter
+      - name: Cache report
+        uses: actions/cache@v3
+        if: env.REPORT == 'report' && env.GITHUB_REF_NAME == 'main'
+        with:
+          key: report-cache
+          path: |
+            ./report.serve.json
+            ./report.build.json
+
+      - name: Comment pull request
         uses: actions/github-script@v6
-        if: matrix.node_version == '16' && matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request'
+        if: env.REPORT == 'report'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
