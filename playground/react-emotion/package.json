@@ -15,7 +15,7 @@
     "react-switch": "^7.0.0"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-pipeline-operator": "^7.18.2",
+    "@babel/plugin-proposal-pipeline-operator": "^7.18.6",
     "@emotion/babel-plugin": "^11.9.2",
     "@vitejs/plugin-react": "workspace:*"
   },

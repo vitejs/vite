@@ -39,8 +39,8 @@
     "vue": "^3.2.25"
   },
   "devDependencies": {
-    "@jridgewell/gen-mapping": "^0.3.1",
-    "@jridgewell/trace-mapping": "^0.3.13",
+    "@jridgewell/gen-mapping": "^0.3.2",
+    "@jridgewell/trace-mapping": "^0.3.14",
     "debug": "^4.3.4",
     "rollup": "^2.75.6",
     "slash": "^4.0.0",
