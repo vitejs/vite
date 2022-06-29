@@ -1,5 +1,4 @@
 import config from './vite.config.js'
-
 /**
  * @type {import('vite').UserConfig}
  */
