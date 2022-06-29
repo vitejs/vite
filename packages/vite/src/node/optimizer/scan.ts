@@ -6,11 +6,7 @@ import type { Loader, OnLoadResult, Plugin } from 'esbuild'
 import { build, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import {
-  JS_TYPES_RE,
-  KNOWN_ASSET_TYPES,
-  SPECIAL_QUERY_RE
-} from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
 import {
   cleanUrl,
   createDebugger,
@@ -231,7 +227,11 @@ function esbuildScanPlugin(
         // It is possible for the scanner to scan html types in node_modules.
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
-        if (resolved.includes('node_modules') && isOptimizable(resolved, config.optimizeDeps)) return
+        if (
+          resolved.includes('node_modules') &&
+          isOptimizable(resolved, config.optimizeDeps)
+        )
+          return
         return {
           path: resolved,
           namespace: 'html'
