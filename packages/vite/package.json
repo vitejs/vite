@@ -68,9 +68,9 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.18.5",
-    "@babel/types": "^7.18.4",
-    "@jridgewell/trace-mapping": "^0.3.13",
+    "@babel/parser": "^7.18.6",
+    "@babel/types": "^7.18.7",
+    "@jridgewell/trace-mapping": "^0.3.14",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^22.0.1",
     "@rollup/plugin-dynamic-import-vars": "^1.4.3",
