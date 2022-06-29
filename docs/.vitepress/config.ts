@@ -59,6 +59,7 @@ export default defineConfig({
         { text: '简体中文', link: 'https://cn.vitejs.dev' },
         { text: '日本語', link: 'https://ja.vitejs.dev' },
         { text: 'Español', link: 'https://es.vitejs.dev' }
+        { text: 'Portuguese', link: 'https://pt.vitejs.dev' }
       ]
     },
 
@@ -68,8 +69,8 @@ export default defineConfig({
     },
 
     nav: [
-      { text: 'Guide', link: '/guide/', activeMatch: '/guide/' },
-      { text: 'Config', link: '/config/', activeMatch: '/config/' },
+      { text: 'Guia', link: '/guide/', activeMatch: '/guide/' },
+      { text: 'Configuração', link: '/config/', activeMatch: '/config/' },
       { text: 'Plugins', link: '/plugins/', activeMatch: '/plugins/' },
       {
         text: 'Links',
