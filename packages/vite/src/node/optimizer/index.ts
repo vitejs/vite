@@ -46,7 +46,7 @@ export type ExportsData = {
 }
 
 export interface DepsOptimizer {
-  metadata: (options: { ssr: boolean }) => DepOptimizationMetadata
+  metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (
     id: string,
@@ -142,6 +142,14 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   force?: boolean
+  /**
+   * Enable optimization of dependencies in dev SSR
+   * There is no discovery mechanism. Only explicit dependencies in ssr.noExternal
+   * which aren't filtered by optimizeDeps.exclude, and deps in optimizeDeps.include
+   * are optimized.
+   * @experimental
+   */
+  devSsr?: boolean
 }
 
 export interface DepOptimizationResult {
@@ -545,6 +553,9 @@ export async function runOptimizeDeps(
       : JSON.stringify(process.env.NODE_ENV || config.mode)
   }
 
+  const platform =
+    ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
+
   const start = performance.now()
 
   const result = await build({
@@ -554,9 +565,15 @@ export async function runOptimizeDeps(
     // We can't use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
-    platform: ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser',
+    platform,
     define,
     format: 'esm',
+    banner:
+      platform === 'node'
+        ? {
+            js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
+          }
+        : undefined,
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
@@ -567,7 +584,7 @@ export async function runOptimizeDeps(
     metafile: true,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
     ...esbuildOptions,
     supported: {

@@ -5,6 +5,7 @@ import { KNOWN_ASSET_TYPES } from '../constants'
 import type { ResolvedConfig } from '..'
 import {
   flattenId,
+  isBuiltin,
   isExternalUrl,
   isRunningWithYarnPnp,
   moduleListContains,
@@ -42,7 +43,8 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr: boolean
 ): Plugin {
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = config.optimizeDeps.extensions
@@ -77,7 +79,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined)
+    return resolver(id, _importer, undefined, ssr)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -86,6 +88,9 @@ export function esbuildDepPlugin(
         path: id,
         namespace: 'browser-external'
       }
+    }
+    if (ssr && isBuiltin(resolved)) {
+      return
     }
     if (isExternalUrl(resolved)) {
       return {

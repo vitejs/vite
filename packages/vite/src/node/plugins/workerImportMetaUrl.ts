@@ -76,6 +76,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
+      const ssr = options?.ssr === true
       const query = parseRequest(id)
       let s: MagicString | undefined
       if (
@@ -123,7 +124,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let url: string
           if (isBuild) {
-            getDepsOptimizer(config)?.registerWorkersSource(id)
+            getDepsOptimizer(config, { ssr })?.registerWorkersSource(id)
             url = await workerFileToUrl(config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)

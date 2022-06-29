@@ -10,6 +10,7 @@ import definePropertyExports from 'define-property-exports'
 import onlyObjectAssignedExports from 'only-object-assigned-exports'
 import requireAbsolute from 'require-absolute'
 import noExternalCjs from 'no-external-cjs'
+import importBuiltinCjs from 'import-builtin-cjs'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -48,6 +49,9 @@ export async function render(url, rootDir) {
 
   const noExternalCjsMessage = noExternalCjs.hello()
   html += `\n<p class="no-external-cjs-msg">message from no-external-cjs: ${noExternalCjsMessage}</p>`
+
+  const importBuiltinCjsMessage = importBuiltinCjs.hello()
+  html += `\n<p class="import-builtin-cjs-msg">message from import-builtin-cjs: ${importBuiltinCjsMessage}</p>`
 
   return html + '\n'
 }

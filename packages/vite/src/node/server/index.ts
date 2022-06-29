@@ -745,15 +745,16 @@ async function restartServer(server: ViteDevServer) {
 
 async function updateCjsSsrExternals(server: ViteDevServer) {
   if (!server._ssrExternals) {
-    // We use the non-ssr optimized deps to find known imports
     let knownImports: string[] = []
-    const depsOptimizer = getDepsOptimizer(server.config)
+
+    // Important! We use the non-ssr optimized deps to find known imports
+    const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
+
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
-      const metadata = depsOptimizer.metadata({ ssr: false })
       knownImports = [
-        ...Object.keys(metadata.optimized),
-        ...Object.keys(metadata.discovered)
+        ...Object.keys(depsOptimizer.metadata.optimized),
+        ...Object.keys(depsOptimizer.metadata.discovered)
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
