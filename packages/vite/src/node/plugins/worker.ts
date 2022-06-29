@@ -222,7 +222,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id) {
+    async transform(raw, id, options) {
+      const ssr = options?.ssr === true
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
         // if import worker by worker constructor will had query.type
@@ -269,7 +270,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        getDepsOptimizer(config)?.registerWorkersSource(id)
+        getDepsOptimizer(config, { ssr })?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url

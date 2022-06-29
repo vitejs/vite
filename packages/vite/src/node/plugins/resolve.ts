@@ -83,7 +83,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Resolve using esbuild deps optimization
-  getDepsOptimizer?: () => DepsOptimizer | undefined
+  getDepsOptimizer?: (type: { ssr?: boolean }) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
@@ -102,11 +102,11 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
     name: 'vite:resolve',
 
     async resolveId(id, importer, resolveOpts) {
+      const ssr = resolveOpts?.ssr === true
+
       // We need to delay depsOptimizer until here instead of passing it as an option
       // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = resolveOptions.getDepsOptimizer?.()
-
-      const ssr = resolveOpts?.ssr === true
+      const depsOptimizer = resolveOptions.getDepsOptimizer?.({ ssr })
 
       if (id.startsWith(browserExternalId)) {
         return id
@@ -186,7 +186,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // Inject the current browserHash version if the path doesn't have one
           if (!normalizedFsPath.match(DEP_VERSION_RE)) {
             const browserHash = optimizedDepInfoFromFile(
-              depsOptimizer.metadata({ ssr }),
+              depsOptimizer.metadata,
               normalizedFsPath
             )?.browserHash
             if (browserHash) {
@@ -269,7 +269,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           asSrc &&
           depsOptimizer &&
           !options.scan &&
-          (res = await tryOptimizedResolve(depsOptimizer, ssr, id, importer))
+          (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
           return res
         }
@@ -690,7 +690,7 @@ export function tryNodeResolve(
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = depsOptimizer.metadata({ ssr }).browserHash
+      const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -716,16 +716,12 @@ export function tryNodeResolve(
 
 export async function tryOptimizedResolve(
   depsOptimizer: DepsOptimizer,
-  ssr: boolean,
   id: string,
   importer?: string
 ): Promise<string | undefined> {
   await depsOptimizer.scanProcessing
 
-  const metadata = depsOptimizer.metadata({ ssr })
-  if (!metadata) {
-    return
-  }
+  const metadata = depsOptimizer.metadata
 
   const depInfo = optimizedDepInfoFromId(metadata, id)
   if (depInfo) {

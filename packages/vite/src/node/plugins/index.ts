@@ -62,7 +62,8 @@ export async function resolvePlugins(
       packageCache: config.packageCache,
       ssrConfig: config.ssr,
       asSrc: true,
-      getDepsOptimizer: () => getDepsOptimizer(config),
+      getDepsOptimizer: (type: { ssr?: boolean }) =>
+        getDepsOptimizer(config, type),
       shouldExternalize:
         isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
           ? (id) => shouldExternalizeForSSR(id, config)

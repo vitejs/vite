@@ -24,7 +24,6 @@ import {
   runOptimizeDeps
 } from '.'
 import type {
-  DepOptimizationMetadata,
   DepOptimizationProcessing,
   DepsOptimizer,
   OptimizedDepInfo
@@ -39,18 +38,36 @@ const isDebugEnabled = _debug('vite:deps').enabled
 const debounceMs = 100
 
 const depsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
+const devSsrDepsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
 export function getDepsOptimizer(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  type: { ssr?: boolean }
 ): DepsOptimizer | undefined {
   // Workers compilation shares the DepsOptimizer from the main build
-  return depsOptimizerMap.get(config.mainConfig || config)
+  const isDevSsr = type.ssr && config.command !== 'build'
+  return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
+    config.mainConfig || config
+  )
 }
 
 export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
-): Promise<DepsOptimizer> {
+): Promise<void> {
+  await createDepsOptimizer(config, server)
+}
+
+export async function initDevSsrDepsOptimizer(
+  config: ResolvedConfig
+): Promise<void> {
+  await createDevSsrDepsOptimizer(config)
+}
+
+async function createDepsOptimizer(
+  config: ResolvedConfig,
+  server?: ViteDevServer
+): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
 
@@ -62,18 +79,11 @@ export async function initDepsOptimizer(
 
   let handle: NodeJS.Timeout | undefined
 
-  let ssrServerDepsMetadata: DepOptimizationMetadata
-  let _metadata =
+  let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp)
 
   const depsOptimizer: DepsOptimizer = {
-    metadata: (options: { ssr: boolean }) => {
-      if (isBuild || !options.ssr) {
-        return _metadata
-      } else {
-        return ssrServerDepsMetadata
-      }
-    },
+    metadata,
     registerMissingImport,
     run: () => debouncedProcessing(0),
     isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
@@ -88,10 +98,6 @@ export async function initDepsOptimizer(
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
-
-  if (!isBuild && config.ssr) {
-    ssrServerDepsMetadata = await optimizeServerSsrDeps(config)
-  }
 
   let newDepsDiscovered = false
 
@@ -137,7 +143,6 @@ export async function initDepsOptimizer(
         config,
         sessionTimestamp
       )
-      const metadata = _metadata
       for (const depInfo of Object.values(discovered)) {
         addOptimizedDepInfo(metadata, 'discovered', {
           ...depInfo,
@@ -154,8 +159,6 @@ export async function initDepsOptimizer(
       setTimeout(async () => {
         try {
           debug(colors.green(`scanning for dependencies...`))
-
-          const metadata = _metadata
 
           const discovered = await discoverProjectDependencies(
             config,
@@ -201,7 +204,7 @@ export async function initDepsOptimizer(
     // Ensure that a rerun will not be issued for current discovered deps
     if (handle) clearTimeout(handle)
 
-    if (Object.keys(_metadata.discovered).length === 0) {
+    if (Object.keys(metadata.discovered).length === 0) {
       currentlyProcessing = false
       return
     }
@@ -216,8 +219,6 @@ export async function initDepsOptimizer(
 
     // if the rerun fails, _metadata remains untouched, current discovered
     // deps are cleaned, and a fullReload is issued
-
-    let metadata = _metadata
 
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
@@ -324,7 +325,7 @@ export async function initDepsOptimizer(
           )
         }
 
-        metadata = _metadata = newData
+        metadata = depsOptimizer.metadata = newData
         resolveEnqueuedProcessingPromises()
       }
 
@@ -418,7 +419,7 @@ export async function initDepsOptimizer(
     // debounce time to wait for new missing deps finished, issue a new
     // optimization of deps (both old and newly found) once the previous
     // optimizeDeps processing is finished
-    const deps = Object.keys(_metadata.discovered)
+    const deps = Object.keys(metadata.discovered)
     const depsString = depsLogString(deps)
     debug(colors.green(`new dependencies found: ${depsString}`))
     runOptimizer()
@@ -449,7 +450,6 @@ export async function initDepsOptimizer(
         `Error: ${id} is a missing dependency in SSR dev server, it needs to be added to optimizeDeps.include`
       )
     }
-    const metadata = _metadata
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -539,7 +539,7 @@ export async function initDepsOptimizer(
     if (!firstRunEnsured && !firstRunCalled && registeredIds.length === 0) {
       setTimeout(() => {
         if (!firstRunCalled && registeredIds.length === 0) {
-          getDepsOptimizer(config)?.run()
+          debouncedProcessing(0) // queue the optimizer run
         }
       }, runOptimizerIfIdleAfterMs)
     }
@@ -580,7 +580,7 @@ export async function initDepsOptimizer(
             if (registeredIds.length > 0) {
               runOptimizerWhenIdle()
             } else {
-              getDepsOptimizer(config)?.run()
+              debouncedProcessing(0) // queue the optimizer run
             }
           }
         }
@@ -596,8 +596,34 @@ export async function initDepsOptimizer(
       }
     }
   }
+}
 
-  return depsOptimizer
+async function createDevSsrDepsOptimizer(
+  config: ResolvedConfig
+): Promise<void> {
+  const metadata = await optimizeServerSsrDeps(config)
+  const depsOptimizer = {
+    metadata,
+    isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
+    isOptimizedDepUrl: createIsOptimizedDepUrl(config),
+    getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
+      `${depInfo.file}?v=${depInfo.browserHash}`,
+
+    registerMissingImport: () => {
+      throw new Error(
+        'Vite Internal Error: registerMissingImport is not supported in dev SSR'
+      )
+    },
+    // noop, there is no scanning during dev SSR
+    // the optimizer blocks the server start
+    run: () => {},
+    registerWorkersSource: (id: string) => {},
+    delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
+    resetRegisteredIds: () => {},
+    ensureFirstRun: () => {},
+    options: config.optimizeDeps
+  }
+  devSsrDepsOptimizerMap.set(config, depsOptimizer)
 }
 
 export async function preTransformOptimizeDepsEntries(

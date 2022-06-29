@@ -28,7 +28,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
+import {
+  getDepsOptimizer,
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer
+} from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -306,6 +310,8 @@ export async function createServer(
 
   let exitProcess: () => void
 
+  let creatingDevSsrOptimizer: Promise<void> | null = null
+
   const server: ViteDevServer = {
     config,
     middlewares,
@@ -324,6 +330,13 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      if (!getDepsOptimizer(config, { ssr: true })) {
+        if (!creatingDevSsrOptimizer) {
+          creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
+        }
+        await creatingDevSsrOptimizer
+        creatingDevSsrOptimizer = null
+      }
       await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
@@ -752,15 +765,21 @@ async function restartServer(server: ViteDevServer) {
 
 async function updateCjsSsrExternals(server: ViteDevServer) {
   if (!server._ssrExternals) {
-    // We use the non-ssr optimized deps to find known imports
     let knownImports: string[] = []
-    const depsOptimizer = getDepsOptimizer(server.config)
+
+    // Important! We use the non-ssr optimized deps to find known imports
+    // Only the explicitly defined deps are optimized during dev SSR, so
+    // we use the generated list from the scanned deps in regular dev.
+    // This is part of the v2 externalization heuristics and it is kept
+    // for backwards compatibility in case user needs to fallback to the
+    // legacy scheme. It may be removed in a future v3 minor.
+    const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
+
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
-      const metadata = depsOptimizer.metadata({ ssr: false })
       knownImports = [
-        ...Object.keys(metadata.optimized),
-        ...Object.keys(metadata.discovered)
+        ...Object.keys(depsOptimizer.metadata.optimized),
+        ...Object.keys(depsOptimizer.metadata.discovered)
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)
