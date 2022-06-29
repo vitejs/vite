@@ -858,6 +858,7 @@ importers:
       forwarded-export: file:./forwarded-export
       import-builtin-cjs: file:./import-builtin-cjs
       no-external-cjs: file:./no-external-cjs
+      no-external-css: file:./no-external-css
       object-assigned-exports: file:./object-assigned-exports
       only-object-assigned-exports: file:./only-object-assigned-exports
       primitive-export: file:./primitive-export
@@ -871,6 +872,7 @@ importers:
       forwarded-export: file:playground/ssr-deps/forwarded-export
       import-builtin-cjs: file:playground/ssr-deps/import-builtin-cjs
       no-external-cjs: file:playground/ssr-deps/no-external-cjs
+      no-external-css: file:playground/ssr-deps/no-external-css
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
       only-object-assigned-exports: file:playground/ssr-deps/only-object-assigned-exports
       primitive-export: file:playground/ssr-deps/primitive-export
@@ -897,6 +899,9 @@ importers:
     specifiers: {}
 
   playground/ssr-deps/no-external-cjs:
+    specifiers: {}
+
+  playground/ssr-deps/no-external-css:
     specifiers: {}
 
   playground/ssr-deps/object-assigned-exports:
@@ -8867,6 +8872,12 @@ packages:
   file:playground/ssr-deps/no-external-cjs:
     resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
     name: no-external-cjs
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/no-external-css:
+    resolution: {directory: playground/ssr-deps/no-external-css, type: directory}
+    name: primitive-export-css
     version: 0.0.0
     dev: false
 

@@ -16,7 +16,12 @@ module.exports = {
   },
 
   optimizeDeps: {
-    include: ['dep-linked-include', 'nested-exclude > nested-include'],
+    include: [
+      'dep-linked-include',
+      'nested-exclude > nested-include',
+      // will throw if optimized (should log warning instead)
+      'non-optimizable-include'
+    ],
     exclude: ['nested-exclude'],
     esbuildOptions: {
       plugins: [
