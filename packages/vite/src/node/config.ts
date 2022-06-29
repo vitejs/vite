@@ -648,6 +648,19 @@ export async function resolveConfig(
     )
   }
 
+  if (
+    config.server?.force &&
+    !isBuild &&
+    config.optimizeDeps?.force === undefined
+  ) {
+    resolved.optimizeDeps.force = true
+    logger.warn(
+      colors.yellow(
+        `server.force is deprecated, use optimizeDeps.force instead`
+      )
+    )
+  }
+
   if (resolved.legacy?.buildRollupPluginCommonjs) {
     const optimizerDisabled = resolved.optimizeDeps.disabled
     if (!optimizerDisabled) {
