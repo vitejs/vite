@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vitejs.dev/schemas/v2.0.0/ssr-manifest.json",
+  "$id": "https://vitejs.dev/schemas/ssr-manifest.json",
   "title": "Vite SSR Manifest",
   "type": "object",
   "patternProperties": {
