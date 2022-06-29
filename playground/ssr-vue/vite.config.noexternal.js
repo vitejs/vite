@@ -1,8 +1,6 @@
-const config = require('./vite.config.js')
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = Object.assign(config, {
+import config from './vite.config.js'
+
+export default Object.assign(config, {
   ssr: {
     noExternal: /./
   },
