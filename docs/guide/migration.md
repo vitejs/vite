@@ -100,7 +100,7 @@ You can use `?init` which is similar to the previous behavior.
 -import init from 'example.wasm'
 +import init from 'example.wasm?init'
 
--init().then((instance) => {
+-init().then((exports) => {
 +init().then(({ exports }) => {
   exports.test()
 })
