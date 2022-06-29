@@ -36,15 +36,15 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.18.4",
-    "@microsoft/api-extractor": "^7.25.2",
+    "@babel/types": "^7.18.7",
+    "@microsoft/api-extractor": "^7.28.1",
     "@rollup/plugin-typescript": "^8.3.3",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
     "@types/convert-source-map": "^1.5.2",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
-    "@types/estree": "^0.0.51",
+    "@types/estree": "^0.0.52",
     "@types/etag": "^1.8.1",
     "@types/fs-extra": "^9.0.13",
     "@types/hash-sum": "^1.0.0",
@@ -59,8 +59,8 @@
     "@types/semver": "^7.3.10",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.28.0",
-    "@typescript-eslint/parser": "^5.28.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.0",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.47",
@@ -71,13 +71,13 @@
     "execa": "^6.1.0",
     "fs-extra": "^10.1.0",
     "kill-port": "^1.6.1",
-    "lint-staged": "^13.0.2",
+    "lint-staged": "^13.0.3",
     "minimist": "^1.2.6",
     "node-fetch": "^3.2.6",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.22.2",
-    "pnpm": "^7.3.0",
+    "playwright-chromium": "^1.23.0",
+    "pnpm": "^7.4.0",
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
@@ -90,8 +90,8 @@
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.2",
-    "vitest": "^0.15.1",
+    "vitepress": "^1.0.0-alpha.4",
+    "vitest": "^0.16.0",
     "vue": "^3.2.37"
   },
   "simple-git-hooks": {
@@ -112,7 +112,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.3.0",
+  "packageManager": "pnpm@7.4.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
