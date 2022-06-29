@@ -26,7 +26,11 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
+export {
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer,
+  getDepsOptimizer
+} from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -47,7 +51,7 @@ export type ExportsData = {
 }
 
 export interface DepsOptimizer {
-  metadata: (options: { ssr: boolean }) => DepOptimizationMetadata
+  metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (
     id: string,
@@ -546,6 +550,9 @@ export async function runOptimizeDeps(
       : JSON.stringify(process.env.NODE_ENV || config.mode)
   }
 
+  const platform =
+    ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
+
   const start = performance.now()
 
   const result = await build({
@@ -555,9 +562,16 @@ export async function runOptimizeDeps(
     // We can't use platform 'neutral', as esbuild has custom handling
     // when the platform is 'node' or 'browser' that can't be emulated
     // by using mainFields and conditions
-    platform: ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser',
+    platform,
     define,
     format: 'esm',
+    // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
+    banner:
+      platform === 'node'
+        ? {
+            js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
+          }
+        : undefined,
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
@@ -568,7 +582,7 @@ export async function runOptimizeDeps(
     metafile: true,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
     ...esbuildOptions,
     supported: {

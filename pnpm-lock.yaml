@@ -856,6 +856,7 @@ importers:
       define-property-exports: file:./define-property-exports
       express: ^4.18.1
       forwarded-export: file:./forwarded-export
+      import-builtin-cjs: file:./import-builtin-cjs
       no-external-cjs: file:./no-external-cjs
       no-external-css: file:./no-external-css
       object-assigned-exports: file:./object-assigned-exports
@@ -869,6 +870,7 @@ importers:
       define-properties-exports: file:playground/ssr-deps/define-properties-exports
       define-property-exports: file:playground/ssr-deps/define-property-exports
       forwarded-export: file:playground/ssr-deps/forwarded-export
+      import-builtin-cjs: file:playground/ssr-deps/import-builtin-cjs
       no-external-cjs: file:playground/ssr-deps/no-external-cjs
       no-external-css: file:playground/ssr-deps/no-external-css
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
@@ -892,6 +894,9 @@ importers:
       object-assigned-exports: file:../object-assigned-exports
     dependencies:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
+
+  playground/ssr-deps/import-builtin-cjs:
+    specifiers: {}
 
   playground/ssr-deps/no-external-cjs:
     specifiers: {}
@@ -8858,9 +8863,15 @@ packages:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
     dev: false
 
+  file:playground/ssr-deps/import-builtin-cjs:
+    resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
+    name: import-builtin
+    version: 0.0.0
+    dev: false
+
   file:playground/ssr-deps/no-external-cjs:
     resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
-    name: primitive-export
+    name: no-external-cjs
     version: 0.0.0
     dev: false
 
