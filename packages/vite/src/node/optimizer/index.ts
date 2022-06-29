@@ -259,7 +259,7 @@ export async function optimizeServerSsrDeps(
   const noExternal = config.ssr?.noExternal
   if (noExternal) {
     alsoInclude = arraify(noExternal).filter(
-      (ne) => typeof ne === 'string' && isOptimizable(ne, config.optimizeDeps)
+      (ne) => typeof ne === 'string'
     ) as string[]
     noExternalFilter =
       noExternal === true
@@ -661,7 +661,11 @@ async function addManuallyIncludedOptimizeDeps(
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
         const entry = await resolve(id)
         if (entry) {
-          deps[normalizedId] = entry
+          if (isOptimizable(entry, config.optimizeDeps)) {
+            deps[normalizedId] = entry
+          } else {
+            config.logger.warn(`Cannot optimize entry ${entry}`)
+          }
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${colors.cyan(id)}`
