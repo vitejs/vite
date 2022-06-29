@@ -761,6 +761,11 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
     let knownImports: string[] = []
 
     // Important! We use the non-ssr optimized deps to find known imports
+    // Only the explicitly defined deps are optimized during dev SSR, so
+    // we use the generated list from the scanned deps in regular dev.
+    // This is part of the v2 externalization heuristics and it is kept
+    // for backwards compatibility in case user needs to fallback to the
+    // legacy scheme. It may be removed in a future v3 minor.
     const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
 
     if (depsOptimizer) {

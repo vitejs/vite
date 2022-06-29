@@ -564,6 +564,7 @@ export async function runOptimizeDeps(
     platform,
     define,
     format: 'esm',
+    // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
     banner:
       platform === 'node'
         ? {
