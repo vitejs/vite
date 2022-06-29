@@ -28,7 +28,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
+import {
+  getDepsOptimizer,
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer
+} from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -299,6 +303,8 @@ export async function createServer(
 
   let exitProcess: () => void
 
+  let creatingDevSsrOptimizer: Promise<void> | null = null
+
   const server: ViteDevServer = {
     config,
     middlewares,
@@ -317,6 +323,13 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      if (!getDepsOptimizer(config, { ssr: true })) {
+        if (!creatingDevSsrOptimizer) {
+          creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
+        }
+        await creatingDevSsrOptimizer
+        creatingDevSsrOptimizer = null
+      }
       await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,

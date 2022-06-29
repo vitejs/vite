@@ -25,7 +25,11 @@ import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
+export {
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer,
+  getDepsOptimizer
+} from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -142,14 +146,6 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   force?: boolean
-  /**
-   * Enable optimization of dependencies in dev SSR
-   * There is no discovery mechanism. Only explicit dependencies in ssr.noExternal
-   * which aren't filtered by optimizeDeps.exclude, and deps in optimizeDeps.include
-   * are optimized.
-   * @experimental
-   */
-  devSsr?: boolean
 }
 
 export interface DepOptimizationResult {

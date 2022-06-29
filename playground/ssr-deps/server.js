@@ -36,9 +36,6 @@ export async function createServer(root = process.cwd(), hmrPort) {
     appType: 'custom',
     ssr: {
       noExternal: ['no-external-cjs', 'import-builtin-cjs']
-    },
-    optimizeDeps: {
-      devSsr: true
     }
   })
   // use vite's connect instance as middleware

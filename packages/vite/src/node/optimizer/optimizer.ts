@@ -56,10 +56,12 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   await createDepsOptimizer(config, server)
+}
 
-  if (config.optimizeDeps.devSsr && config.command !== 'build') {
-    await createDevSsrDepsOptimizer(config, server)
-  }
+export async function initDevSsrDepsOptimizer(
+  config: ResolvedConfig
+): Promise<void> {
+  await createDevSsrDepsOptimizer(config)
 }
 
 async function createDepsOptimizer(
@@ -597,8 +599,7 @@ async function createDepsOptimizer(
 }
 
 async function createDevSsrDepsOptimizer(
-  config: ResolvedConfig,
-  server?: ViteDevServer
+  config: ResolvedConfig
 ): Promise<void> {
   const metadata = await optimizeServerSsrDeps(config)
   const depsOptimizer = {
