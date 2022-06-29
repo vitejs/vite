@@ -648,13 +648,13 @@ export async function findKnownImports(
 async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
-  extra?: string[],
+  extra: string[] = [],
   filter?: (id: string) => boolean
 ): Promise<void> {
-  const include = [...(config.optimizeDeps?.include ?? []), ...(extra ?? [])]
-  if (include) {
+  const optimizeDepsInclude = config.optimizeDeps?.include ?? []
+  if (optimizeDepsInclude.length || extra.length) {
     const resolve = config.createResolver({ asSrc: false, scan: true })
-    for (const id of include) {
+    for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
@@ -663,8 +663,10 @@ async function addManuallyIncludedOptimizeDeps(
         if (entry) {
           if (isOptimizable(entry, config.optimizeDeps)) {
             deps[normalizedId] = entry
-          } else {
-            config.logger.warn(`Cannot optimize entry ${entry}`)
+          } else if (optimizeDepsInclude.includes(id)) {
+            config.logger.warn(
+              `Cannot optimize included dependency: ${colors.cyan(id)}`
+            )
           }
         } else {
           throw new Error(
