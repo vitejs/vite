@@ -24,6 +24,7 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
+  OPTIMIZABLE_ENTRY_RE,
   VALID_ID_PREFIX,
   wildcardHosts
 } from './constants'
@@ -89,6 +90,16 @@ export function moduleListContains(
   id: string
 ): boolean | undefined {
   return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+}
+
+export function isOptimizable(
+  id: string,
+  optimizeDepsConfig: ResolvedConfig['optimizeDeps']
+): boolean {
+  return (
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    (optimizeDepsConfig.extensions?.some((ext) => id.endsWith(ext)) ?? false)
+  )
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/

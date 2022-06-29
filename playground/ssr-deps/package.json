@@ -19,7 +19,8 @@
     "read-file-content": "file:./read-file-content",
     "require-absolute": "file:./require-absolute",
     "ts-transpiled-exports": "file:./ts-transpiled-exports",
-    "no-external-cjs": "file:./no-external-cjs"
+    "no-external-cjs": "file:./no-external-cjs",
+    "no-external-css": "file:./no-external-css"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

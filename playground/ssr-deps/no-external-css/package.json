@@ -1,0 +1,9 @@
+{
+  "name": "no-external-css",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./index.css"
+  }
+}

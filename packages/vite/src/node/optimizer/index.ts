@@ -14,6 +14,7 @@ import {
   emptyDir,
   flattenId,
   getHash,
+  isOptimizable,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -644,20 +645,26 @@ export async function findKnownImports(
 async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
-  extra?: string[],
+  extra: string[] = [],
   filter?: (id: string) => boolean
 ): Promise<void> {
-  const include = [...(config.optimizeDeps?.include ?? []), ...(extra ?? [])]
-  if (include) {
+  const optimizeDepsInclude = config.optimizeDeps?.include ?? []
+  if (optimizeDepsInclude.length || extra.length) {
     const resolve = config.createResolver({ asSrc: false, scan: true })
-    for (const id of include) {
+    for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
         const entry = await resolve(id)
         if (entry) {
-          deps[normalizedId] = entry
+          if (isOptimizable(entry, config.optimizeDeps)) {
+            deps[normalizedId] = entry
+          } else if (optimizeDepsInclude.includes(id)) {
+            config.logger.warn(
+              `Cannot optimize included dependency: ${colors.cyan(id)}`
+            )
+          }
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${colors.cyan(id)}`
