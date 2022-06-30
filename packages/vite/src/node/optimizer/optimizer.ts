@@ -2,10 +2,12 @@ import path from 'node:path'
 import colors from 'picocolors'
 import _debug from 'debug'
 import glob from 'fast-glob'
+import micromatch from 'micromatch'
 import { FS_PREFIX } from '../constants'
 import { getHash } from '../utils'
-import { transformRequest } from '../server/transformRequest'
+import { preTransformRequest } from '../server/transformRequest'
 import type { ResolvedConfig, ViteDevServer } from '..'
+import { filterScannableEntries, scanImportsInEntries } from './scan'
 import {
   addOptimizedDepInfo,
   createIsOptimizedDepUrl,
@@ -21,6 +23,7 @@ import {
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   optimizeServerSsrDeps,
+  optimizedDepInfoFromId,
   runOptimizeDeps
 } from '.'
 import type {
@@ -71,7 +74,8 @@ async function createDepsOptimizer(
   const { logger } = config
   const isBuild = config.command === 'build'
 
-  const scan = config.command !== 'build' && config.legacy?.devDepsScanner
+  const { devStrategy } = config.optimizeDeps
+  const preScan = config.command !== 'build' && devStrategy === 'pre-scan'
 
   const sessionTimestamp = Date.now().toString()
 
@@ -81,6 +85,16 @@ async function createDepsOptimizer(
 
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp)
+
+  const { entries } = config.optimizeDeps
+  const optOutEntries = (
+    entries ? (Array.isArray(entries) ? entries : [entries]) : []
+  )
+    .filter((rule) => rule.startsWith('!'))
+    .map((rule) => rule.slice(1))
+
+  // Used for devStrategy === 'dynamic-scan'
+  let discoveredDynamicImports: string[] = []
 
   const depsOptimizer: DepsOptimizer = {
     metadata,
@@ -94,6 +108,30 @@ async function createDepsOptimizer(
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
+    registerDynamicImport: ({ id, url }) => {
+      if (!firstRunCalled && server) {
+        // devStrategy === 'eager' process all dynamic imports with the real
+        // plugins during cold start
+        if (devStrategy === 'eager') {
+          if (!micromatch.isMatch(id, optOutEntries)) {
+            preTransformRequest(url, server, { ssr: false })
+          }
+        }
+        // devStrategy === 'dynamic-scan' aggregates the discovered dynamic
+        // imports and process them with esbuild once the server is iddle and
+        // before the first optimize batch to pre-discover missing deps
+        else if (devStrategy === 'dynamic-scan') {
+          if (!discoveredDynamicImports.includes(id)) {
+            discoveredDynamicImports.push(id)
+          }
+        }
+        // devStrategy === 'lazy' ignores dynamic imports, giving a faster cold
+        // start with potential full page reloads
+
+        // for devStrategy === 'pre-scan', dynamic imports where already pre-scanned
+        // by esbuild so there is also nothing to do here
+      }
+    },
     options: config.optimizeDeps
   }
 
@@ -137,7 +175,7 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   if (!cachedMetadata) {
-    if (!scan) {
+    if (!preScan) {
       // Initialize discovered deps with manually added optimizeDeps.include info
       const discovered = await initialProjectDependencies(
         config,
@@ -195,6 +233,30 @@ async function createDepsOptimizer(
   }
 
   async function runOptimizer() {
+    if (!firstRunCalled && !isBuild && devStrategy === 'dynamic-scan') {
+      const entries = filterScannableEntries(discoveredDynamicImports)
+      discoveredDynamicImports = []
+      const optimizeDepsEntries = config.optimizeDeps.entries
+      if (optimizeDepsEntries) {
+        const explicitEntries = filterScannableEntries(
+          await globExplicitEntries(optimizeDepsEntries, config)
+        )
+        for (const explicitEntry of explicitEntries) {
+          if (!entries.includes(explicitEntry)) {
+            entries.push(explicitEntry)
+          }
+        }
+      }
+      if (entries.length) {
+        const { deps } = await scanImportsInEntries(entries, config)
+        for (const id of Object.keys(deps)) {
+          if (!optimizedDepInfoFromId(metadata, id)) {
+            registerMissingImport(id, deps[id])
+          }
+        }
+      }
+    }
+
     const isRerun = firstRunCalled
     firstRunCalled = true
 
@@ -489,7 +551,7 @@ async function createDepsOptimizer(
     // we can get a list of every missing dependency before giving to the
     // browser a dependency that may be outdated, thus avoiding full page reloads
 
-    if (scan || firstRunCalled) {
+    if (preScan || firstRunCalled) {
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()
@@ -614,6 +676,7 @@ async function createDevSsrDepsOptimizer(
         'Vite Internal Error: registerMissingImport is not supported in dev SSR'
       )
     },
+    registerDynamicImport: () => {},
     // noop, there is no scanning during dev SSR
     // the optimizer blocks the server start
     run: () => {},
@@ -630,23 +693,28 @@ export async function preTransformOptimizeDepsEntries(
   server: ViteDevServer
 ): Promise<void> {
   const { config } = server
-  const { root } = config
   const { entries } = config.optimizeDeps
   if (entries) {
-    const explicitEntries = await glob(entries, {
-      cwd: root,
-      ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
-      absolute: true
-    })
+    const explicitEntries = await globExplicitEntries(entries, config)
     // TODO: should we restrict the entries to JS and HTML like the
     // scanner did? I think we can let the user chose any entry
     for (const entry of explicitEntries) {
-      const url = entry.startsWith(root + '/')
-        ? entry.slice(root.length)
+      const url = entry.startsWith(config.root + '/')
+        ? entry.slice(config.root.length)
         : path.posix.join(FS_PREFIX + entry)
-      transformRequest(url, server, { ssr: false }).catch((e) => {
-        config.logger.error(e.message)
-      })
+
+      preTransformRequest(url, server, { ssr: false })
     }
   }
+}
+
+async function globExplicitEntries(
+  entries: string | string[],
+  config: ResolvedConfig
+): Promise<string[]> {
+  return await glob(entries, {
+    cwd: config.root,
+    ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
+    absolute: true
+  })
 }

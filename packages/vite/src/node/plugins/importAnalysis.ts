@@ -49,17 +49,14 @@ import {
   cjsShouldExternalizeForSSR,
   shouldExternalizeForSSR
 } from '../ssr/ssrExternal'
-import { transformRequest } from '../server/transformRequest'
+import { preTransformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDirPrefix,
   getDepsOptimizer,
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import {
-  ERR_OUTDATED_OPTIMIZED_DEP,
-  throwOutdatedRequest
-} from './optimizedDeps'
+import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
@@ -244,7 +241,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const staticImportedUrls = new Set<{ url: string; id: string }>()
+      const importedUrlsToPreTransform = new Set<{ url: string; id: string }>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -531,9 +528,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
+          const importedUrl = {
+            id: resolvedId,
+            url: unwrapId(removeImportQuery(url)).replace(
+              NULL_BYTE_PLACEHOLDER,
+              '\0'
+            )
+          }
           if (!isDynamicImport) {
-            // for pre-transforming
-            staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
+            importedUrlsToPreTransform.add(importedUrl)
+          } else {
+            depsOptimizer?.registerDynamicImport(importedUrl)
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
@@ -686,23 +691,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
-      // TODO: should we also crawl dynamic imports? or the experience is good enough to allow
-      // users to chose their tradeoffs by explicitily setting optimizeDeps.entries for the
-      // most common dynamic imports
-      if (config.server.preTransformRequests && staticImportedUrls.size) {
-        staticImportedUrls.forEach(({ url, id }) => {
-          url = unwrapId(removeImportQuery(url)).replace(
-            NULL_BYTE_PLACEHOLDER,
-            '\0'
-          )
-          transformRequest(url, server, { ssr }).catch((e) => {
-            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
-              // This are expected errors
-              return
-            }
-            // Unexpected error, log the issue but avoid an unhandled exception
-            config.logger.error(e.message)
-          })
+      // These requests will also be registered in transformRequest to be awaited
+      // by the deps optimizer
+      if (
+        config.server.preTransformRequests &&
+        importedUrlsToPreTransform.size
+      ) {
+        importedUrlsToPreTransform.forEach(({ url }) => {
+          preTransformRequest(url, server, { ssr })
         })
       }
 

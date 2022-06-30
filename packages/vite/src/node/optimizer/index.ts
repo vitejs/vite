@@ -63,7 +63,7 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-
+  registerDynamicImport: (importInfo: { id: string; url: string }) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
@@ -142,6 +142,23 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Defines the cold start strategy:
+   * 'dynamic-scan': delay optimization until static imports are crawled, then
+   * scan with esbuild dynamic import entries found in the source code
+   * 'pre-scan': pre scan user code with esbuild to find the first batch of
+   * dependecies to optimize
+   * 'lazy': only static imports are crawled, leading to the fastest cold start
+   * experience with the tradeoff of possible full page reload when navigating
+   * to dynamic routes
+   * 'eager': both static and dynamic imports are processed on cold start
+   * completely removing the need for full page reloads at the expense of a
+   * slower cold start
+   *
+   * @default 'dynamic-scan', and 'pre-scan' for appType 'mpa'
+   * @experimental
+   */
+  devStrategy?: 'dynamic-scan' | 'pre-scan' | 'lazy' | 'eager'
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    * @experimental
