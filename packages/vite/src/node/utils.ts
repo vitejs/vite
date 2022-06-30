@@ -480,7 +480,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = start - (count - lineLength) + 1
+          const pad = Math.max(start - (count - lineLength) + 1, 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start
