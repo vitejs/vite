@@ -1,6 +1,4 @@
-/**
- * @type {import('vite').UserConfig}
- */
+const path = require('path')
 
 const dynamicBaseAssetsCode = `
 globalThis.__toAssetUrl = url => '/' + url
@@ -8,6 +6,10 @@ globalThis.__publicBase = '/'
 `
 
 const baseConfig = require('./vite.config.js')
+
+/**
+ * @type {import('vite').UserConfig}
+ */
 module.exports = {
   ...baseConfig,
   base: './', // overwrite the original base: '/foo/'
@@ -43,15 +45,19 @@ module.exports = {
     }
   ],
   experimental: {
-    buildAdvancedBaseOptions: {
-      relative: true,
-      assets: {
-        url: '/',
-        runtime: (url) => `globalThis.__toAssetUrl(${url})`
-      },
-      public: {
-        url: '/',
-        runtime: (url) => `globalThis.__publicBase+${url}`
+    renderBuiltUrl(filename, { hostType, type }) {
+      if (type === 'asset') {
+        if (hostType === 'js') {
+          return {
+            runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`
+          }
+        }
+      } else if (type === 'public') {
+        if (hostType === 'js') {
+          return {
+            runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`
+          }
+        }
       }
     }
   }

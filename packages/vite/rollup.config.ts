@@ -19,14 +19,7 @@ const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      module: 'esnext',
-      include: ['src/client/env.ts'],
-      baseUrl: path.resolve(__dirname, 'src/env'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
     })
   ],
   output: {
@@ -40,13 +33,7 @@ const clientConfig = defineConfig({
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      include: ['src/client/**/*.ts'],
-      baseUrl: path.resolve(__dirname, 'src/client'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
     })
   ],
   output: {
@@ -102,12 +89,7 @@ function createNodePlugins(
     }),
     nodeResolve({ preferBuiltins: true }),
     typescript({
-      tsconfig: 'src/node/tsconfig.json',
-      module: 'esnext',
-      target: 'es2020',
-      include: ['src/**/*.ts', 'types/**'],
-      exclude: ['src/**/__tests__/**'],
-      esModuleInterop: true,
+      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
       sourceMap,
       declaration: declarationDir !== false,
       declarationDir: declarationDir !== false ? declarationDir : undefined

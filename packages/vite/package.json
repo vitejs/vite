@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.0.0-beta.3",
+  "version": "3.0.0-beta.5",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -20,7 +20,8 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./dist/client/*": "./dist/client/*"
+    "./dist/client/*": "./dist/client/*",
+    "./package.json": "./package.json"
   },
   "files": [
     "bin",
@@ -57,7 +58,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.14.43",
+    "esbuild": "^0.14.47",
     "postcss": "^8.4.14",
     "resolve": "^1.22.1",
     "rollup": "^2.75.6"
@@ -67,9 +68,9 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.18.5",
-    "@babel/types": "^7.18.4",
-    "@jridgewell/trace-mapping": "^0.3.13",
+    "@babel/parser": "^7.18.6",
+    "@babel/types": "^7.18.7",
+    "@jridgewell/trace-mapping": "^0.3.14",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^22.0.1",
     "@rollup/plugin-dynamic-import-vars": "^1.4.3",

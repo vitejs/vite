@@ -108,19 +108,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const assetsBase = config.experimental.buildAdvancedBaseOptions.assets
-  const relativePreloadUrls = !(assetsBase.url || assetsBase.runtime)
+  const relativePreloadUrls = config.base === './' || config.base === ''
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
-    : `function(dep) { return ${
-        assetsBase.runtime
-          ? assetsBase.runtime('dep')
-          : `${JSON.stringify(assetsBase.url ?? config.base)}+dep`
-      }}`
+    : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -159,7 +154,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
-      const depsOptimizer = getDepsOptimizer(config)
+      const depsOptimizer = getDepsOptimizer(config, { ssr })
 
       const normalizeUrl = async (
         url: string,
@@ -175,8 +170,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
             // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata({ ssr })
-              .depInfoList) {
+            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
               if (!optimizedModule.src) continue // Ignore chunks
               if (optimizedModule.file === importer) {
                 importerFile = optimizedModule.src
@@ -267,7 +261,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
               const needsInterop = await optimizedDepNeedsInterop(
-                depsOptimizer.metadata({ ssr }),
+                depsOptimizer.metadata,
                 file,
                 config
               )
