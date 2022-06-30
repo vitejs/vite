@@ -103,22 +103,21 @@ jobs:
       - name: Test docs
         run: pnpm run test-docs
 
-      - name: Cache report
-        uses: actions/cache@v3
-        with:
-          key: report-cache
-          path: |
-            ./report.serve.json
-            ./report.build.json
-
-      - name: Comment pull request
-        uses: actions/github-script@v6
+      - name: Compared timing report
         if: env.REPORT == 'report'
+        uses: poyoho/compared-action@v1.0.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const action = require("./scripts/action-script")
-            action(github, context)
+          title: "compared timing report"
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          old-paths: |
+            ./report/serve.json
+            ./report/build.json
+          new-paths: |
+            ./report/new.serve.json
+            ./report/new.build.json
+          fields: |
+            hooks
+          cache-only: ${{ github.ref_name == 'main' }}
 
   lint:
     timeout-minutes: 10
