@@ -530,7 +530,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const importedUrl = {
             id: resolvedId,
-            url: unwrapId(removeImportQuery(url)).replace(
+            url: unwrapId(removeImportQuery(urlWithoutBase)).replace(
               NULL_BYTE_PLACEHOLDER,
               '\0'
             )
