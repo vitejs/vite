@@ -110,11 +110,11 @@ jobs:
           title: "compared timing report"
           token: "${{ secrets.GITHUB_TOKEN }}"
           old-paths: |
-            ./report/serve.json
-            ./report/build.json
+            ./reports/serve.json
+            ./reports/build.json
           new-paths: |
-            ./report/new.serve.json
-            ./report/new.build.json
+            ./reports/new.serve.json
+            ./reports/new.build.json
           fields: |
             hooks
           cache-only: ${{ github.ref_name == 'main' }}
