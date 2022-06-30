@@ -14,6 +14,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
-    "terser": "^5.14.1"
+    "terser": "^5.14.1",
+    "dep-a": "file:./dep-a",
+    "dep-including-a": "file:./dep-including-a"
   }
 }

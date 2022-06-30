@@ -708,6 +708,9 @@ importers:
   playground/optimize-deps/nested-include:
     specifiers: {}
 
+  playground/optimize-deps/non-optimizable-include:
+    specifiers: {}
+
   playground/optimize-missing-deps:
     specifiers:
       express: ^4.18.1
@@ -729,6 +732,8 @@ importers:
   playground/preload:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
+      dep-a: file:./dep-a
+      dep-including-a: file:./dep-including-a
       terser: ^5.14.1
       vue: ^3.2.37
       vue-router: ^4.0.16
@@ -737,7 +742,18 @@ importers:
       vue-router: 4.0.16_vue@3.2.37
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
+      dep-a: file:playground/preload/dep-a
+      dep-including-a: file:playground/preload/dep-including-a
       terser: 5.14.1
+
+  playground/preload/dep-a:
+    specifiers: {}
+
+  playground/preload/dep-including-a:
+    specifiers:
+      dep-a: file:../dep-a
+    dependencies:
+      dep-a: file:playground/preload/dep-a
 
   playground/preserve-symlinks:
     specifiers:
@@ -8837,6 +8853,19 @@ packages:
     version: 0.0.0
     dev: false
 
+  file:playground/preload/dep-a:
+    resolution: {directory: playground/preload/dep-a, type: directory}
+    name: dep-a
+    version: 0.0.0
+
+  file:playground/preload/dep-including-a:
+    resolution: {directory: playground/preload/dep-including-a, type: directory}
+    name: dep-including-a
+    version: 0.0.0
+    dependencies:
+      dep-a: file:playground/preload/dep-a
+    dev: true
+
   file:playground/react/jsx-entry:
     resolution: {directory: playground/react/jsx-entry, type: directory}
     name: jsx-entry
@@ -8877,7 +8906,7 @@ packages:
 
   file:playground/ssr-deps/no-external-css:
     resolution: {directory: playground/ssr-deps/no-external-css, type: directory}
-    name: primitive-export-css
+    name: no-external-css
     version: 0.0.0
     dev: false
 
