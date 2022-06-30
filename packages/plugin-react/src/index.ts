@@ -165,10 +165,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           .filter(Boolean) as ReactBabelHook[]
 
         if (hooks.length > 0) {
-          return (runPluginOverrides = (babelOptions) => {
+          return (runPluginOverrides = (babelOptions, context) => {
             hooks.forEach((hook) => hook(babelOptions, context, config))
             return true
-          })(babelOptions)
+          })(babelOptions, context)
         }
         runPluginOverrides = () => false
         return false
