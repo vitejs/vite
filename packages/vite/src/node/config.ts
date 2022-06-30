@@ -636,7 +636,9 @@ export async function resolveConfig(
   if (middlewareMode === 'ssr') {
     logger.warn(
       colors.yellow(
-        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true and appType 'custom'`
+        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true${
+          config.appType === 'custom' ? '' : ` and appType 'custom'`
+        }`
       )
     )
   }
