@@ -27,7 +27,7 @@ export default defineConfig(({ command, ssrBuild }) => ({
         if (id === '@foo') {
           // Force a mismatch error if ssrBuild is different from ssrFromOptions
           return `export default { msg: '${
-            command === 'build' && ssrBuild !== ssrFromOptions
+            command === 'build' && !!ssrBuild !== ssrFromOptions
               ? `defineConfig ssrBuild !== ssr from load options`
               : 'hi'
           }' }`
