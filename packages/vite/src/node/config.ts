@@ -610,7 +610,7 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
-      devStrategy: config.appType === 'mpa' ? 'pre-scan' : 'dynamic-scan',
+      devStrategy: 'dynamic-scan',
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: config.resolve?.preserveSymlinks,

@@ -155,7 +155,7 @@ export interface DepOptimizationOptions {
    * completely removing the need for full page reloads at the expense of a
    * slower cold start
    *
-   * @default 'dynamic-scan', and 'pre-scan' for appType 'mpa'
+   * @default 'dynamic-scan'
    * @experimental
    */
   devStrategy?: 'dynamic-scan' | 'pre-scan' | 'lazy' | 'eager'
