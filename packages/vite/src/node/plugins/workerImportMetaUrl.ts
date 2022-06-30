@@ -76,13 +76,15 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:worker-import-meta-url',
 
     async transform(code, id, options) {
-      const query = parseRequest(id)
-      let s: MagicString | undefined
+      const ssr = options?.ssr === true
       if (
+        !options?.ssr &&
         (code.includes('new Worker') || code.includes('new SharedWorker')) &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
+        const query = parseRequest(id)
+        let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
           /\bnew\s+(Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
@@ -95,13 +97,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           const urlStart = cleanString.indexOf(emptyUrl, index)
           const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
-
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              urlIndex
-            )
-          }
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
@@ -123,7 +118,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let url: string
           if (isBuild) {
-            getDepsOptimizer(config)?.registerWorkersSource(id)
+            getDepsOptimizer(config, { ssr })?.registerWorkersSource(id)
             url = await workerFileToUrl(config, file, query)
           } else {
             url = await fileToUrl(cleanUrl(file), config, this)

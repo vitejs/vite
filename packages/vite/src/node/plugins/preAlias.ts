@@ -11,10 +11,10 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
-      const ssr = options?.ssr ?? false
-      const depsOptimizer = getDepsOptimizer(config)
+      const ssr = options?.ssr === true
+      const depsOptimizer = getDepsOptimizer(config, { ssr })
       if (depsOptimizer && bareImportRE.test(id) && !options?.scan) {
-        return await tryOptimizedResolve(depsOptimizer, ssr, id, importer)
+        return await tryOptimizedResolve(depsOptimizer, id, importer)
       }
     }
   }

@@ -51,23 +51,6 @@ export default defineConfig(({ command, ssrBuild }) => ({
         }
       }
     },
-    {
-      name: 'virtual-module',
-      resolveId(id) {
-        if (id === virtualFile) {
-          return virtualId
-        } else if (id === nestedVirtualFile) {
-          return nestedVirtualId
-        }
-      },
-      load(id) {
-        if (id === virtualId) {
-          return `export { msg } from "@nested-virtual-file";`
-        } else if (id === nestedVirtualId) {
-          return `export const msg = "[success] from conventional virtual file"`
-        }
-      }
-    },
     // Example of a plugin that injects a helper from a virtual module that can
     // be used in renderBuiltUrl
     (function () {
