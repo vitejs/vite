@@ -636,14 +636,16 @@ export async function resolveConfig(
   if (middlewareMode === 'ssr') {
     logger.warn(
       colors.yellow(
-        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true and appType 'custom'`
+        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
+          config.appType === 'custom' ? '' : ` and appType to 'custom'`
+        } instead`
       )
     )
   }
   if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
-        `server.middlewareMode 'html' is now deprecated, use server.middlewareMode true`
+        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`
       )
     )
   }
