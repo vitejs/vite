@@ -44,14 +44,18 @@ In addition, environment variables that already exist when Vite is executed have
 
 Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
+### Accessing Environment Variables in Application Code
+
+To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code.
+
+For example, consider the following file:
 
 ```
 DB_PASSWORD=foobar
 VITE_SOME_KEY=123
 ```
 
-Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
+The `VITE_SOME_KEY` will be accessible at `import.meta.env.VITE_SOME_KEY` to your client source code because it is prefixed with `VITE_`. The `DB_PASSWORD` will not be accessible in the cliect source code.
 
 If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
 
