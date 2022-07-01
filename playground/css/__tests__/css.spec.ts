@@ -426,3 +426,9 @@ test('PostCSS source.input.from includes query', async () => {
   // should resolve assets
   expect(code).toContain('/postcss-source-input.css?query=foo')
 })
+
+test('aliased css has content', async () => {
+  expect(await getColor('.aliased')).toBe('blue')
+  expect(await page.textContent('.aliased-content')).toMatch('.aliased')
+  expect(await getColor('.aliased-module')).toBe('blue')
+})
