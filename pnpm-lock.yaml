@@ -137,11 +137,14 @@ importers:
   packages/playground/css:
     specifiers:
       css-dep: link:./css-dep
+      css-js-dep: file:./css-js-dep
       fast-glob: ^3.2.11
       less: ^4.1.2
       postcss-nested: ^5.0.6
       sass: ^1.43.4
       stylus: ^0.55.0
+    dependencies:
+      css-js-dep: link:css-js-dep
     devDependencies:
       css-dep: link:css-dep
       fast-glob: 3.2.11
@@ -169,6 +172,9 @@ importers:
       stylus: 0.55.0
 
   packages/playground/css/css-dep:
+    specifiers: {}
+
+  packages/playground/css/css-js-dep:
     specifiers: {}
 
   packages/playground/css/pkg-dep:
@@ -5836,7 +5842,7 @@ packages:
     dev: true
 
   /image-size/0.5.5:
-    resolution: {integrity: sha1-Cd/Uq50g4p6xw+gLiZA3jfnjy5w=}
+    resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
     hasBin: true
     requiresBuild: true

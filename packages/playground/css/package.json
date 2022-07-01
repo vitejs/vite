@@ -6,7 +6,11 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "ts-node ../../../scripts/patchFileDeps.ts"
+  },
+  "dependencies": {
+    "css-js-dep": "file:./css-js-dep"
   },
   "devDependencies": {
     "css-dep": "link:./css-dep",
