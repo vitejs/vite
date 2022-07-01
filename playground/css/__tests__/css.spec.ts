@@ -349,6 +349,11 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
+test('import dependency includes css import', async () => {
+  expect(await getColor('.css-js-dep')).toBe('green')
+  expect(await getColor('.css-js-dep-module')).toBe('green')
+})
+
 test('URL separation', async () => {
   const urlSeparated = await page.$('.url-separated')
   const baseUrl = 'url(images/dog.webp)'
