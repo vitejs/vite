@@ -81,11 +81,15 @@ const relativeRawResult = {
 }
 
 test('should work', async () => {
-  expect(await page.textContent('.result')).toBe(
-    JSON.stringify(allResult, null, 2)
+  await untilUpdated(
+    () => page.textContent('.result'),
+    JSON.stringify(allResult, null, 2),
+    true
   )
-  expect(await page.textContent('.result-node_modules')).toBe(
-    JSON.stringify(nodeModulesResult, null, 2)
+  await untilUpdated(
+    () => page.textContent('.result-node_modules'),
+    JSON.stringify(nodeModulesResult, null, 2),
+    true
   )
 })
 
