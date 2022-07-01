@@ -5,11 +5,11 @@ import { init, parse as parseImports } from 'es-module-lexer'
 import type { OutputChunk, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { transformImportGlob } from '../importGlob'
-import { combineSourcemaps } from '../utils'
+import { bareImportRE, combineSourcemaps } from '../utils'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { removedPureCssFilesCache } from './css'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -148,6 +148,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           e: end,
           ss: expStart,
           se: expEnd,
+          n: specifier,
           d: dynamicIndex
         } = imports[index]
 
@@ -193,6 +194,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const original = source.slice(expStart, expEnd)
           const replacement = `${preloadMethod}(() => ${original},${isModernFlag}?"${preloadMarker}":void 0)`
           str().overwrite(expStart, expEnd, replacement, { contentOnly: true })
+        }
+
+        // Differentiate CSS imports that use the default export from those that
+        // do not by injecting a ?used query - this allows us to avoid including
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
+        // them)
+        if (
+          specifier &&
+          isCSSRequest(specifier) &&
+          source.slice(expStart, start).includes('from') &&
+          // edge case for package names ending with .css (e.g normalize.css)
+          !(bareImportRE.test(specifier) && !specifier.includes('/'))
+        ) {
+          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
+          str().overwrite(start, end, dynamicIndex > -1 ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
