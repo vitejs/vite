@@ -266,7 +266,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
-            await depsOptimizer.scanProcessing
+            await depsOptimizer.preScanning
 
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file

@@ -719,7 +719,7 @@ export async function tryOptimizedResolve(
   id: string,
   importer?: string
 ): Promise<string | undefined> {
-  await depsOptimizer.scanProcessing
+  await depsOptimizer.preScanning
 
   const metadata = depsOptimizer.metadata
 

@@ -7,8 +7,9 @@ import { FS_PREFIX } from '../constants'
 import { getHash } from '../utils'
 import { preTransformRequest } from '../server/transformRequest'
 import type { ResolvedConfig, ViteDevServer } from '..'
-import { filterScannableEntries, scanImportsInEntries } from './scan'
+
 import {
+  addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
   createIsOptimizedDepUrl,
   debuggerViteDeps as debug,
@@ -18,13 +19,13 @@ import {
   extractExportsData,
   getOptimizedDepPath,
   initDepsOptimizerMetadata,
-  initialProjectDependencies,
   isOptimizedDepFile,
   loadCachedDepOptimizationMetadata,
   newDepOptimizationProcessing,
   optimizeServerSsrDeps,
   optimizedDepInfoFromId,
-  runOptimizeDeps
+  runOptimizeDeps,
+  toDiscoveredDependencies
 } from '.'
 import type {
   DepOptimizationProcessing,
@@ -75,7 +76,8 @@ async function createDepsOptimizer(
   const isBuild = config.command === 'build'
 
   const { devStrategy } = config.optimizeDeps
-  const preScan = config.command !== 'build' && devStrategy === 'pre-scan'
+  const preScan = !isBuild && devStrategy === 'pre-scan'
+  const lazyScan = !isBuild && devStrategy === 'scan'
 
   const sessionTimestamp = Date.now().toString()
 
@@ -93,8 +95,7 @@ async function createDepsOptimizer(
     .filter((rule) => rule.startsWith('!'))
     .map((rule) => rule.slice(1))
 
-  // Used for devStrategy === 'dynamic-scan'
-  let discoveredDynamicImports: string[] = []
+  let scannedDepsPromise: Promise<Record<string, string>> | undefined
 
   const depsOptimizer: DepsOptimizer = {
     metadata,
@@ -115,14 +116,6 @@ async function createDepsOptimizer(
         if (devStrategy === 'eager') {
           if (!micromatch.isMatch(id, optOutEntries)) {
             preTransformRequest(url, server, { ssr: false })
-          }
-        }
-        // devStrategy === 'dynamic-scan' aggregates the discovered dynamic
-        // imports and process them with esbuild once the server is iddle and
-        // before the first optimize batch to pre-discover missing deps
-        else if (devStrategy === 'dynamic-scan') {
-          if (!discoveredDynamicImports.includes(id)) {
-            discoveredDynamicImports.push(id)
           }
         }
         // devStrategy === 'lazy' ignores dynamic imports, giving a faster cold
@@ -175,31 +168,24 @@ async function createDepsOptimizer(
   let firstRunCalled = !!cachedMetadata
 
   if (!cachedMetadata) {
-    if (!preScan) {
-      // Initialize discovered deps with manually added optimizeDeps.include info
-      const discovered = await initialProjectDependencies(
-        config,
-        sessionTimestamp
-      )
-      for (const depInfo of Object.values(discovered)) {
-        addOptimizedDepInfo(metadata, 'discovered', {
-          ...depInfo,
-          processing: depOptimizationProcessing.promise
-        })
-      }
-    } else {
-      // Perform a esbuild base scan of user code to discover dependencies
+    if (preScan) {
+      // Perform a esbuild based scan of user code to discover dependencies
       currentlyProcessing = true
 
       const scanPhaseProcessing = newDepOptimizationProcessing()
-      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+      depsOptimizer.preScanning = scanPhaseProcessing.promise
 
       setTimeout(async () => {
         try {
-          debug(colors.green(`scanning for dependencies...`))
+          debug(colors.green(`pre-scanning for dependencies...`))
 
-          const discovered = await discoverProjectDependencies(
+          const deps = await discoverProjectDependencies(config)
+
+          await addManuallyIncludedOptimizeDeps(deps, config)
+
+          const discovered = toDiscoveredDependencies(
             config,
+            deps,
             sessionTimestamp
           )
 
@@ -213,45 +199,63 @@ async function createDepsOptimizer(
 
           debug(
             colors.green(
-              `dependencies found: ${depsLogString(Object.keys(discovered))}`
+              `dependencies found by pre-scanner: ${depsLogString(
+                Object.keys(discovered)
+              )}`
             )
           )
 
           scanPhaseProcessing.resolve()
-          depsOptimizer.scanProcessing = undefined
+          depsOptimizer.preScanning = undefined
 
           await runOptimizer()
         } catch (e) {
           logger.error(e.message)
-          if (depsOptimizer.scanProcessing) {
+          if (depsOptimizer.preScanning) {
             scanPhaseProcessing.resolve()
-            depsOptimizer.scanProcessing = undefined
+            depsOptimizer.preScanning = undefined
           }
         }
       }, 0)
+    } else {
+      // Initialize discovered deps with manually added optimizeDeps.include info
+
+      const deps: Record<string, string> = {}
+      await addManuallyIncludedOptimizeDeps(deps, config)
+
+      const discovered = await toDiscoveredDependencies(
+        config,
+        deps,
+        sessionTimestamp
+      )
+
+      for (const depInfo of Object.values(discovered)) {
+        addOptimizedDepInfo(metadata, 'discovered', {
+          ...depInfo,
+          processing: depOptimizationProcessing.promise
+        })
+      }
+
+      // For build time, or 'lazy' and 'eager' dev, we don't use the scanner
+      // For 'dynanic-scan' dev, we use the scanner on the discovered dynamic imports
+      // For 'scan' dev, we use the scanner on the background and use the deps
+      // found to complete the list once the server is iddle
+      if (lazyScan) {
+        debug(colors.green(`scanning for dependencies in the background...`))
+        scannedDepsPromise = discoverProjectDependencies(config)
+      }
     }
   }
 
   async function runOptimizer() {
-    if (!firstRunCalled && !isBuild && devStrategy === 'dynamic-scan') {
-      const entries = filterScannableEntries(discoveredDynamicImports)
-      discoveredDynamicImports = []
-      const optimizeDepsEntries = config.optimizeDeps.entries
-      if (optimizeDepsEntries) {
-        const explicitEntries = filterScannableEntries(
-          await globExplicitEntries(optimizeDepsEntries, config)
-        )
-        for (const explicitEntry of explicitEntries) {
-          if (!entries.includes(explicitEntry)) {
-            entries.push(explicitEntry)
-          }
-        }
-      }
-      if (entries.length) {
-        const { deps } = await scanImportsInEntries(entries, config)
-        for (const id of Object.keys(deps)) {
+    if (!firstRunCalled) {
+      // Await until the scanner is done
+      const scannedDeps = await scannedDepsPromise
+      scannedDepsPromise = undefined
+      if (scannedDeps) {
+        for (const id of Object.keys(scannedDeps)) {
           if (!optimizedDepInfoFromId(metadata, id)) {
-            registerMissingImport(id, deps[id])
+            addMissingDep(id, scannedDeps[id])
           }
         }
       }
@@ -502,14 +506,14 @@ async function createDepsOptimizer(
     resolved: string,
     ssr?: boolean
   ): OptimizedDepInfo {
-    if (depsOptimizer.scanProcessing) {
+    if (depsOptimizer.preScanning) {
       config.logger.error(
         'Vite internal error: registering missing import before initial scanning is over'
       )
     }
     if (!isBuild && ssr) {
       config.logger.error(
-        `Error: ${id} is a missing dependency in SSR dev server, it needs to be added to optimizeDeps.include`
+        'Vite internal error: ssr dep registerd as a browser dep'
       )
     }
     const optimized = metadata.optimized[id]
@@ -527,7 +531,27 @@ async function createDepsOptimizer(
       return missing
     }
     newDepsDiscovered = true
-    missing = addOptimizedDepInfo(metadata, 'discovered', {
+
+    missing = addMissingDep(id, resolved, ssr)
+
+    // Until the first optimize run is called, avoid triggering processing
+    // We'll wait until the user codebase is eagerly processed by Vite so
+    // we can get a list of every missing dependency before giving to the
+    // browser a dependency that may be outdated, thus avoiding full page reloads
+
+    if (preScan || firstRunCalled) {
+      // Debounced rerun, let other missing dependencies be discovered before
+      // the running next optimizeDeps
+      debouncedProcessing()
+    }
+
+    // Return the path for the optimized bundle, this path is known before
+    // esbuild is run to generate the pre-bundle
+    return missing
+  }
+
+  function addMissingDep(id: string, resolved: string, ssr?: boolean) {
+    return addOptimizedDepInfo(metadata, 'discovered', {
       id,
       file: getOptimizedDepPath(id, config, ssr),
       src: resolved,
@@ -545,21 +569,6 @@ async function createDepsOptimizer(
       processing: depOptimizationProcessing.promise,
       exportsData: extractExportsData(resolved, config)
     })
-
-    // Until the first optimize run is called, avoid triggering processing
-    // We'll wait until the user codebase is eagerly processed by Vite so
-    // we can get a list of every missing dependency before giving to the
-    // browser a dependency that may be outdated, thus avoiding full page reloads
-
-    if (preScan || firstRunCalled) {
-      // Debounced rerun, let other missing dependencies be discovered before
-      // the running next optimizeDeps
-      debouncedProcessing()
-    }
-
-    // Return the path for the optimized bundle, this path is known before
-    // esbuild is run to generate the pre-bundle
-    return missing
   }
 
   function debouncedProcessing(timeout = debounceMs) {

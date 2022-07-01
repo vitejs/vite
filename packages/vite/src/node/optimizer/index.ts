@@ -52,7 +52,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
-  scanProcessing?: Promise<void>
+  preScanning?: Promise<void>
   registerMissingImport: (
     id: string,
     resolved: string,
@@ -73,6 +73,25 @@ export interface DepsOptimizer {
 }
 
 export interface DepOptimizationOptions {
+  /**
+   * Defines the cold start strategy:
+   * 'scan': use esbuild to scan for deps in the background, then aggregate
+   * them with the found deps in the main route once the server is iddle.
+   * 'dynamic-scan': delay optimization until static imports are crawled, then
+   * scan with esbuild dynamic import entries found in the source code
+   * 'pre-scan': pre scan user code with esbuild to find the first batch of
+   * dependecies to optimize. Only deps found by the scanner are optimized at first.
+   * 'lazy': only static imports are crawled, leading to the fastest cold start
+   * experience with the tradeoff of possible full page reload when navigating
+   * to dynamic routes
+   * 'eager': both static and dynamic imports are processed on cold start
+   * completely removing the need for full page reloads at the expense of a
+   * slower cold start
+   *
+   * @default 'scan'
+   * @experimental
+   */
+  devStrategy?: 'scan' | 'pre-scan' | 'lazy' | 'eager'
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
@@ -142,23 +161,6 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
-  /**
-   * Defines the cold start strategy:
-   * 'dynamic-scan': delay optimization until static imports are crawled, then
-   * scan with esbuild dynamic import entries found in the source code
-   * 'pre-scan': pre scan user code with esbuild to find the first batch of
-   * dependecies to optimize
-   * 'lazy': only static imports are crawled, leading to the fastest cold start
-   * experience with the tradeoff of possible full page reload when navigating
-   * to dynamic routes
-   * 'eager': both static and dynamic imports are processed on cold start
-   * completely removing the need for full page reloads at the expense of a
-   * slower cold start
-   *
-   * @default 'dynamic-scan'
-   * @experimental
-   */
-  devStrategy?: 'dynamic-scan' | 'pre-scan' | 'lazy' | 'eager'
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    * @experimental
@@ -249,10 +251,14 @@ export async function optimizeDeps(
   if (cachedMetadata) {
     return cachedMetadata
   }
-  const depsInfo = await discoverProjectDependencies(config)
+  const deps = await discoverProjectDependencies(config)
 
-  const depsString = depsLogString(Object.keys(depsInfo))
+  const depsString = depsLogString(Object.keys(deps))
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+
+  await addManuallyIncludedOptimizeDeps(deps, config)
+
+  const depsInfo = toDiscoveredDependencies(config, deps)
 
   const result = await runOptimizeDeps(config, depsInfo)
 
@@ -299,7 +305,7 @@ export async function optimizeServerSsrDeps(
     noExternalFilter
   )
 
-  const depsInfo = toDiscoveredDependencies(config, deps, true)
+  const depsInfo = toDiscoveredDependencies(config, deps, '', true)
 
   const result = await runOptimizeDeps(config, depsInfo, true)
 
@@ -382,9 +388,8 @@ export function loadCachedDepOptimizationMetadata(
  * find deps to pre-bundle and include user hard-coded dependencies
  */
 export async function discoverProjectDependencies(
-  config: ResolvedConfig,
-  timestamp?: string
-): Promise<Record<string, OptimizedDepInfo>> {
+  config: ResolvedConfig
+): Promise<Record<string, string>> {
   const { deps, missing } = await scanImports(config)
 
   const missingIds = Object.keys(missing)
@@ -401,31 +406,14 @@ export async function discoverProjectDependencies(
     )
   }
 
-  return initialProjectDependencies(config, timestamp, deps)
-}
-
-/**
- * Create the initial discovered deps list. At build time we only
- * have the manually included deps. During dev, a scan phase is
- * performed and knownDeps is the list of discovered deps
- */
-export async function initialProjectDependencies(
-  config: ResolvedConfig,
-  timestamp?: string,
-  knownDeps?: Record<string, string>
-): Promise<Record<string, OptimizedDepInfo>> {
-  const deps: Record<string, string> = knownDeps ?? {}
-
-  await addManuallyIncludedOptimizeDeps(deps, config)
-
-  return toDiscoveredDependencies(config, deps, !!config.build.ssr, timestamp)
+  return deps
 }
 
 export function toDiscoveredDependencies(
   config: ResolvedConfig,
   deps: Record<string, string>,
-  ssr: boolean,
-  timestamp?: string
+  timestamp: string = '',
+  ssr: boolean = !!config.build.ssr
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
     getDepHash(config),
@@ -673,7 +661,7 @@ export async function findKnownImports(
   return Object.keys(deps)
 }
 
-async function addManuallyIncludedOptimizeDeps(
+export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
   extra: string[] = [],
