@@ -130,7 +130,7 @@ app.use('*', async (req, res, next) => {
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
   } catch (e) {
-    // If an error is caught, let Vite fix the stracktrace so it maps back to
+    // If an error is caught, let Vite fix the stack trace so it maps back to
     // your actual source code.
     vite.ssrFixStacktrace(e)
     next(e)
