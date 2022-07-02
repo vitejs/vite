@@ -671,11 +671,7 @@ async function createDepsOptimizer(
 async function createDevSsrDepsOptimizer(
   config: ResolvedConfig
 ): Promise<void> {
-  // Important: scanning needs to be done before running the optimizer
-  await getDepsOptimizer(config, { ssr: false })?.scanning
-
   const metadata = await optimizeServerSsrDeps(config)
-
   const depsOptimizer = {
     metadata,
     isOptimizedDepFile: (id: string) => isOptimizedDepFile(id, config),
