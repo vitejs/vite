@@ -24,6 +24,7 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import { enqueueEsbuildTask } from './index'
 
 const debug = createDebugger('vite:deps')
 
@@ -98,18 +99,24 @@ export async function scanImports(config: ResolvedConfig): Promise<{
     config.optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
-    entries.map((entry) =>
-      build({
-        absWorkingDir: process.cwd(),
-        write: false,
-        entryPoints: [entry],
-        bundle: true,
-        format: 'esm',
-        logLevel: 'error',
-        plugins: [...plugins, plugin],
-        ...esbuildOptions
+    entries.map((entry) => {
+      return new Promise((resolve) => {
+        return enqueueEsbuildTask(() => {
+          const result = build({
+            absWorkingDir: process.cwd(),
+            write: false,
+            entryPoints: [entry],
+            bundle: true,
+            format: 'esm',
+            logLevel: 'error',
+            plugins: [...plugins, plugin],
+            ...esbuildOptions
+          })
+          resolve(result)
+          return result
+        })
       })
-    )
+    })
   )
 
   debug(`Scan completed in ${(performance.now() - start).toFixed(2)}ms:`, deps)
