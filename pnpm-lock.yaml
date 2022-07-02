@@ -343,10 +343,12 @@ importers:
 
   playground/alias:
     specifiers:
+      '@vue/shared': ^3.2.37
       aliased-module: file:./dir/module
       resolve-linked: workspace:*
       vue: ^3.2.37
     dependencies:
+      '@vue/shared': 3.2.37
       aliased-module: file:playground/alias/dir/module
       vue: 3.2.37
     devDependencies:

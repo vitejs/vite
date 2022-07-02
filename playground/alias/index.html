@@ -42,6 +42,10 @@
       }
     }
   }).mount('.optimized')
+
+  // aliased to an absolute URL in CJS, should be optimized
+  import { isFunction } from '@vue/shared'
+  console.log(isFunction(() => {}))
 </script>
 
 <script type="module" src="/@/from-script-src.js"></script>
