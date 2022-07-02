@@ -155,10 +155,13 @@ async function createDepsOptimizer(
     // is refactored to work without the scanned deps. We could skip
     // this for build later.
 
+    runScanner()
+  }
+
+  async function runScanner() {
     const scanPhaseProcessing = newDepOptimizationProcessing()
     depsOptimizer.scanning = scanPhaseProcessing.promise
 
-    //setTimeout(async () => {
     try {
       debug(colors.green(`scanning for dependencies...`))
 
@@ -197,7 +200,6 @@ async function createDepsOptimizer(
       scanPhaseProcessing.resolve()
       depsOptimizer.scanning = undefined
     }
-    //}, 0)
   }
 
   async function startNextDiscoveredBatch() {
@@ -671,9 +673,6 @@ async function createDepsOptimizer(
 async function createDevSsrDepsOptimizer(
   config: ResolvedConfig
 ): Promise<void> {
-  // Important: scanning needs to be done before running the optimizer
-  await getDepsOptimizer(config, { ssr: false })?.scanning
-
   const metadata = await optimizeServerSsrDeps(config)
 
   const depsOptimizer = {

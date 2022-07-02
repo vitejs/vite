@@ -311,7 +311,24 @@ export async function createServer(
 
   let exitProcess: () => void
 
-  // let creatingDevSsrOptimizer: Promise<void> | null = null
+  let creatingDevSsrOptimizer: Promise<void> | null = null
+  async function initSsrServer() {
+    // Important: scanning needs to be done before starting the SSR dev optimizer
+    const optimizer = getDepsOptimizer(config, { ssr: false })
+    if (optimizer) {
+      await optimizer.scanning
+    } else {
+      config.logger.error('Error: ssrLoadModule called before server started')
+    }
+    if (!getDepsOptimizer(config, { ssr: true })) {
+      if (!creatingDevSsrOptimizer) {
+        creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
+      }
+      await creatingDevSsrOptimizer
+      creatingDevSsrOptimizer = null
+    }
+    await updateCjsSsrExternals(server)
+  }
 
   const server: ViteDevServer = {
     config,
@@ -331,16 +348,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      /*
-      if (!getDepsOptimizer(config, { ssr: true })) {
-        if (!creatingDevSsrOptimizer) {
-          creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
-        }
-        await creatingDevSsrOptimizer
-        creatingDevSsrOptimizer = null
-      }
-      */
-      await updateCjsSsrExternals(server)
+      await initSsrServer()
       return ssrLoadModule(
         url,
         server,
@@ -539,7 +547,6 @@ export async function createServer(
   const initOptimizer = async () => {
     if (isDepsOptimizerEnabled(config)) {
       await initDepsOptimizer(config, server)
-      await initDevSsrDepsOptimizer(config)
     }
   }
 
@@ -778,7 +785,6 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
     // for backwards compatibility in case user needs to fallback to the
     // legacy scheme. It may be removed in a future v3 minor.
     const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
-
     if (depsOptimizer) {
       await depsOptimizer.scanning
       knownImports = [
