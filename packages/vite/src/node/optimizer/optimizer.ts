@@ -158,46 +158,46 @@ async function createDepsOptimizer(
     const scanPhaseProcessing = newDepOptimizationProcessing()
     depsOptimizer.scanning = scanPhaseProcessing.promise
 
-    setTimeout(async () => {
-      try {
-        debug(colors.green(`scanning for dependencies...`))
+    //setTimeout(async () => {
+    try {
+      debug(colors.green(`scanning for dependencies...`))
 
-        const deps = await discoverProjectDependencies(config)
+      const deps = await discoverProjectDependencies(config)
 
-        const depsString = depsLogString(Object.keys(deps))
-        debug(colors.green(`dependencies found by scanner: ${depsString}`))
+      const depsString = depsLogString(Object.keys(deps))
+      debug(colors.green(`dependencies found by scanner: ${depsString}`))
 
-        // Add these dependencies to the discovered list, as these are currently
-        // used by the preAliasPlugin to support aliased and optimized deps.
-        // This is also used by the CJS externalization heuristics in legacy mode
-        for (const id of Object.keys(deps)) {
-          if (!metadata.discovered[id]) {
-            addMissingDep(id, deps[id])
-          }
+      // Add these dependencies to the discovered list, as these are currently
+      // used by the preAliasPlugin to support aliased and optimized deps.
+      // This is also used by the CJS externalization heuristics in legacy mode
+      for (const id of Object.keys(deps)) {
+        if (!metadata.discovered[id]) {
+          addMissingDep(id, deps[id])
         }
-
-        if (!isBuild) {
-          const knownDeps = prepareKnownDeps()
-
-          // For dev, we run the scanner and the first optimization
-          // run on the background, but we wait until crawling has ended
-          // to decide if we send this result to the browser or we need to
-          // do another optimize step
-          setTimeout(() => {
-            try {
-              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-            } catch (e) {
-              logger.error(e.message)
-            }
-          }, 0)
-        }
-      } catch (e) {
-        logger.error(e.message)
-      } finally {
-        scanPhaseProcessing.resolve()
-        depsOptimizer.scanning = undefined
       }
-    }, 0)
+
+      if (!isBuild) {
+        const knownDeps = prepareKnownDeps()
+
+        // For dev, we run the scanner and the first optimization
+        // run on the background, but we wait until crawling has ended
+        // to decide if we send this result to the browser or we need to
+        // do another optimize step
+        setTimeout(() => {
+          try {
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+          } catch (e) {
+            logger.error(e.message)
+          }
+        }, 0)
+      }
+    } catch (e) {
+      logger.error(e.message)
+    } finally {
+      scanPhaseProcessing.resolve()
+      depsOptimizer.scanning = undefined
+    }
+    //}, 0)
   }
 
   async function startNextDiscoveredBatch() {

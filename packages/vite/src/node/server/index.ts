@@ -311,7 +311,7 @@ export async function createServer(
 
   let exitProcess: () => void
 
-  let creatingDevSsrOptimizer: Promise<void> | null = null
+  // let creatingDevSsrOptimizer: Promise<void> | null = null
 
   const server: ViteDevServer = {
     config,
@@ -331,6 +331,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      /*
       if (!getDepsOptimizer(config, { ssr: true })) {
         if (!creatingDevSsrOptimizer) {
           creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
@@ -338,6 +339,7 @@ export async function createServer(
         await creatingDevSsrOptimizer
         creatingDevSsrOptimizer = null
       }
+      */
       await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
@@ -537,6 +539,7 @@ export async function createServer(
   const initOptimizer = async () => {
     if (isDepsOptimizerEnabled(config)) {
       await initDepsOptimizer(config, server)
+      await initDevSsrDepsOptimizer(config)
     }
   }
 
