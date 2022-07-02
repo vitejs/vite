@@ -536,8 +536,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           if (!isDynamicImport) {
             importedUrlsToPreTransform.add(importedUrl)
-          } else {
-            depsOptimizer?.registerDynamicImport(importedUrl)
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning

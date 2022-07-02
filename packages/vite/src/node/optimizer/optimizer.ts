@@ -1,11 +1,6 @@
-import path from 'node:path'
 import colors from 'picocolors'
 import _debug from 'debug'
-import glob from 'fast-glob'
-import micromatch from 'micromatch'
-import { FS_PREFIX } from '../constants'
 import { getHash } from '../utils'
-import { preTransformRequest } from '../server/transformRequest'
 import type { ResolvedConfig, ViteDevServer } from '..'
 
 import {
@@ -75,9 +70,6 @@ async function createDepsOptimizer(
   const { logger } = config
   const isBuild = config.command === 'build'
 
-  const { devStrategy } = config.optimizeDeps
-  const scan = !isBuild && devStrategy === 'scan'
-
   const sessionTimestamp = Date.now().toString()
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(config)
@@ -86,13 +78,6 @@ async function createDepsOptimizer(
 
   let metadata =
     cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp)
-
-  const { entries } = config.optimizeDeps
-  const optOutEntries = (
-    entries ? (Array.isArray(entries) ? entries : [entries]) : []
-  )
-    .filter((rule) => rule.startsWith('!'))
-    .map((rule) => rule.slice(1))
 
   const depsOptimizer: DepsOptimizer = {
     metadata,
@@ -106,19 +91,6 @@ async function createDepsOptimizer(
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
-    registerDynamicImport: ({ id, url }) => {
-      if (!firstRunCalled && server) {
-        // devStrategy === 'eager' process all dynamic imports with the real
-        // plugins during cold start
-        if (devStrategy === 'eager') {
-          if (!micromatch.isMatch(id, optOutEntries)) {
-            preTransformRequest(url, server, { ssr: false })
-          }
-        }
-        // devStrategy === 'lazy' ignores dynamic imports, giving a faster cold
-        // start with potential full page reloads
-      }
-    },
     options: config.optimizeDeps
   }
 
@@ -130,13 +102,10 @@ async function createDepsOptimizer(
   let newDepsToLogHandle: NodeJS.Timeout | undefined
   const logNewlyDiscoveredDeps = () => {
     if (newDepsToLog.length) {
+      const depsString = depsLogString(newDepsToLog)
       config.logger.info(
-        colors.green(
-          `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`
-        ),
-        {
-          timestamp: true
-        }
+        colors.green(`✨ new dependencies optimized: ${depsString}`),
+        { timestamp: true }
       )
       newDepsToLog = []
     }
@@ -154,9 +123,6 @@ async function createDepsOptimizer(
 
   let enqueuedRerun: (() => void) | undefined
   let currentlyProcessing = false
-
-  // Only pretransform optimizeDeps.entries on cold start
-  let optimizeDepsEntriesVisited = !!cachedMetadata
 
   // If there wasn't a cache or it is outdated, we need to prepare a first run
   let firstRunCalled = !!cachedMetadata
@@ -185,44 +151,42 @@ async function createDepsOptimizer(
       })
     }
 
-    // For 'scan' dev, we run the scanner and the first optimization
-    // run on the background, but we wait until crawling has ended
-    // to decide if we send this result to the browser or we need to
-    // do another optimize step
-    if (scan) {
-      const scanPhaseProcessing = newDepOptimizationProcessing()
-      depsOptimizer.scanning = scanPhaseProcessing.promise
+    // TODO: We need the scan during build time, until preAliasPlugin
+    // is refactored to work without the scanned deps. We could skip
+    // this for build later.
 
-      setTimeout(async () => {
-        try {
-          debug(colors.green(`scanning for dependencies...`))
+    const scanPhaseProcessing = newDepOptimizationProcessing()
+    depsOptimizer.scanning = scanPhaseProcessing.promise
 
-          const deps = await discoverProjectDependencies(config)
+    setTimeout(async () => {
+      try {
+        debug(colors.green(`scanning for dependencies...`))
 
-          // Add these dependencies to the discovered list, as these are currently
-          // used by the preAliasPlugin to support aliased and optimized deps.
-          // This is also used by the CJS externalization heuristics in legacy mode
-          for (const id of Object.keys(deps)) {
-            if (!metadata.discovered[id]) {
-              addMissingDep(id, deps[id])
-            }
+        const deps = await discoverProjectDependencies(config)
+
+        const depsString = depsLogString(Object.keys(deps))
+        debug(colors.green(`dependencies found by scanner: ${depsString}`))
+
+        // Add these dependencies to the discovered list, as these are currently
+        // used by the preAliasPlugin to support aliased and optimized deps.
+        // This is also used by the CJS externalization heuristics in legacy mode
+        for (const id of Object.keys(deps)) {
+          if (!metadata.discovered[id]) {
+            addMissingDep(id, deps[id])
           }
+        }
 
-          const discoveredByScanner = toDiscoveredDependencies(
-            config,
-            deps,
-            sessionTimestamp
-          )
-
-          debug(
-            colors.green(
-              `dependencies found by scanner: ${depsLogString(
-                Object.keys(discoveredByScanner)
-              )}`
-            )
-          )
-
+        if (!isBuild) {
+          // For dev, we run the scanner and the first optimization
+          // run on the background, but we wait until crawling has ended
+          // to decide if we send this result to the browser or we need to
+          // do another optimize step
           setTimeout(() => {
+            const discoveredByScanner = toDiscoveredDependencies(
+              config,
+              deps,
+              sessionTimestamp
+            )
             try {
               postScanOptimizationResult = runOptimizeDeps(
                 config,
@@ -232,14 +196,14 @@ async function createDepsOptimizer(
               logger.error(e.message)
             }
           }, 0)
-        } catch (e) {
-          logger.error(e.message)
-        } finally {
-          scanPhaseProcessing.resolve()
-          depsOptimizer.scanning = undefined
         }
-      }, 0)
-    }
+      } catch (e) {
+        logger.error(e.message)
+      } finally {
+        scanPhaseProcessing.resolve()
+        depsOptimizer.scanning = undefined
+      }
+    }, 0)
   }
 
   async function startNextDiscoveredBatch() {
@@ -576,7 +540,7 @@ async function createDepsOptimizer(
 
     currentlyProcessing = false
 
-    if (scan) {
+    if (!isBuild) {
       // Await for the scan+optimize step running in the background
       // It normally should be over by the time crawling of user code ended
       await depsOptimizer.scanning
@@ -622,7 +586,7 @@ async function createDepsOptimizer(
         runOptimizer(result)
       }
     } else {
-      // 'lazy' and 'eager', queue the first optimizer run
+      // queue the first optimizer run
       debouncedProcessing(0)
     }
   }
@@ -674,10 +638,6 @@ async function createDepsOptimizer(
       registeredIds.push({ id, done })
       runOptimizerWhenIdle()
     }
-    if (server && !optimizeDepsEntriesVisited) {
-      optimizeDepsEntriesVisited = true
-      preTransformOptimizeDepsEntries(server)
-    }
   }
 
   function runOptimizerWhenIdle() {
@@ -725,7 +685,6 @@ async function createDevSsrDepsOptimizer(
         'Vite Internal Error: registerMissingImport is not supported in dev SSR'
       )
     },
-    registerDynamicImport: () => {},
     // noop, there is no scanning during dev SSR
     // the optimizer blocks the server start
     run: () => {},
@@ -736,36 +695,6 @@ async function createDevSsrDepsOptimizer(
     options: config.optimizeDeps
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)
-}
-
-export async function preTransformOptimizeDepsEntries(
-  server: ViteDevServer
-): Promise<void> {
-  const { config } = server
-  const { entries } = config.optimizeDeps
-  if (entries) {
-    const explicitEntries = await globExplicitEntries(entries, config)
-    // TODO: should we restrict the entries to JS and HTML like the
-    // scanner did? I think we can let the user chose any entry
-    for (const entry of explicitEntries) {
-      const url = entry.startsWith(config.root + '/')
-        ? entry.slice(config.root.length)
-        : path.posix.join(FS_PREFIX + entry)
-
-      preTransformRequest(url, server, { ssr: false })
-    }
-  }
-}
-
-async function globExplicitEntries(
-  entries: string | string[],
-  config: ResolvedConfig
-): Promise<string[]> {
-  return await glob(entries, {
-    cwd: config.root,
-    ignore: ['**/node_modules/**', `**/${config.build.outDir}/**`],
-    absolute: true
-  })
 }
 
 function findInteropMismatches(

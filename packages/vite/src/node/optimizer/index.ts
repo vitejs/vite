@@ -63,7 +63,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-  registerDynamicImport: (importInfo: { id: string; url: string }) => void
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
@@ -73,24 +72,6 @@ export interface DepsOptimizer {
 }
 
 export interface DepOptimizationOptions {
-  /**
-   * Defines the cold start strategy:
-   * 'scan': use esbuild to scan for deps in the background and optimize them.
-   * Await until the server is iddle so we also get the list of deps found while
-   * crawling static imports. Use the optimization result if every dep has already
-   * been optimized. If there are new dependencies, trigger a new optimization
-   * step discarding the previous optimization result.
-   * 'lazy': only static imports are crawled, leading to the fastest cold start
-   * experience with the tradeoff of possible full page reload when navigating
-   * to dynamic routes
-   * 'eager': both static and dynamic imports are processed on cold start
-   * completely removing the need for full page reloads at the expense of a
-   * slower cold start
-   *
-   * @default 'scan'
-   * @experimental
-   */
-  devStrategy?: 'scan' | 'lazy' | 'eager'
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
