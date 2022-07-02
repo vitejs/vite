@@ -44,6 +44,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
+  const start = performance.now()
+
   let entries: string[] = []
 
   const explicitEntryPatterns = config.optimizeDeps.entries
@@ -68,7 +70,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
 
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
-  entries = filterScannableEntries(entries)
+  entries = entries.filter(
+    (entry) => isScannable(entry) && fs.existsSync(entry)
+  )
 
   if (!entries.length) {
     if (!explicitEntryPatterns && !config.optimizeDeps.include) {
@@ -81,25 +85,9 @@ export async function scanImports(config: ResolvedConfig): Promise<{
       )
     }
     return { deps: {}, missing: {} }
+  } else {
+    debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
   }
-
-  return scanImportsInEntries(entries, config)
-}
-
-export function filterScannableEntries(entries: string[]): string[] {
-  return entries.filter((entry) => isScannable(entry) && fs.existsSync(entry))
-}
-
-export async function scanImportsInEntries(
-  entries: string[],
-  config: ResolvedConfig
-): Promise<{
-  deps: Record<string, string>
-  missing: Record<string, string>
-}> {
-  const start = performance.now()
-
-  debug(`Crawling dependencies using entries:\n  ${entries.join('\n  ')}`)
 
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
@@ -140,7 +128,7 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-export async function globEntries(
+export function globEntries(
   pattern: string | string[],
   config: ResolvedConfig
 ): Promise<string[]> {
