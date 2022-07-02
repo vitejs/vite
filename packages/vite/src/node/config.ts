@@ -66,7 +66,7 @@ export type { RenderBuiltAssetUrl } from './build'
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
-  ssrBuild: boolean | string
+  ssrBuild: boolean
 }
 
 /**
@@ -378,7 +378,7 @@ export async function resolveConfig(
   const configEnv = {
     mode,
     command,
-    ssrBuild: config.build?.ssr ?? false
+    ssrBuild: !!config.build?.ssr
   }
 
   let { configFile } = config
