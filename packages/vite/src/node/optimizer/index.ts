@@ -52,7 +52,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
-  preScanning?: Promise<void>
+  scanning?: Promise<void>
   registerMissingImport: (
     id: string,
     resolved: string,
@@ -75,12 +75,11 @@ export interface DepsOptimizer {
 export interface DepOptimizationOptions {
   /**
    * Defines the cold start strategy:
-   * 'scan': use esbuild to scan for deps in the background, then aggregate
-   * them with the found deps in the main route once the server is iddle.
-   * 'dynamic-scan': delay optimization until static imports are crawled, then
-   * scan with esbuild dynamic import entries found in the source code
-   * 'pre-scan': pre scan user code with esbuild to find the first batch of
-   * dependecies to optimize. Only deps found by the scanner are optimized at first.
+   * 'scan': use esbuild to scan for deps in the background and optimize them.
+   * Await until the server is iddle so we also get the list of deps found while
+   * crawling static imports. Use the optimization result if every dep has already
+   * been optimized. If there are new dependencies, trigger a new optimization
+   * step discarding the previous optimization result.
    * 'lazy': only static imports are crawled, leading to the fastest cold start
    * experience with the tradeoff of possible full page reload when navigating
    * to dynamic routes
@@ -91,7 +90,7 @@ export interface DepOptimizationOptions {
    * @default 'scan'
    * @experimental
    */
-  devStrategy?: 'scan' | 'pre-scan' | 'lazy' | 'eager'
+  devStrategy?: 'scan' | 'lazy' | 'eager'
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
@@ -436,7 +435,7 @@ export function toDiscoveredDependencies(
 
 export function depsLogString(qualifiedIds: string[]): string {
   if (isDebugEnabled) {
-    return colors.yellow(qualifiedIds.join(`\n  `))
+    return colors.yellow(qualifiedIds.join(`, `))
   } else {
     const total = qualifiedIds.length
     const maxListed = 5
@@ -499,6 +498,9 @@ export async function runOptimizeDeps(
   const processingResult: DepOptimizationResult = {
     metadata,
     async commit() {
+      // We let the optimizeDeps caller modify the browserHash of dependencies before committing
+      commitMetadata()
+
       // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
       // Processing is done, we can now replace the depsCacheDir with processingCacheDir
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
@@ -645,8 +647,10 @@ export async function runOptimizeDeps(
     }
   }
 
-  const dataPath = path.join(processingCacheDir, '_metadata.json')
-  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
+  function commitMetadata() {
+    const dataPath = path.join(processingCacheDir, '_metadata.json')
+    writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
+  }
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 

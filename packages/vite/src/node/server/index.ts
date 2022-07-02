@@ -777,7 +777,7 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
     const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
 
     if (depsOptimizer) {
-      await depsOptimizer.preScanning
+      await depsOptimizer.scanning
       knownImports = [
         ...Object.keys(depsOptimizer.metadata.optimized),
         ...Object.keys(depsOptimizer.metadata.discovered)

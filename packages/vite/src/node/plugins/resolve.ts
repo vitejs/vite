@@ -719,7 +719,11 @@ export async function tryOptimizedResolve(
   id: string,
   importer?: string
 ): Promise<string | undefined> {
-  await depsOptimizer.preScanning
+  // TODO: we need to wait until scanning is done here as this function
+  // is used in the preAliasPlugin to decide if an aliased dep is optimized,
+  // and avoid replacing the bare import with the resolved path.
+  // We should be able to remove this in the future
+  await depsOptimizer.scanning
 
   const metadata = depsOptimizer.metadata
 
