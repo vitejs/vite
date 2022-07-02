@@ -177,21 +177,15 @@ async function createDepsOptimizer(
         }
 
         if (!isBuild) {
+          const knownDeps = prepareKnownDeps()
+
           // For dev, we run the scanner and the first optimization
           // run on the background, but we wait until crawling has ended
           // to decide if we send this result to the browser or we need to
           // do another optimize step
           setTimeout(() => {
-            const discoveredByScanner = toDiscoveredDependencies(
-              config,
-              deps,
-              sessionTimestamp
-            )
             try {
-              postScanOptimizationResult = runOptimizeDeps(
-                config,
-                discoveredByScanner
-              )
+              postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
             } catch (e) {
               logger.error(e.message)
             }
@@ -231,21 +225,25 @@ async function createDepsOptimizer(
     // All deps, previous known and newly discovered are rebundled,
     // respect insertion order to keep the metadata file stable
 
-    const newDeps: Record<string, OptimizedDepInfo> = {}
+    const knownDeps = prepareKnownDeps()
 
+    startNextDiscoveredBatch()
+
+    return await runOptimizeDeps(config, knownDeps)
+  }
+
+  function prepareKnownDeps() {
+    const knownDeps: Record<string, OptimizedDepInfo> = {}
     // Clone optimized info objects, fileHash, browserHash may be changed for them
     for (const dep of Object.keys(metadata.optimized)) {
-      newDeps[dep] = { ...metadata.optimized[dep] }
+      knownDeps[dep] = { ...metadata.optimized[dep] }
     }
     for (const dep of Object.keys(metadata.discovered)) {
       // Clone the discovered info discarding its processing promise
       const { processing, ...info } = metadata.discovered[dep]
-      newDeps[dep] = info
+      knownDeps[dep] = info
     }
-
-    startNextDiscoveredBatch()
-
-    return await runOptimizeDeps(config, newDeps)
+    return knownDeps
   }
 
   async function runOptimizer(preRunResult?: DepOptimizationResult) {
