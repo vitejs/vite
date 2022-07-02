@@ -540,11 +540,12 @@ async function createDepsOptimizer(
 
     currentlyProcessing = false
 
-    if (!isBuild) {
+    if (!isBuild && postScanOptimizationResult) {
       // Await for the scan+optimize step running in the background
       // It normally should be over by the time crawling of user code ended
       await depsOptimizer.scanning
-      const result = (await postScanOptimizationResult) as DepOptimizationResult
+      const result = await postScanOptimizationResult
+      postScanOptimizationResult = undefined
 
       const scanDeps = Object.keys(result.metadata.optimized)
       const crawlDeps = Object.keys(metadata.discovered)
