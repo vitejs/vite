@@ -19,6 +19,7 @@ module.exports = {
     'process.env.SOMEVAR': '"SOMEVAR"',
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,
-    __VAR_NAME__: false
+    __VAR_NAME__: false,
+    __STRINGIFIED_OBJ__: JSON.stringify({ foo: true })
   }
 }

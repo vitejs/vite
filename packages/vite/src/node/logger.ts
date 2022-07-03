@@ -1,13 +1,14 @@
 /* eslint no-console: 0 */
 
-import type { AddressInfo, Server } from 'net'
-import os from 'os'
+import type { AddressInfo, Server } from 'node:net'
+import os from 'node:os'
 import readline from 'readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { CommonServerOptions } from './http'
 import type { Hostname } from './utils'
 import { resolveHostname } from './utils'
+import { loopbackHosts } from './constants'
 import type { ResolvedConfig } from '.'
 
 export type LogType = 'error' | 'warn' | 'info'
@@ -144,23 +145,18 @@ export function createLogger(
   return logger
 }
 
-export function printCommonServerUrls(
+export async function printCommonServerUrls(
   server: Server,
   options: CommonServerOptions,
   config: ResolvedConfig
-): void {
+): Promise<void> {
   const address = server.address()
   const isAddressInfo = (x: any): x is AddressInfo => x?.address
   if (isAddressInfo(address)) {
-    const hostname = resolveHostname(options.host)
+    const hostname = await resolveHostname(options.host)
     const protocol = options.https ? 'https' : 'http'
-    printServerUrls(
-      hostname,
-      protocol,
-      address.port,
-      config.base,
-      config.logger.info
-    )
+    const base = config.base === './' || config.base === '' ? '/' : config.base
+    printServerUrls(hostname, protocol, address.port, base, config.logger.info)
   }
 }
 
@@ -171,20 +167,30 @@ function printServerUrls(
   base: string,
   info: Logger['info']
 ): void {
-  const urls: Array<{ label: string; url: string }> = []
+  const urls: Array<{ label: string; url: string; disabled?: boolean }> = []
+  const notes: Array<{ label: string; message: string }> = []
 
-  if (hostname.host === '127.0.0.1') {
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+
     urls.push({
       label: 'Local',
       url: colors.cyan(
-        `${protocol}://${hostname.name}:${colors.bold(port)}${base}`
+        `${protocol}://${hostnameName}:${colors.bold(port)}${base}`
       )
     })
 
-    if (hostname.name !== '127.0.0.1') {
+    if (hostname.implicit) {
       urls.push({
         label: 'Network',
-        url: colors.dim(`use ${colors.white(colors.bold('--host'))} to expose`)
+        url: `use ${colors.white(colors.bold('--host'))} to expose`,
+        disabled: true
       })
     }
   } else {
@@ -208,15 +214,25 @@ function printServerUrls(
       })
   }
 
-  const length = urls.reduce(
-    (length, { label }) => Math.max(length, label.length),
-    0
+  const length = Math.max(
+    ...[...urls, ...notes].map(({ label }) => label.length)
   )
-  urls.forEach(({ label, url: text }) => {
-    info(
-      `  ${colors.green('➜')}  ${colors.bold(label)}: ${' '.repeat(
-        length - label.length
-      )}${text}`
-    )
+  const print = (
+    iconWithColor: string,
+    label: string,
+    messageWithColor: string,
+    disabled?: boolean
+  ) => {
+    const message = `  ${iconWithColor}  ${
+      label ? colors.bold(label) + ':' : ' '
+    } ${' '.repeat(length - label.length)}${messageWithColor}`
+    info(disabled ? colors.dim(message) : message)
+  }
+
+  urls.forEach(({ label, url: text, disabled }) => {
+    print(colors.green('➜'), label, text, disabled)
+  })
+  notes.forEach(({ label, message: text }) => {
+    print(colors.white('❖'), label, text)
   })
 }

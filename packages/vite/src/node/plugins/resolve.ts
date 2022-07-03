@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
@@ -24,6 +24,7 @@ import {
   isDataUrl,
   isExternalUrl,
   isFileReadable,
+  isNonDriveRelativeAbsolutePath,
   isObject,
   isPossibleTsOutput,
   isTsRequest,
@@ -82,19 +83,18 @@ export interface InternalResolveOptions extends ResolveOptions {
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Resolve using esbuild deps optimization
-  getDepsOptimizer?: () => DepsOptimizer | undefined
+  getDepsOptimizer?: (type: { ssr?: boolean }) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
-export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
+export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   const {
     root,
-    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
     preferRelative = false
-  } = baseOptions
+  } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
@@ -102,11 +102,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     name: 'vite:resolve',
 
     async resolveId(id, importer, resolveOpts) {
+      const ssr = resolveOpts?.ssr === true
+
       // We need to delay depsOptimizer until here instead of passing it as an option
       // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = baseOptions.getDepsOptimizer?.()
-
-      const ssr = resolveOpts?.ssr === true
+      const depsOptimizer = resolveOptions.getDepsOptimizer?.({ ssr })
 
       if (id.startsWith(browserExternalId)) {
         return id
@@ -125,8 +125,8 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options: InternalResolveOptions = {
         isRequire,
-        ...baseOptions,
-        scan: resolveOpts?.scan ?? baseOptions.scan
+        ...resolveOptions,
+        scan: resolveOpts?.scan ?? resolveOptions.scan
       }
 
       if (importer) {
@@ -173,8 +173,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id.startsWith('.') ||
-        (preferRelative && /^\w/.test(id)) ||
-        importer?.endsWith('.html')
+        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
@@ -240,7 +239,10 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       }
 
       // absolute fs paths
-      if (path.isAbsolute(id) && (res = tryFsResolve(id, options))) {
+      if (
+        isNonDriveRelativeAbsolutePath(id) &&
+        (res = tryFsResolve(id, options))
+      ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return res
       }
@@ -266,7 +268,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           !external &&
           asSrc &&
           depsOptimizer &&
-          (isBuild || !ssr) &&
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
@@ -542,6 +543,8 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
+  ssr ??= false
+
   // split id by last '>' for nested selected packages, for example:
   // 'foo > bar > baz' => 'foo > bar' & 'baz'
   // 'foo'             => ''          & 'foo'
@@ -695,7 +698,7 @@ export function tryNodeResolve(
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
+    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved, ssr)
     resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
   }
 
@@ -718,7 +721,9 @@ export async function tryOptimizedResolve(
 ): Promise<string | undefined> {
   await depsOptimizer.scanProcessing
 
-  const depInfo = optimizedDepInfoFromId(depsOptimizer.metadata, id)
+  const metadata = depsOptimizer.metadata
+
+  const depInfo = optimizedDepInfoFromId(metadata, id)
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }
@@ -728,7 +733,7 @@ export async function tryOptimizedResolve(
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
-  for (const optimizedData of depsOptimizer.metadata.depInfoList) {
+  for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
     const pkgPath = optimizedData.id

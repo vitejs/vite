@@ -1,8 +1,7 @@
-import path from 'path'
+import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter } from '@rollup/pluginutils'
-import { normalizePath } from 'vite'
+import { createFilter, normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import {
   addRefreshWrapper,
@@ -91,7 +90,7 @@ declare module 'vite' {
 
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
-  let base = '/'
+  let devBase = '/'
   let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
   let isProduction = true
@@ -118,8 +117,19 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
+    config() {
+      if (opts.jsxRuntime === 'classic') {
+        return {
+          esbuild: {
+            logOverride: {
+              'this-is-undefined-in-esm': 'silent'
+            }
+          }
+        }
+      }
+    },
     configResolved(config) {
-      base = config.base
+      devBase = config.base
       projectRoot = config.root
       resolvedCacheDir = normalizePath(path.resolve(config.cacheDir))
       filter = createFilter(opts.include, opts.exclude, {
@@ -155,10 +165,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           .filter(Boolean) as ReactBabelHook[]
 
         if (hooks.length > 0) {
-          return (runPluginOverrides = (babelOptions) => {
+          return (runPluginOverrides = (babelOptions, context) => {
             hooks.forEach((hook) => hook(babelOptions, context, config))
             return true
-          })(babelOptions)
+          })(babelOptions, context)
         }
         runPluginOverrides = () => false
         return false
@@ -266,7 +276,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           !(isProjectFile && babelOptions.babelrc)
 
         if (shouldSkip) {
-          return // Avoid parsing if no plugins exist.
+          // Avoid parsing if no plugins exist.
+          return {
+            code
+          }
         }
 
         const parserPlugins: typeof babelOptions.parserOpts.plugins = [
@@ -355,13 +368,16 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           {
             tag: 'script',
             attrs: { type: 'module' },
-            children: preambleCode.replace(`__BASE__`, base)
+            children: preambleCode.replace(`__BASE__`, devBase)
           }
         ]
     }
   }
 
-  // const runtimeId = 'react/jsx-runtime'
+  const reactJsxRuntimeId = 'react/jsx-runtime'
+  const reactJsxDevRuntimeId = 'react/jsx-dev-runtime'
+  const virtualReactJsxRuntimeId = '\0' + reactJsxRuntimeId
+  const virtualReactJsxDevRuntimeId = '\0' + reactJsxDevRuntimeId
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
@@ -369,32 +385,42 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: ['react/jsx-dev-runtime']
+          include: [reactJsxRuntimeId, reactJsxDevRuntimeId]
         }
       }
-    }
-    // TODO: this optimization may not be necesary and it is breacking esbuild+rollup compat,
-    // see https://github.com/vitejs/vite/pull/7246#discussion_r861552185
-    // We could still do the same trick and resolve to the optimized dependency here
-    /*
-    resolveId(id: string) {
-      return id === runtimeId ? id : null
     },
-    load(id: string) {
-      if (id === runtimeId) {
-        const runtimePath = resolve.sync(runtimeId, {
-          basedir: projectRoot
-        })
-        const exports = ['jsx', 'jsxs', 'Fragment']
+    resolveId(id, importer) {
+      // Resolve runtime to a virtual path to be interoped.
+      // Since the interop code re-imports `id`, we need to prevent re-resolving
+      // to the virtual id if the importer is already the virtual id.
+      if (id === reactJsxRuntimeId && importer !== virtualReactJsxRuntimeId) {
+        return virtualReactJsxRuntimeId
+      }
+      if (
+        id === reactJsxDevRuntimeId &&
+        importer !== virtualReactJsxDevRuntimeId
+      ) {
+        return virtualReactJsxDevRuntimeId
+      }
+    },
+    load(id) {
+      // Apply manual interop
+      if (id === virtualReactJsxRuntimeId) {
         return [
-          `import * as jsxRuntime from ${JSON.stringify(runtimePath)}`,
-          // We can't use `export * from` or else any callsite that uses
-          // this module will be compiled to `jsxRuntime.exports.jsx`
-          // instead of the more concise `jsx` alias.
-          ...exports.map((name) => `export const ${name} = jsxRuntime.${name}`)
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsx = jsxRuntime.jsx`,
+          `export const jsxs = jsxRuntime.jsxs`
         ].join('\n')
       }
-    } */
+      if (id === virtualReactJsxDevRuntimeId) {
+        return [
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxDevRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsxDEV = jsxRuntime.jsxDEV`
+        ].join('\n')
+      }
+    }
   }
 
   return [viteBabel, viteReactRefresh, useAutomaticRuntime && viteReactJsx]

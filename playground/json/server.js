@@ -20,7 +20,7 @@ async function createServer(
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
@@ -28,6 +28,7 @@ async function createServer(
         interval: 100
       }
     },
+    appType: 'custom',
     json: {
       stringify: true
     }

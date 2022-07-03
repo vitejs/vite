@@ -5,10 +5,10 @@
 // TODO: explicitly import APIs and remove this
 /// <reference types="vitest/globals"/>
 
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import colors from 'css-color-names'
-import type { ElementHandle } from 'playwright-chromium'
+import type { ElementHandle, ConsoleMessage } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
@@ -150,7 +150,7 @@ export async function untilUpdated(
   runInBuild = false
 ): Promise<void> {
   if (isBuild && !runInBuild) return
-  const maxTries = process.env.CI ? 100 : 50
+  const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
     if (actual.indexOf(expected) > -1 || tries === maxTries - 1) {
@@ -162,12 +162,94 @@ export async function untilUpdated(
   }
 }
 
-export const extractSourcemap = (content: string) => {
+export async function untilBrowserLogAfter(
+  operation: () => any,
+  target: string | RegExp | Array<string | RegExp>,
+  callback?: (logs: string[]) => PromiseLike<void> | void
+): Promise<string[]> {
+  const promise = untilBrowserLog(target, false)
+  await operation()
+  const logs = await promise
+  if (callback) {
+    await callback(logs)
+  }
+  return logs
+}
+
+async function untilBrowserLog(
+  target?: string | RegExp | Array<string | RegExp>,
+  expectOrder = true
+): Promise<string[]> {
+  let resolve: () => void
+  let reject: (reason: any) => void
+  const promise = new Promise<void>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+
+  const logs = []
+
+  try {
+    const isMatch = (matcher: string | RegExp) => (text: string) =>
+      typeof matcher === 'string' ? text === matcher : matcher.test(text)
+
+    let processMsg: (text: string) => boolean
+
+    if (!target) {
+      processMsg = () => true
+    } else if (Array.isArray(target)) {
+      if (expectOrder) {
+        const remainingTargets = [...target]
+        processMsg = (text: string) => {
+          const nextTarget = remainingTargets.shift()
+          expect(text).toMatch(nextTarget)
+          return remainingTargets.length === 0
+        }
+      } else {
+        const remainingMatchers = target.map(isMatch)
+        processMsg = (text: string) => {
+          const nextIndex = remainingMatchers.findIndex((matcher) =>
+            matcher(text)
+          )
+          if (nextIndex >= 0) {
+            remainingMatchers.splice(nextIndex, 1)
+          }
+          return remainingMatchers.length === 0
+        }
+      }
+    } else {
+      processMsg = isMatch(target)
+    }
+
+    const handleMsg = (msg: ConsoleMessage) => {
+      try {
+        const text = msg.text()
+        logs.push(text)
+        const done = processMsg(text)
+        if (done) {
+          resolve()
+        }
+      } catch (err) {
+        reject(err)
+      }
+    }
+
+    page.on('console', handleMsg)
+  } catch (err) {
+    reject(err)
+  }
+
+  await promise
+
+  return logs
+}
+
+export const extractSourcemap = (content: string): any => {
   const lines = content.trim().split('\n')
   return fromComment(lines[lines.length - 1]).toObject()
 }
 
-export const formatSourcemapForSnapshot = (map: any) => {
+export const formatSourcemapForSnapshot = (map: any): any => {
   const root = normalizePath(testDir)
   const m = { ...map }
   delete m.file
@@ -182,8 +264,8 @@ export async function killProcess(
 ): Promise<void> {
   if (isWindows) {
     try {
-      const { default: execa } = await import('execa')
-      execa.commandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
+      const { execaCommandSync } = await import('execa')
+      execaCommandSync(`taskkill /pid ${serverProcess.pid} /T /F`)
     } catch (e) {
       console.error('failed to taskkill:', e)
     }

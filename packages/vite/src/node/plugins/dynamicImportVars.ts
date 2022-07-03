@@ -1,17 +1,17 @@
-import { posix } from 'path'
+import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
-import { createFilter } from '@rollup/pluginutils'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import {
+  createFilter,
   normalizePath,
   parseRequest,
   requestQuerySplitRE,
-  transformResult
+  transformStableResult
 } from '../utils'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
@@ -209,7 +209,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
           )
         }
-        return transformResult(s, importer, config)
+        return transformStableResult(s, importer, config)
       }
     }
   }

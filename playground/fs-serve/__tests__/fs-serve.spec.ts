@@ -35,6 +35,13 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fetch-status')).toBe('403')
   })
 
+  test('unsafe fetch with special characters (#8498)', async () => {
+    expect(await page.textContent('.unsafe-fetch-8498')).toMatch(
+      '403 Restricted'
+    )
+    expect(await page.textContent('.unsafe-fetch-8498-status')).toBe('403')
+  })
+
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
@@ -50,6 +57,11 @@ describe.runIf(isServe)('main', () => {
   test('unsafe fs fetch', async () => {
     expect(await page.textContent('.unsafe-fs-fetch')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
+  })
+
+  test('unsafe fs fetch with special characters (#8498)', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('403')
   })
 
   test('nested entry', async () => {

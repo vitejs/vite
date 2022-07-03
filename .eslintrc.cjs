@@ -137,13 +137,13 @@ module.exports = defineConfig({
         'node/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '>=14.6.0'
+            version: '>=14.18.0'
           }
         ],
         'node/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '>=14.6.0'
+            version: '>=14.18.0'
           }
         ]
       }
@@ -155,7 +155,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['*.js'],
+      files: ['playground/**', '*.js'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }

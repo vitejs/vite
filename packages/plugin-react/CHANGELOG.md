@@ -1,3 +1,24 @@
+## 2.0.0-beta.0 (2022-06-21)
+
+* feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)
+* feat: experimental.buildAdvancedBaseOptions (#8450) ([8ef7333](https://github.com/vitejs/vite/commit/8ef7333)), closes [#8450](https://github.com/vitejs/vite/issues/8450)
+* feat: expose createFilter util (#8562) ([c5c424a](https://github.com/vitejs/vite/commit/c5c424a)), closes [#8562](https://github.com/vitejs/vite/issues/8562)
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use node prefix (#8309) ([60721ac](https://github.com/vitejs/vite/commit/60721ac)), closes [#8309](https://github.com/vitejs/vite/issues/8309)
+* chore(deps): update all non-major dependencies (#8669) ([628863d](https://github.com/vitejs/vite/commit/628863d)), closes [#8669](https://github.com/vitejs/vite/issues/8669)
+* fix(plugin-react): set `this-is-undefined-in-esm` to silent if classic runtime (#8674) ([f0aecba](https://github.com/vitejs/vite/commit/f0aecba)), closes [#8674](https://github.com/vitejs/vite/issues/8674)
+
+
+
+## 2.0.0-alpha.3 (2022-06-12)
+
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* fix(plugin-react): apply manual runtime interop (#8546) ([f09299c](https://github.com/vitejs/vite/commit/f09299c)), closes [#8546](https://github.com/vitejs/vite/issues/8546)
+* fix(plugin-react): support import namespace in `parseReactAlias` (#5313) ([05b91cd](https://github.com/vitejs/vite/commit/05b91cd)), closes [#5313](https://github.com/vitejs/vite/issues/5313)
+* refactor: remove hooks ssr param support (#8491) ([f59adf8](https://github.com/vitejs/vite/commit/f59adf8)), closes [#8491](https://github.com/vitejs/vite/issues/8491)
+
+
+
 ## 2.0.0-alpha.2 (2022-05-26)
 
 * feat: non-blocking esbuild optimization at build time (#8280) ([909cf9c](https://github.com/vitejs/vite/commit/909cf9c)), closes [#8280](https://github.com/vitejs/vite/issues/8280)

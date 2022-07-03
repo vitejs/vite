@@ -1,17 +1,20 @@
-import fs from 'fs'
-import path from 'path'
-import { performance } from 'perf_hooks'
+import fs from 'node:fs'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import _debug from 'debug'
 import colors from 'picocolors'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
+import { createFilter } from '@rollup/pluginutils'
 import type { ResolvedConfig } from '../config'
 import {
+  arraify,
   createDebugger,
   emptyDir,
   flattenId,
   getHash,
+  isOptimizable,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -20,9 +23,14 @@ import {
   writeFile
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
+import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
+export {
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer,
+  getDepsOptimizer
+} from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -45,8 +53,11 @@ export type ExportsData = {
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
-
-  registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
+  registerMissingImport: (
+    id: string,
+    resolved: string,
+    ssr?: boolean
+  ) => OptimizedDepInfo
   run: () => void
 
   isOptimizedDepFile: (id: string) => boolean
@@ -56,6 +67,7 @@ export interface DepsOptimizer {
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
+  ensureFirstRun: () => void
 
   options: DepOptimizationOptions
 }
@@ -72,13 +84,6 @@ export interface DepOptimizationOptions {
    * vite project root. This will overwrite default entries inference.
    */
   entries?: string | string[]
-  /**
-   * Enable esbuild based scan phase, to get back to the optimized deps discovery
-   * strategy used in Vite v2
-   * @default false
-   * @experimental
-   */
-  devScan?: boolean
   /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
@@ -137,6 +142,11 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+  /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   * @experimental
+   */
+  force?: boolean
 }
 
 export interface DepOptimizationResult {
@@ -209,7 +219,7 @@ export interface DepOptimizationMetadata {
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
-  force = config.force,
+  force = config.optimizeDeps.force,
   asCommand = false
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
@@ -228,6 +238,53 @@ export async function optimizeDeps(
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
   const result = await runOptimizeDeps(config, depsInfo)
+
+  await result.commit()
+
+  return result.metadata
+}
+
+export async function optimizeServerSsrDeps(
+  config: ResolvedConfig
+): Promise<DepOptimizationMetadata> {
+  const cachedMetadata = loadCachedDepOptimizationMetadata(
+    config,
+    config.optimizeDeps.force,
+    false,
+    true // ssr
+  )
+  if (cachedMetadata) {
+    return cachedMetadata
+  }
+
+  let alsoInclude: string[] | undefined
+  let noExternalFilter: ((id: unknown) => boolean) | undefined
+
+  const noExternal = config.ssr?.noExternal
+  if (noExternal) {
+    alsoInclude = arraify(noExternal).filter(
+      (ne) => typeof ne === 'string'
+    ) as string[]
+    noExternalFilter =
+      noExternal === true
+        ? (dep: unknown) => false
+        : createFilter(noExternal, config.optimizeDeps?.exclude, {
+            resolve: false
+          })
+  }
+
+  const deps: Record<string, string> = {}
+
+  await addManuallyIncludedOptimizeDeps(
+    deps,
+    config,
+    alsoInclude,
+    noExternalFilter
+  )
+
+  const depsInfo = toDiscoveredDependencies(config, deps, true)
+
+  const result = await runOptimizeDeps(config, depsInfo, true)
 
   await result.commit()
 
@@ -265,8 +322,9 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
-  force = config.force,
-  asCommand = false
+  force = config.optimizeDeps.force,
+  asCommand = false,
+  ssr = !!config.build.ssr
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
 
@@ -276,7 +334,7 @@ export function loadCachedDepOptimizationMetadata(
     emptyDir(config.cacheDir)
   }
 
-  const depsCacheDir = getDepsCacheDir(config)
+  const depsCacheDir = getDepsCacheDir(config, ssr)
 
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
@@ -343,6 +401,15 @@ export async function initialProjectDependencies(
 
   await addManuallyIncludedOptimizeDeps(deps, config)
 
+  return toDiscoveredDependencies(config, deps, !!config.build.ssr, timestamp)
+}
+
+export function toDiscoveredDependencies(
+  config: ResolvedConfig,
+  deps: Record<string, string>,
+  ssr: boolean,
+  timestamp?: string
+): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
     getDepHash(config),
     deps,
@@ -353,7 +420,7 @@ export async function initialProjectDependencies(
     const src = deps[id]
     discovered[id] = {
       id,
-      file: getOptimizedDepPath(id, config),
+      file: getOptimizedDepPath(id, config, ssr),
       src,
       browserHash: browserHash,
       exportsData: extractExportsData(src, config)
@@ -383,15 +450,17 @@ export function depsLogString(qualifiedIds: string[]): string {
  */
 export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
-  depsInfo: Record<string, OptimizedDepInfo>
+  depsInfo: Record<string, OptimizedDepInfo>,
+  ssr: boolean = !!resolvedConfig.build.ssr
 ): Promise<DepOptimizationResult> {
+  const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build'
   }
 
-  const depsCacheDir = getDepsCacheDir(resolvedConfig)
-  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig)
+  const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
+  const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
 
   // Create a temporal directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
@@ -471,13 +540,18 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
-  const define: Record<string, string> = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode)
+  // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
+  // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
+  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
+  // later replaced by the define plugin
+  const define = {
+    'process.env.NODE_ENV': isBuild
+      ? '__vite_process_env_NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || config.mode)
   }
-  for (const key in config.define) {
-    const value = config.define[key]
-    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
-  }
+
+  const platform =
+    ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
 
   const start = performance.now()
 
@@ -485,21 +559,37 @@ export async function runOptimizeDeps(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
+    // We can't use platform 'neutral', as esbuild has custom handling
+    // when the platform is 'node' or 'browser' that can't be emulated
+    // by using mainFields and conditions
+    platform,
+    define,
     format: 'esm',
-    target: config.build.target || undefined,
+    // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
+    banner:
+      platform === 'node'
+        ? {
+            js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
+          }
+        : undefined,
+    target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: resolvedConfig.command !== 'build',
+    ignoreAnnotations: !isBuild,
     metafile: true,
-    define,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
-    ...esbuildOptions
+    ...esbuildOptions,
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   })
 
   const meta = result.metafile!
@@ -533,7 +623,7 @@ export async function runOptimizeDeps(
       const id = path
         .relative(processingCacheDirOutputPath, o)
         .replace(jsExtensionRE, '')
-      const file = getOptimizedDepPath(id, resolvedConfig)
+      const file = getOptimizedDepPath(id, resolvedConfig, ssr)
       if (
         !findOptimizedDepInfoInRecord(
           metadata.optimized,
@@ -568,19 +658,27 @@ export async function findKnownImports(
 
 async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  extra: string[] = [],
+  filter?: (id: string) => boolean
 ): Promise<void> {
-  const include = config.optimizeDeps?.include
-  if (include) {
+  const optimizeDepsInclude = config.optimizeDeps?.include ?? []
+  if (optimizeDepsInclude.length || extra.length) {
     const resolve = config.createResolver({ asSrc: false, scan: true })
-    for (const id of include) {
+    for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
-      if (!deps[normalizedId]) {
+      if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
         const entry = await resolve(id)
         if (entry) {
-          deps[normalizedId] = entry
+          if (isOptimizable(entry, config.optimizeDeps)) {
+            deps[normalizedId] = entry
+          } else if (optimizeDepsInclude.includes(id)) {
+            config.logger.warn(
+              `Cannot optimize included dependency: ${colors.cyan(id)}`
+            )
+          }
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${colors.cyan(id)}`
@@ -610,45 +708,55 @@ export function depsFromOptimizedDepInfo(
 
 export function getOptimizedDepPath(
   id: string,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr: boolean = !!config.build.ssr
 ): string {
   return normalizePath(
-    path.resolve(getDepsCacheDir(config), flattenId(id) + '.js')
+    path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js')
   )
 }
 
-function getDepsCacheSuffix(config: ResolvedConfig): string {
+function getDepsCacheSuffix(config: ResolvedConfig, ssr: boolean): string {
   let suffix = ''
   if (config.command === 'build') {
-    suffix += '_build'
-    if (config.build.ssr) {
-      suffix += '_ssr'
-    }
+    // Differentiate build caches depending on outDir to allow parallel builds
+    const { outDir } = config.build
+    const buildId =
+      outDir.length > 8 || outDir.includes('/') ? getHash(outDir) : outDir
+    suffix += `_build-${buildId}`
+  }
+  if (ssr) {
+    suffix += '_ssr'
   }
   return suffix
 }
-export function getDepsCacheDir(config: ResolvedConfig): string {
-  const dirName = 'deps' + getDepsCacheSuffix(config)
-  return normalizePath(path.resolve(config.cacheDir, dirName))
+
+export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
+  return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
 }
 
-function getProcessingDepsCacheDir(config: ResolvedConfig) {
-  const dirName = 'deps' + getDepsCacheSuffix(config) + '_temp'
-  return normalizePath(path.resolve(config.cacheDir, dirName))
+function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
+  return (
+    getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr) + '_temp'
+  )
+}
+
+export function getDepsCacheDirPrefix(config: ResolvedConfig): string {
+  return normalizePath(path.resolve(config.cacheDir, 'deps'))
 }
 
 export function isOptimizedDepFile(
   id: string,
   config: ResolvedConfig
 ): boolean {
-  return id.startsWith(getDepsCacheDir(config))
+  return id.startsWith(getDepsCacheDirPrefix(config))
 }
 
 export function createIsOptimizedDepUrl(
   config: ResolvedConfig
 ): (url: string) => boolean {
   const { root } = config
-  const depsCacheDir = getDepsCacheDir(config)
+  const depsCacheDir = getDepsCacheDirPrefix(config)
 
   // determine the url prefix of files inside cache directory
   const depsCacheDirRelative = normalizePath(path.relative(root, depsCacheDir))
@@ -887,7 +995,6 @@ export function getDepHash(config: ResolvedConfig): string {
     {
       mode: process.env.NODE_ENV || config.mode,
       root: config.root,
-      define: config.define,
       resolve: config.resolve,
       buildTarget: config.build.target,
       assetsInclude: config.assetsInclude,

@@ -1,11 +1,12 @@
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import { createHash } from 'crypto'
-import { promisify } from 'util'
-import { URL, URLSearchParams, pathToFileURL } from 'url'
-import { builtinModules, createRequire } from 'module'
-import { performance } from 'perf_hooks'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { promisify } from 'node:util'
+import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { builtinModules, createRequire } from 'node:module'
+import { promises as dns } from 'node:dns'
+import { performance } from 'node:perf_hooks'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -16,15 +17,32 @@ import type { Alias, AliasOptions } from 'types/alias'
 import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
+import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX
+  OPTIMIZABLE_ENTRY_RE,
+  VALID_ID_PREFIX,
+  wildcardHosts
 } from './constants'
 import type { ResolvedConfig } from '.'
+
+/**
+ * Inlined to keep `@rollup/pluginutils` in devDependencies
+ */
+export type FilterPattern =
+  | ReadonlyArray<string | RegExp>
+  | string
+  | RegExp
+  | null
+export const createFilter = _createFilter as (
+  include?: FilterPattern,
+  exclude?: FilterPattern,
+  options?: { resolve?: string | false | null }
+) => (id: string | unknown) => boolean
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -72,6 +90,16 @@ export function moduleListContains(
   id: string
 ): boolean | undefined {
   return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+}
+
+export function isOptimizable(
+  id: string,
+  optimizeDepsConfig: ResolvedConfig['optimizeDeps']
+): boolean {
+  return (
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    (optimizeDepsConfig.extensions?.some((ext) => id.endsWith(ext)) ?? false)
+  )
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
@@ -292,10 +320,6 @@ export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
-export function isRelativeBase(base: string): boolean {
-  return base === '' || base.startsWith('.')
-}
-
 export async function asyncReplace(
   input: string,
   re: RegExp,
@@ -456,7 +480,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = start - (count - lineLength) + 1
+          const pad = Math.max(start - (count - lineLength) + 1, 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start
@@ -719,20 +743,42 @@ export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
 }
 
-export interface Hostname {
-  // undefined sets the default behaviour of server.listen
-  host: string | undefined
-  // resolve to localhost when possible
-  name: string
+/**
+ * Returns resolved localhost address when `dns.lookup` result differs from DNS
+ *
+ * `dns.lookup` result is same when defaultResultOrder is `verbatim`.
+ * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
+ * For example, when IPv6 is not supported on that machine/network.
+ */
+export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
+  string | undefined
+> {
+  const [nodeResult, dnsResult] = await Promise.all([
+    dns.lookup('localhost'),
+    dns.lookup('localhost', { verbatim: true })
+  ])
+  const isSame =
+    nodeResult.family === dnsResult.family &&
+    nodeResult.address === dnsResult.address
+  return isSame ? undefined : nodeResult.address
 }
 
-export function resolveHostname(
+export interface Hostname {
+  /** undefined sets the default behaviour of server.listen */
+  host: string | undefined
+  /** resolve to localhost when possible */
+  name: string
+  /** if it is using the default behavior */
+  implicit: boolean
+}
+
+export async function resolveHostname(
   optionsHost: string | boolean | undefined
-): Hostname {
+): Promise<Hostname> {
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
-    host = '127.0.0.1'
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -740,16 +786,18 @@ export function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
-  const name =
-    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
-    host === '0.0.0.0' ||
-    host === '::' ||
-    host === undefined
-      ? 'localhost'
-      : host
+  // Set host name to localhost when possible
+  let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
 
-  return { host, name }
+  if (host === 'localhost') {
+    // See #8647 for more details.
+    const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
+    if (localhostAddr) {
+      name = localhostAddr
+    }
+  }
+
+  return { host, name, implicit: optionsHost === undefined }
 }
 
 export function arraify<T>(target: T | T[]): T[] {
@@ -991,15 +1039,49 @@ function normalizeSingleAlias({
   return alias
 }
 
-export function transformResult(
+/**
+ * Transforms transpiled code result where line numbers aren't altered,
+ * so we can skip sourcemap generation during dev
+ */
+export function transformStableResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
 ): TransformResult {
-  const isBuild = config.command === 'build'
-  const needSourceMap = !isBuild || config.build.sourcemap
   return {
     code: s.toString(),
-    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
+}
+
+export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+  do {
+    arr = (await Promise.all(arr)).flat(Infinity) as any
+  } while (arr.some((v: any) => v?.then))
+  return arr
+}
+
+// strip UTF-8 BOM
+export function stripBomTag(content: string): string {
+  if (content.charCodeAt(0) === 0xfeff) {
+    return content.slice(1)
+  }
+
+  return content
+}
+
+export const isTS = (filename: string): boolean => /\.[cm]?ts$/.test(filename)
+
+const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
+
+/**
+ * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
+ * this function returns false for them but true for absolute paths (e.g. C:/something)
+ */
+export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
+  if (!isWindows) return p.startsWith('/')
+  return windowsDrivePathPrefixRE.test(p)
 }

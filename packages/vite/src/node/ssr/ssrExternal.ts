@@ -1,12 +1,12 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
-import { createFilter } from '@rollup/pluginutils'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
   bareImportRE,
   createDebugger,
+  createFilter,
   isBuiltin,
   isDefined,
   lookupFile,
@@ -167,8 +167,8 @@ function createIsSsrExternal(
   }
 }
 
-// When ssr.format is 'cjs', this function is used reverting to the Vite 2.9
-// SSR externalization heuristics
+// When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
+// is used reverting to the Vite 2.9 SSR externalization heuristics
 function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,

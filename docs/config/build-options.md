@@ -73,7 +73,7 @@ If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 ## build.cssTarget
 
 - **Type:** `string | string[]`
-- **Default:** the same as [`build.target`](/config/#build-target)
+- **Default:** the same as [`build.target`](#build-target)
 
 This options allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
 
@@ -145,7 +145,7 @@ Produce SSR-oriented build. The value can be a string to directly specify the SS
 
 Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
-Note the `build.minify` option is not available when using the `'es'` format in lib mode.
+Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and break tree-shaking.
 
 Terser must be installed when it is set to `'terser'`.
 

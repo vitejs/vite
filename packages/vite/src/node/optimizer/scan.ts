@@ -1,23 +1,19 @@
-import fs from 'fs'
-import path from 'path'
-import { performance } from 'perf_hooks'
+import fs from 'node:fs'
+import path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import glob from 'fast-glob'
 import type { Loader, OnLoadResult, Plugin } from 'esbuild'
 import { build, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import {
-  JS_TYPES_RE,
-  KNOWN_ASSET_TYPES,
-  OPTIMIZABLE_ENTRY_RE,
-  SPECIAL_QUERY_RE
-} from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
 import {
   cleanUrl,
   createDebugger,
   dataUrlRE,
   externalRE,
   isObject,
+  isOptimizable,
   moduleListContains,
   multilineCommentsRE,
   normalizePath,
@@ -189,10 +185,6 @@ function esbuildScanPlugin(
     '@vite/env'
   ]
 
-  const isOptimizable = (id: string) =>
-    OPTIMIZABLE_ENTRY_RE.test(id) ||
-    !!config.optimizeDeps.extensions?.some((ext) => id.endsWith(ext))
-
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
     external: !entries.includes(path)
@@ -235,7 +227,11 @@ function esbuildScanPlugin(
         // It is possible for the scanner to scan html types in node_modules.
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
-        if (resolved.includes('node_modules') && isOptimizable(resolved)) return
+        if (
+          resolved.includes('node_modules') &&
+          isOptimizable(resolved, config.optimizeDeps)
+        )
+          return
         return {
           path: resolved,
           namespace: 'html'
@@ -382,7 +378,7 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (isOptimizable(resolved)) {
+              if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })

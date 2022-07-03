@@ -3,12 +3,36 @@
 ## server.host
 
 - **Type:** `string | boolean`
-- **Default:** `'127.0.0.1'`
+- **Default:** `'localhost'`
 
 Specify which IP addresses the server should listen on.
 Set this to `0.0.0.0` or `true` to listen on all addresses, including LAN and public addresses.
 
 This can be set via the CLI using `--host 0.0.0.0` or `--host`.
+
+::: tip NOTE
+
+There are cases when other servers might respond instead of Vite.
+
+The first case is when `localhost` is used. Node.js below v17 reorders the result of DNS-resolved address by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening. Vite prints the resolved address when it differs.
+
+You could set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Or you could set `server.host` to `127.0.0.1` explicitly.
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import dns from 'dns'
+
+dns.setDefaultResultOrder('verbatim')
+
+export default defineConfig({
+  // omit
+})
+```
+
+The second case is when wildcard hosts (e.g. `0.0.0.0`) is used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
+
+:::
 
 ## server.port
 
@@ -21,7 +45,7 @@ Specify server port. Note if the port is already being used, Vite will automatic
 
 - **Type:** `boolean`
 
-Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+Set to `true` to exit if port is already in use, instead of automatically trying the next available port.
 
 ## server.https
 
@@ -107,13 +131,6 @@ Configure CORS for the dev server. This is enabled by default and allows any ori
 
 Specify server response headers.
 
-## server.force
-
-- **Type:** `boolean`
-- **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
-
-Set to `true` to force dependency pre-bundling.
-
 ## server.hmr
 
 - **Type:** `boolean | { protocol?: string, host?: string, port?: number, path?: string, timeout?: number, overlay?: boolean, clientPort?: number, server?: Server }`
@@ -122,9 +139,25 @@ Disable or configure HMR connection (in cases where the HMR websocket must use a
 
 Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
-`clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on. Useful if you're using an SSL proxy in front of your dev server.
+`clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on.
 
-If specifying `server.hmr.server`, Vite will process HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+When `server.hmr.server` is defined, Vite will process the HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
+
+::: tip NOTE
+
+With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fallback to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
+
+```
+Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.
+```
+
+The error that appears in the Browser when the fallback happens can be ignored. To avoid the error by directly bypassing reverse proxies, you could either:
+
+- configure the reverse proxy to proxy WebSocket too
+- set [`server.strictPort = true`](#server-strictport) and set `server.hmr.clientPort` to the same value with `server.port`
+- set `server.hmr.port` to a different value from [`server.port`](#server-port)
+
+:::
 
 ## server.watch
 
@@ -153,14 +186,12 @@ export default defineConfig({
 
 ## server.middlewareMode
 
-- **Type:** `'ssr' | 'html'`
+- **Type:** `boolean`
+- **Default:** `false`
 
-Create Vite server in middleware mode. (without a HTTP server)
+Create Vite server in middleware mode.
 
-- `'ssr'` will disable Vite's own HTML serving logic so that you should serve `index.html` manually.
-- `'html'` will enable Vite's own HTML serving logic.
-
-- **Related:** [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
+- **Related:** [appType](./shared-options#apptype), [SSR - Setting Up the Dev Server](/guide/ssr#setting-up-the-dev-server)
 
 - **Example:**
 
@@ -171,17 +202,19 @@ const { createServer: createViteServer } = require('vite')
 async function createServer() {
   const app = express()
 
-  // Create Vite server in middleware mode.
+  // Create Vite server in middleware mode
   const vite = await createViteServer({
-    server: { middlewareMode: 'ssr' }
+    server: { middlewareMode: true },
+    appType: 'custom' // don't include Vite's default HTML handling middlewares
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
-    // If `middlewareMode` is `'ssr'`, should serve `index.html` here.
-    // If `middlewareMode` is `'html'`, there is no need to serve `index.html`
-    // because Vite will do that.
+    // Since `appType` is `'custom'`, should serve response here.
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
+    // HTML requests and 404s so user middlewares should be added
+    // before Vite's middlewares to take effect instead
   })
 }
 

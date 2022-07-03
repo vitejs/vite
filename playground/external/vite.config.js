@@ -1,11 +1,17 @@
-module.exports = {
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [serveExternalDep()],
   build: {
+    minify: false,
     rollupOptions: {
-      external: ['external-dep']
+      external: ['vue', 'external-dep']
+    },
+    commonjsOptions: {
+      esmExternals: ['vue']
     }
-  },
-  plugins: [serveExternalDep()]
-}
+  }
+})
 
 function serveExternalDep() {
   const middleware = (req, res, next) => {

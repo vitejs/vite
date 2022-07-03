@@ -1,6 +1,6 @@
-import { getColor, page, ports } from '~utils'
+import path from 'node:path'
 import { createServer } from 'vite'
-import path from 'path'
+import { getColor, page, ports } from '~utils'
 
 test('postcss config', async () => {
   const port = ports['css/postcss-caching']
@@ -36,7 +36,7 @@ test('postcss config', async () => {
     blueApp = null
 
     greenApp = await startServer(greenAppDir)
-    await page.goto(`http://localhost:${port}`)
+    await page.reload() // hmr reloads it automatically but reload here for consistency
     const greenA = await page.$('.postcss-a')
     expect(await getColor(greenA)).toBe('black')
     const greenB = await page.$('.postcss-b')

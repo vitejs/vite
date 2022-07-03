@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
-import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -25,7 +25,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv)
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
     })
   }
 
@@ -63,6 +64,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...userDefine,
       ...importMetaKeys,
       ...(replaceProcessEnv ? processEnv : {})
+    }
+
+    if (isBuild && !replaceProcessEnv) {
+      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
     }
 
     const replacementsKeys = Object.keys(replacements)
@@ -139,11 +144,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const result: TransformResult = { code: s.toString() }
-      if (config.build.sourcemap) {
-        result.map = s.generateMap({ hires: true })
-      }
-      return result
+      return transformStableResult(s, id, config)
     }
   }
 }

@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import readFileContent from 'read-file-content'
 import primitiveExport from 'primitive-export'
 import tsDefaultExport, { hello as tsNamedExport } from 'ts-transpiled-exports'
@@ -9,6 +9,8 @@ import definePropertiesExports from 'define-properties-exports'
 import definePropertyExports from 'define-property-exports'
 import onlyObjectAssignedExports from 'only-object-assigned-exports'
 import requireAbsolute from 'require-absolute'
+import noExternalCjs from 'no-external-cjs'
+import importBuiltinCjs from 'import-builtin-cjs'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -44,6 +46,12 @@ export async function render(url, rootDir) {
 
   const requireAbsoluteMessage = requireAbsolute.hello()
   html += `\n<p class="require-absolute-msg">message from require-absolute: ${requireAbsoluteMessage}</p>`
+
+  const noExternalCjsMessage = noExternalCjs.hello()
+  html += `\n<p class="no-external-cjs-msg">message from no-external-cjs: ${noExternalCjsMessage}</p>`
+
+  const importBuiltinCjsMessage = importBuiltinCjs.hello()
+  html += `\n<p class="import-builtin-cjs-msg">message from import-builtin-cjs: ${importBuiltinCjsMessage}</p>`
 
   return html + '\n'
 }

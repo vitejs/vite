@@ -1,5 +1,5 @@
 import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
-import type { ViteHotContext } from 'types/hot'
+import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
@@ -7,24 +7,70 @@ import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
-declare const __HMR_PROTOCOL__: string
-declare const __HMR_HOSTNAME__: string
-declare const __HMR_PORT__: string
+declare const __HMR_PROTOCOL__: string | null
+declare const __HMR_HOSTNAME__: string | null
+declare const __HMR_PORT__: number | null
+declare const __HMR_DIRECT_TARGET__: string
+declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
 console.debug('[vite] connecting...')
 
+const importMetaUrl = new URL(import.meta.url)
+
 // use server configuration, then fallback to inference
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
+const hmrPort = __HMR_PORT__
+const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
+  hmrPort || importMetaUrl.port
+}${__HMR_BASE__}`
+const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
 
 let socket: WebSocket
 try {
-  socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
+  let fallback: (() => void) | undefined
+  // only use fallback when port is inferred to prevent confusion
+  if (!hmrPort) {
+    fallback = () => {
+      // fallback to connecting directly to the hmr server
+      // for servers which does not support proxying websocket
+      socket = setupWebSocket(socketProtocol, directSocketHost)
+      socket.addEventListener(
+        'open',
+        () => {
+          console.info(
+            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.'
+          )
+        },
+        { once: true }
+      )
+    }
+  }
+
+  socket = setupWebSocket(socketProtocol, socketHost, fallback)
+} catch (error) {
+  console.error(`[vite] failed to connect to websocket (${error}). `)
+}
+
+function setupWebSocket(
+  protocol: string,
+  hostAndPath: string,
+  onCloseWithoutOpen?: () => void
+) {
+  const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
+  let isOpened = false
+
+  socket.addEventListener(
+    'open',
+    () => {
+      isOpened = true
+    },
+    { once: true }
+  )
 
   // Listen for messages
   socket.addEventListener('message', async ({ data }) => {
@@ -34,12 +80,18 @@ try {
   // ping server
   socket.addEventListener('close', async ({ wasClean }) => {
     if (wasClean) return
+
+    if (!isOpened && onCloseWithoutOpen) {
+      onCloseWithoutOpen()
+      return
+    }
+
     console.log(`[vite] server connection lost. polling for restart...`)
-    await waitForSuccessfulPing()
+    await waitForSuccessfulPing(hostAndPath)
     location.reload()
   })
-} catch (error) {
-  console.error(`[vite] failed to connect to websocket (${error}). `)
+
+  return socket
 }
 
 function warnFailedFetch(err: Error, path: string | string[]) {
@@ -222,13 +274,13 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
   }
 }
 
-async function waitForSuccessfulPing(ms = 1000) {
+async function waitForSuccessfulPing(hostAndPath: string, ms = 1000) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       // A fetch on a websocket URL will return a successful promise with status 400,
       // but will reject a networking error.
-      await fetch(`${location.protocol}//${socketHost}`)
+      await fetch(`${location.protocol}//${hostAndPath}`)
       break
     } catch (e) {
       // wait ms before attempting to ping again
@@ -248,7 +300,10 @@ const supportsConstructedSheet = (() => {
   return false
 })()
 
-const sheetsMap = new Map()
+const sheetsMap = new Map<
+  string,
+  HTMLStyleElement | CSSStyleSheet | undefined
+>()
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
@@ -260,10 +315,12 @@ export function updateStyle(id: string, content: string): void {
 
     if (!style) {
       style = new CSSStyleSheet()
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
       // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
     }
   } else {
@@ -308,7 +365,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     return
   }
 
-  const moduleMap = new Map()
+  const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
   // make sure we only import each dep once
@@ -338,7 +395,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       const [path, query] = dep.split(`?`)
       try {
-        const newMod = await import(
+        const newMod: ModuleNamespace = await import(
           /* @vite-ignore */
           base +
             path.slice(1) +
@@ -375,18 +432,17 @@ interface HotModule {
 interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
-  fn: (modules: object[]) => void
+  fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
+
+type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((data: any) => void)[]>()
-const ctxToListenersMap = new Map<
-  string,
-  Map<string, ((data: any) => void)[]>
->()
+const customListenersMap: CustomListenersMap = new Map()
+const ctxToListenersMap = new Map<string, CustomListenersMap>()
 
 export function createHotContext(ownerPath: string): ViteHotContext {
   if (!dataMap.has(ownerPath)) {
@@ -414,7 +470,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     }
   }
 
-  const newListeners = new Map()
+  const newListeners: CustomListenersMap = new Map()
   ctxToListenersMap.set(ownerPath, newListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
@@ -446,6 +502,12 @@ export function createHotContext(ownerPath: string): ViteHotContext {
       } else {
         throw new Error(`invalid hot.accept() usage.`)
       }
+    },
+
+    // export names (first arg) are irrelevant on the client side, they're
+    // extracted in the server for propagation
+    acceptExports(_: string | readonly string[], callback?: any) {
+      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
     },
 
     dispose(cb) {

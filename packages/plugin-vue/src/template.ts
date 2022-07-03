@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import slash from 'slash'
 import type {
   CompilerOptions,
@@ -116,10 +116,11 @@ export function resolveTemplateCompilerOptions(
     // relative paths directly to absolute paths without incurring an extra import
     // request
     if (filename.startsWith(options.root)) {
+      const devBase = options.devServer.config.base
       assetUrlOptions = {
         base:
           (options.devServer.config.server?.origin ?? '') +
-          options.devServer.config.base +
+          devBase +
           slash(path.relative(options.root, path.dirname(filename)))
       }
     }

@@ -1,5 +1,5 @@
 {
-  "name": "test-external",
+  "name": "external-test",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,6 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vitejs/dep-that-imports-vue": "file:./dep-that-imports-vue",
+    "@vitejs/dep-that-requires-vue": "file:./dep-that-requires-vue",
     "external-dep": "file:./external-dep"
+  },
+  "devDependencies": {
+    "vite": "workspace:*",
+    "vue": "^3.2.37"
   }
 }

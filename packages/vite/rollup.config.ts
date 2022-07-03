@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
@@ -19,14 +19,7 @@ const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      module: 'esnext',
-      include: ['src/client/env.ts'],
-      baseUrl: path.resolve(__dirname, 'src/env'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
     })
   ],
   output: {
@@ -40,13 +33,7 @@ const clientConfig = defineConfig({
   external: ['./env', '@vite/env'],
   plugins: [
     typescript({
-      tsconfig: false,
-      target: 'es2020',
-      include: ['src/client/**/*.ts'],
-      baseUrl: path.resolve(__dirname, 'src/client'),
-      paths: {
-        'types/*': ['../../types/*']
-      }
+      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json')
     })
   ],
   output: {
@@ -102,12 +89,7 @@ function createNodePlugins(
     }),
     nodeResolve({ preferBuiltins: true }),
     typescript({
-      tsconfig: 'src/node/tsconfig.json',
-      module: 'esnext',
-      target: 'es2020',
-      include: ['src/**/*.ts', 'types/**'],
-      exclude: ['src/**/__tests__/**'],
-      esModuleInterop: true,
+      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
       sourceMap,
       declaration: declarationDir !== false,
       declarationDir: declarationDir !== false ? declarationDir : undefined
@@ -123,11 +105,6 @@ function createNodePlugins(
           src: `require('fsevents')`,
           replacement: `__require('fsevents')`
         },
-        // cac re-assigns module.exports even in its mjs dist
-        'cac/dist/index.mjs': {
-          src: `if (typeof module !== "undefined") {`,
-          replacement: `if (false) {`
-        },
         // postcss-import -> sugarss
         'process-content.js': {
           src: 'require("sugarss")',
@@ -139,15 +116,11 @@ function createNodePlugins(
         },
         // postcss-load-config calls require after register ts-node
         'postcss-load-config/src/index.js': {
-          src: `require(configFile)`,
-          replacement: `__require(configFile)`
-        },
-        // @rollup/plugin-commonjs uses incorrect esm
-        '@rollup/plugin-commonjs/dist/index.es.js': {
-          src: `import { sync } from 'resolve';`,
-          replacement: `import __resolve from 'resolve';const sync = __resolve.sync;`
+          pattern: /require(?=\((configFile|'ts-node')\))/g,
+          replacement: `eval('require')`
         }
       }),
+
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
@@ -208,7 +181,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies))
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(55)]
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(120)]
   })
 }
 
@@ -406,9 +379,9 @@ function licensePlugin() {
  */
 function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
-import { fileURLToPath as __cjs_fileURLToPath } from 'url';
-import { dirname as __cjs_dirname } from 'path';
-import { createRequire as __cjs_createRequire } from 'module';
+import { fileURLToPath as __cjs_fileURLToPath } from 'node:url';
+import { dirname as __cjs_dirname } from 'node:path';
+import { createRequire as __cjs_createRequire } from 'node:module';
 
 const __filename = __cjs_fileURLToPath(import.meta.url);
 const __dirname = __cjs_dirname(__filename);
