@@ -62,9 +62,11 @@ export type { RenderBuiltAssetUrl } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
+
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
+  ssrBuild: boolean
 }
 
 /**
@@ -375,7 +377,8 @@ export async function resolveConfig(
 
   const configEnv = {
     mode,
-    command
+    command,
+    ssrBuild: !!config.build?.ssr
   }
 
   let { configFile } = config
