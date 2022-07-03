@@ -2,7 +2,6 @@ import { extname } from 'node:path'
 import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
-import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -10,7 +9,6 @@ import {
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
@@ -39,13 +37,13 @@ export class ModuleNode {
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
 
-  constructor(url: string) {
+  /**
+   * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
+   */
+  constructor(url: string, setIsSelfAccepting = true) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
-    // #7870
-    // The `isSelfAccepting` value is set by importAnalysis, but some
-    // assets don't go through importAnalysis.
-    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
+    if (setIsSelfAccepting) {
       this.isSelfAccepting = false
     }
   }
@@ -182,11 +180,15 @@ export class ModuleGraph {
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true
+  ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
-      mod = new ModuleNode(url)
+      mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
