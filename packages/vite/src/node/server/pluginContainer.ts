@@ -542,10 +542,6 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
-      if (isUserExternal(rawId, importer, false)) {
-        return { id: rawId, external: true }
-      }
-
       const skip = options?.skip
       const ssr = options?.ssr
       const scan = !!options?.scan
@@ -558,37 +554,52 @@ export async function createPluginContainer(
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
-      for (const plugin of plugins) {
-        if (!plugin.resolveId) continue
-        if (skip?.has(plugin)) continue
 
-        ctx._activePlugin = plugin
+      if (isUserExternal(rawId, importer, false)) {
+        id = rawId
+        partial.external = true
+      } else {
+        for (const plugin of plugins) {
+          if (!plugin.resolveId) continue
+          if (skip?.has(plugin)) continue
 
-        const pluginResolveStart = isDebug ? performance.now() : 0
-        const result = await plugin.resolveId.call(
-          ctx as any,
-          rawId,
-          importer,
-          { ssr, scan, isEntry }
-        )
-        if (!result) continue
+          ctx._activePlugin = plugin
 
-        if (typeof result === 'string') {
-          id = result
-        } else {
-          id = result.id
-          Object.assign(partial, result)
+          const pluginResolveStart = isDebug ? performance.now() : 0
+          const result = await plugin.resolveId.call(
+            ctx as any,
+            rawId,
+            importer,
+            { ssr, scan, isEntry }
+          )
+          if (!result) continue
+
+          if (typeof result === 'string') {
+            id = result
+          } else {
+            id = result.id
+            Object.assign(partial, result)
+          }
+
+          isDebug &&
+            debugPluginResolve(
+              timeFrom(pluginResolveStart),
+              plugin.name,
+              prettifyUrl(id, root)
+            )
+
+          // resolveId() is hookFirst - first non-null result is returned.
+          break
         }
 
-        isDebug &&
-          debugPluginResolve(
-            timeFrom(pluginResolveStart),
-            plugin.name,
-            prettifyUrl(id, root)
-          )
-
-        // resolveId() is hookFirst - first non-null result is returned.
-        break
+        if (
+          !partial.external &&
+          typeof rollupOptions.external === 'function' &&
+          isUserExternal(id ?? rawId, importer, true)
+        ) {
+          id ??= rawId
+          partial.external = true
+        }
       }
 
       if (isDebug && rawId !== id && !rawId.startsWith(FS_PREFIX)) {
@@ -598,17 +609,10 @@ export async function createPluginContainer(
           seenResolves[key] = true
           debugResolve(
             `${timeFrom(resolveStart)} ${colors.cyan(rawId)} -> ${colors.dim(
-              id
+              partial.external ? '(external)' : id
             )}`
           )
         }
-      }
-
-      if (
-        typeof rollupOptions.external === 'function' &&
-        isUserExternal(id ?? rawId, importer, true)
-      ) {
-        return { id: id ?? rawId, external: true }
       }
 
       if (id) {
