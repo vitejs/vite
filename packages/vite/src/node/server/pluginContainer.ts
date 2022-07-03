@@ -69,6 +69,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  resolveRollupExternal,
   timeFrom
 } from '../utils'
 import { FS_PREFIX } from '../constants'
@@ -189,6 +190,21 @@ export async function createPluginContainer(
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
     )
+  }
+
+  function isUserExternal(
+    id: string,
+    parentId: string | undefined,
+    isResolved: boolean
+  ): boolean | null | void {
+    if (rollupOptions.external && !id.startsWith('\0')) {
+      return resolveRollupExternal(
+        rollupOptions.external,
+        id,
+        parentId,
+        isResolved
+      )
+    }
   }
 
   // throw when an unsupported ModuleInfo property is accessed,
@@ -526,18 +542,8 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
-      if (external && typeof external !== 'function') {
-        for (const item of arraify(external)) {
-          if (typeof item === 'string') {
-            if (item === rawId) {
-              return { id: rawId, external: true }
-            }
-          } else if (item instanceof RegExp) {
-            if (item.test(rawId)) {
-              return { id: rawId, external: true }
-            }
-          }
-        }
+      if (isUserExternal(rawId, importer, false)) {
+        return { id: rawId, external: true }
       }
 
       const skip = options?.skip
@@ -598,10 +604,11 @@ export async function createPluginContainer(
         }
       }
 
-      if (external && typeof external === 'function') {
-        if (external(id ?? rawId, importer, !!id)) {
-          return { id: id ?? rawId, external: true }
-        }
+      if (
+        typeof rollupOptions.external === 'function' &&
+        isUserExternal(id ?? rawId, importer, true)
+      ) {
+        return { id: id ?? rawId, external: true }
       }
 
       if (id) {

@@ -26,7 +26,13 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import {
+  copyDir,
+  emptyDir,
+  lookupFile,
+  normalizePath,
+  resolveRollupExternal
+} from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -749,31 +755,8 @@ async function cjsSsrResolveExternal(
       return true
     }
     if (user) {
-      return resolveUserExternal(user, id, parentId, isResolved)
+      return resolveRollupExternal(user, id, parentId, isResolved)
     }
-  }
-}
-
-function resolveUserExternal(
-  user: ExternalOption,
-  id: string,
-  parentId: string | undefined,
-  isResolved: boolean
-) {
-  if (typeof user === 'function') {
-    return user(id, parentId, isResolved)
-  } else if (Array.isArray(user)) {
-    return user.some((test) => isExternal(id, test))
-  } else {
-    return isExternal(id, user)
-  }
-}
-
-function isExternal(id: string, test: string | RegExp) {
-  if (typeof test === 'string') {
-    return id === test
-  } else {
-    return test.test(id)
   }
 }
 

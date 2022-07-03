@@ -16,7 +16,7 @@ import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
 import type MagicString from 'magic-string'
 
-import type { TransformResult } from 'rollup'
+import type { ExternalOption, TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
@@ -1084,4 +1084,27 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+export function resolveRollupExternal(
+  external: ExternalOption,
+  id: string,
+  parentId: string | undefined,
+  isResolved: boolean
+): boolean | null | void {
+  if (typeof external === 'function') {
+    return external(id, parentId, isResolved)
+  } else if (Array.isArray(external)) {
+    return external.some((test) => isExternal(id, test))
+  } else {
+    return isExternal(id, external)
+  }
+}
+
+function isExternal(id: string, test: string | RegExp) {
+  if (typeof test === 'string') {
+    return id === test
+  } else {
+    return test.test(id)
+  }
 }
