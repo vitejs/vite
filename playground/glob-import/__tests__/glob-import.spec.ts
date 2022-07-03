@@ -1,11 +1,4 @@
-import {
-  addFile,
-  editFile,
-  isBuild,
-  page,
-  removeFile,
-  untilUpdated
-} from '~utils'
+import { addFile, editFile, isBuild, page, removeFile, withRetry } from '~utils'
 
 const filteredResult = {
   './alias.js': {
@@ -16,21 +9,12 @@ const filteredResult = {
   }
 }
 
-// json exports key order is altered during build, but it doesn't matter in
-// terms of behavior since module exports are not ordered anyway
-const json = isBuild
-  ? {
-      msg: 'baz',
-      default: {
-        msg: 'baz'
-      }
-    }
-  : {
-      default: {
-        msg: 'baz'
-      },
-      msg: 'baz'
-    }
+const json = {
+  msg: 'baz',
+  default: {
+    msg: 'baz'
+  }
+}
 
 const globWithAlias = {
   '/dir/alias.js': {
@@ -44,6 +28,13 @@ const allResult = {
     default: 'hi'
   },
   '/dir/baz.json': json,
+  '/dir/foo.css': isBuild
+    ? {
+        default: '.foo{color:#00f}\n'
+      }
+    : {
+        default: '.foo {\n  color: blue;\n}\n'
+      },
   '/dir/foo.js': {
     msg: 'foo'
   },
@@ -81,16 +72,18 @@ const relativeRawResult = {
 }
 
 test('should work', async () => {
-  await untilUpdated(
-    () => page.textContent('.result'),
-    JSON.stringify(allResult, null, 2),
-    true
-  )
-  await untilUpdated(
-    () => page.textContent('.result-node_modules'),
-    JSON.stringify(nodeModulesResult, null, 2),
-    true
-  )
+  await withRetry(async () => {
+    const actual = await page.textContent('.result')
+    expect(JSON.parse(actual)).toStrictEqual(allResult)
+  }, true)
+  await withRetry(async () => {
+    const actualEager = await page.textContent('.result-eager')
+    expect(JSON.parse(actualEager)).toStrictEqual(allResult)
+  }, true)
+  await withRetry(async () => {
+    const actualNodeModules = await page.textContent('.result-node_modules')
+    expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
+  }, true)
 })
 
 test('import glob raw', async () => {
@@ -113,55 +106,49 @@ test('unassigned import processes', async () => {
 
 if (!isBuild) {
   test('hmr for adding/removing files', async () => {
+    const resultElement = page.locator('.result')
+
     addFile('dir/a.js', '')
-    await untilUpdated(
-      () => page.textContent('.result'),
-      JSON.stringify(
-        {
-          '/dir/a.js': {},
-          ...allResult,
-          '/dir/index.js': {
-            ...allResult['/dir/index.js'],
-            modules: {
-              './a.js': {},
-              ...allResult['/dir/index.js'].modules
-            }
+    await withRetry(async () => {
+      const actualAdd = await resultElement.textContent()
+      expect(JSON.parse(actualAdd)).toStrictEqual({
+        '/dir/a.js': {},
+        ...allResult,
+        '/dir/index.js': {
+          ...allResult['/dir/index.js'],
+          modules: {
+            './a.js': {},
+            ...allResult['/dir/index.js'].modules
           }
-        },
-        null,
-        2
-      )
-    )
+        }
+      })
+    })
 
     // edit the added file
     editFile('dir/a.js', () => 'export const msg ="a"')
-    await untilUpdated(
-      () => page.textContent('.result'),
-      JSON.stringify(
-        {
-          '/dir/a.js': {
-            msg: 'a'
-          },
-          ...allResult,
-          '/dir/index.js': {
-            ...allResult['/dir/index.js'],
-            modules: {
-              './a.js': {
-                msg: 'a'
-              },
-              ...allResult['/dir/index.js'].modules
-            }
-          }
+    await withRetry(async () => {
+      const actualEdit = await resultElement.textContent()
+      expect(JSON.parse(actualEdit)).toStrictEqual({
+        '/dir/a.js': {
+          msg: 'a'
         },
-        null,
-        2
-      )
-    )
+        ...allResult,
+        '/dir/index.js': {
+          ...allResult['/dir/index.js'],
+          modules: {
+            './a.js': {
+              msg: 'a'
+            },
+            ...allResult['/dir/index.js'].modules
+          }
+        }
+      })
+    })
 
     removeFile('dir/a.js')
-    await untilUpdated(
-      () => page.textContent('.result'),
-      JSON.stringify(allResult, null, 2)
-    )
+    await withRetry(async () => {
+      const actualRemove = await resultElement.textContent()
+      expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
+    })
   })
 }

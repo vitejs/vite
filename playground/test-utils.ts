@@ -162,6 +162,25 @@ export async function untilUpdated(
   }
 }
 
+/**
+ * Retry `func` until it does not throw error.
+ */
+export async function withRetry(
+  func: () => Promise<void>,
+  runInBuild = false
+): Promise<void> {
+  if (isBuild && !runInBuild) return
+  const maxTries = process.env.CI ? 200 : 50
+  for (let tries = 0; tries < maxTries; tries++) {
+    try {
+      await func()
+      return
+    } catch {}
+    await timeout(50)
+  }
+  await func()
+}
+
 export async function untilBrowserLogAfter(
   operation: () => any,
   target: string | RegExp | Array<string | RegExp>,
