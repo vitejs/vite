@@ -22,8 +22,8 @@ If you have questions, the community is usually helpful at [Vite Discord's #ssr 
 
 Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
 
-- [Vue 3](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-vue)
-- [React](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-react)
+- [Vue 3](https://github.com/vitejs/vite/tree/v2/packages/playground/ssr-vue)
+- [React](https://github.com/vitejs/vite/tree/v2/packages/playground/ssr-react)
 
 ## Source Structure
 
@@ -177,7 +177,7 @@ Then, in `server.js` we need to add some production specific logic by checking `
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 
-Refer to the [Vue](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-vue) and [React](https://github.com/vitejs/vite/tree/main/packages/playground/ssr-react) demos for working setup.
+Refer to the [Vue](https://github.com/vitejs/vite/tree/v2/packages/playground/ssr-vue) and [React](https://github.com/vitejs/vite/tree/v2/packages/playground/ssr-react) demos for working setup.
 
 ## Generating Preload Directives
 
