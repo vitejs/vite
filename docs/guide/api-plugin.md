@@ -544,7 +544,7 @@ export default defineConfig({
 ```
 
 ::: tip NOTE
-We recommend **alway prefixing** your event names to avoid collisions with other plugins.
+We recommend **always prefixing** your event names to avoid collisions with other plugins.
 :::
 
 On the client side, use [`hot.on`](/guide/api-hmr.html#hot-on-event-cb) to listen to the events:
