@@ -27,10 +27,10 @@ export function baseMiddleware({
     }
 
     if (
-      // fix #8770
-      (!parsed.pathname.endsWith('/') && parsed.pathname + '/' === devBase) ||
       path === '/' ||
-      path === '/index.html'
+      path === '/index.html' ||
+      // fix #8770
+      (!parsed.pathname.endsWith('/') && parsed.pathname + '/' === devBase)
     ) {
       // redirect root visit to based url with search and hash
       res.writeHead(302, {
