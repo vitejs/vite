@@ -6,6 +6,7 @@ import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
+  bareImportRE,
   cleanUrl,
   combineSourcemaps,
   isDataUrl,
@@ -16,7 +17,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { removedPureCssFilesCache } from './css'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
 /**
@@ -238,13 +239,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        if (!depsOptimizer) {
-          continue
-        }
-
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
-        if (specifier) {
+        if (depsOptimizer && specifier) {
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
@@ -296,6 +293,27 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
+        }
+
+        // Differentiate CSS imports that use the default export from those that
+        // do not by injecting a ?used query - this allows us to avoid including
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
+        // them)
+        if (
+          specifier &&
+          isCSSRequest(specifier) &&
+          // always inject ?used query when it is a dynamic import
+          // because there is no way to check whether the default export is used
+          (source.slice(expStart, start).includes('from') || isDynamicImport) &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
+          // edge case for package names ending with .css (e.g normalize.css)
+          !(bareImportRE.test(specifier) && !specifier.includes('/'))
+        ) {
+          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
+          str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
