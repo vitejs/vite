@@ -61,8 +61,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...userDefine,
       ...importMetaKeys,
+      ...userDefine,
       ...(replaceProcessEnv ? processEnv : {})
     }
 
