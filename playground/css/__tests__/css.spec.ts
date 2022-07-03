@@ -349,7 +349,8 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
-test('import dependency includes css import', async () => {
+// skip because #8278 is reverted
+test.skip('import dependency includes css import', async () => {
   expect(await getColor('.css-js-dep')).toBe('green')
   expect(await getColor('.css-js-dep-module')).toBe('green')
 })
@@ -436,7 +437,8 @@ test('PostCSS source.input.from includes query', async () => {
   )
 })
 
-test('aliased css has content', async () => {
+// skip because #8278 is reverted
+test.skip('aliased css has content', async () => {
   expect(await getColor('.aliased')).toBe('blue')
   expect(await page.textContent('.aliased-content')).toMatch('.aliased')
   expect(await getColor('.aliased-module')).toBe('blue')
