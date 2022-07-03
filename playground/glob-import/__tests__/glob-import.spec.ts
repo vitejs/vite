@@ -148,21 +148,7 @@ if (!isBuild) {
     removeFile('dir/a.js')
     await withRetry(async () => {
       const actualRemove = await resultElement.textContent()
-      expect(JSON.parse(actualRemove)).toStrictEqual({
-        '/dir/a.js': {
-          msg: 'a'
-        },
-        ...allResult,
-        '/dir/index.js': {
-          ...allResult['/dir/index.js'],
-          modules: {
-            './a.js': {
-              msg: 'a'
-            },
-            ...allResult['/dir/index.js'].modules
-          }
-        }
-      })
+      expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
     })
   })
 }
