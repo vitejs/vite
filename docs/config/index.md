@@ -78,9 +78,9 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
 })
 ```
 
-Only `ssrBuild` is included, as during dev, the config creates a single server shared between the SSR and non-SSR requests.
-
 It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
+
+Only `ssrBuild` is included instead of a more general `ssr` flag because, during dev, the config is shared by the single server handling SSR and non-SSR requests.
 
 ## Async Config
 
