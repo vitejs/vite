@@ -14,7 +14,7 @@
 
 # Vite ⚡
 
-> Next Generation Frontend Tooling
+> Fast frontend development server and production bundler
 
 - 💡 Instant Server Start
 - ⚡️ Lightning Fast HMR

@@ -2,11 +2,11 @@
 layout: home
 
 title: Vite
-titleTemplate: Next Generation Frontend Tooling
+titleTemplate: Fast frontend development server and production bundler
 
 hero:
   name: Vite
-  text: Next Generation Frontend Tooling
+  text: Fast frontend development server and production bundler
   tagline: Get ready for a development environment that can finally catch up with you.
   image:
     src: /logo-with-shadow.png
