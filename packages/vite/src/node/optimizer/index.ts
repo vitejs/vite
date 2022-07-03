@@ -271,7 +271,7 @@ export async function optimizeServerSsrDeps(
     noExternalFilter =
       noExternal === true
         ? (dep: unknown) => false
-        : createFilter(noExternal, config.optimizeDeps?.exclude, {
+        : createFilter(undefined, config.optimizeDeps?.exclude, {
             resolve: false
           })
   }

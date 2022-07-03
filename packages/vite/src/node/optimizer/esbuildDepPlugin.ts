@@ -46,6 +46,17 @@ export function esbuildDepPlugin(
   config: ResolvedConfig,
   ssr: boolean
 ): Plugin {
+  let explicitExternal = config.optimizeDeps?.exclude
+  const ssrExternal = config.ssr?.external
+  if (ssr && ssrExternal?.length) {
+    explicitExternal ||= []
+    for (const id of ssrExternal) {
+      if (!explicitExternal.includes(id)) {
+        explicitExternal.push(id)
+      }
+    }
+  }
+
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = config.optimizeDeps.extensions
     ? externalTypes.filter(
@@ -163,7 +174,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+          if (moduleListContains(explicitExternal, id)) {
             return {
               path: id,
               external: true
