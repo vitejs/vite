@@ -18,7 +18,6 @@ import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, slash, transformStableResult } from '../utils'
-import { isCSSRequest } from './css'
 
 const { isMatch, scan } = micromatch
 
@@ -392,9 +391,6 @@ export async function transformGlobImport(
             const filePath = paths.filePath
             let importPath = paths.importPath
             let importQuery = query
-
-            if (isCSSRequest(file))
-              importQuery = importQuery ? `${importQuery}&used` : '?used'
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
