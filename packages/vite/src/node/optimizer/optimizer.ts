@@ -2,7 +2,6 @@ import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
 import type { ResolvedConfig, ViteDevServer } from '..'
-
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -54,13 +53,35 @@ export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
 ): Promise<void> {
-  await createDepsOptimizer(config, server)
+  if (!getDepsOptimizer(config, { ssr: false })) {
+    await createDepsOptimizer(config, server)
+  }
 }
 
+let creatingDevSsrOptimizer: Promise<void> | undefined
 export async function initDevSsrDepsOptimizer(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  server: ViteDevServer
 ): Promise<void> {
-  await createDevSsrDepsOptimizer(config)
+  if (getDepsOptimizer(config, { ssr: true })) {
+    return
+  }
+  if (creatingDevSsrOptimizer) {
+    return creatingDevSsrOptimizer
+  }
+  creatingDevSsrOptimizer = (async function () {
+    // Important: scanning needs to be done before starting the SSR dev optimizer
+    // If ssrLoadModule is called before server.listen(), the main deps optimizer
+    // will not be yet created
+    if (!getDepsOptimizer(config, { ssr: false })) {
+      await initDepsOptimizer(config, server)
+    }
+    await getDepsOptimizer(config, { ssr: false })!.scanning
+
+    await createDevSsrDepsOptimizer(config)
+    creatingDevSsrOptimizer = undefined
+  })()
+  return await creatingDevSsrOptimizer
 }
 
 async function createDepsOptimizer(
@@ -149,6 +170,7 @@ async function createDepsOptimizer(
         ...depInfo,
         processing: depOptimizationProcessing.promise
       })
+      newDepsDiscovered = true
     }
 
     // TODO: We need the scan during build time, until preAliasPlugin
@@ -167,8 +189,15 @@ async function createDepsOptimizer(
 
       const deps = await discoverProjectDependencies(config)
 
-      const depsString = depsLogString(Object.keys(deps))
-      debug(colors.green(`dependencies found by scanner: ${depsString}`))
+      debug(
+        colors.green(
+          Object.keys(deps).length > 0
+            ? `dependencies found by scanner: ${depsLogString(
+                Object.keys(deps)
+              )}`
+            : `no dependencies found by scanner`
+        )
+      )
 
       // Add these dependencies to the discovered list, as these are currently
       // used by the preAliasPlugin to support aliased and optimized deps.
@@ -186,13 +215,7 @@ async function createDepsOptimizer(
         // run on the background, but we wait until crawling has ended
         // to decide if we send this result to the browser or we need to
         // do another optimize step
-        setTimeout(() => {
-          try {
-            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-          } catch (e) {
-            logger.error(e.message)
-          }
-        }, 0)
+        postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
       }
     } catch (e) {
       logger.error(e.message)
@@ -476,7 +499,6 @@ async function createDepsOptimizer(
       // It will be processed in the next rerun call
       return missing
     }
-    newDepsDiscovered = true
 
     missing = addMissingDep(id, resolved, ssr)
 
@@ -497,6 +519,8 @@ async function createDepsOptimizer(
   }
 
   function addMissingDep(id: string, resolved: string, ssr?: boolean) {
+    newDepsDiscovered = true
+
     return addOptimizedDepInfo(metadata, 'discovered', {
       id,
       file: getOptimizedDepPath(id, config, ssr),
@@ -518,6 +542,9 @@ async function createDepsOptimizer(
   }
 
   function debouncedProcessing(timeout = debounceMs) {
+    if (!newDepsDiscovered) {
+      return
+    }
     // Debounced rerun, let other missing dependencies be discovered before
     // the running next optimizeDeps
     enqueuedRerun = undefined
@@ -534,21 +561,35 @@ async function createDepsOptimizer(
   }
 
   async function onCrawlEnd() {
+    debug(colors.green(`✨ static imports crawl ended`))
     if (firstRunCalled) {
       return
     }
 
     currentlyProcessing = false
 
+    const crawlDeps = Object.keys(metadata.discovered)
+
+    // Await for the scan+optimize step running in the background
+    // It normally should be over by the time crawling of user code ended
+    await depsOptimizer.scanning
+
     if (!isBuild && postScanOptimizationResult) {
-      // Await for the scan+optimize step running in the background
-      // It normally should be over by the time crawling of user code ended
-      await depsOptimizer.scanning
       const result = await postScanOptimizationResult
       postScanOptimizationResult = undefined
 
       const scanDeps = Object.keys(result.metadata.optimized)
-      const crawlDeps = Object.keys(metadata.discovered)
+
+      if (scanDeps.length === 0 && crawlDeps.length === 0) {
+        debug(
+          colors.green(
+            `✨ no dependencies found by the scanner or crawling static imports`
+          )
+        )
+        result.cancel()
+        firstRunCalled = true
+        return
+      }
 
       const needsInteropMismatch = findInteropMismatches(
         metadata.discovered,
@@ -580,15 +621,24 @@ async function createDepsOptimizer(
       } else {
         debug(
           colors.green(
-            `✨ using post-scan optimizer result, the scanner found every needed deps`
+            `✨ using post-scan optimizer result, the scanner found every used dependency`
           )
         )
         startNextDiscoveredBatch()
         runOptimizer(result)
       }
     } else {
-      // queue the first optimizer run
-      debouncedProcessing(0)
+      if (crawlDeps.length === 0) {
+        debug(
+          colors.green(
+            `✨ no dependencies found while crawling the static imports`
+          )
+        )
+        firstRunCalled = true
+      } else {
+        // queue the first optimizer run
+        debouncedProcessing(0)
+      }
     }
   }
 

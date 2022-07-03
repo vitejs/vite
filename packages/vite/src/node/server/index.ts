@@ -311,25 +311,6 @@ export async function createServer(
 
   let exitProcess: () => void
 
-  let creatingDevSsrOptimizer: Promise<void> | null = null
-  async function initSsrServer() {
-    // Important: scanning needs to be done before starting the SSR dev optimizer
-    const optimizer = getDepsOptimizer(config, { ssr: false })
-    if (optimizer) {
-      await optimizer.scanning
-    } else {
-      config.logger.error('Error: ssrLoadModule called before server started')
-    }
-    if (!getDepsOptimizer(config, { ssr: true })) {
-      if (!creatingDevSsrOptimizer) {
-        creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
-      }
-      await creatingDevSsrOptimizer
-      creatingDevSsrOptimizer = null
-    }
-    await updateCjsSsrExternals(server)
-  }
-
   const server: ViteDevServer = {
     config,
     middlewares,
@@ -348,7 +329,10 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      await initSsrServer()
+      if (isDepsOptimizerEnabled(config)) {
+        await initDevSsrDepsOptimizer(config, server)
+      }
+      await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
         server,
@@ -544,32 +528,40 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  const initOptimizer = async () => {
-    if (isDepsOptimizerEnabled(config)) {
-      await initDepsOptimizer(config, server)
+  let initingServer: Promise<void> | undefined
+  let serverInited = false
+  const initServer = async () => {
+    if (serverInited) {
+      return
     }
+    if (initingServer) {
+      return initingServer
+    }
+    initingServer = (async function () {
+      await container.buildStart({})
+      if (isDepsOptimizerEnabled(config)) {
+        await initDepsOptimizer(config, server)
+      }
+      initingServer = undefined
+      serverInited = true
+    })()
+    return await initServer
   }
 
   if (!middlewareMode && httpServer) {
-    let isOptimized = false
     // overwrite listen to init optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
-      if (!isOptimized) {
-        try {
-          await container.buildStart({})
-          await initOptimizer()
-          isOptimized = true
-        } catch (e) {
-          httpServer.emit('error', e)
-          return
-        }
+      try {
+        await initServer()
+      } catch (e) {
+        httpServer.emit('error', e)
+        return
       }
       return listen(port, ...args)
     }) as any
   } else {
-    await container.buildStart({})
-    await initOptimizer()
+    await initServer()
   }
 
   return server
