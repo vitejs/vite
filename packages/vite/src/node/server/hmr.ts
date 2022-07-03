@@ -169,18 +169,24 @@ export function updateModules(
     ws.send({
       type: 'full-reload'
     })
-  } else {
-    config.logger.info(
-      updates
-        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
-        .join('\n'),
-      { clear: true, timestamp: true }
-    )
-    ws.send({
-      type: 'update',
-      updates
-    })
+    return
   }
+
+  if (updates.length === 0) {
+    debugHmr(colors.yellow(`no update happened `) + colors.dim(file))
+    return
+  }
+
+  config.logger.info(
+    updates
+      .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
+      .join('\n'),
+    { clear: true, timestamp: true }
+  )
+  ws.send({
+    type: 'update',
+    updates
+  })
 }
 
 export async function handleFileAddUnlink(
