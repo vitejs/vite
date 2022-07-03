@@ -30,7 +30,7 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
-import { join, resolve } from 'node:path'
+import path, { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import type {
@@ -615,12 +615,24 @@ export async function createPluginContainer(
         }
       }
 
-      if (id) {
-        partial.id = isExternalUrl(id) ? id : normalizePath(id)
-        return partial as PartialResolvedId
+      if (!id) return null
+
+      if (partial.external) {
+        if (
+          // TODO: refactor this monster
+          partial.external !== 'absolute' &&
+          ((rollupOptions.makeAbsoluteExternalsRelative ===
+            'ifRelativeSource' &&
+            rawId.startsWith('.')) ||
+            rollupOptions.makeAbsoluteExternalsRelative !== false)
+        ) {
+          partial.id = path.posix.relative(root, id)
+        }
       } else {
-        return null
+        partial.id = isExternalUrl(id) ? id : normalizePath(id)
       }
+
+      return partial as PartialResolvedId
     },
 
     async load(id, options) {
