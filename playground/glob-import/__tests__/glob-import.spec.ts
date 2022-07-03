@@ -32,6 +32,14 @@ const json = isBuild
       msg: 'baz'
     }
 
+const css = isBuild
+  ? {
+      default: '.foo{color:#00f}\n'
+    }
+  : {
+      default: '.foo {\n  color: blue;\n}\n'
+    }
+
 const globWithAlias = {
   '/dir/alias.js': {
     default: 'hi'
@@ -44,6 +52,7 @@ const allResult = {
     default: 'hi'
   },
   '/dir/baz.json': json,
+  '/dir/foo.css': css,
   '/dir/foo.js': {
     msg: 'foo'
   },
@@ -83,6 +92,11 @@ const relativeRawResult = {
 test('should work', async () => {
   await untilUpdated(
     () => page.textContent('.result'),
+    JSON.stringify(allResult, null, 2),
+    true
+  )
+  await untilUpdated(
+    () => page.textContent('.result-eager'),
     JSON.stringify(allResult, null, 2),
     true
   )
