@@ -10,7 +10,7 @@ const nestedVirtualId = '\0' + nestedVirtualFile
 
 const base = '/test/'
 
-export default defineConfig({
+export default defineConfig(({ command, ssrBuild }) => ({
   base,
   plugins: [
     vuePlugin(),
@@ -22,9 +22,15 @@ export default defineConfig({
           return id
         }
       },
-      load(id) {
+      load(id, options) {
+        const ssrFromOptions = options?.ssr ?? false
         if (id === '@foo') {
-          return `export default { msg: 'hi' }`
+          // Force a mismatch error if ssrBuild is different from ssrFromOptions
+          return `export default { msg: '${
+            command === 'build' && !!ssrBuild !== ssrFromOptions
+              ? `defineConfig ssrBuild !== ssr from load options`
+              : 'hi'
+          }' }`
         }
       }
     },
@@ -111,4 +117,4 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['example-external-component']
   }
-})
+}))

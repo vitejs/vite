@@ -61,10 +61,10 @@ Vite also directly supports TS config files. You can use `vite.config.ts` with t
 
 ## Conditional Config
 
-If the config needs to conditional determine options based on the command (`dev`/`serve` or `build`) or the [mode](/guide/env-and-mode) being used, it can export a function instead:
+If the config needs to conditionally determine options based on the command (`dev`/`serve` or `build`), the [mode](/guide/env-and-mode) being used, or if it is an SSR build (`ssrBuild`), it can export a function instead:
 
 ```js
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ command, mode, ssrBuild }) => {
   if (command === 'serve') {
     return {
       // dev specific config
@@ -79,6 +79,8 @@ export default defineConfig(({ command, mode }) => {
 ```
 
 It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
+
+Only `ssrBuild` is included instead of a more general `ssr` flag because, during dev, the config is shared by the single server handling SSR and non-SSR requests.
 
 ## Async Config
 
