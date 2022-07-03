@@ -136,19 +136,11 @@ type PluginContext = Omit<
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
-  resolvedConfig: ResolvedConfig,
+  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
-  const {
-    plugins,
-    logger,
-    root,
-    build: { rollupOptions }
-  } = resolvedConfig
-  const { external, makeAbsoluteExternalsRelative: makeRelative } =
-    rollupOptions
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -197,16 +189,6 @@ export async function createPluginContainer(
           )} is not supported in serve mode. This plugin is likely not vite-compatible.`
         )
     )
-  }
-
-  function isUserExternal(
-    id: string,
-    parentId: string | undefined,
-    isResolved: boolean
-  ): boolean | null | void {
-    if (external && !id.startsWith('\0')) {
-      return resolveRollupExternal(external, id, parentId, isResolved)
-    }
   }
 
   // throw when an unsupported ModuleInfo property is accessed,
@@ -524,7 +506,22 @@ export async function createPluginContainer(
       return {
         acorn,
         acornInjectPlugins: [],
-        ...options
+        ...options,
+        // normalize external as function
+        external(
+          id: string,
+          parentId: string | undefined,
+          isResolved: boolean
+        ) {
+          if (options.external && !id.startsWith('\0')) {
+            return resolveRollupExternal(
+              options.external,
+              id,
+              parentId,
+              isResolved
+            )
+          }
+        }
       }
     })(),
 
@@ -552,12 +549,14 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
+      const { external, makeAbsoluteExternalsRelative: makeRelative } =
+        container.options as NormalizedInputOptions
       const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
 
-      if (isUserExternal(rawId, importer, false)) {
+      if (external(rawId, importer, false)) {
         id = rawId
         partial.external = true
       } else {
@@ -594,11 +593,7 @@ export async function createPluginContainer(
           break
         }
 
-        if (
-          !partial.external &&
-          typeof external === 'function' &&
-          isUserExternal(id ?? rawId, importer, true)
-        ) {
+        if (!partial.external && external(id ?? rawId, importer, true)) {
           id ??= rawId
           partial.external = true
         }
@@ -625,7 +620,7 @@ export async function createPluginContainer(
         ((makeRelative === 'ifRelativeSource' && rawId.startsWith('.')) ||
           makeRelative !== false)
       ) {
-        id = path.relative(root, id)
+        id = './' + path.relative(root, id)
       }
 
       partial.id = isExternalUrl(id) ? id : normalizePath(id)
