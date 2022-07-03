@@ -163,7 +163,7 @@ export async function untilUpdated(
 }
 
 /**
- * Poll a getter until the value it returns includes the expected value.
+ * Retry `func` until it does not throw error.
  */
 export async function withRetry(
   func: () => Promise<void>,
