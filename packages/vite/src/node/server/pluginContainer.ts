@@ -136,12 +136,19 @@ type PluginContext = Omit<
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
-  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  resolvedConfig: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
-  const external = rollupOptions.external
+  const {
+    plugins,
+    logger,
+    root,
+    build: { rollupOptions }
+  } = resolvedConfig
+  const { external, makeAbsoluteExternalsRelative: makeRelative } =
+    rollupOptions
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -197,13 +204,8 @@ export async function createPluginContainer(
     parentId: string | undefined,
     isResolved: boolean
   ): boolean | null | void {
-    if (rollupOptions.external && !id.startsWith('\0')) {
-      return resolveRollupExternal(
-        rollupOptions.external,
-        id,
-        parentId,
-        isResolved
-      )
+    if (external && !id.startsWith('\0')) {
+      return resolveRollupExternal(external, id, parentId, isResolved)
     }
   }
 
@@ -594,7 +596,7 @@ export async function createPluginContainer(
 
         if (
           !partial.external &&
-          typeof rollupOptions.external === 'function' &&
+          typeof external === 'function' &&
           isUserExternal(id ?? rawId, importer, true)
         ) {
           id ??= rawId
@@ -617,21 +619,16 @@ export async function createPluginContainer(
 
       if (!id) return null
 
-      if (partial.external) {
-        if (
-          // TODO: refactor this monster
-          partial.external !== 'absolute' &&
-          ((rollupOptions.makeAbsoluteExternalsRelative ===
-            'ifRelativeSource' &&
-            rawId.startsWith('.')) ||
-            rollupOptions.makeAbsoluteExternalsRelative !== false)
-        ) {
-          partial.id = path.posix.relative(root, id)
-        }
-      } else {
-        partial.id = isExternalUrl(id) ? id : normalizePath(id)
+      if (
+        partial.external &&
+        partial.external !== 'absolute' &&
+        ((makeRelative === 'ifRelativeSource' && rawId.startsWith('.')) ||
+          makeRelative !== false)
+      ) {
+        id = path.relative(root, id)
       }
 
+      partial.id = isExternalUrl(id) ? id : normalizePath(id)
       return partial as PartialResolvedId
     },
 
