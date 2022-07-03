@@ -429,46 +429,11 @@ export function depsLogString(qualifiedIds: string[]): string {
   }
 }
 
-const esbuildQueue: (() => Promise<any>)[] = []
-let esbuildProcessing = false
-export function enqueueEsbuildTask(task: () => Promise<any>): void {
-  esbuildQueue.push(task)
-  if (!esbuildProcessing) {
-    processNext()
-  }
-}
-async function processNext() {
-  const task = esbuildQueue.shift()
-  if (task) {
-    esbuildProcessing = true
-    await task()
-    if (esbuildQueue.length > 0) {
-      processNext()
-    } else {
-      esbuildProcessing = false
-    }
-  }
-}
-
-export function runOptimizeDeps(
-  resolvedConfig: ResolvedConfig,
-  depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = !!resolvedConfig.build.ssr
-): Promise<DepOptimizationResult> {
-  return new Promise((resolve) => {
-    enqueueEsbuildTask(() => {
-      const result = _runOptimizeDeps(resolvedConfig, depsInfo, ssr)
-      resolve(result)
-      return result
-    })
-  })
-}
-
 /**
  * Internally, Vite uses this function to prepare a optimizeDeps run. When Vite starts, we can get
  * the metadata and start the server without waiting for the optimizeDeps processing to be completed
  */
-async function _runOptimizeDeps(
+export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
   ssr: boolean = !!resolvedConfig.build.ssr
