@@ -545,7 +545,7 @@ export async function createServer(
       initingServer = undefined
       serverInited = true
     })()
-    return await initServer
+    return initingServer
   }
 
   if (!middlewareMode && httpServer) {
