@@ -692,6 +692,7 @@ export async function addManuallyIncludedOptimizeDeps(
   extra: string[] = [],
   filter?: (id: string) => boolean
 ): Promise<void> {
+  const { logger } = config
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length || extra.length) {
@@ -706,13 +707,20 @@ export async function addManuallyIncludedOptimizeDeps(
           if (isOptimizable(entry, optimizeDeps)) {
             deps[normalizedId] = entry
           } else if (optimizeDepsInclude.includes(id)) {
-            config.logger.warn(
-              `Cannot optimize included dependency: ${colors.cyan(id)}`
+            logger.warn(
+              `Cannot optimize dependency: ${colors.cyan(
+                id
+              )}, present in 'include'`
             )
           }
         } else {
-          throw new Error(
-            `Failed to resolve force included dependency: ${colors.cyan(id)}`
+          const configOptionName = optimizeDepsInclude.includes(id)
+            ? 'include'
+            : 'noExternal'
+          logger.warn(
+            `Failed to resolve dependency: ${colors.cyan(
+              id
+            )}, present in '${configOptionName}'`
           )
         }
       }
