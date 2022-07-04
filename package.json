@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.18.7",
-    "@microsoft/api-extractor": "^7.28.1",
+    "@microsoft/api-extractor": "^7.28.2",
     "@rollup/plugin-typescript": "^8.3.3",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
@@ -59,12 +59,12 @@
     "@types/semver": "^7.3.10",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.30.0",
-    "@typescript-eslint/parser": "^5.30.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.4",
+    "@typescript-eslint/parser": "^5.30.4",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.47",
-    "eslint": "^8.18.0",
+    "eslint": "^8.19.0",
     "eslint-define-config": "^1.5.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -76,8 +76,8 @@
     "node-fetch": "^3.2.6",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.23.0",
-    "pnpm": "^7.4.0",
+    "playwright-chromium": "^1.23.1",
+    "pnpm": "^7.5.0",
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
@@ -86,12 +86,12 @@
     "simple-git-hooks": "^2.8.0",
     "sirv": "^2.0.2",
     "tslib": "^2.4.0",
-    "tsx": "^3.6.0",
+    "tsx": "^3.7.1",
     "typescript": "^4.6.4",
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
     "vitepress": "^1.0.0-alpha.4",
-    "vitest": "^0.16.0",
+    "vitest": "^0.17.0",
     "vue": "^3.2.37"
   },
   "simple-git-hooks": {
@@ -112,7 +112,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.4.0",
+  "packageManager": "pnpm@7.5.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
