@@ -696,6 +696,15 @@ export async function addManuallyIncludedOptimizeDeps(
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length || extra.length) {
+    const unableToOptimize = (id: string, msg: string) => {
+      if (optimizeDepsInclude.includes(id)) {
+        logger.warn(
+          `${msg}: ${colors.cyan(id)}, present in '${
+            ssr ? 'ssr.' : ''
+          }optimizeDeps.include'`
+        )
+      }
+    }
     const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
@@ -706,22 +715,11 @@ export async function addManuallyIncludedOptimizeDeps(
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
             deps[normalizedId] = entry
-          } else if (optimizeDepsInclude.includes(id)) {
-            logger.warn(
-              `Cannot optimize dependency: ${colors.cyan(
-                id
-              )}, present in 'include'`
-            )
+          } else {
+            unableToOptimize(entry, 'Cannot optimize dependency')
           }
         } else {
-          const configOptionName = optimizeDepsInclude.includes(id)
-            ? 'include'
-            : 'noExternal'
-          logger.warn(
-            `Failed to resolve dependency: ${colors.cyan(
-              id
-            )}, present in '${configOptionName}'`
-          )
+          unableToOptimize(id, 'Failed to resolve dependency')
         }
       }
     }
