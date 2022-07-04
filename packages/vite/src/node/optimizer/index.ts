@@ -14,6 +14,7 @@ import {
   emptyDir,
   flattenId,
   getHash,
+  isOptimizable,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -22,9 +23,14 @@ import {
   writeFile
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
+import { ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
-export { initDepsOptimizer, getDepsOptimizer } from './optimizer'
+export {
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer,
+  getDepsOptimizer
+} from './optimizer'
 
 export const debuggerViteDeps = createDebugger('vite:deps')
 const debug = debuggerViteDeps
@@ -45,7 +51,7 @@ export type ExportsData = {
 }
 
 export interface DepsOptimizer {
-  metadata: (options: { ssr: boolean }) => DepOptimizationMetadata
+  metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
   registerMissingImport: (
     id: string,
@@ -61,6 +67,7 @@ export interface DepsOptimizer {
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
+  ensureFirstRun: () => void
 
   options: DepOptimizationOptions
 }
@@ -533,17 +540,39 @@ export async function runOptimizeDeps(
     flatIdToExports[flatId] = exportsData
   }
 
+  // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
+  // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
+  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
+  // later replaced by the define plugin
+  const define = {
+    'process.env.NODE_ENV': isBuild
+      ? '__vite_process_env_NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || config.mode)
+  }
+
+  const platform =
+    ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
+
   const start = performance.now()
 
   const result = await build({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    // Ensure resolution is handled by esbuildDepPlugin and
-    // avoid replacing `process.env.NODE_ENV` for 'browser'
-    platform: 'neutral',
+    // We can't use platform 'neutral', as esbuild has custom handling
+    // when the platform is 'node' or 'browser' that can't be emulated
+    // by using mainFields and conditions
+    platform,
+    define,
     format: 'esm',
-    target: config.build.target || undefined,
+    // See https://github.com/evanw/esbuild/issues/1921#issuecomment-1152991694
+    banner:
+      platform === 'node'
+        ? {
+            js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
+          }
+        : undefined,
+    target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
     external: config.optimizeDeps?.exclude,
     logLevel: 'error',
     splitting: true,
@@ -553,9 +582,14 @@ export async function runOptimizeDeps(
     metafile: true,
     plugins: [
       ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config)
+      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
     ],
-    ...esbuildOptions
+    ...esbuildOptions,
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   })
 
   const meta = result.metafile!
@@ -625,20 +659,26 @@ export async function findKnownImports(
 async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
-  extra?: string[],
+  extra: string[] = [],
   filter?: (id: string) => boolean
 ): Promise<void> {
-  const include = [...(config.optimizeDeps?.include ?? []), ...(extra ?? [])]
-  if (include) {
+  const optimizeDepsInclude = config.optimizeDeps?.include ?? []
+  if (optimizeDepsInclude.length || extra.length) {
     const resolve = config.createResolver({ asSrc: false, scan: true })
-    for (const id of include) {
+    for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
         const entry = await resolve(id)
         if (entry) {
-          deps[normalizedId] = entry
+          if (isOptimizable(entry, config.optimizeDeps)) {
+            deps[normalizedId] = entry
+          } else if (optimizeDepsInclude.includes(id)) {
+            config.logger.warn(
+              `Cannot optimize included dependency: ${colors.cyan(id)}`
+            )
+          }
         } else {
           throw new Error(
             `Failed to resolve force included dependency: ${colors.cyan(id)}`

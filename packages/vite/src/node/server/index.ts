@@ -28,7 +28,11 @@ import {
   ssrRewriteStacktrace
 } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
+import {
+  getDepsOptimizer,
+  initDepsOptimizer,
+  initDevSsrDepsOptimizer
+} from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
@@ -96,6 +100,13 @@ export interface ServerOptions extends CommonServerOptions {
    * @default true
    */
   preTransformRequests?: boolean
+  /**
+   * Force dep pre-optimization regardless of whether deps have changed.
+   *
+   * @deprecated Use optimizeDeps.force instead, this option may be removed
+   * in a future minor version without following semver
+   */
+  force?: boolean
 }
 
 export interface ResolvedServerOptions extends ServerOptions {
@@ -280,8 +291,9 @@ export async function createServer(
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {
     ignored: [
-      '**/node_modules/**',
       '**/.git/**',
+      '**/node_modules/**',
+      '**/test-results/**', // Playwright
       ...(Array.isArray(ignored) ? ignored : [ignored])
     ],
     ignoreInitial: true,
@@ -298,6 +310,8 @@ export async function createServer(
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
+
+  let creatingDevSsrOptimizer: Promise<void> | null = null
 
   const server: ViteDevServer = {
     config,
@@ -317,6 +331,13 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      if (!getDepsOptimizer(config, { ssr: true })) {
+        if (!creatingDevSsrOptimizer) {
+          creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
+        }
+        await creatingDevSsrOptimizer
+        creatingDevSsrOptimizer = null
+      }
       await updateCjsSsrExternals(server)
       return ssrLoadModule(
         url,
@@ -697,7 +718,7 @@ async function restartServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
-      server: {
+      optimizeDeps: {
         force: true
       }
     })
@@ -718,7 +739,7 @@ async function restartServer(server: ViteDevServer) {
       // prevent new server `restart` function from calling
       // @ts-ignore
       newServer[key] = server[key]
-    } else if (key !== 'app') {
+    } else {
       // @ts-ignore
       server[key] = newServer[key]
     }
@@ -745,15 +766,21 @@ async function restartServer(server: ViteDevServer) {
 
 async function updateCjsSsrExternals(server: ViteDevServer) {
   if (!server._ssrExternals) {
-    // We use the non-ssr optimized deps to find known imports
     let knownImports: string[] = []
-    const depsOptimizer = getDepsOptimizer(server.config)
+
+    // Important! We use the non-ssr optimized deps to find known imports
+    // Only the explicitly defined deps are optimized during dev SSR, so
+    // we use the generated list from the scanned deps in regular dev.
+    // This is part of the v2 externalization heuristics and it is kept
+    // for backwards compatibility in case user needs to fallback to the
+    // legacy scheme. It may be removed in a future v3 minor.
+    const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
+
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
-      const metadata = depsOptimizer.metadata({ ssr: false })
       knownImports = [
-        ...Object.keys(metadata.optimized),
-        ...Object.keys(metadata.discovered)
+        ...Object.keys(depsOptimizer.metadata.optimized),
+        ...Object.keys(depsOptimizer.metadata.discovered)
       ]
     }
     server._ssrExternals = cjsSsrResolveExternals(server.config, knownImports)

@@ -29,7 +29,7 @@ import {
   slash
 } from '../utils'
 import type { ResolvedConfig } from '../config'
-import type { BuildAdvancedBaseOptions } from '../build'
+import { toOutputFilePathInHtml } from '../build'
 import {
   assetUrlRE,
   checkPublicFile,
@@ -239,7 +239,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       if (id.endsWith('.html')) {
         const relativeUrlPath = slash(path.relative(config.root, id))
         const publicPath = `/${relativeUrlPath}`
-        const publicBase = getPublicBase(relativeUrlPath, config)
+        const publicBase = getBaseInHTML(relativeUrlPath, config)
+
+        const publicToRelative = (filename: string, importer: string) =>
+          publicBase + filename
+        const toOutputPublicFilePath = (url: string) =>
+          toOutputFilePathInHtml(
+            url.slice(1),
+            'public',
+            relativeUrlPath,
+            'html',
+            config,
+            publicToRelative
+          )
 
         // pre-transform
         html = await applyHtmlTransforms(html, preHooks, {
@@ -276,7 +288,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 src!.value!.loc.start.offset,
                 src!.value!.loc.end.offset,
-                `"${normalizePublicPath(url, publicBase)}"`,
+                `"${toOutputPublicFilePath(url)}"`,
                 { contentOnly: true }
               )
             }
@@ -358,7 +370,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   s.overwrite(
                     p.value.loc.start.offset,
                     p.value.loc.end.offset,
-                    `"${normalizePublicPath(url, publicBase)}"`,
+                    `"${toOutputPublicFilePath(url)}"`,
                     { contentOnly: true }
                   )
                 }
@@ -474,7 +486,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               { contentOnly: true }
             )
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, normalizePublicPath(url, publicBase), {
+            s.overwrite(start, end, toOutputPublicFilePath(url), {
               contentOnly: true
             })
           }
@@ -535,7 +547,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       const toScriptTag = (
         chunk: OutputChunk,
-        assetsBase: string,
+        toOutputPath: (filename: string) => string,
         isAsync: boolean
       ): HtmlTagDescriptor => ({
         tag: 'script',
@@ -543,25 +555,25 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ...(isAsync ? { async: true } : {}),
           type: 'module',
           crossorigin: true,
-          src: toPublicPath(chunk.fileName, assetsBase)
+          src: toOutputPath(chunk.fileName)
         }
       })
 
       const toPreloadTag = (
         chunk: OutputChunk,
-        assetsBase: string
+        toOutputPath: (filename: string) => string
       ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
           crossorigin: true,
-          href: toPublicPath(chunk.fileName, assetsBase)
+          href: toOutputPath(chunk.fileName)
         }
       })
 
       const getCssTagsForChunk = (
         chunk: OutputChunk,
-        assetsBase: string,
+        toOutputPath: (filename: string) => string,
         seen: Set<string> = new Set()
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
@@ -570,7 +582,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach((file) => {
             const importee = bundle[file]
             if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, assetsBase, seen))
+              tags.push(...getCssTagsForChunk(importee, toOutputPath, seen))
             }
           })
         }
@@ -582,7 +594,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               tag: 'link',
               attrs: {
                 rel: 'stylesheet',
-                href: toPublicPath(file, assetsBase)
+                href: toOutputPath(file)
               }
             })
           }
@@ -593,7 +605,21 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
       for (const [id, html] of processedHtml) {
         const relativeUrlPath = path.posix.relative(config.root, id)
-        const assetsBase = getAssetsBase(relativeUrlPath, config)
+        const assetsBase = getBaseInHTML(relativeUrlPath, config)
+        const toOutputAssetFilePath = (filename: string) => {
+          if (isExternalUrl(filename)) {
+            return filename
+          } else {
+            return toOutputFilePathInHtml(
+              filename,
+              'asset',
+              relativeUrlPath,
+              'html',
+              config,
+              (filename: string, importer: string) => assetsBase + filename
+            )
+          }
+        }
 
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
@@ -622,13 +648,15 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
           const assetTags = canInlineEntry
-            ? imports.map((chunk) => toScriptTag(chunk, assetsBase, isAsync))
+            ? imports.map((chunk) =>
+                toScriptTag(chunk, toOutputAssetFilePath, isAsync)
+              )
             : [
-                toScriptTag(chunk, assetsBase, isAsync),
-                ...imports.map((i) => toPreloadTag(i, assetsBase))
+                toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+                ...imports.map((i) => toPreloadTag(i, toOutputAssetFilePath))
               ]
 
-          assetTags.push(...getCssTagsForChunk(chunk, assetsBase))
+          assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)
         }
@@ -644,7 +672,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 tag: 'link',
                 attrs: {
                   rel: 'stylesheet',
-                  href: toPublicPath(cssChunk.fileName, assetsBase)
+                  href: toOutputAssetFilePath(cssChunk.fileName)
                 }
               }
             ])
@@ -676,7 +704,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          return assetsBase + getAssetFilename(fileHash, config) + postfix
+          return (
+            toOutputAssetFilePath(getAssetFilename(fileHash, config)!) + postfix
+          )
         })
 
         if (chunk && canInlineEntry) {
@@ -818,46 +848,15 @@ function isEntirelyImport(code: string) {
   return !code.replace(importRE, '').replace(commentRE, '').trim().length
 }
 
-function getBaseInHTML(
-  urlRelativePath: string,
-  baseOptions: BuildAdvancedBaseOptions,
-  config: ResolvedConfig
-) {
+function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
   // Prefer explicit URL if defined for linking to assets and public files from HTML,
   // even when base relative is specified
-  return (
-    baseOptions.url ??
-    (baseOptions.relative
-      ? path.posix.join(
-          path.posix.relative(urlRelativePath, '').slice(0, -2),
-          './'
-        )
-      : config.base)
-  )
-}
-
-function getPublicBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(
-    urlRelativePath,
-    config.experimental.buildAdvancedBaseOptions.public,
-    config
-  )
-}
-
-function getAssetsBase(urlRelativePath: string, config: ResolvedConfig) {
-  return getBaseInHTML(
-    urlRelativePath,
-    config.experimental.buildAdvancedBaseOptions.assets,
-    config
-  )
-}
-
-function toPublicPath(filename: string, publicBase: string) {
-  return isExternalUrl(filename) ? filename : publicBase + filename
-}
-
-function normalizePublicPath(publicPath: string, publicBase: string) {
-  return publicBase + publicPath.slice(1)
+  return config.base === './' || config.base === ''
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
 }
 
 const headInjectRE = /([ \t]*)<\/head>/i

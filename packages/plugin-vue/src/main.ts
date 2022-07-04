@@ -306,10 +306,17 @@ async function genScriptCode(
       (!script.lang || (script.lang === 'ts' && options.devServer)) &&
       !script.src
     ) {
+      const userPlugins = options.script?.babelParserPlugins || []
+      const defaultPlugins =
+        script.lang === 'ts'
+          ? userPlugins.includes('decorators')
+            ? (['typescript'] as const)
+            : (['typescript', 'decorators-legacy'] as const)
+          : []
       scriptCode = options.compiler.rewriteDefault(
         script.content,
         '_sfc_main',
-        script.lang === 'ts' ? ['typescript'] : undefined
+        [...defaultPlugins, ...userPlugins]
       )
       map = script.map
     } else {
