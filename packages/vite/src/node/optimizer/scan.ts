@@ -128,7 +128,7 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-export function globEntries(
+function globEntries(
   pattern: string | string[],
   config: ResolvedConfig
 ): Promise<string[]> {

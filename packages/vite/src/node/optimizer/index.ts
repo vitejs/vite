@@ -50,7 +50,7 @@ export type ExportsData = {
 
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
-  scanning?: Promise<void>
+  scanProcessing?: Promise<void>
   registerMissingImport: (
     id: string,
     resolved: string,
@@ -236,7 +236,7 @@ export async function optimizeDeps(
 
   await addManuallyIncludedOptimizeDeps(deps, config)
 
-  const depsInfo = toDiscoveredDependencies(config, deps)
+  const depsInfo = toDiscoveredDependencies(config, deps, !!config.build.ssr)
 
   const result = await runOptimizeDeps(config, depsInfo)
 
@@ -262,7 +262,7 @@ export async function optimizeServerSsrDeps(
 
   await addManuallyIncludedOptimizeDeps(deps, config)
 
-  const depsInfo = toDiscoveredDependencies(config, deps, '', true)
+  const depsInfo = toDiscoveredDependencies(config, deps, true)
 
   const result = await runOptimizeDeps(config, depsInfo, true)
 
@@ -369,8 +369,8 @@ export async function discoverProjectDependencies(
 export function toDiscoveredDependencies(
   config: ResolvedConfig,
   deps: Record<string, string>,
-  timestamp: string = '',
-  ssr: boolean = !!config.build.ssr
+  ssr: boolean,
+  timestamp: string = ''
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
     getDepHash(config),
@@ -456,9 +456,6 @@ export async function runOptimizeDeps(
   const processingResult: DepOptimizationResult = {
     metadata,
     async commit() {
-      // We let the optimizeDeps caller modify the browserHash of dependencies before committing
-      commitMetadata()
-
       // Write metadata file, delete `deps` folder and rename the `processing` folder to `deps`
       // Processing is done, we can now replace the depsCacheDir with processingCacheDir
       // Rewire the file paths from the temporal processing dir to the final deps cache dir
@@ -605,10 +602,8 @@ export async function runOptimizeDeps(
     }
   }
 
-  function commitMetadata() {
-    const dataPath = path.join(processingCacheDir, '_metadata.json')
-    writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
-  }
+  const dataPath = path.join(processingCacheDir, '_metadata.json')
+  writeFile(dataPath, stringifyDepsOptimizerMetadata(metadata, depsCacheDir))
 
   debug(`deps bundled in ${(performance.now() - start).toFixed(2)}ms`)
 

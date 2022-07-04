@@ -723,7 +723,7 @@ export async function tryOptimizedResolve(
   // is used in the preAliasPlugin to decide if an aliased dep is optimized,
   // and avoid replacing the bare import with the resolved path.
   // We should be able to remove this in the future
-  await depsOptimizer.scanning
+  await depsOptimizer.scanProcessing
 
   const metadata = depsOptimizer.metadata
 

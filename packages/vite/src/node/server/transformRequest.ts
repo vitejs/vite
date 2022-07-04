@@ -16,7 +16,6 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
@@ -276,18 +275,4 @@ async function loadAndTransform(
   }
 
   return result
-}
-
-export async function preTransformRequest(
-  url: string,
-  server: ViteDevServer,
-  options: { ssr: boolean } = { ssr: false }
-): Promise<TransformResult | null> {
-  return transformRequest(url, server, options).catch((e) => {
-    if (e?.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
-      // Unexpected error, log the issue but avoid an unhandled exception
-      server.config.logger.error(e.message)
-    }
-    return null
-  })
 }

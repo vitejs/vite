@@ -49,14 +49,17 @@ import {
   cjsShouldExternalizeForSSR,
   shouldExternalizeForSSR
 } from '../ssr/ssrExternal'
-import { preTransformRequest } from '../server/transformRequest'
+import { transformRequest } from '../server/transformRequest'
 import {
   getDepsCacheDirPrefix,
   getDepsOptimizer,
   optimizedDepNeedsInterop
 } from '../optimizer'
 import { checkPublicFile } from './asset'
-import { throwOutdatedRequest } from './optimizedDeps'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  throwOutdatedRequest
+} from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 
@@ -241,7 +244,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
-      const importedUrlsToPreTransform = new Set<{ url: string; id: string }>()
+      const staticImportedUrls = new Set<{ url: string; id: string }>()
       const acceptedUrls = new Set<{
         url: string
         start: number
@@ -266,7 +269,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         let importerFile = importer
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
-            await depsOptimizer.scanning
+            await depsOptimizer.scanProcessing
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
@@ -527,15 +530,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             )
           }
 
-          const importedUrl = {
-            id: resolvedId,
-            url: unwrapId(removeImportQuery(urlWithoutBase)).replace(
-              NULL_BYTE_PLACEHOLDER,
-              '\0'
-            )
-          }
           if (!isDynamicImport) {
-            importedUrlsToPreTransform.add(importedUrl)
+            staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
           // check @vite-ignore which suppresses dynamic import warning
@@ -690,12 +686,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // pre-transform known direct imports
       // These requests will also be registered in transformRequest to be awaited
       // by the deps optimizer
-      if (
-        config.server.preTransformRequests &&
-        importedUrlsToPreTransform.size
-      ) {
-        importedUrlsToPreTransform.forEach(({ url }) => {
-          preTransformRequest(url, server, { ssr })
+      if (config.server.preTransformRequests && staticImportedUrls.size) {
+        staticImportedUrls.forEach(({ url, id }) => {
+          url = unwrapId(removeImportQuery(url)).replace(
+            NULL_BYTE_PLACEHOLDER,
+            '\0'
+          )
+          transformRequest(url, server, { ssr }).catch((e) => {
+            if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+              // This are expected errors
+              return
+            }
+            // Unexpected error, log the issue but avoid an unhandled exception
+            config.logger.error(e.message)
+          })
         })
       }
 

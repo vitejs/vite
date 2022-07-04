@@ -76,7 +76,7 @@ export async function initDevSsrDepsOptimizer(
     if (!getDepsOptimizer(config, { ssr: false })) {
       await initDepsOptimizer(config, server)
     }
-    await getDepsOptimizer(config, { ssr: false })!.scanning
+    await getDepsOptimizer(config, { ssr: false })!.scanProcessing
 
     await createDevSsrDepsOptimizer(config)
     creatingDevSsrOptimizer = undefined
@@ -162,6 +162,7 @@ async function createDepsOptimizer(
     const discovered = await toDiscoveredDependencies(
       config,
       deps,
+      !!config.build.ssr,
       sessionTimestamp
     )
 
@@ -182,7 +183,7 @@ async function createDepsOptimizer(
 
   async function runScanner() {
     const scanPhaseProcessing = newDepOptimizationProcessing()
-    depsOptimizer.scanning = scanPhaseProcessing.promise
+    depsOptimizer.scanProcessing = scanPhaseProcessing.promise
 
     try {
       debug(colors.green(`scanning for dependencies...`))
@@ -221,7 +222,7 @@ async function createDepsOptimizer(
       logger.error(e.message)
     } finally {
       scanPhaseProcessing.resolve()
-      depsOptimizer.scanning = undefined
+      depsOptimizer.scanProcessing = undefined
     }
   }
 
@@ -572,7 +573,7 @@ async function createDepsOptimizer(
 
     // Await for the scan+optimize step running in the background
     // It normally should be over by the time crawling of user code ended
-    await depsOptimizer.scanning
+    await depsOptimizer.scanProcessing
 
     if (!isBuild && postScanOptimizationResult) {
       const result = await postScanOptimizationResult
