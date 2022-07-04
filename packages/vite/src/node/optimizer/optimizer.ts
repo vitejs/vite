@@ -123,10 +123,13 @@ async function createDepsOptimizer(
   let newDepsToLogHandle: NodeJS.Timeout | undefined
   const logNewlyDiscoveredDeps = () => {
     if (newDepsToLog.length) {
-      const depsString = depsLogString(newDepsToLog)
       config.logger.info(
-        colors.green(`✨ new dependencies optimized: ${depsString}`),
-        { timestamp: true }
+        colors.green(
+          `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`
+        ),
+        {
+          timestamp: true
+        }
       )
       newDepsToLog = []
     }

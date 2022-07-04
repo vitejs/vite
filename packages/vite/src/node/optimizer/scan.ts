@@ -128,10 +128,7 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-function globEntries(
-  pattern: string | string[],
-  config: ResolvedConfig
-): Promise<string[]> {
+function globEntries(pattern: string | string[], config: ResolvedConfig) {
   return glob(pattern, {
     cwd: config.root,
     ignore: [

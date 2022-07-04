@@ -370,7 +370,7 @@ export function toDiscoveredDependencies(
   config: ResolvedConfig,
   deps: Record<string, string>,
   ssr: boolean,
-  timestamp: string = ''
+  timestamp?: string
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
     getDepHash(config),

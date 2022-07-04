@@ -777,6 +777,7 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
     // for backwards compatibility in case user needs to fallback to the
     // legacy scheme. It may be removed in a future v3 minor.
     const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
+
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
       knownImports = [
