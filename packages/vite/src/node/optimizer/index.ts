@@ -25,7 +25,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { esbuildDepPlugin } from './esbuildDepPlugin'
+import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
   initDepsOptimizer,
@@ -282,7 +282,7 @@ export async function optimizeServerSsrDeps(
     noExternalFilter =
       noExternal === true
         ? (dep: unknown) => false
-        : createFilter(noExternal, exclude, {
+        : createFilter(undefined, exclude, {
             resolve: false
           })
   }
@@ -519,7 +519,8 @@ export async function runOptimizeDeps(
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const { plugins = [], ...esbuildOptions } = optimizeDeps?.esbuildOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
+    optimizeDeps?.esbuildOptions ?? {}
 
   for (const id in depsInfo) {
     const src = depsInfo[id].src!
@@ -552,6 +553,37 @@ export async function runOptimizeDeps(
   const platform =
     ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
 
+  const external = [...(optimizeDeps?.exclude ?? [])]
+
+  if (isBuild) {
+    let rollupOptionsExternal = config?.build?.rollupOptions?.external
+    if (rollupOptionsExternal) {
+      if (typeof rollupOptionsExternal === 'string') {
+        rollupOptionsExternal = [rollupOptionsExternal]
+      }
+      // TODO: decide whether to support RegExp and function options
+      // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
+      if (
+        !Array.isArray(rollupOptionsExternal) ||
+        rollupOptionsExternal.some((ext) => typeof ext !== 'string')
+      ) {
+        throw new Error(
+          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
+            `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+        )
+      }
+      external.push(...(rollupOptionsExternal as string[]))
+    }
+  }
+
+  const plugins = [...pluginsFromConfig]
+  if (external.length) {
+    plugins.push(esbuildCjsExternalPlugin(external))
+  }
+  plugins.push(
+    esbuildDepPlugin(flatIdDeps, flatIdToExports, external, config, ssr)
+  )
+
   const start = performance.now()
 
   const result = await build({
@@ -572,17 +604,14 @@ export async function runOptimizeDeps(
           }
         : undefined,
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
-    external: optimizeDeps?.exclude,
+    external,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
     ignoreAnnotations: !isBuild,
     metafile: true,
-    plugins: [
-      ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
-    ],
+    plugins,
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,

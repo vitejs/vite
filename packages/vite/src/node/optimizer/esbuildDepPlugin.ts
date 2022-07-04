@@ -44,10 +44,11 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
+  external: string[],
   config: ResolvedConfig,
   ssr: boolean
 ): Plugin {
-  const { extensions, exclude } = getDepOptimizationConfig(config, ssr)
+  const { extensions } = getDepOptimizationConfig(config, ssr)
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -164,7 +165,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(exclude, id)) {
+          if (moduleListContains(external, id)) {
             return {
               path: id,
               external: true
@@ -299,6 +300,33 @@ module.exports = Object.create(new Proxy({}, {
           loader: 'default'
         }))
       }
+    }
+  }
+}
+
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
     }
   }
 }
