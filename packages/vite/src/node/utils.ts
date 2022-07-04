@@ -18,6 +18,7 @@ import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import type { Plugin } from './plugin'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -961,11 +962,30 @@ function mergeConfigRecursively(
       merged[key] = true
       continue
     }
+    // newConfig priority vite.config.js plugins and duplicate removal
+    if (
+      key === 'plugins' &&
+      (Array.isArray(existing) || Array.isArray(value))
+    ) {
+      const values = arraify(value ?? [])
+      const existings = arraify(existing ?? [])
+      merged[key] = [...values, ...existings]
+      if (values.length !== 0 && existings.length !== 0) {
+        const pluginKeyMap = new Map()
+        merged[key] = merged[key].filter(
+          (plugin: Plugin) =>
+            !pluginKeyMap.has(plugin.name) &&
+            pluginKeyMap.set(plugin.name, true)
+        )
+      }
+      continue
+    }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
       merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
       continue
     }
+
     if (isObject(existing) && isObject(value)) {
       merged[key] = mergeConfigRecursively(
         existing,

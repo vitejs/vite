@@ -160,6 +160,21 @@ describe('mergeConfig', () => {
 
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
   })
+  test('merge array has same plugin name', () => {
+    const baseConfig = {
+      plugins: [{ name: 'string1' }]
+    }
+
+    const newConfig = {
+      plugins: [{ name: 'string1' }, { name: 'string2' }]
+    }
+
+    const mergedConfig = {
+      plugins: [{ name: 'string2' }, { name: 'string1' }]
+    }
+
+    expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
+  })
 
   test('handles ssr.noExternal', () => {
     const baseConfig = {
