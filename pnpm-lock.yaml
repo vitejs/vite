@@ -227,7 +227,7 @@ importers:
       cac: ^6.7.12
       chokidar: ^3.5.3
       connect: ^3.7.0
-      connect-history-api-fallback: ^1.6.0
+      connect-history-api-fallback: ^2.0.0
       convert-source-map: ^1.8.0
       cors: ^2.8.5
       cross-spawn: ^7.0.3
@@ -294,7 +294,7 @@ importers:
       cac: 6.7.12
       chokidar: 3.5.3
       connect: 3.7.0
-      connect-history-api-fallback: 1.6.0
+      connect-history-api-fallback: 2.0.0
       convert-source-map: 1.8.0
       cors: 2.8.5
       cross-spawn: 7.0.3
@@ -3520,8 +3520,8 @@ packages:
   /concat-map/0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  /connect-history-api-fallback/1.6.0:
-    resolution: {integrity: sha512-e54B99q/OUoH64zYYRf3HBP5z24G38h5D3qXu23JGRoigpX5Ss4r9ZnDk3g0Z8uQC2x2lPaJ+UlWBc1ZWBWdLg==}
+  /connect-history-api-fallback/2.0.0:
+    resolution: {integrity: sha512-U73+6lQFmfiNPrYbXqr6kZ1i1wiRqXnp2nhMsINseWXO8lDau0LGEffJ8kQi4EjLZympVgRdvqjAgiZ1tgzDDA==}
     engines: {node: '>=0.8'}
     dev: true
 
