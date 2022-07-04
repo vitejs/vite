@@ -65,7 +65,10 @@ export type { RenderBuiltAssetUrl } from './build'
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
-  ssrBuild: boolean
+  /**
+   * @experimental
+   */
+  ssrBuild?: boolean
 }
 
 /**
