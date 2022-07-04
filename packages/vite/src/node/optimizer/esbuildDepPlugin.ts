@@ -2,6 +2,7 @@ import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
+import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig } from '..'
 import {
   flattenId,
@@ -46,11 +47,11 @@ export function esbuildDepPlugin(
   config: ResolvedConfig,
   ssr: boolean
 ): Plugin {
+  const { extensions, exclude } = getDepOptimizationConfig(config, ssr)
+
   // remove optimizable extensions from `externalTypes` list
-  const allExternalTypes = config.optimizeDeps.extensions
-    ? externalTypes.filter(
-        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
-      )
+  const allExternalTypes = extensions
+    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
   // default resolver which prefers ESM
@@ -163,7 +164,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+          if (moduleListContains(exclude, id)) {
             return {
               path: id,
               external: true

@@ -47,7 +47,7 @@ import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -331,7 +331,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions | undefined
+    ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -557,11 +557,11 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  let ssr = resolveSSROptions(config.ssr)
-  if (config.legacy?.buildSsrCjsExternalHeuristics) {
-    if (ssr) ssr.format = 'cjs'
-    else ssr = { target: 'node', format: 'cjs' }
-  }
+  const ssr = resolveSSROptions(
+    config.ssr,
+    config.legacy?.buildSsrCjsExternalHeuristics,
+    config.resolve?.preserveSymlinks
+  )
 
   const middlewareMode = config?.server?.middlewareMode
 
@@ -664,6 +664,12 @@ export async function resolveConfig(
       resolved.optimizeDeps.disabled = 'build'
     } else if (optimizerDisabled === 'dev') {
       resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
+    const ssrOptimizerDisabled = resolved.ssr.optimizeDeps.disabled
+    if (!ssrOptimizerDisabled) {
+      resolved.ssr.optimizeDeps.disabled = 'build'
+    } else if (ssrOptimizerDisabled === 'dev') {
+      resolved.ssr.optimizeDeps.disabled = true // Also disabled during build
     }
   }
 
@@ -1001,13 +1007,22 @@ async function loadConfigFromBundledFile(
   return raw.__esModule ? raw.default : raw
 }
 
-export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
-  const { command, optimizeDeps } = config
-  const { disabled } = optimizeDeps
+export function getDepOptimizationConfig(
+  config: ResolvedConfig,
+  ssr: boolean
+): DepOptimizationConfig {
+  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
+}
+export function isDepsOptimizerEnabled(
+  config: ResolvedConfig,
+  ssr: boolean
+): boolean {
+  const { command } = config
+  const { disabled } = getDepOptimizationConfig(config, ssr)
   return !(
     disabled === true ||
     (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && optimizeDeps.disabled === 'dev')
+    (command === 'serve' && disabled === 'dev')
   )
 }
 
@@ -1037,6 +1052,8 @@ function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
     }
   }
 }
+
+// TODO: optimizeDeps
 
 // Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
 function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {

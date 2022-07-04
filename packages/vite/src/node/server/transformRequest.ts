@@ -145,7 +145,7 @@ async function doTransform(
 
   const result = loadAndTransform(id, url, server, options, timestamp)
 
-  getDepsOptimizer(config, { ssr })?.delayDepsOptimizerUntil(id, () => result)
+  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
 
   return result
 }

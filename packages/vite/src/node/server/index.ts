@@ -329,7 +329,7 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (isDepsOptimizerEnabled(config)) {
+      if (isDepsOptimizerEnabled(config, true)) {
         await initDevSsrDepsOptimizer(config, server)
       }
       await updateCjsSsrExternals(server)
@@ -539,7 +539,8 @@ export async function createServer(
     }
     initingServer = (async function () {
       await container.buildStart({})
-      if (isDepsOptimizerEnabled(config)) {
+      if (isDepsOptimizerEnabled(config, false)) {
+        // non-ssr
         await initDepsOptimizer(config, server)
       }
       initingServer = undefined
@@ -776,7 +777,7 @@ async function updateCjsSsrExternals(server: ViteDevServer) {
     // This is part of the v2 externalization heuristics and it is kept
     // for backwards compatibility in case user needs to fallback to the
     // legacy scheme. It may be removed in a future v3 minor.
-    const depsOptimizer = getDepsOptimizer(server.config, { ssr: false })
+    const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
 
     if (depsOptimizer) {
       await depsOptimizer.scanProcessing
