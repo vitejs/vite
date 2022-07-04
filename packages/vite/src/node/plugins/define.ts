@@ -11,6 +11,19 @@ const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isBuildLib = isBuild && config.build.lib
+  let isTargetNode: boolean | undefined
+
+  if (
+    Array.isArray(config.build.target) &&
+    config.build.target.find((e) => e.startsWith('node'))
+  ) {
+    isTargetNode = true
+  } else if (
+    typeof config.build.target === 'string' &&
+    config.build.target.startsWith('node')
+  ) {
+    isTargetNode = true
+  }
 
   // ignore replace process.env in lib build
   const processEnv: Record<string, string> = {}
@@ -58,7 +71,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   function generatePattern(
     ssr: boolean
   ): [Record<string, string | undefined>, RegExp | null] {
-    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
+    const replaceProcessEnv =
+      !(ssr || isTargetNode) || config.ssr?.target === 'webworker'
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
