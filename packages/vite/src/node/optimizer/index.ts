@@ -63,7 +63,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-
   delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
   registerWorkersSource: (id: string) => void
   resetRegisteredIds: () => void
@@ -232,10 +231,14 @@ export async function optimizeDeps(
   if (cachedMetadata) {
     return cachedMetadata
   }
-  const depsInfo = await discoverProjectDependencies(config)
+  const deps = await discoverProjectDependencies(config)
 
-  const depsString = depsLogString(Object.keys(depsInfo))
+  const depsString = depsLogString(Object.keys(deps))
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
+
+  await addManuallyIncludedOptimizeDeps(deps, config)
+
+  const depsInfo = toDiscoveredDependencies(config, deps, !!config.build.ssr)
 
   const result = await runOptimizeDeps(config, depsInfo)
 
@@ -365,9 +368,8 @@ export function loadCachedDepOptimizationMetadata(
  * find deps to pre-bundle and include user hard-coded dependencies
  */
 export async function discoverProjectDependencies(
-  config: ResolvedConfig,
-  timestamp?: string
-): Promise<Record<string, OptimizedDepInfo>> {
+  config: ResolvedConfig
+): Promise<Record<string, string>> {
   const { deps, missing } = await scanImports(config)
 
   const missingIds = Object.keys(missing)
@@ -384,24 +386,7 @@ export async function discoverProjectDependencies(
     )
   }
 
-  return initialProjectDependencies(config, timestamp, deps)
-}
-
-/**
- * Create the initial discovered deps list. At build time we only
- * have the manually included deps. During dev, a scan phase is
- * performed and knownDeps is the list of discovered deps
- */
-export async function initialProjectDependencies(
-  config: ResolvedConfig,
-  timestamp?: string,
-  knownDeps?: Record<string, string>
-): Promise<Record<string, OptimizedDepInfo>> {
-  const deps: Record<string, string> = knownDeps ?? {}
-
-  await addManuallyIncludedOptimizeDeps(deps, config)
-
-  return toDiscoveredDependencies(config, deps, !!config.build.ssr, timestamp)
+  return deps
 }
 
 export function toDiscoveredDependencies(
@@ -431,7 +416,7 @@ export function toDiscoveredDependencies(
 
 export function depsLogString(qualifiedIds: string[]): string {
   if (isDebugEnabled) {
-    return colors.yellow(qualifiedIds.join(`\n  `))
+    return colors.yellow(qualifiedIds.join(`, `))
   } else {
     const total = qualifiedIds.length
     const maxListed = 5
@@ -656,7 +641,7 @@ export async function findKnownImports(
   return Object.keys(deps)
 }
 
-async function addManuallyIncludedOptimizeDeps(
+export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
   extra: string[] = [],

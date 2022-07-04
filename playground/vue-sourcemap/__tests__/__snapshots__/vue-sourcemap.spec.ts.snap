@@ -1,6 +1,6 @@
 // Vitest Snapshot v1
 
-exports[`serve:vue-sourcemap > css 1`] = `
+exports[`serve:vue-sourcemap > css > serve-css 1`] = `
 {
   "mappings": ";AAQA;EACE,UAAU;AACZ",
   "sources": [
@@ -47,7 +47,7 @@ exports[`serve:vue-sourcemap > css 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > css module 1`] = `
+exports[`serve:vue-sourcemap > css module > serve-css-module 1`] = `
 {
   "mappings": ";AAcA;EACE,UAAU;AACZ",
   "sources": [
@@ -94,7 +94,7 @@ exports[`serve:vue-sourcemap > css module 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > css scoped 1`] = `
+exports[`serve:vue-sourcemap > css scoped > serve-css-scoped 1`] = `
 {
   "mappings": ";AAoBA;EACE,UAAU;AACZ",
   "sources": [
@@ -141,7 +141,7 @@ exports[`serve:vue-sourcemap > css scoped 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > js 1`] = `
+exports[`serve:vue-sourcemap > js > serve-js 1`] = `
 {
   "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
   "sources": [
@@ -165,7 +165,7 @@ console.log('setup')
 }
 `;
 
-exports[`serve:vue-sourcemap > less with additionalData 1`] = `
+exports[`serve:vue-sourcemap > less with additionalData > serve-less-with-additionalData 1`] = `
 {
   "mappings": "AAKA;EACE",
   "sources": [
@@ -187,7 +187,7 @@ exports[`serve:vue-sourcemap > less with additionalData 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > no script 1`] = `
+exports[`serve:vue-sourcemap > no script > serve-no-script 1`] = `
 {
   "mappings": ";;;wBACE,oBAAwB,WAArB,aAAiB",
   "sourceRoot": "",
@@ -204,7 +204,7 @@ exports[`serve:vue-sourcemap > no script 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > no template 1`] = `
+exports[`serve:vue-sourcemap > no template > serve-no-template 1`] = `
 {
   "mappings": "AACA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;",
   "sources": [
@@ -224,7 +224,7 @@ console.log('setup')
 }
 `;
 
-exports[`serve:vue-sourcemap > sass 1`] = `
+exports[`serve:vue-sourcemap > sass > serve-sass 1`] = `
 {
   "mappings": "AAKA;EACE",
   "sources": [
@@ -245,7 +245,7 @@ exports[`serve:vue-sourcemap > sass 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > sass with import 1`] = `
+exports[`serve:vue-sourcemap > sass with import > serve-sass-with-import 1`] = `
 {
   "mappings": "AAAA;EACE;;ACOF;EACE",
   "sources": [
@@ -273,7 +273,7 @@ exports[`serve:vue-sourcemap > sass with import 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > src imported 1`] = `
+exports[`serve:vue-sourcemap > src imported > serve-src-imported 1`] = `
 {
   "mappings": "AAAA;EACE,UAAU;AACZ",
   "sources": [
@@ -289,7 +289,7 @@ exports[`serve:vue-sourcemap > src imported 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > src imported sass 1`] = `
+exports[`serve:vue-sourcemap > src imported sass > serve-src-imported-sass 1`] = `
 {
   "mappings": "AAAA;EACE;;ACCF;EACE",
   "sources": [
@@ -310,7 +310,7 @@ exports[`serve:vue-sourcemap > src imported sass 1`] = `
 }
 `;
 
-exports[`serve:vue-sourcemap > ts 1`] = `
+exports[`serve:vue-sourcemap > ts > serve-ts 1`] = `
 {
   "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
   "sources": [

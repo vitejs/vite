@@ -21,7 +21,10 @@
     "ts-transpiled-exports": "file:./ts-transpiled-exports",
     "no-external-cjs": "file:./no-external-cjs",
     "import-builtin-cjs": "file:./import-builtin-cjs",
-    "no-external-css": "file:./no-external-css"
+    "no-external-css": "file:./no-external-css",
+    "non-optimized-with-nested-external": "file:./non-optimized-with-nested-external",
+    "optimized-with-nested-external": "file:./optimized-with-nested-external",
+    "optimized-cjs-with-nested-external": "file:./optimized-with-nested-external"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

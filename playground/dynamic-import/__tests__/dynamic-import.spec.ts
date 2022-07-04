@@ -24,18 +24,18 @@ test('should load data URL of `data:`', async () => {
   await untilUpdated(() => page.textContent('.view'), 'data', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd', async () => {
   await page.click('.mxd')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
 
 // in this case, it is not possible to detect the correct module
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd2', async () => {
   await page.click('.mxd2')
   await untilUpdated(() => page.textContent('.view'), 'false', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })

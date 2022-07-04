@@ -41,7 +41,7 @@ export async function resolvePlugins(
   return [
     isWatch ? ensureWatchPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    isBuild ? null : preAliasPlugin(config),
+    preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
     config.build.polyfillModulePreload

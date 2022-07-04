@@ -36,6 +36,10 @@ export const viteBinPath = path.posix.join(
 let server: ViteDevServer | http.Server
 
 /**
+ * Vite Dev Server when testing serve
+ */
+export let viteServer: ViteDevServer
+/**
  * Root of the Vite fixture
  */
 export let rootDir: string
@@ -146,6 +150,7 @@ beforeAll(async (s) => {
         }
         if (serve) {
           server = await serve()
+          viteServer = mod.viteServer
           return
         }
       } else {
@@ -212,7 +217,7 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const testConfig = mergeConfig(options, config || {})
     viteConfig = testConfig
-    server = await (await createServer(testConfig)).listen()
+    viteServer = server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
     const devBase = server.config.base
     viteTestUrl = `http://localhost:${server.config.server.port}${

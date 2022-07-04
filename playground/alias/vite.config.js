@@ -16,6 +16,11 @@ module.exports = {
       { find: '/@', replacement: path.resolve(__dirname, 'dir') },
       // aliasing an optimized dep
       { find: 'vue', replacement: 'vue/dist/vue.esm-bundler.js' },
+      // aliasing an optimized dep to absolute URL
+      {
+        find: '@vue/shared',
+        replacement: require.resolve('@vue/shared/dist/shared.cjs.prod.js')
+      },
       // aliasing one unoptimized dep to an optimized dep
       { find: 'foo', replacement: 'vue' },
       {
