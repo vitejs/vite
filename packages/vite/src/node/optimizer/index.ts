@@ -6,8 +6,10 @@ import colors from 'picocolors'
 import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
+import { createFilter } from '@rollup/pluginutils'
 import type { ResolvedConfig } from '../config'
 import {
+  arraify,
   createDebugger,
   emptyDir,
   flattenId,
@@ -258,9 +260,30 @@ export async function optimizeServerSsrDeps(
     return cachedMetadata
   }
 
+  let alsoInclude: string[] | undefined
+  let noExternalFilter: ((id: unknown) => boolean) | undefined
+
+  const noExternal = config.ssr?.noExternal
+  if (noExternal) {
+    alsoInclude = arraify(noExternal).filter(
+      (ne) => typeof ne === 'string'
+    ) as string[]
+    noExternalFilter =
+      noExternal === true
+        ? (dep: unknown) => false
+        : createFilter(noExternal, config.optimizeDeps?.exclude, {
+            resolve: false
+          })
+  }
+
   const deps: Record<string, string> = {}
 
-  await addManuallyIncludedOptimizeDeps(deps, config)
+  await addManuallyIncludedOptimizeDeps(
+    deps,
+    config,
+    alsoInclude,
+    noExternalFilter
+  )
 
   const depsInfo = toDiscoveredDependencies(config, deps, true)
 

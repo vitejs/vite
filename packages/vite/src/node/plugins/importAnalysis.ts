@@ -270,6 +270,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (moduleListContains(config.optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
+
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
@@ -531,6 +532,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           if (!isDynamicImport) {
+            // for pre-transforming
             staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir) && !ssr) {
