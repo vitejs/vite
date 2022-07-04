@@ -83,7 +83,7 @@
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
-    "connect-history-api-fallback": "^1.6.0",
+    "connect-history-api-fallback": "^2.0.0",
     "convert-source-map": "^1.8.0",
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
