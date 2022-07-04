@@ -311,8 +311,6 @@ export async function createServer(
 
   let exitProcess: () => void
 
-  let creatingDevSsrOptimizer: Promise<void> | null = null
-
   const server: ViteDevServer = {
     config,
     middlewares,
@@ -331,12 +329,8 @@ export async function createServer(
     },
     transformIndexHtml: null!, // to be immediately set
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      if (!getDepsOptimizer(config, { ssr: true })) {
-        if (!creatingDevSsrOptimizer) {
-          creatingDevSsrOptimizer = initDevSsrDepsOptimizer(config)
-        }
-        await creatingDevSsrOptimizer
-        creatingDevSsrOptimizer = null
+      if (isDepsOptimizerEnabled(config)) {
+        await initDevSsrDepsOptimizer(config, server)
       }
       await updateCjsSsrExternals(server)
       return ssrLoadModule(
@@ -534,32 +528,40 @@ export async function createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
-  const initOptimizer = async () => {
-    if (isDepsOptimizerEnabled(config)) {
-      await initDepsOptimizer(config, server)
+  let initingServer: Promise<void> | undefined
+  let serverInited = false
+  const initServer = async () => {
+    if (serverInited) {
+      return
     }
+    if (initingServer) {
+      return initingServer
+    }
+    initingServer = (async function () {
+      await container.buildStart({})
+      if (isDepsOptimizerEnabled(config)) {
+        await initDepsOptimizer(config, server)
+      }
+      initingServer = undefined
+      serverInited = true
+    })()
+    return initingServer
   }
 
   if (!middlewareMode && httpServer) {
-    let isOptimized = false
     // overwrite listen to init optimizer before server start
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
-      if (!isOptimized) {
-        try {
-          await container.buildStart({})
-          await initOptimizer()
-          isOptimized = true
-        } catch (e) {
-          httpServer.emit('error', e)
-          return
-        }
+      try {
+        await initServer()
+      } catch (e) {
+        httpServer.emit('error', e)
+        return
       }
       return listen(port, ...args)
     }) as any
   } else {
-    await container.buildStart({})
-    await initOptimizer()
+    await initServer()
   }
 
   return server

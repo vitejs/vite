@@ -691,9 +691,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
-      // TODO: should we also crawl dynamic imports? or the experience is good enough to allow
-      // users to chose their tradeoffs by explicitily setting optimizeDeps.entries for the
-      // most common dynamic imports
+      // These requests will also be registered in transformRequest to be awaited
+      // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
           url = unwrapId(removeImportQuery(url)).replace(
