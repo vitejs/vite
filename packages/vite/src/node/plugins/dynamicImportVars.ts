@@ -177,7 +177,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         let result
         try {
           result = await transformDynamicImport(
-            source.slice(start, end),
+            source.slice(start, end).trim(), // Note: trim as es-module-lexer doesn't capture backticks
             importer,
             resolve
           )
