@@ -192,6 +192,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
+        id.startsWith('\0') ||
         SPECIAL_QUERY_RE.test(id)
       ) {
         return
@@ -340,6 +341,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
+        id.startsWith('\0') ||
         SPECIAL_QUERY_RE.test(id)
       ) {
         return

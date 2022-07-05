@@ -42,7 +42,7 @@ export function jsonPlugin(
 
     transform(json, id) {
       if (!jsonExtRE.test(id)) return null
-      if (SPECIAL_QUERY_RE.test(id)) return null
+      if (id.startsWith('\0') || SPECIAL_QUERY_RE.test(id)) return null
 
       json = stripBomTag(json)
 
