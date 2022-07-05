@@ -201,14 +201,15 @@ $ npm install -g wrangler
 # Login to Cloudflare account from CLI
 $ wrangler login
 
-# Run your build command 
+# Run your build command
 $ npm run build
 
 # Create new deployment
 $ npx wrangler pages publish dist
 
 ```
-After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project. 
+
+After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
 
 ## Google Firebase
 
