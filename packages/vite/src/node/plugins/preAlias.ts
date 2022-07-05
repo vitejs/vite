@@ -1,6 +1,7 @@
+import path from 'node:path'
 import type { Alias, AliasOptions, ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { bareImportRE } from '../utils'
+import { bareImportRE, isOptimizable, moduleListContains } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
@@ -21,7 +22,39 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
         !options?.scan
       ) {
         if (findPatterns.find((pattern) => matches(pattern, id))) {
-          return await tryOptimizedResolve(depsOptimizer, id, importer)
+          const optimizedId = await tryOptimizedResolve(
+            depsOptimizer,
+            id,
+            importer
+          )
+          if (optimizedId) {
+            return optimizedId // aliased dep already optimized
+          }
+          const resolved = await this.resolve(id, importer, {
+            skipSelf: true,
+            ...options
+          })
+          if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
+            const optimizeDeps = depsOptimizer.options
+            const resolvedId = resolved.id
+            const isVirtual = resolvedId === id || resolvedId.includes('\0')
+            if (
+              !isVirtual &&
+              !moduleListContains(optimizeDeps.exclude, id) &&
+              path.isAbsolute(resolvedId) &&
+              (resolvedId.includes('node_modules') ||
+                optimizeDeps.include?.includes(id)) &&
+              isOptimizable(resolvedId, optimizeDeps)
+            ) {
+              // aliased dep has not yet been optimized
+              const optimizedInfo = depsOptimizer!.registerMissingImport(
+                id,
+                resolvedId
+              )
+              return { id: depsOptimizer!.getOptimizedDepId(optimizedInfo) }
+            }
+          }
+          return resolved
         }
       }
     }

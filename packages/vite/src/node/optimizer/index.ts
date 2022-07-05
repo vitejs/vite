@@ -54,11 +54,7 @@ export type ExportsData = {
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
-  registerMissingImport: (
-    id: string,
-    resolved: string,
-    ssr?: boolean
-  ) => OptimizedDepInfo
+  registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
 
   isOptimizedDepFile: (id: string) => boolean
