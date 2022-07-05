@@ -1,6 +1,13 @@
+import fs from 'node:fs'
 import path from 'node:path'
-import type { Alias, AliasOptions, ResolvedConfig } from '..'
+import type {
+  Alias,
+  AliasOptions,
+  DepOptimizationOptions,
+  ResolvedConfig
+} from '..'
 import type { Plugin } from '../plugin'
+import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import { bareImportRE, isOptimizable, moduleListContains } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
@@ -10,6 +17,8 @@ import { tryOptimizedResolve } from './resolve'
  */
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
+  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
+  const isBuild = config.command === 'build'
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
@@ -30,6 +39,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           if (optimizedId) {
             return optimizedId // aliased dep already optimized
           }
+
           const resolved = await this.resolve(id, importer, {
             skipSelf: true,
             ...options
@@ -40,11 +50,14 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             const isVirtual = resolvedId === id || resolvedId.includes('\0')
             if (
               !isVirtual &&
+              fs.existsSync(resolvedId) &&
               !moduleListContains(optimizeDeps.exclude, id) &&
               path.isAbsolute(resolvedId) &&
               (resolvedId.includes('node_modules') ||
                 optimizeDeps.include?.includes(id)) &&
-              isOptimizable(resolvedId, optimizeDeps)
+              isOptimizable(resolvedId, optimizeDeps) &&
+              !(isBuild && ssr && isConfiguredAsExternal(id)) &&
+              (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized
               const optimizedInfo = depsOptimizer!.registerMissingImport(
@@ -59,6 +72,22 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
       }
     }
   }
+}
+
+function optimizeAliasReplacementForSSR(
+  id: string,
+  optimizeDeps: DepOptimizationOptions
+) {
+  if (optimizeDeps.include?.includes(id)) {
+    return true
+  }
+  // In the regular resolution, the default for non-external modules is to
+  // be optimized if they are CJS. Here, we don't have the package id but
+  // only the replacement file path. We could find the package.json from
+  // the id and respect the same default in the future.
+  // Default to not optimize an aliased replacement for now, forcing the
+  // user to explicitly add it to the ssr.optimizeDeps.include list.
+  return false
 }
 
 // In sync with rollup plugin alias logic

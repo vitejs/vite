@@ -277,7 +277,7 @@ export async function optimizeServerSsrDeps(
     ) as string[]
     noExternalFilter =
       noExternal === true
-        ? (dep: unknown) => false
+        ? (dep: unknown) => true
         : createFilter(undefined, exclude, {
             resolve: false
           })
@@ -701,16 +701,22 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
-    const resolve = config.createResolver({ asSrc: false, scan: true })
+    const resolve = config.createResolver({
+      asSrc: false,
+      scan: true,
+      ssrOptimizeCheck: ssr
+    })
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
-        const entry = await resolve(id)
+        const entry = await resolve(id, undefined, undefined, ssr)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
-            deps[normalizedId] = entry
+            if (!entry.endsWith('?__vite_skip_optimization')) {
+              deps[normalizedId] = entry
+            }
           } else {
             unableToOptimize(entry, 'Cannot optimize dependency')
           }

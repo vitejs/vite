@@ -184,7 +184,7 @@ async function createDepsOptimizer(
     }
 
     if (!isBuild) {
-      // The scanner is dev only
+      // Important, the scanner is dev only
       runScanner()
     }
   }
