@@ -79,8 +79,6 @@ export const core = [
     avatar: 'https://github.com/bluwy.png',
     name: 'Bjorn Lu',
     title: 'Frontend Developer',
-    org: 'Opslock',
-    orgLink: 'https://opslock.com',
     desc: 'Svelte and Vite team member. Something something opinions.',
     links: [
       { icon: 'github', link: 'https://github.com/bluwy' },
