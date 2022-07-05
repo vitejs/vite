@@ -511,6 +511,15 @@ importers:
   playground/html:
     specifiers: {}
 
+  playground/import-assertion:
+    specifiers:
+      '@vitejs/import-assertion-dep': file:./import-assertion-dep
+    dependencies:
+      '@vitejs/import-assertion-dep': file:playground/import-assertion/import-assertion-dep
+
+  playground/import-assertion/import-assertion-dep:
+    specifiers: {}
+
   playground/js-sourcemap:
     specifiers: {}
 
@@ -8806,6 +8815,12 @@ packages:
     version: 0.0.0
     dependencies:
       vue: 3.2.37
+    dev: false
+
+  file:playground/import-assertion/import-assertion-dep:
+    resolution: {directory: playground/import-assertion/import-assertion-dep, type: directory}
+    name: '@vitejs/import-assertion-dep'
+    version: 0.0.0
     dev: false
 
   file:playground/json/json-module:

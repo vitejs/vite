@@ -387,10 +387,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
+          se: expEnd,
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          n: specifier
+          n: specifier,
+          a: assertIndex
         } = imports[index]
 
         const rawUrl = source.slice(start, end)
@@ -426,6 +428,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const isDynamicImport = dynamicIndex > -1
+
+        // strip import assertions as we can process them ourselves
+        if (!isDynamicImport && assertIndex > -1) {
+          str().remove(end + 1, expEnd)
+        }
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
