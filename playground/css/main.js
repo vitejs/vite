@@ -104,3 +104,6 @@ import aliasModule from '#alias-module'
 document
   .querySelector('.aliased-module')
   .classList.add(aliasModule.aliasedModule)
+
+import special from 'special.css'
+text('.null-byte', special)

@@ -25,6 +25,9 @@
 <h2>Has BOM Tag</h2>
 <pre class="bom"></pre>
 
+<p>Null byte</p>
+<pre class="null-byte"></pre>
+
 <script type="module">
   import json, { hello } from './test.json'
   import deepJson, { name } from 'vue/package.json'
@@ -57,6 +60,9 @@
 
   import hasBomJson from './json-bom/has-bom.json'
   text('.bom', JSON.stringify(hasBomJson))
+
+  import special from 'special.json'
+  text('.null-byte', special)
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text

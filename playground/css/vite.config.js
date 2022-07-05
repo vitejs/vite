@@ -4,6 +4,7 @@ const path = require('path')
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  plugins: [specialCssPlugin()],
   build: {
     cssTarget: 'chrome61'
   },
@@ -50,6 +51,26 @@ module.exports = {
           './options/relative-import.styl',
           path.join(__dirname, 'options/absolute-import.styl')
         ]
+      }
+    }
+  }
+}
+
+/**
+ * @returns {import('vite').Plugin}
+ */
+function specialCssPlugin() {
+  return {
+    name: 'special-css-plugin',
+    enforce: 'pre',
+    resolveId(id) {
+      if (id === 'special.css') {
+        return '\0special.css'
+      }
+    },
+    load(id) {
+      if (id === '\0special.css') {
+        return `export default 'i_am_special'`
       }
     }
   }

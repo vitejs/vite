@@ -443,3 +443,7 @@ test.skip('aliased css has content', async () => {
   expect(await page.textContent('.aliased-content')).toMatch('.aliased')
   expect(await getColor('.aliased-module')).toBe('blue')
 })
+
+test('css plugin skip when id starts with null byte', async () => {
+  expect(await page.textContent('.null-byte')).toBe('i_am_special')
+})

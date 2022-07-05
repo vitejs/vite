@@ -45,3 +45,7 @@ test('?raw', async () => {
     readFileSync(require.resolve('../test.json'), 'utf-8')
   )
 })
+
+test('json plugin skip when id starts with null byte', async () => {
+  expect(await page.textContent('.null-byte')).toBe('i_am_special')
+})
