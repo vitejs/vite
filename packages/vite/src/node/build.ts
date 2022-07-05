@@ -398,7 +398,7 @@ async function doBuild(
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
-  if (isDepsOptimizerEnabled(config)) {
+  if (isDepsOptimizerEnabled(config, ssr)) {
     await initDepsOptimizer(config)
   }
 
@@ -739,7 +739,7 @@ async function cjsSsrResolveExternal(
   } catch (e) {}
   if (!knownImports) {
     // no dev deps optimization data, do a fresh scan
-    knownImports = await findKnownImports(config)
+    knownImports = await findKnownImports(config, false) // needs to use non-ssr
   }
   const ssrExternals = cjsSsrResolveExternals(config, knownImports)
 

@@ -1,9 +1,13 @@
+import type { DepOptimizationConfig } from '../optimizer'
+
 export type SSRTarget = 'node' | 'webworker'
 export type SSRFormat = 'esm' | 'cjs'
 
+export type SsrDepOptimizationOptions = DepOptimizationConfig
+
 export interface SSROptions {
-  external?: string[]
   noExternal?: string | RegExp | (string | RegExp)[] | true
+  external?: string[]
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
@@ -18,22 +22,50 @@ export interface SSROptions {
    * @experimental
    */
   format?: SSRFormat
+  /**
+   * Control over which dependencies are optimized during SSR and esbuild options
+   * During build:
+   *   no external CJS dependencies are optimized by default
+   * During dev:
+   *   explicit no external CJS dependencies are optimized by default
+   * @experimental
+   */
+  optimizeDeps?: SsrDepOptimizationOptions
 }
 
 export interface ResolvedSSROptions extends SSROptions {
   target: SSRTarget
   format: SSRFormat
+  optimizeDeps: SsrDepOptimizationOptions
 }
 
 export function resolveSSROptions(
-  ssr: SSROptions | undefined
-): ResolvedSSROptions | undefined {
-  if (ssr === undefined) {
-    return undefined
+  ssr: SSROptions | undefined,
+  buildSsrCjsExternalHeuristics?: boolean,
+  preserveSymlinks?: boolean
+): ResolvedSSROptions {
+  ssr ??= {}
+  const optimizeDeps = ssr.optimizeDeps ?? {}
+  let format: SSRFormat = 'esm'
+  let target: SSRTarget = 'node'
+  if (buildSsrCjsExternalHeuristics) {
+    if (ssr) {
+      format = 'cjs'
+    } else {
+      target = 'node'
+      format = 'cjs'
+    }
   }
   return {
-    format: 'esm',
-    target: 'node',
-    ...ssr
+    format,
+    target,
+    ...ssr,
+    optimizeDeps: {
+      ...optimizeDeps,
+      esbuildOptions: {
+        preserveSymlinks,
+        ...optimizeDeps.esbuildOptions
+      }
+    }
   }
 }

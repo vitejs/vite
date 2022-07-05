@@ -270,7 +270,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        getDepsOptimizer(config, { ssr })?.registerWorkersSource(id)
+        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url

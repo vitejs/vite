@@ -44,6 +44,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
+  // Only used to scan non-ssr code
+
   const start = performance.now()
 
   let entries: string[] = []

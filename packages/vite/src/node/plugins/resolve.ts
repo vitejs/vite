@@ -83,7 +83,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Resolve using esbuild deps optimization
-  getDepsOptimizer?: (type: { ssr?: boolean }) => DepsOptimizer | undefined
+  getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
@@ -106,7 +106,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       // We need to delay depsOptimizer until here instead of passing it as an option
       // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = resolveOptions.getDepsOptimizer?.({ ssr })
+      const depsOptimizer = resolveOptions.getDepsOptimizer?.(ssr)
 
       if (id.startsWith(browserExternalId)) {
         return id

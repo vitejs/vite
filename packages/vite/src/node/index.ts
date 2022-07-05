@@ -35,6 +35,7 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
+  DepOptimizationConfig,
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
@@ -43,6 +44,7 @@ export type {
 } from './optimizer'
 export type {
   ResolvedSSROptions,
+  SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
   SSRTarget

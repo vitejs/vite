@@ -28,6 +28,7 @@ import {
   VALID_ID_PREFIX,
   wildcardHosts
 } from './constants'
+import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from '.'
 
 /**
@@ -94,11 +95,12 @@ export function moduleListContains(
 
 export function isOptimizable(
   id: string,
-  optimizeDepsConfig: ResolvedConfig['optimizeDeps']
+  optimizeDeps: DepOptimizationConfig
 ): boolean {
+  const { extensions } = optimizeDeps
   return (
     OPTIMIZABLE_ENTRY_RE.test(id) ||
-    (optimizeDepsConfig.extensions?.some((ext) => id.endsWith(ext)) ?? false)
+    (extensions?.some((ext) => id.endsWith(ext)) ?? false)
   )
 }
 

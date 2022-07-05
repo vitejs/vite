@@ -7,6 +7,7 @@ import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import { createFilter } from '@rollup/pluginutils'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import {
   arraify,
@@ -24,7 +25,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET } from '../constants'
-import { esbuildDepPlugin } from './esbuildDepPlugin'
+import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
   initDepsOptimizer,
@@ -71,18 +72,7 @@ export interface DepsOptimizer {
   options: DepOptimizationOptions
 }
 
-export interface DepOptimizationOptions {
-  /**
-   * By default, Vite will crawl your `index.html` to detect dependencies that
-   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
-   * will crawl those entry points instead.
-   *
-   * If neither of these fit your needs, you can specify custom entries using
-   * this option - the value should be a fast-glob pattern or array of patterns
-   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
-   * vite project root. This will overwrite default entries inference.
-   */
-  entries?: string | string[]
+export interface DepOptimizationConfig {
   /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
@@ -141,6 +131,20 @@ export interface DepOptimizationOptions {
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
+}
+
+export type DepOptimizationOptions = DepOptimizationConfig & {
+  /**
+   * By default, Vite will crawl your `index.html` to detect dependencies that
+   * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
+   * will crawl those entry points instead.
+   *
+   * If neither of these fit your needs, you can specify custom entries using
+   * this option - the value should be a fast-glob pattern or array of patterns
+   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
+   * vite project root. This will overwrite default entries inference.
+   */
+  entries?: string | string[]
   /**
    * Force dep pre-optimization regardless of whether deps have changed.
    * @experimental
@@ -223,22 +227,26 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
+  const ssr = !!config.build.ssr
+
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
+    ssr,
     force,
     asCommand
   )
   if (cachedMetadata) {
     return cachedMetadata
   }
+
   const deps = await discoverProjectDependencies(config)
 
   const depsString = depsLogString(Object.keys(deps))
   log(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
-  await addManuallyIncludedOptimizeDeps(deps, config)
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
-  const depsInfo = toDiscoveredDependencies(config, deps, !!config.build.ssr)
+  const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
   const result = await runOptimizeDeps(config, depsInfo)
 
@@ -250,11 +258,12 @@ export async function optimizeDeps(
 export async function optimizeServerSsrDeps(
   config: ResolvedConfig
 ): Promise<DepOptimizationMetadata> {
+  const ssr = true
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
+    ssr,
     config.optimizeDeps.force,
-    false,
-    true // ssr
+    false
   )
   if (cachedMetadata) {
     return cachedMetadata
@@ -262,6 +271,8 @@ export async function optimizeServerSsrDeps(
 
   let alsoInclude: string[] | undefined
   let noExternalFilter: ((id: unknown) => boolean) | undefined
+
+  const { exclude } = getDepOptimizationConfig(config, ssr)
 
   const noExternal = config.ssr?.noExternal
   if (noExternal) {
@@ -271,7 +282,7 @@ export async function optimizeServerSsrDeps(
     noExternalFilter =
       noExternal === true
         ? (dep: unknown) => false
-        : createFilter(noExternal, config.optimizeDeps?.exclude, {
+        : createFilter(undefined, exclude, {
             resolve: false
           })
   }
@@ -281,6 +292,7 @@ export async function optimizeServerSsrDeps(
   await addManuallyIncludedOptimizeDeps(
     deps,
     config,
+    ssr,
     alsoInclude,
     noExternalFilter
   )
@@ -296,9 +308,10 @@ export async function optimizeServerSsrDeps(
 
 export function initDepsOptimizerMetadata(
   config: ResolvedConfig,
+  ssr: boolean,
   timestamp?: string
 ): DepOptimizationMetadata {
-  const hash = getDepHash(config)
+  const hash = getDepHash(config, ssr)
   return {
     hash,
     browserHash: getOptimizedBrowserHash(hash, {}, timestamp),
@@ -325,9 +338,9 @@ export function addOptimizedDepInfo(
  */
 export function loadCachedDepOptimizationMetadata(
   config: ResolvedConfig,
+  ssr: boolean,
   force = config.optimizeDeps.force,
-  asCommand = false,
-  ssr = !!config.build.ssr
+  asCommand = false
 ): DepOptimizationMetadata | undefined {
   const log = asCommand ? config.logger.info : debug
 
@@ -349,7 +362,7 @@ export function loadCachedDepOptimizationMetadata(
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (cachedMetadata && cachedMetadata.hash === getDepHash(config)) {
+    if (cachedMetadata && cachedMetadata.hash === getDepHash(config, ssr)) {
       log('Hash is consistent. Skipping. Use --force to override.')
       // Nothing to commit or cancel as we are using the cache, we only
       // need to resolve the processing promise so requests can move on
@@ -396,7 +409,7 @@ export function toDiscoveredDependencies(
   timestamp?: string
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getDepHash(config),
+    getDepHash(config, ssr),
     deps,
     timestamp
   )
@@ -408,7 +421,7 @@ export function toDiscoveredDependencies(
       file: getOptimizedDepPath(id, config, ssr),
       src,
       browserHash: browserHash,
-      exportsData: extractExportsData(src, config)
+      exportsData: extractExportsData(src, config, ssr)
     }
   }
   return discovered
@@ -463,7 +476,7 @@ export async function runOptimizeDeps(
     JSON.stringify({ type: 'module' })
   )
 
-  const metadata = initDepsOptimizerMetadata(config)
+  const metadata = initDepsOptimizerMetadata(config, ssr)
 
   metadata.browserHash = getOptimizedBrowserHash(
     metadata.hash,
@@ -504,13 +517,15 @@ export async function runOptimizeDeps(
   const idToExports: Record<string, ExportsData> = {}
   const flatIdToExports: Record<string, ExportsData> = {}
 
-  const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+
+  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
+    optimizeDeps?.esbuildOptions ?? {}
 
   for (const id in depsInfo) {
     const src = depsInfo[id].src!
     const exportsData = await (depsInfo[id].exportsData ??
-      extractExportsData(src, config))
+      extractExportsData(src, config, ssr))
     if (exportsData.jsxLoader) {
       // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
       // This is useful for packages such as Gatsby.
@@ -538,6 +553,37 @@ export async function runOptimizeDeps(
   const platform =
     ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
 
+  const external = [...(optimizeDeps?.exclude ?? [])]
+
+  if (isBuild) {
+    let rollupOptionsExternal = config?.build?.rollupOptions?.external
+    if (rollupOptionsExternal) {
+      if (typeof rollupOptionsExternal === 'string') {
+        rollupOptionsExternal = [rollupOptionsExternal]
+      }
+      // TODO: decide whether to support RegExp and function options
+      // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
+      if (
+        !Array.isArray(rollupOptionsExternal) ||
+        rollupOptionsExternal.some((ext) => typeof ext !== 'string')
+      ) {
+        throw new Error(
+          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
+            `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+        )
+      }
+      external.push(...(rollupOptionsExternal as string[]))
+    }
+  }
+
+  const plugins = [...pluginsFromConfig]
+  if (external.length) {
+    plugins.push(esbuildCjsExternalPlugin(external))
+  }
+  plugins.push(
+    esbuildDepPlugin(flatIdDeps, flatIdToExports, external, config, ssr)
+  )
+
   const start = performance.now()
 
   const result = await build({
@@ -558,17 +604,14 @@ export async function runOptimizeDeps(
           }
         : undefined,
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
-    external: config.optimizeDeps?.exclude,
+    external,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
     ignoreAnnotations: !isBuild,
     metafile: true,
-    plugins: [
-      ...plugins,
-      esbuildDepPlugin(flatIdDeps, flatIdToExports, config, ssr)
-    ],
+    plugins,
     ...esbuildOptions,
     supported: {
       'dynamic-import': true,
@@ -599,7 +642,7 @@ export async function runOptimizeDeps(
       browserHash: metadata.browserHash,
       // After bundling we have more information and can warn the user about legacy packages
       // that require manual configuration
-      needsInterop: needsInterop(config, id, idToExports[id], output)
+      needsInterop: needsInterop(config, ssr, id, idToExports[id], output)
     })
   }
 
@@ -634,21 +677,34 @@ export async function runOptimizeDeps(
 }
 
 export async function findKnownImports(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr: boolean
 ): Promise<string[]> {
   const deps = (await scanImports(config)).deps
-  await addManuallyIncludedOptimizeDeps(deps, config)
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
   return Object.keys(deps)
 }
 
 export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
+  ssr: boolean,
   extra: string[] = [],
   filter?: (id: string) => boolean
 ): Promise<void> {
-  const optimizeDepsInclude = config.optimizeDeps?.include ?? []
+  const { logger } = config
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length || extra.length) {
+    const unableToOptimize = (id: string, msg: string) => {
+      if (optimizeDepsInclude.includes(id)) {
+        logger.warn(
+          `${msg}: ${colors.cyan(id)}, present in '${
+            ssr ? 'ssr.' : ''
+          }optimizeDeps.include'`
+        )
+      }
+    }
     const resolve = config.createResolver({ asSrc: false, scan: true })
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
@@ -657,17 +713,13 @@ export async function addManuallyIncludedOptimizeDeps(
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
         const entry = await resolve(id)
         if (entry) {
-          if (isOptimizable(entry, config.optimizeDeps)) {
+          if (isOptimizable(entry, optimizeDeps)) {
             deps[normalizedId] = entry
-          } else if (optimizeDepsInclude.includes(id)) {
-            config.logger.warn(
-              `Cannot optimize included dependency: ${colors.cyan(id)}`
-            )
+          } else {
+            unableToOptimize(entry, 'Cannot optimize dependency')
           }
         } else {
-          throw new Error(
-            `Failed to resolve force included dependency: ${colors.cyan(id)}`
-          )
+          unableToOptimize(id, 'Failed to resolve dependency')
         }
       }
     }
@@ -865,12 +917,15 @@ function esbuildOutputFromId(
 
 export async function extractExportsData(
   filePath: string,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr: boolean
 ): Promise<ExportsData> {
   await init
 
-  const esbuildOptions = config.optimizeDeps?.esbuildOptions ?? {}
-  if (config.optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+
+  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
+  if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
     // so only the entry file is being transformed.
@@ -933,12 +988,13 @@ const KNOWN_INTEROP_IDS = new Set(['moment'])
 
 function needsInterop(
   config: ResolvedConfig,
+  ssr: boolean,
   id: string,
   exportsData: ExportsData,
   output?: { exports: string[] }
 ): boolean {
   if (
-    config.optimizeDeps?.needsInterop?.includes(id) ||
+    getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id) ||
     KNOWN_INTEROP_IDS.has(id)
   ) {
     return true
@@ -972,10 +1028,11 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
 
-export function getDepHash(config: ResolvedConfig): string {
+export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   let content = lookupFile(config.root, lockfileFormats) || ''
   // also take config into account
   // only a subset of config options that can affect dep optimization
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
   content += JSON.stringify(
     {
       mode: process.env.NODE_ENV || config.mode,
@@ -985,13 +1042,11 @@ export function getDepHash(config: ResolvedConfig): string {
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: config.optimizeDeps?.include,
-        exclude: config.optimizeDeps?.exclude,
+        include: optimizeDeps?.include,
+        exclude: optimizeDeps?.exclude,
         esbuildOptions: {
-          ...config.optimizeDeps?.esbuildOptions,
-          plugins: config.optimizeDeps?.esbuildOptions?.plugins?.map(
-            (p) => p.name
-          )
+          ...optimizeDeps?.esbuildOptions,
+          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name)
         }
       }
     },
@@ -1044,13 +1099,15 @@ function findOptimizedDepInfoInRecord(
 export async function optimizedDepNeedsInterop(
   metadata: DepOptimizationMetadata,
   file: string,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  ssr: boolean
 ): Promise<boolean | undefined> {
   const depInfo = optimizedDepInfoFromFile(metadata, file)
   if (depInfo?.src && depInfo.needsInterop === undefined) {
-    depInfo.exportsData ??= extractExportsData(depInfo.src, config)
+    depInfo.exportsData ??= extractExportsData(depInfo.src, config, ssr)
     depInfo.needsInterop = needsInterop(
       config,
+      ssr,
       depInfo.id,
       await depInfo.exportsData
     )

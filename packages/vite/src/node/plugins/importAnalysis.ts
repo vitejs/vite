@@ -9,6 +9,7 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
+import { getDepOptimizationConfig } from '..'
 import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
@@ -214,7 +215,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
-      const depsOptimizer = getDepsOptimizer(config, { ssr })
+      const depsOptimizer = getDepsOptimizer(config, ssr)
 
       const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
@@ -267,7 +268,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+
+        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
 
@@ -485,7 +488,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const needsInterop = await optimizedDepNeedsInterop(
                 depsOptimizer.metadata,
                 file,
-                config
+                config,
+                ssr
               )
 
               if (needsInterop === undefined) {

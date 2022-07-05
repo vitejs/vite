@@ -33,7 +33,6 @@ export async function resolvePlugins(
 ): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
   const isWatch = isBuild && !!config.build.watch
-
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
@@ -47,7 +46,8 @@ export async function resolvePlugins(
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    ...(isDepsOptimizerEnabled(config)
+    ...(isDepsOptimizerEnabled(config, false) ||
+    isDepsOptimizerEnabled(config, true)
       ? [
           isBuild
             ? optimizedDepsBuildPlugin(config)
@@ -62,8 +62,7 @@ export async function resolvePlugins(
       packageCache: config.packageCache,
       ssrConfig: config.ssr,
       asSrc: true,
-      getDepsOptimizer: (type: { ssr?: boolean }) =>
-        getDepsOptimizer(config, type),
+      getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
       shouldExternalize:
         isBuild && config.build.ssr && config.ssr?.format !== 'cjs'
           ? (id) => shouldExternalizeForSSR(id, config)

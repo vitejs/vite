@@ -18,7 +18,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:optimized-deps',
 
     async resolveId(id, source, { ssr }) {
-      if (getDepsOptimizer(config, { ssr })?.isOptimizedDepFile(id)) {
+      if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -29,7 +29,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     async load(id, options) {
       const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, { ssr })
+      const depsOptimizer = getDepsOptimizer(config, ssr)
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
@@ -85,29 +85,26 @@ export function optimizedDepsBuildPlugin(config: ResolvedConfig): Plugin {
       if (!config.isWorker) {
         // This will be run for the current active optimizer, during build
         // it will be the SSR optimizer if config.build.ssr is defined
-        getDepsOptimizer(config, { ssr: undefined })?.resetRegisteredIds()
+        getDepsOptimizer(config)?.resetRegisteredIds()
       }
     },
 
     async resolveId(id, importer, { ssr }) {
-      if (getDepsOptimizer(config, { ssr })?.isOptimizedDepFile(id)) {
+      if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
         return id
       }
     },
 
     transform(_code, id, options) {
       const ssr = options?.ssr === true
-      getDepsOptimizer(config, { ssr })?.delayDepsOptimizerUntil(
-        id,
-        async () => {
-          await this.load({ id })
-        }
-      )
+      getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, async () => {
+        await this.load({ id })
+      })
     },
 
     async load(id, options) {
       const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, { ssr })
+      const depsOptimizer = getDepsOptimizer(config, ssr)
       if (!depsOptimizer?.isOptimizedDepFile(id)) {
         return
       }
