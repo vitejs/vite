@@ -1,3 +1,72 @@
+## 3.0.0-beta.6 (2022-07-04)
+
+* chore: add package.json to export map (#8838) ([cbefc63](https://github.com/vitejs/vite/commit/cbefc63)), closes [#8838](https://github.com/vitejs/vite/issues/8838)
+* chore: update deprecation warnings for improved migration DX (#8866) ([4eb2348](https://github.com/vitejs/vite/commit/4eb2348)), closes [#8866](https://github.com/vitejs/vite/issues/8866)
+* chore: use tsconfig for client build (#8815) ([10936cd](https://github.com/vitejs/vite/commit/10936cd)), closes [#8815](https://github.com/vitejs/vite/issues/8815)
+* chore(deps): update all non-major dependencies (#8905) ([4a24c17](https://github.com/vitejs/vite/commit/4a24c17)), closes [#8905](https://github.com/vitejs/vite/issues/8905)
+* chore(deps): update dependency connect-history-api-fallback to v2 (#8906) ([129c7c6](https://github.com/vitejs/vite/commit/129c7c6)), closes [#8906](https://github.com/vitejs/vite/issues/8906)
+* refactor: remove ?used inject in glob plugin (#8900) ([f9b5c14](https://github.com/vitejs/vite/commit/f9b5c14)), closes [#8900](https://github.com/vitejs/vite/issues/8900)
+* fix: avoid optimizing non-optimizable external deps (#8860) ([cd8d63b](https://github.com/vitejs/vite/commit/cd8d63b)), closes [#8860](https://github.com/vitejs/vite/issues/8860)
+* fix: ensure define overrides import.meta in build (#8892) ([7d810a9](https://github.com/vitejs/vite/commit/7d810a9)), closes [#8892](https://github.com/vitejs/vite/issues/8892)
+* fix: ignore Playwright test results directory (#8778) ([314c09c](https://github.com/vitejs/vite/commit/314c09c)), closes [#8778](https://github.com/vitejs/vite/issues/8778)
+* fix: node platform for ssr dev regression (#8840) ([7257fd8](https://github.com/vitejs/vite/commit/7257fd8)), closes [#8840](https://github.com/vitejs/vite/issues/8840)
+* fix: optimize deps on dev SSR, builtin imports in node (#8854) ([d49856c](https://github.com/vitejs/vite/commit/d49856c)), closes [#8854](https://github.com/vitejs/vite/issues/8854)
+* fix: prevent crash when the pad amount is negative (#8747) ([3af6a1b](https://github.com/vitejs/vite/commit/3af6a1b)), closes [#8747](https://github.com/vitejs/vite/issues/8747)
+* fix: reverts #8278 ([a0da2f0](https://github.com/vitejs/vite/commit/a0da2f0)), closes [#8278](https://github.com/vitejs/vite/issues/8278)
+* fix: server.force deprecation and force on restart API (#8842) ([c94f564](https://github.com/vitejs/vite/commit/c94f564)), closes [#8842](https://github.com/vitejs/vite/issues/8842)
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+* fix(hmr): set isSelfAccepting unless it is delayed (#8898) ([ae34565](https://github.com/vitejs/vite/commit/ae34565)), closes [#8898](https://github.com/vitejs/vite/issues/8898)
+* fix(worker): dont throw on `import.meta.url` in ssr (#8846) ([ef749ed](https://github.com/vitejs/vite/commit/ef749ed)), closes [#8846](https://github.com/vitejs/vite/issues/8846)
+* feat: accept AcceptedPlugin type for postcss plugin (#8830) ([6886078](https://github.com/vitejs/vite/commit/6886078)), closes [#8830](https://github.com/vitejs/vite/issues/8830)
+* feat: ssrBuild flag in config env (#8863) ([b6d655a](https://github.com/vitejs/vite/commit/b6d655a)), closes [#8863](https://github.com/vitejs/vite/issues/8863)
+
+
+
+## 3.0.0-beta.5 (2022-06-28)
+
+* fix: deps optimizer should wait on entries (#8822) ([2db1b5b](https://github.com/vitejs/vite/commit/2db1b5b)), closes [#8822](https://github.com/vitejs/vite/issues/8822)
+* fix: incorrectly resolving `knownJsSrcRE` files from root (fixes #4161) (#8808) ([e1e426e](https://github.com/vitejs/vite/commit/e1e426e)), closes [#4161](https://github.com/vitejs/vite/issues/4161) [#8808](https://github.com/vitejs/vite/issues/8808)
+* feat: experimental.renderBuiltUrl (revised build base options) (#8762) ([895a7d6](https://github.com/vitejs/vite/commit/895a7d6)), closes [#8762](https://github.com/vitejs/vite/issues/8762)
+* feat: respect esbuild minify config for css (#8811) ([d90409e](https://github.com/vitejs/vite/commit/d90409e)), closes [#8811](https://github.com/vitejs/vite/issues/8811)
+* feat: use esbuild supported feature (#8665) ([2061d41](https://github.com/vitejs/vite/commit/2061d41)), closes [#8665](https://github.com/vitejs/vite/issues/8665)
+
+
+
+## 3.0.0-beta.4 (2022-06-27)
+
+* fix: /@fs/ dir traversal with escaped chars (fixes #8498) (#8804) ([6851009](https://github.com/vitejs/vite/commit/6851009)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8804](https://github.com/vitejs/vite/issues/8804)
+* fix: preserve extension of css assets in the manifest (#8768) ([9508549](https://github.com/vitejs/vite/commit/9508549)), closes [#8768](https://github.com/vitejs/vite/issues/8768)
+
+
+
+## 3.0.0-beta.3 (2022-06-26)
+
+* fix: always remove temp config (#8782) ([2c2a86b](https://github.com/vitejs/vite/commit/2c2a86b)), closes [#8782](https://github.com/vitejs/vite/issues/8782)
+* fix: ensure deps optimizer first run, fixes #8750 (#8775) ([3f689a4](https://github.com/vitejs/vite/commit/3f689a4)), closes [#8750](https://github.com/vitejs/vite/issues/8750) [#8775](https://github.com/vitejs/vite/issues/8775)
+* fix: remove buildTimeImportMetaUrl (#8785) ([cd32095](https://github.com/vitejs/vite/commit/cd32095)), closes [#8785](https://github.com/vitejs/vite/issues/8785)
+* fix: skip inline html (#8789) ([4a6408b](https://github.com/vitejs/vite/commit/4a6408b)), closes [#8789](https://github.com/vitejs/vite/issues/8789)
+* fix(optimizer): only run require-import conversion if require'd (#8795) ([7ae0d3e](https://github.com/vitejs/vite/commit/7ae0d3e)), closes [#8795](https://github.com/vitejs/vite/issues/8795)
+* perf: avoid sourcemap chains during dev (#8796) ([1566f61](https://github.com/vitejs/vite/commit/1566f61)), closes [#8796](https://github.com/vitejs/vite/issues/8796)
+* chore: use `tsx` directly instead of indirect `esno` (#8773) ([f018f13](https://github.com/vitejs/vite/commit/f018f13)), closes [#8773](https://github.com/vitejs/vite/issues/8773)
+* feat: respect esbuild minify config (#8754) ([8b77695](https://github.com/vitejs/vite/commit/8b77695)), closes [#8754](https://github.com/vitejs/vite/issues/8754)
+* chore!: update rollup commonjs plugin to v22  (#8743) ([d4dcdd1](https://github.com/vitejs/vite/commit/d4dcdd1)), closes [#8743](https://github.com/vitejs/vite/issues/8743)
+
+
+
+## 3.0.0-beta.2 (2022-06-24)
+
+* feat: enable tree-shaking for lib es (#8737) ([5dc0f72](https://github.com/vitejs/vite/commit/5dc0f72)), closes [#8737](https://github.com/vitejs/vite/issues/8737)
+* feat: supports cts and mts config (#8729) ([c2b09db](https://github.com/vitejs/vite/commit/c2b09db)), closes [#8729](https://github.com/vitejs/vite/issues/8729)
+* fix: avoid type mismatch with Rollup (fix #7843) (#8701) ([87e51f7](https://github.com/vitejs/vite/commit/87e51f7)), closes [#7843](https://github.com/vitejs/vite/issues/7843) [#8701](https://github.com/vitejs/vite/issues/8701)
+* fix: optimizeDeps.entries transformRequest url (fix #8719) (#8748) ([9208c3b](https://github.com/vitejs/vite/commit/9208c3b)), closes [#8719](https://github.com/vitejs/vite/issues/8719) [#8748](https://github.com/vitejs/vite/issues/8748)
+* fix(hmr): __HMR_PORT__ should not be `'undefined'` (#8761) ([3271266](https://github.com/vitejs/vite/commit/3271266)), closes [#8761](https://github.com/vitejs/vite/issues/8761)
+* perf(lib): improve helper inject regex (#8741) ([19fc7e5](https://github.com/vitejs/vite/commit/19fc7e5)), closes [#8741](https://github.com/vitejs/vite/issues/8741)
+* refactor: remove unnecessary condition (#8742) ([2ae269e](https://github.com/vitejs/vite/commit/2ae269e)), closes [#8742](https://github.com/vitejs/vite/issues/8742)
+* docs: fix alpha changelog links (#8736) ([31348b5](https://github.com/vitejs/vite/commit/31348b5)), closes [#8736](https://github.com/vitejs/vite/issues/8736)
+* chore: v3 beta release notes (#8718) ([7e899d0](https://github.com/vitejs/vite/commit/7e899d0)), closes [#8718](https://github.com/vitejs/vite/issues/8718)
+
+
+
 ## 3.0.0-beta.1 (2022-06-22)
 
 ### Main Changes
@@ -166,81 +235,81 @@
 
 #### [3.0.0-beta.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-beta.0) (2022-06-21)
 
-See [3.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/3.0.0-beta.0/packages/vite/CHANGELOG.md)
+See [3.0.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-beta.0/packages/vite/CHANGELOG.md)
 
 #### [3.0.0-alpha.14](https://github.com/vitejs/vite/compare/v3.0.0-alpha.13...v3.0.0-alpha.14) (2022-06-20)
 
-See [3.0.0-alpha.14 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.14/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.14 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.14/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.13](https://github.com/vitejs/vite/compare/v3.0.0-alpha.12...v3.0.0-alpha.13) (2022-06-19)
 
-See [3.0.0-alpha.13 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.13/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.13 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.13/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.12](https://github.com/vitejs/vite/compare/v3.0.0-alpha.11...v3.0.0-alpha.12) (2022-06-16)
 
-See [3.0.0-alpha.12 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.12/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.12 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.12/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.11](https://github.com/vitejs/vite/compare/v3.0.0-alpha.10...v3.0.0-alpha.11) (2022-06-14)
 
-See [3.0.0-alpha.11 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.11/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.11 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.11/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.10](https://github.com/vitejs/vite/compare/v3.0.0-alpha.9...v3.0.0-alpha.10) (2022-06-10)
 
-See [3.0.0-alpha.10 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.10/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.10 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.10/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.9](https://github.com/vitejs/vite/compare/v3.0.0-alpha.8...v3.0.0-alpha.9) (2022-06-01)
 
-See [3.0.0-alpha.9 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.9/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.9 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.9/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.8](https://github.com/vitejs/vite/compare/v3.0.0-alpha.7...v3.0.0-alpha.8) (2022-05-31)
 
-See [3.0.0-alpha.8 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.8/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.8 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.8/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.7](https://github.com/vitejs/vite/compare/v3.0.0-alpha.6...v3.0.0-alpha.7) (2022-05-27)
 
-See [3.0.0-alpha.7 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.7/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.7 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.7/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.6](https://github.com/vitejs/vite/compare/v3.0.0-alpha.5...v3.0.0-alpha.6) (2022-05-27)
 
-See [3.0.0-alpha.6 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.6/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.6 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.6/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.5](https://github.com/vitejs/vite/compare/v3.0.0-alpha.4...v3.0.0-alpha.5) (2022-05-26)
 
-See [3.0.0-alpha.5 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.5/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.5 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.5/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.4](https://github.com/vitejs/vite/compare/v3.0.0-alpha.3...v3.0.0-alpha.4) (2022-05-25)
 
-See [3.0.0-alpha.4 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.4/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.4 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.4/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.3](https://github.com/vitejs/vite/compare/v3.0.0-alpha.2...v3.0.0-alpha.3) (2022-05-25)
 
-See [3.0.0-alpha.3 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.3/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.3 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.3/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.2](https://github.com/vitejs/vite/compare/v3.0.0-alpha.1...v3.0.0-alpha.2) (2022-05-23)
 
-See [3.0.0-alpha.2 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.2/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.2 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.2/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.1](https://github.com/vitejs/vite/compare/v3.0.0-alpha.0...v3.0.0-alpha.1) (2022-05-18)
 
-See [3.0.0-alpha.1 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.1/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.1 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.1/packages/vite/CHANGELOG.md)
 
 
 #### [3.0.0-alpha.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-alpha.0) (2022-05-13)
 
-See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/3.0.0-alpha.0/packages/vite/CHANGELOG.md)
+See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.0/packages/vite/CHANGELOG.md)
 
 
 

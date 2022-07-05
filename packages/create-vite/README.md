@@ -38,7 +38,7 @@ npm create vite@latest my-vue-app -- --template vue
 yarn create vite my-vue-app --template vue
 
 # pnpm
-pnpm create vite my-vue-app -- --template vue
+pnpm create vite my-vue-app --template vue
 ```
 
 Currently supported template presets include:

@@ -42,7 +42,7 @@ export default defineConfig({
 - **Type:** `boolean`
 - **Default:** [`server.strictPort`](./server-options#server-strictport)
 
-Set to `true` to exit if port is already in use, instead of automatically try the next available port.
+Set to `true` to exit if port is already in use, instead of automatically trying the next available port.
 
 ## preview.https
 

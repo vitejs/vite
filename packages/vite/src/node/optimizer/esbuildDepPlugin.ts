@@ -2,9 +2,11 @@ import path from 'node:path'
 import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
+import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig } from '..'
 import {
   flattenId,
+  isBuiltin,
   isExternalUrl,
   isRunningWithYarnPnp,
   moduleListContains,
@@ -42,13 +44,15 @@ const externalTypes = [
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   exportsData: Record<string, ExportsData>,
-  config: ResolvedConfig
+  external: string[],
+  config: ResolvedConfig,
+  ssr: boolean
 ): Plugin {
+  const { extensions } = getDepOptimizationConfig(config, ssr)
+
   // remove optimizable extensions from `externalTypes` list
-  const allExternalTypes = config.optimizeDeps.extensions
-    ? externalTypes.filter(
-        (type) => !config.optimizeDeps.extensions?.includes('.' + type)
-      )
+  const allExternalTypes = extensions
+    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
     : externalTypes
 
   // default resolver which prefers ESM
@@ -77,7 +81,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined)
+    return resolver(id, _importer, undefined, ssr)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -86,6 +90,9 @@ export function esbuildDepPlugin(
         path: id,
         namespace: 'browser-external'
       }
+    }
+    if (ssr && isBuiltin(resolved)) {
+      return
     }
     if (isExternalUrl(resolved)) {
       return {
@@ -118,10 +125,16 @@ export function esbuildDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            // here it is not set to `external: true` to convert `require` to `import`
+            if (kind === 'require-call') {
+              // here it is not set to `external: true` to convert `require` to `import`
+              return {
+                path: resolved,
+                namespace: externalWithConversionNamespace
+              }
+            }
             return {
               path: resolved,
-              namespace: externalWithConversionNamespace
+              external: true
             }
           }
         }
@@ -152,7 +165,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(config.optimizeDeps?.exclude, id)) {
+          if (moduleListContains(external, id)) {
             return {
               path: id,
               external: true
@@ -287,6 +300,33 @@ module.exports = Object.create(new Proxy({}, {
           loader: 'default'
         }))
       }
+    }
+  }
+}
+
+// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
+// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
+export function esbuildCjsExternalPlugin(externals: string[]): Plugin {
+  return {
+    name: 'cjs-external',
+    setup(build) {
+      const escape = (text: string) =>
+        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
+      const filter = new RegExp(externals.map(escape).join('|'))
+
+      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
+        path: args.path,
+        external: true
+      }))
+
+      build.onResolve({ filter }, (args) => ({
+        path: args.path,
+        namespace: 'external'
+      }))
+
+      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
+        contents: `export * from ${JSON.stringify(args.path)}`
+      }))
     }
   }
 }

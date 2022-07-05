@@ -23,10 +23,8 @@ export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
-  ResolvedBuildOptions,
-  BuildAdvancedBaseConfig,
-  ResolvedBuildAdvancedBaseConfig,
-  BuildAdvancedBaseOptions
+  RenderBuiltAssetUrl,
+  ResolvedBuildOptions
 } from './build'
 export type {
   PreviewOptions,
@@ -37,6 +35,7 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
+  DepOptimizationConfig,
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
@@ -45,6 +44,7 @@ export type {
 } from './optimizer'
 export type {
   ResolvedSSROptions,
+  SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
   SSRTarget

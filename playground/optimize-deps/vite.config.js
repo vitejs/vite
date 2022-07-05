@@ -16,7 +16,12 @@ module.exports = {
   },
 
   optimizeDeps: {
-    include: ['dep-linked-include', 'nested-exclude > nested-include'],
+    include: [
+      'dep-linked-include',
+      'nested-exclude > nested-include',
+      // will throw if optimized (should log warning instead)
+      'non-optimizable-include'
+    ],
     exclude: ['nested-exclude'],
     esbuildOptions: {
       plugins: [
@@ -72,7 +77,7 @@ module.exports = {
       apply: 'build',
       enforce: 'pre',
       load(id) {
-        if (id === '__vite-browser-external:fs') {
+        if (id === '__vite-browser-external') {
           return `export default {}; export function readFileSync() {}`
         }
       }

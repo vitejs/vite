@@ -10,6 +10,15 @@ import definePropertyExports from 'define-property-exports'
 import onlyObjectAssignedExports from 'only-object-assigned-exports'
 import requireAbsolute from 'require-absolute'
 import noExternalCjs from 'no-external-cjs'
+import importBuiltinCjs from 'import-builtin-cjs'
+
+// This import will set a 'Hello World!" message in the nested-external non-entry dependency
+import 'non-optimized-with-nested-external'
+
+// These two are optimized and get the message from nested-external, if the dependency is
+// not properly externalized and ends up bundled, the message will be undefined
+import optimizedWithNestedExternal from 'optimized-with-nested-external'
+import optimizedCjsWithNestedExternal from 'optimized-cjs-with-nested-external'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -48,6 +57,16 @@ export async function render(url, rootDir) {
 
   const noExternalCjsMessage = noExternalCjs.hello()
   html += `\n<p class="no-external-cjs-msg">message from no-external-cjs: ${noExternalCjsMessage}</p>`
+
+  const importBuiltinCjsMessage = importBuiltinCjs.hello()
+  html += `\n<p class="import-builtin-cjs-msg">message from import-builtin-cjs: ${importBuiltinCjsMessage}</p>`
+
+  const optimizedWithNestedExternalMessage = optimizedWithNestedExternal.hello()
+  html += `\n<p class="optimized-with-nested-external">message from optimized-with-nested-external: ${optimizedWithNestedExternalMessage}</p>`
+
+  const optimizedCjsWithNestedExternalMessage =
+    optimizedCjsWithNestedExternal.hello()
+  html += `\n<p class="optimized-cjs-with-nested-external">message from optimized-cjs-with-nested-external: ${optimizedCjsWithNestedExternalMessage}</p>`
 
   return html + '\n'
 }

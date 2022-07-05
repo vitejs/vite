@@ -7,16 +7,14 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
-  BuildAdvancedBaseConfig,
   BuildOptions,
-  ResolvedBuildAdvancedBaseConfig,
+  RenderBuiltAssetUrl,
   ResolvedBuildOptions
 } from './build'
-import { resolveBuildAdvancedBaseConfig, resolveBuildOptions } from './build'
+import { resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -29,6 +27,7 @@ import {
   dynamicImport,
   isExternalUrl,
   isObject,
+  isTS,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -37,12 +36,17 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from './constants'
+import {
+  CLIENT_ENTRY,
+  DEFAULT_ASSETS_RE,
+  DEFAULT_CONFIG_FILES,
+  ENV_ENTRY
+} from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -53,13 +57,18 @@ import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
-export type { BuildAdvancedBaseOptions, BuildAdvancedBaseConfig } from './build'
+export type { RenderBuiltAssetUrl } from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
+
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
+  /**
+   * @experimental
+   */
+  ssrBuild?: boolean
 }
 
 /**
@@ -256,11 +265,11 @@ export interface ExperimentalOptions {
    */
   importGlobRestoreExtension?: boolean
   /**
-   * Build advanced base options. Allow finegrain contol over assets and public files base
+   * Allow finegrain contol over assets and public files paths
    *
    * @experimental
    */
-  buildAdvancedBaseOptions?: BuildAdvancedBaseConfig
+  renderBuiltUrl?: RenderBuiltAssetUrl
   /**
    * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
    *
@@ -270,19 +279,7 @@ export interface ExperimentalOptions {
   hmrPartialAccept?: boolean
 }
 
-export type ResolvedExperimentalOptions = Required<ExperimentalOptions> & {
-  buildAdvancedBaseOptions: ResolvedBuildAdvancedBaseConfig
-}
-
 export interface LegacyOptions {
-  /**
-   * Revert vite dev to the v2.9 strategy. Enable esbuild based deps scanner.
-   *
-   * @experimental
-   * @deprecated
-   * @default false
-   */
-  devDepsScanner?: boolean
   /**
    * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
    *
@@ -336,7 +333,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions | undefined
+    ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -345,7 +342,7 @@ export type ResolvedConfig = Readonly<
     packageCache: PackageCache
     worker: ResolveWorkerOptions
     appType: AppType
-    experimental: ResolvedExperimentalOptions
+    experimental: ExperimentalOptions
   }
 >
 
@@ -374,7 +371,8 @@ export async function resolveConfig(
 
   const configEnv = {
     mode,
-    command
+    command,
+    ssrBuild: !!config.build?.ssr
   }
 
   let { configFile } = config
@@ -487,28 +485,12 @@ export async function resolveConfig(
 
   // During dev, we ignore relative base and fallback to '/'
   // For the SSR build, relative base isn't possible by means
-  // of import.meta.url. The user will be able to work out a setup
-  // using experimental.buildAdvancedBaseOptions
-  const base =
-    relativeBaseShortcut && (!isBuild || config.build?.ssr)
+  // of import.meta.url.
+  const resolvedBase = relativeBaseShortcut
+    ? !isBuild || config.build?.ssr
       ? '/'
-      : config.base ?? '/'
-  let resolvedBase = relativeBaseShortcut
-    ? base
-    : resolveBaseUrl(base, isBuild, logger, 'base')
-  if (
-    config.experimental?.buildAdvancedBaseOptions?.relative &&
-    config.base === undefined
-  ) {
-    resolvedBase = './'
-  }
-
-  const resolvedBuildAdvancedBaseOptions = resolveBuildAdvancedBaseConfig(
-    config.experimental?.buildAdvancedBaseOptions,
-    resolvedBase,
-    isBuild,
-    logger
-  )
+      : './'
+    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
 
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
@@ -577,16 +559,22 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  let ssr = resolveSSROptions(config.ssr)
-  if (config.legacy?.buildSsrCjsExternalHeuristics) {
-    if (ssr) ssr.format = 'cjs'
-    else ssr = { target: 'node', format: 'cjs' }
-  }
+  const ssr = resolveSSROptions(
+    config.ssr,
+    config.legacy?.buildSsrCjsExternalHeuristics,
+    config.resolve?.preserveSymlinks
+  )
 
   const middlewareMode = config?.server?.middlewareMode
 
-  config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
+
+  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
+    config.legacy = {
+      ...config.legacy,
+      buildRollupPluginCommonjs: true
+    }
+  }
 
   const BASE_URL = resolvedBase
 
@@ -637,22 +625,36 @@ export async function resolveConfig(
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
-      ...config.experimental,
-      buildAdvancedBaseOptions: resolvedBuildAdvancedBaseOptions
+      ...config.experimental
     }
   }
 
   if (middlewareMode === 'ssr') {
     logger.warn(
       colors.yellow(
-        `server.middlewareMode 'ssr' is now deprecated, use server.middlewareMode true and appType 'custom'`
+        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
+          config.appType === 'custom' ? '' : ` and appType to 'custom'`
+        } instead`
       )
     )
   }
   if (middlewareMode === 'html') {
     logger.warn(
       colors.yellow(
-        `server.middlewareMode 'html' is now deprecated, use server.middlewareMode true`
+        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`
+      )
+    )
+  }
+
+  if (
+    config.server?.force &&
+    !isBuild &&
+    config.optimizeDeps?.force === undefined
+  ) {
+    resolved.optimizeDeps.force = true
+    logger.warn(
+      colors.yellow(
+        `server.force is deprecated, use optimizeDeps.force instead`
       )
     )
   }
@@ -663,6 +665,12 @@ export async function resolveConfig(
       resolved.optimizeDeps.disabled = 'build'
     } else if (optimizerDisabled === 'dev') {
       resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
+    const ssrOptimizerDisabled = resolved.ssr.optimizeDeps.disabled
+    if (!ssrOptimizerDisabled) {
+      resolved.ssr.optimizeDeps.disabled = 'build'
+    } else if (ssrOptimizerDisabled === 'dev') {
+      resolved.ssr.optimizeDeps.disabled = true // Also disabled during build
     }
   }
 
@@ -746,14 +754,13 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
 export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
-  logger: Logger,
-  optionName: string
+  logger: Logger
 ): string {
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
         colors.bold(
-          `(!) invalid "${optionName}" option: ${base}. The value can only be an absolute ` +
+          `(!) invalid "base" option: ${base}. The value can only be an absolute ` +
             `URL, ./, or an empty string.`
         )
       )
@@ -773,7 +780,7 @@ export function resolveBaseUrl(
     if (!base.startsWith('/')) {
       logger.warn(
         colors.yellow(
-          colors.bold(`(!) "${optionName}" option should start with a slash.`)
+          colors.bold(`(!) "base" option should start with a slash.`)
         )
       )
       base = '/' + base
@@ -783,9 +790,7 @@ export function resolveBaseUrl(
   // ensure ending slash
   if (!base.endsWith('/')) {
     logger.warn(
-      colors.yellow(
-        colors.bold(`(!) "${optionName}" option should end with a slash.`)
-      )
+      colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
     )
     base += '/'
   }
@@ -825,62 +830,39 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let isTS = false
-  let isESM = false
   let dependencies: string[] = []
-
-  // check package.json for type: "module" and set `isMjs` to true
-  try {
-    const pkg = lookupFile(configRoot, ['package.json'])
-    if (pkg && JSON.parse(pkg).type === 'module') {
-      isESM = true
-    }
-  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    isTS = configFile.endsWith('.ts')
-
-    if (configFile.endsWith('.mjs')) {
-      isESM = true
-    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
+    for (const filename of DEFAULT_CONFIG_FILES) {
+      const filePath = path.resolve(configRoot, filename)
+      if (!fs.existsSync(filePath)) continue
 
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
-        isESM = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
-        isTS = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
-      if (fs.existsSync(cjsConfigFile)) {
-        resolvedPath = cjsConfigFile
-        isESM = false
-      }
+      resolvedPath = filePath
+      break
     }
   }
 
   if (!resolvedPath) {
     debug('no config file found.')
     return null
+  }
+
+  let isESM = false
+  if (/\.m[jt]s$/.test(resolvedPath)) {
+    isESM = true
+  } else if (/\.c[jt]s$/.test(resolvedPath)) {
+    isESM = false
+  } else {
+    // check package.json for type: "module" and set `isESM` to true
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+    } catch (e) {}
   }
 
   try {
@@ -890,15 +872,19 @@ export async function loadConfigFromFile(
       const fileUrl = pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
-      if (isTS) {
+
+      if (isTS(resolvedPath)) {
         // before we can register loaders without requiring users to run node
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
-          .default
-        fs.unlinkSync(resolvedPath + '.js')
+        fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
+        try {
+          userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
+            .default
+        } finally {
+          fs.unlinkSync(resolvedPath + '.mjs')
+        }
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
         // using Function to avoid this from being compiled away by TS/Rollup
@@ -972,7 +958,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         setup(build) {
-          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
               `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
@@ -982,7 +968,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              loader: isTS(args.path) ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })
@@ -1022,92 +1008,21 @@ async function loadConfigFromBundledFile(
   return raw.__esModule ? raw.default : raw
 }
 
-export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
-  const { command, optimizeDeps } = config
-  const { disabled } = optimizeDeps
+export function getDepOptimizationConfig(
+  config: ResolvedConfig,
+  ssr: boolean
+): DepOptimizationConfig {
+  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
+}
+export function isDepsOptimizerEnabled(
+  config: ResolvedConfig,
+  ssr: boolean
+): boolean {
+  const { command } = config
+  const { disabled } = getDepOptimizationConfig(config, ssr)
   return !(
     disabled === true ||
     (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && optimizeDeps.disabled === 'dev')
+    (command === 'serve' && disabled === 'dev')
   )
-}
-
-// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
-// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
-function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
-  return {
-    name: 'cjs-external',
-    setup(build) {
-      const escape = (text: string) =>
-        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
-      const filter = new RegExp(externals.map(escape).join('|'))
-
-      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
-        path: args.path,
-        external: true
-      }))
-
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external'
-      }))
-
-      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-        contents: `export * from ${JSON.stringify(args.path)}`
-      }))
-    }
-  }
-}
-
-// Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
-function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
-  // Only affects the build command
-  if (command !== 'build') {
-    return {}
-  }
-
-  // Skip if using Rollup CommonJS plugin
-  if (
-    config.legacy?.buildRollupPluginCommonjs ||
-    config.optimizeDeps?.disabled === 'build'
-  ) {
-    return {}
-  }
-
-  // Skip if no `external` configured
-  const external = config?.build?.rollupOptions?.external
-  if (!external) {
-    return {}
-  }
-
-  let normalizedExternal = external
-  if (typeof external === 'string') {
-    normalizedExternal = [external]
-  }
-
-  // TODO: decide whether to support RegExp and function options
-  // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
-  if (
-    !Array.isArray(normalizedExternal) ||
-    normalizedExternal.some((ext) => typeof ext !== 'string')
-  ) {
-    throw new Error(
-      `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
-        `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
-    )
-  }
-
-  const additionalConfig: UserConfig = {
-    optimizeDeps: {
-      exclude: normalizedExternal as string[],
-      esbuildOptions: {
-        plugins: [
-          // TODO: maybe it can be added globally/unconditionally?
-          esbuildCjsExternalPlugin(normalizedExternal as string[])
-        ]
-      }
-    }
-  }
-
-  return additionalConfig
 }
