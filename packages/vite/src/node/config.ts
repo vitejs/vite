@@ -7,7 +7,6 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { Plugin as ESBuildPlugin } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
 import type {
@@ -47,7 +46,7 @@ import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -334,7 +333,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions | undefined
+    ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -560,15 +559,14 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  let ssr = resolveSSROptions(config.ssr)
-  if (config.legacy?.buildSsrCjsExternalHeuristics) {
-    if (ssr) ssr.format = 'cjs'
-    else ssr = { target: 'node', format: 'cjs' }
-  }
+  const ssr = resolveSSROptions(
+    config.ssr,
+    config.legacy?.buildSsrCjsExternalHeuristics,
+    config.resolve?.preserveSymlinks
+  )
 
   const middlewareMode = config?.server?.middlewareMode
 
-  config = mergeConfig(config, externalConfigCompat(config, configEnv))
   const optimizeDeps = config.optimizeDeps || {}
 
   if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
@@ -667,6 +665,12 @@ export async function resolveConfig(
       resolved.optimizeDeps.disabled = 'build'
     } else if (optimizerDisabled === 'dev') {
       resolved.optimizeDeps.disabled = true // Also disabled during build
+    }
+    const ssrOptimizerDisabled = resolved.ssr.optimizeDeps.disabled
+    if (!ssrOptimizerDisabled) {
+      resolved.ssr.optimizeDeps.disabled = 'build'
+    } else if (ssrOptimizerDisabled === 'dev') {
+      resolved.ssr.optimizeDeps.disabled = true // Also disabled during build
     }
   }
 
@@ -1004,92 +1008,21 @@ async function loadConfigFromBundledFile(
   return raw.__esModule ? raw.default : raw
 }
 
-export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
-  const { command, optimizeDeps } = config
-  const { disabled } = optimizeDeps
+export function getDepOptimizationConfig(
+  config: ResolvedConfig,
+  ssr: boolean
+): DepOptimizationConfig {
+  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
+}
+export function isDepsOptimizerEnabled(
+  config: ResolvedConfig,
+  ssr: boolean
+): boolean {
+  const { command } = config
+  const { disabled } = getDepOptimizationConfig(config, ssr)
   return !(
     disabled === true ||
     (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && optimizeDeps.disabled === 'dev')
+    (command === 'serve' && disabled === 'dev')
   )
-}
-
-// esbuild doesn't transpile `require('foo')` into `import` statements if 'foo' is externalized
-// https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
-function esbuildCjsExternalPlugin(externals: string[]): ESBuildPlugin {
-  return {
-    name: 'cjs-external',
-    setup(build) {
-      const escape = (text: string) =>
-        `^${text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`
-      const filter = new RegExp(externals.map(escape).join('|'))
-
-      build.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
-        path: args.path,
-        external: true
-      }))
-
-      build.onResolve({ filter }, (args) => ({
-        path: args.path,
-        namespace: 'external'
-      }))
-
-      build.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
-        contents: `export * from ${JSON.stringify(args.path)}`
-      }))
-    }
-  }
-}
-
-// Support `rollupOptions.external` when `legacy.buildRollupPluginCommonjs` is disabled
-function externalConfigCompat(config: UserConfig, { command }: ConfigEnv) {
-  // Only affects the build command
-  if (command !== 'build') {
-    return {}
-  }
-
-  // Skip if using Rollup CommonJS plugin
-  if (
-    config.legacy?.buildRollupPluginCommonjs ||
-    config.optimizeDeps?.disabled === 'build'
-  ) {
-    return {}
-  }
-
-  // Skip if no `external` configured
-  const external = config?.build?.rollupOptions?.external
-  if (!external) {
-    return {}
-  }
-
-  let normalizedExternal = external
-  if (typeof external === 'string') {
-    normalizedExternal = [external]
-  }
-
-  // TODO: decide whether to support RegExp and function options
-  // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
-  if (
-    !Array.isArray(normalizedExternal) ||
-    normalizedExternal.some((ext) => typeof ext !== 'string')
-  ) {
-    throw new Error(
-      `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
-        `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
-    )
-  }
-
-  const additionalConfig: UserConfig = {
-    optimizeDeps: {
-      exclude: normalizedExternal as string[],
-      esbuildOptions: {
-        plugins: [
-          // TODO: maybe it can be added globally/unconditionally?
-          esbuildCjsExternalPlugin(normalizedExternal as string[])
-        ]
-      }
-    }
-  }
-
-  return additionalConfig
 }
