@@ -86,7 +86,9 @@ import(`../alias/${base}.js`).then((mod) => {
 
 // prettier-ignore
 import(
+  /* this messes with */
   `../alias/${base}.js`
+  /* es-module-lexer */
 ).then((mod) => {
   text('.dynamic-import-with-vars-multiline', mod.hello())
 })

@@ -10,6 +10,7 @@ import {
   createFilter,
   normalizePath,
   parseRequest,
+  removeComments,
   requestQuerySplitRE,
   transformStableResult
 } from '../utils'
@@ -176,11 +177,10 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
-          result = await transformDynamicImport(
-            source.slice(start, end).trim(), // Note: trim as es-module-lexer doesn't capture backticks
-            importer,
-            resolve
-          )
+          // When import string is using backticks, es-module-lexer `end` captures until
+          // the closing parenthesis, instead of the closing backtick. Remove them manually.
+          const importSource = removeComments(source.slice(start, end)).trim()
+          result = await transformDynamicImport(importSource, importer, resolve)
         } catch (error) {
           if (warnOnError) {
             this.warn(error)
