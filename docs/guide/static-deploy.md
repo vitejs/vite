@@ -189,10 +189,10 @@ $ ntl deploy --prod
 
 ## Cloudflare Pages
 
-1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/)
-2. Authenticate Wrangler with your Cloudflare account using `wrangler login`
-3. Run your build command 
-4. Deploy using `npx wrangler pages publish <Build-directory>`
+1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
+2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
+3. Run your build command.
+4. Deploy using `npx wrangler pages publish dist`.
 
 ```bash
 # Install Wrangler CLI
@@ -202,13 +202,13 @@ $ npm install -g wrangler
 $ wrangler login
 
 # Run your build command 
-$ npm run build 
+$ npm run build
 
 # Create new deployment
-$ npx wrangler pages publish <Build-directory>
+$ npx wrangler pages publish dist
 
 ```
-After your assets are uploaded Wrangler will give you a preview URL to inspect your site and when you log into the Cloudflare Pages dashboard you will see you new Project. 
+After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project. 
 
 ## Google Firebase
 
