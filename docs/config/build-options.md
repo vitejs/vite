@@ -180,12 +180,12 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
-### build.chunkSizeWarningLimit
+## build.chunkSizeWarningLimit
 
 - **Type:** `number`
 - **Default:** `500`
 
-  Limit for chunk size warnings (in kbs).
+Limit for chunk size warnings (in kbs).
 
 ## build.watch
 
