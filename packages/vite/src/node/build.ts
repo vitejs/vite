@@ -21,6 +21,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
+import { detectWhetherChokidarWithDefaultOptionWorks, isWSL2 } from './watcher'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
@@ -502,22 +503,44 @@ async function doBuild(
       }
 
       const watcherOptions = config.build.watch
+      const resolvedChokidarOptions = {
+        ignoreInitial: true,
+        ignorePermissionErrors: true,
+        ...watcherOptions.chokidar,
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          ...(watcherOptions?.chokidar?.ignored || [])
+        ]
+      }
+
+      if (isWSL2 && resolvedChokidarOptions.usePolling === undefined) {
+        detectWhetherChokidarWithDefaultOptionWorks(config.root).then(
+          ({ result, warning }) => {
+            if (result === false) {
+              config.logger.warn(
+                colors.yellow(
+                  colors.bold(`(!) `) +
+                    'Default file system watching is not working with your setup due to the limitation of WSL2. ' +
+                    'Rebuild will not happen.' +
+                    'More information: https://vitejs.dev/config/server-options.html#server-watch'
+                )
+              )
+            }
+            if (warning) {
+              config.logger.warn(colors.yellow(warning))
+            }
+          }
+        )
+      }
+
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
           ...watcherOptions,
-          chokidar: {
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar,
-            ignored: [
-              '**/node_modules/**',
-              '**/.git/**',
-              ...(watcherOptions?.chokidar?.ignored || [])
-            ]
-          }
+          chokidar: resolvedChokidarOptions
         }
       })
 

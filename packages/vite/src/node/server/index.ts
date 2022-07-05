@@ -37,6 +37,7 @@ import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
+import { detectWhetherChokidarWithDefaultOptionWorks, isWSL2 } from '../watcher'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -282,14 +283,8 @@ export async function createServer(
   )
   const { middlewareMode } = serverConfig
 
-  const middlewares = connect() as Connect.Server
-  const httpServer = middlewareMode
-    ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
-  const ws = createWebSocketServer(httpServer, config, httpsOptions)
-
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
-  const watcher = chokidar.watch(path.resolve(root), {
+  const resolvedWatchOptions: chokidar.WatchOptions = {
     ignored: [
       '**/.git/**',
       '**/node_modules/**',
@@ -300,7 +295,38 @@ export async function createServer(
     ignorePermissionErrors: true,
     disableGlobbing: true,
     ...watchOptions
-  }) as FSWatcher
+  }
+
+  if (isWSL2 && resolvedWatchOptions.usePolling === undefined) {
+    detectWhetherChokidarWithDefaultOptionWorks(root).then(
+      ({ result, warning }) => {
+        if (result === false) {
+          config.logger.warn(
+            colors.yellow(
+              colors.bold(`(!) `) +
+                'Default file system watching is not working with your setup due to the limitation of WSL2. ' +
+                'HMR and other features will not work. ' +
+                'More information: https://vitejs.dev/config/server-options.html#server-watch'
+            )
+          )
+        }
+        if (warning) {
+          config.logger.warn(colors.yellow(warning))
+        }
+      }
+    )
+  }
+
+  const middlewares = connect() as Connect.Server
+  const httpServer = middlewareMode
+    ? null
+    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+  const ws = createWebSocketServer(httpServer, config, httpsOptions)
+
+  const watcher = chokidar.watch(
+    path.resolve(root),
+    resolvedWatchOptions
+  ) as FSWatcher
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr })
