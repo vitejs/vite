@@ -105,20 +105,17 @@ export function shouldExternalizeForSSR(
   return isSsrExternal(id)
 }
 
-function createIsSsrExternal(
+export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig
-): (id: string) => boolean | undefined {
-  const processedIds = new Map<string, boolean | undefined>()
-
-  const { ssr, root } = config
-
+): (id: string) => boolean {
+  const { ssr } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
     noExternal !== 'undefined' &&
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
 
-  const isConfiguredAsExternal = (id: string) => {
+  return (id: string) => {
     const { ssr } = config
     if (!ssr || ssr.external?.includes(id)) {
       return true
@@ -131,6 +128,16 @@ function createIsSsrExternal(
     }
     return true
   }
+}
+
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const processedIds = new Map<string, boolean | undefined>()
+
+  const { ssr, root } = config
+
+  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
   const resolveOptions: InternalResolveOptions = {
     root,

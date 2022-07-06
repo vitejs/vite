@@ -975,7 +975,7 @@ Repository: http://github.com/bripkens/connect-history-api-fallback.git
 
 > The MIT License
 > 
-> Copyright (c) 2012 Ben Ripkens http://bripkens.de
+> Copyright (c) 2022 Ben Blackmore and contributors
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
