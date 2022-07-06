@@ -1,7 +1,8 @@
 import { port } from './serve'
-import { page } from '~utils'
+import { isBuild, page } from '~utils'
 
 const url = `http://localhost:${port}`
+const mode = isBuild ? `production` : `development`
 
 /**
  * test for #5809
@@ -90,4 +91,26 @@ test('msg from optimized cjs with nested external', async () => {
   expect(await page.textContent('.optimized-cjs-with-nested-external')).toMatch(
     'Hello World!'
   )
+})
+
+test('msg from import-meta-env', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.import-meta-env .base')).toBe('/')
+  expect(await page.textContent('.import-meta-env .dev')).toBe(String(!isBuild))
+  expect(await page.textContent('.import-meta-env .mode')).toBe(mode)
+  expect(await page.textContent('.import-meta-env .prod')).toBe(String(isBuild))
+  expect(await page.textContent('.import-meta-env .ssr')).toBe('true')
+})
+
+test('inline import.meta.env', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.import-meta-env-inline .base')).toBe('/')
+  expect(await page.textContent('.import-meta-env-inline .dev')).toBe(
+    String(!isBuild)
+  )
+  expect(await page.textContent('.import-meta-env-inline .mode')).toBe(mode)
+  expect(await page.textContent('.import-meta-env-inline .prod')).toBe(
+    String(isBuild)
+  )
+  expect(await page.textContent('.import-meta-env-inline .ssr')).toBe('true')
 })

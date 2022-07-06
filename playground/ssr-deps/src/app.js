@@ -11,6 +11,7 @@ import onlyObjectAssignedExports from 'only-object-assigned-exports'
 import requireAbsolute from 'require-absolute'
 import noExternalCjs from 'no-external-cjs'
 import importBuiltinCjs from 'import-builtin-cjs'
+import { metaEnv } from 'import-meta-env'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
 import 'non-optimized-with-nested-external'
@@ -67,6 +68,26 @@ export async function render(url, rootDir) {
   const optimizedCjsWithNestedExternalMessage =
     optimizedCjsWithNestedExternal.hello()
   html += `\n<p class="optimized-cjs-with-nested-external">message from optimized-cjs-with-nested-external: ${optimizedCjsWithNestedExternalMessage}</p>`
+
+  html += `\n<p class="import-meta-env">message from import-meta-env:
+  <pre>
+    <code class="base">${metaEnv.BASE_URL}</code>
+    <code class="dev">${metaEnv.DEV}</code>
+    <code class="mode">${metaEnv.MODE}</code>
+    <code class="prod">${metaEnv.PROD}</code>
+    <code class="ssr">${metaEnv.SSR}</code>
+  </pre>
+  </p>`
+
+  html += `\n<p class="import-meta-env-inline">message from import-meta-env:
+  <pre>
+    <code class="base">BASE: ${import.meta.env.BASE_URL}</code>
+    <code class="dev">DEV: ${import.meta.env.DEV}</code>
+    <code class="mode">MODE: ${import.meta.env.MODE}</code>
+    <code class="prod">PROD: ${import.meta.env.PROD}</code>
+    <code class="ssr">SSR: ${import.meta.env.SSR}</code>
+  </pre>
+  </p>`
 
   return html + '\n'
 }
