@@ -189,6 +189,8 @@ $ ntl deploy --prod
 
 ## Cloudflare Pages
 
+### Cloudflare Pages via Wrangler
+
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
@@ -210,7 +212,7 @@ $ npx wrangler pages publish dist
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
 
-## Cloudflare Pages with Git
+### Cloudflare Pages with Git
 
 1. Push your code to your git repository (GitHub, GitLab).
 2. Log in to the Cloudflare dashboard and select your account in **Account Home** > **Pages**.
