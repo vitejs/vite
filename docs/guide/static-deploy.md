@@ -189,6 +189,8 @@ $ ntl deploy --prod
 
 ## Cloudflare Pages
 
+### Cloudflare Pages via Wrangler
+
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
@@ -209,6 +211,20 @@ $ npx wrangler pages publish dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
+
+### Cloudflare Pages with Git
+
+1. Push your code to your git repository (GitHub, GitLab).
+2. Log in to the Cloudflare dashboard and select your account in **Account Home** > **Pages**.
+3. Select **Create a new Project** and the **Connect Git** option.
+4. Select the git project you want to deploy and click **Begin setup**
+5. Select the corresponding framework preset in the build setting depending on the Vite framework you have selected.
+6. Then save and deploy!
+7. Your application is deployed! (e.g `https://<PROJECTNAME>.pages.dev/`)
+
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly “main”) will result in a Production Deployment.
+
+You can also add custom domains and handle custom build settings on Pages. Learn more about [Cloudflare Pages Git Integration](https://developers.cloudflare.com/pages/get-started/#manage-your-site).
 
 ## Google Firebase
 
