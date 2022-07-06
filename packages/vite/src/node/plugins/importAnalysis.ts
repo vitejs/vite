@@ -835,10 +835,10 @@ export function transformCjsImport(
           importNames.push({ importedName, localName: defaultExports })
         } else {
           const localName = makeLegalIdentifier(
-            `__vite__cjsExport_${spec.exported.name}`
+            `__vite__cjsExport_${exportedName}`
           )
           importNames.push({ importedName, localName })
-          exportNames.push(`${localName} as ${spec.exported.name}`)
+          exportNames.push(`${localName} as ${exportedName}`)
         }
       }
     }
