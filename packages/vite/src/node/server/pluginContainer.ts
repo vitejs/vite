@@ -98,6 +98,10 @@ export interface PluginContainer {
        * @internal
        */
       scan?: boolean
+      /**
+       * @internal
+       */
+      ignoreExternal?: boolean
       isEntry?: boolean
     }
   ): Promise<PartialResolvedId | null>
@@ -544,6 +548,7 @@ export async function createPluginContainer(
       const skip = options?.skip
       const ssr = options?.ssr
       const scan = !!options?.scan
+      const ignoreExternal = !!options?.ignoreExternal
       const isEntry = !!options?.isEntry
       const ctx = new Context()
       ctx.ssr = !!ssr
@@ -556,7 +561,7 @@ export async function createPluginContainer(
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
 
-      if (external(rawId, importer, false)) {
+      if (!ignoreExternal && external(rawId, importer, false)) {
         id = rawId
         partial.external = true
       } else {
@@ -593,7 +598,11 @@ export async function createPluginContainer(
           break
         }
 
-        if (!partial.external && external(id ?? rawId, importer, true)) {
+        if (
+          !ignoreExternal &&
+          !partial.external &&
+          external(id ?? rawId, importer, true)
+        ) {
           id ??= rawId
           partial.external = true
         }
@@ -615,15 +624,17 @@ export async function createPluginContainer(
       if (!id) return null
 
       if (
+        !ignoreExternal &&
         partial.external &&
         partial.external !== 'absolute' &&
         ((makeRelative === 'ifRelativeSource' && rawId.startsWith('.')) ||
           makeRelative !== false)
       ) {
-        id = './' + path.relative(root, id)
+        partial.id = './' + normalizePath(path.relative(root, id))
+      } else {
+        partial.id = isExternalUrl(id) ? id : normalizePath(id)
       }
 
-      partial.id = isExternalUrl(id) ? id : normalizePath(id)
       return partial as PartialResolvedId
     },
 

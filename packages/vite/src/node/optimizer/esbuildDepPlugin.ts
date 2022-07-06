@@ -81,7 +81,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(id, _importer, undefined, ssr, true)
   }
 
   const resolveResult = (id: string, resolved: string) => {
