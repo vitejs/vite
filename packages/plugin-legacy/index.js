@@ -564,7 +564,7 @@ async function buildPolyfillChunk(
   buildOptions,
   externalSystemJS
 ) {
-  let { minify, assetsDir } = buildOptions
+  let { minify, assetsDir, entryFileNames } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
     // so that everything is resolved from here
@@ -583,7 +583,8 @@ async function buildPolyfillChunk(
         },
         output: {
           format: name.includes('legacy') ? 'iife' : 'es',
-          manualChunks: undefined
+          manualChunks: undefined,
+          entryFileNames,
         }
       }
     }
