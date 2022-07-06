@@ -554,8 +554,7 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx._scan = scan
       ctx._resolveSkips = skip
-      const { external, makeAbsoluteExternalsRelative: makeRelative } =
-        container.options as NormalizedInputOptions
+      const { external } = container.options as NormalizedInputOptions
       const resolveStart = isDebug ? performance.now() : 0
 
       let id: string | null = null
@@ -621,21 +620,12 @@ export async function createPluginContainer(
         }
       }
 
-      if (!id) return null
-
-      if (
-        !ignoreExternal &&
-        partial.external &&
-        partial.external !== 'absolute' &&
-        ((makeRelative === 'ifRelativeSource' && rawId.startsWith('.')) ||
-          makeRelative !== false)
-      ) {
-        partial.id = './' + normalizePath(path.relative(root, id))
-      } else {
+      if (id) {
         partial.id = isExternalUrl(id) ? id : normalizePath(id)
+        return partial as PartialResolvedId
+      } else {
+        return null
       }
-
-      return partial as PartialResolvedId
     },
 
     async load(id, options) {
