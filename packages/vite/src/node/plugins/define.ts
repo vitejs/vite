@@ -39,6 +39,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   // during dev, import.meta properties are handled by importAnalysis plugin.
   // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
+  const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
@@ -47,7 +48,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
-    Object.assign(importMetaKeys, {
+    Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
       'import.meta.hot': `false`
@@ -61,8 +62,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...userDefine,
       ...importMetaKeys,
+      ...userDefine,
+      ...importMetaFallbackKeys,
       ...(replaceProcessEnv ? processEnv : {})
     }
 

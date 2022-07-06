@@ -81,7 +81,9 @@ async function createServer() {
     server: { middlewareMode: true },
     appType: 'custom'
   })
+
   // use vite's connect instance as middleware
+  // if you use your own express router (express.Router()), you should use router.use
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
