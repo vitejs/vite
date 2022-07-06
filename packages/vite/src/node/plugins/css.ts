@@ -426,7 +426,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = `export default ${JSON.stringify(content)}`
         }
       } else {
-        code = `export default ''`
+        // if moduleCode exists return it **even if** it does not have `?used`
+        // this will disable tree-shake to work with `import './foo.module.css'` but this usually does not happen
+        // this is a limitation of the current approach by `?used` to make tree-shake work
+        // See #8936 for more details
+        code = modulesCode || `export default ''`
       }
 
       return {
