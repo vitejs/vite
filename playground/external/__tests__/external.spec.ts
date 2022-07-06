@@ -1,7 +1,8 @@
+import { describe, test } from 'vitest'
 import { isBuild, page } from '~utils'
 
 test('external', async () => {
-  expect(await page.textContent('.external')).toBe('vite')
+  expect(await page.textContent('#source-vue-version')).toBe('3.2.0')
 })
 
 describe.runIf(isBuild)('build', () => {

@@ -1,8 +1,8 @@
+import { version } from 'vue'
 import '@vitejs/dep-that-imports-vue'
 import '@vitejs/dep-that-requires-vue'
-import { hello } from 'external-dep'
 
-text('.external', hello)
+text('#source-vue-version', version)
 
 function text(el, text) {
   document.querySelector(el).textContent = text
