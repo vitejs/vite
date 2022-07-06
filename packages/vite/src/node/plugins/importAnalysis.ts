@@ -9,6 +9,7 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
+import { getDepOptimizationConfig } from '..'
 import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
@@ -214,7 +215,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
-      const depsOptimizer = getDepsOptimizer(config, { ssr })
+      const depsOptimizer = getDepsOptimizer(config, ssr)
 
       const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
@@ -267,7 +268,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         let importerFile = importer
-        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+
+        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
 
@@ -356,7 +359,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
           try {
-            const depModule = await moduleGraph.ensureEntryFromUrl(url, ssr)
+            // delay setting `isSelfAccepting` until the file is actually used (#7870)
+            const depModule = await moduleGraph.ensureEntryFromUrl(
+              url,
+              ssr,
+              canSkipImportAnalysis(url)
+            )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
@@ -379,10 +387,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           s: start,
           e: end,
           ss: expStart,
+          se: expEnd,
           d: dynamicIndex,
           // #2083 User may use escape path,
           // so use imports[index].n to get the unescaped string
-          n: specifier
+          n: specifier,
+          a: assertIndex
         } = imports[index]
 
         const rawUrl = source.slice(start, end)
@@ -418,6 +428,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         const isDynamicImport = dynamicIndex > -1
+
+        // strip import assertions as we can process them ourselves
+        if (!isDynamicImport && assertIndex > -1) {
+          str().remove(end + 1, expEnd)
+        }
 
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
@@ -480,7 +495,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               const needsInterop = await optimizedDepNeedsInterop(
                 depsOptimizer.metadata,
                 file,
-                config
+                config,
+                ssr
               )
 
               if (needsInterop === undefined) {
@@ -686,9 +702,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
 
       // pre-transform known direct imports
-      // TODO: should we also crawl dynamic imports? or the experience is good enough to allow
-      // users to chose their tradeoffs by explicitily setting optimizeDeps.entries for the
-      // most common dynamic imports
+      // These requests will also be registered in transformRequest to be awaited
+      // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
           url = unwrapId(removeImportQuery(url)).replace(
@@ -809,6 +824,7 @@ export function transformCjsImport(
         spec.exported.type === 'Identifier'
       ) {
         // for ExportSpecifier, local name is same as imported name
+        // prefix the variable name to avoid clashing with other local variables
         const importedName = spec.local.name
         // we want to specify exported name as variable and re-export it
         const exportedName = spec.exported.name
@@ -818,8 +834,11 @@ export function transformCjsImport(
           )
           importNames.push({ importedName, localName: defaultExports })
         } else {
-          importNames.push({ importedName, localName: exportedName })
-          exportNames.push(exportedName)
+          const localName = makeLegalIdentifier(
+            `__vite__cjsExport_${exportedName}`
+          )
+          importNames.push({ importedName, localName })
+          exportNames.push(`${localName} as ${exportedName}`)
         }
       }
     }

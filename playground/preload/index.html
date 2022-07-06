@@ -3,6 +3,8 @@
   import { createApp } from 'vue'
   import router from './router.js'
   import App from './src/App.vue'
+  import { msgFromA } from 'dep-a'
+  console.log(msgFromA)
 
   createApp(App).use(router).mount('#app')
 </script>
