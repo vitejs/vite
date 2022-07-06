@@ -220,7 +220,7 @@ After your assets are uploaded, Wrangler will give you a preview URL to inspect 
 4. Select the git project you want to deploy and click **Begin setup**
 5. Select the corresponding framework preset in the build setting depending on the Vite framework you have selected.
 6. Then save and deploy!
-7. Your application is deployed!(e.g https://vitedemo.pages.dev/)
+7. Your application is deployed! (e.g https://vitedemo.pages.dev/)
 
 After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://developers.cloudflare.com/pages/platform/preview-deployments/) unless specified not to in your [branch build controls](https://developers.cloudflare.com/pages/platform/branch-build-controls/). All changes to the Production Branch (commonly “main”) will result in a Production Deployment.
 
