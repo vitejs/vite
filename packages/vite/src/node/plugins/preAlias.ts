@@ -28,7 +28,9 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
         importer &&
         depsOptimizer &&
         bareImportRE.test(id) &&
-        !options?.scan
+        !options?.scan &&
+        id !== '@vite/client' &&
+        id !== '@vite/env'
       ) {
         if (findPatterns.find((pattern) => matches(pattern, id))) {
           const optimizedId = await tryOptimizedResolve(
