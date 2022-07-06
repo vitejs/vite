@@ -183,11 +183,10 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    // TODO: We need the scan during build time, until preAliasPlugin
-    // is refactored to work without the scanned deps. We could skip
-    // this for build later.
-
-    runScanner()
+    if (!isBuild) {
+      // Important, the scanner is dev only
+      runScanner()
+    }
   }
 
   async function runScanner() {

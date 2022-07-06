@@ -545,7 +545,9 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, { ssr }))?.id
+      return (
+        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+      )?.id
     }
   }
 
