@@ -61,6 +61,7 @@ export function resolveSSROptions(
     target,
     ...ssr,
     optimizeDeps: {
+      disabled: true,
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks,
