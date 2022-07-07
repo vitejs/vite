@@ -34,6 +34,7 @@ import { join, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import type {
+  CustomPluginOptions,
   EmittedFile,
   InputOptions,
   LoadResult,
@@ -91,6 +92,7 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
+      custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
       /**
@@ -258,7 +260,11 @@ export async function createPluginContainer(
     async resolve(
       id: string,
       importer?: string,
-      options?: { skipSelf?: boolean }
+      options?: {
+        custom?: CustomPluginOptions
+        isEntry?: boolean
+        skipSelf?: boolean
+      }
     ) {
       let skip: Set<Plugin> | undefined
       if (options?.skipSelf && this._activePlugin) {
@@ -266,6 +272,8 @@ export async function createPluginContainer(
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
+        custom: options?.custom,
+        isEntry: !!options?.isEntry,
         skip,
         ssr: this.ssr,
         scan: this._scan
@@ -528,7 +536,6 @@ export async function createPluginContainer(
       const skip = options?.skip
       const ssr = options?.ssr
       const scan = !!options?.scan
-      const isEntry = !!options?.isEntry
       const ctx = new Context()
       ctx.ssr = !!ssr
       ctx._scan = scan
@@ -548,7 +555,12 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr, scan, isEntry }
+          {
+            custom: options?.custom,
+            isEntry: !!options?.isEntry,
+            ssr,
+            scan
+          }
         )
         if (!result) continue
 

@@ -100,6 +100,52 @@ describe('plugin container', () => {
 
       expect.assertions(1)
     })
+
+    it('can pass custom resolve opts between plugins', async () => {
+      const entryUrl = '/x.js'
+
+      const plugin1: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          if (id === entryUrl) {
+            return this.resolve('foobar', 'notreal', {
+              custom: { p1: 'success' },
+              isEntry: true
+            })
+          }
+        }
+      }
+
+      const plugin2: Plugin = {
+        name: 'p2',
+        resolveId(id, importer, opts) {
+          if (id === 'foobar') {
+            expect(importer).toBe('notreal')
+            expect(opts).toEqual(
+              expect.objectContaining({
+                custom: { p1: 'success' },
+                isEntry: true
+              })
+            )
+            return entryUrl
+          }
+        },
+        load(id) {
+          if (id === entryUrl) {
+            return null
+          }
+        }
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin1, plugin2]
+      })
+
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.load(entryUrl)
+
+      expect.assertions(2)
+    })
   })
 })
 
