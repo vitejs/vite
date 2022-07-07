@@ -67,7 +67,7 @@ export const core = [
   {
     avatar: 'https://i.imgur.com/KMed6rQ.jpeg',
     name: 'Alec Larson',
-    title: 'Open sourceror',
+    title: 'Entrepreneur',
     desc: 'Risk taker, Free thinker, App builder, Board game believer.',
     links: [
       { icon: 'github', link: 'https://github.com/aleclarson' },
