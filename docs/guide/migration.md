@@ -101,6 +101,19 @@ You can use `?init` which is similar to the previous behavior.
 })
 ```
 
+### Automatic https certificate generation
+
+A valid certificate is needed when using `https`. In Vite v2, if no certificate was configured, a self-signed certificate was automatically created and cached.
+Since Vite v3, we recommend manually creating your certificates. If you still want to use the automatic generation from v2, this feature can be enabled back by adding [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins.
+
+```js
+import basicSsl from '@vitejs/plugin-basic-ssl'
+
+export default {
+  plugins: [basicSsl()]
+}
+```
+
 ## Advanced
 
 There are some changes which only affects plugin/tool creators.

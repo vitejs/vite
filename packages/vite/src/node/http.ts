@@ -1,4 +1,4 @@
-import fs, { promises as fsp } from 'node:fs'
+import fs from 'node:fs'
 import path from 'node:path'
 import type {
   Server as HttpServer,
@@ -134,9 +134,6 @@ export async function resolveHttpsConfig(
     key: readFileIfExists(key),
     pfx: readFileIfExists(pfx)
   })
-  if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
-  }
   return httpsOption
 }
 
@@ -149,30 +146,6 @@ function readFileIfExists(value?: string | Buffer | any[]) {
     }
   }
   return value
-}
-
-async function getCertificate(cacheDir: string) {
-  const cachePath = path.join(cacheDir, '_cert.pem')
-
-  try {
-    const [stat, content] = await Promise.all([
-      fsp.stat(cachePath),
-      fsp.readFile(cachePath, 'utf8')
-    ])
-
-    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
-      throw new Error('cache is outdated.')
-    }
-
-    return content
-  } catch {
-    const content = (await import('./certificate')).createCertificate()
-    fsp
-      .mkdir(cacheDir, { recursive: true })
-      .then(() => fsp.writeFile(cachePath, content))
-      .catch(() => {})
-    return content
-  }
 }
 
 export async function httpServerStart(
