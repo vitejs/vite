@@ -66,7 +66,7 @@ export const core = [
   },
   {
     avatar: 'https://github.com/aleclarson.png',
-    name: 'aleclarson',
+    name: 'Alec Larson',
     title: 'Open sourceror',
     desc: 'Risk taker, Free thinker, App builder, Board game believer.',
     links: [
