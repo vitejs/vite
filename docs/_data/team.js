@@ -112,7 +112,7 @@ export const core = [
     title: 'Developer',
     desc: 'Web Developer. Vue & Vite team member',
     links: [
-      { icon: 'github', link: 'https://github.com/ygj6' }，
+      { icon: 'github', link: 'https://github.com/ygj6' },
       { icon: 'twitter', link: 'https://twitter.com/ygj_66' }
     ]
   },
