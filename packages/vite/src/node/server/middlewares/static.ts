@@ -109,11 +109,16 @@ export function serveStaticMiddleware(
     }
 
     if (redirected) {
-      req.url = redirected
+      req.url = encodePercent(redirected)
     }
 
     serve(req, res, next)
   }
+}
+
+const percentRe = /%/g
+function encodePercent(url: string) {
+  return url.includes('%') ? url.replace(percentRe, '%25') : url
 }
 
 export function serveRawFsMiddleware(
@@ -144,7 +149,7 @@ export function serveRawFsMiddleware(
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
-      req.url = url
+      req.url = encodePercent(url)
       serveFromRoot(req, res, next)
     } else {
       next()
