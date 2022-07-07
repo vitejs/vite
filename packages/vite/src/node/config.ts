@@ -563,7 +563,7 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
-  if (process.env.VITE_TEST_DISABLING_CJS_PLUGIN) {
+  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config.build ??= {}
     config.build.commonjsOptions = { include: [] }
     config.optimizeDeps ??= {}
