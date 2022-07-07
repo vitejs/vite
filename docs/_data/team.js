@@ -110,8 +110,11 @@ export const core = [
     avatar: 'https://github.com/ygj6.png',
     name: 'ygj6',
     title: 'Developer',
-    desc: '...?',
-    links: [{ icon: 'github', link: 'https://github.com/ygj6' }]
+    desc: 'Web Developer. Vue & Vite team member',
+    links: [
+      { icon: 'github', link: 'https://github.com/ygj6' }，
+      { icon: 'twitter', link: 'https://twitter.com/ygj_66' }
+    ]
   },
   {
     avatar: 'https://github.com/Niputi.png',
