@@ -104,7 +104,8 @@ export const core = [
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'twitter', link: 'https://twitter.com/sapphi_red' }
-    ]
+    ],
+    sponsor: 'https://github.com/sponsors/sapphi-red'
   },
   {
     avatar: 'https://github.com/ygj6.png',
