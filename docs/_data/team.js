@@ -65,7 +65,7 @@ export const core = [
     sponsor: 'https://github.com/sponsors/Shinigami92'
   },
   {
-    avatar: 'https://github.com/aleclarson.png',
+    avatar: 'https://i.imgur.com/KMed6rQ.jpeg',
     name: 'Alec Larson',
     title: 'Open sourceror',
     desc: 'Risk taker, Free thinker, App builder, Board game believer.',
