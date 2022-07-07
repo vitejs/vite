@@ -25,6 +25,8 @@ import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 
+type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
+
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro)$/
@@ -163,7 +165,11 @@ function esbuildScanPlugin(
 ): Plugin {
   const seen = new Map<string, string | undefined>()
 
-  const resolve = async (id: string, importer?: string) => {
+  const resolve = async (
+    id: string,
+    importer?: string,
+    options?: ResolveIdOptions
+  ) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
@@ -172,6 +178,7 @@ function esbuildScanPlugin(
       id,
       importer && normalizePath(importer),
       {
+        ...options,
         scan: true
       }
     )
@@ -316,12 +323,18 @@ function esbuildScanPlugin(
                         config.root,
                         resolve
                       )
-                    )?.s.toString() || transpiledContents
+                    )?.s.toString() || transpiledContents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               } else {
                 scripts[key] = {
                   loader,
-                  contents
+                  contents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               }
 
@@ -434,9 +447,13 @@ function esbuildScanPlugin(
         {
           filter: /.*/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
               return externalUnlessEntry({ path: id })
