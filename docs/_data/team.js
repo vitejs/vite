@@ -31,7 +31,7 @@ export const core = [
     title: 'A fanatical open sourceror',
     org: 'NuxtLabs',
     orgLink: 'https://nuxtlabs.com/',
-    desc: 'Core team member of Vite & Vue Working at NuxtLabs.',
+    desc: 'Core team member of Vite & Vue. Working at NuxtLabs.',
     links: [
       { icon: 'github', link: 'https://github.com/antfu' },
       { icon: 'twitter', link: 'https://twitter.com/antfu7' }
