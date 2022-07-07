@@ -619,7 +619,7 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
+    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
