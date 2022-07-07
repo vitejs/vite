@@ -55,6 +55,8 @@ Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` o
 
 The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
 
+A valid certificate is needed. For a basic setup, you can add [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins, which will automatically create and cache a self-signed certificate. But we recommend creating your own certificates.
+
 ## server.open
 
 - **Type:** `boolean | string`
