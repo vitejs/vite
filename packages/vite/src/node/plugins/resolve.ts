@@ -132,7 +132,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
-        if (isTsRequest(importer)) {
+        if (
+          isTsRequest(importer) ||
+          resolveOpts.custom?.depScan?.loader?.startsWith('ts')
+        ) {
           options.isFromTsImporter = true
         } else {
           const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
