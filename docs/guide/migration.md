@@ -17,17 +17,17 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 ## Config Options Changes
 
-- The following options that were already deprecated in v2 have been removed:
+The following options that were already deprecated in v2 have been removed:
 
-  - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolve-alias))
-  - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolve-dedupe))
-  - `build.base` (switch to [`base`](../config/shared-options.md#base))
-  - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
-  - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
-  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
-  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedeps-esbuildoptions))
+- `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolve-alias))
+- `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolve-dedupe))
+- `build.base` (switch to [`base`](../config/shared-options.md#base))
+- `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
+- `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
+- `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+- `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedeps-esbuildoptions))
 
-## Architecture changes and legacy Options
+## Architecture Changes and Legacy Options
 
 This section describes the biggest architecture changes in Vite v3. To allow projects to migrate from v2 in case of a compat issue, legacy options have been added to revert to the Vite v2 strategies.
 
@@ -72,7 +72,7 @@ Also [`build.rollupOptions.output.inlineDynamicImports`](https://rollupjs.org/gu
 - When using an alias with `import.meta.glob`, the keys are always absolute.
 - `import.meta.globEager` is now deprecated. Use `import.meta.glob('*', { eager: true })` instead.
 
-### WebAssembly support
+### WebAssembly Support
 
 `import init from 'example.wasm'` syntax is dropped to prevent future collision with ["ESM integration for Wasm"](https://github.com/WebAssembly/esm-integration).
 You can use `?init` which is similar to the previous behavior.
@@ -87,7 +87,7 @@ You can use `?init` which is similar to the previous behavior.
 })
 ```
 
-### Automatic https certificate generation
+### Automatic https Certificate Generation
 
 A valid certificate is needed when using `https`. In Vite v2, if no certificate was configured, a self-signed certificate was automatically created and cached.
 Since Vite v3, we recommend manually creating your certificates. If you still want to use the automatic generation from v2, this feature can be enabled back by adding [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins.
