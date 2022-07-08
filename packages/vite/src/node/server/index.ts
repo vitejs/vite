@@ -35,7 +35,7 @@ import {
   initDevSsrDepsOptimizer
 } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
-import type { Logger} from '../logger';
+import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
 import type { PluginContainer } from './pluginContainer'
@@ -329,7 +329,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
-    resolvedUrls: null,
+    resolvedUrls: null, // will be set on listen
     ssrTransform(code: string, inMap: SourceMap | null, url: string) {
       return ssrTransform(code, inMap, url, {
         json: { stringify: server.config.json?.stringify }

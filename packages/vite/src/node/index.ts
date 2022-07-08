@@ -17,7 +17,8 @@ export type {
   ServerOptions,
   FileSystemServeOptions,
   ServerHook,
-  ResolvedServerOptions
+  ResolvedServerOptions,
+  ResolvedServerUrls
 } from './server'
 export type {
   BuildOptions,
