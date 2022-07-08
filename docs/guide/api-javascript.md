@@ -141,7 +141,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { build } from 'vite'
 
-const __dirname = fileURLToPath(new URL('project', import.meta.url))
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 ;(async () => {
   await build({
