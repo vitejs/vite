@@ -58,7 +58,7 @@ test('export class declaration', async () => {
 test('export var declaration', async () => {
   expect(await ssrTransformSimpleCode(`export const a = 1, b = 2`))
     .toMatchInlineSnapshot(`
-    "const a = 1, b = 2
+    "const a = 1, b = 2 
     Object.defineProperty(__vite_ssr_exports__, \\"a\\", { enumerable: true, configurable: true, get(){ return a }});
     Object.defineProperty(__vite_ssr_exports__, \\"b\\", { enumerable: true, configurable: true, get(){ return b }});"
   `)
