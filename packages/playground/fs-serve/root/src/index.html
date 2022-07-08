@@ -19,6 +19,8 @@
 <pre class="unsafe-fetch"></pre>
 <pre class="unsafe-fetch-8498-status"></pre>
 <pre class="unsafe-fetch-8498"></pre>
+<pre class="unsafe-fetch-8498-2-status"></pre>
+<pre class="unsafe-fetch-8498-2"></pre>
 
 <h2>Safe /@fs/ Fetch</h2>
 <pre class="safe-fs-fetch-status"></pre>
@@ -31,6 +33,8 @@
 <pre class="unsafe-fs-fetch"></pre>
 <pre class="unsafe-fs-fetch-8498-status"></pre>
 <pre class="unsafe-fs-fetch-8498"></pre>
+<pre class="unsafe-fs-fetch-8498-2-status"></pre>
+<pre class="unsafe-fs-fetch-8498-2"></pre>
 
 <h2>Nested Entry</h2>
 <pre class="nested-entry"></pre>
@@ -100,6 +104,19 @@
       console.error(e)
     })
 
+  // outside of allowed dir with special characters 2 #8498
+  fetch('/src/%252e%252e%252funsafe%252etxt')
+    .then((r) => {
+      text('.unsafe-fetch-8498-2-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.unsafe-fetch-8498-2', data)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
   // imported before, should be treated as safe
   fetch('/@fs/' + ROOT + '/safe.json')
     .then((r) => {
@@ -131,6 +148,18 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch-8498', JSON.stringify(data))
+    })
+
+  // outside root with special characters 2 #8498
+  fetch(
+    '/@fs/' + ROOT + '/root/src/%252e%252e%252f%252e%252e%252funsafe%252ejson'
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-8498-2-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-8498-2', JSON.stringify(data))
     })
 
   // not imported before, inside root with special characters, treated as safe
