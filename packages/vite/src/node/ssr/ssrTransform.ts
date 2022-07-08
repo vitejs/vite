@@ -267,14 +267,18 @@ async function ssrTransformScript(
 
   let map = s.generateMap({ hires: true })
   if (inMap && inMap.mappings && inMap.sources.length > 0) {
-    map = combineSourcemaps(url, [
-      {
-        ...map,
-        sources: inMap.sources,
-        sourcesContent: inMap.sourcesContent
-      } as RawSourceMap,
-      inMap as RawSourceMap
-    ]) as SourceMap
+    map = combineSourcemaps(
+      url,
+      [
+        {
+          ...map,
+          sources: inMap.sources,
+          sourcesContent: inMap.sourcesContent
+        } as RawSourceMap,
+        inMap as RawSourceMap
+      ],
+      false
+    ) as SourceMap
   } else {
     map.sources = [url]
     // needs to use originalCode instead of code
