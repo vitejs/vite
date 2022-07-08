@@ -107,7 +107,7 @@ export function shouldExternalizeForSSR(
 
 export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig
-): (id: string) => boolean {
+): (id: string) => boolean | undefined {
   const { ssr } = config
   const noExternal = ssr?.noExternal
   const noExternalFilter =
@@ -115,18 +115,22 @@ export function createIsConfiguredAsSsrExternal(
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
 
+  // Returns true if it is configured as external, false if it is filtered
+  // by noExternal and undefined if it isn't affected by the explicit config
   return (id: string) => {
     const { ssr } = config
-    if (!ssr || ssr.external?.includes(id)) {
-      return true
+    if (ssr) {
+      if (ssr.external?.includes(id)) {
+        return true
+      }
+      if (typeof noExternal === 'boolean') {
+        return !noExternal
+      }
+      if (noExternalFilter && !noExternalFilter(id)) {
+        return false
+      }
     }
-    if (typeof noExternal === 'boolean') {
-      return !noExternal
-    }
-    if (noExternalFilter) {
-      return noExternalFilter(id)
-    }
-    return true
+    return undefined
   }
 }
 
@@ -165,10 +169,11 @@ function createIsSsrExternal(
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
-    const external =
-      !id.startsWith('.') &&
-      !path.isAbsolute(id) &&
-      (isBuiltin(id) || (isConfiguredAsExternal(id) && isValidPackageEntry(id)))
+    let external = false
+    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+      external =
+        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isValidPackageEntry(id))
+    }
     processedIds.set(id, external)
     return external
   }
