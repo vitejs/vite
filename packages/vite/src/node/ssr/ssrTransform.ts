@@ -38,12 +38,13 @@ export async function ssrTransform(
   code: string,
   inMap: SourceMap | null,
   url: string,
+  originalCode: string,
   options?: TransformOptions
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
   }
-  return ssrTransformScript(code, inMap, url)
+  return ssrTransformScript(code, inMap, url, originalCode)
 }
 
 async function ssrTransformJSON(
@@ -61,7 +62,8 @@ async function ssrTransformJSON(
 async function ssrTransformScript(
   code: string,
   inMap: SourceMap | null,
-  url: string
+  url: string,
+  originalCode: string
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
@@ -275,7 +277,9 @@ async function ssrTransformScript(
     ]) as SourceMap
   } else {
     map.sources = [url]
-    map.sourcesContent = [code]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    map.sourcesContent = [originalCode]
   }
 
   return {
