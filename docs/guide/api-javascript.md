@@ -85,7 +85,8 @@ interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode.
+   * The resolved urls Vite prints on the CLI. null in middleware mode or
+   * before `server.listen` is called.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**

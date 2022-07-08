@@ -186,7 +186,8 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode.
+   * The resolved urls Vite prints on the CLI. null in middleware mode or
+   * before `server.listen` is called.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -394,8 +395,12 @@ export async function createServer(
           serverConfig.host,
           config.logger.info
         )
-      } else {
+      } else if (middlewareMode) {
         throw new Error('cannot print server URLs in middleware mode.')
+      } else {
+        throw new Error(
+          'cannot print server URLs before server.listen is called'
+        )
       }
     },
     async restart(forceOptimize?: boolean) {
