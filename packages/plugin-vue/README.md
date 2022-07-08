@@ -110,6 +110,7 @@ export default {
 
 ```ts
 import vue from '@vitejs/plugin-vue'
+import yaml from 'js-yaml'
 
 const vueI18nPlugin = {
   name: 'vue-i18n',
@@ -118,7 +119,7 @@ const vueI18nPlugin = {
       return
     }
     if (/\.ya?ml$/.test(id)) {
-      code = JSON.stringify(require('js-yaml').load(code.trim()))
+      code = JSON.stringify(yaml.load(code.trim()))
     }
     return `export default Comp => {
       Comp.i18n = ${code}

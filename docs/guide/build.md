@@ -35,7 +35,7 @@ The build can be customized via various [build config options](/config/build-opt
 
 ```js
 // vite.config.js
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     rollupOptions: {
       // https://rollupjs.org/guide/en/#big-list-of-options
@@ -53,7 +53,7 @@ You can configure how chunks are split using `build.rollupOptions.output.manualC
 ```js
 // vite.config.js
 import { splitVendorChunkPlugin } from 'vite'
-module.exports = defineConfig({
+export default defineConfig({
   plugins: [splitVendorChunkPlugin()]
 })
 ```
@@ -66,7 +66,7 @@ You can enable rollup watcher with `vite build --watch`. Or, you can directly ad
 
 ```js
 // vite.config.js
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     watch: {
       // https://rollupjs.org/guide/en/#watch-options
@@ -97,10 +97,10 @@ During build, all you need to do is to specify multiple `.html` files as entry p
 
 ```js
 // vite.config.js
-const { resolve } = require('path')
-const { defineConfig } = require('vite')
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     rollupOptions: {
       input: {
@@ -122,10 +122,10 @@ When it is time to bundle your library for distribution, use the [`build.lib` co
 
 ```js
 // vite.config.js
-const path = require('path')
-const { defineConfig } = require('vite')
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'lib/main.js'),
@@ -214,17 +214,17 @@ experimental: {
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the third `context` param given to the function.
 
 ```js
-  experimental: {
-    renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
-      if (type === 'public') {
-        return 'https://www.domain.com/' + filename
-      }
-      else if (path.extname(importer) === '.js') {
-        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
-      }
-      else {
-        return 'https://cdn.domain.com/assets/' + filename
-      }
+experimental: {
+  renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
+    if (type === 'public') {
+      return 'https://www.domain.com/' + filename
+    }
+    else if (path.extname(importer) === '.js') {
+      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+    }
+    else {
+      return 'https://cdn.domain.com/assets/' + filename
     }
   }
+}
 ```

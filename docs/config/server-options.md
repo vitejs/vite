@@ -198,8 +198,8 @@ Create Vite server in middleware mode.
 - **Example:**
 
 ```js
-const express = require('express')
-const { createServer: createViteServer } = require('vite')
+import express from 'express'
+import { createServer as createViteServer } from 'vite'
 
 async function createServer() {
   const app = express()

@@ -18,10 +18,10 @@ The following guides are based on some shared assumptions:
 It is important to note that `vite preview` is intended for previewing the build locally and not meant as a production server.
 
 ::: tip NOTE
-These guides provide instructions for performing a static deployment of your Vite site. Vite also has experimental support for Server Side Rendering. SSR refers to front-end frameworks that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. Check out the [SSR Guide](./ssr) to learn about this feature. On the other hand, if you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
+These guides provide instructions for performing a static deployment of your Vite site. Vite also supports Server Side Rendering. SSR refers to front-end frameworks that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. Check out the [SSR Guide](./ssr) to learn about this feature. On the other hand, if you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
 :::
 
-## Building The App
+## Building the App
 
 You may run `npm run build` command to build the app.
 
@@ -31,7 +31,7 @@ $ npm run build
 
 By default, the build output will be placed at `dist`. You may deploy this `dist` folder to any of your preferred platforms.
 
-### Testing The App Locally
+### Testing the App Locally
 
 Once you've built the app, you may test it locally by running `npm run preview` command.
 
@@ -52,7 +52,7 @@ You may configure the port of the server by passing `--port` flag as an argument
 }
 ```
 
-Now the `preview` method will launch the server at `http://localhost:8080`.
+Now the `preview` command will launch the server at `http://localhost:8080`.
 
 ## GitHub Pages
 
@@ -96,40 +96,6 @@ Now the `preview` method will launch the server at `http://localhost:8080`.
 ::: tip
 You can also run the above script in your CI setup to enable automatic deployment on each push.
 :::
-
-### GitHub Pages and Travis CI
-
-1. Set the correct `base` in `vite.config.js`.
-
-   If you are deploying to `https://<USERNAME or GROUP>.github.io/`, you can omit `base` as it defaults to `'/'`.
-
-   If you are deploying to `https://<USERNAME or GROUP>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
-
-2. Create a file named `.travis.yml` in the root of your project.
-
-3. Run `npm install` locally and commit the generated lockfile (`package-lock.json`).
-
-4. Use the GitHub Pages deploy provider template, and follow the [Travis CI documentation](https://docs.travis-ci.com/user/deployment/pages/).
-
-   ```yaml
-   language: node_js
-   node_js:
-     - lts/*
-   install:
-     - npm ci
-   script:
-     - npm run build
-   deploy:
-     provider: pages
-     skip_cleanup: true
-     local_dir: dist
-     # A token generated on GitHub allowing Travis to push code on you repository.
-     # Set in the Travis settings page of your repository, as a secure variable.
-     github_token: $GITHUB_TOKEN
-     keep_history: true
-     on:
-       branch: main
-   ```
 
 ## GitLab Pages and GitLab CI
 
@@ -186,6 +152,33 @@ The Netlify CLI will share with you a preview URL to inspect. When you are ready
 # Deploy the site into production
 $ ntl deploy --prod
 ```
+
+## Vercel
+
+### Vercel CLI
+
+1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
+2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
+
+```bash
+$ npm i -g vercel
+$ vercel init vite
+Vercel CLI
+> Success! Initialized "vite" example in ~/your-folder.
+- To deploy, `cd vite` and run `vercel`.
+```
+
+### Vercel for Git
+
+1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
+2. [Import your Vite project](https://vercel.com/new) into Vercel.
+3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
+4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
+
+After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
+
+Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
 ## Cloudflare Pages
 
@@ -324,33 +317,6 @@ You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-do
    # opens a browser to view the Dashboard version of Heroku CI
    $ heroku open
    ```
-
-## Vercel
-
-### Vercel CLI
-
-1. Install the [Vercel CLI](https://vercel.com/cli) and run `vercel` to deploy.
-2. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
-3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
-
-```bash
-$ npm i -g vercel
-$ vercel init vite
-Vercel CLI
-> Success! Initialized "vite" example in ~/your-folder.
-- To deploy, `cd vite` and run `vercel`.
-```
-
-### Vercel for Git
-
-1. Push your code to your git repository (GitHub, GitLab, Bitbucket).
-2. [Import your Vite project](https://vercel.com/new) into Vercel.
-3. Vercel will detect that you are using Vite and will enable the correct settings for your deployment.
-4. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
-
-After your project has been imported and deployed, all subsequent pushes to branches will generate [Preview Deployments](https://vercel.com/docs/concepts/deployments/environments#preview), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://vercel.com/docs/concepts/deployments/environments#production).
-
-Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/git).
 
 ## Azure Static Web Apps
 
