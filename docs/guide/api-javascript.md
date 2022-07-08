@@ -13,7 +13,11 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```js
+import { fileURLToPath } from 'url'
 import { createServer } from 'vite'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+
 ;(async () => {
   const server = await createServer({
     // any valid user config options, plus `mode` and `configFile`
@@ -134,7 +138,11 @@ async function build(
 
 ```js
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { build } from 'vite'
+
+const __dirname = fileURLToPath(new URL('project', import.meta.url))
+
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),

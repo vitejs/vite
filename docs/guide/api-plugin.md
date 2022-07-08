@@ -199,7 +199,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     name: 'mutate-config',
     config(config, { command }) {
       if (command === 'build') {
-        config.root = __dirname
+        config.root = 'foo'
       }
     }
   })
