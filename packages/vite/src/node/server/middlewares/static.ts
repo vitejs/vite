@@ -107,7 +107,7 @@ export function serveStaticMiddleware(
     }
 
     if (redirected) {
-      req.url = redirected
+      req.url = encodeURIComponent(redirected)
     }
 
     serve(req, res, next)
@@ -142,7 +142,7 @@ export function serveRawFsMiddleware(
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
-      req.url = url
+      req.url = encodeURIComponent(url)
       serveFromRoot(req, res, next)
     } else {
       next()
