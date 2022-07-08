@@ -14,8 +14,8 @@ module.exports = {
       'node:url': 'url'
     }
   },
-
   optimizeDeps: {
+    disabled: false,
     include: [
       'dep-linked-include',
       'nested-exclude > nested-include',
@@ -44,7 +44,11 @@ module.exports = {
 
   build: {
     // to make tests faster
-    minify: false
+    minify: false,
+    // Avoid @rollup/plugin-commonjs
+    commonjsOptions: {
+      include: []
+    }
   },
 
   plugins: [
