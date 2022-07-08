@@ -399,7 +399,7 @@ export async function createServer(
         throw new Error('cannot print server URLs in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called'
+          'cannot print server URLs before server.listen is called.'
         )
       }
     },
