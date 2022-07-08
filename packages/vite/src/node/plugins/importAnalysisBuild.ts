@@ -55,6 +55,8 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
+/* eslint-disable no-var */
+// please, don't use modern js features here for support legacy browsers
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
@@ -66,21 +68,21 @@ function preload(
   }
 
   return Promise.all(
-    deps.map((dep) => {
+    deps.map(function (dep) {
       // @ts-ignore
       dep = assetsURL(dep, importerUrl)
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
       seen[dep] = true
-      const isCss = dep.endsWith('.css')
-      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
+      var isCss = /\.css$/.test(dep)
+      var cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
-      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+      if (document.querySelector('link[href="' + dep + '"]' + cssSelector)) {
         return
       }
       // @ts-ignore
-      const link = document.createElement('link')
+      var link = document.createElement('link')
       // @ts-ignore
       link.rel = isCss ? 'stylesheet' : scriptRel
       if (!isCss) {
@@ -91,16 +93,19 @@ function preload(
       // @ts-ignore
       document.head.appendChild(link)
       if (isCss) {
-        return new Promise((res, rej) => {
+        return new Promise(function (res, rej) {
           link.addEventListener('load', res)
-          link.addEventListener('error', () =>
-            rej(new Error(`Unable to preload CSS for ${dep}`))
-          )
+          link.addEventListener('error', function () {
+            rej(new Error('Unable to preload CSS for ' + dep))
+          })
         })
       }
     })
-  ).then(() => baseModule())
+  ).then(function () {
+    return baseModule()
+  })
 }
+/* eslint-enable no-var */
 
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
@@ -118,7 +123,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
     : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  const preloadCode = `var scriptRel = ${scriptRel};var assetsURL = ${assetsURL};var seen = {};export var ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:build-import-analysis',
@@ -238,10 +243,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
-          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          str().prependLeft(expStart, `${preloadMethod}(function () { return `)
           str().appendRight(
             expEnd,
-            `,${isModernFlag}?"${preloadMarker}":void 0${
+            `},${isModernFlag}?"${preloadMarker}":void 0${
               relativePreloadUrls ? ',import.meta.url' : ''
             })`
           )
@@ -329,7 +334,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (
         needPreloadHelper &&
         insertPreload &&
-        !source.includes(`const ${preloadMethod} =`)
+        !source.includes(`var ${preloadMethod} =`)
       ) {
         str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
       }
