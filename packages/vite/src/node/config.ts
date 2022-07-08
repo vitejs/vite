@@ -281,14 +281,6 @@ export interface ExperimentalOptions {
 
 export interface LegacyOptions {
   /**
-   * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
-   *
-   * @experimental
-   * @deprecated
-   * @default false
-   */
-  buildRollupPluginCommonjs?: boolean
-  /**
    * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
    *
    * @experimental
@@ -571,11 +563,14 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
-  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
-    config.legacy = {
-      ...config.legacy,
-      buildRollupPluginCommonjs: true
-    }
+  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+    config.build ??= {}
+    config.build.commonjsOptions = { include: [] }
+    config.optimizeDeps ??= {}
+    config.optimizeDeps.disabled = false
+    config.ssr ??= {}
+    config.ssr.optimizeDeps ??= {}
+    config.ssr.optimizeDeps.disabled = false
   }
 
   const BASE_URL = resolvedBase
@@ -616,6 +611,7 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
+      disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: config.resolve?.preserveSymlinks,
@@ -623,7 +619,7 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
+    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
@@ -659,21 +655,6 @@ export async function resolveConfig(
         `server.force is deprecated, use optimizeDeps.force instead`
       )
     )
-  }
-
-  if (resolved.legacy?.buildRollupPluginCommonjs) {
-    const optimizerDisabled = resolved.optimizeDeps.disabled
-    if (!optimizerDisabled) {
-      resolved.optimizeDeps.disabled = 'build'
-    } else if (optimizerDisabled === 'dev') {
-      resolved.optimizeDeps.disabled = true // Also disabled during build
-    }
-    const ssrOptimizerDisabled = resolved.ssr.optimizeDeps.disabled
-    if (!ssrOptimizerDisabled) {
-      resolved.ssr.optimizeDeps.disabled = 'build'
-    } else if (ssrOptimizerDisabled === 'dev') {
-      resolved.ssr.optimizeDeps.disabled = true // Also disabled during build
-    }
   }
 
   // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
