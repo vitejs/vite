@@ -13,8 +13,7 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```js
-const { createServer } = require('vite')
-
+import { createServer } from 'vite'
 ;(async () => {
   const server = await createServer({
     // any valid user config options, plus `mode` and `configFile`
@@ -134,9 +133,8 @@ async function build(
 **Example Usage:**
 
 ```js
-const path = require('path')
-const { build } = require('vite')
-
+import path from 'path'
+import { build } from 'vite'
 ;(async () => {
   await build({
     root: path.resolve(__dirname, './project'),
@@ -161,8 +159,7 @@ async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
 **Example Usage:**
 
 ```js
-const { preview } = require('vite')
-
+import { preview } from 'vite'
 ;(async () => {
   const previewServer = await preview({
     // any valid user config options, plus `mode` and `configFile`
