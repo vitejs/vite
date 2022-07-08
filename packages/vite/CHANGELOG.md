@@ -1,3 +1,9 @@
+## 3.0.0-beta.9 (2022-07-08)
+
+* fix: respect explicitily external/noExternal config (#8983) ([e369880](https://github.com/vitejs/vite/commit/e369880)), closes [#8983](https://github.com/vitejs/vite/issues/8983)
+
+
+
 ## 3.0.0-beta.8 (2022-07-08)
 
 * refactor: opt-in optimizeDeps during build and SSR (#8965) ([f8c8cf2](https://github.com/vitejs/vite/commit/f8c8cf2)), closes [#8965](https://github.com/vitejs/vite/issues/8965)
