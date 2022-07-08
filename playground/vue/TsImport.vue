@@ -4,5 +4,5 @@
 </template>
 
 <script setup lang="ts">
-import { foo } from './TsImportFile.js'
+import { foo } from '/@/TsImportFile.js'
 </script>
