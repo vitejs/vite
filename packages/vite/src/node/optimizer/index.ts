@@ -564,8 +564,7 @@ export async function runOptimizeDeps(
         rollupOptionsExternal.some((ext) => typeof ext !== 'string')
       ) {
         throw new Error(
-          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
-            `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string when using esbuild optimization at build time.`
         )
       }
       external.push(...(rollupOptionsExternal as string[]))

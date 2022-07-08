@@ -297,14 +297,15 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
-
+  const { commonjsOptions } = options
+  const usePluginCommonjs =
+    !Array.isArray(commonjsOptions?.include) ||
+    commonjsOptions?.include.length !== 0
   return {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(config.legacy?.buildRollupPluginCommonjs
-        ? [commonjsPlugin(options.commonjsOptions)]
-        : []),
+      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
