@@ -427,6 +427,14 @@ export async function resolveConfig(
     }
   }
 
+  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+    config = mergeConfig(config, {
+      build: { commonjsOptions: { include: [] } },
+      optimizeDeps: { disabled: false },
+      ssr: { optimizeDeps: { disabled: false } }
+    })
+  }
+
   // resolve root
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd()
@@ -562,16 +570,6 @@ export async function resolveConfig(
   const middlewareMode = config?.server?.middlewareMode
 
   const optimizeDeps = config.optimizeDeps || {}
-
-  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
-    config.build ??= {}
-    config.build.commonjsOptions = { include: [] }
-    config.optimizeDeps ??= {}
-    config.optimizeDeps.disabled = false
-    config.ssr ??= {}
-    config.ssr.optimizeDeps ??= {}
-    config.ssr.optimizeDeps.disabled = false
-  }
 
   const BASE_URL = resolvedBase
 
