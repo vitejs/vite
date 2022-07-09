@@ -276,11 +276,13 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         let inputMap: SourceMap | undefined
         if (prependReactImport) {
-          code = prependReactImportCode + code
           if (needHiresSourcemap) {
             const s = new MagicString(code)
             s.prepend(prependReactImportCode)
+            code = s.toString()
             inputMap = s.generateMap({ hires: true, source: id })
+          } else {
+            code = prependReactImportCode + code
           }
         }
 
