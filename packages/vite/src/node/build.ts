@@ -21,13 +21,12 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
-import { detectWhetherChokidarWithDefaultOptionWorks, isWSL2 } from './watcher'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
+import { copyDir, emptyDir, isWSL2, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -515,22 +514,14 @@ async function doBuild(
       }
 
       if (isWSL2 && resolvedChokidarOptions.usePolling === undefined) {
-        detectWhetherChokidarWithDefaultOptionWorks(config.root).then(
-          ({ result, warning }) => {
-            if (result === false) {
-              config.logger.warn(
-                colors.yellow(
-                  colors.bold(`(!) `) +
-                    'Default file system watching is not working with your setup due to the limitation of WSL2. ' +
-                    'Rebuild will not happen.' +
-                    'More information: https://vitejs.dev/config/server-options.html#server-watch'
-                )
-              )
-            }
-            if (warning) {
-              config.logger.warn(colors.yellow(warning))
-            }
-          }
+        config.logger.warn(
+          colors.yellow(
+            colors.bold(`(!) `) +
+              'Default file system watching might not work with your setup due to the limitation of WSL2. ' +
+              'Rebuild will not happen when file system watching is not working. ' +
+              'To suppress this warning, set true or false to "build.watch.usePolling". ' +
+              'More information: https://vitejs.dev/config/server-options.html#server-watch'
+          )
         )
       }
 
