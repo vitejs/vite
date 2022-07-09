@@ -26,10 +26,12 @@ export const isWSL2 = (() => {
  * returns `true` when it works, `false` when it doesn't, `undefined` when it failed to detect
  */
 export const detectWhetherChokidarWithDefaultOptionWorks = (
-  root: string,
-  timeout = 100
+  root: string
 ): Promise<{ result: boolean | undefined; warning: string | undefined }> =>
   new Promise((resolve) => {
+    const editWait = 100
+    const detectWaitTimeout = 500
+
     const id = ('' + performance.now()).replace(/\./g, '')
     const tempFileShort = `.chokidardetector.${id}.txt`
     const tempFile = path.resolve(root, tempFileShort)
@@ -42,24 +44,29 @@ export const detectWhetherChokidarWithDefaultOptionWorks = (
       disableGlobbing: true,
       ignoreInitial: true
     })
-    w.on('add', () => {
+    // add works with WSL2, but edit does not work
+    w.on('edit', () => {
       resolveWithCleanup(true)
     })
     w.on('error', () => {
       resolveWithCleanup(undefined)
     })
     w.on('ready', () => {
-      fs.promises.writeFile(tempFile, 'detector', 'utf-8').then(
-        () => {
+      ;(async () => {
+        try {
+          await fs.promises.writeFile(tempFile, 'detector', 'utf-8')
           wroteFile = true
-        },
-        () => {
+          await new Promise((resolve) => setTimeout(resolve, editWait))
+          // edit file
+          await fs.promises.writeFile(tempFile, 'detector2', 'utf-8')
+        } catch {
           resolveWithCleanup(undefined)
         }
-      )
+      })()
+
       timeoutId = setTimeout(() => {
         resolveWithCleanup(false)
-      }, timeout)
+      }, detectWaitTimeout)
     })
 
     let resolved = false
