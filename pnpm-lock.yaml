@@ -162,6 +162,7 @@ importers:
       '@babel/plugin-transform-react-jsx-development': ^7.18.6
       '@babel/plugin-transform-react-jsx-self': ^7.18.6
       '@babel/plugin-transform-react-jsx-source': ^7.18.6
+      magic-string: ^0.26.2
       react-refresh: ^0.14.0
       vite: workspace:*
     dependencies:
@@ -170,6 +171,7 @@ importers:
       '@babel/plugin-transform-react-jsx-development': 7.18.6_@babel+core@7.18.6
       '@babel/plugin-transform-react-jsx-self': 7.18.6_@babel+core@7.18.6
       '@babel/plugin-transform-react-jsx-source': 7.18.6_@babel+core@7.18.6
+      magic-string: 0.26.2
       react-refresh: 0.14.0
     devDependencies:
       vite: link:../vite
@@ -820,6 +822,19 @@ importers:
       '@babel/plugin-proposal-pipeline-operator': 7.18.6
       '@emotion/babel-plugin': 11.9.2
       '@vitejs/plugin-react': link:../../packages/plugin-react
+
+  playground/react-sourcemap:
+    specifiers:
+      '@vitejs/plugin-react': workspace:*
+      cross-env: ^7.0.3
+      react: ^18.2.0
+      react-dom: ^18.2.0
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    devDependencies:
+      '@vitejs/plugin-react': link:../../packages/plugin-react
+      cross-env: 7.0.3
 
   playground/react/jsx-entry:
     specifiers: {}
@@ -5710,7 +5725,7 @@ packages:
     dev: true
 
   /isexe/2.0.0:
-    resolution: {integrity: sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=}
+    resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
     dev: true
 
   /jiti/1.13.0:
