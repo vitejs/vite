@@ -3,6 +3,8 @@ import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
 import { createFilter, normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'magic-string'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -93,6 +95,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   let devBase = '/'
   let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
+  let needHiresSourcemap = false
   let isProduction = true
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
@@ -135,6 +138,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
+      needHiresSourcemap =
+        config.command === 'build' && !!config.build.sourcemap
       isProduction = config.isProduction
       skipFastRefresh ||= isProduction || config.command === 'build'
 
@@ -217,6 +222,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         }
 
         let ast: t.File | null | undefined
+        let prependReactImport = false
         if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
@@ -261,8 +267,19 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // Even if the automatic JSX runtime is not used, we can still
             // inject the React import for .jsx and .tsx modules.
             if (!skipReactImport && !importReactRE.test(code)) {
-              code = `import React from 'react'; ` + code
+              prependReactImport = true
             }
+          }
+        }
+
+        let inputMap: SourceMap | undefined
+        if (prependReactImport) {
+          console.log('prepend')
+          const s = new MagicString(code)
+          s.prepend("import React from 'react'; ")
+          code = s.toString()
+          if (needHiresSourcemap) {
+            inputMap = s.generateMap({ hires: true, source: id })
           }
         }
 
@@ -275,11 +292,11 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           !babelOptions.configFile &&
           !(isProjectFile && babelOptions.babelrc)
 
+        // Avoid parsing if no plugins exist.
         if (shouldSkip) {
-          // Avoid parsing if no plugins exist.
           return {
             code,
-            map: null
+            map: inputMap ?? null
           }
         }
 
@@ -327,7 +344,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           plugins,
           sourceMaps: true,
           // Vite handles sourcemap flattening
-          inputSourceMap: false as any
+          inputSourceMap: inputMap ?? (false as any)
         })
 
         if (result) {
