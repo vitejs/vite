@@ -2,11 +2,11 @@
 layout: home
 
 title: Vite
-titleTemplate: Next Generation Frontend Tooling
+titleTemplate: Next Generation Frontend Builder
 
 hero:
   name: Vite
-  text: Next Generation Frontend Tooling
+  text: Next Generation Frontend Builder
   tagline: Get ready for a development environment that can finally catch up with you.
   image:
     src: /logo-with-shadow.png
@@ -25,7 +25,7 @@ hero:
 features:
   - icon: 💡
     title: Instant Server Start
-    details: On demand file serving over native ESM, no bundling required!
+    details: On demand development server utilizing native ESM, no bundling required!
   - icon: ⚡️
     title: Lightning Fast HMR
     details: Hot Module Replacement (HMR) that stays fast regardless of app size.
