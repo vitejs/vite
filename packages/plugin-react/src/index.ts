@@ -278,7 +278,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         if (shouldSkip) {
           // Avoid parsing if no plugins exist.
           return {
-            code
+            code,
+            map: null
           }
         }
 
