@@ -186,12 +186,13 @@ export default defineConfig({
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
-When running Vite on WSL2, if the project folder resides in a Windows filesystem, file system watching does not work without `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
+When running Vite on WSL2 and a file is edited by Windows applications (non WSL2 process), file system watching does not work without `{ usePolling: true }`.
+This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739).
 
 To make file system watching work, you could either:
 
-- **Recommended**: Move the project folder outside of a Windows filesystem.
-  - Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
+- **Recommended**: Use WSL2 applications to edit your files.
+  - Also it is recommended to move the project folder outside of a Windows filesystem. Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
 - Set `{ usePolling: true }`
   - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar#performance).
 
