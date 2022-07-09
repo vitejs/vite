@@ -44,8 +44,8 @@ export const detectWhetherChokidarWithDefaultOptionWorks = (
       disableGlobbing: true,
       ignoreInitial: true
     })
-    // add works with WSL2, but edit does not work
-    w.on('edit', () => {
+    // add works with WSL2, but change does not work
+    w.on('change', () => {
       resolveWithCleanup(true)
     })
     w.on('error', () => {
