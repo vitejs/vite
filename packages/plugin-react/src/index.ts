@@ -90,6 +90,8 @@ declare module 'vite' {
   }
 }
 
+const prependReactImportCode = "import React from 'react'; "
+
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
   let devBase = '/'
@@ -274,10 +276,10 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         let inputMap: SourceMap | undefined
         if (prependReactImport) {
-          const s = new MagicString(code)
-          s.prepend("import React from 'react'; ")
-          code = s.toString()
+          code = prependReactImportCode + code
           if (needHiresSourcemap) {
+            const s = new MagicString(code)
+            s.prepend(prependReactImportCode)
             inputMap = s.generateMap({ hires: true, source: id })
           }
         }
