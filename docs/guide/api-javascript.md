@@ -48,7 +48,6 @@ The `InlineConfig` interface extends `UserConfig` with additional properties:
 
 The `ResolvedConfig` interface has all the same properties of a `UserConfig`, except most properties are resolved and non-undefined. It also contains utilities like:
 
-- `config.createResolver`: Create a function to resolve `id`s using core Vite plugins.
 - `config.assetsInclude`: A function to check if an `id` is considered an asset.
 - `config.logger`: Vite's internal logger object.
 
@@ -264,22 +263,6 @@ function normalizePath(id: string): string
 **Related:** [Path Normalization](./api-plugin.md#path-normalization)
 
 Normalizes a path to interoperate between Vite plugins.
-
-## `optimizeDeps`
-
-**Type Signature:**
-
-```ts
-async function optimizeDeps(
-  config: ResolvedConfig,
-  force = config.optimizeDeps.force,
-  asCommand = false
-): Promise<DepOptimizationMetadata>
-```
-
-**Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
-
-Scan and optimize dependencies within a project. Used by Vite CLI when running `vite optimize`.
 
 ## `transformWithEsbuild`
 
