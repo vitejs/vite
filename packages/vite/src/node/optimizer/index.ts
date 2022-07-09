@@ -214,7 +214,8 @@ export interface DepOptimizationMetadata {
 }
 
 /**
- * Used by Vite CLI when running `vite optimize`
+ * Scan and optimize dependencies within a project.
+ * Used by Vite CLI when running `vite optimize`.
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
