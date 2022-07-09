@@ -274,7 +274,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
 
         let inputMap: SourceMap | undefined
         if (prependReactImport) {
-          console.log('prepend')
           const s = new MagicString(code)
           s.prepend("import React from 'react'; ")
           code = s.toString()
