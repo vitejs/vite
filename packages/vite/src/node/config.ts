@@ -429,10 +429,11 @@ export async function resolveConfig(
 
   if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config = mergeConfig(config, {
-      build: { commonjsOptions: { include: [] } },
       optimizeDeps: { disabled: false },
       ssr: { optimizeDeps: { disabled: false } }
     })
+    config.build ??= {}
+    config.build.commonjsOptions = { include: [] }
   }
 
   // resolve root
