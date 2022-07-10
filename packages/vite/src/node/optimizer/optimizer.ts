@@ -185,52 +185,50 @@ async function createDepsOptimizer(
 
     if (!isBuild) {
       // Important, the scanner is dev only
-      runScanner()
-    }
-  }
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+      // Ensure server listen is called before the scanner
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`))
 
-  async function runScanner() {
-    const scanPhaseProcessing = newDepOptimizationProcessing()
-    depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+          const deps = await discoverProjectDependencies(config)
 
-    try {
-      debug(colors.green(`scanning for dependencies...`))
+          debug(
+            colors.green(
+              Object.keys(deps).length > 0
+                ? `dependencies found by scanner: ${depsLogString(
+                    Object.keys(deps)
+                  )}`
+                : `no dependencies found by scanner`
+            )
+          )
 
-      const deps = await discoverProjectDependencies(config)
+          // Add these dependencies to the discovered list, as these are currently
+          // used by the preAliasPlugin to support aliased and optimized deps.
+          // This is also used by the CJS externalization heuristics in legacy mode
+          for (const id of Object.keys(deps)) {
+            if (!metadata.discovered[id]) {
+              addMissingDep(id, deps[id])
+            }
+          }
 
-      debug(
-        colors.green(
-          Object.keys(deps).length > 0
-            ? `dependencies found by scanner: ${depsLogString(
-                Object.keys(deps)
-              )}`
-            : `no dependencies found by scanner`
-        )
-      )
+          if (!isBuild) {
+            const knownDeps = prepareKnownDeps()
 
-      // Add these dependencies to the discovered list, as these are currently
-      // used by the preAliasPlugin to support aliased and optimized deps.
-      // This is also used by the CJS externalization heuristics in legacy mode
-      for (const id of Object.keys(deps)) {
-        if (!metadata.discovered[id]) {
-          addMissingDep(id, deps[id])
+            // For dev, we run the scanner and the first optimization
+            // run on the background, but we wait until crawling has ended
+            // to decide if we send this result to the browser or we need to
+            // do another optimize step
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+          }
+        } catch (e) {
+          logger.error(e.message)
+        } finally {
+          scanPhaseProcessing.resolve()
+          depsOptimizer.scanProcessing = undefined
         }
-      }
-
-      if (!isBuild) {
-        const knownDeps = prepareKnownDeps()
-
-        // For dev, we run the scanner and the first optimization
-        // run on the background, but we wait until crawling has ended
-        // to decide if we send this result to the browser or we need to
-        // do another optimize step
-        postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-      }
-    } catch (e) {
-      logger.error(e.message)
-    } finally {
-      scanPhaseProcessing.resolve()
-      depsOptimizer.scanProcessing = undefined
+      }, 0)
     }
   }
 
