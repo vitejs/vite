@@ -320,7 +320,7 @@ export async function createServer(
     ws,
     moduleGraph,
     ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, {
+      return ssrTransform(code, inMap, url, code, {
         json: { stringify: server.config.json?.stringify }
       })
     },
