@@ -235,6 +235,7 @@ async function loadAndTransform(
     inMap: map,
     ssr
   })
+  const originalCode = code
   if (
     transformResult == null ||
     (isObject(transformResult) && transformResult.code == null)
@@ -258,7 +259,7 @@ async function loadAndTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url, {
+    ? await ssrTransform(code, map as SourceMap, url, originalCode, {
         json: { stringify: !!server.config.json?.stringify }
       })
     : ({
