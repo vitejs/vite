@@ -26,7 +26,7 @@ export function resolveChokidarOptions(
     logger.warn(
       colors.yellow(
         colors.bold(`(!) `) +
-          'Default file system watching might not work with your setup due to the limitation of WSL2. ' +
+          'Default file system watching might not work with your setup due to a limitation of WSL2. ' +
           'HMR and other features will not work when file system watching is not working. ' +
           `To suppress this warning, set true or false to "${optionName}.usePolling". ` +
           'More information: https://vitejs.dev/config/server-options.html#server-watch'
