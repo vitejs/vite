@@ -17,7 +17,6 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   isParentDirectory,
-  isWSL2,
   mergeConfig,
   normalizePath,
   resolveHostname
@@ -38,6 +37,7 @@ import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printCommonServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
+import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -283,31 +283,11 @@ export async function createServer(
   )
   const { middlewareMode } = serverConfig
 
-  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
-  const resolvedWatchOptions: chokidar.WatchOptions = {
-    ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
-      ...(Array.isArray(ignored) ? ignored : [ignored])
-    ],
-    ignoreInitial: true,
-    ignorePermissionErrors: true,
-    disableGlobbing: true,
-    ...watchOptions
-  }
-
-  if (isWSL2 && resolvedWatchOptions.usePolling === undefined) {
-    config.logger.warn(
-      colors.yellow(
-        colors.bold(`(!) `) +
-          'Default file system watching might not work with your setup due to the limitation of WSL2. ' +
-          'HMR and other features will not work when file system watching is not working. ' +
-          'To suppress this warning, set true or false to "server.watch.usePolling". ' +
-          'More information: https://vitejs.dev/config/server-options.html#server-watch'
-      )
-    )
-  }
+  const resolvedWatchOptions = resolveChokidarOptions(
+    config.logger,
+    { disableGlobbing: true, ...serverConfig.watch },
+    'server.watch'
+  )
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode

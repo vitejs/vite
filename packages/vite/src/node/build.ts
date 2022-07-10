@@ -26,7 +26,7 @@ import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
-import { copyDir, emptyDir, isWSL2, lookupFile, normalizePath } from './utils'
+import { copyDir, emptyDir, lookupFile, normalizePath } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -48,6 +48,7 @@ import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import { resolveChokidarOptions } from './watch'
 
 export interface BuildOptions {
   /**
@@ -501,36 +502,18 @@ async function doBuild(
         output.push(buildOutputOptions(outputs))
       }
 
-      const watcherOptions = config.build.watch
-      const resolvedChokidarOptions = {
-        ignoreInitial: true,
-        ignorePermissionErrors: true,
-        ...watcherOptions.chokidar,
-        ignored: [
-          '**/node_modules/**',
-          '**/.git/**',
-          ...(watcherOptions?.chokidar?.ignored || [])
-        ]
-      }
-
-      if (isWSL2 && resolvedChokidarOptions.usePolling === undefined) {
-        config.logger.warn(
-          colors.yellow(
-            colors.bold(`(!) `) +
-              'Default file system watching might not work with your setup due to the limitation of WSL2. ' +
-              'Rebuild will not happen when file system watching is not working. ' +
-              'To suppress this warning, set true or false to "build.watch.usePolling". ' +
-              'More information: https://vitejs.dev/config/server-options.html#server-watch'
-          )
-        )
-      }
+      const resolvedChokidarOptions = resolveChokidarOptions(
+        config.logger,
+        config.build.watch.chokidar,
+        'build.watch.chokidar'
+      )
 
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
-          ...watcherOptions,
+          ...config.build.watch,
           chokidar: resolvedChokidarOptions
         }
       })
