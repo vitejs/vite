@@ -76,7 +76,7 @@ Vite now avoids full reload during cold start when imports are injected by plugi
 
 In Vite 2.9, both the scanner and optimizer were run in the background. In the best scenario, where the scanner would find every dependency, no reload was needed in cold start. But if the scanner missed a dependency, a new optimization phase and then a reload were needed. Vite was able to avoid some of these reloads in v2.9, as we detected if the new optimized chunks were compatible with the ones the browser had. But if there was a common dep, the sub-chunks could change and a reload was required to avoid duplicated state. In Vite 3, the optimized deps aren't handed to the browser until the crawling of static imports is done. A quick optimization phase is issued if there is a missing dep (for example, injected by a plugin), and only then, the bundled deps are sent. So, a page reload is no longer needed for these cases.
 
-<img style="background-color:rgb(36, 36, 36);padding:5%;" width="90%" height="auto" src="./../images/vite-3-cold-start.svg">
+<img style="background-color:rgb(36, 36, 36);padding:5%;" width="90%" height="auto" src="../images/vite-3-cold-start.svg">
 
 ### import.meta.glob
 
@@ -148,7 +148,7 @@ Vite cares about its publish and install footprint, a fast installation of a new
 | Vite 3.0.0  |    3.05MB    |    17.8MB    |
 | Reduction   |     -30%     |     -7%      |
 
-In part, this reduction was possible by making some dependencies that most users weren't needing optional. First, [Terser]() is no longer installed by default. This dependency was no longer needed since we already made esbuild the default minifier for both JS and CSS in Vite v2. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`). We also moved [node-forge]() out of the monorepo, implementing support for automatic https certificate generation as a new plugins: [@vitejs/plugin-basic-ssl](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). It is recommended creating secure certificates, so this feature didn't justify the added size of this dependency.
+In part, this reduction was possible by making some dependencies that most users weren't needing optional. First, [Terser](https://github.com/terser/terser) is no longer installed by default. This dependency was no longer needed since we already made esbuild the default minifier for both JS and CSS in Vite v2. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`). We also moved [node-forge](https://github.com/digitalbazaar/forge) out of the monorepo, implementing support for automatic https certificate generation as a new plugins: [@vitejs/plugin-basic-ssl](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). It is recommended creating secure certificates, so this feature didn't justify the added size of this dependency.
 
 ## Bug fixing
 
