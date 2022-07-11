@@ -7,6 +7,7 @@ import { URL, URLSearchParams, pathToFileURL } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
+import type { AddressInfo, Server } from 'node:net'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -26,10 +27,13 @@ import {
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
   VALID_ID_PREFIX,
+  loopbackHosts,
   wildcardHosts
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
-import type { ResolvedConfig } from '.'
+import type { ResolvedConfig } from './config'
+import type { ResolvedServerUrls } from './server'
+import type { CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -770,8 +774,6 @@ export interface Hostname {
   host: string | undefined
   /** resolve to localhost when possible */
   name: string
-  /** if it is using the default behavior */
-  implicit: boolean
 }
 
 export async function resolveHostname(
@@ -799,7 +801,60 @@ export async function resolveHostname(
     }
   }
 
-  return { host, name, implicit: optionsHost === undefined }
+  return { host, name }
+}
+
+export async function resolveServerUrls(
+  server: Server,
+  options: CommonServerOptions,
+  config: ResolvedConfig
+): Promise<ResolvedServerUrls> {
+  const address = server.address()
+
+  const isAddressInfo = (x: any): x is AddressInfo => x?.address
+  if (!isAddressInfo(address)) {
+    return { local: [], network: [] }
+  }
+
+  const local: string[] = []
+  const network: string[] = []
+  const hostname = await resolveHostname(options.host)
+  const protocol = options.https ? 'https' : 'http'
+  const port = address.port
+  const base = config.base === './' || config.base === '' ? '/' : config.base
+
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter(
+        (detail) =>
+          detail &&
+          detail.address &&
+          // Node < v18
+          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+            // Node >= v18
+            (typeof detail.family === 'number' && detail.family === 4))
+      )
+      .forEach((detail) => {
+        const host = detail.address.replace('127.0.0.1', hostname.name)
+        const url = `${protocol}://${host}:${port}${base}`
+        if (detail.address.includes('127.0.0.1')) {
+          local.push(url)
+        } else {
+          network.push(url)
+        }
+      })
+  }
+  return { local, network }
 }
 
 export function arraify<T>(target: T | T[]): T[] {
