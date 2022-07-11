@@ -35,7 +35,9 @@ This section describes the biggest architecture changes in Vite v3. To allow pro
 
 Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
-Vite's default dev server host is now `localhost`. You can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1`.
+Vite's default dev server host is now `localhost`. This change only affects when running on Node.js 17+. You can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1`.
+
+Note that Vite may print `127.0.0.1` as the listening host when `localhost` is used. You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to prevent this. See [`server.host`](../config/server-options.md#server-host) for more details.
 
 ### SSR Changes
 
