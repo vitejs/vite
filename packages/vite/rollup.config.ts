@@ -115,7 +115,12 @@ function createNodePlugins(
       ignore: ['bufferutil', 'utf-8-validate']
     }),
     json(),
-    isProduction && licensePlugin(),
+    isProduction &&
+      licensePlugin(
+        path.resolve(__dirname, 'LICENSE.md'),
+        'Vite core license',
+        'Vite'
+      ),
     cjsPatchPlugin()
   ]
 }

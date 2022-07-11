@@ -7,7 +7,12 @@ import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
 
-function licensePlugin() {
+/**
+ * @param {string} licenseFilePath
+ * @param {string} licenseTitle
+ * @param {string} packageName
+ */
+function licensePlugin(licenseFilePath, licenseTitle, packageName) {
   return license({
     thirdParty(dependencies) {
       // https://github.com/rollup/rollup/blob/master/build-plugins/generate-license-file.js
@@ -97,17 +102,17 @@ function licensePlugin() {
         )
         .join('\n---------------------------------------\n\n')
       const licenseText =
-        `# Vite core license\n` +
-        `Vite is released under the MIT license:\n\n` +
+        `# ${licenseTitle}\n` +
+        `${packageName} is released under the MIT license:\n\n` +
         coreLicense +
         `\n# Licenses of bundled dependencies\n` +
-        `The published Vite artifact additionally contains code with the following licenses:\n` +
+        `The published ${packageName} artifact additionally contains code with the following licenses:\n` +
         `${sortLicenses(licenses).join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
         dependencyLicenseTexts
-      const existingLicenseText = fs.readFileSync('LICENSE.md', 'utf8')
+      const existingLicenseText = fs.readFileSync(licenseFilePath, 'utf8')
       if (existingLicenseText !== licenseText) {
-        fs.writeFileSync('LICENSE.md', licenseText)
+        fs.writeFileSync(licenseFilePath, licenseText)
         console.warn(
           colors.yellow(
             '\nLICENSE.md updated. You should commit the updated file.\n'
