@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vitejs.dev/schemas/manifest.json",
+  "title": "Vite Manifest",
+  "type": "object",
+  "patternProperties": {
+    "^.+$": {
+      "$ref": "#/$defs/chunk"
+    }
+  },
+  "$defs": {
+    "chunk": {
+      "type": "object",
+      "properties": {
+        "src": {
+          "type": "string",
+          "description": "Source file of the chunk."
+        },
+        "file": {
+          "type": "string",
+          "description": "A JS filename, relative to the outDir."
+        },
+        "css": {
+          "type": "array",
+          "description": "CSS files imported by the chunk.",
+          "items": {
+            "type": "string",
+            "description": "A CSS filename, relative to the outDir."
+          }
+        },
+        "assets": {
+          "type": "array",
+          "description": "Assets imported by the chunk.",
+          "items": {
+            "type": "string",
+            "description": "An asset filename, relative to the outDir."
+          }
+        },
+        "isEntry": {
+          "type": "boolean",
+          "description": "Whether the chunk is an entry."
+        },
+        "isDynamicEntry": {
+          "type": "boolean",
+          "description": "Whether the chunk is a dynamic entry."
+        },
+        "imports": {
+          "type": "array",
+          "description": "Imports of the chunk.",
+          "items": {
+            "type": "string",
+            "description": "A key for an existing JS entry in the manifest."
+          }
+        },
+        "dynamicImports": {
+          "type": "array",
+          "description": "Dynamic imports of the chunk.",
+          "items": {
+            "type": "string",
+            "description": "A key for an existing JS entry in the manifest."
+          }
+        }
+      },
+      "additionalProperties": true,
+      "required": ["file"]
+    }
+  }
+}
