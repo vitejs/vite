@@ -188,6 +188,8 @@ export interface ViteDevServer {
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
+   *
+   * @experimental
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
