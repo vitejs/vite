@@ -189,7 +189,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile
