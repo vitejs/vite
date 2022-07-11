@@ -4,14 +4,14 @@ import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'
 import corsMiddleware from 'cors'
-import type { ResolvedServerOptions } from './server'
+import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
 import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname } from './utils'
-import { printCommonServerUrls } from './logger'
+import { resolveHostname, resolveServerUrls } from './utils'
+import { printServerUrls } from './logger'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
 
@@ -48,9 +48,15 @@ export interface PreviewServer {
    */
   httpServer: http.Server
   /**
+   * The resolved urls Vite prints on the
+   *
+   * @experimental
+   */
+  resolvedUrls: ResolvedServerUrls
+  /**
    * Print server urls
    */
-  printUrls: () => Promise<void>
+  printUrls(): void
 }
 
 export type PreviewServerHook = (server: {
@@ -127,6 +133,12 @@ export async function preview(
     logger
   })
 
+  const resolvedUrls = await resolveServerUrls(
+    httpServer,
+    config.preview,
+    config
+  )
+
   if (options.open) {
     const path = typeof options.open === 'string' ? options.open : previewBase
     openBrowser(
@@ -141,8 +153,9 @@ export async function preview(
   return {
     config,
     httpServer,
-    async printUrls() {
-      await printCommonServerUrls(httpServer, config.preview, config)
+    resolvedUrls,
+    printUrls() {
+      printServerUrls(resolvedUrls, options.host, logger.info)
     }
   }
 }

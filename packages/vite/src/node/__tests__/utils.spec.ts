@@ -56,8 +56,7 @@ describe('resolveHostname', () => {
 
     expect(await resolveHostname(undefined)).toEqual({
       host: 'localhost',
-      name: resolved ?? 'localhost',
-      implicit: true
+      name: resolved ?? 'localhost'
     })
   })
 
@@ -66,24 +65,21 @@ describe('resolveHostname', () => {
 
     expect(await resolveHostname('localhost')).toEqual({
       host: 'localhost',
-      name: resolved ?? 'localhost',
-      implicit: false
+      name: resolved ?? 'localhost'
     })
   })
 
   test('accepts 0.0.0.0', async () => {
     expect(await resolveHostname('0.0.0.0')).toEqual({
       host: '0.0.0.0',
-      name: 'localhost',
-      implicit: false
+      name: 'localhost'
     })
   })
 
   test('accepts ::', async () => {
     expect(await resolveHostname('::')).toEqual({
       host: '::',
-      name: 'localhost',
-      implicit: false
+      name: 'localhost'
     })
   })
 
@@ -92,8 +88,7 @@ describe('resolveHostname', () => {
       await resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')
     ).toEqual({
       host: '0000:0000:0000:0000:0000:0000:0000:0000',
-      name: 'localhost',
-      implicit: false
+      name: 'localhost'
     })
   })
 })

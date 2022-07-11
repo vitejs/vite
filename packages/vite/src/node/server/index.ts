@@ -19,7 +19,8 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
-  resolveHostname
+  resolveHostname,
+  resolveServerUrls
 } from '../utils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { cjsSsrResolveExternals } from '../ssr/ssrExternal'
@@ -35,7 +36,7 @@ import {
 } from '../optimizer'
 import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
-import { printCommonServerUrls } from '../logger'
+import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
@@ -185,6 +186,13 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
+   * The resolved urls Vite prints on the CLI. null in middleware mode or
+   * before `server.listen` is called.
+   *
+   * @experimental
+   */
+  resolvedUrls: ResolvedServerUrls | null
+  /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
    */
@@ -234,7 +242,7 @@ export interface ViteDevServer {
   /**
    * Print server urls
    */
-  printUrls(): Promise<void>
+  printUrls(): void
   /**
    * Restart the server.
    *
@@ -269,6 +277,11 @@ export interface ViteDevServer {
       abort: () => void
     }
   >
+}
+
+export interface ResolvedServerUrls {
+  local: string[]
+  network: string[]
 }
 
 export async function createServer(
@@ -319,6 +332,7 @@ export async function createServer(
     pluginContainer: container,
     ws,
     moduleGraph,
+    resolvedUrls: null, // will be set on listen
     ssrTransform(code: string, inMap: SourceMap | null, url: string) {
       return ssrTransform(code, inMap, url, code, {
         json: { stringify: server.config.json?.stringify }
@@ -350,8 +364,16 @@ export async function createServer(
     ssrRewriteStacktrace(stack: string) {
       return ssrRewriteStacktrace(stack, moduleGraph)
     },
-    listen(port?: number, isRestart?: boolean) {
-      return startServer(server, port, isRestart)
+    async listen(port?: number, isRestart?: boolean) {
+      await startServer(server, port, isRestart)
+      if (httpServer) {
+        server.resolvedUrls = await resolveServerUrls(
+          httpServer,
+          config.server,
+          config
+        )
+      }
+      return server
     },
     async close() {
       if (!middlewareMode) {
@@ -360,19 +382,27 @@ export async function createServer(
           process.stdin.off('end', exitProcess)
         }
       }
-
       await Promise.all([
         watcher.close(),
         ws.close(),
         container.close(),
         closeHttpServer()
       ])
+      server.resolvedUrls = null
     },
-    async printUrls() {
-      if (httpServer) {
-        await printCommonServerUrls(httpServer, config.server, config)
-      } else {
+    printUrls() {
+      if (server.resolvedUrls) {
+        printServerUrls(
+          server.resolvedUrls,
+          serverConfig.host,
+          config.logger.info
+        )
+      } else if (middlewareMode) {
         throw new Error('cannot print server URLs in middleware mode.')
+      } else {
+        throw new Error(
+          'cannot print server URLs before server.listen is called.'
+        )
       }
     },
     async restart(forceOptimize?: boolean) {
@@ -572,7 +602,7 @@ async function startServer(
   server: ViteDevServer,
   inlinePort?: number,
   isRestart: boolean = false
-): Promise<ViteDevServer> {
+): Promise<void> {
   const httpServer = server.httpServer
   if (!httpServer) {
     throw new Error('Cannot call server.listen in middleware mode.')
@@ -622,8 +652,6 @@ async function startServer(
       server.config.logger
     )
   }
-
-  return server
 }
 
 function createServerCloseFn(server: http.Server | null) {
