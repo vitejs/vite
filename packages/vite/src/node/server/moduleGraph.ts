@@ -238,7 +238,7 @@ export class ModuleGraph {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
-    const { pathname, search, hash } = new URL(url)
+    const { pathname, search, hash } = new URL(url, 'relative://')
     if (ext && !pathname!.endsWith(ext)) {
       url = pathname + ext + (search || '') + (hash || '')
     }
