@@ -14,6 +14,10 @@ export default defineBuildConfig({
       minify: true
     }
   },
+  alias: {
+    // we can always use non-transpiled code since we support 14.18.0+
+    prompts: 'prompts/lib/index.js'
+  },
   hooks: {
     'rollup:options'(ctx, options) {
       if (!options.plugins) {
