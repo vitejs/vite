@@ -238,9 +238,9 @@ export class ModuleGraph {
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     const ext = extname(cleanUrl(resolvedId))
-    const { path, query, fragment } = new URL(url)
-    if (ext && !path!.endsWith(ext)) {
-      url = path + ext + (query ? `?${query} `: '') + (fragment ? `#${fragment}` : '')
+    const { pathname, search, hash } = new URL(url)
+    if (ext && !pathname!.endsWith(ext)) {
+      url = pathname + ext + (search || '') + (hash || '')
     }
     return [url, resolvedId, resolved?.meta]
   }
