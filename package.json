@@ -36,8 +36,8 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.18.7",
-    "@microsoft/api-extractor": "^7.28.2",
+    "@babel/types": "^7.18.8",
+    "@microsoft/api-extractor": "^7.28.4",
     "@rollup/plugin-typescript": "^8.3.3",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
@@ -59,8 +59,8 @@
     "@types/semver": "^7.3.10",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.30.4",
-    "@typescript-eslint/parser": "^5.30.4",
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.47",
@@ -76,7 +76,7 @@
     "node-fetch": "^3.2.6",
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
-    "playwright-chromium": "^1.23.1",
+    "playwright-chromium": "^1.23.2",
     "pnpm": "^7.5.0",
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
@@ -91,7 +91,7 @@
     "unbuild": "^0.7.4",
     "vite": "workspace:*",
     "vitepress": "^1.0.0-alpha.4",
-    "vitest": "^0.17.0",
+    "vitest": "^0.18.0",
     "vue": "^3.2.37"
   },
   "simple-git-hooks": {
