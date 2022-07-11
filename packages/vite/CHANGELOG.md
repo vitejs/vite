@@ -1,3 +1,17 @@
+## 3.0.0-beta.10 (2022-07-11)
+
+* feat: expose server resolved urls (#8986) ([26bcdc3](https://github.com/vitejs/vite/commit/26bcdc3)), closes [#8986](https://github.com/vitejs/vite/issues/8986)
+* feat: show ws connection error (#9007) ([da7c3ae](https://github.com/vitejs/vite/commit/da7c3ae)), closes [#9007](https://github.com/vitejs/vite/issues/9007)
+* chore: fix test optimizeDeps at build time flag (#9004) ([9363872](https://github.com/vitejs/vite/commit/9363872)), closes [#9004](https://github.com/vitejs/vite/issues/9004)
+* chore: ignore ts warning (#9015) ([e2a6bf4](https://github.com/vitejs/vite/commit/e2a6bf4)), closes [#9015](https://github.com/vitejs/vite/issues/9015)
+* chore: scanner after server listen (#9020) ([53799e1](https://github.com/vitejs/vite/commit/53799e1)), closes [#9020](https://github.com/vitejs/vite/issues/9020)
+* chore: v3.0.0-beta.9 release notes (#8996) ([2a9bc6d](https://github.com/vitejs/vite/commit/2a9bc6d)), closes [#8996](https://github.com/vitejs/vite/issues/8996)
+* chore(deps): update all non-major dependencies (#9022) ([6342140](https://github.com/vitejs/vite/commit/6342140)), closes [#9022](https://github.com/vitejs/vite/issues/9022)
+* fix(ssr): sourcemap content (fixes #8657) (#8997) ([aff4544](https://github.com/vitejs/vite/commit/aff4544)), closes [#8657](https://github.com/vitejs/vite/issues/8657) [#8997](https://github.com/vitejs/vite/issues/8997)
+* docs: update api-javascript (#8999) ([05b17df](https://github.com/vitejs/vite/commit/05b17df)), closes [#8999](https://github.com/vitejs/vite/issues/8999)
+
+
+
 ## 3.0.0-beta.9 (2022-07-08)
 
 ### Main Changes
