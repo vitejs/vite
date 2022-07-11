@@ -380,13 +380,13 @@ export async function createServer(
           process.stdin.off('end', exitProcess)
         }
       }
-
       await Promise.all([
         watcher.close(),
         ws.close(),
         container.close(),
         closeHttpServer()
       ])
+      server.resolvedUrls = null
     },
     printUrls() {
       if (server.resolvedUrls) {
