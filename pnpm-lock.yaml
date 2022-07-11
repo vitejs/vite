@@ -41,6 +41,7 @@ importers:
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
       execa: ^6.1.0
+      fast-glob: ^3.2.11
       fs-extra: ^10.1.0
       lint-staged: ^13.0.3
       minimist: ^1.2.6
@@ -50,8 +51,10 @@ importers:
       pnpm: ^7.9.3
       prettier: 2.7.1
       prompts: ^2.4.2
+      resolve: ^1.22.1
       rimraf: ^3.0.2
       rollup: ~2.78.0
+      rollup-plugin-license: ^2.8.1
       semver: ^7.3.7
       simple-git-hooks: ^2.8.0
       tslib: ^2.4.0
@@ -94,6 +97,7 @@ importers:
       eslint-plugin-import: 2.26.0_3bh5nkk7utn7e74vrwtv6rxmt4
       eslint-plugin-node: 11.1.0_eslint@8.22.0
       execa: 6.1.0
+      fast-glob: 3.2.11
       fs-extra: 10.1.0
       lint-staged: 13.0.3
       minimist: 1.2.6
@@ -103,8 +107,10 @@ importers:
       pnpm: 7.9.3
       prettier: 2.7.1
       prompts: 2.4.2
+      resolve: 1.22.1
       rimraf: 3.0.2
       rollup: 2.78.0
+      rollup-plugin-license: 2.8.1_rollup@2.78.0
       semver: 7.3.7
       simple-git-hooks: 2.8.0
       tslib: 2.4.0
@@ -252,7 +258,6 @@ importers:
       resolve: ^1.22.1
       resolve.exports: ^1.1.0
       rollup: ~2.78.0
-      rollup-plugin-license: ^2.8.1
       sirv: ^2.0.2
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
@@ -313,7 +318,6 @@ importers:
       postcss-load-config: 4.0.1_postcss@8.4.16
       postcss-modules: 5.0.0_postcss@8.4.16
       resolve.exports: 1.1.0
-      rollup-plugin-license: 2.8.1_rollup@2.78.0
       sirv: 2.0.2
       source-map-js: 1.0.2
       source-map-support: 0.5.21
@@ -5039,7 +5043,7 @@ packages:
       is-glob: 4.0.3
       minimatch: 3.1.2
       object.values: 1.1.5
-      resolve: 1.22.0
+      resolve: 1.22.1
       tsconfig-paths: 3.14.1
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
@@ -5058,7 +5062,7 @@ packages:
       eslint-utils: 2.1.0
       ignore: 5.2.0
       minimatch: 3.1.2
-      resolve: 1.22.0
+      resolve: 1.22.1
       semver: 6.3.0
     dev: true
 
