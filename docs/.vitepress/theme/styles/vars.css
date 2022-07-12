@@ -6,6 +6,7 @@
   --vp-c-brand: #646cff;
   --vp-c-brand-light: #747bff;
   --vp-c-brand-lighter: #9499ff;
+  --vp-c-brand-lightest: #bcc0ff;
   --vp-c-brand-dark: #535bf2;
   --vp-c-brand-darker: #454ce1;
   --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
@@ -71,7 +72,7 @@
 
 .dark {
   --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-lighter);
+  --vp-custom-block-tip-text: var(--vp-c-brand-lightest);
   --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
 }
 
@@ -81,4 +82,29 @@
 
 .DocSearch {
   --docsearch-primary-color: var(--vp-c-brand) !important;
+}
+
+/**
+ * VitePress: Custom fix
+ * -------------------------------------------------------------------------- */
+
+/* a11y: use lighter colors for links in dark mode */
+.dark .vp-doc a,
+.dark .VPNavBarMenuLink.VPNavBarMenuLink:hover,
+.dark .VPNavBarMenuLink.VPNavBarMenuLink.active,
+.dark .link.link:hover,
+.dark .link.link.active,
+.dark .edit-link-button.edit-link-button,
+.dark .pager-link .title {
+  color: var(--vp-c-brand-lighter);
+}
+
+.dark .vp-doc a:hover {
+  color: var(--vp-c-brand-lightest);
+  opacity: 1;
+}
+
+/* transition by color instead of opacity */
+.dark .vp-doc .custom-block a {
+  transition: color 0.25s;
 }
