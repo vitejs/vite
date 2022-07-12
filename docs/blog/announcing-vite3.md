@@ -151,7 +151,7 @@ init().then((instance) => {
 })
 ```
 
-Learn more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.html#webassembly)
+Learn more in the [WebAssembly guide](/guide/features.html#webassembly)
 
 ### Improved Relative Base Support
 
