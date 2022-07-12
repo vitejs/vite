@@ -107,7 +107,7 @@ import.meta.glob(['./dir/*.js', './another/*.js'])
 import.meta.glob(['./dir/*.js', '!**/bar.js'])
 ```
 
-[Named Imports](https://vitejs.dev/guide/features.html#glob-import) can be specified to improve tree-shacking
+[Named Imports](https://vitejs.dev/guide/features.html#named-imports) can be specified to improve tree-shacking
 
 ```js
 import.meta.glob('./dir/*.js', { import: 'setup' })
