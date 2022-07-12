@@ -93,7 +93,7 @@ Apart from the CLI’s aesthetics improvements, you’ll notice that the default
 
 One of the pain points of Vite v2 was configuring the server when running behind a proxy. Vite v3 changes the default connection scheme so it works out of the box in most scenarios. All these setups are now tested as part of the Vite Ecosystem CI through [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue).
 
-### ESM SSR build by default
+### ESM SSR Build by Default
 
 Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite v3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
 
