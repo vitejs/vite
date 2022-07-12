@@ -159,7 +159,7 @@ Vite v3 now properly supports relative base (using `base: ''`), allowing built a
 
 ### Built Asset Paths fine-grained Control (Experimental)
 
-There are other deploy scenarios where this isn't enough. For example, if the generated hashed assets need to be deployed to a different CDN from the public files, then finer-grained control is required over path generation at build time. Vite v3 provides an experimental API to modify the built file paths. Check [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options) for more information.
+There are other deploy scenarios where this isn't enough. For example, if the generated hashed assets need to be deployed to a different CDN from the public files, then finer-grained control is required over path generation at build time. Vite v3 provides an experimental API to modify the built file paths. Check [Build Advanced Base Options](/guide/build.html#advanced-base-options) for more information.
 
 ### Esbuild Deps Optimization at Build Time (Experimental)
 
