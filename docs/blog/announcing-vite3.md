@@ -171,7 +171,7 @@ We have worked closely with projects in the ecosystem to ensure that frameworks 
 
 ## Acknowledgments
 
-Vite 3 is the result of the aggregate effort of members of the [Vite Team](https://main.vitejs.dev/team) working together with ecosystem projects maintainers and other collaborators to Vite core.
+Vite 3 is the result of the aggregate effort of members of the [Vite Team](https://main.vitejs.dev/team) working together with ecosystem project maintainers and other collaborators to Vite core.
 
 We want to thank everyone that have implemented features, and fixes, given feedback, and have been involved in Vite v3:
 
