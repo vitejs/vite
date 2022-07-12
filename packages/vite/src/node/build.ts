@@ -339,10 +339,14 @@ const parallelBuilds: RollupBuild[] = []
 export async function build(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+  // NODE_ENV may be used as an "isProduction" flag for plugins
+  // Be sure to reset on exit (see finally block)
+  const initialNodeEnv = process.env.NODE_ENV
   parallelCallCounts++
   try {
     return await doBuild(inlineConfig)
   } finally {
+    process.env.NODE_ENV = initialNodeEnv
     parallelCallCounts--
     if (parallelCallCounts <= 0) {
       await Promise.all(parallelBuilds.map((bundle) => bundle.close()))
