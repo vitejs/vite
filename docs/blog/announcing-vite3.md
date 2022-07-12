@@ -140,7 +140,7 @@ There is opt-in support for [HMR Partial Accept](https://github.com/vitejs/vite/
 
 ## Bundle size-reduction
 
-Vite cares about its publish and install footprint, a fast installation of a new app is a feature. Vite bundles most of its dependencies and tries to use modern lightweight alternatives where possible. Continuing with this ongoing goal, Vite 3 publish size is 30% smaller than v2.
+Vite cares about its publish and install footprint; a fast installation of a new app is a feature. Vite bundles most of its dependencies and tries to use modern lightweight alternatives where possible. Continuing with this ongoing goal, Vite 3 publish size is 30% smaller than v2.
 
 |             | Publish Size | Install Size |
 | ----------- | :----------: | :----------: |
