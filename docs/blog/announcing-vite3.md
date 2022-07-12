@@ -186,7 +186,7 @@ We also want to thank individuals and companies sponsoring the Vite team, and co
 
 ## What's Next
 
-We'll take the next months to ensure a smooth transition for all the projects built on top of Vite. So the first minors will be focused on continuing our triaging efforts with a focus on newly opened issues.
+We'll take the following months to ensure a smooth transition for all the projects built on top of Vite. So the first minors will be focused on continuing our triaging efforts with a focus on newly opened issues.
 
 The Rollup team is [working on its next major](https://twitter.com/lukastaegert/status/1544186847399743488), to be released in the next months. Once the Rollup plugins ecosystem has time to update, we'll follow up with a new Vite major. This will gives us another opportunity to introduce bigger changes during this year, that we could take to stabilize some of the experimental features introduce in this release.
 
