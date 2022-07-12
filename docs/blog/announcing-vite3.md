@@ -6,7 +6,7 @@ sidebar: false
 
 In February last year, [Evan You](https://twitter.com/youyuxi) released Vite v2. Since then, its adoption has grown non-stop, reaching more than 1 million npm downloads per week. A sprawling ecosystem rapidly formed after the release. Vite is powering a renewed innovation race in Web frameworks. [Nuxt v3](https://v3.nuxtjs.org/) will use Vite by default. [SvelteKit](https://kit.svelte.dev/), [Astro](https://astro.build/), [Hydrogen](https://hydrogen.shopify.dev/), and [SolidStart](https://docs.solidjs.com/start) are all built with Vite. [Laravel has now decided to use Vite by default](https://laravel.com/docs/9.x/vite). [Vite Ruby](https://vite-ruby.netlify.app/) shows how Vite can improve Rails DX. [Vitest](https://vitest.dev) is making strides as a Vite-native alternative to Jest. Vite is behind [Cypress](https://docs.cypress.io/guides/component-testing/writing-your-first-component-test) and [Playwright](https://playwright.dev/docs/test-components)'s new Component Testing features, Storybook has [Vite as an official builder](https://github.com/storybookjs/builder-vite). And [the list goes on](https://patak.dev/vite/ecosystem.html). Maintainers from most of these projects got involved in improving the Vite core itself, working closely with the Vite [team](https://vitejs.dev/team) and other contributors.
 
-Today, 16 months from the v2 launch we are happy to announce the release of Vite 3. We decided to release a new Vite major at least yearly to align with Node EOL, and take the opportunity to review Vite's API regularly with a short migration path for projects in the ecosystem.
+Today, 16 months from the v2 launch we are happy to announce the release of Vite 3. We decided to release a new Vite major at least every year to align with [Node's EOL](https://nodejs.org/en/about/releases/), and take the opportunity to review Vite's API regularly with a short migration path for projects in the ecosystem.
 
 Quick links:
 
@@ -14,7 +14,7 @@ Quick links:
 - [Migration Guide](/guide/migration)
 - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#300-beta9-2022-07-08)
 
-If you are new to Vite, we recommend reading the [Why Vite Guide](https://vitejs.dev/guide/why.html). Then check out [the Getting Started](https://vitejs.dev/guide/getting-started) and [Features guide](https://vitejs.dev/guide/features) to see what Vite provides out of the box. As usual, contributions are welcome at [GitHub](https://github.com/vitejs/vite). More than 600 collaborators have helped improve Vite so far. Follow the updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vitejs.dev/).
+If you are new to Vite, we recommend reading the [Why Vite Guide](https://vitejs.dev/guide/why.html). Then check out [the Getting Started](https://vitejs.dev/guide/getting-started) and [Features guide](https://vitejs.dev/guide/features) to see what Vite provides out of the box. As usual, contributions are welcome at [GitHub](https://github.com/vitejs/vite). More than [600 collaborators](https://github.com/vitejs/vite/graphs/contributors) have helped improve Vite so far. Follow the updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vitejs.dev/).
 
 ## What's New
 
@@ -34,9 +34,7 @@ There is also now an official Spanish translation, that has been added to the pr
 - [日本語](https://ja.vitejs.dev/)
 - [Español](https://es.vitejs.dev/)
 
-Before updating to Vite 3, please read the [migration guide from v2](https://main.vitejs.dev/guide/migration).
-
-### Create Vite starter templates
+### Create Vite Starter Templates
 
 [create-vite](https://main.vitejs.dev/guide/#trying-vite-online) templates have been a great tool to quickly test Vite with your favorite framework. In Vite v3, all of the templates got a new theme in line with the new docs. Open them online and start playing with Vite 3 now:
 
@@ -66,7 +64,7 @@ The theme is now shared by all templates. This should help better convey the sco
 
 ### Vite CLI
 
-<pre style="background-color:rgb(36, 36, 36);padding:2em;">
+<pre style="background-color: var(--vp-code-block-bg);padding:2em;">
   <span style="color:lightgreen"><b>VITE</b></span> <span style="color:lightgreen">v3.0.0</span>  <span style="color:gray">ready in <b>320</b> ms</span>
 
   <span style="color:lightgreen"><b>➜</b></span>  <span style="color:white"><b>Local</b>:</span>   <span style="color:cyan">http://127.0.0.1:5173/</span>
@@ -77,19 +75,19 @@ Apart from the CLI’s aesthetics improvements, you’ll notice that the default
 
 ### Improved WebSocket Connection Strategy
 
-One of the pain points of Vite v2 was configuring the server when running behind a proxy. Vite v3 changes the default connection scheme so it works out of the box in most scenarios. All these setups are now tested as part of the Vite Ecosystem CI through [vite-setup-catalogue](https://github.com/sapphi-red/vite-setup-catalogue).
+One of the pain points of Vite v2 was configuring the server when running behind a proxy. Vite v3 changes the default connection scheme so it works out of the box in most scenarios. All these setups are now tested as part of the Vite Ecosystem CI through [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue).
 
 ### ESM SSR build by default
 
 Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite v3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
 
-### Cold start improvements
+### Cold Start Improvements
 
 Vite now avoids full reload during cold start when imports are injected by plugins while crawling the initial statically imported modules ([#8869](https://github.com/vitejs/vite/issues/8869)).
 
 In Vite 2.9, both the scanner and optimizer were run in the background. In the best scenario, where the scanner would find every dependency, no reload was needed in cold start. But if the scanner missed a dependency, a new optimization phase and then a reload were needed. Vite was able to avoid some of these reloads in v2.9, as we detected if the new optimized chunks were compatible with the ones the browser had. But if there was a common dep, the sub-chunks could change and a reload was required to avoid duplicated state. In Vite 3, the optimized deps aren't handed to the browser until the crawling of static imports is done. A quick optimization phase is issued if there is a missing dep (for example, injected by a plugin), and only then, the bundled deps are sent. So, a page reload is no longer needed for these cases.
 
-<img style="background-color:rgb(36, 36, 36);padding:5%;" width="90%" height="auto" src="../images/vite-3-cold-start.svg">
+<img style="background-color: var(--vp-code-block-bg);padding:5%;" width="90%" height="auto" src="../images/vite-3-cold-start.svg">
 
 ### import.meta.glob
 
@@ -119,7 +117,13 @@ import.meta.glob('./dir/*.js', { import: 'setup' })
 import.meta.glob('./dir/*.js', { query: { custom: 'data' } })
 ```
 
-### Aligning WASM import with future standards
+[Eager Imports](https://vitejs.dev/guide/features.html#glob-import) is now passed as a flag
+
+```js
+import.meta.glob('./dir/*.js', { eager: true })
+```
+
+### Aligning WASM import with Future Standards
 
 The WebAssembly import API has been revised to avoid collisions with future standards and to make it more flexible:
 
@@ -137,11 +141,11 @@ Learn more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.htm
 
 Vite v3 now properly supports relative base (using `base: ''`), allowing built assets to be deployed to different bases without re-building. This is useful when the base isn't known at build time, for example when deploying to content-addressable networks like [IPFS](https://ipfs.io/).
 
-### Built asset paths fine-grained control (Experimental)
+### Built Asset Paths fine-grained Control (Experimental)
 
 There are other deploy scenarios where this isn't enough. For example, if the generated hashed assets need to be deployed to a different CDN from the public files, then finer-grained control is required over path generation at build time. Vite v3 provides an experimental API to modify the built file paths. Check [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options) for more information.
 
-### Esbuild deps optimization at build time (Experimental)
+### Esbuild Deps Optimization at Build Time (Experimental)
 
 One of the main differences between dev and build time is how Vite handles dependencies. During build time, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is used to allow importing CJS only dependencies (like React). When using the dev server, esbuild is used instead to pre-bundle and optimize dependencies, and an inline interop scheme is applied while transforming user code importing CJS deps. During the development of Vite v3, we introduced the changes needed to also allow the use of [esbuild to optimize dependencies during build time](https://main.vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time). [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) can then be avoided, making dev and build time work in the same way.
 
@@ -161,9 +165,9 @@ Vite cares about its publish and install footprint; a fast installation of a new
 | Vite 3.0.0  |    3.05MB    |    17.8MB    |
 | Reduction   |     -30%     |     -7%      |
 
-In part, this reduction was possible by making some dependencies that most users didn't need optional. First, [Terser](https://github.com/terser/terser) is no longer installed by default. This dependency was no longer needed since we already made esbuild the default minifier for both JS and CSS in Vite v2. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`). We also moved [node-forge](https://github.com/digitalbazaar/forge) out of the monorepo, implementing support for automatic HTTPS certificate generation as a new plugin: [@vitejs/plugin-basic-ssl](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). It is recommended to create secure certificates, so this feature didn't justify the added size of this dependency.
+In part, this reduction was possible by making some dependencies that most users weren't needing optional. First, [Terser](https://github.com/terser/terser) is no longer installed by default. This dependency was no longer needed since we already made esbuild the default minifier for both JS and CSS in Vite v2. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`). We also moved [node-forge](https://github.com/digitalbazaar/forge) out of the monorepo, implementing support for automatic https certificate generation as a new plugins: [`@vitejs/plugin-basic-ssl`](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). It is recommended creating secure certificates, so this feature didn't justify the added size of this dependency.
 
-## Bug fixing
+## Bug Fixing
 
 A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), [@sapphi_red](https://twitter.com/sapphi_red), that recently joined the Vite team. During the past three months, the Vite open issues were reduced from 770 to 400. And this dive was achieved while the newly open PRs were at an all-time high.
 
@@ -171,14 +175,16 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 [![](../images/v3-new-open-issues-and-PRs.png)](https://www.repotrends.com/vitejs/vite)
 
-## Notes about Compatibility
+## Notes About Compatibility
 
 - Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 - Vite is now published as ESM, with a CJS proxy to the ESM entry for compatibility.
 - The Modern Browser Baseline now targets browsers which support the [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta).
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
 
-## The ecosystem is ready for v3
+Learn more in the [Migration Guide](https://main.vitejs.dev/guide/migration).
+
+## The Ecosystem is Ready for v3
 
 We have worked closely with projects in the ecosystem to ensure that frameworks powered by Vite are ready for Vite v3. [vite-ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci) allows us to run the CI's from the leading players in the ecosystem against Vite's main branch and receive timely reports before introducing a regression. Today's release should soon be compatible with most projects using Vite.
 
@@ -195,7 +201,7 @@ We want to thank everyone that have implemented features, and fixes, given feedb
 - [@KiaKing85](https://twitter.com/KiaKing85) for getting the theme ready for the Vite v3 release, and [@\_brc_dd](https://twitter.com/_brc_dd) for working on the VitePress internals.
 - [@CodingWithCego](https://twitter.com/CodingWithCego) for the new Spanish translation, and [@ShenQingchuan](https://twitter.com/ShenQingchuan), [@hiro-lapis](https://github.com/hiro-lapis) and others in the Chinese and Japanese translations teams for keeping the translated docs up to date.
 
-We also want to thank individuals and companies sponsoring the Vite team, and companies investing in Vite development: some of [@antfu7](https://twitter.com/antfu7)'s work on Vite and the ecosystem is part of his job at [Nuxt Labs](https://nuxtlabs.com/), and [StackBlitz](https://stackblitz.com/) hired [@patak_dev](https://twitter.com/patak_dev) to work full time on Vite,
+We also want to thank individuals and companies sponsoring the Vite team, and companies investing in Vite development: some of [@antfu7](https://twitter.com/antfu7)'s work on Vite and the ecosystem is part of his job at [Nuxt Labs](https://nuxtlabs.com/), and [StackBlitz](https://stackblitz.com/) hired [@patak_dev](https://twitter.com/patak_dev) to work full time on Vite.
 
 ## What's Next
 
@@ -203,4 +209,4 @@ We'll take the following months to ensure a smooth transition for all the projec
 
 The Rollup team is [working on its next major](https://twitter.com/lukastaegert/status/1544186847399743488), to be released in the following months. Once the Rollup plugins ecosystem has time to update, we'll follow up with a new Vite major. This will give us another opportunity to introduce more significant changes this year, which we could take to stabilize some of the experimental features introduced in this release.
 
-If you are interested in helping improve Vite, the best way to get on board is to help with triaging issues. Join [our Discord](https://chat.vitejs.dev) and look for the #contributing channel. Or get involved in our #docs, #help others, or create plugins. We are just getting started. There are many open ideas to keep improving Vite's DX.
+If you are interested in helping improve Vite, the best way to get on board is to help with triaging issues. Join [our Discord](https://chat.vitejs.dev) and look for the `#contributing` channel. Or get involved in our `#docs`, `#help` others, or create plugins. We are just getting started. There are many open ideas to keep improving Vite's DX.
