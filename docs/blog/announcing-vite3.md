@@ -40,7 +40,7 @@ Before updating to Vite 3, please read the [migration guide from v2](https://mai
 
 [create-vite](https://main.vitejs.dev/guide/#trying-vite-online) templates have been a great tool to quickly test Vite with your favorite framework. In Vite v3, all of the templates got a new theme in line with the new docs. Open them online and start playing with Vite 3 now:
 
-<div style="display:flex;width:100%;justify-content:space-around;align-items:center;flex-wrap:wrap;">
+<div class="stackblitz-links">
 <a target="_blank" href="https://vite.new"><img width="75" height="75" src="../images/vite.svg"></a>
 <a target="_blank" href="https://vite.new/vue"><img width="75" height="70" src="../images/vue.svg"></a>
 <a target="_blank" href="https://vite.new/svelte"><img width="75" height="70" src="../images/svelte.svg"></a>
@@ -48,6 +48,19 @@ Before updating to Vite 3, please read the [migration guide from v2](https://mai
 <a target="_blank" href="https://vite.new/preact"><img width="75" height="70" src="../images/preact.svg"></a>
 <a target="_blank" href="https://vite.new/lit"><img width="75" height="70" src="../images/lit.svg"></a>
 </div>
+
+<style>
+.stackblitz-links {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stackblitz-links > a:hover {
+  filter: drop-shadow(0 0 0.5em #646cffaa);
+}
+</style>
 
 The theme is now shared by all templates. This should help better convey the scope for these starters as minimal templates to get started with Vite. For more complete solutions including linting, testing setup, and other features, there are official Vite-powered templates for some frameworks like [create-vue](https://github.com/vuejs/create-vue) and [create-svelte](https://github.com/sveltejs/kit). There is a community-maintained list of templates at [Awesome Vite](https://github.com/vitejs/awesome-vite#templates).
 
