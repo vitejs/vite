@@ -167,7 +167,7 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 ## The ecosystem is ready for v3
 
-We have worked closely with projects in the ecosystem to ensure that frameworks powered by Vite are ready for Vite v3. [vite-ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci) allow us to run the CI's from the main players in the ecosystem against Vite's main branch and receive timely reports before introducing a regression. Today's release should soon be compatible with most projects using Vite.
+We have worked closely with projects in the ecosystem to ensure that frameworks powered by Vite are ready for Vite v3. [vite-ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci) allows us to run the CI's from the leading players in the ecosystem against Vite's main branch and receive timely reports before introducing a regression. Today's release should soon be compatible with most projects using Vite.
 
 ## Acknowledgments
 
