@@ -35,11 +35,11 @@
   - [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options)
   - [HMR Partial Accept](https://github.com/vitejs/vite/pull/7324)
   - Vite now allows the use of [esbuild to optimize dependencies during build time](https://main.vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time) avoiding the need of [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs), removing one of the difference id dependency handling between dev and prod.
-- Bundle size reduction 
+- Bundle size reduction
   - Terser is now an optional dependency. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`)
   - node-forge moved out of the monorepo to [@vitejs/plugin-basic-ssl](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation)
-- Options that were [already deprecated in v2](https://main.vitejs.dev/guide/migration.html#config-options-changes) have been removed. 
-  
+- Options that were [already deprecated in v2](https://main.vitejs.dev/guide/migration.html#config-options-changes) have been removed.
+
 > **Note**
 > Before updating, check out the [migration guide from v2](https://main.vitejs.dev/guide/migration)
 
@@ -346,6 +346,22 @@ See [3.0.0-alpha.1 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.1
 #### [3.0.0-alpha.0](https://github.com/vitejs/vite/compare/v2.9.12...v3.0.0-alpha.0) (2022-05-13)
 
 See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.0/packages/vite/CHANGELOG.md)
+
+
+
+## <small>2.9.14 (2022-07-08)</small>
+
+* fix: re-encode url to prevent fs.allow bypass (fixes #8498) (#8990) ([adb61c5](https://github.com/vitejs/vite/commit/adb61c5)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8990](https://github.com/vitejs/vite/issues/8990)
+* fix: reverts #8471, fix css content ([da77dee](https://github.com/vitejs/vite/commit/da77dee)), closes [#8874](https://github.com/vitejs/vite/issues/8874)
+* fix(css): preserve dynamic import css code (fixes #5348) ([d4d89b9](https://github.com/vitejs/vite/commit/d4d89b9)), closes [#5348](https://github.com/vitejs/vite/issues/5348) [#7746](https://github.com/vitejs/vite/issues/7746)
+* fix(css): always use css module content (#8977) ([84ec02a](https://github.com/vitejs/vite/commit/84ec02a)), closes [#8936](https://github.com/vitejs/vite/issues/8936) [#8977](https://github.com/vitejs/vite/issues/8977)
+
+
+
+## <small>2.9.13 (2022-06-27)</small>
+
+* fix: /@fs/ dir traversal with escaped chars (fixes #8498) (#8805) ([e109d64](https://github.com/vitejs/vite/commit/e109d64)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8805](https://github.com/vitejs/vite/issues/8805)
+* fix(wasm): support decoding data URL in Node < v16 (#8668) ([1afc1c2](https://github.com/vitejs/vite/commit/1afc1c2)), closes [#8668](https://github.com/vitejs/vite/issues/8668)
 
 
 
