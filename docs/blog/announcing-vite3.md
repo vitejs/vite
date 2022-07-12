@@ -195,7 +195,7 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 - Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 - Vite is now published as ESM, with a CJS proxy to the ESM entry for compatibility.
-- The Modern Browser Baseline now targets browsers which support the [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta).
+- The Modern Browser Baseline now targets browsers which support the [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta) features.
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
 
 Learn more in the [Migration Guide](/guide/migration).
