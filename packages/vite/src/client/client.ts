@@ -134,7 +134,11 @@ async function handleMessage(payload: HMRPayload) {
       sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
-      setInterval(() => socket.send('{"type":"ping"}'), __HMR_TIMEOUT__)
+      setInterval(() => {
+        if (socket.readyState === socket.OPEN) {
+          socket.send('{"type":"ping"}')
+        }
+      }, __HMR_TIMEOUT__)
       break
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
