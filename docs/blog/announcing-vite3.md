@@ -122,7 +122,7 @@ Learn more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.htm
 
 ### Improved Relative Base Support
 
-Vite v3 now properly supports relative base (using `base: ''`), allowing built assets to be deployed to different bases without the need for a re-build. This is useful when the base isn't known at build time, for example when deploying to content-addressable networks like [IPFS](https://ipfs.io/).
+Vite v3 now properly supports relative base (using `base: ''`), allowing built assets to be deployed to different bases without re-building. This is useful when the base isn't known at build time, for example when deploying to content-addressable networks like [IPFS](https://ipfs.io/).
 
 ### Built asset paths fine-grained control (Experimental)
 
