@@ -49,7 +49,7 @@ Before updating to Vite 3, please read the [migration guide from v2](https://mai
 <a target="_blank" href="https://vite.new/lit"><img width="75" height="70" src="../images/lit.svg"></a>
 </div>
 
-The theme is now shared by all templates. This should help better convey the scope for these starters, as minimal templates to get started with Vite. For more complete solutions including linting, testing setup, and other features, there are official Vite-powered templates for some frameworks like [create-vue](https://github.com/vuejs/create-vue) and [create-svelte](https://github.com/sveltejs/kit). There is a community-maintained list of templates at [Awesome Vite](https://github.com/vitejs/awesome-vite#templates).
+The theme is now shared by all templates. This should help better convey the scope for these starters as minimal templates to get started with Vite. For more complete solutions including linting, testing setup, and other features, there are official Vite-powered templates for some frameworks like [create-vue](https://github.com/vuejs/create-vue) and [create-svelte](https://github.com/sveltejs/kit). There is a community-maintained list of templates at [Awesome Vite](https://github.com/vitejs/awesome-vite#templates).
 
 ### Vite CLI
 
