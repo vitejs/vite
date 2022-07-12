@@ -39,12 +39,12 @@ There is also now an official Spanish translation, that has been added to the pr
 [create-vite](/guide/#trying-vite-online) templates have been a great tool to quickly test Vite with your favorite framework. In Vite v3, all of the templates got a new theme in line with the new docs. Open them online and start playing with Vite 3 now:
 
 <div class="stackblitz-links">
-<a target="_blank" href="https://vite.new"><img width="75" height="75" src="../images/vite.svg"></a>
-<a target="_blank" href="https://vite.new/vue"><img width="75" height="75" src="../images/vue.svg"></a>
-<a target="_blank" href="https://vite.new/svelte"><img width="60" height="60" src="../images/svelte.svg"></a>
-<a target="_blank" href="https://vite.new/react"><img width="75" height="75" src="../images/react.svg"></a>
-<a target="_blank" href="https://vite.new/preact"><img width="65" height="65" src="../images/preact.svg"></a>
-<a target="_blank" href="https://vite.new/lit"><img width="60" height="60" src="../images/lit.svg"></a>
+<a target="_blank" href="https://vite.new"><img width="75" height="75" src="../images/vite.svg" alt="Vite logo"></a>
+<a target="_blank" href="https://vite.new/vue"><img width="75" height="75" src="../images/vue.svg" alt="Vue logo"></a>
+<a target="_blank" href="https://vite.new/svelte"><img width="60" height="60" src="../images/svelte.svg" alt="Svelte logo"></a>
+<a target="_blank" href="https://vite.new/react"><img width="75" height="75" src="../images/react.svg" alt="React logo"></a>
+<a target="_blank" href="https://vite.new/preact"><img width="65" height="65" src="../images/preact.svg" alt="Preact logo"></a>
+<a target="_blank" href="https://vite.new/lit"><img width="60" height="60" src="../images/lit.svg" alt="Lit logo"></a>
 </div>
 
 <style>
