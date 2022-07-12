@@ -40,11 +40,11 @@ There is also now an official Spanish translation, that has been added to the pr
 
 <div class="stackblitz-links">
 <a target="_blank" href="https://vite.new"><img width="75" height="75" src="../images/vite.svg"></a>
-<a target="_blank" href="https://vite.new/vue"><img width="75" height="70" src="../images/vue.svg"></a>
-<a target="_blank" href="https://vite.new/svelte"><img width="75" height="70" src="../images/svelte.svg"></a>
-<a target="_blank" href="https://vite.new/react"><img width="75" height="70" src="../images/react.svg"></a>
-<a target="_blank" href="https://vite.new/preact"><img width="75" height="70" src="../images/preact.svg"></a>
-<a target="_blank" href="https://vite.new/lit"><img width="75" height="70" src="../images/lit.svg"></a>
+<a target="_blank" href="https://vite.new/vue"><img width="75" height="75" src="../images/vue.svg"></a>
+<a target="_blank" href="https://vite.new/svelte"><img width="60" height="60" src="../images/svelte.svg"></a>
+<a target="_blank" href="https://vite.new/react"><img width="75" height="75" src="../images/react.svg"></a>
+<a target="_blank" href="https://vite.new/preact"><img width="65" height="65" src="../images/preact.svg"></a>
+<a target="_blank" href="https://vite.new/lit"><img width="60" height="60" src="../images/lit.svg"></a>
 </div>
 
 <style>
@@ -53,7 +53,23 @@ There is also now an official Spanish translation, that has been added to the pr
   width: 100%;
   justify-content: space-around;
   align-items: center;
-  flex-wrap: wrap;
+}
+@media screen and (max-width: 550px) {
+  .stackblitz-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%;
+    gap: 2rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+.stackblitz-links > a {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  align-items: center;
+  justify-items: center;
 }
 .stackblitz-links > a:hover {
   filter: drop-shadow(0 0 0.5em #646cffaa);
@@ -64,7 +80,7 @@ The theme is now shared by all templates. This should help better convey the sco
 
 ### Vite CLI
 
-<pre style="background-color: var(--vp-code-block-bg);padding:2em;">
+<pre style="background-color: var(--vp-code-block-bg);padding:2em;border-radius:8px;max-width: 100%">
   <span style="color:lightgreen"><b>VITE</b></span> <span style="color:lightgreen">v3.0.0</span>  <span style="color:gray">ready in <b>320</b> ms</span>
 
   <span style="color:lightgreen"><b>➜</b></span>  <span style="color:white"><b>Local</b>:</span>   <span style="color:cyan">http://127.0.0.1:5173/</span>
@@ -87,7 +103,7 @@ Vite now avoids full reload during cold start when imports are injected by plugi
 
 In Vite 2.9, both the scanner and optimizer were run in the background. In the best scenario, where the scanner would find every dependency, no reload was needed in cold start. But if the scanner missed a dependency, a new optimization phase and then a reload were needed. Vite was able to avoid some of these reloads in v2.9, as we detected if the new optimized chunks were compatible with the ones the browser had. But if there was a common dep, the sub-chunks could change and a reload was required to avoid duplicated state. In Vite 3, the optimized deps aren't handed to the browser until the crawling of static imports is done. A quick optimization phase is issued if there is a missing dep (for example, injected by a plugin), and only then, the bundled deps are sent. So, a page reload is no longer needed for these cases.
 
-<img style="background-color: rgb(26, 26, 26);padding:4%;border-radius:8px;" width="100%" height="auto" src="../images/vite-3-cold-start.svg">
+<img style="background-color: var(--vp-code-block-bg);padding:4%;border-radius:8px;" width="100%" height="auto" src="../images/vite-3-cold-start.svg">
 
 ### import.meta.glob
 
