@@ -113,7 +113,7 @@ import.meta.glob(['./dir/*.js', '!**/bar.js'])
 import.meta.glob('./dir/*.js', { import: 'setup' })
 ```
 
-[Custom Queries](https://vitejs.dev/guide/features.html#glob-import) can be passed to attach metadata
+[Custom Queries](https://vitejs.dev/guide/features.html#custom-queries) can be passed to attach metadata
 
 ```js
 import.meta.glob('./dir/*.js', { query: { custom: 'data' } })
