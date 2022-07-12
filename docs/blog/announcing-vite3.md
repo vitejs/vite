@@ -139,7 +139,7 @@ import.meta.glob('./dir/*.js', { query: { custom: 'data' } })
 import.meta.glob('./dir/*.js', { eager: true })
 ```
 
-### Aligning WASM import with Future Standards
+### Aligning WASM Import with Future Standards
 
 The WebAssembly import API has been revised to avoid collisions with future standards and to make it more flexible:
 
