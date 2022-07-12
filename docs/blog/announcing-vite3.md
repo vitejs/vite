@@ -191,7 +191,7 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 [![](../images/v3-new-open-issues-and-PRs.png)](https://www.repotrends.com/vitejs/vite)
 
-## Notes About Compatibility
+## Compatibility Notes
 
 - Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 - Vite is now published as ESM, with a CJS proxy to the ESM entry for compatibility.
