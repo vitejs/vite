@@ -95,7 +95,7 @@ In Vite 2.9, both the scanner and optimizer were run in the background. In the b
 
 `import.meta.glob` support was rewritten. Read about the new features in the [Glob Import Guide](https://main.vitejs.dev/guide/features.html#glob-import):
 
-[Multiple Patterns](https://vitejs.dev/guide/features.html#glob-import) can be passed as an array
+[Multiple Patterns](https://vitejs.dev/guide/features.html#multiple-patterns) can be passed as an array
 
 ```js
 import.meta.glob(['./dir/*.js', './another/*.js'])
