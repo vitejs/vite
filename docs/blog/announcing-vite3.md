@@ -190,4 +190,4 @@ We'll take the following months to ensure a smooth transition for all the projec
 
 The Rollup team is [working on its next major](https://twitter.com/lukastaegert/status/1544186847399743488), to be released in the next months. Once the Rollup plugins ecosystem has time to update, we'll follow up with a new Vite major. This will gives us another opportunity to introduce bigger changes during this year, that we could take to stabilize some of the experimental features introduce in this release.
 
-If you are interested in helping improve Vite, the best way to get onboard is to help with triaging. Join [our Discord](https://chat.vitejs.dev) and look for the #contributing channel. Or get involved in our #docs, #help others, or create plugins. We are just getting started. There are many open ideas to keep improving Vite's DX.
+If you are interested in helping improve Vite, the best way to get on board is to help with triaging issues. Join [our Discord](https://chat.vitejs.dev) and look for the #contributing channel. Or get involved in our #docs, #help others, or create plugins. We are just getting started. There are many open ideas to keep improving Vite's DX.
