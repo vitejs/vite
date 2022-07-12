@@ -34,7 +34,7 @@ There is also now an official Spanish translation, that has been added to the pr
 - [日本語](https://ja.vitejs.dev/)
 - [Español](https://es.vitejs.dev/)
 
-### Create Vite starter templates
+### Create Vite Starter Templates
 
 [create-vite](https://main.vitejs.dev/guide/#trying-vite-online) templates have been a great tool to quickly test Vite with your favorite framework. In Vite v3, all of the templates got a new theme in line with the new docs. Open them online and start playing with Vite 3 now:
 
@@ -73,7 +73,7 @@ The theme is now shared by all templates. This should help better convey the sco
 
 Apart from the CLI’s aesthetics improvements, you’ll notice that the default dev server port is now 5173 and the preview server listening at 4173. This change ensures Vite will avoid collisions with other tools.
 
-### Improved WebSocket connection strategy
+### Improved WebSocket Connection Strategy
 
 One of the pain points of Vite v2 was configuring the server when running behind a proxy. Vite v3 changes the default connection scheme so it works out of the box in most scenarios. All these setups are now tested as part of the Vite Ecosystem CI through [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue).
 
@@ -81,7 +81,7 @@ One of the pain points of Vite v2 was configuring the server when running behind
 
 Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite v3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
 
-### Cold start improvements
+### Cold Start Improvements
 
 Vite now avoids full reload during cold start when imports are injected by plugins while crawling the initial statically imported modules ([#8869](https://github.com/vitejs/vite/issues/8869)).
 
@@ -123,7 +123,7 @@ import.meta.glob('./dir/*.js', { query: { custom: 'data' } })
 import.meta.glob('./dir/*.js', { eager: true })
 ```
 
-### Aligning WASM import with future standards
+### Aligning WASM import with Future Standards
 
 The WebAssembly import API has been revised to avoid collisions with future standards and to make it more flexible:
 
@@ -137,21 +137,21 @@ init().then((instance) => {
 
 Learn more in the [WebAssembly guide](https://main.vitejs.dev/guide/features.html#webassembly)
 
-### Improved relative base support
+### Improved Relative Base Support
 
 Vite v3 now properly supports relative base (using `base: ''`), allowing built assets to be deployed to different bases without re-building. This is useful when the base isn't known at build time, for example when deploying to content-addressable networks like [IPFS](https://ipfs.io/).
 
-### Built asset paths fine-grained control (Experimental)
+### Built Asset Paths fine-grained Control (Experimental)
 
 There are other deploy scenarios where this isn't enough. For example, if the generated hashed assets need to be deployed to a different CDN from the public files, then finer-grained control is required over path generation at build time. Vite v3 provides an experimental API to modify the built file paths. Check [Build Advanced Base Options](https://main.vitejs.dev/guide/build.html#advanced-base-options) for more information.
 
-### Esbuild deps optimization at build time (Experimental)
+### Esbuild Deps Optimization at Build Time (Experimental)
 
 One of the main differences between dev and build time is how Vite handles dependencies. During build time, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is used to allow importing CJS only dependencies (like React). When using the dev server, esbuild is used instead to pre-bundle and optimize dependencies, and an inline interop scheme is applied while transforming user code importing CJS deps. During the development of Vite v3, we introduced the changes needed to also allow the use of [esbuild to optimize dependencies during build time](https://main.vitejs.dev/guide/migration.html#using-esbuild-deps-optimization-at-build-time). [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) can then be avoided, making dev and build time work in the same way.
 
 Given that Rollup v3 will be out in the next months, and we're going to follow up with another Vite major, we've decided to make this mode optional to reduce v3 scope and give Vite and the ecosystem more time to work out possible issues with the new CJS interop approach during build time. Frameworks may switch to using esbuild deps optimization during build time by default at their own pace before Vite v4.
 
-#### HMR partial accept (Experimental)
+#### HMR Partial Accept (Experimental)
 
 There is opt-in support for [HMR Partial Accept](https://github.com/vitejs/vite/pull/7324). This feature could unlock finer-grained HMR for framework components that export several bindings in the same module. You can learn more at [the discussion for this proposal](https://github.com/vitejs/vite/discussions/7309).
 
@@ -167,7 +167,7 @@ Vite cares about its publish and install footprint; a fast installation of a new
 
 In part, this reduction was possible by making some dependencies that most users weren't needing optional. First, [Terser](https://github.com/terser/terser) is no longer installed by default. This dependency was no longer needed since we already made esbuild the default minifier for both JS and CSS in Vite v2. If you use `build.minify: 'terser'`, you'll need to install it (`npm add -D terser`). We also moved [node-forge](https://github.com/digitalbazaar/forge) out of the monorepo, implementing support for automatic https certificate generation as a new plugins: [`@vitejs/plugin-basic-ssl`](https://main.vitejs.dev/guide/migration.html#automatic-https-certificate-generation). It is recommended creating secure certificates, so this feature didn't justify the added size of this dependency.
 
-## Bug fixing
+## Bug Fixing
 
 A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), [@sapphi_red](https://twitter.com/sapphi_red), that recently joined the Vite team. During the past three months, the Vite open issues were reduced from 770 to 400. And this dive was achieved while the newly open PRs were at an all-time high.
 
@@ -175,7 +175,7 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 [![](../images/v3-new-open-issues-and-PRs.png)](https://www.repotrends.com/vitejs/vite)
 
-## Notes about compatibility
+## Notes About Compatibility
 
 - Vite no longer supports Node v12, which reached its EOL. Node 14.18+ is now required.
 - Vite is now published as ESM, with a CJS proxy to the ESM entry for compatibility.
@@ -184,7 +184,7 @@ A triaging marathon was spearheaded by [@bluwyoo](https://twitter.com/bluwyoo), 
 
 Learn more in the [Migration Guide](https://main.vitejs.dev/guide/migration).
 
-## The ecosystem is ready for v3
+## The Ecosystem is Ready for v3
 
 We have worked closely with projects in the ecosystem to ensure that frameworks powered by Vite are ready for Vite v3. [vite-ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci) allows us to run the CI's from the leading players in the ecosystem against Vite's main branch and receive timely reports before introducing a regression. Today's release should soon be compatible with most projects using Vite.
 
