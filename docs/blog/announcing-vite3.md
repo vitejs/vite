@@ -68,7 +68,7 @@ One of the pain points of Vite v2 was configuring the server when running behind
 
 ### ESM SSR build by default
 
-Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite v3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals). externalizing dependencies by default.
+Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite v3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
 
 ### Cold start improvements
 
