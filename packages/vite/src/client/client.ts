@@ -294,7 +294,8 @@ async function waitForSuccessfulPing(hostAndPath: string, ms = 1000) {
     try {
       // A fetch on a websocket URL will return a successful promise with status 400,
       // but will reject a networking error.
-      await fetch(`${location.protocol}//${hostAndPath}`)
+      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
+      await fetch(`${location.protocol}//${hostAndPath}`, { mode: 'no-cors' })
       break
     } catch (e) {
       // wait ms before attempting to ping again
