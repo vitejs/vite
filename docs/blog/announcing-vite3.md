@@ -107,33 +107,33 @@ In Vite 2.9, both the scanner and optimizer were run in the background. In the b
 
 ### import.meta.glob
 
-`import.meta.glob` support was rewritten. Read about the new features in the [Glob Import Guide](https://main.vitejs.dev/guide/features.html#glob-import):
+`import.meta.glob` support was rewritten. Read about the new features in the [Glob Import Guide](/guide/features.html#glob-import):
 
-[Multiple Patterns](https://vitejs.dev/guide/features.html#multiple-patterns) can be passed as an array
+[Multiple Patterns](/guide/features.html#multiple-patterns) can be passed as an array
 
 ```js
 import.meta.glob(['./dir/*.js', './another/*.js'])
 ```
 
-[Negative Patterns](https://vitejs.dev/guide/features.html#negative-patterns) are now supported (prefixed with `!`) to ignore some specific files
+[Negative Patterns](/guide/features.html#negative-patterns) are now supported (prefixed with `!`) to ignore some specific files
 
 ```js
 import.meta.glob(['./dir/*.js', '!**/bar.js'])
 ```
 
-[Named Imports](https://vitejs.dev/guide/features.html#named-imports) can be specified to improve tree-shacking
+[Named Imports](/guide/features.html#named-imports) can be specified to improve tree-shacking
 
 ```js
 import.meta.glob('./dir/*.js', { import: 'setup' })
 ```
 
-[Custom Queries](https://vitejs.dev/guide/features.html#custom-queries) can be passed to attach metadata
+[Custom Queries](/guide/features.html#custom-queries) can be passed to attach metadata
 
 ```js
 import.meta.glob('./dir/*.js', { query: { custom: 'data' } })
 ```
 
-[Eager Imports](https://vitejs.dev/guide/features.html#glob-import) is now passed as a flag
+[Eager Imports](/guide/features.html#glob-import) is now passed as a flag
 
 ```js
 import.meta.glob('./dir/*.js', { eager: true })
