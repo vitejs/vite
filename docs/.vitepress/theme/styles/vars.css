@@ -88,7 +88,11 @@
  * VitePress: Custom fix
  * -------------------------------------------------------------------------- */
 
-/* a11y: use lighter colors for links in dark mode */
+/*
+  Use lighter colors for links in dark mode for a11y.
+  Also specify some class twice to have higer specificity
+  over scoped class data attribute.
+*/
 .dark .vp-doc a,
 .dark .VPNavBarMenuLink.VPNavBarMenuLink:hover,
 .dark .VPNavBarMenuLink.VPNavBarMenuLink.active,
@@ -104,7 +108,7 @@
   opacity: 1;
 }
 
-/* transition by color instead of opacity */
+/* Transition by color instead of opacity */
 .dark .vp-doc .custom-block a {
   transition: color 0.25s;
 }
