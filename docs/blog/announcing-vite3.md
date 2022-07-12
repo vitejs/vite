@@ -88,7 +88,7 @@ In Vite 2.9, both the scanner and optimizer were run in the background. In the b
 import.meta.glob(['./dir/*.js', './another/*.js'])
 ```
 
-[Negative Patterns](https://vitejs.dev/guide/features.html#glob-import) are now supported (prefixed with `!`) to ignore some certain files
+[Negative Patterns](https://vitejs.dev/guide/features.html#glob-import) are now supported (prefixed with `!`) to ignore some specific files
 
 ```js
 import.meta.glob(['./dir/*.js', '!**/bar.js'])
