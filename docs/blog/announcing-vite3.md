@@ -22,7 +22,7 @@ If you are new to Vite, we recommend reading the [Why Vite Guide](https://vitejs
 
 Go to [vitejs.dev](https://vitejs.dev) to enjoy the new v3 docs. Vite is now using the new [VitePress](https://vitepress.vuejs.org) default theme, with a stunning dark mode between other features.
 
-[![](../images/v3-docs.png)](https://vitejs.dev)
+[![Vite documentation frontpage](../images/v3-docs.png)](https://vitejs.dev)
 
 Several projects in the ecosystem have already migrated to it (see [Vitest](https://vitest.dev), [vite-plugin-pwa](https://vite-plugin-pwa.netlify.app/), and [VitePress](https://vitepress.vuejs.org/) itself).
 
