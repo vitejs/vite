@@ -349,6 +349,22 @@ See [3.0.0-alpha.0 changelog](https://github.com/vitejs/vite/blob/v3.0.0-alpha.0
 
 
 
+## <small>2.9.14 (2022-07-08)</small>
+
+* fix: backport #8979, re-encode url to prevent fs.allow bypass (fixes #8498) (#8990) ([adb61c5](https://github.com/vitejs/vite/commit/adb61c5)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8990](https://github.com/vitejs/vite/issues/8990)
+* fix: reverts #8471 ([da77dee](https://github.com/vitejs/vite/commit/da77dee)), closes [#8471](https://github.com/vitejs/vite/issues/8471)
+* fix(css): backport #7746 ([d4d89b9](https://github.com/vitejs/vite/commit/d4d89b9)), closes [#7746](https://github.com/vitejs/vite/issues/7746)
+* fix(css): backport #8936 (#8977) ([84ec02a](https://github.com/vitejs/vite/commit/84ec02a)), closes [#8936](https://github.com/vitejs/vite/issues/8936) [#8977](https://github.com/vitejs/vite/issues/8977)
+
+
+
+## <small>2.9.13 (2022-06-27)</small>
+
+* fix: backport #8804, /@fs/ dir traversal with escaped chars (fixes #8498) (#8805) ([e109d64](https://github.com/vitejs/vite/commit/e109d64)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8805](https://github.com/vitejs/vite/issues/8805)
+* fix(wasm): support decoding data URL in Node < v16 (#8668) ([1afc1c2](https://github.com/vitejs/vite/commit/1afc1c2)), closes [#8668](https://github.com/vitejs/vite/issues/8668)
+
+
+
 ## <small>2.9.12 (2022-06-10)</small>
 
 * fix: outdated optimized dep removed from module graph (#8534) ([c0d6c60](https://github.com/vitejs/vite/commit/c0d6c60)), closes [#8534](https://github.com/vitejs/vite/issues/8534)
