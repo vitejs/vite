@@ -244,7 +244,7 @@ While working towards Vite 3, we also improved the contributing experience for c
 - Unit and E2E tests have been migrated to [Vitest](https://vitest.dev), providing a faster and more stable DX. This move also works as dog fooding for an important infrastructure project in the ecosystem.
 - VitePress build is now tested as part of CI.
 - Vite upgraded to [pnpm 7](https://pnpm.io/), following the rest of the ecosystem.
-- Playgrounds have been moved to [`/playgrounds`](https://github.com/vitejs/vite/tree/main/playground) out of packages.
+- Playgrounds have been moved to [`/playgrounds`](https://github.com/vitejs/vite/tree/main/playground) out of packages directory.
 - The packages and playgrounds are now `"type": "module"`.
 - Plugins are now bundled using [unbuild](https://github.com/unjs/unbuild), and [plugin-vue-jsx](https://github.com/vitejs/vite/tree/main/packages/plugin-vue-jsx) and [plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) were moved to TypeScript.
 
