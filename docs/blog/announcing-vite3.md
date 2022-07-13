@@ -2,32 +2,23 @@
 sidebar: false
 head:
   - - meta
-    - name: og:type
+    - property: og:type
       content: website
   - - meta
-    - name: og:title
+    - property: og:title
       content: Announcing Vite 3
   - - meta
-    - name: og:image
+    - property: og:image
       content: https://vitejs.dev/og-image-announcing-vite3.png
   - - meta
-    - name: og:url
+    - property: og:url
       content: https://vitejs.dev/blog/announcing-vite3
   - - meta
-    - name: twitter:description
+    - property: og:description
       content: Vite 3 Release Announcement
-  - - meta
-    - name: twitter:title
-      content: Announcing Vite 3
   - - meta
     - name: twitter:card
       content: summary_large_image
-  - - meta
-    - name: twitter:image
-      content: https://vitejs.dev/og-image-announcing-vite3.png
-  - - meta
-    - name: twitter:url
-      content: https://vitejs.dev/blog/announcing-vite3
 ---
 
 # Vite 3.0 is out!
