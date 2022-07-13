@@ -90,7 +90,7 @@
 
 /*
   Use lighter colors for links in dark mode for a11y.
-  Also specify some class twice to have higer specificity
+  Also specify some classes twice to have higher specificity
   over scoped class data attribute.
 */
 .dark .vp-doc a,
