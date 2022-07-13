@@ -15,11 +15,9 @@ export default defineConfig({
     ['meta', { property: 'og:title', content: ogTitle }],
     ['meta', { property: 'og:image', content: ogImage }],
     ['meta', { property: 'og:url', content: ogUrl }],
-    ['meta', { property: 'twitter:description', content: ogDescription }],
-    ['meta', { property: 'twitter:title', content: ogTitle }],
-    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { property: 'twitter:image', content: ogImage }],
-    ['meta', { property: 'twitter:url', content: ogUrl }]
+    ['meta', { property: 'og:description', content: ogDescription }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:site', content: '@vite_js' }]
   ],
 
   vue: {
