@@ -44,7 +44,7 @@
     "vite": "workspace:*"
   },
   "peerDependencies": {
-    "vite": "^3.0.0-alpha",
+    "vite": "^3.0.0",
     "vue": "^3.0.0"
   }
 }
