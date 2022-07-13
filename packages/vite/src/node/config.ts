@@ -360,6 +360,10 @@ export async function resolveConfig(
   if (mode === 'production') {
     process.env.NODE_ENV = 'production'
   }
+  // production env would not work in serve, fallback to development
+  if (command === 'serve' && process.env.NODE_ENV === 'production') {
+    process.env.NODE_ENV = 'development'
+  }
 
   const configEnv = {
     mode,
