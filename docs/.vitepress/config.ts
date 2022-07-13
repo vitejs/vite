@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitepress'
 
 const ogDescription = 'Next Generation Frontend Tooling'
-const ogImage = 'https://main.vitejs.dev/og-image.png'
+const ogImage = 'https://vitejs.dev/og-image.png'
 const ogTitle = 'Vite'
-const ogUrl = 'https://main.vitejs.dev'
+const ogUrl = 'https://vitejs.dev'
 
 export default defineConfig({
   title: 'Vite',
