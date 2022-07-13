@@ -1,3 +1,10 @@
+## 2.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* fix(react): sourcemap incorrect warning and classic runtime sourcemap (#9006) ([bdae7fa](https://github.com/vitejs/vite/commit/bdae7fa)), closes [#9006](https://github.com/vitejs/vite/issues/9006)
+
+
+
 ## 2.0.0-beta.1 (2022-07-06)
 
 * fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
