@@ -1,3 +1,12 @@
+## 3.0.0 (2022-07-13)
+
+* fix: prevent production node_env in serve (#9066) ([7662998](https://github.com/vitejs/vite/commit/7662998)), closes [#9066](https://github.com/vitejs/vite/issues/9066)
+* fix: reload on restart with middleware mode (fixes #9038) (#9040) ([e372693](https://github.com/vitejs/vite/commit/e372693)), closes [#9038](https://github.com/vitejs/vite/issues/9038) [#9040](https://github.com/vitejs/vite/issues/9040)
+* fix: remove ws is already closed error (#9041) ([45b8b53](https://github.com/vitejs/vite/commit/45b8b53)), closes [#9041](https://github.com/vitejs/vite/issues/9041)
+* chore: include 2.9.13-2.9.14 changelog in main (#9053) ([f020066](https://github.com/vitejs/vite/commit/f020066)), closes [#9053](https://github.com/vitejs/vite/issues/9053)
+
+
+
 ## 3.0.0-beta.10 (2022-07-11)
 
 * feat: expose server resolved urls (#8986) ([26bcdc3](https://github.com/vitejs/vite/commit/26bcdc3)), closes [#8986](https://github.com/vitejs/vite/issues/8986)
