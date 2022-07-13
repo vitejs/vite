@@ -1,5 +1,33 @@
 ---
 sidebar: false
+head:
+  - - meta
+    - name: og:type
+      content: website
+  - - meta
+    - name: og:title
+      content: Announcing Vite 3
+  - - meta
+    - name: og:image
+      content: https://vitejs.dev/og-image-announcing-vite3.png
+  - - meta
+    - name: og:url
+      content: https://vitejs.dev/blog/announcing-vite3
+  - - meta
+    - name: twitter:description
+      content: Vite 3 Release Announcement
+  - - meta
+    - name: twitter:title
+      content: Announcing Vite 3
+  - - meta
+    - name: twitter:card
+      content: summary_large_image
+  - - meta
+    - name: twitter:image
+      content: https://vitejs.dev/og-image-announcing-vite3.png
+  - - meta
+    - name: twitter:url
+      content: https://vitejs.dev/blog/announcing-vite3
 ---
 
 # Vite 3.0 is out!
@@ -16,9 +44,7 @@ Quick links:
 
 If you are new to Vite, we recommend reading the [Why Vite Guide](https://vitejs.dev/guide/why.html). Then check out [the Getting Started](https://vitejs.dev/guide/getting-started) and [Features guide](https://vitejs.dev/guide/features) to see what Vite provides out of the box. As usual, contributions are welcome at [GitHub](https://github.com/vitejs/vite). More than [600 collaborators](https://github.com/vitejs/vite/graphs/contributors) have helped improve Vite so far. Follow the updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vitejs.dev/).
 
-## What's New
-
-### Documentation
+## New Documentation
 
 Go to [vitejs.dev](https://vitejs.dev) to enjoy the new v3 docs. Vite is now using the new [VitePress](https://vitepress.vuejs.org) default theme, with a stunning dark mode between other features.
 
@@ -34,7 +60,7 @@ There is also now an official Spanish translation, that has been added to the pr
 - [日本語](https://ja.vitejs.dev/)
 - [Español](https://es.vitejs.dev/)
 
-### Create Vite Starter Templates
+## Create Vite Starter Templates
 
 [create-vite](/guide/#trying-vite-online) templates have been a great tool to quickly test Vite with your favorite framework. In Vite 3, all of the templates got a new theme in line with the new docs. Open them online and start playing with Vite 3 now:
 
@@ -78,6 +104,8 @@ There is also now an official Spanish translation, that has been added to the pr
 
 The theme is now shared by all templates. This should help better convey the scope for these starters as minimal templates to get started with Vite. For more complete solutions including linting, testing setup, and other features, there are official Vite-powered templates for some frameworks like [create-vue](https://github.com/vuejs/create-vue) and [create-svelte](https://github.com/sveltejs/kit). There is a community-maintained list of templates at [Awesome Vite](https://github.com/vitejs/awesome-vite#templates).
 
+## Dev Improvements
+
 ### Vite CLI
 
 <pre style="background-color: var(--vp-code-block-bg);padding:2em;border-radius:8px;max-width: 100%">
@@ -93,10 +121,6 @@ Apart from the CLI’s aesthetics improvements, you’ll notice that the default
 
 One of the pain points of Vite 2 was configuring the server when running behind a proxy. Vite 3 changes the default connection scheme so it works out of the box in most scenarios. All these setups are now tested as part of the Vite Ecosystem CI through [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue).
 
-### ESM SSR Build by Default
-
-Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite 3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
-
 ### Cold Start Improvements
 
 Vite now avoids full reload during cold start when imports are injected by plugins while crawling the initial statically imported modules ([#8869](https://github.com/vitejs/vite/issues/8869)).
@@ -106,9 +130,9 @@ Vite now avoids full reload during cold start when imports are injected by plugi
 
 In Vite 2.9, both the scanner and optimizer were run in the background. In the best scenario, where the scanner would find every dependency, no reload was needed in cold start. But if the scanner missed a dependency, a new optimization phase and then a reload were needed. Vite was able to avoid some of these reloads in v2.9, as we detected if the new optimized chunks were compatible with the ones the browser had. But if there was a common dep, the sub-chunks could change and a reload was required to avoid duplicated state. In Vite 3, the optimized deps aren't handed to the browser until the crawling of static imports is done. A quick optimization phase is issued if there is a missing dep (for example, injected by a plugin), and only then, the bundled deps are sent. So, a page reload is no longer needed for these cases.
 
-<img style="background-color: var(--vp-code-block-bg);padding:4%;border-radius:8px;" width="100%" height="auto" src="../images/vite-3-cold-start.svg" alt="Two graphs comparing Vite 2.9 and Vite 3 optimization strategy">
-
 </details>
+
+<img style="background-color: var(--vp-code-block-bg);padding:4%;border-radius:8px;" width="100%" height="auto" src="../images/vite-3-cold-start.svg" alt="Two graphs comparing Vite 2.9 and Vite 3 optimization strategy">
 
 ### import.meta.glob
 
@@ -158,9 +182,17 @@ init().then((instance) => {
 
 Learn more in the [WebAssembly guide](/guide/features.html#webassembly)
 
+## Build Improvements
+
+### ESM SSR Build by Default
+
+Most SSR frameworks in the ecosystem were already using ESM builds. So, Vite 3 makes ESM the default format for SSR builds. This allows us to streamline previous [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals), externalizing dependencies by default.
+
 ### Improved Relative Base Support
 
 Vite 3 now properly supports relative base (using `base: ''`), allowing built assets to be deployed to different bases without re-building. This is useful when the base isn't known at build time, for example when deploying to content-addressable networks like [IPFS](https://ipfs.io/).
+
+## Experimental Features
 
 ### Built Asset Paths fine-grained Control (Experimental)
 
@@ -172,7 +204,7 @@ One of the main differences between dev and build time is how Vite handles depen
 
 Given that Rollup v3 will be out in the next months, and we're going to follow up with another Vite major, we've decided to make this mode optional to reduce v3 scope and give Vite and the ecosystem more time to work out possible issues with the new CJS interop approach during build time. Frameworks may switch to using esbuild deps optimization during build time by default at their own pace before Vite 4.
 
-#### HMR Partial Accept (Experimental)
+### HMR Partial Accept (Experimental)
 
 There is opt-in support for [HMR Partial Accept](https://github.com/vitejs/vite/pull/7324). This feature could unlock finer-grained HMR for framework components that export several bindings in the same module. You can learn more at [the discussion for this proposal](https://github.com/vitejs/vite/discussions/7309).
 
