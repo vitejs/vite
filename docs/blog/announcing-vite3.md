@@ -152,7 +152,7 @@ import.meta.glob(['./dir/*.js', './another/*.js'])
 import.meta.glob(['./dir/*.js', '!**/bar.js'])
 ```
 
-[Named Imports](/guide/features.html#named-imports) can be specified to improve tree-shacking
+[Named Imports](/guide/features.html#named-imports) can be specified to improve tree-shaking
 
 ```js
 import.meta.glob('./dir/*.js', { import: 'setup' })
