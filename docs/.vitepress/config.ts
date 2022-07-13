@@ -106,10 +106,10 @@ export default defineConfig({
         ]
       },
       {
-        text: 'v3 (next)',
+        text: 'v3 (stable)',
         items: [
           {
-            text: 'v2.x (stable)',
+            text: 'v2 (legacy)',
             link: 'https://v2.vitejs.dev'
           }
         ]
