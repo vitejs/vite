@@ -27,7 +27,6 @@ import {
   dynamicImport,
   isExternalUrl,
   isObject,
-  isTS,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -816,7 +815,6 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let dependencies: string[] = []
 
   if (configFile) {
     // explicit config path is always resolved from cwd
@@ -852,42 +850,13 @@ export async function loadConfigFromFile(
   }
 
   try {
-    let userConfig: UserConfigExport | undefined
-
-    if (isESM) {
-      const fileUrl = pathToFileURL(resolvedPath)
-      const bundled = await bundleConfigFile(resolvedPath, true)
-      dependencies = bundled.dependencies
-
-      if (isTS(resolvedPath)) {
-        // before we can register loaders without requiring users to run node
-        // with --experimental-loader themselves, we have to do a hack here:
-        // bundle the config file w/ ts transforms first, write it to disk,
-        // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
-        try {
-          userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
-            .default
-        } finally {
-          fs.unlinkSync(resolvedPath + '.mjs')
-        }
-        debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
-      } else {
-        // using Function to avoid this from being compiled away by TS/Rollup
-        // append a query so that we force reload fresh config in case of
-        // server restart
-        userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
-        debug(`native esm config loaded in ${getTime()}`, fileUrl)
-      }
-    }
-
-    if (!userConfig) {
-      // Bundle config file and transpile it to cjs using esbuild.
-      const bundled = await bundleConfigFile(resolvedPath)
-      dependencies = bundled.dependencies
-      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
-      debug(`bundled config file loaded in ${getTime()}`)
-    }
+    const bundled = await bundleConfigFile(resolvedPath, isESM)
+    const userConfig = await loadConfigFromBundledFile(
+      resolvedPath,
+      bundled.code,
+      isESM
+    )
+    debug(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -898,7 +867,7 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies
+      dependencies: bundled.dependencies
     }
   } catch (e) {
     createLogger(logLevel).error(
@@ -911,7 +880,7 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  isESM = false
+  isESM: boolean
 ): Promise<{ code: string; dependencies: string[] }> {
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
@@ -954,7 +923,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: isTS(args.path) ? 'ts' : 'js',
+              loader: args.path.endsWith('ts') ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })
@@ -976,22 +945,38 @@ interface NodeModuleWithCompile extends NodeModule {
 const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
-  bundledCode: string
-): Promise<UserConfig> {
-  const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions['.js']
-  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
-    if (filename === realFileName) {
-      ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
-    } else {
-      defaultLoader(module, filename)
+  bundledCode: string,
+  isESM: boolean
+): Promise<UserConfigExport> {
+  // for esm, before we can register loaders without requiring users to run node
+  // with --experimental-loader themselves, we have to do a hack here:
+  // write it to disk, load it with native Node ESM, then delete the file.
+  if (isESM) {
+    const fileUrl = pathToFileURL(fileName)
+    fs.writeFileSync(fileName + '.mjs', bundledCode)
+    try {
+      return (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`)).default
+    } finally {
+      fs.unlinkSync(fileName + '.mjs')
     }
   }
-  // clear cache in case of server restart
-  delete _require.cache[_require.resolve(fileName)]
-  const raw = _require(fileName)
-  _require.extensions['.js'] = defaultLoader
-  return raw.__esModule ? raw.default : raw
+  // for cjs, we can register a custom loader via `_require.extensions`
+  else {
+    const realFileName = fs.realpathSync(fileName)
+    const defaultLoader = _require.extensions['.js']
+    _require.extensions['.js'] = (module: NodeModule, filename: string) => {
+      if (filename === realFileName) {
+        ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
+      } else {
+        defaultLoader(module, filename)
+      }
+    }
+    // clear cache in case of server restart
+    delete _require.cache[_require.resolve(fileName)]
+    const raw = _require(fileName)
+    _require.extensions['.js'] = defaultLoader
+    return raw.__esModule ? raw.default : raw
+  }
 }
 
 export function getDepOptimizationConfig(
