@@ -38,11 +38,9 @@ import {
   moduleListContains,
   normalizePath,
   prettifyUrl,
-  removeImportQuery,
   stripBomTag,
   timeFrom,
-  transformStableResult,
-  unwrapId
+  transformStableResult
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -706,10 +704,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
-          url = unwrapId(removeImportQuery(url)).replace(
-            NULL_BYTE_PLACEHOLDER,
-            '\0'
-          )
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
