@@ -28,6 +28,7 @@ import {
   isObject,
   isPossibleTsOutput,
   isTsRequest,
+  isWindows,
   nestedResolveFrom,
   normalizePath,
   resolveFrom,
@@ -239,6 +240,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               moduleSideEffects: pkg.hasSideEffects(res)
             }
           }
+          return res
+        }
+      }
+
+      // drive relative fs paths (only windows)
+      if (isWindows && id.startsWith('/')) {
+        const basedir = importer ? path.dirname(importer) : process.cwd()
+        const fsPath = path.resolve(basedir, id)
+        if ((res = tryFsResolve(fsPath, options))) {
+          isDebug &&
+            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return res
         }
       }

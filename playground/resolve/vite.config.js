@@ -1,8 +1,25 @@
+const path = require('node:path')
+const { normalizePath } = require('vite')
+
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
 
 const customVirtualFile = '@custom-virtual-file'
 const { a } = require('./config-dep')
+
+const generatedContentVirtualFile = '@generated-content-virtual-file'
+const generatedContentImports = [
+  {
+    specifier: normalizePath(
+      path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, '')
+    ),
+    elementQuery: '.drive-relative'
+  },
+  {
+    specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
+    elementQuery: '.absolute'
+  }
+]
 
 module.exports = {
   resolve: {
@@ -37,6 +54,32 @@ module.exports = {
       load(id) {
         if (id === customVirtualFile) {
           return `export const msg = "[success] from custom virtual file"`
+        }
+      }
+    },
+    {
+      name: 'generated-content',
+      resolveId(id) {
+        if (id === generatedContentVirtualFile) {
+          return id
+        }
+      },
+      load(id) {
+        if (id === generatedContentVirtualFile) {
+          const tests = generatedContentImports
+            .map(
+              ({ specifier, elementQuery }, i) =>
+                `import content${i} from ${JSON.stringify(specifier)}\n` +
+                `text(${JSON.stringify(elementQuery)}, content${i})`
+            )
+            .join('\n')
+
+          return (
+            'function text(selector, text) {\n' +
+            '  document.querySelector(selector).textContent = text\n' +
+            '}\n\n' +
+            tests
+          )
         }
       }
     }
