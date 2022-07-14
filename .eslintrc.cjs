@@ -137,13 +137,13 @@ module.exports = defineConfig({
         'node/no-unsupported-features/es-builtins': [
           'error',
           {
-            version: '>=14.18.0'
+            version: '^14.18.0 || >=16.0.0'
           }
         ],
         'node/no-unsupported-features/node-builtins': [
           'error',
           {
-            version: '>=14.18.0'
+            version: '^14.18.0 || >=16.0.0'
           }
         ]
       }
