@@ -39,6 +39,7 @@ export default defineConfig({
     ],
 
     algolia: {
+      appId: 'BH4D9OD16A',
       apiKey: '***REMOVED***',
       indexName: 'vitejs',
       searchParameters: {
