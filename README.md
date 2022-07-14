@@ -35,8 +35,6 @@ In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/g
 
 ## v3.0
 
-Current Status: **Beta** (for internal testing, not recommended for production)
-
 The `main` branch is now for v3.0, if you are looking for current stable releases, check the [`v2` branch](https://github.com/vitejs/vite/tree/v2) branch instead.
 
 We will start drafting release notes and migration guide for v3.0 when we enter the beta stage. Before that you can check:
