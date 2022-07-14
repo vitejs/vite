@@ -437,11 +437,14 @@ function reloadOnTsconfigChange(changedFile: string) {
 
     // reset tsconfck so that recompile works with up2date configs
     initTSConfck(server.config).finally(() => {
-      // force full reload
-      server.ws.send({
-        type: 'full-reload',
-        path: '*'
-      })
+      // server may not be available if vite config is updated at the same time
+      if (server) {
+        // force full reload
+        server.ws.send({
+          type: 'full-reload',
+          path: '*'
+        })
+      }
     })
   }
 }
