@@ -14,6 +14,10 @@ const generatedContentImports = [
       path.resolve(__dirname, './drive-relative.js').replace(/^[a-zA-Z]:/, '')
     ),
     elementQuery: '.drive-relative'
+  },
+  {
+    specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
+    elementQuery: '.absolute'
   }
 ]
 

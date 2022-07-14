@@ -79,6 +79,10 @@ test.runIf(isWindows)('drive-relative path', async () => {
   expect(await page.textContent('.drive-relative')).toMatch('[success]')
 })
 
+test('absolute path', async () => {
+  expect(await page.textContent('.absolute')).toMatch('[success]')
+})
+
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
