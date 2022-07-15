@@ -298,10 +298,19 @@ export function resolveEsbuildTranspileOptions(
   // pure annotations and break tree-shaking
   // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
   const isEsLibBuild = config.build.lib && format === 'es'
+  const esbuildOptions = config.esbuild || {}
   const options: TransformOptions = {
-    ...config.esbuild,
+    ...esbuildOptions,
     target: target || undefined,
-    format: rollupToEsbuildFormatMap[format]
+    format: rollupToEsbuildFormatMap[format],
+    // the final build should always support dynamic import and import.meta.
+    // if they need to be polyfilled, plugin-legacy should be used.
+    // plugin-legacy detects these two features when checking for modern code.
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   }
 
   // If no minify, disable all minify options
