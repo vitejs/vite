@@ -962,9 +962,11 @@ async function loadConfigFromBundledFile(
   }
   // for cjs, we can register a custom loader via `_require.extensions`
   else {
+    const extension = path.extname(fileName)
     const realFileName = fs.realpathSync(fileName)
-    const defaultLoader = _require.extensions['.js']
-    _require.extensions['.js'] = (module: NodeModule, filename: string) => {
+    const loaderExt = extension in _require.extensions ? extension : '.js'
+    const defaultLoader = _require.extensions[loaderExt]!
+    _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
       if (filename === realFileName) {
         ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
       } else {
@@ -974,7 +976,7 @@ async function loadConfigFromBundledFile(
     // clear cache in case of server restart
     delete _require.cache[_require.resolve(fileName)]
     const raw = _require(fileName)
-    _require.extensions['.js'] = defaultLoader
+    _require.extensions[loaderExt] = defaultLoader
     return raw.__esModule ? raw.default : raw
   }
 }
