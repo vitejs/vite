@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite --config ./vite.config-iife.js",
+    "start": "pnpm run dev",
     "build": "vite --config ./vite.config-iife.js build",
     "preview": "vite --config ./vite.config-iife.js preview",
     "dev:es": "vite --config ./vite.config-es.js dev",

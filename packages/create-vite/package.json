@@ -16,6 +16,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "unbuild --stub",
+    "start": "pnpm run dev",
     "build": "unbuild",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"

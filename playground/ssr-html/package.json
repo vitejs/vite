@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server",
+    "start": "node server",
     "serve": "NODE_ENV=production node server",
     "debug": "node --inspect-brk server"
   },

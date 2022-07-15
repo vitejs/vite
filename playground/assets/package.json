@@ -5,6 +5,7 @@
   "scripts": {
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "dev": "vite",
+    "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "dev:relative-base": "vite --config ./vite.config-relative-base.js dev",

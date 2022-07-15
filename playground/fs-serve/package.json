@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite root",
+    "start": "pnpm run dev",
     "build": "vite build root",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview root"

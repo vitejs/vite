@@ -161,6 +161,7 @@ Our scripts in `package.json` will look like this:
 {
   "scripts": {
     "dev": "node server",
+    "start": "node server",
     "build:client": "vite build --outDir dist/client",
     "build:server": "vite build --outDir dist/server --ssr src/entry-server.js"
   }
