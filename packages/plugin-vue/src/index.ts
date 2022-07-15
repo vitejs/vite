@@ -122,6 +122,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         define: {
           __VUE_OPTIONS_API__: config.define?.__VUE_OPTIONS_API__ ?? true,
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
+        },
+        ssr: {
+          external: config.legacy?.buildSsrCjsExternalHeuristics
+            ? ['vue', '@vue/server-renderer']
+            : []
         }
       }
     },
