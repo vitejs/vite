@@ -1,4 +1,4 @@
-import { isBuild, page } from '~utils'
+import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -73,6 +73,14 @@ test('a ts module can import another ts module using its corresponding js file n
 
 test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
+})
+
+test.runIf(isWindows)('drive-relative path', async () => {
+  expect(await page.textContent('.drive-relative')).toMatch('[success]')
+})
+
+test('absolute path', async () => {
+  expect(await page.textContent('.absolute')).toMatch('[success]')
 })
 
 test('browser field', async () => {
