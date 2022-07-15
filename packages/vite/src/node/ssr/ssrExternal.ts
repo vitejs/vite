@@ -120,13 +120,17 @@ export function createIsConfiguredAsSsrExternal(
   return (id: string) => {
     const { ssr } = config
     if (ssr) {
-      if (ssr.external?.includes(id)) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) {
+        return undefined
+      }
+      if (ssr.external?.includes(pkgName)) {
         return true
       }
       if (typeof noExternal === 'boolean') {
         return !noExternal
       }
-      if (noExternalFilter && !noExternalFilter(id)) {
+      if (noExternalFilter && !noExternalFilter(pkgName)) {
         return false
       }
     }
