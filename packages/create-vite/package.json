@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=14.18.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "repository": {
     "type": "git",
