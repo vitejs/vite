@@ -133,7 +133,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         },
         ssr: {
-          external: ['vue', '@vue/server-renderer']
+          external: config.legacy?.buildSsrCjsExternalHeuristics
+            ? ['vue', '@vue/server-renderer']
+            : []
         }
       }
     },
