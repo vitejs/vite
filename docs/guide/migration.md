@@ -2,7 +2,7 @@
 
 ## Node.js Support
 
-Vite no longer supports Node.js 12, which reached its EOL. Node.js 14.18+ is now required.
+Vite no longer supports Node.js 12 / 13 / 15, which reached its EOL. Node.js 14.18+ / 16+ is now required.
 
 ## Modern Browser Baseline change
 
