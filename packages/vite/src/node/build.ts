@@ -466,10 +466,10 @@ async function doBuild(
           ? `[name].${jsExt}`
           : libOptions
           ? resolveLibFilename(libOptions, format, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         assetFileNames: libOptions
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
