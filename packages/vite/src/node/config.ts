@@ -900,11 +900,38 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          build.onResolve({ filter: /.*/ }, (args) => {
-            const id = args.path
+          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
+            // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id)) {
               return {
                 external: true
+              }
+            }
+            // bundle the rest and make sure that the we can also access
+            // it's third-party dependencies. externalize if not.
+            // monorepo/
+            // ├─ package.json
+            // ├─ utils.js -----------> bundle (share same node_modules)
+            // ├─ vite-project/
+            // │  ├─ vite.config.js --> entry
+            // │  ├─ package.json
+            // ├─ foo-project/
+            // │  ├─ utils.js --------> external (has own node_modules)
+            // │  ├─ package.json
+            const idFsPath = path.resolve(path.dirname(importer), id)
+            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
+              pathOnly: true
+            })
+            if (idPkgPath) {
+              const idPkgDir = path.dirname(idPkgPath)
+              // if this file needs to go up one or more directory to reach the vite config,
+              // that means it has it's own node_modules (e.g. foo-project)
+              if (path.relative(idPkgDir, fileName).startsWith('..')) {
+                return {
+                  // normalize actual import after bundled as a single vite config
+                  path: idFsPath,
+                  external: true
+                }
               }
             }
           })
