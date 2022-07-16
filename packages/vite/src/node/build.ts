@@ -22,7 +22,7 @@ import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveBaseUrl, resolveConfig } from './config'
+import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { terserPlugin } from './plugins/terser'
@@ -47,7 +47,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { VERSION } from './constants'
+import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 
 export interface BuildOptions {
   /**
@@ -270,15 +270,7 @@ export function resolveBuildOptions(
 
   // handle special build targets
   if (resolved.target === 'modules') {
-    // Support browserslist
-    // "defaults and supports es6-module and supports es6-module-dynamic-import",
-    resolved.target = [
-      'es2020', // support import.meta.url
-      'edge88',
-      'firefox78',
-      'chrome87',
-      'safari13' // transpile nullish coalescing
-    ]
+    resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2021 so it can be minified by terser
     resolved.target = 'es2021'
@@ -305,14 +297,15 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
-
+  const { commonjsOptions } = options
+  const usePluginCommonjs =
+    !Array.isArray(commonjsOptions?.include) ||
+    commonjsOptions?.include.length !== 0
   return {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(config.legacy?.buildRollupPluginCommonjs
-        ? [commonjsPlugin(options.commonjsOptions)]
-        : []),
+      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
@@ -406,7 +399,7 @@ async function doBuild(
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
-  if (isDepsOptimizerEnabled(config)) {
+  if (isDepsOptimizerEnabled(config, ssr)) {
     await initDepsOptimizer(config)
   }
 
@@ -473,10 +466,10 @@ async function doBuild(
           ? `[name].${jsExt}`
           : libOptions
           ? resolveLibFilename(libOptions, format, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         assetFileNames: libOptions
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
@@ -747,7 +740,7 @@ async function cjsSsrResolveExternal(
   } catch (e) {}
   if (!knownImports) {
     // no dev deps optimization data, do a fresh scan
-    knownImports = await findKnownImports(config)
+    knownImports = await findKnownImports(config, false) // needs to use non-ssr
   }
   const ssrExternals = cjsSsrResolveExternals(config, knownImports)
 
@@ -831,109 +824,89 @@ function injectSsrFlag<T extends Record<string, any>>(
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
 
-/*
- * If defined, these functions will be called for assets and public files
- * paths which are generated in JS assets. Examples:
- *
- *   assets: { runtime: (url: string) => `window.__assetsPath(${url})` }
- *   public: { runtime: (url: string) => `window.__publicPath + ${url}` }
- *
- * For assets and public files paths in CSS or HTML, the corresponding
- * `assets.url` and `public.url` base urls or global base will be used.
- *
- * When using relative base, the assets.runtime function isn't needed as
- * all the asset paths will be computed using import.meta.url
- * The public.runtime function is still useful if the public files aren't
- * deployed in the same base as the hashed assets
- */
+export type RenderBuiltAssetUrl = (
+  filename: string,
+  type: {
+    type: 'asset' | 'public'
+    hostId: string
+    hostType: 'js' | 'css' | 'html'
+    ssr: boolean
+  }
+) => string | { relative?: boolean; runtime?: string } | undefined
 
-export interface BuildAdvancedBaseOptions {
-  /**
-   * Relative base. If true, every generated URL is relative and the dist folder
-   * can be deployed to any base or subdomain. Use this option when the base
-   * is unkown at build time
-   * @default false
-   */
-  relative?: boolean
-  url?: string
-  runtime?: (filename: string) => string
+export function toOutputFilePathInString(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (
+    filename: string,
+    hostType: string
+  ) => string | { runtime: string }
+): string | { runtime: string } {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        return { runtime: result.runtime }
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  }
+  return config.base + filename
 }
 
-export type BuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
-  /**
-   * Base for assets and public files in case they should be different
-   */
-  assets?: string | BuildAdvancedBaseOptions
-  public?: string | BuildAdvancedBaseOptions
-}
-
-export type ResolvedBuildAdvancedBaseConfig = BuildAdvancedBaseOptions & {
-  assets: BuildAdvancedBaseOptions
-  public: BuildAdvancedBaseOptions
-}
-
-/**
- * Resolve base. Note that some users use Vite to build for non-web targets like
- * electron or expects to deploy
- */
-export function resolveBuildAdvancedBaseConfig(
-  baseConfig: BuildAdvancedBaseConfig | undefined,
-  resolvedBase: string,
-  isBuild: boolean,
-  logger: Logger
-): ResolvedBuildAdvancedBaseConfig {
-  baseConfig ??= {}
-
-  const relativeBaseShortcut = resolvedBase === '' || resolvedBase === './'
-
-  const resolved = {
-    relative: baseConfig?.relative ?? relativeBaseShortcut,
-    url: baseConfig?.url
-      ? resolveBaseUrl(
-          baseConfig?.url,
-          isBuild,
-          logger,
-          'experimental.buildAdvancedBaseOptions.url'
+export function toOutputFilePathWithoutRuntime(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, hostId: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime} }" is not supported for assets in ${hostType} files: ${filename}`
         )
-      : undefined,
-    runtime: baseConfig?.runtime
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
   }
-
-  return {
-    ...resolved,
-    assets: resolveBuildBaseSpecificOptions(
-      baseConfig?.assets,
-      resolved,
-      isBuild,
-      logger,
-      'assets'
-    ),
-    public: resolveBuildBaseSpecificOptions(
-      baseConfig?.public,
-      resolved,
-      isBuild,
-      logger,
-      'public'
-    )
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
   }
 }
 
-function resolveBuildBaseSpecificOptions(
-  options: BuildAdvancedBaseOptions | string | undefined,
-  parent: BuildAdvancedBaseOptions,
-  isBuild: boolean,
-  logger: Logger,
-  optionName: string
-): BuildAdvancedBaseOptions {
-  const urlConfigPath = `experimental.buildAdvancedBaseOptions.${optionName}.url`
-  if (typeof options === 'string') {
-    options = { url: options }
-  }
-  return {
-    relative: options?.relative ?? parent.relative,
-    url: options?.url
-      ? resolveBaseUrl(options?.url, isBuild, logger, urlConfigPath)
-      : parent.url,
-    runtime: options?.runtime ?? parent.runtime
-  }
-}
+export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime

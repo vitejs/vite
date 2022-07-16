@@ -47,6 +47,11 @@ text('.charset-css', charset)
 import './dep.css'
 import './glob-dep.css'
 
+import { barModuleClasses } from 'css-js-dep'
+document
+  .querySelector('.css-js-dep-module')
+  .classList.add(barModuleClasses.cssJsDepModule)
+
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
@@ -92,6 +97,13 @@ text('.imported-css-globEager', JSON.stringify(globEager, null, 2))
 
 import postcssSourceInput from './postcss-source-input.css?query=foo'
 text('.postcss-source-input', postcssSourceInput)
+
+import aliasContent from '#alias'
+text('.aliased-content', aliasContent)
+import aliasModule from '#alias-module'
+document
+  .querySelector('.aliased-module')
+  .classList.add(aliasModule.aliasedModule)
 
 // async css modules
 import('./async-modules/blue')

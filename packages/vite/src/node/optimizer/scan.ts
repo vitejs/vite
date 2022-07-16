@@ -6,18 +6,14 @@ import type { Loader, OnLoadResult, Plugin } from 'esbuild'
 import { build, transform } from 'esbuild'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
-import {
-  JS_TYPES_RE,
-  KNOWN_ASSET_TYPES,
-  OPTIMIZABLE_ENTRY_RE,
-  SPECIAL_QUERY_RE
-} from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES, SPECIAL_QUERY_RE } from '../constants'
 import {
   cleanUrl,
   createDebugger,
   dataUrlRE,
   externalRE,
   isObject,
+  isOptimizable,
   moduleListContains,
   multilineCommentsRE,
   normalizePath,
@@ -28,6 +24,8 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+
+type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
 const debug = createDebugger('vite:deps')
 
@@ -48,6 +46,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
+  // Only used to scan non-ssr code
+
   const start = performance.now()
 
   let entries: string[] = []
@@ -165,7 +165,11 @@ function esbuildScanPlugin(
 ): Plugin {
   const seen = new Map<string, string | undefined>()
 
-  const resolve = async (id: string, importer?: string) => {
+  const resolve = async (
+    id: string,
+    importer?: string,
+    options?: ResolveIdOptions
+  ) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
@@ -174,6 +178,7 @@ function esbuildScanPlugin(
       id,
       importer && normalizePath(importer),
       {
+        ...options,
         scan: true
       }
     )
@@ -188,10 +193,6 @@ function esbuildScanPlugin(
     '@vite/client',
     '@vite/env'
   ]
-
-  const isOptimizable = (id: string) =>
-    OPTIMIZABLE_ENTRY_RE.test(id) ||
-    !!config.optimizeDeps.extensions?.some((ext) => id.endsWith(ext))
 
   const externalUnlessEntry = ({ path }: { path: string }) => ({
     path,
@@ -235,7 +236,11 @@ function esbuildScanPlugin(
         // It is possible for the scanner to scan html types in node_modules.
         // If we can optimize this html type, skip it so it's handled by the
         // bare import resolve, and recorded as optimization dep.
-        if (resolved.includes('node_modules') && isOptimizable(resolved)) return
+        if (
+          resolved.includes('node_modules') &&
+          isOptimizable(resolved, config.optimizeDeps)
+        )
+          return
         return {
           path: resolved,
           namespace: 'html'
@@ -318,12 +323,18 @@ function esbuildScanPlugin(
                         config.root,
                         resolve
                       )
-                    )?.s.toString() || transpiledContents
+                    )?.s.toString() || transpiledContents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               } else {
                 scripts[key] = {
                   loader,
-                  contents
+                  contents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               }
 
@@ -382,7 +393,7 @@ function esbuildScanPlugin(
             }
             if (resolved.includes('node_modules') || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (isOptimizable(resolved)) {
+              if (isOptimizable(resolved, config.optimizeDeps)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
@@ -436,9 +447,13 @@ function esbuildScanPlugin(
         {
           filter: /.*/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
               return externalUnlessEntry({ path: id })

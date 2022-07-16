@@ -1,10 +1,24 @@
 import { defineConfig } from 'vitepress'
 
+const ogDescription = 'Next Generation Frontend Tooling'
+const ogImage = 'https://vitejs.dev/og-image.png'
+const ogTitle = 'Vite'
+const ogUrl = 'https://vitejs.dev'
+
 export default defineConfig({
   title: 'Vite',
   description: 'Next Generation Frontend Tooling',
 
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: ogTitle }],
+    ['meta', { property: 'og:image', content: ogImage }],
+    ['meta', { property: 'og:url', content: ogUrl }],
+    ['meta', { property: 'og:description', content: ogDescription }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:site', content: '@vite_js' }]
+  ],
 
   vue: {
     reactivityTransform: true
@@ -25,6 +39,7 @@ export default defineConfig({
     ],
 
     algolia: {
+      appId: 'BH4D9OD16A',
       apiKey: 'b573aa848fd57fb47d693b531297403c',
       indexName: 'vitejs',
       searchParameters: {
@@ -41,7 +56,8 @@ export default defineConfig({
       text: 'English',
       items: [
         { text: '简体中文', link: 'https://cn.vitejs.dev' },
-        { text: '日本語', link: 'https://ja.vitejs.dev' }
+        { text: '日本語', link: 'https://ja.vitejs.dev' },
+        { text: 'Español', link: 'https://es.vitejs.dev' }
       ]
     },
 
@@ -55,39 +71,44 @@ export default defineConfig({
       { text: 'Config', link: '/config/', activeMatch: '/config/' },
       { text: 'Plugins', link: '/plugins/', activeMatch: '/plugins/' },
       {
-        text: 'Links',
+        text: 'Resources',
         items: [
+          { text: 'Team', link: '/team' },
           {
-            text: 'Twitter',
-            link: 'https://twitter.com/vite_js'
-          },
-          {
-            text: 'Discord Chat',
-            link: 'https://chat.vitejs.dev'
-          },
-          {
-            text: 'Awesome Vite',
-            link: 'https://github.com/vitejs/awesome-vite'
-          },
-          {
-            text: 'DEV Community',
-            link: 'https://dev.to/t/vite'
-          },
-          {
-            text: 'Rollup Plugins Compat',
-            link: 'https://vite-rollup-plugins.patak.dev/'
-          },
-          {
-            text: 'Changelog',
-            link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+            items: [
+              {
+                text: 'Twitter',
+                link: 'https://twitter.com/vite_js'
+              },
+              {
+                text: 'Discord Chat',
+                link: 'https://chat.vitejs.dev'
+              },
+              {
+                text: 'Awesome Vite',
+                link: 'https://github.com/vitejs/awesome-vite'
+              },
+              {
+                text: 'DEV Community',
+                link: 'https://dev.to/t/vite'
+              },
+              {
+                text: 'Rollup Plugins Compat',
+                link: 'https://vite-rollup-plugins.patak.dev/'
+              },
+              {
+                text: 'Changelog',
+                link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md'
+              }
+            ]
           }
         ]
       },
       {
-        text: 'v3 (next)',
+        text: 'Version',
         items: [
           {
-            text: 'v2.x (stable)',
+            text: 'Vite 2 Docs',
             link: 'https://v2.vitejs.dev'
           }
         ]

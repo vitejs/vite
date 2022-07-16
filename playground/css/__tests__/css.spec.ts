@@ -349,6 +349,11 @@ test('PostCSS dir-dependency', async () => {
   }
 })
 
+test('import dependency includes css import', async () => {
+  expect(await getColor('.css-js-dep')).toBe('green')
+  expect(await getColor('.css-js-dep-module')).toBe('green')
+})
+
 test('URL separation', async () => {
   const urlSeparated = await page.$('.url-separated')
   const baseUrl = 'url(images/dog.webp)'
@@ -424,7 +429,18 @@ test("relative path rewritten in Less's data-uri", async () => {
 test('PostCSS source.input.from includes query', async () => {
   const code = await page.textContent('.postcss-source-input')
   // should resolve assets
-  expect(code).toContain('/postcss-source-input.css?query=foo')
+  expect(code).toContain(
+    isBuild
+      ? '/postcss-source-input.css?used&query=foo'
+      : '/postcss-source-input.css?query=foo'
+  )
+})
+
+test('aliased css has content', async () => {
+  expect(await getColor('.aliased')).toBe('blue')
+  // skipped: currently not supported see #8936
+  // expect(await page.textContent('.aliased-content')).toMatch('.aliased')
+  expect(await getColor('.aliased-module')).toBe('blue')
 })
 
 test('async css modules', async () => {

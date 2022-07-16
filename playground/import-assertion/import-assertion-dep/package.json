@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/import-assertion-dep",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": "./index.js"
+}

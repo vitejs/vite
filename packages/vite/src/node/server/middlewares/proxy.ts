@@ -1,4 +1,5 @@
 import type * as http from 'node:http'
+import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
@@ -43,16 +44,29 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
-    proxy.on('error', (err, req, res) => {
-      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
-        timestamp: true,
-        error: err
-      })
-      res
-        .writeHead(500, {
-          'Content-Type': 'text/plain'
+    proxy.on('error', (err, req, originalRes) => {
+      // When it is ws proxy, res is net.Socket
+      const res = originalRes as http.ServerResponse | net.Socket
+      if ('req' in res) {
+        config.logger.error(
+          `${colors.red(`http proxy error:`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err
+          }
+        )
+        res
+          .writeHead(500, {
+            'Content-Type': 'text/plain'
+          })
+          .end()
+      } else {
+        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+          timestamp: true,
+          error: err
         })
-        .end()
+        res.end()
+      }
     })
 
     if (opts.configure) {
