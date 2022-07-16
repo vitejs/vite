@@ -882,6 +882,8 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean
 ): Promise<{ code: string; dependencies: string[] }> {
+  const dirnameVarName = '__vite_injected_original_dirname'
+  const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -894,6 +896,8 @@ async function bundleConfigFile(
     sourcemap: 'inline',
     metafile: true,
     define: {
+      __dirname: dirnameVarName,
+      __filename: filenameVarName,
       'import.meta.url': importMetaUrlVarName
     },
     plugins: [
@@ -943,8 +947,10 @@ async function bundleConfigFile(
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
-              `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
-              `const __filename = ${JSON.stringify(args.path)};` +
+              `const ${dirnameVarName} = ${JSON.stringify(
+                path.dirname(args.path)
+              )};` +
+              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href
               )};`
