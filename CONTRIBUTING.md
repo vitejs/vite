@@ -83,7 +83,7 @@ Each integration test can be run under either dev server mode or build mode.
 
 - `pnpm run test-build` runs tests only under build mode.
 
-- `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g., `pnpm run test-serve asset` runs tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode.
+- `pnpm run test-serve [match]` or `pnpm run test-build [match]` runs tests in specific packages that match the given filter. e.g. `pnpm run test-serve asset` runs tests for both `playground/asset` and `vite/src/node/__tests__/asset` under serve mode.
 
   Note package matching is not available for the `pnpm test` script, which always runs all tests.
 
@@ -107,7 +107,7 @@ test('should work', async () => {
 })
 ```
 
-Some common test helpers (e.g., `testDir`, `isBuild`, or `editFile`) are also available in the utils. Source code is located at `playground/test-utils.ts`.
+Some common test helpers (e.g. `testDir`, `isBuild`, or `editFile`) are also available in the utils. Source code is located at `playground/test-utils.ts`.
 
 Note: The test build environment uses a [different default set of Vite config](https://github.com/vitejs/vite/blob/main/playground/vitestSetup.ts#L102-L122) to skip transpilation during tests to make it faster. This may produce a different result compared to the default production build.
 
@@ -149,11 +149,11 @@ In many test cases, we need to mock dependencies using `link:` and `file:` proto
 
 ## Debug Logging
 
-You can set the `DEBUG` environment variable to turn on debugging logs (e.g., `DEBUG="vite:resolve"`). To see all debug logs, you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
+You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DEBUG="vite:resolve"`). To see all debug logs, you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
 
 ## Pull Request Guidelines
 
-- Checkout a topic branch from a base branch (e.g., `main`), and merge back against that branch.
+- Checkout a topic branch from a base branch (e.g. `main`), and merge back against that branch.
 
 - If adding a new feature:
 
@@ -162,7 +162,7 @@ You can set the `DEBUG` environment variable to turn on debugging logs (e.g., `D
 
 - If fixing a bug:
 
-  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log (e.g., `fix: update entities encoding/decoding (fix #3899)`).
+  - If you are resolving a special issue, add `(fix #xxxx[,#xxxx])` (#xxxx is the issue id) in your PR title for a better release log (e.g. `fix: update entities encoding/decoding (fix #3899)`).
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable.
 
@@ -216,7 +216,7 @@ Avoid deps that have large transitive dependencies that results in bloated size 
 
 ### Ensure Type Support
 
-Vite aims to be fully usable as a dependency in a TypeScript project (e.g., it should provide proper typings for VitePress), and also in `vite.config.ts`. This means technically a dependency whose types are exposed needs to be part of `dependencies` instead of `devDependencies`. However, this also means we won't be able to bundle it.
+Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it should provide proper typings for VitePress), and also in `vite.config.ts`. This means technically a dependency whose types are exposed needs to be part of `dependencies` instead of `devDependencies`. However, this also means we won't be able to bundle it.
 
 To get around this, we inline some of these dependencies' types in `packages/vite/types`. This way, we can still expose the typing but bundle the dependency's source code.
 
