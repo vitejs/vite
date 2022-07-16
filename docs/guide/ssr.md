@@ -65,7 +65,10 @@ When building an SSR app, you likely want to have full control over your main se
 import fs from 'fs'
 import path from 'path'
 import express from 'express'
-import {createServer as createViteServer} from 'vite'
+import { fileURLToPath } from "url";
+import { createServer as createViteServer } from "vite";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function createServer() {
   const app = express()
