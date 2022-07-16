@@ -235,23 +235,25 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 If you would like to start a translation in your language, you are welcome to contribute! Please join the [#docs channel](https://discord.com/channels/804011606160703521/855049073157341234) in [Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
 
-The English docs are embedded in the main Vite repo to enable contributors to work on docs, tests, and implementation in the same PR. Translations are done by forking the main repo.
+The [English docs are embedded in the main Vite repo](https://github.com/vitejs/vite/tree/main/docs) to enable contributors to work on docs, tests, and implementation in the same PR. Translations of those docs are contained in [separate repos in the `vitejs` org](https://github.com/vitejs?q=docs&type=all&language=&sort=).
 
 ### How To Start a Translation Repo
 
-1. Fork this repo to your personal account.
-2. Keep all the files in `docs/`, and remove everything else.
+1. Create a new Git repo, named `docs-LANGUAGE_CODE`, where `LANGUAGE_CODE` is the [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) for the target language (e.g. `docs-fr` for French translations):
 
-   - Setup your translation site based on the files in the `docs/` folder as a VitePress project
-     (that said, `package.json` is needed).
+   ```sh
+   mkdir docs-fr
+   cd docs-fr
+   npm init -y
+   git init
+   git add .
+   git commit -m init
+   ```
 
-   - Refresh git history by removing `.git`, and then run `git init`.
+1. Copy Vite's `docs/` folder into the root of your translations project.
+1. Translate the documentation files (in `docs/**/*.md`) from English to your language.
+1. Push your commits to your GitHub repo.
+1. Setup a [Netlify deploy preview](https://docs.netlify.com/site-deploys/deploy-previews/) and [Netlify PR commenter](https://docs.netlify.com/site-deploys/notifications/#github-pull-request-comments) to enable contributors to easily review and approve your translations.
+1. Setup [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) as a GitHub Action that automatically cherry-picks any updates from Vite's English docs to your translation repo. You'll then have to manually translate those updates in your repo.
 
-3. Translate the docs.
-
-   - During this stage, you may be translating documents and synchronizing updates at the same time, but don't worry about that. It's very common in translation contributions.
-
-4. Push your commits to your GitHub repo. You can setup a Netlify preview as well.
-5. Use [Ryu-cho](https://github.com/vuejs-translations/ryu-cho) tool to setup a GitHub Action. Automatically track the English docs update later.
-
-We recommend searching Vite Land for other speakers of your language who could help with the translation work. Once the translation is done, communicate it to the Vite team, so the repo can be moved to the official `vitejs` org in GitHub.
+We recommend searching Vite Land for other speakers of your language who could help with the translation work. Once the translation is done, communicate it to the Vite team, so the translation repo can be moved to the official `vitejs` org in GitHub.
