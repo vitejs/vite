@@ -24,7 +24,7 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 1. Add a `debugger` statement where you want to stop the code execution.
 
-1. Click the "Run and Debug" icon in the activity bar of the editor.
+1. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run view_](https://code.visualstudio.com/docs/editor/debugging#_run-view).
 
 1. Go to `playground/xxx`, and run `pnpm run dev`.
 
