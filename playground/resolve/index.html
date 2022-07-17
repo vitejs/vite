@@ -121,6 +121,15 @@
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
 
+<h2>unpackaged file in node_modules</h2>
+<p class="unpackaged-file"></p>
+
+<h2>index file from unpackaged directory in node_modules</h2>
+<p class="unpackaged-index-file"></p>
+
+<h2>deep import of unpackaged directory in node_modules</h2>
+<p class="unpackaged-deep-import"></p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -277,6 +286,15 @@
 
   import es5Ext from 'es5-ext'
   text('.path-contains-sharp-symbol', '[success]')
+
+  import unpackagedFile from 'pr-9170/unpackaged-file'
+  text('.unpackaged-file', unpackagedFile)
+
+  import unpackagedIndexFile from 'pr-9170/unpackaged-index-file'
+  text('.unpackaged-index-file', unpackagedIndexFile)
+
+  import unpackagedDeepImport from 'pr-9170/unpackaged-deep-import'
+  text('.unpackaged-deep-import', unpackagedDeepImport)
 </script>
 
 <style>

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { Module } from 'node:module'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { resolveExports } from 'resolve.exports'
@@ -42,7 +43,12 @@ import {
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
-import type { PackageCache, PackageData } from '../packages'
+import {
+  findPackageJson,
+  isWorkspaceRoot,
+  PackageCache,
+  PackageData
+} from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
 import { isWorkerRequest } from './worker'
 
@@ -495,13 +501,17 @@ function tryFsResolve(
     }
   }
 
+  if (!tryIndex) {
+    return
+  }
+
   if (
     postfix &&
     (res = tryResolveFile(
       fsPath,
       '',
       options,
-      tryIndex,
+      true,
       targetWeb,
       options.tryPrefix,
       options.skipPackageJson
@@ -515,7 +525,7 @@ function tryFsResolve(
       file,
       postfix,
       options,
-      tryIndex,
+      true,
       targetWeb,
       options.tryPrefix,
       options.skipPackageJson
@@ -551,8 +561,10 @@ function tryResolveFile(
           }
         }
       }
-      const index = tryFsResolve(file + '/index', options)
-      if (index) return index + postfix
+      const indexFile = tryIndexFile(file, targetWeb, options)
+      if (indexFile) {
+        return indexFile + postfix
+      }
     }
   }
 
@@ -580,7 +592,22 @@ function tryResolveFile(
   }
 }
 
+function tryIndexFile(
+  dir: string,
+  targetWeb: boolean,
+  options: InternalResolveOptions
+) {
+  if (!options.skipPackageJson) {
+    options = { ...options, skipPackageJson: true }
+  }
+  return tryFsResolve(dir + '/index', options, false, targetWeb)
+}
+
 export const idToPkgMap = new Map<string, PackageData>()
+
+const lookupNodeModules = (Module as any)._nodeModulePaths as {
+  (cwd: string): string[]
+}
 
 export function tryNodeResolve(
   id: string,
@@ -601,37 +628,15 @@ export function tryNodeResolve(
   // 'foo'             => ''          & 'foo'
   const lastArrowIndex = id.lastIndexOf('>')
   const nestedRoot = id.substring(0, lastArrowIndex).trim()
-  const nestedPath = id.substring(lastArrowIndex + 1).trim()
 
-  const possiblePkgIds: string[] = []
-  for (let prevSlashIndex = -1; ; ) {
-    let slashIndex = nestedPath.indexOf('/', prevSlashIndex + 1)
-    if (slashIndex < 0) {
-      slashIndex = nestedPath.length
-    }
-
-    const part = nestedPath.slice(
-      prevSlashIndex + 1,
-      (prevSlashIndex = slashIndex)
-    )
-    if (!part) {
-      break
-    }
-
-    // Assume path parts with an extension are not package roots, except for the
-    // first path part (since periods are sadly allowed in package names).
-    // At the same time, skip the first path part if it begins with "@"
-    // (since "@foo/bar" should be treated as the top-level path).
-    if (possiblePkgIds.length ? path.extname(part) : part[0] === '@') {
-      continue
-    }
-
-    const possiblePkgId = nestedPath.slice(0, slashIndex)
-    possiblePkgIds.push(possiblePkgId)
+  if (lastArrowIndex !== -1) {
+    id = id.substring(lastArrowIndex + 1).trim()
   }
 
+  const basePkgId = id.split('/', id[0] === '@' ? 2 : 1).join('/')
+
   let basedir: string
-  if (dedupe?.some((id) => possiblePkgIds.includes(id))) {
+  if (dedupe?.includes(basePkgId)) {
     basedir = root
   } else if (
     importer &&
@@ -643,95 +648,210 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  // nested node module, step-by-step resolve to the basedir of the nestedPath
+  // resolve a chain of packages notated by '>' in the id
   if (nestedRoot) {
     basedir = nestedResolveFrom(nestedRoot, basedir, preserveSymlinks)
   }
 
-  // nearest package.json
-  let nearestPkg: PackageData | undefined
-  // nearest package.json that may have the `exports` field
-  let pkg: PackageData | undefined
+  let resolvedPkg: PackageData | undefined
+  let resolvedPkgId: string | undefined
+  let resolvedPkgType: string | undefined
+  let resolvedId: string | undefined
+  let resolver: typeof resolvePackageEntry
 
-  let pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    nearestPkg = resolvePackageData(
-      pkgId,
-      basedir,
-      preserveSymlinks,
-      packageCache
-    )!
-    return nearestPkg
-  })!
+  const nodeModules = lookupNodeModules(basedir)
+  for (const nodeModulesDir of nodeModules) {
+    if (!fs.existsSync(nodeModulesDir)) {
+      continue
+    }
 
-  const rootPkgId = possiblePkgIds[0]
-  const rootPkg = resolvePackageData(
-    rootPkgId,
-    basedir,
-    preserveSymlinks,
-    packageCache
-  )!
-  if (rootPkg?.data?.exports) {
-    pkg = rootPkg
-    pkgId = rootPkgId
-  } else {
-    pkg = nearestPkg
-  }
+    const entryPath = path.join(nodeModulesDir, id)
+    const nearestPkgPath = findPackageJson(entryPath)
+    if (nearestPkgPath) {
+      resolvedPkg = loadPackageData(
+        nearestPkgPath,
+        preserveSymlinks,
+        packageCache
+      )
+      resolvedPkgId = path.dirname(
+        path.relative(nodeModulesDir, nearestPkgPath)
+      )
 
-  if (!pkg || !nearestPkg) {
-    // if import can't be found, check if it's an optional peer dep.
-    // if so, we can resolve to a special id that errors only when imported.
-    if (
-      !options.isHookNodeResolve &&
-      basedir !== root && // root has no peer dep
-      !isBuiltin(nestedPath) &&
-      !nestedPath.includes('\0') &&
-      bareImportRE.test(nestedPath)
-    ) {
-      // find package.json with `name` as main
-      const mainPackageJson = lookupFile(basedir, ['package.json'], {
-        predicate: (content) => !!JSON.parse(content).name
-      })
-      if (mainPackageJson) {
-        const mainPkg = JSON.parse(mainPackageJson)
-        if (
-          mainPkg.peerDependencies?.[nestedPath] &&
-          mainPkg.peerDependenciesMeta?.[nestedPath]?.optional
-        ) {
-          return {
-            id: `${optionalPeerDepId}:${nestedPath}:${mainPkg.name}`
+      // Always use the nearest package.json to determine whether a
+      // ".js" module is ESM or CJS.
+      resolvedPkgType = resolvedPkg.data.type
+
+      // If the nearest package.json has no "exports" field, then we
+      // need to check the dependency's root directory for an exports
+      // field, since that should take precedence (see #10371).
+      if (resolvedPkgId !== basePkgId) {
+        try {
+          const basePkgPath = path.join(
+            nodeModulesDir,
+            basePkgId,
+            'package.json'
+          )
+          const basePkg = loadPackageData(
+            basePkgPath,
+            preserveSymlinks,
+            packageCache
+          )
+          if (basePkg.data.exports) {
+            resolvedPkg = basePkg
+            resolvedPkgId = path.dirname(
+              path.relative(nodeModulesDir, basePkgPath)
+            )
+          }
+        } catch (e) {
+          if (e.code !== 'ENOENT') {
+            throw e
           }
         }
       }
+
+      let usedId: string
+      if (resolvedPkgId === id) {
+        // Use the main entry point
+        resolver = resolvePackageEntry
+        usedId = id
+      } else {
+        // Use a deep entry point
+        resolver = resolveDeepImport
+        usedId = '.' + id.slice(resolvedPkgId.length)
+      }
+
+      try {
+        resolvedId = resolver(usedId, resolvedPkg, targetWeb, options)
+        if (resolvedId) {
+          break
+        }
+      } catch (err) {
+        if (!options.tryEsmOnly) {
+          throw err
+        }
+      }
+      if (options.tryEsmOnly) {
+        resolvedId = resolver(usedId, resolvedPkg, targetWeb, {
+          ...options,
+          isRequire: false,
+          mainFields: DEFAULT_MAIN_FIELDS,
+          extensions: DEFAULT_EXTENSIONS
+        })
+        if (resolvedId) {
+          break
+        }
+      }
+
+      // Reset the resolvedPkg variables to avoid false positives as we
+      // continue our search.
+      resolvedPkg = undefined
+      resolvedPkgId = undefined
+      resolvedPkgType = undefined
+      continue
     }
-    return
+
+    // No package.json was found, but there could still be a module
+    // here. To match Node's behavior, we must be able to resolve a
+    // module without a package.json file helping us out.
+    try {
+      const stat = fs.statSync(entryPath)
+      if (stat.isFile()) {
+        resolvedId = entryPath
+        break
+      }
+      resolvedId = tryIndexFile(entryPath, targetWeb, options)
+      if (resolvedId) {
+        break
+      }
+    } catch {}
+
+    // In case a file extension is missing, we need to try calling the
+    // `tryFsResolve` function.
+    let entryDir = path.dirname(entryPath)
+    let entryDirExists = false
+    if (entryDir === nodeModulesDir) {
+      entryDirExists = true
+    } else {
+      try {
+        const stat = fs.statSync(entryDir)
+        entryDirExists = stat.isDirectory()
+      } catch {}
+    }
+
+    if (entryDirExists) {
+      resolvedId = tryFsResolve(
+        entryPath,
+        { ...options, skipPackageJson: true },
+        false,
+        targetWeb
+      )
+      if (resolvedId) {
+        break
+      }
+    }
+
+    // Stop looking if we're at the workspace root directory.
+    if (
+      isWorkspaceRoot(
+        path.dirname(nodeModulesDir),
+        preserveSymlinks,
+        packageCache
+      )
+    )
+      break
   }
 
-  let resolveId = resolvePackageEntry
-  let unresolvedId = pkgId
-  const isDeepImport = unresolvedId !== nestedPath
-  if (isDeepImport) {
-    resolveId = resolveDeepImport
-    unresolvedId = '.' + nestedPath.slice(pkgId.length)
-  }
+  if (!resolvedId) {
+    const mayBeOptionalPeerDep =
+      !options.isHookNodeResolve &&
+      basedir !== root &&
+      !isBuiltin(basePkgId) &&
+      !basePkgId.includes('\0') &&
+      bareImportRE.test(basePkgId)
 
-  let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
+    if (!mayBeOptionalPeerDep) {
+      return // Module not found.
     }
-  }
-  if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, {
-      ...options,
-      isRequire: false,
-      mainFields: DEFAULT_MAIN_FIELDS,
-      extensions: DEFAULT_EXTENSIONS
+
+    // Find the importer's nearest package.json with a "name" field.
+    // Some projects (like Svelte) have nameless package.json files to
+    // appease older Node.js versions and they don't have the list of
+    // optional peer dependencies like the root package.json does.
+    let basePkg: PackageData | undefined
+    lookupFile(basedir, ['package.json'], {
+      pathOnly: true,
+      predicate(pkgPath) {
+        basePkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
+        return !!basePkg.data.name
+      }
     })
+
+    if (!basePkg) {
+      return // Module not found.
+    }
+
+    const { peerDependencies, peerDependenciesMeta } = basePkg.data
+    const optionalPeerDep =
+      peerDependenciesMeta?.[basePkgId]?.optional &&
+      peerDependencies?.[basePkgId]
+
+    if (!optionalPeerDep) {
+      return // Module not found.
+    }
+
+    return {
+      id: `${optionalPeerDepId}:${basePkgId}:${basePkg.data.name}`
+    }
   }
-  if (!resolved) {
-    return
+
+  if (!resolvedPkg) {
+    const pkgPath = lookupFile(path.dirname(resolvedId), ['package.json'], {
+      pathOnly: true
+    })
+    if (!pkgPath) {
+      return { id: resolvedId }
+    }
+    resolvedPkg = loadPackageData(pkgPath, preserveSymlinks, packageCache)
   }
 
   const processResult = (resolved: PartialResolvedId) => {
@@ -753,8 +873,8 @@ export function tryNodeResolve(
       return resolved
     }
     let resolvedId = id
-    if (isDeepImport) {
-      if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
+    if (resolver === resolveDeepImport) {
+      if (!resolvedPkg?.data.exports && path.extname(id) !== resolvedExt) {
         resolvedId = resolved.id.slice(resolved.id.indexOf(id))
         isDebug &&
           debug(
@@ -766,33 +886,33 @@ export function tryNodeResolve(
   }
 
   // link id to pkg for browser field mapping check
-  idToPkgMap.set(resolved, pkg)
+  idToPkgMap.set(resolvedId, resolvedPkg)
   if ((isBuild && !depsOptimizer) || externalize) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
-      id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved)
+      id: resolvedId,
+      moduleSideEffects: resolvedPkg.hasSideEffects(resolvedId)
     })
   }
 
-  const ext = path.extname(resolved)
+  const ext = path.extname(resolvedId)
   const isCJS =
-    ext === '.cjs' || (ext === '.js' && nearestPkg.data.type !== 'module')
+    ext === '.cjs' || (ext === '.js' && resolvedPkgType !== 'module')
 
   if (
     !options.ssrOptimizeCheck &&
-    (!resolved.includes('node_modules') || // linked
+    (!resolvedId.includes('node_modules') || // linked
       !depsOptimizer || // resolving before listening to the server
       options.scan) // initial esbuild scan phase
   ) {
-    return { id: resolved }
+    return { id: resolvedId }
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
   const isJsType = depsOptimizer
-    ? isOptimizable(resolved, depsOptimizer.options)
-    : OPTIMIZABLE_ENTRY_RE.test(resolved)
+    ? isOptimizable(resolvedId, depsOptimizer.options)
+    : OPTIMIZABLE_ENTRY_RE.test(resolvedId)
 
   let exclude = depsOptimizer?.options.exclude
   let include = depsOptimizer?.options.exclude
@@ -803,22 +923,28 @@ export function tryNodeResolve(
   }
 
   const skipOptimization =
+    !resolvedPkgId ||
     !isJsType ||
     importer?.includes('node_modules') ||
-    exclude?.includes(pkgId) ||
-    exclude?.includes(nestedPath) ||
-    SPECIAL_QUERY_RE.test(resolved) ||
+    exclude?.includes(resolvedPkgId) ||
+    exclude?.includes(basePkgId) ||
+    exclude?.includes(id) ||
+    SPECIAL_QUERY_RE.test(resolvedId) ||
     (!isBuild && ssr) ||
     // Only optimize non-external CJS deps during SSR by default
     (ssr &&
       !isCJS &&
-      !(include?.includes(pkgId) || include?.includes(nestedPath)))
+      !(
+        include?.includes(resolvedPkgId) ||
+        include?.includes(basePkgId) ||
+        include?.includes(id)
+      ))
 
   if (options.ssrOptimizeCheck) {
     return {
       id: skipOptimization
-        ? injectQuery(resolved, `__vite_skip_optimization`)
-        : resolved
+        ? injectQuery(resolvedId, `__vite_skip_optimization`)
+        : resolvedId
     }
   }
 
@@ -831,25 +957,25 @@ export function tryNodeResolve(
     if (!isBuild) {
       const versionHash = depsOptimizer!.metadata.browserHash
       if (versionHash && isJsType) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
+        resolvedId = injectQuery(resolvedId, `v=${versionHash}`)
       }
     }
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
-    resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
+    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolvedId)
+    resolvedId = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
   if (isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
-      id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved)
+      id: resolvedId,
+      moduleSideEffects: resolvedPkg.hasSideEffects(resolvedId)
     }
   } else {
-    return { id: resolved! }
+    return { id: resolvedId }
   }
 }
 

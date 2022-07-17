@@ -144,3 +144,12 @@ test('resolve package that contains # in path', async () => {
     '[success]'
   )
 })
+
+// Support this so we can add symlinks to local directories without
+// creating a package.json file (and because Node.js also supports
+// this).
+test('unpackaged modules in node_modules', async () => {
+  expect(await page.textContent('.unpackaged-file')).toMatch('[success]')
+  expect(await page.textContent('.unpackaged-index-file')).toMatch('[success]')
+  expect(await page.textContent('.unpackaged-deep-import')).toMatch('[success]')
+})

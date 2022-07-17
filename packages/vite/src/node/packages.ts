@@ -163,3 +163,40 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
     }
   }
 }
+
+export function findPackageJson(dir: string): string | null {
+  // Stop looking at node_modules directory.
+  if (path.basename(dir) === 'node_modules') {
+    return null
+  }
+  const pkgPath = path.join(dir, 'package.json')
+  if (fs.existsSync(pkgPath)) {
+    return pkgPath
+  }
+  const parentDir = path.dirname(dir)
+  return parentDir !== dir ? findPackageJson(parentDir) : null
+}
+
+const workspaceRootFiles = ['lerna.json', 'pnpm-workspace.yaml', '.git']
+
+export function isWorkspaceRoot(
+  dir: string,
+  preserveSymlinks?: boolean,
+  packageCache?: PackageCache
+): boolean {
+  const files = fs.readdirSync(dir)
+  if (files.some((file) => workspaceRootFiles.includes(file))) {
+    return true // Found a lerna/pnpm workspace or git repository.
+  }
+  if (files.includes('package.json')) {
+    const workspacePkg = loadPackageData(
+      path.join(dir, 'package.json'),
+      preserveSymlinks,
+      packageCache
+    )
+    if (workspacePkg?.data.workspaces) {
+      return true // Found a npm/yarn workspace.
+    }
+  }
+  return false
+}
