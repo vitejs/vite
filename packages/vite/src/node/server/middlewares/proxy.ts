@@ -55,11 +55,13 @@ export function proxyMiddleware(
             error: err
           }
         )
-        res
-          .writeHead(500, {
-            'Content-Type': 'text/plain'
-          })
-          .end()
+        if (!res.writableEnded) {
+          res
+            .writeHead(500, {
+              'Content-Type': 'text/plain'
+            })
+            .end()
+        }
       } else {
         config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
           timestamp: true,
