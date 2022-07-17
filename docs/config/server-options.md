@@ -21,9 +21,9 @@ You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns
 ```js
 // vite.config.js
 import { defineConfig } from 'vite'
-import dns from 'dns'
+import { setDefaultResultOrder } from 'dns'
 
-dns.setDefaultResultOrder('verbatim')
+setDefaultResultOrder('verbatim')
 
 export default defineConfig({
   // omit
