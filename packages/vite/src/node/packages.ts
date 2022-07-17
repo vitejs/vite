@@ -163,3 +163,16 @@ export function watchPackageDataPlugin(config: ResolvedConfig): Plugin {
     }
   }
 }
+
+export function findPackageJson(dir: string): string | null {
+  // Stop looking at node_modules directory.
+  if (path.basename(dir) === 'node_modules') {
+    return null
+  }
+  const pkgPath = path.join(dir, 'package.json')
+  if (fs.existsSync(pkgPath)) {
+    return pkgPath
+  }
+  const parentDir = path.dirname(dir)
+  return parentDir !== dir ? findPackageJson(parentDir) : null
+}
