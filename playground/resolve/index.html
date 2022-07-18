@@ -76,6 +76,9 @@
 <h2>Plugin resolved virtual file</h2>
 <p class="virtual"></p>
 
+<h2>Plugin resolved virtual file (#9036)</h2>
+<p class="virtual-9036"></p>
+
 <h2>Plugin resolved custom virtual file</h2>
 <p class="custom-virtual"></p>
 
@@ -220,6 +223,9 @@
 
   import { msg as virtualMsg } from '@virtual-file'
   text('.virtual', virtualMsg)
+
+  import { msg as virtualMsg9036 } from 'virtual:file-9036.js'
+  text('.virtual-9036', virtualMsg9036)
 
   import { msg as customVirtualMsg } from '@custom-virtual-file'
   text('.custom-virtual', customVirtualMsg)

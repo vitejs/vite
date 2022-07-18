@@ -4,6 +4,9 @@ const { normalizePath } = require('vite')
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
 
+const virtualFile9036 = 'virtual:file-9036.js'
+const virtualId9036 = '\0' + virtualFile9036
+
 const customVirtualFile = '@custom-virtual-file'
 const { a } = require('./config-dep')
 
@@ -41,6 +44,19 @@ module.exports = {
       load(id) {
         if (id === virtualId) {
           return `export const msg = "[success] from conventional virtual file"`
+        }
+      }
+    },
+    {
+      name: 'virtual-module-9036',
+      resolveId(id) {
+        if (id === virtualFile9036) {
+          return virtualId9036
+        }
+      },
+      load(id) {
+        if (id === virtualId9036) {
+          return `export const msg = "[success] from virtual file #9036"`
         }
       }
     },
