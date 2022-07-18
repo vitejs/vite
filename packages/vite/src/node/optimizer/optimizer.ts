@@ -55,7 +55,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   // Non Dev SSR Optimizer
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
   if (!getDepsOptimizer(config, ssr)) {
     await createDepsOptimizer(config, server)
   }
@@ -95,7 +95,7 @@ async function createDepsOptimizer(
 ): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
-  const ssr = !!config.build.ssr // safe as Dev SSR don't use this optimizer
+  const ssr = isBuild && !!config.build.ssr // safe as Dev SSR don't use this optimizer
 
   const sessionTimestamp = Date.now().toString()
 
