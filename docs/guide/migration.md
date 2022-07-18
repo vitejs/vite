@@ -10,7 +10,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 - Chrome >=87
 - Firefox >=78
-- Safari >=13
+- Safari >=12
 - Edge >=88
 
 A small fraction of users will now require using [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills.
