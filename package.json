@@ -44,7 +44,7 @@
     "@types/convert-source-map": "^1.5.2",
     "@types/cross-spawn": "^6.0.2",
     "@types/debug": "^4.1.7",
-    "@types/estree": "^0.0.52",
+    "@types/estree": "^1.0.0",
     "@types/etag": "^1.8.1",
     "@types/fs-extra": "^9.0.13",
     "@types/hash-sum": "^1.0.0",
