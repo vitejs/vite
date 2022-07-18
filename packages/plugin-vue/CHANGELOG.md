@@ -1,3 +1,11 @@
+## <small>3.0.1 (2022-07-18)</small>
+
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(vue): remove ssr.external config (#9128) ([ec91f98](https://github.com/vitejs/vite/commit/ec91f98)), closes [#9128](https://github.com/vitejs/vite/issues/9128)
+* refactor(vue): limit passable compilerOptions (#8994) ([b7b3e65](https://github.com/vitejs/vite/commit/b7b3e65)), closes [#8994](https://github.com/vitejs/vite/issues/8994)
+
+
+
 ## 3.0.0 (2022-07-13)
 
 * chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
