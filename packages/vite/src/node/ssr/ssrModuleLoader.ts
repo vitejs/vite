@@ -38,7 +38,7 @@ export async function ssrLoadModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean
 ): Promise<SSRModule> {
-  url = unwrapId(url)
+  url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
 
   // when we instantiate multiple dependency modules in parallel, they may
   // point to shared modules. We need to avoid duplicate instantiation attempts
@@ -137,7 +137,7 @@ async function instantiateModule(
     if (dep[0] !== '.' && dep[0] !== '/') {
       return nodeImport(dep, mod.file!, resolveOptions)
     }
-    dep = unwrapId(dep).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
       pendingDeps.push(dep)
       if (pendingDeps.length === 1) {
