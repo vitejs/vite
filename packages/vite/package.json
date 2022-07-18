@@ -68,8 +68,8 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.18.8",
-    "@babel/types": "^7.18.8",
+    "@babel/parser": "^7.18.9",
+    "@babel/types": "^7.18.9",
     "@jridgewell/trace-mapping": "^0.3.14",
     "@rollup/plugin-alias": "^3.1.9",
     "@rollup/plugin-commonjs": "^22.0.1",
@@ -119,7 +119,7 @@
     "tslib": "^2.4.0",
     "types": "link:./types",
     "ufo": "^0.8.5",
-    "ws": "^8.8.0"
+    "ws": "^8.8.1"
   },
   "peerDependencies": {
     "less": "*",

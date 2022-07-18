@@ -26,7 +26,7 @@
     "added-in-entries": "file:./added-in-entries",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.6.10",
+    "phoenix": "^1.6.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "resolve-linked": "workspace:0.0.0",

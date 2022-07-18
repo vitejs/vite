@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.7",
-    "tailwindcss": "^3.1.5",
+    "tailwindcss": "^3.1.6",
     "vue": "^3.2.37",
-    "vue-router": "^4.1.1"
+    "vue-router": "^4.1.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
-    "ts-node": "^10.8.2"
+    "ts-node": "^10.9.1"
   }
 }
