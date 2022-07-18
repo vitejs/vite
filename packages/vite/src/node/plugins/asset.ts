@@ -94,14 +94,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
-      const toRelative = (filename: string, importer: string) => {
-        return {
-          runtime: `new URL(${JSON.stringify(
-            path.posix.relative(path.dirname(importer), filename)
-          )},import.meta.url).href`
-        }
-      }
-
       // Urls added with JS using e.g.
       // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
 
@@ -123,8 +115,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           'asset',
           chunk.fileName,
           'js',
-          config,
-          toRelative
+          config
         )
         const replacementString =
           typeof replacement === 'string'
@@ -147,8 +138,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           'public',
           chunk.fileName,
           'js',
-          config,
-          toRelative
+          config
         )
         const replacementString =
           typeof replacement === 'string'
