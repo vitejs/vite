@@ -233,8 +233,4 @@ We already have many config options, and we should avoid fixing an issue by addi
 
 ## Docs Translation Contribution
 
-If you would like to start a translation in your language, you are welcome to contribute! Please join the [#docs channel](https://discord.com/channels/804011606160703521/855049073157341234) in [Vite Land](https://chat.vitejs.dev) to discuss and coordinate with others.
-
-The [English docs are embedded in the main Vite repo](https://github.com/vitejs/vite/tree/main/docs) to enable contributors to work on docs, tests, and implementation in the same PR. Translations of those docs are contained in [separate repos in the `vitejs` org](https://github.com/vitejs?q=docs&type=all&language=&sort=).
-
 To add a new language to the Vite docs, see [`vite-docs-template`](https://github.com/tony19/vite-docs-template/blob/main/.github/CONTRIBUTING.md).
