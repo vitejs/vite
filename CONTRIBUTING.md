@@ -30,7 +30,7 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 1. From that terminal, go to `playground/xxx`, and run `pnpm run dev`.
 
-1. The execution will stop at the `debugger` statement, and you can use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, restart the process...
+1. The execution will stop at the `debugger` statement, and you can use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, and restart the process...
 
 ### Debugging Errors in Vitest Tests Using Playwright (Chromium)
 
@@ -93,7 +93,7 @@ Other than tests under `playground/` for integration tests, packages might conta
 
 - `pnpm run test-unit` runs unit tests under each package.
 
-- `pnpm run test-unit [match]` runs tests in specific packagees that match the given filter.
+- `pnpm run test-unit [match]` runs tests in specific packages that match the given filter.
 
 ### Test Env and Helpers
 
@@ -210,9 +210,9 @@ Most deps should be added to `devDependencies` even if they are needed at runtim
 
 - Type packages. Example: `@types/*`.
 - Deps that cannot be properly bundled due to binary files. Example: `esbuild`.
-- Deps that ships their own types that are used in Vite's own public types. Example: `rollup`.
+- Deps that ship their own types that are used in Vite's own public types. Example: `rollup`.
 
-Avoid deps that have large transitive dependencies that results in bloated size compared to the functionality it provides. For example, `http-proxy` itself plus `@types/http-proxy` is a little over 1MB in size, but `http-proxy-middleware` pulls in a ton of dependencies that make it 7MB(!) when a minimal custom middleware on top of `http-proxy` only requires a couple lines of code.
+Avoid deps with large transitive dependencies that result in bloated size compared to the functionality it provides. For example, `http-proxy` itself plus `@types/http-proxy` is a little over 1MB in size, but `http-proxy-middleware` pulls in a ton of dependencies that make it 7MB(!) when a minimal custom middleware on top of `http-proxy` only requires a couple of lines of code.
 
 ### Ensure Type Support
 
