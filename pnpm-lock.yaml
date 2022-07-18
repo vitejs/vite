@@ -18,7 +18,7 @@ importers:
       '@types/convert-source-map': ^1.5.2
       '@types/cross-spawn': ^6.0.2
       '@types/debug': ^4.1.7
-      '@types/estree': ^0.0.52
+      '@types/estree': ^1.0.0
       '@types/etag': ^1.8.1
       '@types/fs-extra': ^9.0.13
       '@types/hash-sum': ^1.0.0
@@ -76,7 +76,7 @@ importers:
       '@types/convert-source-map': 1.5.2
       '@types/cross-spawn': 6.0.2
       '@types/debug': 4.1.7
-      '@types/estree': 0.0.52
+      '@types/estree': 1.0.0
       '@types/etag': 1.8.1
       '@types/fs-extra': 9.0.13
       '@types/hash-sum': 1.0.0
@@ -369,6 +369,9 @@ importers:
       fast-glob: 3.2.11
       sass: 1.53.0
       tailwindcss: 3.1.5
+
+  playground/build-old:
+    specifiers: {}
 
   playground/cli:
     specifiers: {}
@@ -2561,8 +2564,8 @@ packages:
     resolution: {integrity: sha512-CuPgU6f3eT/XgKKPqKd/gLZV1Xmvf1a2R5POBOGQa6uv82xpls89HU5zKeVoyR8XzHd1RGNOlQlvUe3CFkjWNQ==}
     dev: true
 
-  /@types/estree/0.0.52:
-    resolution: {integrity: sha512-BZWrtCU0bMVAIliIV+HJO1f1PR41M7NKjfxrFJwwhKI1KwhwOxYw1SXg9ao+CIMt774nFuGiG6eU+udtbEI9oQ==}
+  /@types/estree/1.0.0:
+    resolution: {integrity: sha512-WulqXMDUTYAXCjZnk6JtIHPigp55cVtDgDrO2gHRwhyJto21+1zbVCtOYB2L1F9w4qCQ0rOGWBnBe0FNTiEJIQ==}
     dev: true
 
   /@types/etag/1.8.1:
