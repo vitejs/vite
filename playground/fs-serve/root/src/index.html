@@ -7,6 +7,8 @@
 <h2>Safe Fetch</h2>
 <pre class="safe-fetch-status"></pre>
 <pre class="safe-fetch"></pre>
+<pre class="safe-fetch-query-status"></pre>
+<pre class="safe-fetch-query"></pre>
 
 <h2>Safe Fetch Subdirectory</h2>
 <pre class="safe-fetch-subdir-status"></pre>
@@ -25,6 +27,8 @@
 <h2>Safe /@fs/ Fetch</h2>
 <pre class="safe-fs-fetch-status"></pre>
 <pre class="safe-fs-fetch"></pre>
+<pre class="safe-fs-fetch-query-status"></pre>
+<pre class="safe-fs-fetch-query"></pre>
 <pre class="safe-fs-fetch-special-characters-status"></pre>
 <pre class="safe-fs-fetch-special-characters"></pre>
 
@@ -58,6 +62,17 @@
     .then((data) => {
       text('.safe-fetch', JSON.stringify(data))
     })
+
+  // inside allowed dir with query, safe fetch
+  fetch('/src/safe.txt?query')
+    .then((r) => {
+      text('.safe-fetch-query-status', r.status)
+      return r.text()
+    })
+    .then((data) => {
+      text('.safe-fetch-query', JSON.stringify(data))
+    })
+
   // inside allowed dir, safe fetch
   fetch('/src/subdir/safe.txt')
     .then((r) => {
@@ -125,6 +140,16 @@
     })
     .then((data) => {
       text('.safe-fs-fetch', JSON.stringify(data))
+    })
+
+  // imported before with query, should be treated as safe
+  fetch('/@fs/' + ROOT + '/safe.json?query')
+    .then((r) => {
+      text('.safe-fs-fetch-query-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.safe-fs-fetch-query', JSON.stringify(data))
     })
 
   // not imported before, outside of root, treated as unsafe
