@@ -24,9 +24,9 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 1. Add a `debugger` statement where you want to stop the code execution.
 
-1. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run view_](https://code.visualstudio.com/docs/editor/debugging#_run-view).
+1. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run and Debug view_](https://code.visualstudio.com/docs/editor/debugging#_run-and-debug-view).
 
-1. Click the "JavaScript Debug Termimal" button in the _Run view_, which opens a terminal in VS Code.
+1. Click the "JavaScript Debug Termimal" button in the _Run and Debug view_, which opens a terminal in VS Code.
 
 1. From that terminal, go to `playground/xxx`, and run `pnpm run dev`.
 
