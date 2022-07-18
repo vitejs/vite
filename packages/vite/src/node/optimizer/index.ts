@@ -224,7 +224,7 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
@@ -446,7 +446,8 @@ export function depsLogString(qualifiedIds: string[]): string {
 export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = !!resolvedConfig.build.ssr
+  ssr: boolean = resolvedConfig.command === 'build' &&
+    !!resolvedConfig.build.ssr
 ): Promise<DepOptimizationResult> {
   const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
@@ -748,7 +749,7 @@ export function depsFromOptimizedDepInfo(
 export function getOptimizedDepPath(
   id: string,
   config: ResolvedConfig,
-  ssr: boolean = !!config.build.ssr
+  ssr: boolean
 ): string {
   return normalizePath(
     path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js')

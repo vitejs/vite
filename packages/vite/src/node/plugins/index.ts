@@ -85,7 +85,7 @@ export async function resolvePlugins(
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
-    config.build.ssr ? ssrRequireHookPlugin(config) : null,
+    isBuild && config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
