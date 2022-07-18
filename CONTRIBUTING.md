@@ -24,13 +24,13 @@ To use breakpoints and explore code execution, you can use the ["Run and Debug"]
 
 1. Add a `debugger` statement where you want to stop the code execution.
 
-1. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run and Debug view_](https://code.visualstudio.com/docs/editor/debugging#_run-and-debug-view).
+2. Click the "Run and Debug" icon in the activity bar of the editor, which opens the [_Run and Debug view_](https://code.visualstudio.com/docs/editor/debugging#_run-and-debug-view).
 
-1. Click the "JavaScript Debug Termimal" button in the _Run and Debug view_, which opens a terminal in VS Code.
+3. Click the "JavaScript Debug Termimal" button in the _Run and Debug view_, which opens a terminal in VS Code.
 
-1. From that terminal, go to `playground/xxx`, and run `pnpm run dev`.
+4. From that terminal, go to `playground/xxx`, and run `pnpm run dev`.
 
-1. The execution will stop at the `debugger` statement, and you can use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, and restart the process...
+5. The execution will stop at the `debugger` statement, and you can use the [Debug toolbar](https://code.visualstudio.com/docs/editor/debugging#_debug-actions) to continue, step over, and restart the process...
 
 ### Debugging Errors in Vitest Tests Using Playwright (Chromium)
 
@@ -38,15 +38,15 @@ Some errors are masked and hidden away because of the layers of abstraction and 
 
 1. Add a `debugger` statement to the `playground/vitestSetup.ts` -> `afterAll` hook. This will pause execution before the tests quit and the Playwright browser instance exits.
 
-1. Run the tests with the `debug-serve` script command, which will enable remote debugging: `pnpm run debug-serve resolve`.
+2. Run the tests with the `debug-serve` script command, which will enable remote debugging: `pnpm run debug-serve resolve`.
 
-1. Wait for inspector devtools to open in your browser and the debugger to attach.
+3. Wait for inspector devtools to open in your browser and the debugger to attach.
 
-1. In the sources panel in the right column, click the play button to resume execution, and allow the tests to run, which will open a Chromium instance.
+4. In the sources panel in the right column, click the play button to resume execution, and allow the tests to run, which will open a Chromium instance.
 
-1. Focusing the Chromium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
+5. Focusing the Chromium instance, you can open the browser devtools and inspect the console there to find the underlying problems.
 
-1. To close everything, just stop the test process back in your terminal.
+6. To close everything, just stop the test process back in your terminal.
 
 ## Testing Vite against external packages
 
