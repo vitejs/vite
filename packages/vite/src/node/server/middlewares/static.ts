@@ -81,7 +81,7 @@ export function serveStaticMiddleware(
     }
 
     const url = new URL(req.url!, 'http://example.com')
-    const pathname = getDecodedPathname(url)
+    const pathname = decodeURIComponent(url.pathname)
 
     // apply aliases to static requests as well
     let redirectedPathname: string | undefined
@@ -133,7 +133,7 @@ export function serveRawFsMiddleware(
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
     if (url.pathname.startsWith(FS_PREFIX)) {
-      const pathname = getDecodedPathname(url)
+      const pathname = decodeURIComponent(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
@@ -156,12 +156,6 @@ export function serveRawFsMiddleware(
       next()
     }
   }
-}
-
-function getDecodedPathname(url: URL) {
-  return url.pathname.includes('%')
-    ? decodeURIComponent(url.pathname)
-    : url.pathname
 }
 
 const _matchOptions = { matchBase: true }
