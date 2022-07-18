@@ -23,6 +23,11 @@ describe('main', () => {
       expect(await page.textContent('.safe-fetch-status')).toBe('200')
     })
 
+    test('safe fetch with query', async () => {
+      expect(await page.textContent('.safe-fetch-query')).toMatch('KEY=safe')
+      expect(await page.textContent('.safe-fetch-query-status')).toBe('200')
+    })
+
     test('safe fetch with special characters', async () => {
       expect(
         await page.textContent('.safe-fetch-subdir-special-characters')
