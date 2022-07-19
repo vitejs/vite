@@ -704,7 +704,11 @@ export async function resolveConfig(
 
   const workerResolved: ResolvedConfig = Object.assign(
     workerConfig,
-    resolvedConfig
+    resolvedConfig,
+    {
+      isWorker: true,
+      mainConfig: resolved
+    }
   )
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
