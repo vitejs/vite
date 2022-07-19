@@ -925,7 +925,6 @@ export async function loadConfigFromFile(
     let userConfig: UserConfigExport | undefined
 
     if (isESM) {
-      const fileUrl = require('url').pathToFileURL(resolvedPath)
       const bundled = await bundleConfigFile(resolvedPath, true)
       dependencies = bundled.dependencies
       if (isTS) {
@@ -933,12 +932,15 @@ export async function loadConfigFromFile(
         // with --experimental-loader themselves, we have to do a hack here:
         // bundle the config file w/ ts transforms first, write it to disk,
         // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
-          .default
-        fs.unlinkSync(resolvedPath + '.js')
+        const fileBase = `${resolvedPath}.timestamp-${Date.now()}`
+        const fileNameTmp = `${fileBase}.js`
+        const fileUrl = `${require('url').pathToFileURL(fileBase)}.js`
+        fs.writeFileSync(fileNameTmp, bundled.code)
+        userConfig = (await dynamicImport(fileUrl)).default
+        fs.unlinkSync(fileNameTmp)
         debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
       } else {
+        const fileUrl = require('url').pathToFileURL(resolvedPath)
         // using Function to avoid this from being compiled away by TS/Rollup
         // append a query so that we force reload fresh config in case of
         // server restart
