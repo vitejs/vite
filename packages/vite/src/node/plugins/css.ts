@@ -1249,18 +1249,25 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 function resolveEsbuildMinifyOptions(
   options: ESBuildOptions
 ): TransformOptions {
+  const base: TransformOptions = {
+    logLevel: options.logLevel,
+    logLimit: options.logLimit,
+    logOverride: options.logOverride
+  }
+
   if (
     options.minifyIdentifiers != null ||
     options.minifySyntax != null ||
     options.minifyWhitespace != null
   ) {
     return {
+      ...base,
       minifyIdentifiers: options.minifyIdentifiers ?? true,
       minifySyntax: options.minifySyntax ?? true,
       minifyWhitespace: options.minifyWhitespace ?? true
     }
   } else {
-    return { minify: true }
+    return { ...base, minify: true }
   }
 }
 

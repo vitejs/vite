@@ -7,6 +7,11 @@ module.exports = {
   build: {
     cssTarget: 'chrome61'
   },
+  esbuild: {
+    logOverride: {
+      'unsupported-css-property': 'silent'
+    }
+  },
   resolve: {
     alias: {
       '@': __dirname,
