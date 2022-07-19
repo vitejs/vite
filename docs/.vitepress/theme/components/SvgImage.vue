@@ -1,14 +1,5 @@
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  props: {
-    svg: {
-      type: String,
-      required: true
-    }
-  }
-})
+<script setup lang="ts">
+defineProps<{ svg: string }>()
 </script>
 
 <template>
