@@ -1,1 +1,1 @@
-module.exports = require('../../vite.config')
+module.exports = require('../../vite.config-iife')
