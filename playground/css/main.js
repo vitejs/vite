@@ -104,3 +104,5 @@ import aliasModule from '#alias-module'
 document
   .querySelector('.aliased-module')
   .classList.add(aliasModule.aliasedModule)
+
+import './unsupported.css'
