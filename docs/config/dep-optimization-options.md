@@ -35,6 +35,19 @@ export default defineConfig({
 
 By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
+:::tip Note
+The syntax for entries in the `include` array is `"[parent ESM module name] > [imported CJS module name]"`, e.g. in a project named `"my-project"` that includes a commonjs module named `"commonjs-dep"`, the configuration would be:
+
+```js
+export default defineConfig({
+  optimizeDeps: {
+    include: ['my-project > commonjs-dep']
+  }
+})
+```
+
+:::
+
 ## optimizeDeps.esbuildOptions
 
 - **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
