@@ -5,7 +5,23 @@ module.exports = vite.defineConfig({
   base: '/iife/',
   worker: {
     format: 'iife',
-    plugins: [vueJsx()],
+    plugins: [
+      vueJsx(),
+      {
+        name: 'config-test',
+        config() {
+          return {
+            worker: {
+              rollupOptions: {
+                output: {
+                  entryFileNames: 'assets/worker_.[name].js'
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
     rollupOptions: {
       output: {
         assetFileNames: 'assets/worker_asset.[name].[ext]',

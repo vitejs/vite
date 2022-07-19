@@ -608,13 +608,12 @@ export async function resolveConfig(
 
   // resolve worker
   const resolvedWorkerOptions: ResolveWorkerOptions = {
-    format: config.worker?.format || 'iife',
+    format: workerConfig.worker?.format || 'iife',
     plugins: [],
-    rollupOptions: config.worker?.rollupOptions || {}
+    rollupOptions: workerConfig.worker?.rollupOptions || {}
   }
 
-  const resolved: ResolvedConfig = {
-    ...config,
+  const resolvedConfig: ResolvedConfig = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
@@ -664,6 +663,7 @@ export async function resolveConfig(
       ...config.experimental
     }
   }
+  const resolved: ResolvedConfig = Object.assign(config, resolvedConfig)
 
   if (middlewareMode === 'ssr') {
     logger.warn(
@@ -702,12 +702,10 @@ export async function resolveConfig(
     postPlugins
   )
 
-  const workerResolved: ResolvedConfig = {
-    ...resolved,
-    ...workerConfig,
-    isWorker: true,
-    mainConfig: resolved
-  }
+  const workerResolved: ResolvedConfig = Object.assign(
+    workerConfig,
+    resolvedConfig
+  )
   resolved.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
