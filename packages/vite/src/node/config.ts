@@ -1020,12 +1020,14 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const fileUrl = pathToFileURL(fileName)
-    fs.writeFileSync(fileName + '.mjs', bundledCode)
+    const fileBase = `${fileName}.timestamp-${Date.now()}`
+    const fileNameTmp = `${fileBase}.mjs`
+    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
+    fs.writeFileSync(fileNameTmp, bundledCode)
     try {
-      return (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`)).default
+      return (await dynamicImport(fileUrl)).default
     } finally {
-      fs.unlinkSync(fileName + '.mjs')
+      fs.unlinkSync(fileNameTmp)
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
