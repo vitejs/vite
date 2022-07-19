@@ -395,6 +395,42 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
+  const rawWorkerUserPlugins = (
+    (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
+  ).filter((p) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  })
+
+  let workerConfig = mergeConfig({}, config)
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(rawWorkerUserPlugins)
+
+  // run config hooks
+  const workerUserPlugins = [
+    ...workerPrePlugins,
+    ...workerNormalPlugins,
+    ...workerPostPlugins
+  ]
+  for (const p of workerUserPlugins) {
+    if (p.config) {
+      const res = await p.config(workerConfig, configEnv)
+      if (res) {
+        workerConfig = mergeConfig(workerConfig, res)
+      }
+    }
+  }
+
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
@@ -411,13 +447,6 @@ export async function resolveConfig(
   })
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
-
-  // resolve worker
-  const resolvedWorkerOptions: ResolveWorkerOptions = {
-    format: config.worker?.format || 'iife',
-    plugins: [],
-    rollupOptions: config.worker?.rollupOptions || {}
-  }
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -577,8 +606,14 @@ export async function resolveConfig(
 
   const BASE_URL = resolvedBase
 
-  const resolved: ResolvedConfig = {
-    ...config,
+  // resolve worker
+  const resolvedWorkerOptions: ResolveWorkerOptions = {
+    format: workerConfig.worker?.format || 'iife',
+    plugins: [],
+    rollupOptions: workerConfig.worker?.rollupOptions || {}
+  }
+
+  const resolvedConfig: ResolvedConfig = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
@@ -628,6 +663,7 @@ export async function resolveConfig(
       ...config.experimental
     }
   }
+  const resolved: ResolvedConfig = Object.assign(config, resolvedConfig)
 
   if (middlewareMode === 'ssr') {
     logger.warn(
@@ -659,26 +695,6 @@ export async function resolveConfig(
     )
   }
 
-  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
-  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
-  // So we need to separate the worker plugin from the plugin that vite needs to run.
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved: ResolvedConfig = {
-    ...resolved,
-    isWorker: true,
-    mainConfig: resolved
-  }
-  resolved.worker.plugins = await resolvePlugins(
-    workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins
-  )
-  // call configResolved worker plugins hooks
-  await Promise.all(
-    resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))
-  )
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -686,8 +702,27 @@ export async function resolveConfig(
     postPlugins
   )
 
+  const workerResolved: ResolvedConfig = Object.assign(
+    workerConfig,
+    resolvedConfig,
+    {
+      isWorker: true,
+      mainConfig: resolved
+    }
+  )
+  resolved.worker.plugins = await resolvePlugins(
+    workerResolved,
+    workerPrePlugins,
+    workerNormalPlugins,
+    workerPostPlugins
+  )
+
   // call configResolved hooks
-  await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
+  await Promise.all(
+    userPlugins
+      .map((p) => p.configResolved?.(resolved))
+      .concat(workerUserPlugins.map((p) => p.configResolved?.(workerResolved)))
+  )
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
