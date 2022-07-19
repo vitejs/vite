@@ -4,6 +4,7 @@ import {
   getBg,
   isBuild,
   page,
+  untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl
 } from '~utils'
@@ -142,9 +143,8 @@ if (!isBuild) {
     )
     const el = await page.$('#app')
     expect(await el.textContent()).toBe('title')
-    await editFile(
-      'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-      (code) => code.replace('title', 'title2')
+    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+      code.replace('title', 'title2')
     )
     await page.waitForEvent('load')
     await untilUpdated(
@@ -215,6 +215,368 @@ if (!isBuild) {
     }
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Counter 1')
+  })
+
+  describe('acceptExports', () => {
+    const HOT_UPDATED = /hot updated/
+    const CONNECTED = /connected/
+
+    const baseDir = 'accept-exports'
+
+    describe('when all used exports are accepted', () => {
+      const testDir = baseDir + '/main-accepted'
+
+      const fileName = 'target.ts'
+      const file = `${testDir}/${fileName}`
+      const url = '/' + file
+
+      let dep = 'dep0'
+
+      beforeAll(async () => {
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<<<<< A0 B0 D0 ; ${dep}`)
+            expect(logs).toContain('>>>>>> A0 D0')
+          }
+        )
+      })
+
+      it('the callback is called with the new version the module', async () => {
+        const callbackFile = `${testDir}/callback.ts`
+        const callbackUrl = '/' + callbackFile
+
+        await untilBrowserLogAfter(
+          () => {
+            editFile(callbackFile, (code) =>
+              code
+                .replace("x = 'X'", "x = 'Y'")
+                .replace('reloaded >>>', 'reloaded (2) >>>')
+            )
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual([
+              'reloaded >>> Y',
+              `[vite] hot updated: ${callbackUrl}`
+            ])
+          }
+        )
+
+        await untilBrowserLogAfter(
+          () => {
+            editFile(callbackFile, (code) => code.replace("x = 'Y'", "x = 'Z'"))
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual([
+              'reloaded (2) >>> Z',
+              `[vite] hot updated: ${callbackUrl}`
+            ])
+          }
+        )
+      })
+
+      it('stops HMR bubble on dependency change', async () => {
+        const depFileName = 'dep.ts'
+        const depFile = `${testDir}/${depFileName}`
+
+        await untilBrowserLogAfter(
+          () => {
+            editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual([
+              `<<<<<< A0 B0 D0 ; ${dep}`,
+              `[vite] hot updated: ${url}`
+            ])
+          }
+        )
+      })
+
+      it('accepts itself and refreshes on change', async () => {
+        await untilBrowserLogAfter(
+          () => {
+            editFile(file, (code) => code.replace(/(\b[A-Z])0/g, '$11'))
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual([
+              `<<<<<< A1 B1 D1 ; ${dep}`,
+              `[vite] hot updated: ${url}`
+            ])
+          }
+        )
+      })
+
+      it('accepts itself and refreshes on 2nd change', async () => {
+        await untilBrowserLogAfter(
+          () => {
+            editFile(file, (code) =>
+              code
+                .replace(/(\b[A-Z])1/g, '$12')
+                .replace(
+                  "acceptExports(['a', 'default']",
+                  "acceptExports(['b', 'default']"
+                )
+            )
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual([
+              `<<<<<< A2 B2 D2 ; ${dep}`,
+              `[vite] hot updated: ${url}`
+            ])
+          }
+        )
+      })
+
+      it('does not accept itself anymore after acceptedExports change', async () => {
+        await untilBrowserLogAfter(
+          async () => {
+            editFile(file, (code) => code.replace(/(\b[A-Z])2/g, '$13'))
+            await page.waitForEvent('load')
+          },
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<<<<< A3 B3 D3 ; ${dep}`)
+            expect(logs).toContain('>>>>>> A3 D3')
+          }
+        )
+      })
+    })
+
+    describe('when some used exports are not accepted', () => {
+      const testDir = baseDir + '/main-non-accepted'
+
+      const namedFileName = 'named.ts'
+      const namedFile = `${testDir}/${namedFileName}`
+      const defaultFileName = 'default.ts'
+      const defaultFile = `${testDir}/${defaultFileName}`
+      const depFileName = 'dep.ts'
+      const depFile = `${testDir}/${depFileName}`
+
+      const a = 'A0'
+      let dep = 'dep0'
+
+      beforeAll(async () => {
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
+            expect(logs).toContain(`<<< default: def0`)
+            expect(logs).toContain(`>>>>>> ${a} def0`)
+          }
+        )
+      })
+
+      it('does not stop the HMR bubble on change to dep', async () => {
+        await untilBrowserLogAfter(
+          async () => {
+            editFile(depFile, (code) => code.replace('dep0', (dep = 'dep1')))
+            await page.waitForEvent('load')
+          },
+          [CONNECTED, />>>>>>/],
+          (logs) => {
+            expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
+          }
+        )
+      })
+
+      describe('does not stop the HMR bubble on change to self', () => {
+        it('with named exports', async () => {
+          await untilBrowserLogAfter(
+            async () => {
+              editFile(namedFile, (code) => code.replace(a, 'A1'))
+              await page.waitForEvent('load')
+            },
+            [CONNECTED, />>>>>>/],
+            (logs) => {
+              expect(logs).toContain(`<<< named: A1 ; ${dep}`)
+            }
+          )
+        })
+
+        it('with default export', async () => {
+          await untilBrowserLogAfter(
+            async () => {
+              editFile(defaultFile, (code) => code.replace('def0', 'def1'))
+              await page.waitForEvent('load')
+            },
+            [CONNECTED, />>>>>>/],
+            (logs) => {
+              expect(logs).toContain(`<<< default: def1`)
+            }
+          )
+        })
+      })
+    })
+
+    test('accepts itself when imported for side effects only (no bindings imported)', async () => {
+      const testDir = baseDir + '/side-effects'
+      const file = 'side-effects.ts'
+
+      await untilBrowserLogAfter(
+        () => page.goto(`${viteTestUrl}/${testDir}/`),
+        [CONNECTED, />>>/],
+        (logs) => {
+          expect(logs).toContain('>>> side FX')
+        }
+      )
+
+      await untilBrowserLogAfter(
+        () => {
+          editFile(`${testDir}/${file}`, (code) =>
+            code.replace('>>> side FX', '>>> side FX !!')
+          )
+        },
+        HOT_UPDATED,
+        (logs) => {
+          expect(logs).toEqual([
+            '>>> side FX !!',
+            `[vite] hot updated: /${testDir}/${file}`
+          ])
+        }
+      )
+    })
+
+    describe('acceptExports([])', () => {
+      const testDir = baseDir + '/unused-exports'
+
+      test('accepts itself if no exports are imported', async () => {
+        const fileName = 'unused.ts'
+        const file = `${testDir}/${fileName}`
+        const url = '/' + file
+
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, '-- unused --'],
+          (logs) => {
+            expect(logs).toContain('-- unused --')
+          }
+        )
+
+        await untilBrowserLogAfter(
+          () => {
+            editFile(file, (code) =>
+              code.replace('-- unused --', '-> unused <-')
+            )
+          },
+          HOT_UPDATED,
+          (logs) => {
+            expect(logs).toEqual(['-> unused <-', `[vite] hot updated: ${url}`])
+          }
+        )
+      })
+
+      test("doesn't accept itself if any of its exports is imported", async () => {
+        const fileName = 'used.ts'
+        const file = `${testDir}/${fileName}`
+
+        await untilBrowserLogAfter(
+          () => page.goto(`${viteTestUrl}/${testDir}/`),
+          [CONNECTED, '-- used --'],
+          (logs) => {
+            expect(logs).toContain('-- used --')
+            expect(logs).toContain('used:foo0')
+          }
+        )
+
+        await untilBrowserLogAfter(
+          async () => {
+            editFile(file, (code) =>
+              code.replace('foo0', 'foo1').replace('-- used --', '-> used <-')
+            )
+            await page.waitForEvent('load')
+          },
+          [CONNECTED, /used:foo/],
+          (logs) => {
+            expect(logs).toContain('-> used <-')
+            expect(logs).toContain('used:foo1')
+          }
+        )
+      })
+    })
+
+    describe('indiscriminate imports: import *', () => {
+      const testStarExports = (testDirName: string) => {
+        const testDir = `${baseDir}/${testDirName}`
+
+        it('accepts itself if all its exports are accepted', async () => {
+          const fileName = 'deps-all-accepted.ts'
+          const file = `${testDir}/${fileName}`
+          const url = '/' + file
+
+          await untilBrowserLogAfter(
+            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            [CONNECTED, '>>> ready <<<'],
+            (logs) => {
+              expect(logs).toContain('loaded:all:a0b0c0default0')
+              expect(logs).toContain('all >>>>>> a0, b0, c0')
+            }
+          )
+
+          await untilBrowserLogAfter(
+            () => {
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+            },
+            HOT_UPDATED,
+            (logs) => {
+              expect(logs).toEqual([
+                'all >>>>>> a1, b1, c1',
+                `[vite] hot updated: ${url}`
+              ])
+            }
+          )
+
+          await untilBrowserLogAfter(
+            () => {
+              editFile(file, (code) => code.replace(/([abc])1/g, '$12'))
+            },
+            HOT_UPDATED,
+            (logs) => {
+              expect(logs).toEqual([
+                'all >>>>>> a2, b2, c2',
+                `[vite] hot updated: ${url}`
+              ])
+            }
+          )
+        })
+
+        it("doesn't accept itself if one export is not accepted", async () => {
+          const fileName = 'deps-some-accepted.ts'
+          const file = `${testDir}/${fileName}`
+
+          await untilBrowserLogAfter(
+            () => page.goto(`${viteTestUrl}/${testDir}/`),
+            '>>> ready <<<',
+            (logs) => {
+              expect(logs).toContain('loaded:some:a0b0c0default0')
+              expect(logs).toContain('some >>>>>> a0, b0, c0')
+            }
+          )
+
+          await untilBrowserLogAfter(
+            async () => {
+              editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
+              await page.waitForEvent('load')
+            },
+            '>>> ready <<<',
+            (logs) => {
+              expect(logs).toContain('loaded:some:a1b1c1default0')
+              expect(logs).toContain('some >>>>>> a1, b1, c1')
+            }
+          )
+        })
+      }
+
+      describe('import * from ...', () => testStarExports('star-imports'))
+
+      describe('dynamic import(...)', () => testStarExports('dynamic-imports'))
+    })
   })
 
   test('css in html hmr', async () => {

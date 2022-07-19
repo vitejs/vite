@@ -1,5 +1,5 @@
-import path from 'path'
-import type { OutgoingHttpHeaders, ServerResponse } from 'http'
+import path from 'node:path'
+import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
@@ -80,7 +80,7 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = decodeURI(req.url!)
+    const url = decodeURIComponent(req.url!)
 
     // apply aliases to static requests as well
     let redirected: string | undefined
@@ -109,7 +109,7 @@ export function serveStaticMiddleware(
     }
 
     if (redirected) {
-      req.url = redirected
+      req.url = encodeURIComponent(redirected)
     }
 
     serve(req, res, next)
@@ -123,7 +123,7 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    let url = decodeURI(req.url!)
+    let url = decodeURIComponent(req.url!)
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
@@ -144,7 +144,7 @@ export function serveRawFsMiddleware(
       url = url.slice(FS_PREFIX.length)
       if (isWindows) url = url.replace(/^[A-Z]:/i, '')
 
-      req.url = url
+      req.url = encodeURIComponent(url)
       serveFromRoot(req, res, next)
     } else {
       next()

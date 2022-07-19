@@ -1,3 +1,31 @@
+## 2.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* fix(react): sourcemap incorrect warning and classic runtime sourcemap (#9006) ([bdae7fa](https://github.com/vitejs/vite/commit/bdae7fa)), closes [#9006](https://github.com/vitejs/vite/issues/9006)
+
+
+
+## 2.0.0-beta.1 (2022-07-06)
+
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+* fix(plugin-react): pass correct context to runPluginOverrides (#8809) ([09742e2](https://github.com/vitejs/vite/commit/09742e2)), closes [#8809](https://github.com/vitejs/vite/issues/8809)
+* fix(plugin-react): return code if should skip in transform (fix #7586) (#8676) ([206e22a](https://github.com/vitejs/vite/commit/206e22a)), closes [#7586](https://github.com/vitejs/vite/issues/7586) [#8676](https://github.com/vitejs/vite/issues/8676)
+* chore: use `tsx` directly instead of indirect `esno` (#8773) ([f018f13](https://github.com/vitejs/vite/commit/f018f13)), closes [#8773](https://github.com/vitejs/vite/issues/8773)
+
+
+
+## 2.0.0-beta.0 (2022-06-21)
+
+* feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)
+* feat: experimental.buildAdvancedBaseOptions (#8450) ([8ef7333](https://github.com/vitejs/vite/commit/8ef7333)), closes [#8450](https://github.com/vitejs/vite/issues/8450)
+* feat: expose createFilter util (#8562) ([c5c424a](https://github.com/vitejs/vite/commit/c5c424a)), closes [#8562](https://github.com/vitejs/vite/issues/8562)
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use node prefix (#8309) ([60721ac](https://github.com/vitejs/vite/commit/60721ac)), closes [#8309](https://github.com/vitejs/vite/issues/8309)
+* chore(deps): update all non-major dependencies (#8669) ([628863d](https://github.com/vitejs/vite/commit/628863d)), closes [#8669](https://github.com/vitejs/vite/issues/8669)
+* fix(plugin-react): set `this-is-undefined-in-esm` to silent if classic runtime (#8674) ([f0aecba](https://github.com/vitejs/vite/commit/f0aecba)), closes [#8674](https://github.com/vitejs/vite/issues/8674)
+
+
+
 ## 2.0.0-alpha.3 (2022-06-12)
 
 * fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)

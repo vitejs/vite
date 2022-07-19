@@ -11,7 +11,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 - Safari >=13
 - Edge >=88
 
-You can specify custom targets via the [`build.target` config option](/config/#build-target), where the lowest target is `es2015`.
+You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
 Note that by default, Vite only handles syntax transforms and **does not cover polyfills by default**. You can check out [Polyfill.io](https://polyfill.io/v3/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
@@ -21,19 +21,21 @@ Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/
 
 - Related: [Asset Handling](./assets)
 
-If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
+If you are deploying your project under a nested public path, simply specify the [`base` config option](/config/shared-options.md#base) and all asset paths will be rewritten accordingly. This option can also be specified as a command line flag, e.g. `vite build --base=/my/public/path/`.
 
 JS-imported asset URLs, CSS `url()` references, and asset references in your `.html` files are all automatically adjusted to respect this option during build.
 
 The exception is when you need to dynamically concatenate URLs on the fly. In this case, you can use the globally injected `import.meta.env.BASE_URL` variable which will be the public base path. Note this variable is statically replaced during build so it must appear exactly as-is (i.e. `import.meta.env['BASE_URL']` won't work).
 
+For advanced base path control, check out [Advanced Base Options](#advanced-base-options).
+
 ## Customizing the Build
 
-The build can be customized via various [build config options](/config/#build-options). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
+The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/guide/en/#big-list-of-options) via `build.rollupOptions`:
 
 ```js
 // vite.config.js
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     rollupOptions: {
       // https://rollupjs.org/guide/en/#big-list-of-options
@@ -51,7 +53,7 @@ You can configure how chunks are split using `build.rollupOptions.output.manualC
 ```js
 // vite.config.js
 import { splitVendorChunkPlugin } from 'vite'
-module.exports = defineConfig({
+export default defineConfig({
   plugins: [splitVendorChunkPlugin()]
 })
 ```
@@ -64,7 +66,7 @@ You can enable rollup watcher with `vite build --watch`. Or, you can directly ad
 
 ```js
 // vite.config.js
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     watch: {
       // https://rollupjs.org/guide/en/#watch-options
@@ -95,10 +97,10 @@ During build, all you need to do is to specify multiple `.html` files as entry p
 
 ```js
 // vite.config.js
-const { resolve } = require('path')
-const { defineConfig } = require('vite')
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     rollupOptions: {
       input: {
@@ -116,17 +118,17 @@ If you specify a different root, remember that `__dirname` will still be the fol
 
 When you are developing a browser-oriented library, you are likely spending most of the time on a test/demo page that imports your actual library. With Vite, you can use your `index.html` for that purpose to get the smooth development experience.
 
-When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
+When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
 ```js
 // vite.config.js
-const path = require('path')
-const { defineConfig } = require('vite')
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'lib/main.js'),
+      entry: resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
       fileName: 'my-lib'
@@ -161,8 +163,8 @@ Running `vite build` with this config uses a Rollup preset that is oriented towa
 ```
 $ vite build
 building for production...
-[write] my-lib.mjs 0.08kb, brotli: 0.07kb
-[write] my-lib.umd.js 0.30kb, brotli: 0.16kb
+dist/my-lib.js      0.08 KiB / gzip: 0.07 KiB
+dist/my-lib.umd.cjs 0.30 KiB / gzip: 0.16 KiB
 ```
 
 Recommended `package.json` for your lib:
@@ -170,13 +172,67 @@ Recommended `package.json` for your lib:
 ```json
 {
   "name": "my-lib",
+  "type": "module",
   "files": ["dist"],
-  "main": "./dist/my-lib.umd.js",
-  "module": "./dist/my-lib.mjs",
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
   "exports": {
     ".": {
-      "import": "./dist/my-lib.mjs",
-      "require": "./dist/my-lib.umd.js"
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
+    }
+  }
+}
+```
+
+::: tip Note
+If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
+:::
+
+::: tip Environment Variables
+In library mode, all `import.meta.env.*` usage are statically replaced when building for production. However, `process.env.*` usage are not, so that consumers of your library can dynamically change it. If this is undesirable, you can use `define: { 'process.env.`<wbr>`NODE_ENV': '"production"' }` for example to statically replace them.
+:::
+
+## Advanced Base Options
+
+::: warning
+This feature is experimental, the API may change in a future minor without following semver. Please fix the minor version of Vite when using it.
+:::
+
+For advanced use cases, the deployed assets and public files may be in different paths, for example to use different cache strategies.
+A user may choose to deploy in three different paths:
+
+- The generated entry HTML files (which may be processed during SSR)
+- The generated hashed assets (JS, CSS, and other file types like images)
+- The copied [public files](assets.md#the-public-directory)
+
+A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
+
+```js
+experimental: {
+  renderBuiltUrl: (filename: string, { hostType: 'js' | 'css' | 'html' }) => {
+    if (hostType === 'js') {
+      return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
+    } else {
+      return { relative: true }
+    }
+  }
+}
+```
+
+If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the third `context` param given to the function.
+
+```js
+experimental: {
+  renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
+    if (type === 'public') {
+      return 'https://www.domain.com/' + filename
+    }
+    else if (path.extname(importer) === '.js') {
+      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+    }
+    else {
+      return 'https://cdn.domain.com/assets/' + filename
     }
   }
 }

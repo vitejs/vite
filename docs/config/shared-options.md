@@ -5,7 +5,7 @@
 - **Type:** `string`
 - **Default:** `process.cwd()`
 
-Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the location of the config file itself.
+Project root directory (where `index.html` is located). Can be an absolute path, or a path relative to the current working directory.
 
 See [Project Root](/guide/#index-html-and-project-root) for more details.
 
@@ -77,9 +77,9 @@ const obj = {
 
 ## plugins
 
-- **Type:** `(Plugin | Plugin[])[]`
+- **Type:** `(Plugin | Plugin[] | Promise<Plugin | Plugin[]>)[]`
 
-Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
+Array of plugins to use. Falsy plugins are ignored and arrays of plugins are flattened. If a promise is returned, it would be resolved before running. See [Plugin API](/guide/api-plugin) for more details on Vite plugins.
 
 ## publicDir
 
@@ -198,7 +198,7 @@ Configure CSS modules behavior. The options are passed on to [postcss-modules](h
 
 ## css.postcss
 
-- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.Plugin[] })`
+- **Type:** `string | (postcss.ProcessOptions & { plugins?: postcss.AcceptedPlugin[] })`
 
 Inline PostCSS config or a custom directory to search PostCSS config from (default is project root).
 
@@ -280,6 +280,8 @@ export default defineConfig({
 })
 ```
 
+When [`build.minify`](./build-options.md#build-minify) is `true`, all minify optimizations are applied by default. To disable [certain aspects](https://esbuild.github.io/api/#minify) of it, set any of `esbuild.minifyIdentifiers`, `esbuild.minifySyntax`, or `esbuild.minifyWhitespace` options to `false`. Note the `esbuild.minify` option can't be used to override `build.minify`.
+
 Set to `false` to disable esbuild transforms.
 
 ## assetsInclude
@@ -336,9 +338,15 @@ Env variables starts with `envPrefix` will be exposed to your client source code
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
 :::
 
-## spa
+## appType
 
-- **Type:** `boolean`
-- **Default:** `true`
+- **Type:** `'spa' | 'mpa' | 'custom'`
+- **Default:** `'spa'`
 
-Whether your application is a Single Page Application (SPA). Set to `false` for other kinds of apps like MPAs. Learn more in Vite's [SSR guide](/guide/ssr#vite-cli).
+Whether your application is a Single Page Application (SPA), a [Multi Page Application (MPA)](../guide/build#multi-page-app), or Custom Application (SSR and frameworks with custom HTML handling):
+
+- `'spa'`: include SPA fallback middleware and configure [sirv](https://github.com/lukeed/sirv) with `single: true` in preview
+- `'mpa'`: only include non-SPA HTML middlewares
+- `'custom'`: don't include HTML middlewares
+
+Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).

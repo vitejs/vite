@@ -1,6 +1,6 @@
 // @ts-check
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath } from 'url'
 import express from 'express'
 
@@ -22,7 +22,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
@@ -31,6 +31,14 @@ export async function createServer(root = process.cwd(), hmrPort) {
       },
       hmr: {
         port: hmrPort
+      }
+    },
+    appType: 'custom',
+    ssr: {
+      noExternal: ['no-external-cjs', 'import-builtin-cjs', 'no-external-css'],
+      external: ['nested-external'],
+      optimizeDeps: {
+        disabled: 'build'
       }
     }
   })

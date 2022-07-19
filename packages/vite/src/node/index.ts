@@ -17,12 +17,14 @@ export type {
   ServerOptions,
   FileSystemServeOptions,
   ServerHook,
-  ResolvedServerOptions
+  ResolvedServerOptions,
+  ResolvedServerUrls
 } from './server'
 export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
+  RenderBuiltAssetUrl,
   ResolvedBuildOptions
 } from './build'
 export type {
@@ -34,6 +36,7 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
+  DepOptimizationConfig,
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
@@ -42,6 +45,7 @@ export type {
 } from './optimizer'
 export type {
   ResolvedSSROptions,
+  SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
   SSRTarget

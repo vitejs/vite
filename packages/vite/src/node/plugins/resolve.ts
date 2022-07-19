@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
@@ -24,9 +24,11 @@ import {
   isDataUrl,
   isExternalUrl,
   isFileReadable,
+  isNonDriveRelativeAbsolutePath,
   isObject,
   isPossibleTsOutput,
   isTsRequest,
+  isWindows,
   nestedResolveFrom,
   normalizePath,
   resolveFrom,
@@ -81,20 +83,21 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryEsmOnly?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
+  // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
+  ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
-  getDepsOptimizer?: () => DepsOptimizer | undefined
+  getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
   shouldExternalize?: (id: string) => boolean | undefined
 }
 
-export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
+export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
   const {
     root,
-    isBuild,
     isProduction,
     asSrc,
     ssrConfig,
     preferRelative = false
-  } = baseOptions
+  } = resolveOptions
 
   const { target: ssrTarget, noExternal: ssrNoExternal } = ssrConfig ?? {}
 
@@ -102,11 +105,11 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
     name: 'vite:resolve',
 
     async resolveId(id, importer, resolveOpts) {
+      const ssr = resolveOpts?.ssr === true
+
       // We need to delay depsOptimizer until here instead of passing it as an option
       // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = baseOptions.getDepsOptimizer?.()
-
-      const ssr = resolveOpts?.ssr === true
+      const depsOptimizer = resolveOptions.getDepsOptimizer?.(ssr)
 
       if (id.startsWith(browserExternalId)) {
         return id
@@ -125,12 +128,15 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
 
       const options: InternalResolveOptions = {
         isRequire,
-        ...baseOptions,
-        scan: resolveOpts?.scan ?? baseOptions.scan
+        ...resolveOptions,
+        scan: resolveOpts?.scan ?? resolveOptions.scan
       }
 
       if (importer) {
-        if (isTsRequest(importer)) {
+        if (
+          isTsRequest(importer) ||
+          resolveOpts.custom?.depScan?.loader?.startsWith('ts')
+        ) {
           options.isFromTsImporter = true
         } else {
           const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
@@ -173,8 +179,7 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
       // relative
       if (
         id.startsWith('.') ||
-        (preferRelative && /^\w/.test(id)) ||
-        importer?.endsWith('.html')
+        ((preferRelative || importer?.endsWith('.html')) && /^\w/.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
         const fsPath = path.resolve(basedir, id)
@@ -239,8 +244,22 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
         }
       }
 
+      // drive relative fs paths (only windows)
+      if (isWindows && id.startsWith('/')) {
+        const basedir = importer ? path.dirname(importer) : process.cwd()
+        const fsPath = path.resolve(basedir, id)
+        if ((res = tryFsResolve(fsPath, options))) {
+          isDebug &&
+            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
+          return res
+        }
+      }
+
       // absolute fs paths
-      if (path.isAbsolute(id) && (res = tryFsResolve(id, options))) {
+      if (
+        isNonDriveRelativeAbsolutePath(id) &&
+        (res = tryFsResolve(id, options))
+      ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         return res
       }
@@ -266,7 +285,6 @@ export function resolvePlugin(baseOptions: InternalResolveOptions): Plugin {
           !external &&
           asSrc &&
           depsOptimizer &&
-          (isBuild || !ssr) &&
           !options.scan &&
           (res = await tryOptimizedResolve(depsOptimizer, id, importer))
         ) {
@@ -542,6 +560,8 @@ export function tryNodeResolve(
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
+  ssr ??= false
+
   // split id by last '>' for nested selected packages, for example:
   // 'foo > bar > baz' => 'foo > bar' & 'baz'
   // 'foo'             => ''          & 'foo'
@@ -662,32 +682,57 @@ export function tryNodeResolve(
     })
   }
 
+  const ext = path.extname(resolved)
+  const isCJS = ext === '.cjs' || (ext === '.js' && pkg.data.type !== 'module')
+
   if (
-    !resolved.includes('node_modules') || // linked
-    !depsOptimizer || // resolving before listening to the server
-    options.scan // initial esbuild scan phase
+    !options.ssrOptimizeCheck &&
+    (!resolved.includes('node_modules') || // linked
+      !depsOptimizer || // resolving before listening to the server
+      options.scan) // initial esbuild scan phase
   ) {
     return { id: resolved }
   }
+
   // if we reach here, it's a valid dep import that hasn't been optimized.
   const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
 
-  const exclude = depsOptimizer.options.exclude
-  if (
+  let exclude = depsOptimizer?.options.exclude
+  let include = depsOptimizer?.options.exclude
+  if (options.ssrOptimizeCheck) {
+    // we don't have the depsOptimizer
+    exclude = options.ssrConfig?.optimizeDeps?.exclude
+    include = options.ssrConfig?.optimizeDeps?.exclude
+  }
+
+  const skipOptimization =
     !isJsType ||
     importer?.includes('node_modules') ||
     exclude?.includes(pkgId) ||
     exclude?.includes(nestedPath) ||
     SPECIAL_QUERY_RE.test(resolved) ||
-    (!isBuild && ssr)
-  ) {
+    (!isBuild && ssr) ||
+    // Only optimize non-external CJS deps during SSR by default
+    (ssr &&
+      !isCJS &&
+      !(include?.includes(pkgId) || include?.includes(nestedPath)))
+
+  if (options.ssrOptimizeCheck) {
+    return {
+      id: skipOptimization
+        ? injectQuery(resolved, `__vite_skip_optimization`)
+        : resolved
+    }
+  }
+
+  if (skipOptimization) {
     // excluded from optimization
     // Inject a version query to npm deps so that the browser
     // can cache it without re-validation, but only do so for known js types.
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = depsOptimizer.metadata.browserHash
+      const versionHash = depsOptimizer!.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -695,8 +740,8 @@ export function tryNodeResolve(
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
-    resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
+    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
+    resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
   }
 
   if (isBuild) {
@@ -716,9 +761,15 @@ export async function tryOptimizedResolve(
   id: string,
   importer?: string
 ): Promise<string | undefined> {
+  // TODO: we need to wait until scanning is done here as this function
+  // is used in the preAliasPlugin to decide if an aliased dep is optimized,
+  // and avoid replacing the bare import with the resolved path.
+  // We should be able to remove this in the future
   await depsOptimizer.scanProcessing
 
-  const depInfo = optimizedDepInfoFromId(depsOptimizer.metadata, id)
+  const metadata = depsOptimizer.metadata
+
+  const depInfo = optimizedDepInfoFromId(metadata, id)
   if (depInfo) {
     return depsOptimizer.getOptimizedDepId(depInfo)
   }
@@ -728,7 +779,7 @@ export async function tryOptimizedResolve(
   // further check if id is imported by nested dependency
   let resolvedSrc: string | undefined
 
-  for (const optimizedData of depsOptimizer.metadata.depInfoList) {
+  for (const optimizedData of metadata.depInfoList) {
     if (!optimizedData.src) continue // Ignore chunks
 
     const pkgPath = optimizedData.id

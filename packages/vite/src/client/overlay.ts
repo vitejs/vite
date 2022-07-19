@@ -115,6 +115,9 @@ code {
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
+// Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
+// `HTMLElement` was not originally defined.
+const { HTMLElement = class {} } = globalThis
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
 
@@ -184,6 +187,7 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
+const { customElements } = globalThis // Ensure `customElements` is defined before the next line.
 if (customElements && !customElements.get(overlayId)) {
   customElements.define(overlayId, ErrorOverlay)
 }

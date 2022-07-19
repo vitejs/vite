@@ -6,11 +6,13 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.MODE`**: {string} the [mode](#modes) the app is running in.
 
-- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/#base).
+- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/shared-options.md#base).
 
 - **`import.meta.env.PROD`**: {boolean} whether the app is running in production.
 
 - **`import.meta.env.DEV`**: {boolean} whether the app is running in development (always the opposite of `import.meta.env.PROD`)
+
+- **`import.meta.env.SSR`**: {boolean} whether the app is running in the [server](./ssr.md#conditional-logic).
 
 ### Production Replacement
 
@@ -24,7 +26,7 @@ It will also replace these strings appearing in JavaScript strings and Vue templ
 
 ## `.env` Files
 
-Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir):
+Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/shared-options.md#envdir):
 
 ```
 .env                # loaded in all cases
@@ -47,11 +49,16 @@ Loaded env variables are also exposed to your client source code via `import.met
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
 
 ```
-DB_PASSWORD=foobar
 VITE_SOME_KEY=123
+DB_PASSWORD=foobar
 ```
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
+
+```js
+console.log(import.meta.env.VITE_SOME_KEY) // 123
+console.log(import.meta.env.DB_PASSWORD) // undefined
+```
 
 If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
 

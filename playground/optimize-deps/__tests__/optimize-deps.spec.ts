@@ -77,6 +77,10 @@ test('import from dep with .notjs files', async () => {
   expect(await page.textContent('.not-js')).toMatch(`[success]`)
 })
 
+test('Import from dependency which uses relative path which needs to be resolved by main field', async () => {
+  expect(await page.textContent('.relative-to-main')).toMatch(`[success]`)
+})
+
 test('dep with dynamic import', async () => {
   expect(await page.textContent('.dep-with-dynamic-import')).toMatch(
     `[success]`
@@ -99,6 +103,8 @@ test('vue + vuex', async () => {
   expect(await page.textContent('.vue')).toMatch(`[success]`)
 })
 
+// When we use the Rollup CommonJS plugin instead of esbuild prebundling,
+// the esbuild plugins won't apply to dependencies
 test('esbuild-plugin', async () => {
   expect(await page.textContent('.esbuild-plugin')).toMatch(
     `Hello from an esbuild plugin`

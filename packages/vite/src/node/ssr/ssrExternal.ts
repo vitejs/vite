@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
@@ -105,6 +105,39 @@ export function shouldExternalizeForSSR(
   return isSsrExternal(id)
 }
 
+export function createIsConfiguredAsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const { ssr } = config
+  const noExternal = ssr?.noExternal
+  const noExternalFilter =
+    noExternal !== 'undefined' &&
+    typeof noExternal !== 'boolean' &&
+    createFilter(undefined, noExternal, { resolve: false })
+
+  // Returns true if it is configured as external, false if it is filtered
+  // by noExternal and undefined if it isn't affected by the explicit config
+  return (id: string) => {
+    const { ssr } = config
+    if (ssr) {
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) {
+        return undefined
+      }
+      if (ssr.external?.includes(pkgName)) {
+        return true
+      }
+      if (typeof noExternal === 'boolean') {
+        return !noExternal
+      }
+      if (noExternalFilter && !noExternalFilter(pkgName)) {
+        return false
+      }
+    }
+    return undefined
+  }
+}
+
 function createIsSsrExternal(
   config: ResolvedConfig
 ): (id: string) => boolean | undefined {
@@ -112,25 +145,7 @@ function createIsSsrExternal(
 
   const { ssr, root } = config
 
-  const noExternal = ssr?.noExternal
-  const noExternalFilter =
-    noExternal !== 'undefined' &&
-    typeof noExternal !== 'boolean' &&
-    createFilter(undefined, noExternal, { resolve: false })
-
-  const isConfiguredAsExternal = (id: string) => {
-    const { ssr } = config
-    if (!ssr || ssr.external?.includes(id)) {
-      return true
-    }
-    if (typeof noExternal === 'boolean') {
-      return !noExternal
-    }
-    if (noExternalFilter) {
-      return noExternalFilter(id)
-    }
-    return true
-  }
+  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
   const resolveOptions: InternalResolveOptions = {
     root,
@@ -158,17 +173,18 @@ function createIsSsrExternal(
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
-    const external =
-      !id.startsWith('.') &&
-      !path.isAbsolute(id) &&
-      (isBuiltin(id) || (isConfiguredAsExternal(id) && isValidPackageEntry(id)))
+    let external = false
+    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+      external =
+        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isValidPackageEntry(id))
+    }
     processedIds.set(id, external)
     return external
   }
 }
 
-// When ssr.format is 'cjs', this function is used reverting to the Vite 2.9
-// SSR externalization heuristics
+// When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
+// is used reverting to the Vite 2.9 SSR externalization heuristics
 function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,

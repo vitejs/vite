@@ -13,7 +13,10 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 **Example Usage:**
 
 ```js
-const { createServer } = require('vite')
+import { fileURLToPath } from 'url'
+import { createServer } from 'vite'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 ;(async () => {
   const server = await createServer({
@@ -40,6 +43,13 @@ The `InlineConfig` interface extends `UserConfig` with additional properties:
 
 - `configFile`: specify config file to use. If not set, Vite will try to automatically resolve one from project root. Set to `false` to disable auto resolving.
 - `envFile`: Set to `false` to disable `.env` files.
+
+## `ResolvedConfig`
+
+The `ResolvedConfig` interface has all the same properties of a `UserConfig`, except most properties are resolved and non-undefined. It also contains utilities like:
+
+- `config.assetsInclude`: A function to check if an `id` is considered an asset.
+- `config.logger`: Vite's internal logger object.
 
 ## `ViteDevServer`
 
@@ -134,8 +144,11 @@ async function build(
 **Example Usage:**
 
 ```js
-const path = require('path')
-const { build } = require('vite')
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { build } from 'vite'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 ;(async () => {
   await build({
@@ -161,8 +174,7 @@ async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
 **Example Usage:**
 
 ```js
-const { preview } = require('vite')
-
+import { preview } from 'vite'
 ;(async () => {
   const previewServer = await preview({
     // any valid user config options, plus `mode` and `configFile`
@@ -184,11 +196,73 @@ const { preview } = require('vite')
 async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
-  defaultMode?: string
+  defaultMode = 'development'
 ): Promise<ResolvedConfig>
 ```
 
 The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
+
+## `mergeConfig`
+
+**Type Signature:**
+
+```ts
+function mergeConfig(
+  defaults: Record<string, any>,
+  overrides: Record<string, any>,
+  isRoot = true
+): Record<string, any>
+```
+
+Deeply merge two Vite configs. `isRoot` represents the level within the Vite config which is being merged. For example, set `false` if you're merging two `build` options.
+
+## `searchForWorkspaceRoot`
+
+**Type Signature:**
+
+```ts
+function searchForWorkspaceRoot(
+  current: string,
+  root = searchForPackageRoot(current)
+): string
+```
+
+**Related:** [server.fs.allow](/config/server-options.md#server-fs-allow)
+
+Search for the root of the potential workspace if it meets the following conditions, otherwise it would fallback to `root`:
+
+- contains `workspaces` field in `package.json`
+- contains one of the following file
+  - `lerna.json`
+  - `pnpm-workspace.yaml`
+
+## `loadEnv`
+
+**Type Signature:**
+
+```ts
+function loadEnv(
+  mode: string,
+  envDir: string,
+  prefixes: string | string[] = 'VITE_'
+): Record<string, string>
+```
+
+**Related:** [`.env` Files](./env-and-mode.md#env-files)
+
+Load `.env` files within the `envDir`. By default only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
+
+## `normalizePath`
+
+**Type Signature:**
+
+```ts
+function normalizePath(id: string): string
+```
+
+**Related:** [Path Normalization](./api-plugin.md#path-normalization)
+
+Normalizes a path to interoperate between Vite plugins.
 
 ## `transformWithEsbuild`
 
@@ -202,3 +276,24 @@ async function transformWithEsbuild(
   inMap?: object
 ): Promise<ESBuildTransformResult>
 ```
+
+Transform JavaScript or TypeScript with esbuild. Useful for plugins that prefers matching Vite's internal esbuild transform.
+
+## `loadConfigFromFile`
+
+**Type Signature:**
+
+```ts
+async function loadConfigFromFile(
+  configEnv: ConfigEnv,
+  configFile?: string,
+  configRoot: string = process.cwd(),
+  logLevel?: LogLevel
+): Promise<{
+  path: string
+  config: UserConfig
+  dependencies: string[]
+} | null>
+```
+
+Load a Vite config file manually with esbuild.

@@ -29,11 +29,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import fs from 'fs'
-import { join, resolve } from 'path'
-import { performance } from 'perf_hooks'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import { join, resolve } from 'node:path'
+import { performance } from 'node:perf_hooks'
+import { createRequire } from 'node:module'
 import type {
+  CustomPluginOptions,
   EmittedFile,
   InputOptions,
   LoadResult,
@@ -91,12 +92,14 @@ export interface PluginContainer {
     id: string,
     importer?: string,
     options?: {
+      custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
       /**
        * @internal
        */
       scan?: boolean
+      isEntry?: boolean
     }
   ): Promise<PartialResolvedId | null>
   transform(
@@ -257,7 +260,11 @@ export async function createPluginContainer(
     async resolve(
       id: string,
       importer?: string,
-      options?: { skipSelf?: boolean }
+      options?: {
+        custom?: CustomPluginOptions
+        isEntry?: boolean
+        skipSelf?: boolean
+      }
     ) {
       let skip: Set<Plugin> | undefined
       if (options?.skipSelf && this._activePlugin) {
@@ -265,6 +272,8 @@ export async function createPluginContainer(
         skip.add(this._activePlugin)
       }
       let out = await container.resolveId(id, importer, {
+        custom: options?.custom,
+        isEntry: !!options?.isEntry,
         skip,
         ssr: this.ssr,
         scan: this._scan
@@ -546,7 +555,12 @@ export async function createPluginContainer(
           ctx as any,
           rawId,
           importer,
-          { ssr, scan }
+          {
+            custom: options?.custom,
+            isEntry: !!options?.isEntry,
+            ssr,
+            scan
+          }
         )
         if (!result) continue
 

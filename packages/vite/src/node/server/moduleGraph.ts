@@ -1,8 +1,7 @@
-import { extname } from 'path'
-import { parse as parseUrl } from 'url'
+import { extname } from 'node:path'
+import { parse as parseUrl } from 'node:url'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
-import { isHTMLRequest } from '../plugins/html'
 import {
   cleanUrl,
   normalizePath,
@@ -10,7 +9,6 @@ import {
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { canSkipImportAnalysis } from '../plugins/importAnalysis'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
@@ -29,6 +27,8 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
+  acceptedHmrExports: Set<string> | null = null
+  importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
@@ -37,13 +37,13 @@ export class ModuleNode {
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
 
-  constructor(url: string) {
+  /**
+   * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
+   */
+  constructor(url: string, setIsSelfAccepting = true) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
-    // #7870
-    // The `isSelfAccepting` value is set by importAnalysis, but some
-    // assets don't go through importAnalysis.
-    if (isHTMLRequest(url) || canSkipImportAnalysis(url)) {
+    if (setIsSelfAccepting) {
       this.isSelfAccepting = false
     }
   }
@@ -136,7 +136,9 @@ export class ModuleGraph {
   async updateModuleInfo(
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
+    importedBindings: Map<string, Set<string>> | null,
     acceptedModules: Set<string | ModuleNode>,
+    acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean
   ): Promise<Set<ModuleNode> | undefined> {
@@ -172,14 +174,21 @@ export class ModuleGraph {
           : accepted
       deps.add(dep)
     }
+    // update accepted hmr exports
+    mod.acceptedHmrExports = acceptedExports
+    mod.importedBindings = importedBindings
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true
+  ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
-      mod = new ModuleNode(url)
+      mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId

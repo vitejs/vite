@@ -1,9 +1,9 @@
 /* eslint-disable node/no-extraneous-import */
-import path from 'path'
-import { createHash } from 'crypto'
-import { createRequire } from 'module'
-import { fileURLToPath } from 'url'
-import { build } from 'vite'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
   BuildOptions,
@@ -29,6 +29,73 @@ async function loadBabel() {
     babel = await import('@babel/standalone')
   }
   return babel
+}
+
+// Duplicated from build.ts in Vite Core, at least while the feature is experimental
+// We should later expose this helper for other plugins to use
+function toOutputFilePathInHtml(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, importer: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`
+        )
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
+  }
+}
+function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
+  // Prefer explicit URL if defined for linking to assets and public files from HTML,
+  // even when base relative is specified
+  return config.base === './' || config.base === ''
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
+}
+
+function toAssetPathFromHtml(
+  filename: string,
+  htmlPath: string,
+  config: ResolvedConfig
+): string {
+  const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
+  const toRelative = (filename: string, hostId: string) =>
+    getBaseInHTML(relativeUrlPath, config) + filename
+  return toOutputFilePathInHtml(
+    filename,
+    'asset',
+    htmlPath,
+    'html',
+    config,
+    toRelative
+  )
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
@@ -355,13 +422,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const modernPolyfillFilename = facadeToModernPolyfillMap.get(
         chunk.facadeModuleId
       )
+
       if (modernPolyfillFilename) {
         tags.push({
           tag: 'script',
           attrs: {
             type: 'module',
             crossorigin: true,
-            src: `${config.base}${modernPolyfillFilename}`
+            src: toAssetPathFromHtml(
+              modernPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           }
         })
       } else if (modernPolyfills.size) {
@@ -393,7 +465,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             nomodule: true,
             crossorigin: true,
             id: legacyPolyfillId,
-            src: `${config.base}${legacyPolyfillFilename}`
+            src: toAssetPathFromHtml(
+              legacyPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           injectTo: 'body'
         })
@@ -409,7 +485,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       )
       if (legacyEntryFilename) {
         // `assets/foo.js` means importing "named register" in SystemJS
-        const nonBareBase = config.base === '' ? './' : config.base
         tags.push({
           tag: 'script',
           attrs: {
@@ -419,7 +494,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': nonBareBase + legacyEntryFilename
+            'data-src': toAssetPathFromHtml(
+              legacyEntryFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           children: systemJSInlineCode,
           injectTo: 'body'
@@ -578,7 +657,8 @@ async function buildPolyfillChunk(
     plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
-      target: false,
+      // if a value above 'es5' is set, esbuild injects helper functions which uses es2015 features
+      target: 'es5',
       minify,
       assetsDir,
       rollupOptions: {

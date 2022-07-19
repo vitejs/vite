@@ -55,6 +55,12 @@
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
+<h2>Resolve drive-relative path (Windows only)</h2>
+<p class="drive-relative">fail</p>
+
+<h2>Resolve absolute path</h2>
+<p class="absolute">fail</p>
+
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
 
@@ -89,6 +95,7 @@
 <p class="path-contains-sharp-symbol"></p>
 
 <script type="module">
+  import '@generated-content-virtual-file'
   function text(selector, text) {
     document.querySelector(selector).textContent = text
   }

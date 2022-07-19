@@ -1,11 +1,14 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
-import path from 'path'
+import path from 'node:path'
 import kill from 'kill-port'
+import type { ViteDevServer } from 'vite'
 import { hmrPorts, isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-vue']
+
+export let viteServer: ViteDevServer
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
   if (isBuild) {
@@ -44,6 +47,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     isBuild,
     hmrPorts['ssr-vue']
   )
+  viteServer = vite
 
   return new Promise((resolve, reject) => {
     try {

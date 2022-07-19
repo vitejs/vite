@@ -1,11 +1,10 @@
-import fs, { promises as fsp } from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import type {
   Server as HttpServer,
   OutgoingHttpHeaders as HttpServerHeaders
-} from 'http'
-import type { ServerOptions as HttpsServerOptions } from 'https'
-import { promises as dns } from 'dns'
+} from 'node:http'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -135,9 +134,6 @@ export async function resolveHttpsConfig(
     key: readFileIfExists(key),
     pfx: readFileIfExists(pfx)
   })
-  if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
-  }
   return httpsOption
 }
 
@@ -152,30 +148,6 @@ function readFileIfExists(value?: string | Buffer | any[]) {
   return value
 }
 
-async function getCertificate(cacheDir: string) {
-  const cachePath = path.join(cacheDir, '_cert.pem')
-
-  try {
-    const [stat, content] = await Promise.all([
-      fsp.stat(cachePath),
-      fsp.readFile(cachePath, 'utf8')
-    ])
-
-    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
-      throw new Error('cache is outdated.')
-    }
-
-    return content
-  } catch {
-    const content = (await import('./certificate')).createCertificate()
-    fsp
-      .mkdir(cacheDir, { recursive: true })
-      .then(() => fsp.writeFile(cachePath, content))
-      .catch(() => {})
-    return content
-  }
-}
-
 export async function httpServerStart(
   httpServer: HttpServer,
   serverOptions: {
@@ -186,13 +158,6 @@ export async function httpServerStart(
   }
 ): Promise<number> {
   let { port, strictPort, host, logger } = serverOptions
-
-  // This could be removed when Vite only supports Node 17+ because verbatim=true is default
-  // https://github.com/nodejs/node/pull/39987
-  if (host === 'localhost') {
-    const addr = await dns.lookup('localhost', { verbatim: true })
-    host = addr.address
-  }
 
   return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {

@@ -1,15 +1,19 @@
-import fs from 'fs'
-import path from 'path'
-import { parse as parseUrl, pathToFileURL } from 'url'
-import { performance } from 'perf_hooks'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { parse as parseUrl, pathToFileURL } from 'node:url'
+import { performance } from 'node:perf_hooks'
+import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import type { Plugin } from './plugin'
-import type { BuildOptions, ResolvedBuildOptions } from './build'
+import type {
+  BuildOptions,
+  RenderBuiltAssetUrl,
+  ResolvedBuildOptions
+} from './build'
 import { resolveBuildOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
@@ -17,6 +21,7 @@ import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import type { CSSOptions } from './plugins/css'
 import {
+  asyncFlatten,
   createDebugger,
   createFilter,
   dynamicImport,
@@ -30,12 +35,17 @@ import {
 } from './utils'
 import { resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import { CLIENT_ENTRY, DEFAULT_ASSETS_RE, ENV_ENTRY } from './constants'
+import {
+  CLIENT_ENTRY,
+  DEFAULT_ASSETS_RE,
+  DEFAULT_CONFIG_FILES,
+  ENV_ENTRY
+} from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PluginContainer } from './server/pluginContainer'
 import { createPluginContainer } from './server/pluginContainer'
@@ -46,12 +56,28 @@ import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
+export type { RenderBuiltAssetUrl } from './build'
+
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.
+
 export interface ConfigEnv {
   command: 'build' | 'serve'
   mode: string
+  /**
+   * @experimental
+   */
+  ssrBuild?: boolean
 }
+
+/**
+ * spa: include SPA fallback middleware and configure sirv with `single: true` in preview
+ *
+ * mpa: only include non-SPA HTML middlewares
+ *
+ * custom: don't include HTML middlewares
+ */
+export type AppType = 'spa' | 'mpa' | 'custom'
 
 export type UserConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>
 export type UserConfigExport = UserConfig | Promise<UserConfig> | UserConfigFn
@@ -66,7 +92,13 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption = Plugin | false | null | undefined | PluginOption[]
+export type PluginOption =
+  | Plugin
+  | false
+  | null
+  | undefined
+  | PluginOption[]
+  | Promise<Plugin | false | null | undefined | PluginOption[]>
 
 export interface UserConfig {
   /**
@@ -147,11 +179,6 @@ export interface UserConfig {
    */
   preview?: PreviewOptions
   /**
-   * Force dep pre-optimization regardless of whether deps have changed.
-   * @experimental
-   */
-  force?: boolean
-  /**
    * Dep optimization options
    */
   optimizeDeps?: DepOptimizationOptions
@@ -162,11 +189,18 @@ export interface UserConfig {
   /**
    * Experimental features
    *
-   * Features under this field are addressed to be changed that might NOT follow semver.
+   * Features under this field could change in the future and might NOT follow semver.
    * Please be careful and always pin Vite's version when using them.
    * @experimental
    */
   experimental?: ExperimentalOptions
+  /**
+   * Legacy options
+   *
+   * Features under this field only follow semver for patches, they could be removed in a
+   * future minor version. Please always pin Vite's version to a minor when using them.
+   */
+  legacy?: LegacyOptions
   /**
    * Log level.
    * Default: 'info'
@@ -213,11 +247,12 @@ export interface UserConfig {
     >
   }
   /**
-   * Whether your application is a Single Page Application (SPA). Set to `false`
-   * for other kinds of apps like MPAs.
-   * @default true
+   * Whether your application is a Single Page Application (SPA),
+   * a Multi-Page Application (MPA), or Custom Application (SSR
+   * and frameworks with custom HTML handling)
+   * @default 'spa'
    */
-  spa?: boolean
+  appType?: AppType
 }
 
 export interface ExperimentalOptions {
@@ -228,6 +263,30 @@ export interface ExperimentalOptions {
    * @default false
    */
   importGlobRestoreExtension?: boolean
+  /**
+   * Allow finegrain contol over assets and public files paths
+   *
+   * @experimental
+   */
+  renderBuiltUrl?: RenderBuiltAssetUrl
+  /**
+   * Enables support of HMR partial accept via `import.meta.hot.acceptExports`.
+   *
+   * @experimental
+   * @default false
+   */
+  hmrPartialAccept?: boolean
+}
+
+export interface LegacyOptions {
+  /**
+   * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
+   *
+   * @experimental
+   * @deprecated
+   * @default false
+   */
+  buildSsrCjsExternalHeuristics?: boolean
 }
 
 export interface ResolveWorkerOptions {
@@ -265,7 +324,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions | undefined
+    ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
@@ -273,7 +332,8 @@ export type ResolvedConfig = Readonly<
     /** @internal */
     packageCache: PackageCache
     worker: ResolveWorkerOptions
-    spa: boolean
+    appType: AppType
+    experimental: ExperimentalOptions
   }
 >
 
@@ -299,10 +359,15 @@ export async function resolveConfig(
   if (mode === 'production') {
     process.env.NODE_ENV = 'production'
   }
+  // production env would not work in serve, fallback to development
+  if (command === 'serve' && process.env.NODE_ENV === 'production') {
+    process.env.NODE_ENV = 'development'
+  }
 
   const configEnv = {
     mode,
-    command
+    command,
+    ssrBuild: !!config.build?.ssr
   }
 
   let { configFile } = config
@@ -347,8 +412,9 @@ export async function resolveConfig(
     }) as Plugin[]
 
   // resolve plugins
-  // @ts-ignore
-  const rawUserPlugins = (config.plugins || []).flat(Infinity).filter((p) => {
+  const rawUserPlugins = (
+    (await asyncFlatten(config.plugins || [])) as Plugin[]
+  ).filter((p) => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -358,11 +424,9 @@ export async function resolveConfig(
     } else {
       return p.apply === command
     }
-  }) as Plugin[]
-
-  const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(
-    rawUserPlugins.concat(command === 'build' ? [] : rawWorkerUserPlugins)
-  )
+  })
+  const [prePlugins, normalPlugins, postPlugins] =
+    sortUserPlugins(rawUserPlugins)
 
   // resolve worker
   const resolvedWorkerOptions: ResolveWorkerOptions = {
@@ -380,6 +444,15 @@ export async function resolveConfig(
         config = mergeConfig(config, res)
       }
     }
+  }
+
+  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+    config = mergeConfig(config, {
+      optimizeDeps: { disabled: false },
+      ssr: { optimizeDeps: { disabled: false } }
+    })
+    config.build ??= {}
+    config.build.commonjsOptions = { include: [] }
   }
 
   // resolve root
@@ -427,8 +500,23 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  const BASE_URL = resolveBaseUrl(config.base, command === 'build', logger)
-  const resolvedBuildOptions = resolveBuildOptions(config.build)
+  const isBuild = command === 'build'
+  const relativeBaseShortcut = config.base === '' || config.base === './'
+
+  // During dev, we ignore relative base and fallback to '/'
+  // For the SSR build, relative base isn't possible by means
+  // of import.meta.url.
+  const resolvedBase = relativeBaseShortcut
+    ? !isBuild || config.build?.ssr
+      ? '/'
+      : './'
+    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
+
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    isBuild,
+    logger
+  )
 
   // resolve cache directory
   const pkgPath = lookupFile(resolvedRoot, [`package.json`], { pathOnly: true })
@@ -477,7 +565,9 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, { ssr }))?.id
+      return (
+        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+      )?.id
     }
   }
 
@@ -491,9 +581,17 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr)
+  const ssr = resolveSSROptions(
+    config.ssr,
+    config.legacy?.buildSsrCjsExternalHeuristics,
+    config.resolve?.preserveSymlinks
+  )
+
+  const middlewareMode = config?.server?.middlewareMode
 
   const optimizeDeps = config.optimizeDeps || {}
+
+  const BASE_URL = resolvedBase
 
   const resolved: ResolvedConfig = {
     ...config,
@@ -503,7 +601,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: BASE_URL,
+    base: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -531,6 +629,7 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
+      disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: config.resolve?.preserveSymlinks,
@@ -538,7 +637,42 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    spa: config.spa ?? true
+    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
+    experimental: {
+      importGlobRestoreExtension: false,
+      hmrPartialAccept: false,
+      ...config.experimental
+    }
+  }
+
+  if (middlewareMode === 'ssr') {
+    logger.warn(
+      colors.yellow(
+        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
+          config.appType === 'custom' ? '' : ` and appType to 'custom'`
+        } instead`
+      )
+    )
+  }
+  if (middlewareMode === 'html') {
+    logger.warn(
+      colors.yellow(
+        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`
+      )
+    )
+  }
+
+  if (
+    config.server?.force &&
+    !isBuild &&
+    config.optimizeDeps?.force === undefined
+  ) {
+    resolved.optimizeDeps.force = true
+    logger.warn(
+      colors.yellow(
+        `server.force is deprecated, use optimizeDeps.force instead`
+      )
+    )
   }
 
   const workerResolved: ResolvedConfig = {
@@ -609,22 +743,41 @@ export async function resolveConfig(
     )
   }
 
+  // Check if all assetFileNames have the same reference.
+  // If not, display a warn for user.
+  const outputOption = config.build?.rollupOptions?.output ?? []
+  // Use isArray to narrow its type to array
+  if (Array.isArray(outputOption)) {
+    const assetFileNamesList = outputOption.map(
+      (output) => output.assetFileNames
+    )
+    if (assetFileNamesList.length > 1) {
+      const firstAssetFileNames = assetFileNamesList[0]
+      const hasDifferentReference = assetFileNamesList.some(
+        (assetFileNames) => assetFileNames !== firstAssetFileNames
+      )
+      if (hasDifferentReference) {
+        resolved.logger.warn(
+          colors.yellow(`
+assetFileNames isn't equal for every build.rollupOptions.output. A single pattern across all outputs is supported by Vite.
+`)
+        )
+      }
+    }
+  }
+
   return resolved
 }
 
 /**
- * Resolve base. Note that some users use Vite to build for non-web targets like
+ * Resolve base url. Note that some users use Vite to build for non-web targets like
  * electron or expects to deploy
  */
-function resolveBaseUrl(
+export function resolveBaseUrl(
   base: UserConfig['base'] = '/',
   isBuild: boolean,
   logger: Logger
 ): string {
-  // #1669 special treatment for empty for same dir relative base
-  if (base === '' || base === './') {
-    return isBuild ? base : '/'
-  }
   if (base.startsWith('.')) {
     logger.warn(
       colors.yellow(
@@ -699,56 +852,19 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let isTS = false
-  let isESM = false
-  let dependencies: string[] = []
-
-  // check package.json for type: "module" and set `isMjs` to true
-  try {
-    const pkg = lookupFile(configRoot, ['package.json'])
-    if (pkg && JSON.parse(pkg).type === 'module') {
-      isESM = true
-    }
-  } catch (e) {}
 
   if (configFile) {
     // explicit config path is always resolved from cwd
     resolvedPath = path.resolve(configFile)
-    isTS = configFile.endsWith('.ts')
-
-    if (configFile.endsWith('.mjs')) {
-      isESM = true
-    }
   } else {
     // implicit config file loaded from inline root (if present)
     // otherwise from cwd
-    const jsconfigFile = path.resolve(configRoot, 'vite.config.js')
-    if (fs.existsSync(jsconfigFile)) {
-      resolvedPath = jsconfigFile
-    }
+    for (const filename of DEFAULT_CONFIG_FILES) {
+      const filePath = path.resolve(configRoot, filename)
+      if (!fs.existsSync(filePath)) continue
 
-    if (!resolvedPath) {
-      const mjsconfigFile = path.resolve(configRoot, 'vite.config.mjs')
-      if (fs.existsSync(mjsconfigFile)) {
-        resolvedPath = mjsconfigFile
-        isESM = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const tsconfigFile = path.resolve(configRoot, 'vite.config.ts')
-      if (fs.existsSync(tsconfigFile)) {
-        resolvedPath = tsconfigFile
-        isTS = true
-      }
-    }
-
-    if (!resolvedPath) {
-      const cjsConfigFile = path.resolve(configRoot, 'vite.config.cjs')
-      if (fs.existsSync(cjsConfigFile)) {
-        resolvedPath = cjsConfigFile
-        isESM = false
-      }
+      resolvedPath = filePath
+      break
     }
   }
 
@@ -757,39 +873,27 @@ export async function loadConfigFromFile(
     return null
   }
 
+  let isESM = false
+  if (/\.m[jt]s$/.test(resolvedPath)) {
+    isESM = true
+  } else if (/\.c[jt]s$/.test(resolvedPath)) {
+    isESM = false
+  } else {
+    // check package.json for type: "module" and set `isESM` to true
+    try {
+      const pkg = lookupFile(configRoot, ['package.json'])
+      isESM = !!pkg && JSON.parse(pkg).type === 'module'
+    } catch (e) {}
+  }
+
   try {
-    let userConfig: UserConfigExport | undefined
-
-    if (isESM) {
-      const fileUrl = pathToFileURL(resolvedPath)
-      const bundled = await bundleConfigFile(resolvedPath, true)
-      dependencies = bundled.dependencies
-      if (isTS) {
-        // before we can register loaders without requiring users to run node
-        // with --experimental-loader themselves, we have to do a hack here:
-        // bundle the config file w/ ts transforms first, write it to disk,
-        // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.js', bundled.code)
-        userConfig = (await dynamicImport(`${fileUrl}.js?t=${Date.now()}`))
-          .default
-        fs.unlinkSync(resolvedPath + '.js')
-        debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
-      } else {
-        // using Function to avoid this from being compiled away by TS/Rollup
-        // append a query so that we force reload fresh config in case of
-        // server restart
-        userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
-        debug(`native esm config loaded in ${getTime()}`, fileUrl)
-      }
-    }
-
-    if (!userConfig) {
-      // Bundle config file and transpile it to cjs using esbuild.
-      const bundled = await bundleConfigFile(resolvedPath)
-      dependencies = bundled.dependencies
-      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
-      debug(`bundled config file loaded in ${getTime()}`)
-    }
+    const bundled = await bundleConfigFile(resolvedPath, isESM)
+    const userConfig = await loadConfigFromBundledFile(
+      resolvedPath,
+      bundled.code,
+      isESM
+    )
+    debug(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -800,7 +904,7 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies
+      dependencies: bundled.dependencies
     }
   } catch (e) {
     createLogger(logLevel).error(
@@ -813,7 +917,7 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  isESM = false
+  isESM: boolean
 ): Promise<{ code: string; dependencies: string[] }> {
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
@@ -833,11 +937,38 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
-          build.onResolve({ filter: /.*/ }, (args) => {
-            const id = args.path
+          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
+            // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id)) {
               return {
                 external: true
+              }
+            }
+            // bundle the rest and make sure that the we can also access
+            // it's third-party dependencies. externalize if not.
+            // monorepo/
+            // ├─ package.json
+            // ├─ utils.js -----------> bundle (share same node_modules)
+            // ├─ vite-project/
+            // │  ├─ vite.config.js --> entry
+            // │  ├─ package.json
+            // ├─ foo-project/
+            // │  ├─ utils.js --------> external (has own node_modules)
+            // │  ├─ package.json
+            const idFsPath = path.resolve(path.dirname(importer), id)
+            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
+              pathOnly: true
+            })
+            if (idPkgPath) {
+              const idPkgDir = path.dirname(idPkgPath)
+              // if this file needs to go up one or more directory to reach the vite config,
+              // that means it has it's own node_modules (e.g. foo-project)
+              if (path.relative(idPkgDir, fileName).startsWith('..')) {
+                return {
+                  // normalize actual import after bundled as a single vite config
+                  path: idFsPath,
+                  external: true
+                }
               }
             }
           })
@@ -846,7 +977,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         setup(build) {
-          build.onLoad({ filter: /\.[jt]s$/ }, async (args) => {
+          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
               `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
@@ -856,7 +987,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: args.path.endsWith('.ts') ? 'ts' : 'js',
+              loader: args.path.endsWith('ts') ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })
@@ -878,30 +1009,57 @@ interface NodeModuleWithCompile extends NodeModule {
 const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
-  bundledCode: string
-): Promise<UserConfig> {
-  const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions['.js']
-  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
-    if (filename === realFileName) {
-      ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
-    } else {
-      defaultLoader(module, filename)
+  bundledCode: string,
+  isESM: boolean
+): Promise<UserConfigExport> {
+  // for esm, before we can register loaders without requiring users to run node
+  // with --experimental-loader themselves, we have to do a hack here:
+  // write it to disk, load it with native Node ESM, then delete the file.
+  if (isESM) {
+    const fileUrl = pathToFileURL(fileName)
+    fs.writeFileSync(fileName + '.mjs', bundledCode)
+    try {
+      return (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`)).default
+    } finally {
+      fs.unlinkSync(fileName + '.mjs')
     }
   }
-  // clear cache in case of server restart
-  delete _require.cache[_require.resolve(fileName)]
-  const raw = _require(fileName)
-  _require.extensions['.js'] = defaultLoader
-  return raw.__esModule ? raw.default : raw
+  // for cjs, we can register a custom loader via `_require.extensions`
+  else {
+    const extension = path.extname(fileName)
+    const realFileName = fs.realpathSync(fileName)
+    const loaderExt = extension in _require.extensions ? extension : '.js'
+    const defaultLoader = _require.extensions[loaderExt]!
+    _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
+      if (filename === realFileName) {
+        ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
+      } else {
+        defaultLoader(module, filename)
+      }
+    }
+    // clear cache in case of server restart
+    delete _require.cache[_require.resolve(fileName)]
+    const raw = _require(fileName)
+    _require.extensions[loaderExt] = defaultLoader
+    return raw.__esModule ? raw.default : raw
+  }
 }
 
-export function isDepsOptimizerEnabled(config: ResolvedConfig): boolean {
-  const { command, optimizeDeps } = config
-  const { disabled } = optimizeDeps
+export function getDepOptimizationConfig(
+  config: ResolvedConfig,
+  ssr: boolean
+): DepOptimizationConfig {
+  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
+}
+export function isDepsOptimizerEnabled(
+  config: ResolvedConfig,
+  ssr: boolean
+): boolean {
+  const { command } = config
+  const { disabled } = getDepOptimizationConfig(config, ssr)
   return !(
     disabled === true ||
     (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && optimizeDeps.disabled === 'dev')
+    (command === 'serve' && disabled === 'dev')
   )
 }

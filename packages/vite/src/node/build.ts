@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import colors from 'picocolors'
 import type {
   ExternalOption,
@@ -47,7 +47,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { VERSION } from './constants'
+import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 
 export interface BuildOptions {
   /**
@@ -229,7 +229,11 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export type ResolvedBuildOptions = Required<BuildOptions>
 
-export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
+export function resolveBuildOptions(
+  raw: BuildOptions | undefined,
+  isBuild: boolean,
+  logger: Logger
+): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
     polyfillModulePreload: true,
@@ -266,15 +270,7 @@ export function resolveBuildOptions(raw?: BuildOptions): ResolvedBuildOptions {
 
   // handle special build targets
   if (resolved.target === 'modules') {
-    // Support browserslist
-    // "defaults and supports es6-module and supports es6-module-dynamic-import",
-    resolved.target = [
-      'es2020', // support import.meta.url
-      'edge88',
-      'firefox78',
-      'chrome87',
-      'safari13' // transpile nullish coalescing
-    ]
+    resolved.target = ESBUILD_MODULES_TARGET
   } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
     // esnext + terser: limit to es2021 so it can be minified by terser
     resolved.target = 'es2021'
@@ -301,14 +297,15 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
-
+  const { commonjsOptions } = options
+  const usePluginCommonjs =
+    !Array.isArray(commonjsOptions?.include) ||
+    commonjsOptions?.include.length !== 0
   return {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(!isDepsOptimizerEnabled(config)
-        ? [commonjsPlugin(options.commonjsOptions)]
-        : []),
+      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
@@ -398,11 +395,11 @@ async function doBuild(
   // In CJS, we can pass the externals to rollup as is. In ESM, we need to
   // do it in the resolve plugin so we can add the resolved extension for
   // deep node_modules imports
-  if (ssr && config.ssr?.format === 'cjs') {
+  if (ssr && config.legacy?.buildSsrCjsExternalHeuristics) {
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
-  if (isDepsOptimizerEnabled(config)) {
+  if (isDepsOptimizerEnabled(config, ssr)) {
     await initDepsOptimizer(config)
   }
 
@@ -447,10 +444,11 @@ async function doBuild(
         )
       }
 
+      const ssrWorkerBuild = ssr && config.ssr?.target !== 'webworker'
       const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
-        (ssr && config.ssr?.target !== 'webworker') || libOptions
+        ssrWorkerBuild || libOptions
           ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
       return {
@@ -468,17 +466,17 @@ async function doBuild(
           ? `[name].${jsExt}`
           : libOptions
           ? resolveLibFilename(libOptions, format, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         assetFileNames: libOptions
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssr && typeof input === 'string'),
+          (ssrWorkerBuild && typeof input === 'string'),
         ...output
       }
     }
@@ -733,7 +731,7 @@ async function cjsSsrResolveExternal(
 ): Promise<ExternalOption> {
   // see if we have cached deps data available
   let knownImports: string[] | undefined
-  const dataPath = path.join(getDepsCacheDir(config), '_metadata.json')
+  const dataPath = path.join(getDepsCacheDir(config, false), '_metadata.json')
   try {
     const data = JSON.parse(
       fs.readFileSync(dataPath, 'utf-8')
@@ -742,7 +740,7 @@ async function cjsSsrResolveExternal(
   } catch (e) {}
   if (!knownImports) {
     // no dev deps optimization data, do a fresh scan
-    knownImports = await findKnownImports(config)
+    knownImports = await findKnownImports(config, false) // needs to use non-ssr
   }
   const ssrExternals = cjsSsrResolveExternals(config, knownImports)
 
@@ -825,3 +823,90 @@ function injectSsrFlag<T extends Record<string, any>>(
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
+
+export type RenderBuiltAssetUrl = (
+  filename: string,
+  type: {
+    type: 'asset' | 'public'
+    hostId: string
+    hostType: 'js' | 'css' | 'html'
+    ssr: boolean
+  }
+) => string | { relative?: boolean; runtime?: string } | undefined
+
+export function toOutputFilePathInString(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (
+    filename: string,
+    hostType: string
+  ) => string | { runtime: string }
+): string | { runtime: string } {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        return { runtime: result.runtime }
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  }
+  return config.base + filename
+}
+
+export function toOutputFilePathWithoutRuntime(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, hostId: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime} }" is not supported for assets in ${hostType} files: ${filename}`
+        )
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
+  }
+}
+
+export const toOutputFilePathInCss = toOutputFilePathWithoutRuntime
+export const toOutputFilePathInHtml = toOutputFilePathWithoutRuntime

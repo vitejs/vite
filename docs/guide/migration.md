@@ -1,8 +1,8 @@
 # Migration from v2
 
-## Node Support
+## Node.js Support
 
-Vite no longer supports Node v12, which reached its EOL. Node 14.6+ is now required.
+Vite no longer supports Node.js 12 / 13 / 15, which reached its EOL. Node.js 14.18+ / 16+ is now required.
 
 ## Modern Browser Baseline change
 
@@ -17,41 +17,43 @@ A small fraction of users will now require using [@vitejs/plugin-legacy](https:/
 
 ## Config Options Changes
 
-- The following options that were already deprecated in v2 have been removed:
+The following options that were already deprecated in v2 have been removed:
 
-  - `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolvealias))
-  - `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolvededupe))
-  - `build.base` (switch to [`base`](../config/shared-options.md#base))
-  - `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
-  - `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
-  - `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
-  - `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedepsesbuildoptions))
+- `alias` (switch to [`resolve.alias`](../config/shared-options.md#resolve-alias))
+- `dedupe` (switch to [`resolve.dedupe`](../config/shared-options.md#resolve-dedupe))
+- `build.base` (switch to [`base`](../config/shared-options.md#base))
+- `build.brotliSize` (switch to [`build.reportCompressedSize`](../config/build-options.md#build-reportcompressedsize))
+- `build.cleanCssOptions` (Vite now uses esbuild for CSS minification)
+- `build.polyfillDynamicImport` (use [`@vitejs/plugin-legacy`](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy) for browsers without dynamic import support)
+- `optimizeDeps.keepNames` (switch to [`optimizeDeps.esbuildOptions.keepNames`](../config/dep-optimization-options.md#optimizedeps-esbuildoptions))
 
-## Dev Server Changes
+## Architecture Changes and Legacy Options
+
+This section describes the biggest architecture changes in Vite v3. To allow projects to migrate from v2 in case of a compat issue, legacy options have been added to revert to the Vite v2 strategies.
+
+### Dev Server Changes
 
 Vite's default dev server port is now 5173. You can use [`server.port`](../config/server-options.md#server-port) to set it to 3000.
 
-Vite's default dev server host is now `localhost`. You can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1`.
+Vite's default dev server host is now `localhost`. In Vite v2, Vite was listening to `127.0.0.1` by default. Node.js under v17 normally resolves `localhost` to `127.0.0.1`, so for those versions, the host won't change. For Node.js 17+, you can use [`server.host`](../config/server-options.md#server-host) to set it to `127.0.0.1` to keep the same host as Vite v2.
 
-Vite optimizes dependencies with esbuild to both convert CJS-only deps to ESM and to reduce the number of modules the browser needs to request. In v3, the default strategy to discover and batch dependencies has changed. Vite no longer pre-scans user code with esbuild to get an initial list of dependencies on cold start. Instead, it delays the first dependency optimization run until every imported user module on load is processed.
+Note that Vite v3 now prints the correct host. This means Vite may print `127.0.0.1` as the listening host when `localhost` is used. You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to prevent this. See [`server.host`](../config/server-options.md#server-host) for more details.
 
-To get back the v2 strategy, you can use [`optimizeDeps.devScan`](../config/dep-optimization-options.md#optimizedepsdevscan).
+### SSR Changes
 
-## Build Changes
+Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssr-noexternal) to control what dependencies to include in the SSR bundle.
 
-In v3, Vite uses esbuild to optimize dependencies by default. Doing so, it removes one of the most significant differences between dev and prod present in v2. Because esbuild converts CJS-only dependencies to ESM, [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer used.
+If using ESM for SSR isn't possible in your project, you can set `legacy.buildSsrCjsExternalHeuristics` to generate a CJS bundle using the same externalization strategy of Vite v2.
 
-If you need to get back to the v2 strategy, you can use [`optimizeDeps.disabled: 'build'`](../config/dep-optimization-options.md#optimizedepsdisabled).
-
-## SSR Changes
-
-Vite v3 uses ESM for the SSR build by default. When using ESM, the [SSR externalization heuristics](https://vitejs.dev/guide/ssr.html#ssr-externals) are no longer needed. By default, all dependencies are externalized. You can use [`ssr.noExternal`](../config/ssr-options.md#ssrnoexternal) to control what dependencies to include in the SSR bundle.
-
-If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'cjs'` to generate a CJS bundle. In this case, the same externalization strategy of Vite v2 will be used.
+Also [`build.rollupOptions.output.inlineDynamicImports`](https://rollupjs.org/guide/en/#outputinlinedynamicimports) now defaults to `false` when `ssr.target` is `'node'`. `inlineDynamicImports` changes execution order and bundling to a single file is not needed for node builds.
 
 ## General Changes
 
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
+- Terser is now an optional dependency. If you are using `build.minify: 'terser'`, you need to install it.
+  ```shell
+  npm add -D terser
+  ```
 
 ### `import.meta.glob`
 
@@ -72,7 +74,7 @@ If using ESM for SSR isn't possible in your project, you can set `ssr.format: 'c
 - When using an alias with `import.meta.glob`, the keys are always absolute.
 - `import.meta.globEager` is now deprecated. Use `import.meta.glob('*', { eager: true })` instead.
 
-### WebAssembly support
+### WebAssembly Support
 
 `import init from 'example.wasm'` syntax is dropped to prevent future collision with ["ESM integration for Wasm"](https://github.com/WebAssembly/esm-integration).
 You can use `?init` which is similar to the previous behavior.
@@ -81,11 +83,33 @@ You can use `?init` which is similar to the previous behavior.
 -import init from 'example.wasm'
 +import init from 'example.wasm?init'
 
--init().then((instance) => {
+-init().then((exports) => {
 +init().then(({ exports }) => {
   exports.test()
 })
 ```
+
+### Automatic https Certificate Generation
+
+A valid certificate is needed when using `https`. In Vite v2, if no certificate was configured, a self-signed certificate was automatically created and cached.
+Since Vite v3, we recommend manually creating your certificates. If you still want to use the automatic generation from v2, this feature can be enabled back by adding [@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) to the project plugins.
+
+```js
+import basicSsl from '@vitejs/plugin-basic-ssl'
+
+export default {
+  plugins: [basicSsl()]
+}
+```
+
+## Experimental
+
+### Using esbuild deps optimization at build time
+
+In v3, Vite allows the use of esbuild to optimize dependencies during build time. If enabled, it removes one of the most significant differences between dev and prod present in v2. [`@rollupjs/plugin-commonjs`](https://github.com/rollup/plugins/tree/master/packages/commonjs) is no longer needed in this case since esbuild converts CJS-only dependencies to ESM.
+
+If you want to try this build strategy, you can use `optimizeDeps.disabled: false` (the default in v3 is `disabled: 'build'`). `@rollup/plugin-commonjs`
+can be removed by passing `build.commonjsOptions: { include: [] }`
 
 ## Advanced
 
@@ -95,11 +119,15 @@ There are some changes which only affects plugin/tool creators.
   - `printHttpServerUrls` is removed
   - `server.app`, `server.transformWithEsbuild` are removed
   - `import.meta.hot.acceptDeps` is removed
+- [[#6901] fix: sequential injection of tags in transformIndexHtml](https://github.com/vitejs/vite/pull/6901)
+  - `transformIndexHtml` now gets the correct content modified by earlier plugins, so the order of the injected tags now works as expected.
 - [[#7995] chore: do not fixStacktrace](https://github.com/vitejs/vite/pull/7995)
   - `ssrLoadModule`'s `fixStacktrace` option's default is now `false`
 - [[#8178] feat!: migrate to ESM](https://github.com/vitejs/vite/pull/8178)
   - `formatPostcssSourceMap` is now async
   - `resolvePackageEntry`, `resolvePackageData` are no longer available from CJS build (dynamic import is needed to use in CJS)
+- [[#8626] refactor: type client maps](https://github.com/vitejs/vite/pull/8626)
+  - Type of callback of `import.meta.hot.accept` is now stricter. It is now `(mod: (Record<string, any> & { [Symbol.toStringTag]: 'Module' }) | undefined) => void` (was `(mod: any) => void`).
 
 Also there are other breaking changes which only affect few users.
 
@@ -107,8 +135,12 @@ Also there are other breaking changes which only affect few users.
   - Transpile to ES5 is now necessary even if the user code only includes ES5.
 - [[#7877] fix: vite client types](https://github.com/vitejs/vite/pull/7877)
   - `/// <reference lib="dom" />` is removed from `vite/client.d.ts`. `{ "lib": ["dom"] }` or `{ "lib": ["webworker"] }` is necessary in `tsconfig.json`.
+- [[#8090] feat: preserve process env vars in lib build](https://github.com/vitejs/vite/pull/8090)
+  - `process.env.*` is now preserved in library mode
 - [[#8280] feat: non-blocking esbuild optimization at build time](https://github.com/vitejs/vite/pull/8280)
-  - `server.force` option was removed in favor of `force` option.
+  - `server.force` option was removed in favor of `optimizeDeps.force` option.
+- [[#8550] fix: dont handle sigterm in middleware mode](https://github.com/vitejs/vite/pull/8550)
+  - When running in middleware mode, Vite no longer kills process on `SIGTERM`.
 
 ## Migration from v1
 
