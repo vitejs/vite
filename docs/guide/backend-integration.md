@@ -33,6 +33,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```html
    <!-- if development -->
+   <script type="module" src="http://localhost:5173/@vite/client"></script>
    <script type="module" src="http://localhost:5173/main.js"></script>
    ```
 
