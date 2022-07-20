@@ -419,10 +419,10 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
-      // css & json
+      // css & json & wasm
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json)$/
+          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json|wasm)$/
         },
         externalUnlessEntry
       )
