@@ -68,7 +68,6 @@ describe.runIf(isBuild)('build', () => {
     expect(workerContent).not.toMatch(`import`)
     expect(workerContent).not.toMatch(`export`)
     // chunk
-    console.log(content)
     expect(content).toMatch(`new Worker(""+new URL("../worker-entries/`)
     expect(content).toMatch(`new SharedWorker(""+new URL("../worker-entries/`)
     // inlined
