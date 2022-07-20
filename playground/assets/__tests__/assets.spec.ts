@@ -364,3 +364,11 @@ test('relative path in html asset', async () => {
   expect(await page.textContent('.relative-js')).toMatch('hello')
   expect(await getColor('.relative-css')).toMatch('red')
 })
+
+test('url to public folder', async () => {
+  expect(await getBg('.style-public-assets')).toContain(iconMatch)
+  // TODO: To investigate why `await getBg('.inline-style-public') === "url("http://localhost:5173/icon.png")"`
+  // It supposes to be `url("http://localhost:5173/foo/icon.png")`
+  // (I built the playground to verify)
+  expect(await getBg('.inline-style-public')).toContain(iconMatch)
+})
