@@ -29,6 +29,8 @@ const externalTypes = [
   'stylus',
   'pcss',
   'postcss',
+  // wasm
+  'wasm',
   // known SFC types
   'vue',
   'svelte',
