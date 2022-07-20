@@ -266,6 +266,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             moduleGraph.updateModuleInfo(
               thisModule,
               depModules,
+              depModules,
               null,
               // The root CSS proxy module is self-accepting and should not
               // have an explicit accept list
@@ -298,6 +299,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
   let pureCssChunks: Set<string>
+  let serve: ViteDevServer
 
   // when there are multiple rollup outputs and extracting CSS, only emit once,
   // since output formats have no effect on the generated CSS.
@@ -334,6 +336,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       pureCssChunks = new Set<string>()
       outputToExtractedCSSMap = new Map<NormalizedOutputOptions, string>()
       hasEmitted = false
+    },
+
+    configureServer(_server) {
+      serve = _server
     },
 
     async transform(css, id, options) {
@@ -379,13 +385,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const cssContent = await getContentWithSourcemap(css)
         const devBase = config.base
+        const moduleNode = serve.moduleGraph.getModuleById(id)!
+        const entryPoint =
+          typeof moduleNode.entryPoint === 'string'
+            ? moduleNode.entryPoint
+            : moduleNode.entryPoint!.id
         return [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(devBase, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
-          `__vite__updateStyle(__vite__id, __vite__css)`,
+          `const __vite__entry = ${JSON.stringify(entryPoint)}`,
+          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry)`,
           // css modules exports change on edit so it can't self accept
           `${
             modulesCode ||

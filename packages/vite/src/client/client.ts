@@ -324,7 +324,12 @@ const sheetsMap = new Map<
   HTMLStyleElement | CSSStyleSheet | undefined
 >()
 
-export function updateStyle(id: string, content: string): void {
+// TODO use moduleEntry create a loading anchor
+export function updateStyle(
+  id: string,
+  content: string,
+  moduleEntry: string
+): void {
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {

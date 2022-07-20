@@ -11,6 +11,8 @@ import {
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
 
+let weight = 0
+
 export class ModuleNode {
   /**
    * Public served url path, starts with /
@@ -36,6 +38,15 @@ export class ModuleNode {
   ssrError: Error | null = null
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
+  /**
+   * entryPoint of the module
+   *   - null - no init
+   *   - self - it's entry pointer (the ModuleNode what import by dynamic import)
+   *   - main - it's import by main entry point
+   *   - ModuleNode - it's import by dynamic import and the entry point is this field
+   */
+  entryPoint: ModuleNode | 'self' | 'main' | null = null
+  weight: number = 0
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -136,6 +147,7 @@ export class ModuleGraph {
   async updateModuleInfo(
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
+    staticImportUrls: Set<string | ModuleNode>,
     importedBindings: Map<string, Set<string>> | null,
     acceptedModules: Set<string | ModuleNode>,
     acceptedExports: Set<string> | null,
@@ -154,6 +166,10 @@ export class ModuleGraph {
           : imported
       dep.importers.add(mod)
       nextImports.add(dep)
+      if (!staticImportUrls.has(imported)) {
+        dep.entryPoint = 'self'
+        dep.weight = ++weight
+      }
     }
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
@@ -165,6 +181,30 @@ export class ModuleGraph {
         }
       }
     })
+    // ensure the module entry point
+    mod.importers.forEach((importerMod) => {
+      if (importerMod.entryPoint === 'self') {
+        if (mod.entryPoint) {
+          mod.entryPoint =
+            importerMod.weight > mod.weight ? importerMod : mod.entryPoint
+        } else {
+          mod.entryPoint = importerMod
+        }
+      } else if (importerMod.entryPoint instanceof ModuleNode) {
+        if (mod.entryPoint) {
+          mod.entryPoint =
+            importerMod.entryPoint.weight > mod.weight
+              ? importerMod.entryPoint
+              : mod.entryPoint
+        } else {
+          mod.entryPoint = importerMod.entryPoint
+        }
+      }
+    })
+    if (mod.entryPoint === null) {
+      mod.entryPoint = 'main'
+      mod.weight = Infinity
+    }
     // update accepted hmr deps
     const deps = (mod.acceptedHmrDeps = new Set())
     for (const accepted of acceptedModules) {

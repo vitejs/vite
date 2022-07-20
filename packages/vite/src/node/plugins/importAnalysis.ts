@@ -683,6 +683,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const prunedImports = await moduleGraph.updateModuleInfo(
           importerModule,
           importedUrls,
+          new Set(Array.from(staticImportedUrls).map((item) => item.url)),
           importedBindings,
           normalizedAcceptedUrls,
           isPartiallySelfAccepting ? acceptedExports : null,
