@@ -7,9 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Production
 dist
 dist-ssr
+
+# Miscellaneous
 *.local
 
 # Editor directories and files
