@@ -379,14 +379,18 @@ function esbuildScanPlugin(
           // avoid matching windows volume
           filter: /^[\w@][^:]/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
