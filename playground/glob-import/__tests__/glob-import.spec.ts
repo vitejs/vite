@@ -92,6 +92,12 @@ test('import glob raw', async () => {
   )
 })
 
+test('import property access', async () => {
+  expect(await page.textContent('.property-access')).toBe(
+    JSON.stringify(rawResult['/dir/baz.json'], null, 2)
+  )
+})
+
 test('import relative glob raw', async () => {
   expect(await page.textContent('.relative-glob-raw')).toBe(
     JSON.stringify(relativeRawResult, null, 2)
