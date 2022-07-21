@@ -78,7 +78,7 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
-    } else if (ext === 'mts' || ext === 'mts') {
+    } else if (ext === 'cts' || ext === 'mts') {
       loader = 'ts'
     } else {
       loader = ext as Loader
