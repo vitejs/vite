@@ -1,8 +1,17 @@
+<h1>Glob import</h1>
+<h2>Normal</h2>
 <pre class="result"></pre>
+<h2>Eager</h2>
 <pre class="result-eager"></pre>
+<h2>node_modules</h2>
 <pre class="result-node_modules"></pre>
+<h2>Raw</h2>
 <pre class="globraw"></pre>
+<h2>Property access</h2>
+<pre class="property-access"></pre>
+<h2>Relative raw</h2>
 <pre class="relative-glob-raw"></pre>
+<h2>Side effect</h2>
 <pre class="side-effect-result"></pre>
 
 <script type="module" src="./dir/index.js"></script>
@@ -58,6 +67,18 @@
   })
   document.querySelector('.globraw').textContent = JSON.stringify(
     globraw,
+    null,
+    2
+  )
+</script>
+
+<script type="module">
+  const bazJson = import.meta.glob('/dir/*.json', {
+    as: 'raw',
+    eager: true
+  })['/dir/baz.json']
+  document.querySelector('.property-access').textContent = JSON.stringify(
+    JSON.parse(bazJson),
     null,
     2
   )
