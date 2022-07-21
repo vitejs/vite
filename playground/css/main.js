@@ -105,6 +105,8 @@ document
   .querySelector('.aliased-module')
   .classList.add(aliasModule.aliasedModule)
 
+import './unsupported.css'
+
 // async css modules
 import('./async-modules/blue')
 import('./async-modules/red')

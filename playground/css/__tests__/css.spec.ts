@@ -471,3 +471,10 @@ test('async css modules with normal css', async () => {
   expect(await getColor(black)).toBe('black')
   expect(await getColor(blue)).toBe('blue')
 })
+
+test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('unsupported-css-property')
+  })
+})

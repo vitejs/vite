@@ -23,19 +23,6 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
-::: tip NOTE
-Vite will inject `__filename`, `__dirname` in config files and its deps. Declaring these variables at top level will result in an error:
-
-```js
-const __filename = 'value' // SyntaxError: Identifier '__filename' has already been declared
-
-const func = () => {
-  const __filename = 'value' // no error
-}
-```
-
-:::
-
 ## Config Intellisense
 
 Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:

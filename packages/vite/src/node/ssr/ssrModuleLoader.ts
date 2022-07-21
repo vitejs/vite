@@ -137,7 +137,8 @@ async function instantiateModule(
     if (dep[0] !== '.' && dep[0] !== '/') {
       return nodeImport(dep, mod.file!, resolveOptions)
     }
-    dep = unwrapId(dep)
+    // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
+    dep = unwrapId(dep).replace(NULL_BYTE_PLACEHOLDER, '\0')
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
       pendingDeps.push(dep)
       if (pendingDeps.length === 1) {
@@ -194,7 +195,7 @@ async function instantiateModule(
       ssrImportKey,
       ssrDynamicImportKey,
       ssrExportAllKey,
-      result.code + `\n//# sourceURL=${mod.url}`
+      '"use strict";' + result.code + `\n//# sourceURL=${mod.url}`
     )
     await initModule(
       context.global,

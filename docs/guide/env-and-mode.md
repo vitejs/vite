@@ -60,7 +60,7 @@ console.log(import.meta.env.VITE_SOME_KEY) // 123
 console.log(import.meta.env.DB_PASSWORD) // undefined
 ```
 
-If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
+If you want to customize env variables prefix, see [envPrefix](/config/shared-options.html#envprefix) option.
 
 :::warning SECURITY NOTES
 
