@@ -390,6 +390,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           typeof moduleNode.entryPoint === 'string'
             ? moduleNode.entryPoint
             : moduleNode.entryPoint!.id
+        const entryPointWeight =
+          typeof moduleNode.entryPoint === 'string'
+            ? 0
+            : moduleNode.entryPoint!.weight
         return [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(devBase, CLIENT_PUBLIC_PATH)
@@ -397,7 +401,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
           `const __vite__entry = ${JSON.stringify(entryPoint)}`,
-          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry)`,
+          `const __vite__entry_weight = ${JSON.stringify(entryPointWeight)}`,
+          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry, __vite__entry_weight)`,
           // css modules exports change on edit so it can't self accept
           `${
             modulesCode ||

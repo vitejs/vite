@@ -46,6 +46,9 @@ export class ModuleNode {
    *   - ModuleNode - it's import by dynamic import and the entry point is this field
    */
   entryPoint: ModuleNode | 'self' | 'main' | null = null
+  /**
+   * lower weight is better
+   */
   weight: number = 0
 
   /**
@@ -186,14 +189,14 @@ export class ModuleGraph {
       if (importerMod.entryPoint === 'self') {
         if (mod.entryPoint) {
           mod.entryPoint =
-            importerMod.weight > mod.weight ? importerMod : mod.entryPoint
+            importerMod.weight < mod.weight ? importerMod : mod.entryPoint
         } else {
           mod.entryPoint = importerMod
         }
       } else if (importerMod.entryPoint instanceof ModuleNode) {
         if (mod.entryPoint) {
           mod.entryPoint =
-            importerMod.entryPoint.weight > mod.weight
+            importerMod.entryPoint.weight < mod.weight
               ? importerMod.entryPoint
               : mod.entryPoint
         } else {
@@ -203,7 +206,7 @@ export class ModuleGraph {
     })
     if (mod.entryPoint === null) {
       mod.entryPoint = 'main'
-      mod.weight = Infinity
+      mod.weight = 0
     }
     // update accepted hmr deps
     const deps = (mod.acceptedHmrDeps = new Set())

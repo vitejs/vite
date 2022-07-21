@@ -324,12 +324,33 @@ const sheetsMap = new Map<
   HTMLStyleElement | CSSStyleSheet | undefined
 >()
 
-// TODO use moduleEntry create a loading anchor
+interface CSSAnchor {
+  start: HTMLStyleElement
+  end: HTMLStyleElement
+  weight: number
+}
+
+const anchorMap = new Map<string, CSSAnchor>()
+
+function binarySearchCSSInjectPosition(weight: number): HTMLElement | null {
+  const list = Array.from(anchorMap.values()).sort(
+    (a, b) => a.weight - b.weight
+  )
+  for (const anchor of list) {
+    if (weight < anchor.weight) {
+      return anchor.end
+    }
+  }
+  return null
+}
+
 export function updateStyle(
   id: string,
   content: string,
-  moduleEntry: string
+  moduleEntry: string,
+  entryWeight: number
 ): void {
+  console.log('[mount style]', '\n', id, '\n', moduleEntry, '\n', entryWeight)
   let style = sheetsMap.get(id)
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
@@ -357,7 +378,29 @@ export function updateStyle(
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
-      document.head.appendChild(style)
+      // for debugging
+      style.setAttribute('w', entryWeight.toString())
+      if (moduleEntry === 'main') {
+        document.head.appendChild(style)
+      } else {
+        const anchor = anchorMap.get(moduleEntry)
+        if (anchor) {
+          document.head.insertBefore(style, anchor.end)
+          anchor.end = style
+        } else {
+          const node = binarySearchCSSInjectPosition(entryWeight)
+          anchorMap.set(moduleEntry, {
+            start: style,
+            end: style,
+            weight: entryWeight
+          })
+          if (node) {
+            document.head.insertBefore(style, node)
+          } else {
+            document.head.appendChild(style)
+          }
+        }
+      }
     } else {
       style.innerHTML = content
     }
