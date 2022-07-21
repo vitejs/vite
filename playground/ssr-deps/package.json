@@ -24,7 +24,9 @@
     "no-external-css": "file:./no-external-css",
     "non-optimized-with-nested-external": "file:./non-optimized-with-nested-external",
     "optimized-with-nested-external": "file:./optimized-with-nested-external",
-    "optimized-cjs-with-nested-external": "file:./optimized-with-nested-external"
+    "optimized-cjs-with-nested-external": "file:./optimized-with-nested-external",
+    "external-using-external-entry": "file:./external-using-external-entry",
+    "external-entry": "file:./external-entry"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
