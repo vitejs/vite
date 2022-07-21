@@ -25,6 +25,7 @@ test('template/script latest syntax support', async () => {
 
 test('import ts with .js extension with lang="ts"', async () => {
   expect(await page.textContent('.ts-import')).toBe('success')
+  expect(await page.textContent('.ts-import2')).toBe('success')
 })
 
 test('should remove comments in prod', async () => {
