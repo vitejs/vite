@@ -9,7 +9,6 @@ defineProps<{ svg: string }>()
 <style>
 .svg-image-root {
   background-color: #eee;
-  border: solid 1px #ccc;
   border-radius: 8px;
   padding: 1ch;
   margin: 1ch 0;
