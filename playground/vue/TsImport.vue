@@ -6,5 +6,5 @@
 
 <script setup lang="ts">
 import { foo } from '@/TsImportFile.js'
-import { foo2 } from '/@/TsImportFile.js'
+import { foo as foo2 } from '/@/TsImportFile.js'
 </script>
