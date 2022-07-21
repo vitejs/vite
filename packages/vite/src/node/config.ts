@@ -675,7 +675,6 @@ export async function resolveConfig(
   )
 
   const workerResolved: ResolvedConfig = {
-    ...config,
     ...workerConfig,
     ...resolvedConfig,
     isWorker: true,
