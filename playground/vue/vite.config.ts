@@ -5,7 +5,8 @@ import { vueI18nPlugin } from './CustomBlockPlugin'
 export default defineConfig({
   resolve: {
     alias: {
-      '/@': __dirname
+      '/@': __dirname,
+      '@': __dirname
     }
   },
   plugins: [
