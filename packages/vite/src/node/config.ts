@@ -667,36 +667,6 @@ export async function resolveConfig(
     ...resolvedConfig
   }
 
-  if (middlewareMode === 'ssr') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
-          config.appType === 'custom' ? '' : ` and appType to 'custom'`
-        } instead`
-      )
-    )
-  }
-  if (middlewareMode === 'html') {
-    logger.warn(
-      colors.yellow(
-        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`
-      )
-    )
-  }
-
-  if (
-    config.server?.force &&
-    !isBuild &&
-    config.optimizeDeps?.force === undefined
-  ) {
-    resolved.optimizeDeps.force = true
-    logger.warn(
-      colors.yellow(
-        `server.force is deprecated, use optimizeDeps.force instead`
-      )
-    )
-  }
-
   ;(resolved.plugins as Plugin[]) = await resolvePlugins(
     resolved,
     prePlugins,
@@ -729,6 +699,38 @@ export async function resolveConfig(
         )
       )
   )
+
+  // validate config
+
+  if (middlewareMode === 'ssr') {
+    logger.warn(
+      colors.yellow(
+        `Setting server.middlewareMode to 'ssr' is deprecated, set server.middlewareMode to \`true\`${
+          config.appType === 'custom' ? '' : ` and appType to 'custom'`
+        } instead`
+      )
+    )
+  }
+  if (middlewareMode === 'html') {
+    logger.warn(
+      colors.yellow(
+        `Setting server.middlewareMode to 'html' is deprecated, set server.middlewareMode to \`true\` instead`
+      )
+    )
+  }
+
+  if (
+    config.server?.force &&
+    !isBuild &&
+    config.optimizeDeps?.force === undefined
+  ) {
+    resolved.optimizeDeps.force = true
+    logger.warn(
+      colors.yellow(
+        `server.force is deprecated, use optimizeDeps.force instead`
+      )
+    )
+  }
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
