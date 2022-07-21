@@ -663,7 +663,7 @@ export async function resolveConfig(
       ...config.experimental
     }
   }
-  const resolved: ResolvedConfig = Object.assign(config, resolvedConfig)
+  const resolved: ResolvedConfig = Object.assign({}, config, resolvedConfig)
 
   if (middlewareMode === 'ssr') {
     logger.warn(
