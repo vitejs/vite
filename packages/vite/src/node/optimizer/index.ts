@@ -1009,7 +1009,7 @@ function needsInterop(
   }
 
   if (output) {
-    // if a peer dependency used require() on a ESM dependency, esbuild turns the
+    // if a peer dependency used require() on an ESM dependency, esbuild turns the
     // ESM dependency's entry chunk into a single default export... detect
     // such cases by checking exports mismatch, and force interop.
     const generatedExports: string[] = output.exports
