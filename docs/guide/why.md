@@ -24,9 +24,12 @@ Vite improves the dev server start time by first dividing the modules in an appl
 
   Vite serves source code over [native ESM](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules). This is essentially letting the browser take over part of the job of a bundler: Vite only needs to transform and serve source code on demand, as the browser requests it. Code behind conditional dynamic imports is only processed if actually used on the current screen.
 
-  ![bundler based dev server](/images/bundler.png)
-
-  ![esm based dev server](/images/esm.png)
+<script setup>
+import bundlerSvg from '../images/bundler.svg?raw'
+import esmSvg from '../images/esm.svg?raw'
+</script>
+<svg-image :svg="bundlerSvg" />
+<svg-image :svg="esmSvg" />
 
 ### Slow Updates
 
