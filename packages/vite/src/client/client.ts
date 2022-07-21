@@ -350,7 +350,6 @@ export function updateStyle(
   moduleEntry: string,
   entryWeight: number
 ): void {
-  console.log('[mount style]', '\n', id, '\n', moduleEntry, '\n', entryWeight)
   let style = sheetsMap.get(id)
   // TODO inject the truth oreder for stylesheet
   if (supportsConstructedSheet && !content.includes('@import')) {
