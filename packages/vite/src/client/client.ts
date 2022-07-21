@@ -352,6 +352,7 @@ export function updateStyle(
 ): void {
   console.log('[mount style]', '\n', id, '\n', moduleEntry, '\n', entryWeight)
   let style = sheetsMap.get(id)
+  // TODO inject the truth oreder for stylesheet
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
       removeStyle(id)
@@ -385,7 +386,7 @@ export function updateStyle(
       } else {
         const anchor = anchorMap.get(moduleEntry)
         if (anchor) {
-          document.head.insertBefore(style, anchor.end)
+          document.head.insertBefore(style, anchor.end.nextSibling)
           anchor.end = style
         } else {
           const node = binarySearchCSSInjectPosition(entryWeight)
