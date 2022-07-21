@@ -703,6 +703,8 @@ export async function resolveConfig(
   )
 
   const workerResolved: ResolvedConfig = Object.assign(
+    {},
+    config,
     workerConfig,
     resolvedConfig,
     {
