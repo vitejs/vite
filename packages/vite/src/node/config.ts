@@ -412,25 +412,6 @@ export async function resolveConfig(
     }
   })
 
-  let workerConfig = mergeConfig({}, config)
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(rawWorkerUserPlugins)
-
-  // run config hooks
-  const workerUserPlugins = [
-    ...workerPrePlugins,
-    ...workerNormalPlugins,
-    ...workerPostPlugins
-  ]
-  for (const p of workerUserPlugins) {
-    if (p.config) {
-      const res = await p.config(workerConfig, configEnv)
-      if (res) {
-        workerConfig = mergeConfig(workerConfig, res)
-      }
-    }
-  }
-
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
@@ -607,6 +588,24 @@ export async function resolveConfig(
   const BASE_URL = resolvedBase
 
   // resolve worker
+  let workerConfig = mergeConfig({}, config)
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(rawWorkerUserPlugins)
+
+  // run config hooks
+  const workerUserPlugins = [
+    ...workerPrePlugins,
+    ...workerNormalPlugins,
+    ...workerPostPlugins
+  ]
+  for (const p of workerUserPlugins) {
+    if (p.config) {
+      const res = await p.config(workerConfig, configEnv)
+      if (res) {
+        workerConfig = mergeConfig(workerConfig, res)
+      }
+    }
+  }
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -663,7 +662,10 @@ export async function resolveConfig(
       ...config.experimental
     }
   }
-  const resolved: ResolvedConfig = Object.assign({}, config, resolvedConfig)
+  const resolved: ResolvedConfig = {
+    ...config,
+    ...resolvedConfig
+  }
 
   if (middlewareMode === 'ssr') {
     logger.warn(
@@ -702,17 +704,15 @@ export async function resolveConfig(
     postPlugins
   )
 
-  const workerResolved: ResolvedConfig = Object.assign(
-    {},
-    config,
-    workerConfig,
-    resolvedConfig,
-    {
-      isWorker: true,
-      mainConfig: resolved
-    }
-  )
-  resolved.worker.plugins = await resolvePlugins(
+  const workerResolved: ResolvedConfig = {
+    ...config,
+    ...workerConfig,
+    ...resolvedConfig,
+    isWorker: true,
+    mainConfig: resolved
+  }
+
+  resolvedConfig.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
     workerNormalPlugins,
@@ -723,7 +723,11 @@ export async function resolveConfig(
   await Promise.all(
     userPlugins
       .map((p) => p.configResolved?.(resolved))
-      .concat(workerUserPlugins.map((p) => p.configResolved?.(workerResolved)))
+      .concat(
+        resolvedConfig.worker.plugins.map((p) =>
+          p.configResolved?.(workerResolved)
+        )
+      )
   )
 
   if (process.env.DEBUG) {
