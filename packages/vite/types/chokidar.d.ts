@@ -28,8 +28,8 @@ THE SOFTWARE.
 */
 /// <reference types="node" />
 
-import type * as fs from 'fs'
-import { EventEmitter } from 'events'
+import type * as fs from 'node:fs'
+import { EventEmitter } from 'node:events'
 import type { Matcher } from './anymatch'
 
 export class FSWatcher extends EventEmitter implements fs.FSWatcher {
@@ -140,8 +140,10 @@ export interface WatchOptions {
   cwd?: string
 
   /**
-   *  If set to true then the strings passed to .watch() and .add() are treated as literal path
-   *  names, even if they look like globs. Default: false.
+   * If set to true then the strings passed to .watch() and .add() are treated as literal path
+   * names, even if they look like globs.
+   *
+   * @default false
    */
   disableGlobbing?: boolean
 

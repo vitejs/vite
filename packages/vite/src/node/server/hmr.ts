@@ -1,15 +1,15 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
+import type { Server } from 'node:http'
 import colors from 'picocolors'
-import type { ViteDevServer } from '..'
-import { createDebugger, normalizePath } from '../utils'
-import type { ModuleNode } from './moduleGraph'
 import type { Update } from 'types/hmrPayload'
-import { CLIENT_DIR } from '../constants'
 import type { RollupError } from 'rollup'
-import { isMatch } from 'micromatch'
-import type { Server } from 'http'
+import { CLIENT_DIR } from '../constants'
+import { createDebugger, normalizePath, unique } from '../utils'
+import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
+import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
 
@@ -34,24 +34,25 @@ export interface HmrContext {
   server: ViteDevServer
 }
 
-function getShortName(file: string, root: string) {
+export function getShortName(file: string, root: string): string {
   return file.startsWith(root + '/') ? path.posix.relative(root, file) : file
 }
 
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer
-): Promise<any> {
+): Promise<void> {
   const { ws, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
+  const fileName = path.basename(file)
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === path.resolve(name)
+    (name) => file === name
   )
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    (file === '.env' || file.startsWith('.env.'))
+    (fileName === '.env' || fileName.startsWith('.env.'))
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr(`[config change] ${colors.dim(shortFile)}`)
@@ -124,12 +125,12 @@ export async function handleHMRUpdate(
   updateModules(shortFile, hmrContext.modules, timestamp, server)
 }
 
-function updateModules(
+export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
   { config, ws }: ViteDevServer
-) {
+): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   let needFullReload = false
@@ -168,53 +169,54 @@ function updateModules(
     ws.send({
       type: 'full-reload'
     })
-  } else {
-    config.logger.info(
-      updates
-        .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
-        .join('\n'),
-      { clear: true, timestamp: true }
-    )
-    ws.send({
-      type: 'update',
-      updates
-    })
+    return
   }
+
+  if (updates.length === 0) {
+    debugHmr(colors.yellow(`no update happened `) + colors.dim(file))
+    return
+  }
+
+  config.logger.info(
+    updates
+      .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
+      .join('\n'),
+    { clear: true, timestamp: true }
+  )
+  ws.send({
+    type: 'update',
+    updates
+  })
 }
 
 export async function handleFileAddUnlink(
   file: string,
-  server: ViteDevServer,
-  isUnlink = false
+  server: ViteDevServer
 ): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) ?? [])]
-  if (isUnlink && file in server._globImporters) {
-    delete server._globImporters[file]
-  } else {
-    for (const i in server._globImporters) {
-      const { module, importGlobs } = server._globImporters[i]
-      for (const { base, pattern } of importGlobs) {
-        if (
-          isMatch(file, pattern) ||
-          isMatch(path.relative(base, file), pattern)
-        ) {
-          modules.push(module)
-          // We use `onFileChange` to invalidate `module.file` so that subsequent `ssrLoadModule()`
-          // calls get fresh glob import results with(out) the newly added(/removed) `file`.
-          server.moduleGraph.onFileChange(module.file!)
-          break
-        }
-      }
-    }
-  }
+  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+
+  modules.push(...getAffectedGlobModules(file, server))
+
   if (modules.length > 0) {
     updateModules(
       getShortName(file, server.config.root),
-      modules,
+      unique(modules),
       Date.now(),
       server
     )
   }
+}
+
+function areAllImportsAccepted(
+  importedBindings: Set<string>,
+  acceptedExports: Set<string>
+) {
+  for (const binding of importedBindings) {
+    if (!acceptedExports.has(binding)) {
+      return false
+    }
+  }
+  return true
 }
 
 function propagateUpdate(
@@ -225,6 +227,13 @@ function propagateUpdate(
   }>,
   currentChain: ModuleNode[] = [node]
 ): boolean /* hasDeadEnd */ {
+  // #7561
+  // if the imports of `node` have not been analyzed, then `node` has not
+  // been loaded in the browser and we should stop propagation.
+  if (node.id && node.isSelfAccepting === undefined) {
+    return false
+  }
+
   if (node.isSelfAccepting) {
     boundaries.add({
       boundary: node,
@@ -242,18 +251,30 @@ function propagateUpdate(
     return false
   }
 
-  if (!node.importers.size) {
-    return true
-  }
+  // A partially accepted module with no importers is considered self accepting,
+  // because the deal is "there are parts of myself I can't self accept if they
+  // are used outside of me".
+  // Also, the imported module (this one) must be updated before the importers,
+  // so that they do get the fresh imported module when/if they are reloaded.
+  if (node.acceptedHmrExports) {
+    boundaries.add({
+      boundary: node,
+      acceptedVia: node
+    })
+  } else {
+    if (!node.importers.size) {
+      return true
+    }
 
-  // #3716, #3913
-  // For a non-CSS file, if all of its importers are CSS files (registered via
-  // PostCSS plugins) it should be considered a dead end and force full reload.
-  if (
-    !isCSSRequest(node.url) &&
-    [...node.importers].every((i) => isCSSRequest(i.url))
-  ) {
-    return true
+    // #3716, #3913
+    // For a non-CSS file, if all of its importers are CSS files (registered via
+    // PostCSS plugins) it should be considered a dead end and force full reload.
+    if (
+      !isCSSRequest(node.url) &&
+      [...node.importers].every((i) => isCSSRequest(i.url))
+    ) {
+      return true
+    }
   }
 
   for (const importer of node.importers) {
@@ -264,6 +285,16 @@ function propagateUpdate(
         acceptedVia: node
       })
       continue
+    }
+
+    if (node.id && node.acceptedHmrExports && importer.importedBindings) {
+      const importedBindingsFromNode = importer.importedBindings.get(node.id)
+      if (
+        importedBindingsFromNode &&
+        areAllImportsAccepted(importedBindingsFromNode, node.acceptedHmrExports)
+      ) {
+        continue
+      }
     }
 
     if (currentChain.includes(importer)) {
@@ -286,6 +317,7 @@ function invalidate(mod: ModuleNode, timestamp: number, seen: Set<ModuleNode>) {
   mod.lastHMRTimestamp = timestamp
   mod.transformResult = null
   mod.ssrModule = null
+  mod.ssrError = null
   mod.ssrTransformResult = null
   mod.importers.forEach((importer) => {
     if (!importer.acceptedHmrDeps.has(mod)) {
@@ -431,9 +463,22 @@ export function lexAcceptedHmrDeps(
   return false
 }
 
+export function lexAcceptedHmrExports(
+  code: string,
+  start: number,
+  exportNames: Set<string>
+): boolean {
+  const urls = new Set<{ url: string; start: number; end: number }>()
+  lexAcceptedHmrDeps(code, start, urls)
+  for (const { url } of urls) {
+    exportNames.add(url)
+  }
+  return urls.size > 0
+}
+
 function error(pos: number) {
   const err = new Error(
-    `import.meta.accept() can only accept string literals or an ` +
+    `import.meta.hot.accept() can only accept string literals or an ` +
       `Array of string literals.`
   ) as RollupError
   err.pos = pos

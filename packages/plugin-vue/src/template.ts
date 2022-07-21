@@ -1,15 +1,15 @@
-import path from 'path'
+import path from 'node:path'
 import slash from 'slash'
 import type {
+  CompilerOptions,
   SFCDescriptor,
   SFCTemplateCompileOptions,
-  SFCTemplateCompileResults,
-  CompilerOptions
+  SFCTemplateCompileResults
 } from 'vue/compiler-sfc'
 import type { PluginContext, TransformPluginContext } from 'rollup'
-import type { ResolvedOptions } from '.'
 import { getResolvedScript } from './script'
 import { createRollupError } from './utils/error'
+import type { ResolvedOptions } from '.'
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function transformTemplateAsModule(
@@ -42,7 +42,6 @@ export async function transformTemplateAsModule(
 /**
  * transform the template directly in the main SFC module
  */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function transformTemplateInMain(
   code: string,
   descriptor: SFCDescriptor,
@@ -117,13 +116,15 @@ export function resolveTemplateCompilerOptions(
     // relative paths directly to absolute paths without incurring an extra import
     // request
     if (filename.startsWith(options.root)) {
+      const devBase = options.devServer.config.base
       assetUrlOptions = {
         base:
-          options.devServer.config.base +
+          (options.devServer.config.server?.origin ?? '') +
+          devBase +
           slash(path.relative(options.root, path.dirname(filename)))
       }
     }
-  } else {
+  } else if (transformAssetUrls !== false) {
     // build: force all asset urls into import requests so that they go through
     // the assets plugin for asset registration
     assetUrlOptions = {
@@ -139,7 +140,7 @@ export function resolveTemplateCompilerOptions(
         tags: transformAssetUrls as any
       }
     } else {
-      transformAssetUrls = { ...transformAssetUrls, ...assetUrlOptions }
+      transformAssetUrls = { ...assetUrlOptions, ...transformAssetUrls }
     }
   } else {
     transformAssetUrls = assetUrlOptions

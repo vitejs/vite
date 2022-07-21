@@ -7,8 +7,9 @@
  */
 
 import { dataToEsm } from '@rollup/pluginutils'
-import type { Plugin } from 'rollup'
 import { SPECIAL_QUERY_RE } from '../constants'
+import type { Plugin } from '../plugin'
+import { stripBomTag } from '../utils'
 
 export interface JsonOptions {
   /**
@@ -27,6 +28,11 @@ export interface JsonOptions {
 // Custom json filter for vite
 const jsonExtRE = /\.json($|\?)(?!commonjs-(proxy|external))/
 
+const jsonLangs = `\\.(json|json5)($|\\?)`
+const jsonLangRE = new RegExp(jsonLangs)
+export const isJSONRequest = (request: string): boolean =>
+  jsonLangRE.test(request)
+
 export function jsonPlugin(
   options: JsonOptions = {},
   isBuild: boolean
@@ -37,6 +43,8 @@ export function jsonPlugin(
     transform(json, id) {
       if (!jsonExtRE.test(id)) return null
       if (SPECIAL_QUERY_RE.test(id)) return null
+
+      json = stripBomTag(json)
 
       try {
         if (options.stringify) {

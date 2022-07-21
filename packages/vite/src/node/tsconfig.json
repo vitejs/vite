@@ -3,12 +3,6 @@
   "include": ["./", "../../types"],
   "exclude": ["**/__tests__"],
   "compilerOptions": {
-    // compile away optional-chaining-operator
-    // node support table: https://node.green/#ES2020-features-optional-chaining-operator-----
-    "target": "ES2019",
-    "outDir": "../../dist/node",
-    "module": "commonjs",
-    "lib": ["ESNext"],
-    "sourceMap": true
+    "lib": ["ESNext", "DOM"]
   }
 }

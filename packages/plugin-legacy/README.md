@@ -1,8 +1,6 @@
 # @vitejs/plugin-legacy [![npm](https://img.shields.io/npm/v/@vitejs/plugin-legacy.svg)](https://npmjs.com/package/@vitejs/plugin-legacy)
 
-**Note: this plugin requires `vite@^2.0.0`**.
-
-Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM.
+Vite's default browser support baseline is [Native ESM](https://caniuse.com/es6-module). This plugin provides support for legacy browsers that do not support native ESM when building for production.
 
 By default, this plugin will:
 
@@ -29,20 +27,10 @@ export default {
 }
 ```
 
-When targeting IE11, you also need `regenerator-runtime`:
+Terser must be installed because plugin-legacy uses Terser for minification.
 
-```js
-// vite.config.js
-import legacy from '@vitejs/plugin-legacy'
-
-export default {
-  plugins: [
-    legacy({
-      targets: ['ie >= 11'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime']
-    })
-  ]
-}
+```sh
+npm add -D terser
 ```
 
 ## Options
@@ -140,9 +128,9 @@ The legacy plugin offers a way to use native `import()` in the modern build whil
 
 Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:
 
-- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@3.8.2/) - e.g. `es/map` will import `core-js/es/map`
+- Any [`core-js` 3 sub import paths](https://unpkg.com/browse/core-js@latest/) - e.g. `es/map` will import `core-js/es/map`
 
-- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@3.8.2/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
+- Any [individual `core-js` 3 modules](https://unpkg.com/browse/core-js@latest/modules/) - e.g. `es.array.iterator` will import `core-js/modules/es.array.iterator.js`
 
 **Example**
 
@@ -165,13 +153,20 @@ The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-T9h4ixy0FtNsCwAyTfBtIY6uV5ZhMeNQIlL42GAKEME=`
+- `sha256-BoFUHKsYhJ9tbsHugtNQCmnkBbZ11pcW6kZguu+T+EU=`
+- `sha256-A18HC3jLpyEc9B8oyxq/NBFCyFBJFSsRLt0gmT9kft8=`
+
+<!--
+Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
+-->
 
 These values (without the `sha256-` prefix) can also be retrieved via
 
 ```js
-const { cspHashes } = require('@vitejs/plugin-legacy')
+import { cspHashes } from '@vitejs/plugin-legacy'
 ```
+
+When using the `regenerator-runtime` polyfill, it will attempt to use the `globalThis` object to register itself. If `globalThis` is not available (it is [fairly new](https://caniuse.com/?search=globalThis) and not widely supported, including IE 11), it attempts to perform dynamic `Function(...)` call which violates the CSP. To avoid dynamic `eval` in the absence of `globalThis` consider adding `core-js/proposals/global-this` to `additionalLegacyPolyfills` to define it.
 
 ## References
 

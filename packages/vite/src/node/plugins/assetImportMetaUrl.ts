@@ -1,9 +1,11 @@
-import type { Plugin } from '../plugin'
+import path from 'node:path'
 import MagicString from 'magic-string'
-import path from 'path'
-import { fileToUrl } from './asset'
+import { stripLiteral } from 'strip-literal'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
+import { transformStableResult } from '../utils'
+import { fileToUrl } from './asset'
+import { preloadHelperId } from './importAnalysisBuild'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -12,30 +14,31 @@ import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
  * ```
  * new URL(`./dir/${name}.png`, import.meta.url)
  * // transformed to
- * import.meta.globEager('./dir/**.png')[`./dir/${name}.png`].default
+ * import.meta.glob('./dir/**.png', { eager: true, import: 'default' })[`./dir/${name}.png`]
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
-      if (code.includes('new URL') && code.includes(`import.meta.url`)) {
-        const importMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\)/g
-        const noCommentsCode = code
-          .replace(multilineCommentsRE, (m) => ' '.repeat(m.length))
-          .replace(singlelineCommentsRE, (m) => ' '.repeat(m.length))
-        let s: MagicString | null = null
-        let match: RegExpExecArray | null
-        while ((match = importMetaUrlRE.exec(noCommentsCode))) {
-          const { 0: exp, 1: rawUrl, index } = match
+      if (
+        !options?.ssr &&
+        id !== preloadHelperId &&
+        code.includes('new URL') &&
+        code.includes(`import.meta.url`)
+      ) {
+        let s: MagicString | undefined
+        const assetImportMetaUrlRE =
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
+        const cleanString = stripLiteral(code)
 
-          if (options?.ssr) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in SSR.`,
-              index
-            )
-          }
+        let match: RegExpExecArray | null
+        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
+          const { 0: exp, 1: emptyUrl, index } = match
+
+          const urlStart = cleanString.indexOf(emptyUrl, index)
+          const urlEnd = urlStart + emptyUrl.length
+          const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
 
@@ -44,7 +47,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const ast = this.parse(rawUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
-              const pattern = buildGlobPattern(templateLiteral)
+              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
               // Note: native import.meta.url is not supported in the baseline
               // target so we use the global location here. It can be
               // window.location or self.location in case it is used in a Web Worker.
@@ -52,9 +55,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 index,
                 index + exp.length,
-                `new URL(import.meta.globEagerDefault(${JSON.stringify(
-                  pattern
-                )})[${rawUrl}], self.location)`
+                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default' }))[${rawUrl}], self.location)`,
+                { contentOnly: true }
               )
               continue
             }
@@ -62,18 +64,24 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           const url = rawUrl.slice(1, -1)
           const file = path.resolve(path.dirname(id), url)
-          const builtUrl = await fileToUrl(file, config, this)
+          // Get final asset URL. Catch error if the file does not exist,
+          // in which we can resort to the initial URL and let it resolve in runtime
+          const builtUrl = await fileToUrl(file, config, this).catch(() => {
+            const rawExp = code.slice(index, index + exp.length)
+            config.logger.warnOnce(
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+            )
+            return url
+          })
           s.overwrite(
             index,
             index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
           )
         }
         if (s) {
-          return {
-            code: s.toString(),
-            map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
-          }
+          return transformStableResult(s, id, config)
         }
       }
       return null

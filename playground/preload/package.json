@@ -1,0 +1,21 @@
+{
+  "name": "test-preload",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.2.37",
+    "vue-router": "^4.1.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "workspace:*",
+    "terser": "^5.14.2",
+    "dep-a": "file:./dep-a",
+    "dep-including-a": "file:./dep-including-a"
+  }
+}

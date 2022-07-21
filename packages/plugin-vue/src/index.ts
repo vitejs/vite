@@ -1,6 +1,7 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import type { Plugin, ViteDevServer } from 'vite'
-import { createFilter } from '@rollup/pluginutils'
+import { createFilter } from 'vite'
+/* eslint-disable import/no-duplicates */
 import type {
   SFCBlock,
   SFCScriptCompileOptions,
@@ -8,6 +9,7 @@ import type {
   SFCTemplateCompileOptions
 } from 'vue/compiler-sfc'
 import type * as _compiler from 'vue/compiler-sfc'
+/* eslint-enable import/no-duplicates */
 import { resolveCompiler } from './compiler'
 import { parseVueRequest } from './utils/query'
 import { getDescriptor, getSrcDescriptor } from './utils/descriptorCache'
@@ -18,7 +20,8 @@ import { transformTemplateAsModule } from './template'
 import { transformStyle } from './style'
 import { EXPORT_HELPER_ID, helperCode } from './helper'
 
-export { parseVueRequest, VueQuery } from './utils/query'
+export { parseVueRequest } from './utils/query'
+export type { VueQuery } from './utils/query'
 
 export interface Options {
   include?: string | RegExp | (string | RegExp)[]
@@ -27,9 +30,18 @@ export interface Options {
   isProduction?: boolean
 
   // options to pass on to vue/compiler-sfc
-  script?: Partial<SFCScriptCompileOptions>
-  template?: Partial<SFCTemplateCompileOptions>
-  style?: Partial<SFCStyleCompileOptions>
+  script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
+  template?: Partial<
+    Pick<
+      SFCTemplateCompileOptions,
+      | 'compiler'
+      | 'compilerOptions'
+      | 'preprocessOptions'
+      | 'preprocessCustomRequire'
+      | 'transformAssetUrls'
+    >
+  >
+  style?: Partial<Pick<SFCStyleCompileOptions, 'trim'>>
 
   /**
    * Transform Vue SFCs into custom elements.
@@ -63,7 +75,9 @@ export interface ResolvedOptions extends Options {
   compiler: typeof _compiler
   root: string
   sourceMap: boolean
+  cssDevSourcemap: boolean
   devServer?: ViteDevServer
+  devToolsEnabled?: boolean
 }
 
 export default function vuePlugin(rawOptions: Options = {}): Plugin {
@@ -97,16 +111,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     customElement,
     reactivityTransform,
     root: process.cwd(),
-    sourceMap: true
+    sourceMap: true,
+    cssDevSourcemap: false,
+    devToolsEnabled: process.env.NODE_ENV !== 'production'
   }
-
-  // Temporal handling for 2.7 breaking change
-  const isSSR = (opt: { ssr?: boolean } | boolean | undefined) =>
-    opt === undefined
-      ? false
-      : typeof opt === 'boolean'
-      ? opt
-      : opt?.ssr === true
 
   return {
     name: 'vite:vue',
@@ -125,7 +133,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         },
         ssr: {
-          external: ['vue', '@vue/server-renderer']
+          external: config.legacy?.buildSsrCjsExternalHeuristics
+            ? ['vue', '@vue/server-renderer']
+            : []
         }
       }
     },
@@ -135,7 +145,10 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         ...options,
         root: config.root,
         sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
-        isProduction: config.isProduction
+        cssDevSourcemap: config.css?.devSourcemap ?? false,
+        isProduction: config.isProduction,
+        devToolsEnabled:
+          !!config.define!.__VUE_PROD_DEVTOOLS__ || !config.isProduction
       }
     },
 
@@ -159,7 +172,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     load(id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       if (id === EXPORT_HELPER_ID) {
         return helperCode
       }
@@ -192,7 +205,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
     },
 
     transform(code, id, opt) {
-      const ssr = isSSR(opt)
+      const ssr = opt?.ssr === true
       const { filename, query } = parseVueRequest(id)
       if (query.raw) {
         return
@@ -235,17 +248,11 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
             descriptor,
             Number(query.index),
             options,
-            this
+            this,
+            filename
           )
         }
       }
     }
   }
 }
-
-// overwrite for cjs require('...')() usage
-// The following lines are inserted by scripts/patchEsbuildDist.ts,
-// this doesn't bundle correctly after esbuild 0.14.4
-//
-// module.exports = vuePlugin
-// vuePlugin['default'] = vuePlugin

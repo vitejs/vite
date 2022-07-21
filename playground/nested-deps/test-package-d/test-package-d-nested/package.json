@@ -1,0 +1,6 @@
+{
+  "name": "test-package-d-nested",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js"
+}

@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-react",
-  "version": "1.1.4",
+  "version": "2.0.0",
   "license": "MIT",
   "author": "Evan You",
   "contributors": [
@@ -10,19 +10,24 @@
     "dist",
     "src"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
-    "dev": "tsc -p . -w --incremental",
-    "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "esbuild src/index.ts --bundle --platform=node --target=node12 --external:@babel/* --external:@rollup/* --external:resolve --external:react-refresh/* --outfile=dist/index.js && npm run patch-dist",
-    "patch-dist": "ts-node ../../scripts/patchEsbuildDist.ts dist/index.js viteReact",
-    "build-types": "tsc -p . --emitDeclarationOnly --outDir temp && api-extractor run && rimraf temp",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path . --lerna-package plugin-react",
-    "release": "ts-node ../../scripts/release.ts"
+    "dev": "unbuild --stub",
+    "build": "unbuild && pnpm run patch-cjs",
+    "patch-cjs": "tsx ../../scripts/patchCJS.ts",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "repository": {
     "type": "git",
@@ -34,13 +39,18 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-react#readme",
   "dependencies": {
-    "@babel/core": "^7.16.12",
-    "@babel/plugin-transform-react-jsx": "^7.16.7",
-    "@babel/plugin-transform-react-jsx-development": "^7.16.7",
-    "@babel/plugin-transform-react-jsx-self": "^7.16.7",
-    "@babel/plugin-transform-react-jsx-source": "^7.16.7",
-    "@rollup/pluginutils": "^4.1.2",
-    "react-refresh": "^0.11.0",
-    "resolve": "^1.22.0"
+    "@babel/core": "^7.18.9",
+    "@babel/plugin-transform-react-jsx": "^7.18.6",
+    "@babel/plugin-transform-react-jsx-development": "^7.18.6",
+    "@babel/plugin-transform-react-jsx-self": "^7.18.6",
+    "@babel/plugin-transform-react-jsx-source": "^7.18.6",
+    "magic-string": "^0.26.2",
+    "react-refresh": "^0.14.0"
+  },
+  "peerDependencies": {
+    "vite": "^3.0.0"
+  },
+  "devDependencies": {
+    "vite": "workspace:*"
   }
 }

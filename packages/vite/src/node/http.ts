@@ -1,13 +1,13 @@
-import fs, { promises as fsp } from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import type {
-  OutgoingHttpHeaders as HttpServerHeaders,
-  Server as HttpServer
-} from 'http'
-import type { ServerOptions as HttpsServerOptions } from 'https'
+  Server as HttpServer,
+  OutgoingHttpHeaders as HttpServerHeaders
+} from 'node:http'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
+import type { Connect } from 'types/connect'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
-import type { Connect } from 'types/connect'
 import type { Logger } from './logger'
 
 export interface CommonServerOptions {
@@ -94,29 +94,28 @@ export async function resolveHttpServer(
   app: Connect.Server,
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
-  /*
-   * Some Node.js packages are known to be using this undocumented function,
-   * notably "compression" middleware.
-   */
-  app.prototype._implicitHeader = function _implicitHeader() {
-    this.writeHead(this.statusCode)
-  }
-
   if (!httpsOptions) {
-    return require('http').createServer(app)
+    const { createServer } = await import('http')
+    return createServer(app)
   }
 
+  // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    // #484 fallback to http1 when proxy is needed.
-    return require('https').createServer(httpsOptions, app)
+    const { createServer } = await import('https')
+    return createServer(httpsOptions, app)
   } else {
-    return require('http2').createSecureServer(
+    const { createSecureServer } = await import('http2')
+    return createSecureServer(
       {
+        // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
+        // errors on large numbers of requests
+        maxSessionMemory: 1000,
         ...httpsOptions,
         allowHTTP1: true
       },
+      // @ts-expect-error TODO: is this correct?
       app
-    )
+    ) as unknown as HttpServer
   }
 }
 
@@ -126,7 +125,7 @@ export async function resolveHttpsConfig(
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
-  const httpsOption = isObject(https) ? https : {}
+  const httpsOption = isObject(https) ? { ...https } : {}
 
   const { ca, cert, key, pfx } = httpsOption
   Object.assign(httpsOption, {
@@ -135,45 +134,18 @@ export async function resolveHttpsConfig(
     key: readFileIfExists(key),
     pfx: readFileIfExists(pfx)
   })
-  if (!httpsOption.key || !httpsOption.cert) {
-    httpsOption.cert = httpsOption.key = await getCertificate(cacheDir)
-  }
   return httpsOption
 }
 
 function readFileIfExists(value?: string | Buffer | any[]) {
   if (typeof value === 'string') {
     try {
-      return fs.readFileSync(path.resolve(value as string))
+      return fs.readFileSync(path.resolve(value))
     } catch (e) {
       return value
     }
   }
   return value
-}
-
-async function getCertificate(cacheDir: string) {
-  const cachePath = path.join(cacheDir, '_cert.pem')
-
-  try {
-    const [stat, content] = await Promise.all([
-      fsp.stat(cachePath),
-      fsp.readFile(cachePath, 'utf8')
-    ])
-
-    if (Date.now() - stat.ctime.valueOf() > 30 * 24 * 60 * 60 * 1000) {
-      throw new Error('cache is outdated.')
-    }
-
-    return content
-  } catch {
-    const content = (await import('./certificate')).createCertificate()
-    fsp
-      .mkdir(cacheDir, { recursive: true })
-      .then(() => fsp.writeFile(cachePath, content))
-      .catch(() => {})
-    return content
-  }
 }
 
 export async function httpServerStart(
@@ -185,9 +157,9 @@ export async function httpServerStart(
     logger: Logger
   }
 ): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let { port, strictPort, host, logger } = serverOptions
+  let { port, strictPort, host, logger } = serverOptions
 
+  return new Promise((resolve, reject) => {
     const onError = (e: Error & { code?: string }) => {
       if (e.code === 'EADDRINUSE') {
         if (strictPort) {

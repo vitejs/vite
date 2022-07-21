@@ -1,0 +1,9 @@
+{
+  "name": "non-optimizable-include",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    ".": "./index.css"
+  }
+}

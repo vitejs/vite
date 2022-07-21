@@ -1,11 +1,12 @@
-import type * as http from 'http'
-import { createDebugger, isObject } from '../../utils'
+import type * as http from 'node:http'
+import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
-import { HMR_HEADER } from '../ws'
 import type { Connect } from 'types/connect'
 import type { HttpProxy } from 'types/http-proxy'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '../..'
+import { HMR_HEADER } from '../ws'
+import { createDebugger, isObject } from '../../utils'
+import type { CommonServerOptions, ResolvedConfig } from '../..'
 
 const debug = createDebugger('vite:proxy')
 
@@ -30,10 +31,9 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 
 export function proxyMiddleware(
   httpServer: http.Server | null,
+  options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig
 ): Connect.NextHandleFunction {
-  const options = config.server.proxy!
-
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
@@ -44,11 +44,31 @@ export function proxyMiddleware(
     }
     const proxy = httpProxy.createProxyServer(opts) as HttpProxy.Server
 
-    proxy.on('error', (err) => {
-      config.logger.error(`${colors.red(`http proxy error:`)}\n${err.stack}`, {
-        timestamp: true,
-        error: err
-      })
+    proxy.on('error', (err, req, originalRes) => {
+      // When it is ws proxy, res is net.Socket
+      const res = originalRes as http.ServerResponse | net.Socket
+      if ('req' in res) {
+        config.logger.error(
+          `${colors.red(`http proxy error:`)}\n${err.stack}`,
+          {
+            timestamp: true,
+            error: err
+          }
+        )
+        if (!res.headersSent && !res.writableEnded) {
+          res
+            .writeHead(500, {
+              'Content-Type': 'text/plain'
+            })
+            .end()
+        }
+      } else {
+        config.logger.error(`${colors.red(`ws proxy error:`)}\n${err.stack}`, {
+          timestamp: true,
+          error: err
+        })
+        res.end()
+      }
     })
 
     if (opts.configure) {

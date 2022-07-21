@@ -1,8 +1,8 @@
-/* eslint-disable node/no-extraneous-import */
+import { join } from 'node:path'
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
-import { commandSync } from 'execa'
+import { execaCommandSync } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
-import { join } from 'path'
+import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = join(__dirname, '..')
 
@@ -13,7 +13,7 @@ const run = (
   args: string[],
   options: SyncOptions<string> = {}
 ): ExecaSyncReturnValue<string> => {
-  return commandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
+  return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
 
 // Helper to create a non-empty directory
@@ -38,6 +38,12 @@ afterEach(() => remove(genPath))
 test('prompts for the project name if none supplied', () => {
   const { stdout, exitCode } = run([])
   expect(stdout).toContain('Project name:')
+})
+
+test('prompts for the framework if none supplied when target dir is current directory', () => {
+  mkdirpSync(genPath)
+  const { stdout } = run(['.'], { cwd: genPath })
+  expect(stdout).toContain('Select a framework:')
 })
 
 test('prompts for the framework if none supplied', () => {
@@ -65,7 +71,7 @@ test('asks to overwrite non-empty target directory', () => {
 
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
-  const { stdout } = run(['.'], { cwd: genPath, input: 'test-app\n' })
+  const { stdout } = run(['.'], { cwd: genPath })
   expect(stdout).toContain(`Current directory is not empty.`)
 })
 

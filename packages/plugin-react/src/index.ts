@@ -1,8 +1,10 @@
+import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter } from '@rollup/pluginutils'
-import resolve from 'resolve'
-import type { Plugin, PluginOption } from 'vite'
+import { createFilter, normalizePath } from 'vite'
+import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'magic-string'
 import {
   addRefreshWrapper,
   isRefreshBoundary,
@@ -32,15 +34,18 @@ export interface Options {
    * @default "react"
    */
   jsxImportSource?: string
-
+  /**
+   * Set this to `true` to annotate the JSX factory with `\/* @__PURE__ *\/`.
+   * This option is ignored when `jsxRuntime` is not `"automatic"`.
+   * @default true
+   */
+  jsxPure?: boolean
   /**
    * Babel configuration applied in both dev and prod.
    */
-  babel?: BabelOptions
-  /**
-   * @deprecated Use `babel.parserOpts.plugins` instead
-   */
-  parserPlugins?: ParserOptions['plugins']
+  babel?:
+    | BabelOptions
+    | ((id: string, options: { ssr?: boolean }) => BabelOptions)
 }
 
 export type BabelOptions = Omit<
@@ -66,39 +71,44 @@ export interface ReactBabelOptions extends BabelOptions {
   }
 }
 
+type ReactBabelHook = (
+  babelConfig: ReactBabelOptions,
+  context: ReactBabelHookContext,
+  config: ResolvedConfig
+) => void
+
+type ReactBabelHookContext = { ssr: boolean; id: string }
+
 declare module 'vite' {
   export interface Plugin {
     api?: {
       /**
        * Manipulate the Babel options of `@vitejs/plugin-react`
        */
-      reactBabel?: (options: ReactBabelOptions, config: ResolvedConfig) => void
+      reactBabel?: ReactBabelHook
     }
   }
 }
 
+const prependReactImportCode = "import React from 'react'; "
+
 export default function viteReact(opts: Options = {}): PluginOption[] {
   // Provide default values for Rollup compat.
-  let base = '/'
+  let devBase = '/'
+  let resolvedCacheDir: string
   let filter = createFilter(opts.include, opts.exclude)
+  let needHiresSourcemap = false
   let isProduction = true
   let projectRoot = process.cwd()
   let skipFastRefresh = opts.fastRefresh === false
   let skipReactImport = false
+  let runPluginOverrides = (
+    options: ReactBabelOptions,
+    context: ReactBabelHookContext
+  ) => false
+  let staticBabelOptions: ReactBabelOptions | undefined
 
   const useAutomaticRuntime = opts.jsxRuntime !== 'classic'
-
-  const babelOptions = {
-    babelrc: false,
-    configFile: false,
-    ...opts.babel
-  } as ReactBabelOptions
-
-  babelOptions.plugins ||= []
-  babelOptions.presets ||= []
-  babelOptions.overrides ||= []
-  babelOptions.parserOpts ||= {} as any
-  babelOptions.parserOpts.plugins ||= opts.parserPlugins || []
 
   // Support patterns like:
   // - import * as React from 'react';
@@ -112,12 +122,26 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
+    config() {
+      if (opts.jsxRuntime === 'classic') {
+        return {
+          esbuild: {
+            logOverride: {
+              'this-is-undefined-in-esm': 'silent'
+            }
+          }
+        }
+      }
+    },
     configResolved(config) {
-      base = config.base
+      devBase = config.base
       projectRoot = config.root
+      resolvedCacheDir = normalizePath(path.resolve(config.cacheDir))
       filter = createFilter(opts.include, opts.exclude, {
         resolve: projectRoot
       })
+      needHiresSourcemap =
+        config.command === 'build' && !!config.build.sourcemap
       isProduction = config.isProduction
       skipFastRefresh ||= isProduction || config.command === 'build'
 
@@ -140,15 +164,26 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             `[@vitejs/plugin-react] You should stop using "${plugin.name}" ` +
               `since this plugin conflicts with it.`
           )
-
-        if (plugin.api?.reactBabel) {
-          plugin.api.reactBabel(babelOptions, config)
-        }
       })
+
+      runPluginOverrides = (babelOptions, context) => {
+        const hooks = config.plugins
+          .map((plugin) => plugin.api?.reactBabel)
+          .filter(Boolean) as ReactBabelHook[]
+
+        if (hooks.length > 0) {
+          return (runPluginOverrides = (babelOptions, context) => {
+            hooks.forEach((hook) => hook(babelOptions, context, config))
+            return true
+          })(babelOptions, context)
+        }
+        runPluginOverrides = () => false
+        return false
+      }
     },
     async transform(code, id, options) {
-      const ssr = typeof options === 'boolean' ? options : options?.ssr === true
-      // File extension could be mocked/overriden in querystring.
+      const ssr = options?.ssr === true
+      // File extension could be mocked/overridden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =
         querystring.match(fileExtensionRE) ||
@@ -161,6 +196,18 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         const isProjectFile =
           !isNodeModules && (id[0] === '\0' || id.startsWith(projectRoot + '/'))
 
+        let babelOptions = staticBabelOptions
+        if (typeof opts.babel === 'function') {
+          const rawOptions = opts.babel(id, { ssr })
+          babelOptions = createBabelOptions(rawOptions)
+          runPluginOverrides(babelOptions, { ssr, id: id })
+        } else if (!babelOptions) {
+          babelOptions = createBabelOptions(opts.babel)
+          if (!runPluginOverrides(babelOptions, { ssr, id: id })) {
+            staticBabelOptions = babelOptions
+          }
+        }
+
         const plugins = isProjectFile ? [...babelOptions.plugins] : []
 
         let useFastRefresh = false
@@ -170,20 +217,25 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           if (isReactModule && filter(id)) {
             useFastRefresh = true
             plugins.push([
-              await loadPlugin('react-refresh/babel.js'),
+              await loadPlugin('react-refresh/babel'),
               { skipEnvCheck: true }
             ])
           }
         }
 
         let ast: t.File | null | undefined
+        let prependReactImport = false
         if (!isProjectFile || isJSX) {
           if (useAutomaticRuntime) {
             // By reverse-compiling "React.createElement" calls into JSX,
             // React elements provided by dependencies will also use the
             // automatic runtime!
+            // Avoid parsing the optimized react-dom since it will never
+            // contain compiled JSX and it's a pretty big file (800kb).
+            const isOptimizedReactDom =
+              id.startsWith(resolvedCacheDir) && id.includes('/react-dom.js')
             const [restoredAst, isCommonJS] =
-              !isProjectFile && !isJSX
+              !isProjectFile && !isJSX && !isOptimizedReactDom
                 ? await restoreJSX(babel, code, id)
                 : [null, false]
 
@@ -195,7 +247,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 ),
                 {
                   runtime: 'automatic',
-                  importSource: opts.jsxImportSource
+                  importSource: opts.jsxImportSource,
+                  pure: opts.jsxPure !== false
                 }
               ])
 
@@ -216,8 +269,20 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
             // Even if the automatic JSX runtime is not used, we can still
             // inject the React import for .jsx and .tsx modules.
             if (!skipReactImport && !importReactRE.test(code)) {
-              code = `import React from 'react'; ` + code
+              prependReactImport = true
             }
+          }
+        }
+
+        let inputMap: SourceMap | undefined
+        if (prependReactImport) {
+          if (needHiresSourcemap) {
+            const s = new MagicString(code)
+            s.prepend(prependReactImportCode)
+            code = s.toString()
+            inputMap = s.generateMap({ hires: true, source: id })
+          } else {
+            code = prependReactImportCode + code
           }
         }
 
@@ -230,8 +295,12 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           !babelOptions.configFile &&
           !(isProjectFile && babelOptions.babelrc)
 
+        // Avoid parsing if no plugins exist.
         if (shouldSkip) {
-          return // Avoid parsing if no plugins exist.
+          return {
+            code,
+            map: inputMap ?? null
+          }
         }
 
         const parserPlugins: typeof babelOptions.parserOpts.plugins = [
@@ -278,7 +347,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           plugins,
           sourceMaps: true,
           // Vite handles sourcemap flattening
-          inputSourceMap: false as any
+          inputSourceMap: inputMap ?? (false as any)
         })
 
         if (result) {
@@ -320,13 +389,16 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
           {
             tag: 'script',
             attrs: { type: 'module' },
-            children: preambleCode.replace(`__BASE__`, base)
+            children: preambleCode.replace(`__BASE__`, devBase)
           }
         ]
     }
   }
 
-  const runtimeId = 'react/jsx-runtime'
+  const reactJsxRuntimeId = 'react/jsx-runtime'
+  const reactJsxDevRuntimeId = 'react/jsx-dev-runtime'
+  const virtualReactJsxRuntimeId = '\0' + reactJsxRuntimeId
+  const virtualReactJsxDevRuntimeId = '\0' + reactJsxDevRuntimeId
   // Adapted from https://github.com/alloc/vite-react-jsx
   const viteReactJsx: Plugin = {
     name: 'vite:react-jsx',
@@ -334,25 +406,39 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     config() {
       return {
         optimizeDeps: {
-          include: ['react/jsx-dev-runtime']
+          include: [reactJsxRuntimeId, reactJsxDevRuntimeId]
         }
       }
     },
-    resolveId(id: string) {
-      return id === runtimeId ? id : null
+    resolveId(id, importer) {
+      // Resolve runtime to a virtual path to be interoped.
+      // Since the interop code re-imports `id`, we need to prevent re-resolving
+      // to the virtual id if the importer is already the virtual id.
+      if (id === reactJsxRuntimeId && importer !== virtualReactJsxRuntimeId) {
+        return virtualReactJsxRuntimeId
+      }
+      if (
+        id === reactJsxDevRuntimeId &&
+        importer !== virtualReactJsxDevRuntimeId
+      ) {
+        return virtualReactJsxDevRuntimeId
+      }
     },
-    load(id: string) {
-      if (id === runtimeId) {
-        const runtimePath = resolve.sync(runtimeId, {
-          basedir: projectRoot
-        })
-        const exports = ['jsx', 'jsxs', 'Fragment']
+    load(id) {
+      // Apply manual interop
+      if (id === virtualReactJsxRuntimeId) {
         return [
-          `import * as jsxRuntime from ${JSON.stringify(runtimePath)}`,
-          // We can't use `export * from` or else any callsite that uses
-          // this module will be compiled to `jsxRuntime.exports.jsx`
-          // instead of the more concise `jsx` alias.
-          ...exports.map((name) => `export const ${name} = jsxRuntime.${name}`)
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsx = jsxRuntime.jsx`,
+          `export const jsxs = jsxRuntime.jsxs`
+        ].join('\n')
+      }
+      if (id === virtualReactJsxDevRuntimeId) {
+        return [
+          `import * as jsxRuntime from ${JSON.stringify(reactJsxDevRuntimeId)}`,
+          `export const Fragment = jsxRuntime.Fragment`,
+          `export const jsxDEV = jsxRuntime.jsxDEV`
         ].join('\n')
       }
     }
@@ -367,9 +453,18 @@ function loadPlugin(path: string): Promise<any> {
   return import(path).then((module) => module.default || module)
 }
 
-// overwrite for cjs require('...')() usage
-// The following lines are inserted by scripts/patchEsbuildDist.ts,
-// this doesn't bundle correctly after esbuild 0.14.4
-//
-// module.exports = viteReact
-// viteReact['default'] = viteReact
+function createBabelOptions(rawOptions?: BabelOptions) {
+  const babelOptions = {
+    babelrc: false,
+    configFile: false,
+    ...rawOptions
+  } as ReactBabelOptions
+
+  babelOptions.plugins ||= []
+  babelOptions.presets ||= []
+  babelOptions.overrides ||= []
+  babelOptions.parserOpts ||= {} as any
+  babelOptions.parserOpts.plugins ||= []
+
+  return babelOptions
+}

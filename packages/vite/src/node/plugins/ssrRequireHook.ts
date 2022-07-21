@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
@@ -11,8 +12,10 @@ import { arraify } from '../utils'
 export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
     config.command !== 'build' ||
+    !config.build.ssr ||
     !config.resolve.dedupe?.length ||
     config.ssr?.noExternal === true ||
+    config.ssr?.format !== 'cjs' ||
     isBuildOutputEsm(config)
   ) {
     return null
@@ -49,6 +52,7 @@ type NodeResolveFilename = (
 
 /** Respect the `resolve.dedupe` option in production SSR. */
 function dedupeRequire(dedupe: string[]) {
+  // eslint-disable-next-line no-restricted-globals
   const Module = require('module') as { _resolveFilename: NodeResolveFilename }
   const resolveFilename = Module._resolveFilename
   Module._resolveFilename = function (request, parent, isMain, options) {
@@ -64,10 +68,11 @@ function dedupeRequire(dedupe: string[]) {
   }
 }
 
+const _require = createRequire(import.meta.url)
 export function hookNodeResolve(
   getResolver: (resolveFilename: NodeResolveFilename) => NodeResolveFilename
 ): () => void {
-  const Module = require('module') as { _resolveFilename: NodeResolveFilename }
+  const Module = _require('module') as { _resolveFilename: NodeResolveFilename }
   const prevResolver = Module._resolveFilename
   Module._resolveFilename = getResolver(prevResolver)
   return () => {

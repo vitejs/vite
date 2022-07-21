@@ -1,41 +1,53 @@
-import path from 'path'
-import type { ServerResponse } from 'http'
+import path from 'node:path'
+import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
+import micromatch from 'micromatch'
 import type { ViteDevServer } from '../..'
-import { normalizePath } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
-  ensureLeadingSlash,
   fsPathFromId,
+  fsPathFromUrl,
+  isFileReadable,
   isImportRequest,
   isInternalRequest,
+  isParentDirectory,
   isWindows,
-  slash,
-  isFileReadable
+  slash
 } from '../../utils'
-import { isMatch } from 'micromatch'
 
-const sirvOptions: Options = {
-  dev: true,
-  etag: true,
-  extensions: [],
-  setHeaders(res, pathname) {
-    // Matches js, jsx, ts, tsx.
-    // The reason this is done, is that the .ts file extension is reserved
-    // for the MIME type video/mp2t. In almost all cases, we can expect
-    // these files to be TypeScript files, and for Vite to serve them with
-    // this Content-Type.
-    if (/\.[tj]sx?$/.test(pathname)) {
-      res.setHeader('Content-Type', 'application/javascript')
+const { isMatch } = micromatch
+
+const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
+  return {
+    dev: true,
+    etag: true,
+    extensions: [],
+    setHeaders(res, pathname) {
+      // Matches js, jsx, ts, tsx.
+      // The reason this is done, is that the .ts file extension is reserved
+      // for the MIME type video/mp2t. In almost all cases, we can expect
+      // these files to be TypeScript files, and for Vite to serve them with
+      // this Content-Type.
+      if (/\.[tj]sx?$/.test(pathname)) {
+        res.setHeader('Content-Type', 'application/javascript')
+      }
+      if (headers) {
+        for (const name in headers) {
+          res.setHeader(name, headers[name]!)
+        }
+      }
     }
   }
 }
 
-export function servePublicMiddleware(dir: string): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions)
+export function servePublicMiddleware(
+  dir: string,
+  headers?: OutgoingHttpHeaders
+): Connect.NextHandleFunction {
+  const serve = sirv(dir, sirvOptions(headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServePublicMiddleware(req, res, next) {
@@ -51,7 +63,7 @@ export function serveStaticMiddleware(
   dir: string,
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const serve = sirv(dir, sirvOptions)
+  const serve = sirv(dir, sirvOptions(server.config.server.headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeStaticMiddleware(req, res, next) {
@@ -68,36 +80,40 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = decodeURI(req.url!)
+    const url = new URL(req.url!, 'http://example.com')
+    const pathname = decodeURIComponent(url.pathname)
 
     // apply aliases to static requests as well
-    let redirected: string | undefined
+    let redirectedPathname: string | undefined
     for (const { find, replacement } of server.config.resolve.alias) {
       const matches =
-        typeof find === 'string' ? url.startsWith(find) : find.test(url)
+        typeof find === 'string'
+          ? pathname.startsWith(find)
+          : find.test(pathname)
       if (matches) {
-        redirected = url.replace(find, replacement)
+        redirectedPathname = pathname.replace(find, replacement)
         break
       }
     }
-    if (redirected) {
+    if (redirectedPathname) {
       // dir is pre-normalized to posix style
-      if (redirected.startsWith(dir)) {
-        redirected = redirected.slice(dir.length)
+      if (redirectedPathname.startsWith(dir)) {
+        redirectedPathname = redirectedPathname.slice(dir.length)
       }
     }
 
-    const resolvedUrl = redirected || url
-    let fileUrl = path.resolve(dir, resolvedUrl.replace(/^\//, ''))
-    if (resolvedUrl.endsWith('/') && !fileUrl.endsWith('/')) {
+    const resolvedPathname = redirectedPathname || pathname
+    let fileUrl = path.resolve(dir, resolvedPathname.replace(/^\//, ''))
+    if (resolvedPathname.endsWith('/') && !fileUrl.endsWith('/')) {
       fileUrl = fileUrl + '/'
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
       return
     }
 
-    if (redirected) {
-      req.url = redirected
+    if (redirectedPathname) {
+      url.pathname = encodeURIComponent(redirectedPathname)
+      req.url = url.href.slice(url.origin.length)
     }
 
     serve(req, res, next)
@@ -107,20 +123,21 @@ export function serveStaticMiddleware(
 export function serveRawFsMiddleware(
   server: ViteDevServer
 ): Connect.NextHandleFunction {
-  const serveFromRoot = sirv('/', sirvOptions)
+  const serveFromRoot = sirv('/', sirvOptions(server.config.server.headers))
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    let url = req.url!
+    const url = new URL(req.url!, 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.startsWith(FS_PREFIX)) {
+    if (url.pathname.startsWith(FS_PREFIX)) {
+      const pathname = decodeURIComponent(url.pathname)
       // restrict files outside of `fs.allow`
       if (
         !ensureServingAccess(
-          slash(path.resolve(fsPathFromId(url))),
+          slash(path.resolve(fsPathFromId(pathname))),
           server,
           res,
           next
@@ -129,10 +146,11 @@ export function serveRawFsMiddleware(
         return
       }
 
-      url = url.slice(FS_PREFIX.length)
-      if (isWindows) url = url.replace(/^[A-Z]:/i, '')
+      let newPathname = pathname.slice(FS_PREFIX.length)
+      if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
 
-      req.url = url
+      url.pathname = encodeURIComponent(newPathname)
+      req.url = url.href.slice(url.origin.length)
       serveFromRoot(req, res, next)
     } else {
       next()
@@ -148,15 +166,14 @@ export function isFileServingAllowed(
 ): boolean {
   if (!server.config.server.fs.strict) return true
 
-  const cleanedUrl = cleanUrl(url)
-  const file = ensureLeadingSlash(normalizePath(cleanedUrl))
+  const file = fsPathFromUrl(url)
 
   if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
     return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
-  if (server.config.server.fs.allow.some((i) => file.startsWith(i + '/')))
+  if (server.config.server.fs.allow.some((dir) => isParentDirectory(dir, file)))
     return true
 
   return false
@@ -176,7 +193,7 @@ function ensureServingAccess(
     const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/#server-fs-allow for configurations and more details.`
+Refer to docs https://vitejs.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
     server.config.logger.error(urlMessage)
     server.config.logger.warnOnce(hintMessage + '\n')

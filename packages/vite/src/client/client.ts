@@ -1,32 +1,112 @@
-import type {
-  ErrorPayload,
-  FullReloadPayload,
-  HMRPayload,
-  PrunePayload,
-  Update,
-  UpdatePayload
-} from 'types/hmrPayload'
-import type { CustomEventName } from 'types/customEvent'
+import type { ErrorPayload, HMRPayload, Update } from 'types/hmrPayload'
+import type { ModuleNamespace, ViteHotContext } from 'types/hot'
+import type { InferCustomEventPayload } from 'types/customEvent'
 import { ErrorOverlay, overlayId } from './overlay'
 // eslint-disable-next-line node/no-missing-import
 import '@vite/env'
 
 // injected by the hmr plugin when served
 declare const __BASE__: string
-declare const __HMR_PROTOCOL__: string
-declare const __HMR_HOSTNAME__: string
-declare const __HMR_PORT__: string
+declare const __SERVER_HOST__: string
+declare const __HMR_PROTOCOL__: string | null
+declare const __HMR_HOSTNAME__: string | null
+declare const __HMR_PORT__: number | null
+declare const __HMR_DIRECT_TARGET__: string
+declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
 
-console.log('[vite] connecting...')
+console.debug('[vite] connecting...')
+
+const importMetaUrl = new URL(import.meta.url)
 
 // use server configuration, then fallback to inference
+const serverHost = __SERVER_HOST__
 const socketProtocol =
   __HMR_PROTOCOL__ || (location.protocol === 'https:' ? 'wss' : 'ws')
-const socketHost = `${__HMR_HOSTNAME__ || location.hostname}:${__HMR_PORT__}`
-const socket = new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr')
+const hmrPort = __HMR_PORT__
+const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
+  hmrPort || importMetaUrl.port
+}${__HMR_BASE__}`
+const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
+const messageBuffer: string[] = []
+
+let socket: WebSocket
+try {
+  let fallback: (() => void) | undefined
+  // only use fallback when port is inferred to prevent confusion
+  if (!hmrPort) {
+    fallback = () => {
+      // fallback to connecting directly to the hmr server
+      // for servers which does not support proxying websocket
+      socket = setupWebSocket(socketProtocol, directSocketHost, () => {
+        const currentScriptHostURL = new URL(import.meta.url)
+        const currentScriptHost =
+          currentScriptHostURL.host +
+          currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
+        console.error(
+          '[vite] failed to connect to websocket.\n' +
+            'your current setup:\n' +
+            `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
+            `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
+            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .'
+        )
+      })
+      socket.addEventListener(
+        'open',
+        () => {
+          console.info(
+            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.'
+          )
+        },
+        { once: true }
+      )
+    }
+  }
+
+  socket = setupWebSocket(socketProtocol, socketHost, fallback)
+} catch (error) {
+  console.error(`[vite] failed to connect to websocket (${error}). `)
+}
+
+function setupWebSocket(
+  protocol: string,
+  hostAndPath: string,
+  onCloseWithoutOpen?: () => void
+) {
+  const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
+  let isOpened = false
+
+  socket.addEventListener(
+    'open',
+    () => {
+      isOpened = true
+    },
+    { once: true }
+  )
+
+  // Listen for messages
+  socket.addEventListener('message', async ({ data }) => {
+    handleMessage(JSON.parse(data))
+  })
+
+  // ping server
+  socket.addEventListener('close', async ({ wasClean }) => {
+    if (wasClean) return
+
+    if (!isOpened && onCloseWithoutOpen) {
+      onCloseWithoutOpen()
+      return
+    }
+
+    console.log(`[vite] server connection lost. polling for restart...`)
+    await waitForSuccessfulPing(hostAndPath)
+    location.reload()
+  })
+
+  return socket
+}
 
 function warnFailedFetch(err: Error, path: string | string[]) {
   if (!err.message.match('fetch')) {
@@ -45,20 +125,20 @@ function cleanUrl(pathname: string): string {
   return url.pathname + url.search
 }
 
-// Listen for messages
-socket.addEventListener('message', async ({ data }) => {
-  handleMessage(JSON.parse(data))
-})
-
 let isFirstUpdate = true
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.log(`[vite] connected.`)
+      console.debug(`[vite] connected.`)
+      sendMessageBuffer()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
-      setInterval(() => socket.send('ping'), __HMR_TIMEOUT__)
+      setInterval(() => {
+        if (socket.readyState === socket.OPEN) {
+          socket.send('{"type":"ping"}')
+        }
+      }, __HMR_TIMEOUT__)
       break
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
@@ -91,14 +171,25 @@ async function handleMessage(payload: HMRPayload) {
             const newPath = `${base}${searchUrl.slice(1)}${
               searchUrl.includes('?') ? '&' : '?'
             }t=${timestamp}`
-            el.href = new URL(newPath, el.href).href
+
+            // rather than swapping the href on the existing tag, we will
+            // create a new link tag. Once the new stylesheet has loaded we
+            // will remove the existing link tag. This removes a Flash Of
+            // Unstyled Content that can occur when swapping out the tag href
+            // directly, as the new stylesheet has not yet been loaded.
+            const newLinkTag = el.cloneNode() as HTMLLinkElement
+            newLinkTag.href = new URL(newPath, el.href).href
+            const removeOldEl = () => el.remove()
+            newLinkTag.addEventListener('load', removeOldEl)
+            newLinkTag.addEventListener('error', removeOldEl)
+            el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
         }
       })
       break
     case 'custom': {
-      notifyListeners(payload.event as CustomEventName<any>, payload.data)
+      notifyListeners(payload.event, payload.data)
       break
     }
     case 'full-reload':
@@ -110,6 +201,7 @@ async function handleMessage(payload: HMRPayload) {
         const payloadPath = base + payload.path.slice(1)
         if (
           pagePath === payloadPath ||
+          payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
           location.reload()
@@ -151,19 +243,9 @@ async function handleMessage(payload: HMRPayload) {
   }
 }
 
-function notifyListeners(
-  event: 'vite:beforeUpdate',
-  payload: UpdatePayload
-): void
-function notifyListeners(event: 'vite:beforePrune', payload: PrunePayload): void
-function notifyListeners(
-  event: 'vite:beforeFullReload',
-  payload: FullReloadPayload
-): void
-function notifyListeners(event: 'vite:error', payload: ErrorPayload): void
 function notifyListeners<T extends string>(
-  event: CustomEventName<T>,
-  data: any
+  event: T,
+  data: InferCustomEventPayload<T>
 ): void
 function notifyListeners(event: string, data: any): void {
   const cbs = customListenersMap.get(event)
@@ -210,36 +292,37 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
   }
 }
 
-async function waitForSuccessfulPing(ms = 1000) {
+async function waitForSuccessfulPing(hostAndPath: string, ms = 1000) {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      await fetch(`${base}__vite_ping`)
+      // A fetch on a websocket URL will return a successful promise with status 400,
+      // but will reject a networking error.
+      // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
+      await fetch(`${location.protocol}//${hostAndPath}`, { mode: 'no-cors' })
       break
     } catch (e) {
+      // wait ms before attempting to ping again
       await new Promise((resolve) => setTimeout(resolve, ms))
     }
   }
 }
 
-// ping server
-socket.addEventListener('close', async ({ wasClean }) => {
-  if (wasClean) return
-  console.log(`[vite] server connection lost. polling for restart...`)
-  await waitForSuccessfulPing()
-  location.reload()
-})
-
 // https://wicg.github.io/construct-stylesheets
 const supportsConstructedSheet = (() => {
-  try {
-    // new CSSStyleSheet()
-    // return true
-  } catch (e) {}
+  // TODO: re-enable this try block once Chrome fixes the performance of
+  // rule insertion in really big stylesheets
+  // try {
+  //   new CSSStyleSheet()
+  //   return true
+  // } catch (e) {}
   return false
 })()
 
-const sheetsMap = new Map()
+const sheetsMap = new Map<
+  string,
+  HTMLStyleElement | CSSStyleSheet | undefined
+>()
 
 export function updateStyle(id: string, content: string): void {
   let style = sheetsMap.get(id)
@@ -251,10 +334,12 @@ export function updateStyle(id: string, content: string): void {
 
     if (!style) {
       style = new CSSStyleSheet()
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
-      // @ts-ignore
+      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, style]
     } else {
+      // @ts-expect-error: using experimental API
       style.replaceSync(content)
     }
   } else {
@@ -279,7 +364,7 @@ export function removeStyle(id: string): void {
   const style = sheetsMap.get(id)
   if (style) {
     if (style instanceof CSSStyleSheet) {
-      // @ts-ignore
+      // @ts-expect-error: using experimental API
       document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
         (s: CSSStyleSheet) => s !== style
       )
@@ -299,7 +384,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     return
   }
 
-  const moduleMap = new Map()
+  const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
   // make sure we only import each dep once
@@ -329,7 +414,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       if (disposer) await disposer(dataMap.get(dep))
       const [path, query] = dep.split(`?`)
       try {
-        const newMod = await import(
+        const newMod: ModuleNamespace = await import(
           /* @vite-ignore */
           base +
             path.slice(1) +
@@ -351,6 +436,13 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   }
 }
 
+function sendMessageBuffer() {
+  if (socket.readyState === 1) {
+    messageBuffer.forEach((msg) => socket.send(msg))
+    messageBuffer.length = 0
+  }
+}
+
 interface HotModule {
   id: string
   callbacks: HotCallback[]
@@ -359,22 +451,19 @@ interface HotModule {
 interface HotCallback {
   // the dependencies must be fetchable paths
   deps: string[]
-  fn: (modules: object[]) => void
+  fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
+
+type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
 const hotModulesMap = new Map<string, HotModule>()
 const disposeMap = new Map<string, (data: any) => void | Promise<void>>()
 const pruneMap = new Map<string, (data: any) => void | Promise<void>>()
 const dataMap = new Map<string, any>()
-const customListenersMap = new Map<string, ((data: any) => void)[]>()
-const ctxToListenersMap = new Map<
-  string,
-  Map<string, ((data: any) => void)[]>
->()
+const customListenersMap: CustomListenersMap = new Map()
+const ctxToListenersMap = new Map<string, CustomListenersMap>()
 
-// Just infer the return type for now
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const createHotContext = (ownerPath: string) => {
+export function createHotContext(ownerPath: string): ViteHotContext {
   if (!dataMap.has(ownerPath)) {
     dataMap.set(ownerPath, {})
   }
@@ -400,7 +489,7 @@ export const createHotContext = (ownerPath: string) => {
     }
   }
 
-  const newListeners = new Map()
+  const newListeners: CustomListenersMap = new Map()
   ctxToListenersMap.set(ownerPath, newListeners)
 
   function acceptDeps(deps: string[], callback: HotCallback['fn'] = () => {}) {
@@ -415,12 +504,12 @@ export const createHotContext = (ownerPath: string) => {
     hotModulesMap.set(ownerPath, mod)
   }
 
-  const hot = {
+  const hot: ViteHotContext = {
     get data() {
       return dataMap.get(ownerPath)
     },
 
-    accept(deps: any, callback?: any) {
+    accept(deps?: any, callback?: any) {
       if (typeof deps === 'function' || !deps) {
         // self-accept: hot.accept(() => {})
         acceptDeps([ownerPath], ([mod]) => deps && deps(mod))
@@ -434,17 +523,17 @@ export const createHotContext = (ownerPath: string) => {
       }
     },
 
-    acceptDeps() {
-      throw new Error(
-        `hot.acceptDeps() is deprecated. ` +
-          `Use hot.accept() with the same signature instead.`
-      )
+    // export names (first arg) are irrelevant on the client side, they're
+    // extracted in the server for propagation
+    acceptExports(_: string | readonly string[], callback?: any) {
+      acceptDeps([ownerPath], callback && (([mod]) => callback(mod)))
     },
 
-    dispose(cb: (data: any) => void) {
+    dispose(cb) {
       disposeMap.set(ownerPath, cb)
     },
 
+    // @ts-expect-error untyped
     prune(cb: (data: any) => void) {
       pruneMap.set(ownerPath, cb)
     },
@@ -460,7 +549,7 @@ export const createHotContext = (ownerPath: string) => {
     },
 
     // custom events
-    on: (event: string, cb: (data: any) => void) => {
+    on(event, cb) {
       const addToMap = (map: Map<string, any[]>) => {
         const existing = map.get(event) || []
         existing.push(cb)
@@ -468,6 +557,11 @@ export const createHotContext = (ownerPath: string) => {
       }
       addToMap(customListenersMap)
       addToMap(newListeners)
+    },
+
+    send(event, data) {
+      messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
+      sendMessageBuffer()
     }
   }
 

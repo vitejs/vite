@@ -8,6 +8,7 @@ module.exports = defineConfig({
     'plugin:node/recommended',
     'plugin:@typescript-eslint/recommended'
   ],
+  plugins: ['import'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
@@ -29,14 +30,7 @@ module.exports = defineConfig({
     'node/no-missing-import': [
       'error',
       {
-        allowModules: [
-          'types',
-          'estree',
-          'testUtils',
-          'less',
-          'sass',
-          'stylus'
-        ],
+        allowModules: ['types', 'estree', 'less', 'sass', 'stylus'],
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
@@ -63,7 +57,7 @@ module.exports = defineConfig({
     'node/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass']
+        allowModules: ['vite', 'less', 'sass', 'vitest']
       }
     ],
     'node/no-extraneous-require': [
@@ -79,6 +73,10 @@ module.exports = defineConfig({
 
     '@typescript-eslint/ban-ts-comment': 'off', // TODO: we should turn this on in a new PR
     '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
+    '@typescript-eslint/explicit-module-boundary-types': [
+      'error',
+      { allowArgumentsExplicitlyTypedAsAny: true }
+    ],
     '@typescript-eslint/no-empty-function': [
       'error',
       { allow: ['arrowFunctions'] }
@@ -93,6 +91,19 @@ module.exports = defineConfig({
     '@typescript-eslint/consistent-type-imports': [
       'error',
       { prefer: 'type-imports' }
+    ],
+
+    'import/no-duplicates': 'error',
+    'import/order': 'error',
+    'sort-imports': [
+      'error',
+      {
+        ignoreCase: false,
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        allowSeparatedGroups: false
+      }
     ]
   },
   overrides: [
@@ -103,26 +114,48 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**'],
+      files: ['packages/vite/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
     },
     {
-      files: ['packages/playground/**'],
+      files: ['packages/plugin-*/**/*'],
       rules: {
-        'node/no-extraneous-import': 'off',
-        'node/no-extraneous-require': 'off'
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     },
     {
-      files: ['packages/create-vite/template-*/**'],
+      files: ['playground/**'],
+      rules: {
+        'node/no-extraneous-import': 'off',
+        'node/no-extraneous-require': 'off',
+        'node/no-missing-import': 'off',
+        'node/no-missing-require': 'off',
+        'no-undef': 'off',
+        // engine field doesn't exist in playgrounds
+        'node/no-unsupported-features/es-builtins': [
+          'error',
+          {
+            version: '^14.18.0 || >=16.0.0'
+          }
+        ],
+        'node/no-unsupported-features/node-builtins': [
+          'error',
+          {
+            version: '^14.18.0 || >=16.0.0'
+          }
+        ]
+      }
+    },
+    {
+      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
         'node/no-missing-import': 'off'
       }
     },
     {
-      files: ['*.js'],
+      files: ['playground/**', '*.js'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
@@ -132,6 +165,13 @@ module.exports = defineConfig({
       rules: {
         '@typescript-eslint/triple-slash-reference': 'off'
       }
+    },
+    {
+      files: 'packages/vite/**/*.*',
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+      }
     }
-  ]
+  ],
+  reportUnusedDisableDirectives: true
 })

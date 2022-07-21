@@ -1,3 +1,90 @@
+## 3.0.0 (2022-07-13)
+
+* chore: bump minors and rebuild lock (#8074) ([aeb5b74](https://github.com/vitejs/vite/commit/aeb5b74)), closes [#8074](https://github.com/vitejs/vite/issues/8074)
+* chore: cleanup now that we've dropped Node 12 (#8239) ([29659a0](https://github.com/vitejs/vite/commit/29659a0)), closes [#8239](https://github.com/vitejs/vite/issues/8239)
+* chore: enable ESLint for `__tests__` dir (#8370) ([cd21abf](https://github.com/vitejs/vite/commit/cd21abf)), closes [#8370](https://github.com/vitejs/vite/issues/8370)
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use node prefix (#8309) ([60721ac](https://github.com/vitejs/vite/commit/60721ac)), closes [#8309](https://github.com/vitejs/vite/issues/8309)
+* chore: use vite-env.d.ts convention (#8988) ([cf23963](https://github.com/vitejs/vite/commit/cf23963)), closes [#8988](https://github.com/vitejs/vite/issues/8988)
+* chore(create-vite): add current directory description (#8501) ([8d08220](https://github.com/vitejs/vite/commit/8d08220)), closes [#8501](https://github.com/vitejs/vite/issues/8501)
+* chore(create-vite): react-ts non-null-assertion (#7881) ([771312b](https://github.com/vitejs/vite/commit/771312b)), closes [#7881](https://github.com/vitejs/vite/issues/7881)
+* chore(create-vite): update logo and header styles (#8502) ([1f1ca5e](https://github.com/vitejs/vite/commit/1f1ca5e)), closes [#8502](https://github.com/vitejs/vite/issues/8502)
+* chore(create-vite): upgrade vite-plugin-svelte (#9076) ([acaf9e0](https://github.com/vitejs/vite/commit/acaf9e0)), closes [#9076](https://github.com/vitejs/vite/issues/9076)
+* chore(create-vite): use Type assertion in preact-ts (#8579) ([d1ba059](https://github.com/vitejs/vite/commit/d1ba059)), closes [#8579](https://github.com/vitejs/vite/issues/8579)
+* chore(deps): update all non-major dependencies (#8474) ([6d0ede7](https://github.com/vitejs/vite/commit/6d0ede7)), closes [#8474](https://github.com/vitejs/vite/issues/8474)
+* chore(deps): update all non-major dependencies (#8669) ([628863d](https://github.com/vitejs/vite/commit/628863d)), closes [#8669](https://github.com/vitejs/vite/issues/8669)
+* chore(deps): update all non-major dependencies (#8905) ([4a24c17](https://github.com/vitejs/vite/commit/4a24c17)), closes [#8905](https://github.com/vitejs/vite/issues/8905)
+* chore(deps): update all non-major dependencies (#9022) ([6342140](https://github.com/vitejs/vite/commit/6342140)), closes [#9022](https://github.com/vitejs/vite/issues/9022)
+* chore(deps): update dependency @tsconfig/svelte to v3 (#8282) ([015ebed](https://github.com/vitejs/vite/commit/015ebed)), closes [#8282](https://github.com/vitejs/vite/issues/8282)
+* fix: template-react-ts warning when importing path in vite.config.ts (#8924) ([0e6b82e](https://github.com/vitejs/vite/commit/0e6b82e)), closes [#8924](https://github.com/vitejs/vite/issues/8924)
+* fix: use Vitest for unit testing, clean regex bug (#8040) ([63cd53d](https://github.com/vitejs/vite/commit/63cd53d)), closes [#8040](https://github.com/vitejs/vite/issues/8040)
+* fix(create-vite): allow slash at the end of project path (#6897) ([8167db3](https://github.com/vitejs/vite/commit/8167db3)), closes [#6897](https://github.com/vitejs/vite/issues/6897)
+* fix(create-vite): remove import from public (#9074) ([880f560](https://github.com/vitejs/vite/commit/880f560)), closes [#9074](https://github.com/vitejs/vite/issues/9074)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* fix(deps): update all non-major dependencies (#8558) ([9a1fd4c](https://github.com/vitejs/vite/commit/9a1fd4c)), closes [#8558](https://github.com/vitejs/vite/issues/8558)
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+* fix(lib): use proper extension (#6827) ([34df307](https://github.com/vitejs/vite/commit/34df307)), closes [#6827](https://github.com/vitejs/vite/issues/6827)
+* docs: correct pnpm command (#8763) ([8108b1b](https://github.com/vitejs/vite/commit/8108b1b)), closes [#8763](https://github.com/vitejs/vite/issues/8763)
+* feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)
+* feat(create-vite): add `type: module` to all templates (#8251) ([c3ec60c](https://github.com/vitejs/vite/commit/c3ec60c)), closes [#8251](https://github.com/vitejs/vite/issues/8251)
+* feat(create-vite): align template styles with docs (#8478) ([d72b3dd](https://github.com/vitejs/vite/commit/d72b3dd)), closes [#8478](https://github.com/vitejs/vite/issues/8478)
+* feat(create-vite): migrate to ESM (#8253) ([49478ae](https://github.com/vitejs/vite/commit/49478ae)), closes [#8253](https://github.com/vitejs/vite/issues/8253)
+* feat(create-vite): supports nested directory (closes #6638) (#6739) ([6ccf9aa](https://github.com/vitejs/vite/commit/6ccf9aa)), closes [#6638](https://github.com/vitejs/vite/issues/6638) [#6739](https://github.com/vitejs/vite/issues/6739)
+* feat(create-vite): use framework brand glow color (#8539) ([3a21a5e](https://github.com/vitejs/vite/commit/3a21a5e)), closes [#8539](https://github.com/vitejs/vite/issues/8539)
+* build!: bump targets (#8045) ([66efd69](https://github.com/vitejs/vite/commit/66efd69)), closes [#8045](https://github.com/vitejs/vite/issues/8045)
+* build!: remove node v12 support (#7833) ([eeac2d2](https://github.com/vitejs/vite/commit/eeac2d2)), closes [#7833](https://github.com/vitejs/vite/issues/7833)
+
+
+
+## <small>2.9.3 (2022-05-02)</small>
+
+* chore(create-vite): update reference to volar vscode extension (#7994) ([2b6d8fe](https://github.com/vitejs/vite/commit/2b6d8fe)), closes [#7994](https://github.com/vitejs/vite/issues/7994)
+* feat(create-vite): scaffold directory with only .git (#7971) ([a5bdb9f](https://github.com/vitejs/vite/commit/a5bdb9f)), closes [#7971](https://github.com/vitejs/vite/issues/7971)
+
+
+
+## <small>2.9.2 (2022-04-19)</small>
+
+* chore: remove useless code in preact template (#7789) ([e5729be](https://github.com/vitejs/vite/commit/e5729be)), closes [#7789](https://github.com/vitejs/vite/issues/7789)
+* fix(create-vite): bump `vue-tsc` to `0.34.7` (#7760) ([9a93233](https://github.com/vitejs/vite/commit/9a93233)), closes [#7760](https://github.com/vitejs/vite/issues/7760)
+* fix(create-vite): set skipLibCheck true (#7726) ([54e9cdd](https://github.com/vitejs/vite/commit/54e9cdd)), closes [#7726](https://github.com/vitejs/vite/issues/7726)
+
+
+
+## <small>2.9.1 (2022-04-13)</small>
+
+* chore: fix term cases (#7553) ([c296130](https://github.com/vitejs/vite/commit/c296130)), closes [#7553](https://github.com/vitejs/vite/issues/7553)
+* chore: update @types/react version (#7655) ([eb57627](https://github.com/vitejs/vite/commit/eb57627)), closes [#7655](https://github.com/vitejs/vite/issues/7655)
+* chore: update vue template setup api doc url (#7628) ([4433df4](https://github.com/vitejs/vite/commit/4433df4)), closes [#7628](https://github.com/vitejs/vite/issues/7628)
+* chore(create-vite-app): upgrade react to 18 (#7597) ([8b21029](https://github.com/vitejs/vite/commit/8b21029)), closes [#7597](https://github.com/vitejs/vite/issues/7597)
+* chore(create-vite): add isolatedModules (#7697) ([8f28350](https://github.com/vitejs/vite/commit/8f28350)), closes [#7697](https://github.com/vitejs/vite/issues/7697)
+
+
+
+## 2.9.0 (2022-03-30)
+
+* chore: add isolatedModules to create-vite > template-vue-ts > tsconfig (#7304) ([21990ea](https://github.com/vitejs/vite/commit/21990ea)), closes [#7304](https://github.com/vitejs/vite/issues/7304)
+* chore(deps): update all non-major dependencies (#7490) ([42c15f6](https://github.com/vitejs/vite/commit/42c15f6)), closes [#7490](https://github.com/vitejs/vite/issues/7490)
+* docs(vue-ts): update note on vue type support in ts (#6165) ([cfc7648](https://github.com/vitejs/vite/commit/cfc7648)), closes [#6165](https://github.com/vitejs/vite/issues/6165)
+* workflow: separate version bumping and publishing on release (#6879) ([fe8ef39](https://github.com/vitejs/vite/commit/fe8ef39)), closes [#6879](https://github.com/vitejs/vite/issues/6879)
+
+
+
+# [2.8.0](https://github.com/vitejs/vite/compare/create-vite@2.7.2...create-vite@2.8.0) (2022-02-09)
+
+
+### Bug Fixes
+
+* **create-vite:** use `reset` for prompts for white bg color shell ([#6131](https://github.com/vitejs/vite/issues/6131)) ([dd3bbb8](https://github.com/vitejs/vite/commit/dd3bbb8e21aff812ec482f760e1abceb6bd67aef))
+
+
+### Features
+
+* **create-vite:** tsconfig support vite.config.ts ([#6324](https://github.com/vitejs/vite/issues/6324)) ([bfbdb22](https://github.com/vitejs/vite/commit/bfbdb2242e57cfba0309a88475a1f9cf2a50413f))
+
+
+
 ## [2.7.2](https://github.com/vitejs/vite/compare/create-vite@2.7.1...create-vite@2.7.2) (2021-12-13)
 
 

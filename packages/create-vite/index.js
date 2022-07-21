@@ -1,24 +1,25 @@
 #!/usr/bin/env node
 
 // @ts-check
-const fs = require('fs')
-const path = require('path')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import minimist from 'minimist'
+import prompts from 'prompts'
+import {
+  blue,
+  cyan,
+  green,
+  lightRed,
+  magenta,
+  red,
+  reset,
+  yellow
+} from 'kolorist'
+
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
-const argv = require('minimist')(process.argv.slice(2), { string: ['_'] })
-// eslint-disable-next-line node/no-restricted-require
-const prompts = require('prompts')
-const {
-  yellow,
-  green,
-  cyan,
-  blue,
-  magenta,
-  lightRed,
-  red,
-  reset
-} = require('kolorist')
-
+const argv = minimist(process.argv.slice(2), { string: ['_'] })
 const cwd = process.cwd()
 
 const FRAMEWORKS = [
@@ -129,10 +130,12 @@ const renameFiles = {
 }
 
 async function init() {
-  let targetDir = argv._[0]
+  let targetDir = formatTargetDir(argv._[0])
   let template = argv.template || argv.t
 
-  const defaultProjectName = !targetDir ? 'vite-project' : targetDir
+  const defaultTargetDir = 'vite-project'
+  const getProjectName = () =>
+    targetDir === '.' ? path.basename(path.resolve()) : targetDir
 
   let result = {}
 
@@ -143,9 +146,10 @@ async function init() {
           type: targetDir ? null : 'text',
           name: 'projectName',
           message: reset('Project name:'),
-          initial: defaultProjectName,
-          onState: (state) =>
-            (targetDir = state.value.trim() || defaultProjectName)
+          initial: defaultTargetDir,
+          onState: (state) => {
+            targetDir = formatTargetDir(state.value) || defaultTargetDir
+          }
         },
         {
           type: () =>
@@ -167,10 +171,10 @@ async function init() {
           name: 'overwriteChecker'
         },
         {
-          type: () => (isValidPackageName(targetDir) ? null : 'text'),
+          type: () => (isValidPackageName(getProjectName()) ? null : 'text'),
           name: 'packageName',
           message: reset('Package name:'),
-          initial: () => toValidPackageName(targetDir),
+          initial: () => toValidPackageName(getProjectName()),
           validate: (dir) =>
             isValidPackageName(dir) || 'Invalid package.json name'
         },
@@ -227,7 +231,7 @@ async function init() {
   if (overwrite) {
     emptyDir(root)
   } else if (!fs.existsSync(root)) {
-    fs.mkdirSync(root)
+    fs.mkdirSync(root, { recursive: true })
   }
 
   // determine template
@@ -235,7 +239,11 @@ async function init() {
 
   console.log(`\nScaffolding project in ${root}...`)
 
-  const templateDir = path.join(__dirname, `template-${template}`)
+  const templateDir = path.resolve(
+    fileURLToPath(import.meta.url),
+    '..',
+    `template-${template}`
+  )
 
   const write = (file, content) => {
     const targetPath = renameFiles[file]
@@ -253,9 +261,11 @@ async function init() {
     write(file)
   }
 
-  const pkg = require(path.join(templateDir, `package.json`))
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8')
+  )
 
-  pkg.name = packageName || targetDir
+  pkg.name = packageName || getProjectName()
 
   write('package.json', JSON.stringify(pkg, null, 2))
 
@@ -279,6 +289,13 @@ async function init() {
   console.log()
 }
 
+/**
+ * @param {string | undefined} targetDir
+ */
+function formatTargetDir(targetDir) {
+  return targetDir?.trim().replace(/\/+$/g, '')
+}
+
 function copy(src, dest) {
   const stat = fs.statSync(src)
   if (stat.isDirectory()) {
@@ -288,12 +305,18 @@ function copy(src, dest) {
   }
 }
 
+/**
+ * @param {string} projectName
+ */
 function isValidPackageName(projectName) {
   return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
     projectName
   )
 }
 
+/**
+ * @param {string} projectName
+ */
 function toValidPackageName(projectName) {
   return projectName
     .trim()
@@ -303,6 +326,10 @@ function toValidPackageName(projectName) {
     .replace(/[^a-z0-9-~]+/g, '-')
 }
 
+/**
+ * @param {string} srcDir
+ * @param {string} destDir
+ */
 function copyDir(srcDir, destDir) {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
@@ -312,23 +339,23 @@ function copyDir(srcDir, destDir) {
   }
 }
 
+/**
+ * @param {string} path
+ */
 function isEmpty(path) {
-  return fs.readdirSync(path).length === 0
+  const files = fs.readdirSync(path)
+  return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
+/**
+ * @param {string} dir
+ */
 function emptyDir(dir) {
   if (!fs.existsSync(dir)) {
     return
   }
   for (const file of fs.readdirSync(dir)) {
-    const abs = path.resolve(dir, file)
-    // baseline is Node 12 so can't use rmSync :(
-    if (fs.lstatSync(abs).isDirectory()) {
-      emptyDir(abs)
-      fs.rmdirSync(abs)
-    } else {
-      fs.unlinkSync(abs)
-    }
+    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
 

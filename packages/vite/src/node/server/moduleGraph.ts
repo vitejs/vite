@@ -1,6 +1,5 @@
-import { extname } from 'path'
+import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
-import { parse as parseUrl } from 'url'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
@@ -27,15 +26,25 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
   importedModules = new Set<ModuleNode>()
   acceptedHmrDeps = new Set<ModuleNode>()
-  isSelfAccepting = false
+  acceptedHmrExports: Set<string> | null = null
+  importedBindings: Map<string, Set<string>> | null = null
+  isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
   ssrTransformResult: TransformResult | null = null
   ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
   lastHMRTimestamp = 0
+  lastInvalidationTimestamp = 0
 
-  constructor(url: string) {
+  /**
+   * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
+   */
+  constructor(url: string, setIsSelfAccepting = true) {
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
+    if (setIsSelfAccepting) {
+      this.isSelfAccepting = false
+    }
   }
 }
 
@@ -45,6 +54,7 @@ function invalidateSSRModule(mod: ModuleNode, seen: Set<ModuleNode>) {
   }
   seen.add(mod)
   mod.ssrModule = null
+  mod.ssrError = null
   mod.importers.forEach((importer) => invalidateSSRModule(importer, seen))
 }
 
@@ -94,17 +104,26 @@ export class ModuleGraph {
     }
   }
 
-  invalidateModule(mod: ModuleNode, seen: Set<ModuleNode> = new Set()): void {
-    mod.info = undefined
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now()
+  ): void {
+    // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
+    // processing being done for this module
+    mod.lastInvalidationTimestamp = timestamp
+    // Don't invalidate mod.info and mod.meta, as they are part of the processing pipeline
+    // Invalidating the transform result is enough to ensure this module is re-processed next time it is requested
     mod.transformResult = null
     mod.ssrTransformResult = null
     invalidateSSRModule(mod, seen)
   }
 
   invalidateAll(): void {
+    const timestamp = Date.now()
     const seen = new Set<ModuleNode>()
     this.idToModuleMap.forEach((mod) => {
-      this.invalidateModule(mod, seen)
+      this.invalidateModule(mod, seen, timestamp)
     })
   }
 
@@ -116,7 +135,9 @@ export class ModuleGraph {
   async updateModuleInfo(
     mod: ModuleNode,
     importedModules: Set<string | ModuleNode>,
+    importedBindings: Map<string, Set<string>> | null,
     acceptedModules: Set<string | ModuleNode>,
+    acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean
   ): Promise<Set<ModuleNode> | undefined> {
@@ -152,14 +173,21 @@ export class ModuleGraph {
           : accepted
       deps.add(dep)
     }
+    // update accepted hmr exports
+    mod.acceptedHmrExports = acceptedExports
+    mod.importedBindings = importedBindings
     return noLongerImported
   }
 
-  async ensureEntryFromUrl(rawUrl: string, ssr?: boolean): Promise<ModuleNode> {
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true
+  ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
     let mod = this.urlToModuleMap.get(url)
     if (!mod) {
-      mod = new ModuleNode(url)
+      mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
       this.urlToModuleMap.set(url, mod)
       mod.id = resolvedId
@@ -208,10 +236,16 @@ export class ModuleGraph {
     url = removeImportQuery(removeTimestampQuery(url))
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
-    const ext = extname(cleanUrl(resolvedId))
-    const { pathname, search, hash } = parseUrl(url)
-    if (ext && !pathname!.endsWith(ext)) {
-      url = pathname + ext + (search || '') + (hash || '')
+    if (
+      url !== resolvedId &&
+      !url.includes('\0') &&
+      !url.startsWith(`virtual:`)
+    ) {
+      const ext = extname(cleanUrl(resolvedId))
+      const { pathname, search, hash } = new URL(url, 'relative://')
+      if (ext && !pathname!.endsWith(ext)) {
+        url = pathname + ext + search + hash
+      }
     }
     return [url, resolvedId, resolved?.meta]
   }

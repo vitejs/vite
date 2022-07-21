@@ -1,12 +1,12 @@
+import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
-import { performance } from 'perf_hooks'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
+import { VERSION } from './constants'
 import { resolveConfig } from '.'
-import { preview } from './preview'
 
 const cli = cac('vite')
 
@@ -25,6 +25,7 @@ interface GlobalCLIOptions {
   filter?: string
   m?: string
   mode?: string
+  force?: boolean
 }
 
 /**
@@ -61,7 +62,7 @@ cli
 
 // dev
 cli
-  .command('[root]') // default command
+  .command('[root]', 'start dev server') // default command
   .alias('serve') // the command is called 'serve' in Vite's API
   .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`)
@@ -86,6 +87,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
+        optimizeDeps: { force: options.force },
         server: cleanOptions(options)
       })
 
@@ -97,24 +99,24 @@ cli
 
       const info = server.config.logger.info
 
+      // @ts-ignore
+      const viteStartTime = global.__vite_start_time ?? false
+      const startupDurationString = viteStartTime
+        ? colors.dim(
+            `ready in ${colors.white(
+              colors.bold(Math.ceil(performance.now() - viteStartTime))
+            )} ms`
+          )
+        : ''
+
       info(
-        colors.cyan(`\n  vite v${require('vite/package.json').version}`) +
-          colors.green(` dev server running at:\n`),
-        {
-          clear: !server.config.logger.hasWarned
-        }
+        `\n  ${colors.green(
+          `${colors.bold('VITE')} v${VERSION}`
+        )}  ${startupDurationString}\n`,
+        { clear: !server.config.logger.hasWarned }
       )
 
       server.printUrls()
-
-      // @ts-ignore
-      if (global.__vite_start_time) {
-        // @ts-ignore
-        const startupDuration = performance.now() - global.__vite_start_time
-        info(
-          `\n  ${colors.cyan(`ready in ${Math.ceil(startupDuration)}ms.`)}\n`
-        )
-      }
     } catch (e) {
       createLogger(options.logLevel).error(
         colors.red(`error when starting dev server:\n${e.stack}`),
@@ -126,12 +128,12 @@ cli
 
 // build
 cli
-  .command('build [root]')
+  .command('build [root]', 'build for production')
   .option('--target <target>', `[string] transpile target (default: 'modules')`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .option(
     '--assetsDir <dir>',
-    `[string] directory under outDir to place assets in (default: _assets)`
+    `[string] directory under outDir to place assets in (default: assets)`
   )
   .option(
     '--assetsInlineLimit <number>',
@@ -150,8 +152,12 @@ cli
     `[boolean | "terser" | "esbuild"] enable/disable minification, ` +
       `or specify minifier to use (default: esbuild)`
   )
-  .option('--manifest', `[boolean] emit build manifest json`)
-  .option('--ssrManifest', `[boolean] emit ssr manifest json`)
+  .option('--manifest [name]', `[boolean | string] emit build manifest json`)
+  .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
+  .option(
+    '--force',
+    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`
+  )
   .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`
@@ -169,6 +175,7 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
+        optimizeDeps: { force: options.force },
         build: buildOptions
       })
     } catch (e) {
@@ -182,7 +189,7 @@ cli
 
 // optimize
 cli
-  .command('optimize [root]')
+  .command('optimize [root]', 'pre-bundle dependencies')
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`
@@ -213,7 +220,7 @@ cli
   )
 
 cli
-  .command('preview [root]')
+  .command('preview [root]', 'locally preview production build')
   .option('--host [host]', `[string] specify hostname`)
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
@@ -230,6 +237,7 @@ cli
         strictPort?: boolean
       } & GlobalCLIOptions
     ) => {
+      const { preview } = await import('./preview')
       try {
         const server = await preview({
           root,
@@ -257,6 +265,6 @@ cli
   )
 
 cli.help()
-cli.version(require('../../package.json').version)
+cli.version(VERSION)
 
 cli.parse()
