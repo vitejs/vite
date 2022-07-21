@@ -113,7 +113,7 @@ export interface DepOptimizationConfig {
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
    *
-   * By default, Vite can optimize `.mjs`, `.js`, and `.ts` files. This option
+   * By default, Vite can optimize `.mjs`, `.js`, `.ts`, and `.mts` files. This option
    * allows specifying additional extensions.
    *
    * @experimental
