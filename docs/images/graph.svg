@@ -1,9 +1,4 @@
 <svg viewBox="0 0 1440 495" fill="none" xmlns="http://www.w3.org/2000/svg">
-<style>
-* {
-  font-family: 'Roboto', sans-serif;
-}
-</style>
 <rect y="191" width="315" height="146" rx="10" fill="#C3E88C"/>
 <text fill="#15505C" xml:space="preserve" style="white-space: pre" font-family="Inter" font-size="40" font-weight="600" letter-spacing="0em"><tspan x="105.5" y="278.545">Entry</tspan></text>
 <rect x="556" width="360" height="141" rx="10" fill="#C3E88C"/>

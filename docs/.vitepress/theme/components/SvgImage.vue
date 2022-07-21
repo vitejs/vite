@@ -16,4 +16,7 @@ defineProps<{ svg: string }>()
 html.dark .svg-image-root {
   background-color: #313641;
 }
+.svg-image-root svg text {
+  font-family: var(--vp-font-family-base);
+}
 </style>
