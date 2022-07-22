@@ -142,7 +142,7 @@ async function doTransform(
   // resolve
   const id =
     (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
-
+  server.moduleGraph.tryEnsureModuleWeight(id)
   const result = loadAndTransform(id, url, server, options, timestamp)
 
   getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)

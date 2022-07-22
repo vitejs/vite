@@ -40,11 +40,11 @@ export class ModuleNode {
   /**
    * entryPoint of the module
    *   - null - no init
-   *   - self - it's entry pointer (the ModuleNode what import by dynamic import)
+   *   - dynamic - it's entry pointer (the ModuleNode what import by dynamic import)
    *   - main - it's import by main entry point
    *   - ModuleNode - it's import by dynamic import and the entry point is this field
    */
-  entryPoint: ModuleNode | 'self' | 'main' | null = null
+  entryPoint: ModuleNode | 'dynamic' | 'main' | null = null
   /**
    * lower weight is better
    */
@@ -169,8 +169,7 @@ export class ModuleGraph {
       dep.importers.add(mod)
       nextImports.add(dep)
       if (!staticImportUrls.has(imported)) {
-        dep.entryPoint = 'self'
-        dep.weight = ++weight
+        dep.entryPoint = 'dynamic'
       }
     }
     // remove the importer from deps that were imported but no longer are.
@@ -185,7 +184,7 @@ export class ModuleGraph {
     })
     // ensure the module entry point
     mod.importers.forEach((importerMod) => {
-      if (importerMod.entryPoint === 'self') {
+      if (importerMod.entryPoint === 'dynamic') {
         if (mod.entryPoint) {
           mod.entryPoint =
             importerMod.weight < mod.weight ? importerMod : mod.entryPoint
@@ -203,7 +202,7 @@ export class ModuleGraph {
         }
       }
     })
-    if (mod.entryPoint === null) {
+    if (mod.entryPoint == null) {
       mod.entryPoint = 'main'
       mod.weight = 0
     }
@@ -244,6 +243,17 @@ export class ModuleGraph {
       fileMappedModules.add(mod)
     }
     return mod
+  }
+
+  /**
+   * will call it after http request resolveId
+   * so the call order will as same as the browser module request order
+   */
+  tryEnsureModuleWeight(id: string): void {
+    const mod = this.getModuleById(id)
+    if (mod && mod.entryPoint === 'dynamic' && mod.weight === 0) {
+      mod.weight = ++weight
+    }
   }
 
   // some deps, like a css file referenced via @import, don't have its own
