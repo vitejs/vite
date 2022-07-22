@@ -35,8 +35,13 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal: ['no-external-cjs', 'import-builtin-cjs', 'no-external-css'],
-      external: ['nested-external'],
+      noExternal: [
+        'no-external-cjs',
+        'import-builtin-cjs',
+        'no-external-css',
+        'external-entry'
+      ],
+      external: ['nested-external', 'external-entry/entry'],
       optimizeDeps: {
         disabled: 'build'
       }

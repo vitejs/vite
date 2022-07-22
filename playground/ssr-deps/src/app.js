@@ -20,6 +20,10 @@ import 'non-optimized-with-nested-external'
 import optimizedWithNestedExternal from 'optimized-with-nested-external'
 import optimizedCjsWithNestedExternal from 'optimized-cjs-with-nested-external'
 
+import { setMessage } from 'external-entry/entry'
+setMessage('Hello World!')
+import externalUsingExternalEntry from 'external-using-external-entry'
+
 export async function render(url, rootDir) {
   let html = ''
 
@@ -67,6 +71,9 @@ export async function render(url, rootDir) {
   const optimizedCjsWithNestedExternalMessage =
     optimizedCjsWithNestedExternal.hello()
   html += `\n<p class="optimized-cjs-with-nested-external">message from optimized-cjs-with-nested-external: ${optimizedCjsWithNestedExternalMessage}</p>`
+
+  const externalUsingExternalEntryMessage = externalUsingExternalEntry.hello()
+  html += `\n<p class="external-using-external-entry">message from external-using-external-entry: ${externalUsingExternalEntryMessage}</p>`
 
   return html + '\n'
 }
