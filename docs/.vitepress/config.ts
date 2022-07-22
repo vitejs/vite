@@ -13,7 +13,7 @@ console.log('Env log:', process.env.URL, ':', process.env.DEPLOY_PRIME_URL)
 
 const deployType = (() => {
   switch (deployURL) {
-    case 'https://main--vitejs.netlify.app/':
+    case 'https://main--vitejs.netlify.app':
       return 'main'
     case '':
       return 'local'
