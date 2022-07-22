@@ -307,7 +307,7 @@ async function nodeImport(
 
 // rollup-style default import interop for cjs
 function proxyESM(mod: any) {
-  // This is the only sensible option when the exports object is a primitve
+  // This is the only sensible option when the exports object is a primitive
   if (isPrimitive(mod)) return { default: mod }
 
   let defaultExport = 'default' in mod ? mod.default : mod

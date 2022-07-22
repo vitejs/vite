@@ -5,6 +5,7 @@ import type {
   ArrayExpression,
   CallExpression,
   Literal,
+  MemberExpression,
   Node,
   SequenceExpression
 } from 'estree'
@@ -118,7 +119,7 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression
+    let ast: CallExpression | SequenceExpression | MemberExpression
     let lastTokenPos: number | undefined
 
     try {
@@ -156,6 +157,10 @@ export async function parseImportGlob(
 
     if (ast.type === 'SequenceExpression')
       ast = ast.expressions[0] as CallExpression
+
+    // immediate property access, call expression is nested
+    // import.meta.glob(...)['prop']
+    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
 
     if (ast.type !== 'CallExpression')
       throw err(`Expect CallExpression, got ${ast.type}`)

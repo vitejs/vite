@@ -903,8 +903,11 @@ importers:
       define-properties-exports: file:./define-properties-exports
       define-property-exports: file:./define-property-exports
       express: ^4.18.1
+      external-entry: file:./external-entry
+      external-using-external-entry: file:./external-using-external-entry
       forwarded-export: file:./forwarded-export
       import-builtin-cjs: file:./import-builtin-cjs
+      linked-no-external: link:./linked-no-external
       no-external-cjs: file:./no-external-cjs
       no-external-css: file:./no-external-css
       non-optimized-with-nested-external: file:./non-optimized-with-nested-external
@@ -920,8 +923,11 @@ importers:
       bcrypt: 5.0.1
       define-properties-exports: file:playground/ssr-deps/define-properties-exports
       define-property-exports: file:playground/ssr-deps/define-property-exports
+      external-entry: file:playground/ssr-deps/external-entry
+      external-using-external-entry: file:playground/ssr-deps/external-using-external-entry
       forwarded-export: file:playground/ssr-deps/forwarded-export
       import-builtin-cjs: file:playground/ssr-deps/import-builtin-cjs
+      linked-no-external: link:linked-no-external
       no-external-cjs: file:playground/ssr-deps/no-external-cjs
       no-external-css: file:playground/ssr-deps/no-external-css
       non-optimized-with-nested-external: file:playground/ssr-deps/non-optimized-with-nested-external
@@ -943,6 +949,15 @@ importers:
   playground/ssr-deps/define-property-exports:
     specifiers: {}
 
+  playground/ssr-deps/external-entry:
+    specifiers: {}
+
+  playground/ssr-deps/external-using-external-entry:
+    specifiers:
+      external-entry: file:../external-entry
+    dependencies:
+      external-entry: file:playground/ssr-deps/external-entry
+
   playground/ssr-deps/forwarded-export:
     specifiers:
       object-assigned-exports: file:../object-assigned-exports
@@ -950,6 +965,9 @@ importers:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
 
   playground/ssr-deps/import-builtin-cjs:
+    specifiers: {}
+
+  playground/ssr-deps/linked-no-external:
     specifiers: {}
 
   playground/ssr-deps/nested-external:
@@ -9030,6 +9048,20 @@ packages:
     resolution: {directory: playground/ssr-deps/define-property-exports, type: directory}
     name: define-property-exports
     version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/external-entry:
+    resolution: {directory: playground/ssr-deps/external-entry, type: directory}
+    name: external-entry
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/external-using-external-entry:
+    resolution: {directory: playground/ssr-deps/external-using-external-entry, type: directory}
+    name: external-using-external-entry
+    version: 0.0.0
+    dependencies:
+      external-entry: file:playground/ssr-deps/external-entry
     dev: false
 
   file:playground/ssr-deps/forwarded-export:

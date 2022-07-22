@@ -25,6 +25,7 @@ test('template/script latest syntax support', async () => {
 
 test('import ts with .js extension with lang="ts"', async () => {
   expect(await page.textContent('.ts-import')).toBe('success')
+  expect(await page.textContent('.ts-import2')).toBe('success')
 })
 
 test('should remove comments in prod', async () => {
@@ -211,7 +212,7 @@ describe('src imports', () => {
     await untilUpdated(() => getColor(el), 'red')
   })
 
-  test('tempalte src import hmr', async () => {
+  test('template src import hmr', async () => {
     const el = await page.$('.src-imports-style')
     editFile('src-import/template.html', (code) =>
       code.replace('should be tan', 'should be red')
