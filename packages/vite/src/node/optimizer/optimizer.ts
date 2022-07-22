@@ -240,12 +240,12 @@ async function createDepsOptimizer(
     depOptimizationProcessingQueue.push(depOptimizationProcessing)
 
     // Create a new promise for the next rerun, discovered missing
-    // dependencies will be asigned this promise from this point
+    // dependencies will be assigned this promise from this point
     depOptimizationProcessing = newDepOptimizationProcessing()
   }
 
   async function optimizeNewDeps() {
-    // a succesful completion of the optimizeDeps rerun will end up
+    // a successful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
     // in the cache dir and a new metadata info object assigned
     // to _metadata. A fullReload is only issued if the previous bundled
@@ -391,7 +391,7 @@ async function createDepsOptimizer(
       } else {
         if (newDepsDiscovered) {
           // There are newly discovered deps, and another rerun is about to be
-          // excecuted. Avoid the current full reload discarding this rerun result
+          // executed. Avoid the current full reload discarding this rerun result
           // We don't resolve the processing promise, as they will be resolved
           // once a rerun is committed
           processingResult.cancel()
@@ -528,7 +528,7 @@ async function createDepsOptimizer(
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
-      // doesn't alter the bundled files of previous known dependendencies,
+      // doesn't alter the bundled files of previous known dependencies,
       // we don't need a full reload and this browserHash will be kept
       browserHash: getDiscoveredBrowserHash(
         metadata.hash,

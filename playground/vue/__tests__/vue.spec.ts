@@ -212,7 +212,7 @@ describe('src imports', () => {
     await untilUpdated(() => getColor(el), 'red')
   })
 
-  test('tempalte src import hmr', async () => {
+  test('template src import hmr', async () => {
     const el = await page.$('.src-imports-style')
     editFile('src-import/template.html', (code) =>
       code.replace('should be tan', 'should be red')
