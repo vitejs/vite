@@ -907,6 +907,7 @@ importers:
       external-using-external-entry: file:./external-using-external-entry
       forwarded-export: file:./forwarded-export
       import-builtin-cjs: file:./import-builtin-cjs
+      linked-no-external: link:./linked-no-external
       no-external-cjs: file:./no-external-cjs
       no-external-css: file:./no-external-css
       non-optimized-with-nested-external: file:./non-optimized-with-nested-external
@@ -926,6 +927,7 @@ importers:
       external-using-external-entry: file:playground/ssr-deps/external-using-external-entry
       forwarded-export: file:playground/ssr-deps/forwarded-export
       import-builtin-cjs: file:playground/ssr-deps/import-builtin-cjs
+      linked-no-external: link:linked-no-external
       no-external-cjs: file:playground/ssr-deps/no-external-cjs
       no-external-css: file:playground/ssr-deps/no-external-css
       non-optimized-with-nested-external: file:playground/ssr-deps/non-optimized-with-nested-external
@@ -963,6 +965,9 @@ importers:
       object-assigned-exports: file:playground/ssr-deps/object-assigned-exports
 
   playground/ssr-deps/import-builtin-cjs:
+    specifiers: {}
+
+  playground/ssr-deps/linked-no-external:
     specifiers: {}
 
   playground/ssr-deps/nested-external:
