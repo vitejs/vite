@@ -297,14 +297,15 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
   post: Plugin[]
 } {
   const options = config.build
-
+  const { commonjsOptions } = options
+  const usePluginCommonjs =
+    !Array.isArray(commonjsOptions?.include) ||
+    commonjsOptions?.include.length !== 0
   return {
     pre: [
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
-      ...(config.legacy?.buildRollupPluginCommonjs
-        ? [commonjsPlugin(options.commonjsOptions)]
-        : []),
+      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
       assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
@@ -398,7 +399,7 @@ async function doBuild(
     external = await cjsSsrResolveExternal(config, userExternal)
   }
 
-  if (isDepsOptimizerEnabled(config)) {
+  if (isDepsOptimizerEnabled(config, ssr)) {
     await initDepsOptimizer(config)
   }
 
@@ -465,10 +466,10 @@ async function doBuild(
           ? `[name].${jsExt}`
           : libOptions
           ? resolveLibFilename(libOptions, format, config.root, jsExt)
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
-          : path.posix.join(options.assetsDir, `[name].[hash].js`),
+          : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         assetFileNames: libOptions
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name].[hash].[ext]`),
@@ -739,7 +740,7 @@ async function cjsSsrResolveExternal(
   } catch (e) {}
   if (!knownImports) {
     // no dev deps optimization data, do a fresh scan
-    knownImports = await findKnownImports(config)
+    knownImports = await findKnownImports(config, false) // needs to use non-ssr
   }
   const ssrExternals = cjsSsrResolveExternals(config, knownImports)
 
@@ -842,7 +843,7 @@ export function toOutputFilePathInString(
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string }
+  ) => string | { runtime: string } = toImportMetaURLBasedRelativePath
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -868,6 +869,17 @@ export function toOutputFilePathInString(
     return toRelative(filename, hostId)
   }
   return config.base + filename
+}
+
+function toImportMetaURLBasedRelativePath(
+  filename: string,
+  importer: string
+): { runtime: string } {
+  return {
+    runtime: `new URL(${JSON.stringify(
+      path.posix.relative(path.dirname(importer), filename)
+    )},import.meta.url).href`
+  }
 }
 
 export function toOutputFilePathWithoutRuntime(

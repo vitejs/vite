@@ -52,8 +52,26 @@
 </h2>
 <p class="tsx-extension">fail</p>
 
+<h2>
+  A ts module can import another ESM module using its corresponding mjs file
+  name
+</h2>
+<p class="mjs-extension">fail</p>
+
+<h2>
+  A ts module can import another CommonJS module using its corresponding cjs
+  file name
+</h2>
+<p class="cjs-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
+
+<h2>Resolve drive-relative path (Windows only)</h2>
+<p class="drive-relative">fail</p>
+
+<h2>Resolve absolute path</h2>
+<p class="absolute">fail</p>
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
@@ -69,6 +87,9 @@
 
 <h2>Plugin resolved virtual file</h2>
 <p class="virtual"></p>
+
+<h2>Plugin resolved virtual file (#9036)</h2>
+<p class="virtual-9036"></p>
 
 <h2>Plugin resolved custom virtual file</h2>
 <p class="custom-virtual"></p>
@@ -89,6 +110,7 @@
 <p class="path-contains-sharp-symbol"></p>
 
 <script type="module">
+  import '@generated-content-virtual-file'
   function text(selector, text) {
     document.querySelector(selector).textContent = text
   }
@@ -157,6 +179,12 @@
   import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
   text('.tsx-extension', tsTsxExtensionMsg)
 
+  import { msgCjs as tsCjsExtensionMsg } from './ts-extension'
+  text('.cjs-extension', tsCjsExtensionMsg)
+
+  import { msgMjs as tsMjsExtensionMsg } from './ts-extension'
+  text('.mjs-extension', tsMjsExtensionMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
@@ -213,6 +241,9 @@
 
   import { msg as virtualMsg } from '@virtual-file'
   text('.virtual', virtualMsg)
+
+  import { msg as virtualMsg9036 } from 'virtual:file-9036.js'
+  text('.virtual-9036', virtualMsg9036)
 
   import { msg as customVirtualMsg } from '@custom-virtual-file'
   text('.custom-virtual', customVirtualMsg)

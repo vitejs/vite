@@ -78,6 +78,8 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
+    } else if (ext === 'cts' || ext === 'mts') {
+      loader = 'ts'
     } else {
       loader = ext as Loader
     }
@@ -170,7 +172,7 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
 
@@ -182,7 +184,11 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     minifyIdentifiers: false,
     minifySyntax: false,
     minifyWhitespace: false,
-    treeShaking: false
+    treeShaking: false,
+    // keepNames is not needed when minify is disabled.
+    // Also transforming multiple times with keepNames enabled breaks
+    // tree-shaking. (#9164)
+    keepNames: false
   }
 
   return {
@@ -298,10 +304,19 @@ export function resolveEsbuildTranspileOptions(
   // pure annotations and break tree-shaking
   // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
   const isEsLibBuild = config.build.lib && format === 'es'
+  const esbuildOptions = config.esbuild || {}
   const options: TransformOptions = {
-    ...config.esbuild,
+    ...esbuildOptions,
     target: target || undefined,
-    format: rollupToEsbuildFormatMap[format]
+    format: rollupToEsbuildFormatMap[format],
+    // the final build should always support dynamic import and import.meta.
+    // if they need to be polyfilled, plugin-legacy should be used.
+    // plugin-legacy detects these two features when checking for modern code.
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
   }
 
   // If no minify, disable all minify options
@@ -437,11 +452,14 @@ function reloadOnTsconfigChange(changedFile: string) {
 
     // reset tsconfck so that recompile works with up2date configs
     initTSConfck(server.config).finally(() => {
-      // force full reload
-      server.ws.send({
-        type: 'full-reload',
-        path: '*'
-      })
+      // server may not be available if vite config is updated at the same time
+      if (server) {
+        // force full reload
+        server.ws.send({
+          type: 'full-reload',
+          path: '*'
+        })
+      }
     })
   }
 }

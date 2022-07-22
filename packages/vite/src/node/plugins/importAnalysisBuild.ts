@@ -14,6 +14,7 @@ import {
   moduleListContains
 } from '../utils'
 import type { Plugin } from '../plugin'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
@@ -155,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
-      const depsOptimizer = getDepsOptimizer(config, { ssr })
+      const depsOptimizer = getDepsOptimizer(config, ssr)
 
       const normalizeUrl = async (
         url: string,
@@ -163,7 +164,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       ): Promise<[string, string]> => {
         let importerFile = importer
 
-        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
 
@@ -187,7 +189,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile
@@ -223,10 +225,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           ss: expStart,
           se: expEnd,
           n: specifier,
-          d: dynamicIndex
+          d: dynamicIndex,
+          a: assertIndex
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
+
+        // strip import assertions as we can process them ourselves
+        if (!isDynamicImport && assertIndex > -1) {
+          str().remove(end + 1, expEnd)
+        }
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
@@ -260,7 +268,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const needsInterop = await optimizedDepNeedsInterop(
                 depsOptimizer.metadata,
                 file,
-                config
+                config,
+                ssr
               )
 
               let rewriteDone = false

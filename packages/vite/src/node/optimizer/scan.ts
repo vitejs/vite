@@ -25,6 +25,8 @@ import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 
+type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
+
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro)$/
@@ -44,6 +46,8 @@ export async function scanImports(config: ResolvedConfig): Promise<{
   deps: Record<string, string>
   missing: Record<string, string>
 }> {
+  // Only used to scan non-ssr code
+
   const start = performance.now()
 
   let entries: string[] = []
@@ -161,7 +165,11 @@ function esbuildScanPlugin(
 ): Plugin {
   const seen = new Map<string, string | undefined>()
 
-  const resolve = async (id: string, importer?: string) => {
+  const resolve = async (
+    id: string,
+    importer?: string,
+    options?: ResolveIdOptions
+  ) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
@@ -170,6 +178,7 @@ function esbuildScanPlugin(
       id,
       importer && normalizePath(importer),
       {
+        ...options,
         scan: true
       }
     )
@@ -314,12 +323,18 @@ function esbuildScanPlugin(
                         config.root,
                         resolve
                       )
-                    )?.s.toString() || transpiledContents
+                    )?.s.toString() || transpiledContents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               } else {
                 scripts[key] = {
                   loader,
-                  contents
+                  contents,
+                  pluginData: {
+                    htmlType: { loader }
+                  }
                 }
               }
 
@@ -364,14 +379,18 @@ function esbuildScanPlugin(
           // avoid matching windows volume
           filter: /^[\w@][^:]/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
@@ -404,10 +423,10 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
-      // css & json
+      // css & json & wasm
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json)$/
+          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json|wasm)$/
         },
         externalUnlessEntry
       )
@@ -432,9 +451,13 @@ function esbuildScanPlugin(
         {
           filter: /.*/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id) || !isScannable(resolved)) {
               return externalUnlessEntry({ path: id })

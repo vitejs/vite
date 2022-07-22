@@ -1,6 +1,7 @@
 import colors from 'picocolors'
 import _debug from 'debug'
 import { getHash } from '../utils'
+import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
   addManuallyIncludedOptimizeDeps,
@@ -40,10 +41,10 @@ const devSsrDepsOptimizerMap = new WeakMap<ResolvedConfig, DepsOptimizer>()
 
 export function getDepsOptimizer(
   config: ResolvedConfig,
-  type: { ssr?: boolean }
+  ssr?: boolean
 ): DepsOptimizer | undefined {
   // Workers compilation shares the DepsOptimizer from the main build
-  const isDevSsr = type.ssr && config.command !== 'build'
+  const isDevSsr = ssr && config.command !== 'build'
   return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
     config.mainConfig || config
   )
@@ -53,7 +54,9 @@ export async function initDepsOptimizer(
   config: ResolvedConfig,
   server?: ViteDevServer
 ): Promise<void> {
-  if (!getDepsOptimizer(config, { ssr: false })) {
+  // Non Dev SSR Optimizer
+  const ssr = config.command === 'build' && !!config.build.ssr
+  if (!getDepsOptimizer(config, ssr)) {
     await createDepsOptimizer(config, server)
   }
 }
@@ -63,7 +66,8 @@ export async function initDevSsrDepsOptimizer(
   config: ResolvedConfig,
   server: ViteDevServer
 ): Promise<void> {
-  if (getDepsOptimizer(config, { ssr: true })) {
+  if (getDepsOptimizer(config, true)) {
+    // ssr
     return
   }
   if (creatingDevSsrOptimizer) {
@@ -73,10 +77,11 @@ export async function initDevSsrDepsOptimizer(
     // Important: scanning needs to be done before starting the SSR dev optimizer
     // If ssrLoadModule is called before server.listen(), the main deps optimizer
     // will not be yet created
-    if (!getDepsOptimizer(config, { ssr: false })) {
+    const ssr = false
+    if (!getDepsOptimizer(config, ssr)) {
       await initDepsOptimizer(config, server)
     }
-    await getDepsOptimizer(config, { ssr: false })!.scanProcessing
+    await getDepsOptimizer(config, ssr)!.scanProcessing
 
     await createDevSsrDepsOptimizer(config)
     creatingDevSsrOptimizer = undefined
@@ -90,15 +95,16 @@ async function createDepsOptimizer(
 ): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
+  const ssr = isBuild && !!config.build.ssr // safe as Dev SSR don't use this optimizer
 
   const sessionTimestamp = Date.now().toString()
 
-  const cachedMetadata = loadCachedDepOptimizationMetadata(config)
+  const cachedMetadata = loadCachedDepOptimizationMetadata(config, ssr)
 
   let handle: NodeJS.Timeout | undefined
 
   let metadata =
-    cachedMetadata || initDepsOptimizerMetadata(config, sessionTimestamp)
+    cachedMetadata || initDepsOptimizerMetadata(config, ssr, sessionTimestamp)
 
   const depsOptimizer: DepsOptimizer = {
     metadata,
@@ -112,7 +118,7 @@ async function createDepsOptimizer(
     delayDepsOptimizerUntil,
     resetRegisteredIds,
     ensureFirstRun,
-    options: config.optimizeDeps
+    options: getDepOptimizationConfig(config, ssr)
   }
 
   depsOptimizerMap.set(config, depsOptimizer)
@@ -160,12 +166,12 @@ async function createDepsOptimizer(
     // Initialize discovered deps with manually added optimizeDeps.include info
 
     const deps: Record<string, string> = {}
-    await addManuallyIncludedOptimizeDeps(deps, config)
+    await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
     const discovered = await toDiscoveredDependencies(
       config,
       deps,
-      !!config.build.ssr,
+      ssr,
       sessionTimestamp
     )
 
@@ -177,55 +183,52 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    // TODO: We need the scan during build time, until preAliasPlugin
-    // is refactored to work without the scanned deps. We could skip
-    // this for build later.
+    if (!isBuild) {
+      // Important, the scanner is dev only
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+      // Ensure server listen is called before the scanner
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`))
 
-    runScanner()
-  }
+          const deps = await discoverProjectDependencies(config)
 
-  async function runScanner() {
-    const scanPhaseProcessing = newDepOptimizationProcessing()
-    depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+          debug(
+            colors.green(
+              Object.keys(deps).length > 0
+                ? `dependencies found by scanner: ${depsLogString(
+                    Object.keys(deps)
+                  )}`
+                : `no dependencies found by scanner`
+            )
+          )
 
-    try {
-      debug(colors.green(`scanning for dependencies...`))
+          // Add these dependencies to the discovered list, as these are currently
+          // used by the preAliasPlugin to support aliased and optimized deps.
+          // This is also used by the CJS externalization heuristics in legacy mode
+          for (const id of Object.keys(deps)) {
+            if (!metadata.discovered[id]) {
+              addMissingDep(id, deps[id])
+            }
+          }
 
-      const deps = await discoverProjectDependencies(config)
+          if (!isBuild) {
+            const knownDeps = prepareKnownDeps()
 
-      debug(
-        colors.green(
-          Object.keys(deps).length > 0
-            ? `dependencies found by scanner: ${depsLogString(
-                Object.keys(deps)
-              )}`
-            : `no dependencies found by scanner`
-        )
-      )
-
-      // Add these dependencies to the discovered list, as these are currently
-      // used by the preAliasPlugin to support aliased and optimized deps.
-      // This is also used by the CJS externalization heuristics in legacy mode
-      for (const id of Object.keys(deps)) {
-        if (!metadata.discovered[id]) {
-          addMissingDep(id, deps[id])
+            // For dev, we run the scanner and the first optimization
+            // run on the background, but we wait until crawling has ended
+            // to decide if we send this result to the browser or we need to
+            // do another optimize step
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+          }
+        } catch (e) {
+          logger.error(e.message)
+        } finally {
+          scanPhaseProcessing.resolve()
+          depsOptimizer.scanProcessing = undefined
         }
-      }
-
-      if (!isBuild) {
-        const knownDeps = prepareKnownDeps()
-
-        // For dev, we run the scanner and the first optimization
-        // run on the background, but we wait until crawling has ended
-        // to decide if we send this result to the browser or we need to
-        // do another optimize step
-        postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-      }
-    } catch (e) {
-      logger.error(e.message)
-    } finally {
-      scanPhaseProcessing.resolve()
-      depsOptimizer.scanProcessing = undefined
+      }, 0)
     }
   }
 
@@ -481,14 +484,8 @@ async function createDepsOptimizer(
 
   function registerMissingImport(
     id: string,
-    resolved: string,
-    ssr?: boolean
+    resolved: string
   ): OptimizedDepInfo {
-    if (!isBuild && ssr) {
-      config.logger.error(
-        'Vite internal error: ssr dep registered as a browser dep'
-      )
-    }
     const optimized = metadata.optimized[id]
     if (optimized) {
       return optimized
@@ -504,7 +501,7 @@ async function createDepsOptimizer(
       return missing
     }
 
-    missing = addMissingDep(id, resolved, ssr)
+    missing = addMissingDep(id, resolved)
 
     // Until the first optimize run is called, avoid triggering processing
     // We'll wait until the user codebase is eagerly processed by Vite so
@@ -522,7 +519,7 @@ async function createDepsOptimizer(
     return missing
   }
 
-  function addMissingDep(id: string, resolved: string, ssr?: boolean) {
+  function addMissingDep(id: string, resolved: string) {
     newDepsDiscovered = true
 
     return addOptimizedDepInfo(metadata, 'discovered', {
@@ -541,7 +538,7 @@ async function createDepsOptimizer(
       // loading of this pre-bundled dep needs to await for its processing
       // promise to be resolved
       processing: depOptimizationProcessing.promise,
-      exportsData: extractExportsData(resolved, config)
+      exportsData: extractExportsData(resolved, config, ssr)
     })
   }
 
@@ -748,7 +745,7 @@ async function createDevSsrDepsOptimizer(
     delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
     resetRegisteredIds: () => {},
     ensureFirstRun: () => {},
-    options: config.optimizeDeps
+    options: config.ssr.optimizeDeps
   }
   devSsrDepsOptimizerMap.set(config, depsOptimizer)
 }

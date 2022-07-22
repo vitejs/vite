@@ -144,15 +144,6 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
-// TODO:base review why we aren't using import.meta.url here
-function toStaticRelativePath(filename: string, importer: string) {
-  let outputFilepath = path.posix.relative(path.dirname(importer), filename)
-  if (!outputFilepath.startsWith('.')) {
-    outputFilepath = './' + outputFilepath
-  }
-  return outputFilepath
-}
-
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
@@ -270,7 +261,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         : 'module'
       const workerOptions = workerType === 'classic' ? '' : ',{type: "module"}'
       if (isBuild) {
-        getDepsOptimizer(config, { ssr })?.registerWorkersSource(id)
+        getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
         if (query.inline != null) {
           const chunk = await bundleWorkerEntry(config, id, query)
           // inline as blob data url
@@ -343,8 +334,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             'asset',
             chunk.fileName,
             'js',
-            config,
-            toStaticRelativePath
+            config
           )
           const replacementString =
             typeof replacement === 'string'

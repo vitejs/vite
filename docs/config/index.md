@@ -15,26 +15,13 @@ export default {
 }
 ```
 
-Note Vite supports using ES modules syntax in the config file even if the project is not using native Node ESM via `type: "module"`. In this case, the config file is auto pre-processed before load.
+Note Vite supports using ES modules syntax in the config file even if the project is not using native Node ESM, e.g. `type: "module"` in `package.json`. In this case, the config file is auto pre-processed before load.
 
 You can also explicitly specify a config file to use with the `--config` CLI option (resolved relative to `cwd`):
 
 ```bash
 vite --config my-config.js
 ```
-
-::: tip NOTE
-Vite will inject `__filename`, `__dirname` in config files and its deps. Declaring these variables at top level will result in an error:
-
-```js
-const __filename = 'value' // SyntaxError: Identifier '__filename' has already been declared
-
-const func = () => {
-  const __filename = 'value' // no error
-}
-```
-
-:::
 
 ## Config Intellisense
 
@@ -80,7 +67,7 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
 
 It is important to note that in Vite's API the `command` value is `serve` during dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases), and `build` when building for production (`vite build`).
 
-Only `ssrBuild` is included instead of a more general `ssr` flag because, during dev, the config is shared by the single server handling SSR and non-SSR requests.
+`ssrBuild` is experimental. It is only available during build instead of a more general `ssr` flag because, during dev, the config is shared by the single server handling SSR and non-SSR requests. The value could be `undefined` for tools that don't have separate commands for the browser and SSR build, so use explicit comparison against `true` and `false`.
 
 ## Async Config
 

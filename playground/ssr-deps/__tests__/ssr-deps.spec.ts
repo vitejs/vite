@@ -91,3 +91,15 @@ test('msg from optimized cjs with nested external', async () => {
     'Hello World!'
   )
 })
+
+test('msg from external using external entry', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.external-using-external-entry')).toMatch(
+    'Hello World!'
+  )
+})
+
+test('msg from linked no external', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.linked-no-external')).toMatch('Hello World!')
+})
