@@ -87,7 +87,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string) => boolean | undefined
+  shouldExternalize?: (id: string) => boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
