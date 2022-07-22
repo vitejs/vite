@@ -111,6 +111,9 @@ import './unsupported.css'
 import('./async-modules/blue')
 import('./async-modules/red')
 import('./async-modules/green')
+setTimeout(() => {
+  import('./async-modules/yellow')
+})
 
 // async css module with normal css
 import('./async-modules-and-css/black')
