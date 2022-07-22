@@ -124,8 +124,21 @@ export function createIsConfiguredAsSsrExternal(
       if (!pkgName) {
         return undefined
       }
-      if (ssr.external?.includes(pkgName)) {
+      if (
+        // If this id is defined as external, force it as external
+        // Note that individual package entries are allowed in ssr.external
+        ssr.external?.includes(id)
+      ) {
         return true
+      }
+      if (
+        // A package name in ssr.external externalizes every entry
+        ssr.external?.includes(pkgName)
+      ) {
+        // Return undefined here to avoid short-circuiting the isExternalizable check,
+        // that will filter this id out if it is not externalizable (e.g. a CSS file)
+        // We return here to make ssr.external take precedence over noExternal
+        return undefined
       }
       if (typeof noExternal === 'boolean') {
         return !noExternal
@@ -154,7 +167,7 @@ function createIsSsrExternal(
     isBuild: true
   }
 
-  const isValidPackageEntry = (id: string) => {
+  const isExternalizable = (id: string) => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
@@ -176,7 +189,7 @@ function createIsSsrExternal(
     let external = false
     if (!id.startsWith('.') && !path.isAbsolute(id)) {
       external =
-        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isValidPackageEntry(id))
+        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isExternalizable(id))
     }
     processedIds.set(id, external)
     return external
