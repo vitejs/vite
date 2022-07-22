@@ -843,7 +843,7 @@ export function toOutputFilePathInString(
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string }
+  ) => string | { runtime: string } = toImportMetaURLBasedRelativePath
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -869,6 +869,17 @@ export function toOutputFilePathInString(
     return toRelative(filename, hostId)
   }
   return config.base + filename
+}
+
+function toImportMetaURLBasedRelativePath(
+  filename: string,
+  importer: string
+): { runtime: string } {
+  return {
+    runtime: `new URL(${JSON.stringify(
+      path.posix.relative(path.dirname(importer), filename)
+    )},import.meta.url).href`
+  }
 }
 
 export function toOutputFilePathWithoutRuntime(
