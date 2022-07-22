@@ -52,6 +52,18 @@
 </h2>
 <p class="tsx-extension">fail</p>
 
+<h2>
+  A ts module can import another ESM module using its corresponding mjs file
+  name
+</h2>
+<p class="mjs-extension">fail</p>
+
+<h2>
+  A ts module can import another CommonJS module using its corresponding cjs
+  file name
+</h2>
+<p class="cjs-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -166,6 +178,12 @@
 
   import { msgTsx as tsTsxExtensionMsg } from './ts-extension'
   text('.tsx-extension', tsTsxExtensionMsg)
+
+  import { msgCjs as tsCjsExtensionMsg } from './ts-extension'
+  text('.cjs-extension', tsCjsExtensionMsg)
+
+  import { msgMjs as tsMjsExtensionMsg } from './ts-extension'
+  text('.mjs-extension', tsMjsExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'

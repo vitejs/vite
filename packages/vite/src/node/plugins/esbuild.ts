@@ -78,6 +78,8 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
+    } else if (ext === 'cts' || ext === 'mts') {
+      loader = 'ts'
     } else {
       loader = ext as Loader
     }
@@ -170,7 +172,7 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
 
