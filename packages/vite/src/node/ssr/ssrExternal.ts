@@ -90,13 +90,13 @@ const _require = createRequire(import.meta.url)
 
 const isSsrExternalCache = new WeakMap<
   ResolvedConfig,
-  (id: string) => boolean
+  (id: string) => boolean | undefined
 >()
 
 export function shouldExternalizeForSSR(
   id: string,
   config: ResolvedConfig
-): boolean {
+): boolean | undefined {
   let isSsrExternal = isSsrExternalCache.get(config)
   if (!isSsrExternal) {
     isSsrExternal = createIsSsrExternal(config)
@@ -151,56 +151,46 @@ export function createIsConfiguredAsSsrExternal(
   }
 }
 
-function createIsSsrExternal(config: ResolvedConfig): (id: string) => boolean {
-  const processedIds = new Map<string, boolean>()
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const processedIds = new Map<string, boolean | undefined>()
+
+  const { ssr, root } = config
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
   const resolveOptions: InternalResolveOptions = {
-    root: config.root,
+    root,
     preserveSymlinks: config.resolve.preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
 
-  const resolve = (id: string) => {
-    return tryNodeResolve(
-      id,
-      undefined,
-      resolveOptions,
-      config.ssr?.target === 'webworker',
-      undefined,
-      true,
-      false
-    )
-  }
-
-  const isExternal = (id: string) => {
-    if (id.startsWith('.') || path.isAbsolute(id) || isBuiltin(id)) {
-      return false
-    }
-    // check config for external/noExternal, undefined if not explicitly configured
-    const isConfigExternal = isConfiguredAsExternal(id)
-    if (isConfigExternal !== undefined) {
-      return isConfigExternal
-    }
-    // no external non-dep import or virtual files
+  const isExternalizable = (id: string) => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
-    // no external if can't resolve or is symlink package
-    const resolved = resolve(id)
-    if (!resolved || !resolved.id.includes('node_modules')) {
-      return false
-    }
-    return true
+    return !!tryNodeResolve(
+      id,
+      undefined,
+      resolveOptions,
+      ssr?.target === 'webworker',
+      undefined,
+      true,
+      true // try to externalize, will return undefined if not possible
+    )
   }
 
   return (id: string) => {
     if (processedIds.has(id)) {
-      return processedIds.get(id)!
+      return processedIds.get(id)
     }
-    const external = isExternal(id)
+    let external = false
+    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+      external =
+        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isExternalizable(id))
+    }
     processedIds.set(id, external)
     return external
   }

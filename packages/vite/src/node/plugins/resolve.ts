@@ -87,7 +87,7 @@ export interface InternalResolveOptions extends ResolveOptions {
   ssrOptimizeCheck?: boolean
   // Resolve using esbuild deps optimization
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
-  shouldExternalize?: (id: string) => boolean
+  shouldExternalize?: (id: string) => boolean | undefined
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -655,6 +655,10 @@ export function tryNodeResolve(
   const processResult = (resolved: PartialResolvedId) => {
     if (!externalize) {
       return resolved
+    }
+    // dont external symlink packages
+    if (!resolved.id.includes('node_modules')) {
+      return
     }
     const resolvedExt = path.extname(resolved.id)
     let resolvedId = id
