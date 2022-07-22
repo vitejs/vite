@@ -9,6 +9,8 @@ const ogUrl = 'https://vitejs.dev'
 const deployURL = process.env.DEPLOY_PRIME_URL || ''
 const commitRef = process.env.COMMIT_REF?.slice(0, 8) || 'dev'
 
+console.log('Env log:', process.env.URL, ':', process.env.DEPLOY_PRIME_URL)
+
 const deployType = (() => {
   switch (deployURL) {
     case 'https://main--vitejs.netlify.app/':
