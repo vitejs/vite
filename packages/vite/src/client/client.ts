@@ -319,39 +319,20 @@ const supportsConstructedSheet = (() => {
   return false
 })()
 
-const sheetsMap = new Map<
-  string,
-  HTMLStyleElement | CSSStyleSheet | undefined
->()
+const sheetsMap = new Map<string, StyleNode | CSSStyleSheet | undefined>()
 
-interface CSSAnchor {
-  start: HTMLStyleElement
-  end: HTMLStyleElement
+interface StyleNode extends HTMLStyleElement {
   weight: number
 }
 
-const anchorMap = new Map<string, CSSAnchor>()
-
-function binarySearchCSSInjectPosition(weight: number): HTMLElement | null {
-  const list = Array.from(anchorMap.values()).sort(
-    (a, b) => a.weight - b.weight
-  )
-  for (const anchor of list) {
-    if (weight < anchor.weight) {
-      return anchor.end
-    }
-  }
-  return null
-}
-
+const styleList: StyleNode[] = []
 export function updateStyle(
   id: string,
   content: string,
-  moduleEntry: string,
   entryWeight: number
 ): void {
   let style = sheetsMap.get(id)
-  // TODO inject the truth oreder for stylesheet
+  // TODO inject the truth order(small weight in head) for stylesheet
   if (supportsConstructedSheet && !content.includes('@import')) {
     if (style && !(style instanceof CSSStyleSheet)) {
       removeStyle(id)
@@ -375,32 +356,26 @@ export function updateStyle(
     }
 
     if (!style) {
-      style = document.createElement('style')
+      style = document.createElement('style') as StyleNode
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
       // for debugging
       style.setAttribute('w', entryWeight.toString())
-      if (moduleEntry === 'main') {
-        document.head.appendChild(style)
-      } else {
-        const anchor = anchorMap.get(moduleEntry)
-        if (anchor) {
-          document.head.insertBefore(style, anchor.end.nextSibling)
-          anchor.end = style
+      if (entryWeight) {
+        const nodeIdx = styleList.findIndex((node) => node.weight > entryWeight)
+        const node = styleList[nodeIdx]
+        style.weight = entryWeight
+        if (nodeIdx !== -1) {
+          document.head.insertBefore(style, node)
+          styleList.splice(nodeIdx, 0, style)
         } else {
-          const node = binarySearchCSSInjectPosition(entryWeight)
-          anchorMap.set(moduleEntry, {
-            start: style,
-            end: style,
-            weight: entryWeight
-          })
-          if (node) {
-            document.head.insertBefore(style, node)
-          } else {
-            document.head.appendChild(style)
-          }
+          document.head.appendChild(style)
+          styleList.push(style)
         }
+      } else {
+        document.head.appendChild(style)
       }
+      console.log(styleList.map((n) => n.weight))
     } else {
       style.innerHTML = content
     }

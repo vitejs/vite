@@ -386,10 +386,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const cssContent = await getContentWithSourcemap(css)
         const devBase = config.base
         const moduleNode = serve.moduleGraph.getModuleById(id)!
-        const entryPoint =
-          typeof moduleNode.entryPoint === 'string'
-            ? moduleNode.entryPoint
-            : moduleNode.entryPoint!.id
         const entryPointWeight =
           typeof moduleNode.entryPoint === 'string'
             ? 0
@@ -400,9 +396,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
-          `const __vite__entry = ${JSON.stringify(entryPoint)}`,
           `const __vite__entry_weight = ${JSON.stringify(entryPointWeight)}`,
-          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry, __vite__entry_weight)`,
+          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry_weight)`,
           // css modules exports change on edit so it can't self accept
           `${
             modulesCode ||
