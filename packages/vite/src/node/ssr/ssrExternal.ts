@@ -156,20 +156,22 @@ function createIsSsrExternal(config: ResolvedConfig): (id: string) => boolean {
 
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
+  const resolveOptions: InternalResolveOptions = {
+    root: config.root,
+    preserveSymlinks: config.resolve.preserveSymlinks,
+    isProduction: false,
+    isBuild: true
+  }
+
   const resolve = (id: string) => {
     return tryNodeResolve(
       id,
       undefined,
-      {
-        root: config.root,
-        preserveSymlinks: config.resolve.preserveSymlinks,
-        isProduction: false,
-        isBuild: true
-      },
+      resolveOptions,
       config.ssr?.target === 'webworker',
       undefined,
       true,
-      false // try to externalize, will return undefined if not possible
+      false
     )
   }
 
