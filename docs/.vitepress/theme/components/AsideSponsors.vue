@@ -18,7 +18,7 @@ const sponsors = computed(() => {
 </script>
 
 <template>
-  <a class="viteconf" href="https://viteconf.org">
+  <a class="viteconf" href="https://viteconf.org" target="_blank">
     <img width="22" height="22" src="/viteconf.svg" />
     <span>
       <p class="extra-info">Free Online Conference</p>
