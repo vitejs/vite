@@ -656,6 +656,10 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
+    // dont external symlink packages
+    if (!resolved.id.includes('node_modules')) {
+      return
+    }
     const resolvedExt = path.extname(resolved.id)
     let resolvedId = id
     if (isDeepImport) {
