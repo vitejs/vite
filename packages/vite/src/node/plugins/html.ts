@@ -608,9 +608,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         const relativeUrlPath = path.posix.relative(config.root, id)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
-        const toOutputAssetFilePath = (
+        const toOutputFilePath = (
           filename: string,
-          type: 'asset' | 'public' = 'asset'
+          type: 'asset' | 'public'
         ) => {
           if (isExternalUrl(filename)) {
             return filename
@@ -625,6 +625,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
+
+        const toOutputAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'asset')
+
+        const toOutputPublicAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
@@ -716,9 +722,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
           return normalizePath(
-            toOutputAssetFilePath(
-              getPublicAssetFilename(fileHash, config)!,
-              'public'
+            toOutputPublicAssetFilePath(
+              getPublicAssetFilename(fileHash, config)!
             )
           )
         })
