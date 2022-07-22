@@ -172,7 +172,7 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.([cm]?ts|[jt]sx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
 
