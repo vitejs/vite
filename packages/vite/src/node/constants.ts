@@ -24,6 +24,7 @@ export const ESBUILD_MODULES_TARGET = [
 export const DEFAULT_EXTENSIONS = [
   '.mjs',
   '.js',
+  '.mts',
   '.ts',
   '.jsx',
   '.tsx',
@@ -41,7 +42,7 @@ export const DEFAULT_CONFIG_FILES = [
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
-export const OPTIMIZABLE_ENTRY_RE = /\.(?:(m|c)?js|ts)$/
+export const OPTIMIZABLE_ENTRY_RE = /\.(?:[cm]?[jt]s)$/
 
 export const SPECIAL_QUERY_RE = /[\?&](?:worker|sharedworker|raw|url)\b/
 
