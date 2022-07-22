@@ -151,7 +151,7 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
-   * When doing a re-run, if there are newly discovered dependendencies
+   * When doing a re-run, if there are newly discovered dependencies
    * the page reload will be delayed until the next rerun so we need
    * to be able to discard the result
    */

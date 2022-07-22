@@ -257,14 +257,14 @@ export interface UserConfig {
 
 export interface ExperimentalOptions {
   /**
-   * Append fake `&lang.(ext)` when queries are specified, to preseve the file extension for following plugins to process.
+   * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
    *
    * @experimental
    * @default false
    */
   importGlobRestoreExtension?: boolean
   /**
-   * Allow finegrain contol over assets and public files paths
+   * Allow finegrain control over assets and public files paths
    *
    * @experimental
    */
