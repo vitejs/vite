@@ -14,7 +14,9 @@ import {
   magenta,
   red,
   reset,
-  yellow
+  yellow,
+  white,
+  lightBlue
 } from 'kolorist'
 
 // Avoids autoconversion to number of the project name by defining that the args
@@ -116,6 +118,17 @@ const FRAMEWORKS = [
         name: 'svelte-ts',
         display: 'TypeScript',
         color: blue
+      }
+    ]
+  },
+  {
+    name: 'tailwindcss',
+    color: white,
+    variants: [
+      {
+        name: 'tailwindcss',
+        display: 'Tailwind CSS',
+        color: lightBlue
       }
     ]
   }

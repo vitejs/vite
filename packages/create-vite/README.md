@@ -55,6 +55,7 @@ Currently supported template presets include:
 - `lit-ts`
 - `svelte`
 - `svelte-ts`
+- `tailwindcss`
 
 You can use `.` for the project name to scaffold in the current directory.
 
