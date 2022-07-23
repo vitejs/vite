@@ -94,7 +94,7 @@ test('dep with optional peer dep', async () => {
   if (isServe) {
     expect(browserErrors.map((error) => error.message)).toEqual(
       expect.arrayContaining([
-        'Could not resolve "undefined" imported by "undefined". Is it installed?'
+        'Could not resolve "foobar" imported by "dep-with-optional-peer-dep". Is it installed?'
       ])
     )
   }

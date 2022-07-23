@@ -95,7 +95,7 @@ export function esbuildDepPlugin(
     }
     if (resolved.startsWith(optionalPeerDepId)) {
       return {
-        path: id,
+        path: resolved,
         namespace: 'optional-peer-dep'
       }
     }
