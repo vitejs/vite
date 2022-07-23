@@ -24,7 +24,7 @@ import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
-import { preCloseBundlePlugin } from './preCloseBundle';
+import { preCloseBundlePlugin } from './preCloseBundle'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -37,7 +37,6 @@ export async function resolvePlugins(
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
-
 
   const plugins: Plugin[] = [
     isWatch ? ensureWatchPlugin() : null,
@@ -101,13 +100,13 @@ export async function resolvePlugins(
       : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
   ].filter(Boolean) as Plugin[]
 
-  if (!isBuild)
-    return plugins
+  if (!isBuild) return plugins
 
-  const preClosePlugins = plugins.filter(p => typeof (p as any).preCloseBundle === 'function')
+  const preClosePlugins = plugins.filter(
+    (p) => typeof (p as any).preCloseBundle === 'function'
+  )
 
   return preClosePlugins.length > 0
     ? preCloseBundlePlugin(plugins, preClosePlugins)
     : plugins
-
 }

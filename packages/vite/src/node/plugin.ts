@@ -156,7 +156,5 @@ export interface Plugin extends RollupPlugin {
   /**
    * Invoked between `writeBundle` and `closeBundle` hooks.
    */
-  preCloseBundle?: (
-    this: PluginContext,
-  ) => void | Promise<void>
+  preCloseBundle?: (this: PluginContext) => void | Promise<void>
 }
