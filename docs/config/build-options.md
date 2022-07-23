@@ -6,7 +6,7 @@
 - **Default:** `'modules'`
 - **Related:** [Browser Compatibility](/guide/build#browser-compatibility)
 
-Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module) and [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) support.
+Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta) support.
 
 Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
 
