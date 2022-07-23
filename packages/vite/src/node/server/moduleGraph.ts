@@ -45,7 +45,7 @@ export class ModuleNode {
    */
   entryPoint: ModuleNode | 'dynamic' | 'main' | null = null
   /**
-   * lower weight is better
+   * lower weight had higher priority
    */
   weight: number = 0
 
