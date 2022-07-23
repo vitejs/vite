@@ -153,4 +153,10 @@ export interface Plugin extends RollupPlugin {
     id: string,
     options?: { ssr?: boolean }
   ) => Promise<TransformResult> | TransformResult
+  /**
+   * Invoked between `writeBundle` and `closeBundle` hooks.
+   */
+  preCloseBundle?: (
+    this: PluginContext,
+  ) => void | Promise<void>
 }
