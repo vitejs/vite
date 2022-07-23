@@ -325,11 +325,26 @@ interface StyleNode extends HTMLStyleElement {
   weight: number
 }
 
+let weight = 0
+const entryPointWeightMap = new Map<string, number>()
+
+export function dynamicImportModule(url: string, id: string): Promise<any> {
+  const injectWeight = (id: string) =>
+    injectQuery(id, `epw=${entryPointWeight}`)
+  let entryPointWeight = entryPointWeightMap.get(id)
+  if (!entryPointWeight) {
+    entryPointWeight = ++weight
+    entryPointWeightMap.set(id, entryPointWeight)
+  }
+  // inject entry point weight into the url
+  return import(injectWeight(url))
+}
+
 const styleList: StyleNode[] = []
 export function updateStyle(
   id: string,
   content: string,
-  entryWeight: number
+  entryPoint: string
 ): void {
   let style = sheetsMap.get(id)
   // TODO inject the truth order(small weight in head) for stylesheet
@@ -359,6 +374,7 @@ export function updateStyle(
       style = document.createElement('style') as StyleNode
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
+      const entryWeight = entryPointWeightMap.get(entryPoint) || 0
       // for debugging
       style.setAttribute('w', entryWeight.toString())
       if (entryWeight) {
@@ -375,7 +391,6 @@ export function updateStyle(
       } else {
         document.head.appendChild(style)
       }
-      console.log(styleList.map((n) => n.weight))
     } else {
       style.innerHTML = content
     }

@@ -4,13 +4,12 @@ import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
   normalizePath,
+  parseRequest,
   removeImportQuery,
   removeTimestampQuery
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
-
-let weight = 0
 
 export class ModuleNode {
   /**
@@ -42,7 +41,7 @@ export class ModuleNode {
    *   - null - no init
    *   - dynamic - it's entry pointer (the ModuleNode what import by dynamic import)
    *   - main - it's import by main entry point
-   *   - ModuleNode - it's import by dynamic import and the entry point is this field
+   *   - ModuleNode - it's imported by dynamic import and the entry point is this field
    */
   entryPoint: ModuleNode | 'dynamic' | 'main' | null = null
   /**
@@ -242,18 +241,9 @@ export class ModuleGraph {
       }
       fileMappedModules.add(mod)
     }
+    const epw = parseRequest(rawUrl)?.epw
+    mod.weight = epw ? +epw : 0
     return mod
-  }
-
-  /**
-   * will call it after http request resolveId
-   * so the call order will as same as the browser module request order
-   */
-  tryEnsureModuleWeight(id: string): void {
-    const mod = this.getModuleById(id)
-    if (mod && mod.entryPoint === 'dynamic' && mod.weight === 0) {
-      mod.weight = ++weight
-    }
   }
 
   // some deps, like a css file referenced via @import, don't have its own

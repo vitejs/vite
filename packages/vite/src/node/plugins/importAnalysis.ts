@@ -242,6 +242,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       let isSelfAccepting = false
       let hasEnv = false
       let needQueryInjectHelper = false
+      let needDynamicImportHelper = false
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       const importedUrls = new Set<string>()
@@ -527,9 +528,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               rewriteDone = true
             }
             if (!rewriteDone) {
-              str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
-                contentOnly: true
-              })
+              if (isDynamicImport) {
+                const id = (await server.moduleGraph.getModuleByUrl(url))?.id
+                str().overwrite(
+                  expStart,
+                  expEnd,
+                  `__vite_dynamicImportModule(new URL('${url}', import.meta.url).pathname, '${id}')`,
+                  { contentOnly: true }
+                )
+                needDynamicImportHelper = true
+              } else {
+                str().overwrite(start, end, url, { contentOnly: true })
+              }
             }
           }
 
@@ -633,6 +643,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (needQueryInjectHelper) {
         str().prepend(
           `import { injectQuery as __vite__injectQuery } from "${clientPublicPath}";`
+        )
+      }
+
+      if (needDynamicImportHelper) {
+        str().prepend(
+          `import { dynamicImportModule as __vite_dynamicImportModule } from "${clientPublicPath}";`
         )
       }
 

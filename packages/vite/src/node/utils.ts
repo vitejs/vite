@@ -288,6 +288,7 @@ export function getPotentialTsSrcPaths(filePath: string): string[] {
 }
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
+const epwQueryRE = /(\?|&)epw=(\d+)?(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
@@ -301,7 +302,10 @@ export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
 
 export function removeImportQuery(url: string): string {
-  return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
+  return url
+    .replace(importQueryRE, '$1')
+    .replace(epwQueryRE, '$1')
+    .replace(trailingSeparatorRE, '')
 }
 
 export function injectQuery(url: string, queryToInject: string): string {
