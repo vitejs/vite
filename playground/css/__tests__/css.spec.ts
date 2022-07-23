@@ -443,6 +443,13 @@ test('aliased css has content', async () => {
   expect(await getColor('.aliased-module')).toBe('blue')
 })
 
+test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('unsupported-css-property')
+  })
+})
+
 test('async css modules', async () => {
   const green = await page.$('.async-modules-green')
   const blue2 = await page.$('.async-modules-blue2')
@@ -452,29 +459,20 @@ test('async css modules', async () => {
   const _black = await page.$('.async-modules-and-css-black')
   const _blue = await page.$('.async-modules-and-css-blue')
 
-  expect(await getColor(green)).toBe('green')
-  expect(await getColor(blue2)).toBe('blue')
-
-  expect(await getColor(_black)).toBe('black')
-  expect(await getColor(_blue)).toBe('blue')
-
-  // because that loaded blue > red first
-  // and can't change the style order
-  expect(await getColor(blue)).toBe('black')
-  expect(await getColor(red)).toBe('black')
+  // NOTE: the match inline snapshot should generate by build mode
+  expect(await getColor(green)).toMatchInlineSnapshot('"green"')
+  expect(await getColor(blue2)).toMatchInlineSnapshot('"red"')
+  expect(await getColor(_black)).toMatchInlineSnapshot('"black"')
+  expect(await getColor(_blue)).toMatchInlineSnapshot('"blue"')
+  expect(await getColor(blue)).toMatchInlineSnapshot('"black"')
+  expect(await getColor(red)).toMatchInlineSnapshot('"red"')
 })
 
 test('async css modules with normal css', async () => {
   const black = await page.$('.async-modules-and-css-black')
   const blue = await page.$('.async-modules-and-css-blue')
 
-  expect(await getColor(black)).toBe('black')
-  expect(await getColor(blue)).toBe('blue')
-})
-
-test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
-  serverLogs.forEach((log) => {
-    // no warning from esbuild css minifier
-    expect(log).not.toMatch('unsupported-css-property')
-  })
+  // NOTE: the match inline snapshot should generate by build mode
+  expect(await getColor(black)).toMatchInlineSnapshot('"black"')
+  expect(await getColor(blue)).toMatchInlineSnapshot('"blue"')
 })

@@ -32,6 +32,10 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
 
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangRE = new RegExp(cssLangs)
+const isCSSRequest = (request: string): boolean => cssLangRE.test(request)
+
 let socket: WebSocket
 try {
   let fallback: (() => void) | undefined
@@ -328,7 +332,10 @@ interface StyleNode extends HTMLStyleElement {
 let weight = 0
 const entryPointWeightMap = new Map<string, number>()
 
-export function dynamicImportModule(url: string, id: string): Promise<any> {
+export function dynamicImportModule(url: URL, id: string): Promise<any> {
+  if (isCSSRequest(id)) {
+    return import(url.pathname + url.search)
+  }
   const injectWeight = (id: string) =>
     injectQuery(id, `epw=${entryPointWeight}`)
   let entryPointWeight = entryPointWeightMap.get(id)
@@ -337,7 +344,7 @@ export function dynamicImportModule(url: string, id: string): Promise<any> {
     entryPointWeightMap.set(id, entryPointWeight)
   }
   // inject entry point weight into the url
-  return import(injectWeight(url))
+  return import(injectWeight(url.pathname + url.search))
 }
 
 const styleList: StyleNode[] = []
