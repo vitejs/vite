@@ -1,7 +1,7 @@
 const { resolve } = require('path')
 
 async function awaiting(timeout = 1000) {
-  await new Promise(resolve => setTimeout(resolve, timeout))
+  await new Promise((resolve) => setTimeout(resolve, timeout))
 }
 
 let called1 = false
