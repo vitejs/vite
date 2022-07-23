@@ -390,7 +390,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const entryPoint =
           typeof moduleNode.entryPoint === 'string'
             ? moduleNode.entryPoint
-            : moduleNode.entryPoint!.id
+            : moduleNode?.entryPoint?.id || 'main'
 
         return [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(

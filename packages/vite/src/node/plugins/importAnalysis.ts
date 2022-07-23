@@ -529,14 +529,18 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             if (!rewriteDone) {
               if (isDynamicImport) {
-                const id = (await server.moduleGraph.getModuleByUrl(url))?.id
-                str().overwrite(
-                  expStart,
-                  expEnd,
-                  `__vite_dynamicImportModule(new URL('${url}', import.meta.url).pathname, '${id}')`,
-                  { contentOnly: true }
-                )
-                needDynamicImportHelper = true
+                if (!ssr) {
+                  needDynamicImportHelper = true
+                  const id = (await server.moduleGraph.getModuleByUrl(url))?.id
+                  str().overwrite(
+                    expStart,
+                    expEnd,
+                    `__vite_dynamicImportModule(new URL('${url}', import.meta.url).pathname, '${id}')`,
+                    { contentOnly: true }
+                  )
+                } else {
+                  str().overwrite(start, end, `'${url}'`, { contentOnly: true })
+                }
               } else {
                 str().overwrite(start, end, url, { contentOnly: true })
               }
