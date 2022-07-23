@@ -87,7 +87,7 @@ export async function transformWithEsbuild(
 
   let tsconfigRaw = options?.tsconfigRaw
 
-  // if options provide tsconfigraw in string, it takes highest precedence
+  // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
@@ -443,7 +443,7 @@ function reloadOnTsconfigChange(changedFile: string) {
       tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
       { clear: server.config.clearScreen, timestamp: true }
     )
 
