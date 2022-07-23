@@ -178,7 +178,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         let result
         try {
           // When import string is using backticks, es-module-lexer `end` captures until
-          // the closing parenthesis, instead of the closing backtick. Remove them manually.
+          // the closing parenthesis, instead of the closing backtick. Remove comments manually.
+          // See https://github.com/guybedford/es-module-lexer/issues/118
           const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(importSource, importer, resolve)
         } catch (error) {
