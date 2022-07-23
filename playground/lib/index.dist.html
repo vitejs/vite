@@ -27,11 +27,11 @@
 
 <script src="./my-lib-custom-filename.umd.js"></script>
 <script>
-  MyLib('.umd')
+  window.MyLib('.umd')
   delete window.MyLib // so that it won't affect iife
 </script>
 
 <script src="./my-lib-custom-filename.iife.js"></script>
 <script>
-  MyLib('.iife')
+  window.MyLib('.iife')
 </script>
