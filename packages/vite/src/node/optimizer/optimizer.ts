@@ -55,7 +55,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   // Non Dev SSR Optimizer
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
   if (!getDepsOptimizer(config, ssr)) {
     await createDepsOptimizer(config, server)
   }
@@ -95,7 +95,7 @@ async function createDepsOptimizer(
 ): Promise<void> {
   const { logger } = config
   const isBuild = config.command === 'build'
-  const ssr = !!config.build.ssr // safe as Dev SSR don't use this optimizer
+  const ssr = isBuild && !!config.build.ssr // safe as Dev SSR don't use this optimizer
 
   const sessionTimestamp = Date.now().toString()
 
@@ -183,55 +183,52 @@ async function createDepsOptimizer(
       newDepsDiscovered = true
     }
 
-    // TODO: We need the scan during build time, until preAliasPlugin
-    // is refactored to work without the scanned deps. We could skip
-    // this for build later.
+    if (!isBuild) {
+      // Important, the scanner is dev only
+      const scanPhaseProcessing = newDepOptimizationProcessing()
+      depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+      // Ensure server listen is called before the scanner
+      setTimeout(async () => {
+        try {
+          debug(colors.green(`scanning for dependencies...`))
 
-    runScanner()
-  }
+          const deps = await discoverProjectDependencies(config)
 
-  async function runScanner() {
-    const scanPhaseProcessing = newDepOptimizationProcessing()
-    depsOptimizer.scanProcessing = scanPhaseProcessing.promise
+          debug(
+            colors.green(
+              Object.keys(deps).length > 0
+                ? `dependencies found by scanner: ${depsLogString(
+                    Object.keys(deps)
+                  )}`
+                : `no dependencies found by scanner`
+            )
+          )
 
-    try {
-      debug(colors.green(`scanning for dependencies...`))
+          // Add these dependencies to the discovered list, as these are currently
+          // used by the preAliasPlugin to support aliased and optimized deps.
+          // This is also used by the CJS externalization heuristics in legacy mode
+          for (const id of Object.keys(deps)) {
+            if (!metadata.discovered[id]) {
+              addMissingDep(id, deps[id])
+            }
+          }
 
-      const deps = await discoverProjectDependencies(config)
+          if (!isBuild) {
+            const knownDeps = prepareKnownDeps()
 
-      debug(
-        colors.green(
-          Object.keys(deps).length > 0
-            ? `dependencies found by scanner: ${depsLogString(
-                Object.keys(deps)
-              )}`
-            : `no dependencies found by scanner`
-        )
-      )
-
-      // Add these dependencies to the discovered list, as these are currently
-      // used by the preAliasPlugin to support aliased and optimized deps.
-      // This is also used by the CJS externalization heuristics in legacy mode
-      for (const id of Object.keys(deps)) {
-        if (!metadata.discovered[id]) {
-          addMissingDep(id, deps[id])
+            // For dev, we run the scanner and the first optimization
+            // run on the background, but we wait until crawling has ended
+            // to decide if we send this result to the browser or we need to
+            // do another optimize step
+            postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
+          }
+        } catch (e) {
+          logger.error(e.message)
+        } finally {
+          scanPhaseProcessing.resolve()
+          depsOptimizer.scanProcessing = undefined
         }
-      }
-
-      if (!isBuild) {
-        const knownDeps = prepareKnownDeps()
-
-        // For dev, we run the scanner and the first optimization
-        // run on the background, but we wait until crawling has ended
-        // to decide if we send this result to the browser or we need to
-        // do another optimize step
-        postScanOptimizationResult = runOptimizeDeps(config, knownDeps)
-      }
-    } catch (e) {
-      logger.error(e.message)
-    } finally {
-      scanPhaseProcessing.resolve()
-      depsOptimizer.scanProcessing = undefined
+      }, 0)
     }
   }
 
@@ -243,12 +240,12 @@ async function createDepsOptimizer(
     depOptimizationProcessingQueue.push(depOptimizationProcessing)
 
     // Create a new promise for the next rerun, discovered missing
-    // dependencies will be asigned this promise from this point
+    // dependencies will be assigned this promise from this point
     depOptimizationProcessing = newDepOptimizationProcessing()
   }
 
   async function optimizeNewDeps() {
-    // a succesful completion of the optimizeDeps rerun will end up
+    // a successful completion of the optimizeDeps rerun will end up
     // creating new bundled version of all current and discovered deps
     // in the cache dir and a new metadata info object assigned
     // to _metadata. A fullReload is only issued if the previous bundled
@@ -394,7 +391,7 @@ async function createDepsOptimizer(
       } else {
         if (newDepsDiscovered) {
           // There are newly discovered deps, and another rerun is about to be
-          // excecuted. Avoid the current full reload discarding this rerun result
+          // executed. Avoid the current full reload discarding this rerun result
           // We don't resolve the processing promise, as they will be resolved
           // once a rerun is committed
           processingResult.cancel()
@@ -531,7 +528,7 @@ async function createDepsOptimizer(
       src: resolved,
       // Assing a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
-      // doesn't alter the bundled files of previous known dependendencies,
+      // doesn't alter the bundled files of previous known dependencies,
       // we don't need a full reload and this browserHash will be kept
       browserHash: getDiscoveredBrowserHash(
         metadata.hash,

@@ -30,9 +30,18 @@ export interface Options {
   isProduction?: boolean
 
   // options to pass on to vue/compiler-sfc
-  script?: Partial<SFCScriptCompileOptions>
-  template?: Partial<SFCTemplateCompileOptions>
-  style?: Partial<SFCStyleCompileOptions>
+  script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
+  template?: Partial<
+    Pick<
+      SFCTemplateCompileOptions,
+      | 'compiler'
+      | 'compilerOptions'
+      | 'preprocessOptions'
+      | 'preprocessCustomRequire'
+      | 'transformAssetUrls'
+    >
+  >
+  style?: Partial<Pick<SFCStyleCompileOptions, 'trim'>>
 
   /**
    * Transform Vue SFCs into custom elements.
@@ -124,7 +133,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         },
         ssr: {
-          external: ['vue', '@vue/server-renderer']
+          external: config.legacy?.buildSsrCjsExternalHeuristics
+            ? ['vue', '@vue/server-renderer']
+            : []
         }
       }
     },

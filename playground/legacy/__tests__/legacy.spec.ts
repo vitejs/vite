@@ -81,7 +81,7 @@ describe.runIf(isBuild)('build', () => {
   test('should minify legacy chunks with terser', async () => {
     // This is a ghetto heuristic, but terser output seems to reliably start
     // with one of the following, and non-terser output (including unminified or
-    // ebuild-minified) does not!
+    // esbuild-minified) does not!
     const terserPattern = /^(?:!function|System.register)/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)

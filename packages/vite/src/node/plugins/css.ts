@@ -426,7 +426,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           code = `export default ${JSON.stringify(content)}`
         }
       } else {
-        code = `export default ''`
+        // if moduleCode exists return it **even if** it does not have `?used`
+        // this will disable tree-shake to work with `import './foo.module.css'` but this usually does not happen
+        // this is a limitation of the current approach by `?used` to make tree-shake work
+        // See #8936 for more details
+        code = modulesCode || `export default ''`
       }
 
       return {
@@ -1245,18 +1249,25 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
 function resolveEsbuildMinifyOptions(
   options: ESBuildOptions
 ): TransformOptions {
+  const base: TransformOptions = {
+    logLevel: options.logLevel,
+    logLimit: options.logLimit,
+    logOverride: options.logOverride
+  }
+
   if (
     options.minifyIdentifiers != null ||
     options.minifySyntax != null ||
     options.minifyWhitespace != null
   ) {
     return {
+      ...base,
       minifyIdentifiers: options.minifyIdentifiers ?? true,
       minifySyntax: options.minifySyntax ?? true,
       minifyWhitespace: options.minifyWhitespace ?? true
     }
   } else {
-    return { minify: true }
+    return { ...base, minify: true }
   }
 }
 

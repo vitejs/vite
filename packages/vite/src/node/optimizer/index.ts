@@ -54,11 +54,7 @@ export type ExportsData = {
 export interface DepsOptimizer {
   metadata: DepOptimizationMetadata
   scanProcessing?: Promise<void>
-  registerMissingImport: (
-    id: string,
-    resolved: string,
-    ssr?: boolean
-  ) => OptimizedDepInfo
+  registerMissingImport: (id: string, resolved: string) => OptimizedDepInfo
   run: () => void
 
   isOptimizedDepFile: (id: string) => boolean
@@ -117,7 +113,7 @@ export interface DepOptimizationConfig {
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
    *
-   * By default, Vite can optimize `.mjs`, `.js`, and `.ts` files. This option
+   * By default, Vite can optimize `.mjs`, `.js`, `.ts`, and `.mts` files. This option
    * allows specifying additional extensions.
    *
    * @experimental
@@ -126,8 +122,8 @@ export interface DepOptimizationConfig {
   /**
    * Disables dependencies optimizations, true disables the optimizer during
    * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
-   * one of the modes. Deps optimization is enabled by default in both
-   * @default false
+   * one of the modes. Deps optimization is enabled by default in dev only.
+   * @default 'build'
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
@@ -155,7 +151,7 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
-   * When doing a re-run, if there are newly discovered dependendencies
+   * When doing a re-run, if there are newly discovered dependencies
    * the page reload will be delayed until the next rerun so we need
    * to be able to discard the result
    */
@@ -218,7 +214,8 @@ export interface DepOptimizationMetadata {
 }
 
 /**
- * Used by Vite CLI when running `vite optimize`
+ * Scan and optimize dependencies within a project.
+ * Used by Vite CLI when running `vite optimize`.
  */
 export async function optimizeDeps(
   config: ResolvedConfig,
@@ -227,7 +224,7 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  const ssr = !!config.build.ssr
+  const ssr = config.command === 'build' && !!config.build.ssr
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
@@ -281,7 +278,7 @@ export async function optimizeServerSsrDeps(
     ) as string[]
     noExternalFilter =
       noExternal === true
-        ? (dep: unknown) => false
+        ? (dep: unknown) => true
         : createFilter(undefined, exclude, {
             resolve: false
           })
@@ -449,7 +446,8 @@ export function depsLogString(qualifiedIds: string[]): string {
 export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = !!resolvedConfig.build.ssr
+  ssr: boolean = resolvedConfig.command === 'build' &&
+    !!resolvedConfig.build.ssr
 ): Promise<DepOptimizationResult> {
   const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
@@ -568,8 +566,7 @@ export async function runOptimizeDeps(
         rollupOptionsExternal.some((ext) => typeof ext !== 'string')
       ) {
         throw new Error(
-          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string.\n` +
-            `You can turn on 'legacy.buildRollupPluginCommonjs' to support more advanced options.`
+          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string when using esbuild optimization at build time.`
         )
       }
       external.push(...(rollupOptionsExternal as string[]))
@@ -705,16 +702,22 @@ export async function addManuallyIncludedOptimizeDeps(
         )
       }
     }
-    const resolve = config.createResolver({ asSrc: false, scan: true })
+    const resolve = config.createResolver({
+      asSrc: false,
+      scan: true,
+      ssrOptimizeCheck: ssr
+    })
     for (const id of [...optimizeDepsInclude, ...extra]) {
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
       if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
-        const entry = await resolve(id)
+        const entry = await resolve(id, undefined, undefined, ssr)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
-            deps[normalizedId] = entry
+            if (!entry.endsWith('?__vite_skip_optimization')) {
+              deps[normalizedId] = entry
+            }
           } else {
             unableToOptimize(entry, 'Cannot optimize dependency')
           }
@@ -746,7 +749,7 @@ export function depsFromOptimizedDepInfo(
 export function getOptimizedDepPath(
   id: string,
   config: ResolvedConfig,
-  ssr: boolean = !!config.build.ssr
+  ssr: boolean
 ): string {
   return normalizePath(
     path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js')
@@ -1006,7 +1009,7 @@ function needsInterop(
   }
 
   if (output) {
-    // if a peer dependency used require() on a ESM dependency, esbuild turns the
+    // if a peer dependency used require() on an ESM dependency, esbuild turns the
     // ESM dependency's entry chunk into a single default export... detect
     // such cases by checking exports mismatch, and force interop.
     const generatedExports: string[] = output.exports

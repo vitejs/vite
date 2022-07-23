@@ -27,7 +27,6 @@ import {
   dynamicImport,
   isExternalUrl,
   isObject,
-  isTS,
   lookupFile,
   mergeAlias,
   mergeConfig,
@@ -258,14 +257,14 @@ export interface UserConfig {
 
 export interface ExperimentalOptions {
   /**
-   * Append fake `&lang.(ext)` when queries are specified, to preseve the file extension for following plugins to process.
+   * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
    *
    * @experimental
    * @default false
    */
   importGlobRestoreExtension?: boolean
   /**
-   * Allow finegrain contol over assets and public files paths
+   * Allow finegrain control over assets and public files paths
    *
    * @experimental
    */
@@ -280,14 +279,6 @@ export interface ExperimentalOptions {
 }
 
 export interface LegacyOptions {
-  /**
-   * Revert vite build to the v2.9 strategy. Disable esbuild deps optimization and adds `@rollup/plugin-commonjs`
-   *
-   * @experimental
-   * @deprecated
-   * @default false
-   */
-  buildRollupPluginCommonjs?: boolean
   /**
    * Revert vite build --ssr to the v2.9 strategy. Use CJS SSR build and v2.9 externalization heuristics
    *
@@ -368,6 +359,10 @@ export async function resolveConfig(
   if (mode === 'production') {
     process.env.NODE_ENV = 'production'
   }
+  // production env would not work in serve, fallback to development
+  if (command === 'serve' && process.env.NODE_ENV === 'production') {
+    process.env.NODE_ENV = 'development'
+  }
 
   const configEnv = {
     mode,
@@ -400,6 +395,23 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
+  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
+  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
+  // So we need to separate the worker plugin from the plugin that vite needs to run.
+  const rawWorkerUserPlugins = (
+    (await asyncFlatten(config.worker?.plugins || [])) as Plugin[]
+  ).filter((p) => {
+    if (!p) {
+      return false
+    } else if (!p.apply) {
+      return true
+    } else if (typeof p.apply === 'function') {
+      return p.apply({ ...config, mode }, configEnv)
+    } else {
+      return p.apply === command
+    }
+  })
+
   // resolve plugins
   const rawUserPlugins = (
     (await asyncFlatten(config.plugins || [])) as Plugin[]
@@ -417,13 +429,6 @@ export async function resolveConfig(
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
-  // resolve worker
-  const resolvedWorkerOptions: ResolveWorkerOptions = {
-    format: config.worker?.format || 'iife',
-    plugins: [],
-    rollupOptions: config.worker?.rollupOptions || {}
-  }
-
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   for (const p of userPlugins) {
@@ -433,6 +438,15 @@ export async function resolveConfig(
         config = mergeConfig(config, res)
       }
     }
+  }
+
+  if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
+    config = mergeConfig(config, {
+      optimizeDeps: { disabled: false },
+      ssr: { optimizeDeps: { disabled: false } }
+    })
+    config.build ??= {}
+    config.build.commonjsOptions = { include: [] }
   }
 
   // resolve root
@@ -545,7 +559,9 @@ export async function resolveConfig(
             ]
           }))
       }
-      return (await container.resolveId(id, importer, { ssr }))?.id
+      return (
+        await container.resolveId(id, importer, { ssr, scan: options?.scan })
+      )?.id
     }
   }
 
@@ -569,17 +585,34 @@ export async function resolveConfig(
 
   const optimizeDeps = config.optimizeDeps || {}
 
-  if (process.env.VITE_TEST_LEGACY_CJS_PLUGIN) {
-    config.legacy = {
-      ...config.legacy,
-      buildRollupPluginCommonjs: true
-    }
-  }
-
   const BASE_URL = resolvedBase
 
-  const resolved: ResolvedConfig = {
-    ...config,
+  // resolve worker
+  let workerConfig = mergeConfig({}, config)
+  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
+    sortUserPlugins(rawWorkerUserPlugins)
+
+  // run config hooks
+  const workerUserPlugins = [
+    ...workerPrePlugins,
+    ...workerNormalPlugins,
+    ...workerPostPlugins
+  ]
+  for (const p of workerUserPlugins) {
+    if (p.config) {
+      const res = await p.config(workerConfig, configEnv)
+      if (res) {
+        workerConfig = mergeConfig(workerConfig, res)
+      }
+    }
+  }
+  const resolvedWorkerOptions: ResolveWorkerOptions = {
+    format: workerConfig.worker?.format || 'iife',
+    plugins: [],
+    rollupOptions: workerConfig.worker?.rollupOptions || {}
+  }
+
+  const resolvedConfig: ResolvedConfig = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
       normalizePath(path.resolve(name))
@@ -614,6 +647,7 @@ export async function resolveConfig(
     packageCache: new Map(),
     createResolver,
     optimizeDeps: {
+      disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: config.resolve?.preserveSymlinks,
@@ -621,13 +655,51 @@ export async function resolveConfig(
       }
     },
     worker: resolvedWorkerOptions,
-    appType: config.appType ?? middlewareMode === 'ssr' ? 'custom' : 'spa',
+    appType: config.appType ?? (middlewareMode === 'ssr' ? 'custom' : 'spa'),
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
       ...config.experimental
     }
   }
+  const resolved: ResolvedConfig = {
+    ...config,
+    ...resolvedConfig
+  }
+
+  ;(resolved.plugins as Plugin[]) = await resolvePlugins(
+    resolved,
+    prePlugins,
+    normalPlugins,
+    postPlugins
+  )
+
+  const workerResolved: ResolvedConfig = {
+    ...workerConfig,
+    ...resolvedConfig,
+    isWorker: true,
+    mainConfig: resolved
+  }
+
+  resolvedConfig.worker.plugins = await resolvePlugins(
+    workerResolved,
+    workerPrePlugins,
+    workerNormalPlugins,
+    workerPostPlugins
+  )
+
+  // call configResolved hooks
+  await Promise.all(
+    userPlugins
+      .map((p) => p.configResolved?.(resolved))
+      .concat(
+        resolvedConfig.worker.plugins.map((p) =>
+          p.configResolved?.(workerResolved)
+        )
+      )
+  )
+
+  // validate config
 
   if (middlewareMode === 'ssr') {
     logger.warn(
@@ -658,51 +730,6 @@ export async function resolveConfig(
       )
     )
   }
-
-  if (resolved.legacy?.buildRollupPluginCommonjs) {
-    const optimizerDisabled = resolved.optimizeDeps.disabled
-    if (!optimizerDisabled) {
-      resolved.optimizeDeps.disabled = 'build'
-    } else if (optimizerDisabled === 'dev') {
-      resolved.optimizeDeps.disabled = true // Also disabled during build
-    }
-    const ssrOptimizerDisabled = resolved.ssr.optimizeDeps.disabled
-    if (!ssrOptimizerDisabled) {
-      resolved.ssr.optimizeDeps.disabled = 'build'
-    } else if (ssrOptimizerDisabled === 'dev') {
-      resolved.ssr.optimizeDeps.disabled = true // Also disabled during build
-    }
-  }
-
-  // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
-  // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
-  // So we need to separate the worker plugin from the plugin that vite needs to run.
-  const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
-    sortUserPlugins(config.worker?.plugins as Plugin[])
-  const workerResolved: ResolvedConfig = {
-    ...resolved,
-    isWorker: true,
-    mainConfig: resolved
-  }
-  resolved.worker.plugins = await resolvePlugins(
-    workerResolved,
-    workerPrePlugins,
-    workerNormalPlugins,
-    workerPostPlugins
-  )
-  // call configResolved worker plugins hooks
-  await Promise.all(
-    resolved.worker.plugins.map((p) => p.configResolved?.(workerResolved))
-  )
-  ;(resolved.plugins as Plugin[]) = await resolvePlugins(
-    resolved,
-    prePlugins,
-    normalPlugins,
-    postPlugins
-  )
-
-  // call configResolved hooks
-  await Promise.all(userPlugins.map((p) => p.configResolved?.(resolved)))
 
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
@@ -830,7 +857,6 @@ export async function loadConfigFromFile(
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
   let resolvedPath: string | undefined
-  let dependencies: string[] = []
 
   if (configFile) {
     // explicit config path is always resolved from cwd
@@ -866,42 +892,13 @@ export async function loadConfigFromFile(
   }
 
   try {
-    let userConfig: UserConfigExport | undefined
-
-    if (isESM) {
-      const fileUrl = pathToFileURL(resolvedPath)
-      const bundled = await bundleConfigFile(resolvedPath, true)
-      dependencies = bundled.dependencies
-
-      if (isTS(resolvedPath)) {
-        // before we can register loaders without requiring users to run node
-        // with --experimental-loader themselves, we have to do a hack here:
-        // bundle the config file w/ ts transforms first, write it to disk,
-        // load it with native Node ESM, then delete the file.
-        fs.writeFileSync(resolvedPath + '.mjs', bundled.code)
-        try {
-          userConfig = (await dynamicImport(`${fileUrl}.mjs?t=${Date.now()}`))
-            .default
-        } finally {
-          fs.unlinkSync(resolvedPath + '.mjs')
-        }
-        debug(`TS + native esm config loaded in ${getTime()}`, fileUrl)
-      } else {
-        // using Function to avoid this from being compiled away by TS/Rollup
-        // append a query so that we force reload fresh config in case of
-        // server restart
-        userConfig = (await dynamicImport(`${fileUrl}?t=${Date.now()}`)).default
-        debug(`native esm config loaded in ${getTime()}`, fileUrl)
-      }
-    }
-
-    if (!userConfig) {
-      // Bundle config file and transpile it to cjs using esbuild.
-      const bundled = await bundleConfigFile(resolvedPath)
-      dependencies = bundled.dependencies
-      userConfig = await loadConfigFromBundledFile(resolvedPath, bundled.code)
-      debug(`bundled config file loaded in ${getTime()}`)
-    }
+    const bundled = await bundleConfigFile(resolvedPath, isESM)
+    const userConfig = await loadConfigFromBundledFile(
+      resolvedPath,
+      bundled.code,
+      isESM
+    )
+    debug(`bundled config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -912,7 +909,7 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies
+      dependencies: bundled.dependencies
     }
   } catch (e) {
     createLogger(logLevel).error(
@@ -925,8 +922,10 @@ export async function loadConfigFromFile(
 
 async function bundleConfigFile(
   fileName: string,
-  isESM = false
+  isESM: boolean
 ): Promise<{ code: string; dependencies: string[] }> {
+  const dirnameVarName = '__vite_injected_original_dirname'
+  const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
   const result = await build({
     absWorkingDir: process.cwd(),
@@ -939,17 +938,46 @@ async function bundleConfigFile(
     sourcemap: 'inline',
     metafile: true,
     define: {
+      __dirname: dirnameVarName,
+      __filename: filenameVarName,
       'import.meta.url': importMetaUrlVarName
     },
     plugins: [
       {
         name: 'externalize-deps',
         setup(build) {
-          build.onResolve({ filter: /.*/ }, (args) => {
-            const id = args.path
+          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
+            // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id)) {
               return {
                 external: true
+              }
+            }
+            // bundle the rest and make sure that the we can also access
+            // it's third-party dependencies. externalize if not.
+            // monorepo/
+            // ├─ package.json
+            // ├─ utils.js -----------> bundle (share same node_modules)
+            // ├─ vite-project/
+            // │  ├─ vite.config.js --> entry
+            // │  ├─ package.json
+            // ├─ foo-project/
+            // │  ├─ utils.js --------> external (has own node_modules)
+            // │  ├─ package.json
+            const idFsPath = path.resolve(path.dirname(importer), id)
+            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
+              pathOnly: true
+            })
+            if (idPkgPath) {
+              const idPkgDir = path.dirname(idPkgPath)
+              // if this file needs to go up one or more directory to reach the vite config,
+              // that means it has it's own node_modules (e.g. foo-project)
+              if (path.relative(idPkgDir, fileName).startsWith('..')) {
+                return {
+                  // normalize actual import after bundled as a single vite config
+                  path: idFsPath,
+                  external: true
+                }
               }
             }
           })
@@ -961,14 +989,16 @@ async function bundleConfigFile(
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf8')
             const injectValues =
-              `const __dirname = ${JSON.stringify(path.dirname(args.path))};` +
-              `const __filename = ${JSON.stringify(args.path)};` +
+              `const ${dirnameVarName} = ${JSON.stringify(
+                path.dirname(args.path)
+              )};` +
+              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
               `const ${importMetaUrlVarName} = ${JSON.stringify(
                 pathToFileURL(args.path).href
               )};`
 
             return {
-              loader: isTS(args.path) ? 'ts' : 'js',
+              loader: args.path.endsWith('ts') ? 'ts' : 'js',
               contents: injectValues + contents
             }
           })
@@ -990,22 +1020,42 @@ interface NodeModuleWithCompile extends NodeModule {
 const _require = createRequire(import.meta.url)
 async function loadConfigFromBundledFile(
   fileName: string,
-  bundledCode: string
-): Promise<UserConfig> {
-  const realFileName = fs.realpathSync(fileName)
-  const defaultLoader = _require.extensions['.js']
-  _require.extensions['.js'] = (module: NodeModule, filename: string) => {
-    if (filename === realFileName) {
-      ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
-    } else {
-      defaultLoader(module, filename)
+  bundledCode: string,
+  isESM: boolean
+): Promise<UserConfigExport> {
+  // for esm, before we can register loaders without requiring users to run node
+  // with --experimental-loader themselves, we have to do a hack here:
+  // write it to disk, load it with native Node ESM, then delete the file.
+  if (isESM) {
+    const fileBase = `${fileName}.timestamp-${Date.now()}`
+    const fileNameTmp = `${fileBase}.mjs`
+    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
+    fs.writeFileSync(fileNameTmp, bundledCode)
+    try {
+      return (await dynamicImport(fileUrl)).default
+    } finally {
+      fs.unlinkSync(fileNameTmp)
     }
   }
-  // clear cache in case of server restart
-  delete _require.cache[_require.resolve(fileName)]
-  const raw = _require(fileName)
-  _require.extensions['.js'] = defaultLoader
-  return raw.__esModule ? raw.default : raw
+  // for cjs, we can register a custom loader via `_require.extensions`
+  else {
+    const extension = path.extname(fileName)
+    const realFileName = fs.realpathSync(fileName)
+    const loaderExt = extension in _require.extensions ? extension : '.js'
+    const defaultLoader = _require.extensions[loaderExt]!
+    _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
+      if (filename === realFileName) {
+        ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
+      } else {
+        defaultLoader(module, filename)
+      }
+    }
+    // clear cache in case of server restart
+    delete _require.cache[_require.resolve(fileName)]
+    const raw = _require(fileName)
+    _require.extensions[loaderExt] = defaultLoader
+    return raw.__esModule ? raw.default : raw
+  }
 }
 
 export function getDepOptimizationConfig(

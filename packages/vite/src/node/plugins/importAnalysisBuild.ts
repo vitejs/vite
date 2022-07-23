@@ -189,7 +189,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile
@@ -225,10 +225,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           ss: expStart,
           se: expEnd,
           n: specifier,
-          d: dynamicIndex
+          d: dynamicIndex,
+          a: assertIndex
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
+
+        // strip import assertions as we can process them ourselves
+        if (!isDynamicImport && assertIndex > -1) {
+          str().remove(end + 1, expEnd)
+        }
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
