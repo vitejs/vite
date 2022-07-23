@@ -12,7 +12,12 @@ import type { Connect } from 'types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import type { CommonServerOptions } from '../http'
-import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from '../http'
+import {
+  httpServerStart,
+  resolveHttpServer,
+  resolveHttpsConfig,
+  setClientErrorHandler
+} from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
@@ -300,6 +305,10 @@ export async function createServer(
     ? null
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
+
+  if (httpServer) {
+    setClientErrorHandler(httpServer, config.logger)
+  }
 
   const { ignored = [], ...watchOptions } = serverConfig.watch || {}
   const watcher = chokidar.watch(path.resolve(root), {

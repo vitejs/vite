@@ -6,6 +6,7 @@ import type {
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'types/connect'
+import colors from 'picocolors'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
@@ -181,5 +182,29 @@ export async function httpServerStart(
       httpServer.removeListener('error', onError)
       resolve(port)
     })
+  })
+}
+
+export function setClientErrorHandler(
+  server: HttpServer,
+  logger: Logger
+): void {
+  server.on('clientError', (err, socket) => {
+    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
+      if (!socket.writableEnded) {
+        socket.end(
+          'HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n' +
+            'Request Header was too large. Node.js limits request header size. ' +
+            'Use https://nodejs.org/api/cli.html#--max-http-header-sizesize to change max header size.'
+        )
+      }
+      logger.warn(
+        colors.yellow(
+          'Server / WS server responded with "431 Request Header Fields Too Large." ' +
+            'Node.js limits request header size and the request was dropped. ' +
+            'Use https://nodejs.org/api/cli.html#--max-http-header-sizesize to change max header size.'
+        )
+      )
+    }
   })
 }

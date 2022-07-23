@@ -6,7 +6,12 @@ import type { Connect } from 'types/connect'
 import corsMiddleware from 'cors'
 import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
-import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from './http'
+import {
+  httpServerStart,
+  resolveHttpServer,
+  resolveHttpsConfig,
+  setClientErrorHandler
+} from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
@@ -78,6 +83,7 @@ export async function preview(
     app,
     await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
+  setClientErrorHandler(httpServer, config.logger)
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
