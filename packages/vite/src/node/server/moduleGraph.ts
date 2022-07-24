@@ -4,7 +4,6 @@ import { isDirectCSSRequest } from '../plugins/css'
 import {
   cleanUrl,
   normalizePath,
-  parseRequest,
   removeImportQuery,
   removeTimestampQuery
 } from '../utils'
@@ -241,8 +240,6 @@ export class ModuleGraph {
       }
       fileMappedModules.add(mod)
     }
-    const epw = parseRequest(rawUrl)?.epw
-    mod.weight = epw ? +epw : 0
     return mod
   }
 

@@ -319,6 +319,13 @@ export async function createServer(
     container.resolveId(url, undefined, { ssr })
   )
 
+  ws.on('entry-point-weight', ({ id, weight }) => {
+    const mod = moduleGraph.getModuleById(id)
+    if (mod) {
+      mod.weight = weight
+    }
+  })
+
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 

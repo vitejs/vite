@@ -32,10 +32,6 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const messageBuffer: string[] = []
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
-const isCSSRequest = (request: string): boolean => cssLangRE.test(request)
-
 let socket: WebSocket
 try {
   let fallback: (() => void) | undefined
@@ -332,19 +328,20 @@ interface StyleNode extends HTMLStyleElement {
 let weight = 0
 const entryPointWeightMap = new Map<string, number>()
 
-export function dynamicImportModule(url: URL, id: string): Promise<any> {
-  if (isCSSRequest(id)) {
-    return import(url.pathname + url.search)
-  }
-  const injectWeight = (id: string) =>
-    injectQuery(id, `epw=${entryPointWeight}`)
+export function dynamicImportModule(
+  moduleLoad: () => Promise<any>,
+  id: string
+): Promise<any> {
   let entryPointWeight = entryPointWeightMap.get(id)
   if (!entryPointWeight) {
     entryPointWeight = ++weight
     entryPointWeightMap.set(id, entryPointWeight)
+    sendMessage('entry-point-weight', {
+      id,
+      weight: entryPointWeight
+    })
   }
-  // inject entry point weight into the url
-  return import(injectWeight(url.pathname + url.search))
+  return moduleLoad()
 }
 
 const styleList: StyleNode[] = []
@@ -605,12 +602,19 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     },
 
     send(event, data) {
-      messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
-      sendMessageBuffer()
+      sendMessage(event, data)
     }
   }
 
   return hot
+}
+
+function sendMessage<T extends string>(
+  event: T,
+  data?: InferCustomEventPayload<T>
+): void {
+  messageBuffer.push(JSON.stringify({ type: 'custom', event, data }))
+  sendMessageBuffer()
 }
 
 /**

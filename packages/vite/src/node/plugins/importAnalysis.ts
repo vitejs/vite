@@ -535,7 +535,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   str().overwrite(
                     expStart,
                     expEnd,
-                    `__vite_dynamicImportModule(new URL('${url}', import.meta.url), '${id}')`,
+                    `__vite_dynamicImportModule(() => import('${url}'), '${id}')`,
                     { contentOnly: true }
                   )
                 } else {
