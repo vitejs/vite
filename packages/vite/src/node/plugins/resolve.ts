@@ -556,7 +556,8 @@ export function tryNodeResolve(
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
-  externalize?: boolean
+  externalize?: boolean,
+  allowLinkedExternal: boolean = true
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -657,8 +658,8 @@ export function tryNodeResolve(
       return resolved
     }
     // dont external symlink packages
-    if (!resolved.id.includes('node_modules')) {
-      return
+    if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
+      return resolved
     }
     const resolvedExt = path.extname(resolved.id)
     let resolvedId = id
@@ -666,7 +667,7 @@ export function tryNodeResolve(
       // check ext before externalizing - only externalize
       // extension-less imports and explicit .js imports
       if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
-        return
+        return resolved
       }
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
         resolvedId += resolvedExt

@@ -138,7 +138,7 @@ export function createIsConfiguredAsSsrExternal(
         // Return undefined here to avoid short-circuiting the isExternalizable check,
         // that will filter this id out if it is not externalizable (e.g. a CSS file)
         // We return here to make ssr.external take precedence over noExternal
-        return undefined
+        return true
       }
       if (typeof noExternal === 'boolean') {
         return !noExternal
@@ -167,7 +167,7 @@ function createIsSsrExternal(
     isBuild: true
   }
 
-  const isExternalizable = (id: string) => {
+  const isExternalizable = (id: string, configuredAsExternal?: boolean) => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
@@ -178,8 +178,13 @@ function createIsSsrExternal(
       ssr?.target === 'webworker',
       undefined,
       true,
-      true // try to externalize, will return undefined if not possible
-    )
+      // try to externalize, will return undefined or an object without
+      // a external flag if it isn't externalizable
+      true,
+      // Allow linked packages to be externalized if they are explicitly
+      // configured as external
+      !!configuredAsExternal
+    )?.external
   }
 
   return (id: string) => {
@@ -188,8 +193,14 @@ function createIsSsrExternal(
     }
     let external = false
     if (!id.startsWith('.') && !path.isAbsolute(id)) {
-      external =
-        isBuiltin(id) || (isConfiguredAsExternal(id) ?? isExternalizable(id))
+      if (isBuiltin(id)) {
+        external = true
+      } else {
+        const configuredAsExternal = isConfiguredAsExternal(id)
+        if (configuredAsExternal !== false) {
+          external = isExternalizable(id, configuredAsExternal)
+        }
+      }
     }
     processedIds.set(id, external)
     return external
