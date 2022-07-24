@@ -38,7 +38,7 @@ export class ModuleNode {
   /**
    * entryPoint of the module
    *   - null - no init
-   *   - dynamic - it's entry pointer (the ModuleNode what import by dynamic import)
+   *   - dynamic - it's entry pointer (the ModuleNode which is imported by dynamic import)
    *   - main - it's import by main entry point
    *   - ModuleNode - it's imported by dynamic import and the entry point is this field
    */
