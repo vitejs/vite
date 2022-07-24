@@ -120,10 +120,6 @@ export function createIsConfiguredAsSsrExternal(
   return (id: string) => {
     const { ssr } = config
     if (ssr) {
-      const pkgName = getNpmPackageName(id)
-      if (!pkgName) {
-        return undefined
-      }
       if (
         // If this id is defined as external, force it as external
         // Note that individual package entries are allowed in ssr.external
@@ -131,13 +127,15 @@ export function createIsConfiguredAsSsrExternal(
       ) {
         return true
       }
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) {
+        return undefined
+      }
       if (
-        // A package name in ssr.external externalizes every entry
+        // A package name in ssr.external externalizes every
+        // externalizable package entry
         ssr.external?.includes(pkgName)
       ) {
-        // Return undefined here to avoid short-circuiting the isExternalizable check,
-        // that will filter this id out if it is not externalizable (e.g. a CSS file)
-        // We return here to make ssr.external take precedence over noExternal
         return true
       }
       if (typeof noExternal === 'boolean') {
