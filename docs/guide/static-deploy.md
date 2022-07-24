@@ -64,7 +64,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 2. Inside your project, create `deploy.sh` with the following content (with highlighted lines uncommented appropriately), and run it to deploy:
 
-   ```bash{13,20,23}
+   ```bash{13,21,24}
    #!/usr/bin/env sh
 
    # abort on errors

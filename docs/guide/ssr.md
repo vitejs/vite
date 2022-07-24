@@ -61,7 +61,7 @@ When building an SSR app, you likely want to have full control over your main se
 
 **server.js**
 
-```js{17-19}
+```js{15-18}
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
