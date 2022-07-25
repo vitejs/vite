@@ -103,7 +103,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createAsset(chunk: OutputAsset): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
-          src: chunk.name
+          src: normalizePath(chunk.name!)
         }
 
         if (cssEntryFiles.has(chunk.name!)) manifestChunk.isEntry = true
@@ -118,7 +118,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
-          manifest[chunk.name] = createAsset(chunk)
+          manifest[normalizePath(chunk.name)] = createAsset(chunk)
         }
       }
 
