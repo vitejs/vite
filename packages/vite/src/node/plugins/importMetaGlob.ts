@@ -187,7 +187,7 @@ export async function parseImportGlob(
       } else if (element.type === 'TemplateLiteral') {
         if (element.expressions.length !== 0) {
           throw err(
-            `Expected glob to be a string, but got contains expressions`
+            `Expected glob to be a string, but got dynamic template literal`
           )
         }
         globs.push(element.quasis[0].value.raw)
