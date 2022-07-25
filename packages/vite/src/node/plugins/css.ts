@@ -519,7 +519,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       function ensureFileExt(name: string, ext: string) {
-        return path.format({ ...path.parse(name), base: undefined, ext })
+        return normalizePath(
+          path.format({ ...path.parse(name), base: undefined, ext })
+        )
       }
 
       if (config.build.cssCodeSplit) {
