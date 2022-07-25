@@ -212,6 +212,13 @@ describe('Unicode path', () => {
   })
 })
 
+describe('link with props', () => {
+  test('separate links with different media props', async () => {
+    await page.goto(viteTestUrl + '/link-props/index.html')
+    expect(await getColor('h1')).toBe('red')
+  })
+})
+
 describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')

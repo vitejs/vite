@@ -25,7 +25,8 @@ module.exports = {
         unicodePath: resolve(
           __dirname,
           'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
-        )
+        ),
+        linkProps: resolve(__dirname, 'link-props/index.html')
       }
     }
   },
