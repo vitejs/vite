@@ -272,8 +272,23 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob(`hi ${hey}`)')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Could only use literals]'
+      '[Error: Invalid glob import syntax: Expected glob to be a string, but got contains expressions]'
     )
+  })
+
+  it('template without expressions', async () => {
+    expect(await run('import.meta.glob(`/**/*.page.client.*([a-zA-Z0-9])`)'))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "/**/*.page.client.*([a-zA-Z0-9])",
+          ],
+          "options": {},
+          "start": 0,
+        },
+      ]
+    `)
   })
 
   it('be string', async () => {
