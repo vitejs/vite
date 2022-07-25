@@ -176,7 +176,7 @@ export async function parseImportGlob(
 
     const globs: string[] = []
 
-    const validateLiteral = (element: Expression | SpreadElement) => {
+    const validateLiteral = (element: Expression | SpreadElement | null) => {
       if (!element) return
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
@@ -198,7 +198,6 @@ export async function parseImportGlob(
 
     if (arg1.type === 'ArrayExpression') {
       for (const element of arg1.elements) {
-        if (!element) continue
         validateLiteral(element)
       }
     } else {
