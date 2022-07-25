@@ -519,7 +519,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       function ensureFileExt(name: string, ext: string) {
-        return path.format({ ...path.parse(name), base: undefined, ext })
+        return normalizePath(
+          path.format({ ...path.parse(name), base: undefined, ext })
+        )
       }
 
       if (config.build.cssCodeSplit) {
@@ -533,7 +535,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             : chunk.name
 
           const lang = path.extname(cssAssetName).slice(1)
-          const cssFileName = normalizePath(ensureFileExt(cssAssetName, '.css'))
+          const cssFileName = ensureFileExt(cssAssetName, '.css')
 
           if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
 
