@@ -14,6 +14,7 @@ import {
   requestQuerySplitRE,
   transformStableResult
 } from '../utils'
+import { toAbsoluteGlob } from './importMetaGlob'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
@@ -105,6 +106,7 @@ export async function transformDynamicImport(
   const params = globParams
     ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
     : ''
+
   const exp = `(import.meta.glob(${JSON.stringify(userPattern)}${params}))`
 
   return {
@@ -198,11 +200,22 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
         const { rawPattern, glob } = result
 
+        let newPattern = posix.relative(
+          posix.dirname(importer),
+          await toAbsoluteGlob(rawPattern, config.root, importer, (im) =>
+            this.resolve(im, importer).then((i) => i?.id || im)
+          )
+        )
+
+        if (!/^\.{1,2}\//.test(newPattern)) {
+          newPattern = `./${newPattern}`
+        }
+
         needDynamicImportHelper = true
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${newPattern}\`)`
         )
       }
 
