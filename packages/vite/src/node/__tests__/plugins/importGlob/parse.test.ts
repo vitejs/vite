@@ -276,6 +276,21 @@ describe('parse negatives', async () => {
     )
   })
 
+  it('template with unicode', async () => {
+    expect(await run('import.meta.glob(`/\u0068\u0065\u006c\u006c\u006f`)'))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "globs": [
+            "/hello",
+          ],
+          "options": {},
+          "start": 0,
+        },
+      ]
+    `)
+  })
+
   it('template without expressions', async () => {
     expect(await run('import.meta.glob(`/**/*.page.client.*([a-zA-Z0-9])`)'))
       .toMatchInlineSnapshot(`
