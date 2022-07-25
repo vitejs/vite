@@ -4,10 +4,13 @@ import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
   CallExpression,
+  Expression,
   Literal,
   MemberExpression,
   Node,
-  SequenceExpression
+  SequenceExpression,
+  SpreadElement,
+  TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
 import MagicString from 'magic-string'
@@ -168,29 +171,37 @@ export async function parseImportGlob(
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
-    const arg1 = ast.arguments[0] as ArrayExpression | Literal
+    const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
     const arg2 = ast.arguments[1] as Node | undefined
 
     const globs: string[] = []
-    if (arg1.type === 'ArrayExpression') {
-      for (const element of arg1.elements) {
-        if (!element) continue
-        if (element.type !== 'Literal') throw err('Could only use literals')
+
+    const validateLiteral = (element: Expression | SpreadElement | null) => {
+      if (!element) return
+      if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
           throw err(
             `Expected glob to be a string, but got "${typeof element.value}"`
           )
-
         globs.push(element.value)
+      } else if (element.type === 'TemplateLiteral') {
+        if (element.expressions.length !== 0) {
+          throw err(
+            `Expected glob to be a string, but got dynamic template literal`
+          )
+        }
+        globs.push(element.quasis[0].value.raw)
+      } else {
+        throw err('Could only use literals')
       }
-    } else if (arg1.type === 'Literal') {
-      if (typeof arg1.value !== 'string')
-        throw err(
-          `Expected glob to be a string, but got "${typeof arg1.value}"`
-        )
-      globs.push(arg1.value)
+    }
+
+    if (arg1.type === 'ArrayExpression') {
+      for (const element of arg1.elements) {
+        validateLiteral(element)
+      }
     } else {
-      throw err('Could only use literals')
+      validateLiteral(arg1)
     }
 
     // arg2
