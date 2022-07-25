@@ -4,10 +4,12 @@ import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
   CallExpression,
+  Expression,
   Literal,
   MemberExpression,
   Node,
   SequenceExpression,
+  SpreadElement,
   TemplateLiteral
 } from 'estree'
 import { parseExpressionAt } from 'acorn'
@@ -174,9 +176,7 @@ export async function parseImportGlob(
 
     const globs: string[] = []
 
-    const validateLiteral = (
-      element: Literal | TemplateLiteral | ArrayExpression['elements'][0]
-    ) => {
+    const validateLiteral = (element: Expression | SpreadElement) => {
       if (!element) return
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
