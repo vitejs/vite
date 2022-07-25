@@ -272,7 +272,7 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob(`hi ${hey}`)')
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob import syntax: Expected glob to be a string, but got contains expressions]'
+      '[Error: Invalid glob import syntax: Expected glob to be a string, but got dynamic template literal]'
     )
   })
 
