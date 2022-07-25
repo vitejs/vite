@@ -354,7 +354,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value.content)
                 if (!isExcludedUrl(url)) {
-                  if (node.tag === 'link' && isCSSRequest(url)) {
+                  if (
+                    node.tag === 'link' &&
+                    isCSSRequest(url) &&
+                    // should not be converted if following attributes are present (#6748)
+                    !node.props.some(
+                      (p) => p.name === 'media' || p.name === 'disabled'
+                    )
+                  ) {
                     // CSS references, convert to import
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
