@@ -533,7 +533,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             : chunk.name
 
           const lang = path.extname(cssAssetName).slice(1)
-          const cssFileName = ensureFileExt(cssAssetName, '.css')
+          const cssFileName = normalizePath(ensureFileExt(cssAssetName, '.css'))
 
           if (chunk.isEntry && isPureCssChunk) cssEntryFiles.add(cssAssetName)
 
