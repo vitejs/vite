@@ -6,7 +6,7 @@ Vite no longer supports Node.js 12 / 13 / 15, which reached its EOL. Node.js 14.
 
 ## Modern Browser Baseline change
 
-The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_statements_import_meta):
+The production bundle assumes support for modern JavaScript. By default, Vite targets browsers which support the [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
 
 - Chrome >=87
 - Firefox >=78
