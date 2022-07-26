@@ -87,8 +87,8 @@ export default defineConfig({
     ],
 
     algolia: {
-      appId: 'BH4D9OD16A',
-      apiKey: 'b573aa848fd57fb47d693b531297403c',
+      appId: '7H67QR5P0A',
+      apiKey: 'deaab78bcdfe96b599497d25acc6460e',
       indexName: 'vitejs',
       searchParameters: {
         facetFilters: ['tags:en']
