@@ -161,6 +161,8 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 :::
 
+Checkout [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue) for some examples.
+
 ## server.watch
 
 - **Type:** `object`
