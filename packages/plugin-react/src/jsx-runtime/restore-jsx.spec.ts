@@ -81,7 +81,10 @@ describe('restore-jsx', () => {
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement(foo)`)
-    ).toBeNull()
+    ).toMatchInlineSnapshot(`
+      "import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
+      React__default.createElement(foo);"
+    `)
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement("h1")`)
@@ -104,7 +107,12 @@ describe('restore-jsx', () => {
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement(foo, {hi: there})`)
-    ).toBeNull()
+    ).toMatchInlineSnapshot(`
+      "import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
+      React__default.createElement(foo, {
+        hi: there
+      });"
+    `)
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
     React__default.createElement("h1", {hi: there})`)
