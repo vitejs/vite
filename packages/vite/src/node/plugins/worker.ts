@@ -308,7 +308,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
@@ -334,7 +334,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             'asset',
             chunk.fileName,
             'js',
-            config
+            config,
+            outputOptions.format
           )
           const replacementString =
             typeof replacement === 'string'
