@@ -219,6 +219,36 @@ function handleParseError(
 }
 
 /**
+ * Move importmap to top of <head> with `transformIndexHtml`.
+ * Must be added after post plugins.
+ */
+export function htmlImportMapPlugin(): Plugin {
+  const importMapRE =
+    /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
+  return {
+    name: 'vite:html-importmap',
+    transformIndexHtml(html) {
+      // HTML must have head for importmap
+      if (!headPrependInjectRE.test(html)) return
+
+      let importMap: string | undefined
+      html = html.replace(importMapRE, (match) => {
+        importMap = match
+        return ''
+      })
+      if (importMap) {
+        html = html.replace(
+          headPrependInjectRE,
+          (match) => `${match}\n${importMap}`
+        )
+      }
+
+      return html
+    }
+  }
+}
+
+/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -868,8 +898,6 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
 
 const headInjectRE = /([ \t]*)<\/head>/i
 const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
-const importMapInjectRE =
-  /([ \t]*)<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
 
 const htmlInjectRE = /<\/html>/i
 const htmlPrependInjectRE = /([ \t]*)<html[^>]*>/i
@@ -886,49 +914,7 @@ function injectToHead(
 ) {
   if (tags.length === 0) return html
 
-  // sort importmap script as first
-  const importMapIndex = tags.findIndex(
-    (t) => t.tag === 'script' && t.attrs?.type === 'importmap'
-  )
-  if (importMapIndex !== -1) {
-    tags = [
-      tags[importMapIndex],
-      ...tags.slice(0, importMapIndex),
-      ...tags.slice(importMapIndex + 1)
-    ]
-  }
-
   if (prepend) {
-    // special treatment for module script tags if have existing importmap
-    if (importMapInjectRE.test(html)) {
-      // split tags between module scripts and others
-      const moduleScriptTags: HtmlTagDescriptor[] = []
-      const otherTags: HtmlTagDescriptor[] = []
-      for (const tag of tags) {
-        if (tag.tag === 'script' && tag.attrs?.type === 'module') {
-          moduleScriptTags.push(tag)
-        } else {
-          otherTags.push(tag)
-        }
-      }
-      // module script tags inject after importmap instead
-      if (moduleScriptTags.length) {
-        html = html.replace(
-          importMapInjectRE,
-          (match, p1) =>
-            `${match}\n${serializeTags(moduleScriptTags, incrementIndent(p1))}`
-        )
-      }
-      // rest inject as the first element of head
-      if (otherTags.length) {
-        html = html.replace(
-          headPrependInjectRE,
-          (match, p1) =>
-            `${match}\n${serializeTags(otherTags, incrementIndent(p1))}`
-        )
-      }
-      return html
-    }
     // inject as the first element of head
     if (headPrependInjectRE.test(html)) {
       return html.replace(

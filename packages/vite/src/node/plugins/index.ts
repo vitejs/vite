@@ -12,7 +12,11 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
+import {
+  buildHtmlPlugin,
+  htmlImportMapPlugin,
+  htmlInlineProxyPlugin
+} from './html'
 import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -96,6 +100,7 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)])
+      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+    htmlImportMapPlugin()
   ].filter(Boolean) as Plugin[]
 }
