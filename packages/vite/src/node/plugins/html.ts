@@ -868,7 +868,7 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
 
 const headInjectRE = /([ \t]*)<\/head>/i
 const headPrependInjectRE = /([ \t]*)<head[^>]*>/i
-const importMapPrependInjectRE =
+const importMapInjectRE =
   /([ \t]*)<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
 
 const htmlInjectRE = /<\/html>/i
@@ -900,7 +900,7 @@ function injectToHead(
 
   if (prepend) {
     // special treatment for module script tags if have existing importmap
-    if (importMapPrependInjectRE.test(html)) {
+    if (importMapInjectRE.test(html)) {
       // split tags between module scripts and others
       const moduleScriptTags: HtmlTagDescriptor[] = []
       const otherTags: HtmlTagDescriptor[] = []
@@ -914,7 +914,7 @@ function injectToHead(
       // module script tags inject after importmap instead
       if (moduleScriptTags.length) {
         html = html.replace(
-          importMapPrependInjectRE,
+          importMapInjectRE,
           (match, p1) =>
             `${match}\n${serializeTags(moduleScriptTags, incrementIndent(p1))}`
         )
