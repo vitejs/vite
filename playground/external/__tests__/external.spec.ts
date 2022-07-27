@@ -1,4 +1,10 @@
-import { isBuild, page } from '~utils'
+import { browserLogs, isBuild, isServe, page } from '~utils'
+
+test.runIf(isServe)('importmap', () => {
+  expect(browserLogs).not.toContain(
+    'An import map is added after module script load was triggered.'
+  )
+})
 
 describe.runIf(isBuild)('build', () => {
   test('should externalize imported packages', async () => {
