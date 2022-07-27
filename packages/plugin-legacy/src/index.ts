@@ -387,7 +387,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               plugins: [
                 recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
                 replaceLegacyEnvBabelPlugin(),
-                polyfillImportMetaUrlPlugin(),
                 wrapIIFEBabelPlugin()
               ]
             })
@@ -758,35 +757,6 @@ function replaceLegacyEnvBabelPlugin(): BabelPlugin {
       Identifier(path) {
         if (path.node.name === legacyEnvVarMarker) {
           path.replaceWith(t.booleanLiteral(true))
-        }
-      }
-    }
-  })
-}
-
-/**
- * Replaces `import.meta.url` with `module.meta.url`
- *
- * Rollup replaces like that when generating chunks.
- * But Vite injects `import.meta.url` in `renderChunk` hook
- * and those won't be processed by Rollup.
- */
-function polyfillImportMetaUrlPlugin(): BabelPlugin {
-  return ({ types: t }): BabelPlugin => ({
-    name: 'vite-polyfill-import-meta-url',
-    visitor: {
-      MetaProperty(path) {
-        const { node, parent } = path
-        if (node.meta.name === 'import' && node.property.name === 'meta') {
-          if (
-            parent.type === 'MemberExpression' &&
-            parent.property.type === 'Identifier' &&
-            parent.property.name === 'url'
-          ) {
-            path.replaceWith(
-              t.memberExpression(t.identifier('module'), t.identifier('meta'))
-            )
-          }
         }
       }
     }
