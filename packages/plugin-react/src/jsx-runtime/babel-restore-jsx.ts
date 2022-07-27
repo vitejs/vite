@@ -19,6 +19,16 @@ import type * as babel from '@babel/core'
  */
 export default function ({ types: t }: typeof babel): babel.PluginObj {
   /**
+   * If the props contains '__self' or '__source', it is not transform to JSX.
+   */
+  const isInvalidProps = (props: any[]) =>
+    props.some(
+      (prop) =>
+        t.isJSXIdentifier(prop.name) &&
+        (prop.name.name === '__self' || prop.name.name === '__source')
+    )
+
+  /**
    * Get a `JSXElement` from a `CallExpression`.
    * Returns `null` if this impossible.
    */
@@ -36,7 +46,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     }
 
     const props = getJSXProps(propsNode)
-    if (props == null) {
+    if (props == null || isInvalidProps(props)) {
       return null //no props → [], invalid → null
     }
 
