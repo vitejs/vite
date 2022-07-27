@@ -197,8 +197,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /\/foo\/assets\/asset\.\w{8}\.png \d{1}x/
-          : /\/foo\/nested\/asset\.png \d{1}x/
+          ? /\/foo\/assets\/asset\.\w{8}\.png \dx/
+          : /\/foo\/nested\/asset\.png \dx/
       )
     })
   })
@@ -272,7 +272,7 @@ describe.runIf(isBuild)('encodeURI', () => {
   test('img src with encodeURI', async () => {
     const img = await page.$('.encodeURI')
     expect(
-      await (await img.getAttribute('src')).startsWith('data:image/png;base64')
+      (await img.getAttribute('src')).startsWith('data:image/png;base64')
     ).toBe(true)
   })
 })
