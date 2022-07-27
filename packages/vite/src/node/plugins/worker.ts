@@ -350,12 +350,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           )
         }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
-        }
       }
       if (!isWorker) {
         const workerMap = workerCache.get(config)!
