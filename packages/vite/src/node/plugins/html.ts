@@ -7,6 +7,7 @@ import type {
   SourceMapInput
 } from 'rollup'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
 import type {
   AttributeNode,
   CompilerError,
@@ -51,6 +52,10 @@ const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
 const htmlLangRE = /\.(html|htm)$/
+
+const importMapRE =
+  /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
+const moduleScriptRE = /[ \t]*<script[^>]*type\s*=\s*["']?module["']?[^>]*>/is
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -219,17 +224,45 @@ function handleParseError(
 }
 
 /**
+ * Check if importmap is after any script module. Warn user if so.
+ * Must be added before pre plugins.
+ */
+export function preHtmlImportMapPlugin(config: ResolvedConfig): Plugin {
+  return {
+    name: 'vite:pre-html-importmap',
+    transformIndexHtml: {
+      enforce: 'pre',
+      transform(html, ctx) {
+        const importMapIndex = html.match(importMapRE)?.index
+        if (!importMapIndex) return
+
+        const moduleScriptIndex = html.match(moduleScriptRE)?.index
+        if (!moduleScriptIndex) return
+
+        if (moduleScriptIndex < importMapIndex) {
+          const relativeHtml = path.relative(config.root, ctx.filename)
+          config.logger.warnOnce(
+            colors.yellow(
+              colors.bold(
+                `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`
+              )
+            )
+          )
+        }
+      }
+    }
+  }
+}
+
+/**
  * Move importmap to top of <head> with `transformIndexHtml`.
  * Must be added after post plugins.
  */
-export function htmlImportMapPlugin(): Plugin {
-  const importMapRE =
-    /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
+export function postHtmlImportMapPlugin(): Plugin {
   return {
-    name: 'vite:html-importmap',
+    name: 'vite:post-html-importmap',
     transformIndexHtml(html) {
-      // HTML must have head for importmap
-      if (!headPrependInjectRE.test(html)) return
+      if (!moduleScriptRE.test(html)) return
 
       let importMap: string | undefined
       html = html.replace(importMapRE, (match) => {
@@ -237,10 +270,7 @@ export function htmlImportMapPlugin(): Plugin {
         return ''
       })
       if (importMap) {
-        html = html.replace(
-          headPrependInjectRE,
-          (match) => `${match}\n${importMap}`
-        )
+        html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
       }
 
       return html
