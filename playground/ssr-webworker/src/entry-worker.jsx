@@ -1,6 +1,10 @@
 import { msg as linkedMsg } from 'resolve-linked'
 import React from 'react'
 
+import('./dynamic').then(({ foo }) => {
+  console.log(foo)
+})
+
 addEventListener('fetch', function (event) {
   return event.respondWith(
     new Response(

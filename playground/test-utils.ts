@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/triple-slash-reference */
 // test utils used in e2e tests for playgrounds.
 // `import { getColor } from '~utils'`
 
@@ -8,7 +7,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
-import type { ElementHandle, ConsoleMessage } from 'playwright-chromium'
+import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
@@ -128,7 +127,15 @@ export function findAssetFile(
   assets = 'assets'
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
-  const files = fs.readdirSync(assetsDir)
+  let files: string[]
+  try {
+    files = fs.readdirSync(assetsDir)
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      return ''
+    }
+    throw e
+  }
   const file = files.find((file) => {
     return file.match(match)
   })
