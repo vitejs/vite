@@ -12,12 +12,7 @@ import { importAnalysisPlugin } from './importAnalysis'
 import { cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
-import {
-  buildHtmlPlugin,
-  htmlInlineProxyPlugin,
-  postHtmlImportMapPlugin,
-  preHtmlImportMapPlugin
-} from './html'
+import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
 import { wasmFallbackPlugin, wasmHelperPlugin } from './wasm'
 import { modulePreloadPolyfillPlugin } from './modulePreloadPolyfill'
 import { webWorkerPlugin } from './worker'
@@ -47,7 +42,6 @@ export async function resolvePlugins(
     isBuild ? metadataPlugin() : null,
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
-    preHtmlImportMapPlugin(config),
     ...prePlugins,
     config.build.polyfillModulePreload
       ? modulePreloadPolyfillPlugin(config)
@@ -99,7 +93,6 @@ export async function resolvePlugins(
     importGlobPlugin(config),
     ...postPlugins,
     ...buildPlugins.post,
-    postHtmlImportMapPlugin(),
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []

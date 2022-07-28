@@ -175,7 +175,7 @@ ${
                 }
               }
             `,
-            injectTo: 'head-prepend'
+            injectTo: 'head'
           }
         ]
       }

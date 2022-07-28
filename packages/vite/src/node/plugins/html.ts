@@ -224,61 +224,6 @@ function handleParseError(
 }
 
 /**
- * Check if importmap is after any script module. Warn user if so.
- * Must be added before pre plugins.
- */
-export function preHtmlImportMapPlugin(config: ResolvedConfig): Plugin {
-  return {
-    name: 'vite:pre-html-importmap',
-    transformIndexHtml: {
-      enforce: 'pre',
-      transform(html, ctx) {
-        const importMapIndex = html.match(importMapRE)?.index
-        if (!importMapIndex) return
-
-        const moduleScriptIndex = html.match(moduleScriptRE)?.index
-        if (!moduleScriptIndex) return
-
-        if (moduleScriptIndex < importMapIndex) {
-          const relativeHtml = path.relative(config.root, ctx.filename)
-          config.logger.warnOnce(
-            colors.yellow(
-              colors.bold(
-                `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`
-              )
-            )
-          )
-        }
-      }
-    }
-  }
-}
-
-/**
- * Move importmap to top of <head> with `transformIndexHtml`.
- * Must be added after post plugins.
- */
-export function postHtmlImportMapPlugin(): Plugin {
-  return {
-    name: 'vite:post-html-importmap',
-    transformIndexHtml(html) {
-      if (!moduleScriptRE.test(html)) return
-
-      let importMap: string | undefined
-      html = html.replace(importMapRE, (match) => {
-        importMap = match
-        return ''
-      })
-      if (importMap) {
-        html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
-      }
-
-      return html
-    }
-  }
-}
-
-/**
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
@@ -314,10 +259,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
 
         // pre-transform
-        html = await applyHtmlTransforms(html, preHooks, {
-          path: publicPath,
-          filename: id
-        })
+        html = await applyHtmlTransforms(
+          html,
+          [preImportMapHook(config), ...preHooks],
+          {
+            path: publicPath,
+            filename: id
+          }
+        )
 
         let js = ''
         const s = new MagicString(html)
@@ -763,12 +712,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           result = s.toString()
         }
-        result = await applyHtmlTransforms(result, postHooks, {
-          path: '/' + relativeUrlPath,
-          filename: id,
-          bundle,
-          chunk
-        })
+        result = await applyHtmlTransforms(
+          result,
+          [...postHooks, postImportMapHook()],
+          {
+            path: '/' + relativeUrlPath,
+            filename: id,
+            bundle,
+            chunk
+          }
+        )
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return (
@@ -836,6 +789,49 @@ export type IndexHtmlTransform =
       enforce?: 'pre' | 'post'
       transform: IndexHtmlTransformHook
     }
+
+export function preImportMapHook(
+  config: ResolvedConfig
+): IndexHtmlTransformHook {
+  return (html, ctx) => {
+    const importMapIndex = html.match(importMapRE)?.index
+    if (!importMapIndex) return
+
+    const moduleScriptIndex = html.match(moduleScriptRE)?.index
+    if (!moduleScriptIndex) return
+
+    if (moduleScriptIndex < importMapIndex) {
+      const relativeHtml = path.relative(config.root, ctx.filename)
+      config.logger.warnOnce(
+        colors.yellow(
+          colors.bold(
+            `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`
+          )
+        )
+      )
+    }
+  }
+}
+
+/**
+ * Move importmap before the first module script
+ */
+export function postImportMapHook(): IndexHtmlTransformHook {
+  return (html) => {
+    if (!moduleScriptRE.test(html)) return
+
+    let importMap: string | undefined
+    html = html.replace(importMapRE, (match) => {
+      importMap = match
+      return ''
+    })
+    if (importMap) {
+      html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
+    }
+
+    return html
+  }
+}
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[]
