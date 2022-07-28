@@ -34,6 +34,7 @@ To solve this:
   ```
 
 - Increase the following inotify related limits by `sysctl`
+
   ```shell
   # Check current limits
   $ sysctl fs.inotify
