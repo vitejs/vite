@@ -288,6 +288,9 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
   expect(await page.textContent('.dynamic-import-meta-url-2')).toMatch(
     assetMatch
   )
+  expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
+    isBuild ? 'data:application/javascript;base64' : '/foo/nested/test.js'
+  )
 })
 
 test('new URL(`non-existent`, import.meta.url)', async () => {

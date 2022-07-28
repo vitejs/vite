@@ -55,7 +55,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               s.overwrite(
                 index,
                 index + exp.length,
-                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default' }))[${rawUrl}], self.location)`,
+                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
                 { contentOnly: true }
               )
               continue

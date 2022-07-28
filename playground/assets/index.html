@@ -199,6 +199,9 @@
   <img class="dynamic-import-meta-url-img-2" />
   <code class="dynamic-import-meta-url-2"></code>
 </p>
+<p>
+  <code class="dynamic-import-meta-url-js"></code>
+</p>
 
 <h2>new URL(`./${dynamic}`, import.meta.url,) (with comma)</h2>
 <p>
@@ -389,6 +392,10 @@
 
   testDynamicImportMetaUrlWithComma('icon', 1)
   testDynamicImportMetaUrlWithComma('asset', 2)
+
+  const name = 'test'
+  const js = new URL(`./nested/${name}.js`, import.meta.url).href
+  text('.dynamic-import-meta-url-js', js)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
