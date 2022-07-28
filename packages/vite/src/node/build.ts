@@ -444,11 +444,13 @@ async function doBuild(
         )
       }
 
-      const ssrWorkerBuild = ssr && config.ssr?.target !== 'webworker'
-      const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const ssrNodeBuild = ssr && config.ssr.target === 'node'
+      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
+      const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
+
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
-        ssrWorkerBuild || libOptions
+        ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
       return {
