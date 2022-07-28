@@ -23,11 +23,25 @@ If you are using Linux, file descriptor limits and inotify limits may be causing
 
 To solve this:
 
-- Increase file descriptor limits by `ulimit`
+- Increase file descriptor limit by `ulimit`
+
+  ```shell
+  # Check current limit
+  $ ulimit -Sn
+  # Change limit (temporary)
+  $ ulimit -Sn 10000 # You might need to change the hard limit too
+  # Restart your browser
+  ```
+
 - Increase the following inotify related limits by `sysctl`
-  - `fs.inotify.max_queued_events`
-  - `fs.inotify.max_user_instances`
-  - `fs.inotify.max_user_watches`
+  ```shell
+  # Check current limits
+  $ sysctl fs.inotify
+  # Change limits (temporary)
+  $ sudo sysctl fs.inotify.max_queued_events=16384
+  $ sudo sysctl fs.inotify.max_user_instances=8192
+  $ sudo sysctl fs.inotify.max_user_watches=524288
+  ```
 
 ## HMR
 
