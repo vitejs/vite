@@ -88,7 +88,8 @@ export default defineConfig(({ command, ssrBuild }) => ({
           const cleanId = cleanUrl(id)
           if (
             config.build.ssr &&
-            (cleanId.endsWith('.js') || cleanId.endsWith('.vue'))
+            (cleanId.endsWith('.js') || cleanId.endsWith('.vue')) &&
+            !code.includes('__ssr_vue_processAssetPath')
           ) {
             return {
               code:
