@@ -7,8 +7,11 @@ const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 async function run(input: string) {
   const { glob, rawPattern } =
-    (await transformDynamicImport(input, resolve(__dirname, 'index.js'), (id) =>
-      id.replace('@', resolve(__dirname, './mods/'))
+    (await transformDynamicImport(
+      input,
+      resolve(__dirname, 'index.js'),
+      (id) => id.replace('@', resolve(__dirname, './mods/')),
+      __dirname
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
 }
@@ -36,5 +39,15 @@ describe('parse positives', () => {
 
   it('? in url', async () => {
     expect(await run('`./mo?ds/${base ?? foo}.js?raw`')).toMatchSnapshot()
+  })
+
+  it('with ../ and itself', async () => {
+    expect(await run('`../dynamicImportVar/${name}.js`')).toMatchSnapshot()
+  })
+
+  it('with multi ../ and itself', async () => {
+    expect(
+      await run('`../../plugins/dynamicImportVar/${name}.js`')
+    ).toMatchSnapshot()
   })
 })
