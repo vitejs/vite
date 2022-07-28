@@ -191,7 +191,7 @@ async function init() {
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
             return {
-              title: frameworkColor(framework.name),
+              title: frameworkColor(framework.display || framework.name),
               value: framework
             }
           })
@@ -206,7 +206,7 @@ async function init() {
             framework.variants.map((variant) => {
               const variantColor = variant.color
               return {
-                title: variantColor(variant.name),
+                title: variantColor(variant.display || variant.name),
                 value: variant.name
               }
             })
