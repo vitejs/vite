@@ -31,8 +31,6 @@ const INJECT_HELPERS_IIFE_RE =
 const INJECT_HELPERS_UMD_RE =
   /^(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)/s
 
-let server: ViteDevServer
-
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
@@ -65,7 +63,8 @@ export async function transformWithEsbuild(
   code: string,
   filename: string,
   options?: TransformOptions,
-  inMap?: object
+  inMap?: object,
+  server?: ViteDevServer
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -101,7 +100,7 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      const loadedTsconfig = await loadTsconfigJsonForFile(filename)
+      const loadedTsconfig = await loadTsconfigJsonForFile(filename, server)
       const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
       for (const field of meaningfulFields) {
@@ -191,14 +190,16 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     keepNames: false
   }
 
+  let server: ViteDevServer
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
       server = _server
       server.watcher
-        .on('add', reloadOnTsconfigChange)
-        .on('change', reloadOnTsconfigChange)
-        .on('unlink', reloadOnTsconfigChange)
+        .on('add', (file) => reloadOnTsconfigChange(file, server))
+        .on('change', (file) => reloadOnTsconfigChange(file, server))
+        .on('unlink', (file) => reloadOnTsconfigChange(file, server))
     },
     async configResolved(config) {
       await initTSConfck(config)
@@ -209,7 +210,12 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, transformOptions)
+        const result = await transformWithEsbuild(
+          code,
+          id,
+          transformOptions,
+          server
+        )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -414,7 +420,8 @@ async function initTSConfck(config: ResolvedConfig) {
 }
 
 async function loadTsconfigJsonForFile(
-  filename: string
+  filename: string,
+  server?: ViteDevServer
 ): Promise<TSConfigJSON> {
   try {
     const result = await parse(filename, tsconfckParseOptions)
@@ -434,7 +441,7 @@ async function loadTsconfigJsonForFile(
   }
 }
 
-function reloadOnTsconfigChange(changedFile: string) {
+function reloadOnTsconfigChange(changedFile: string, server: ViteDevServer) {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (
