@@ -85,14 +85,14 @@ export default defineConfig(({ command, ssrBuild }) => ({
           }
         },
         transform(code, id) {
+          const cleanId = cleanUrl(id)
           if (
             config.build.ssr &&
-            cleanUrl(id).endsWith('.js') &&
-            !code.includes('__ssr_vue_processAssetPath')
+            (cleanId.endsWith('.js') || cleanId.endsWith('.vue'))
           ) {
             return {
               code:
-                `import { __ssr_vue_processAssetPath } from '${virtualId}';` +
+                `import { __ssr_vue_processAssetPath } from '${virtualId}';__ssr_vue_processAssetPath;` +
                 code,
               sourcemap: null // no sourcemap support to speed up CI
             }
