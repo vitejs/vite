@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { normalizePath } from 'vite'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 
@@ -9,7 +10,7 @@ async function run(input: string) {
   const { glob, rawPattern } =
     (await transformDynamicImport(
       input,
-      resolve(__dirname, 'index.js'),
+      normalizePath(resolve(__dirname, 'index.js')),
       (id) => id.replace('@', resolve(__dirname, './mods/')),
       __dirname
     )) || {}
