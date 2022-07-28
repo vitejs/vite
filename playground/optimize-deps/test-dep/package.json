@@ -1,0 +1,6 @@
+{
+  "name": "test-dep",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "dep-cjs-browser-field-bare",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.js",
+  "browser": {
+    "events": "test-dep"
+  },
+  "dependencies": {
+    "test-dep": "file:../test-dep"
+  }
+}
