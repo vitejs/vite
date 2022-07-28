@@ -4,12 +4,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
 import minimist from 'minimist'
 import prompts from 'prompts'
 import {
   blue,
   cyan,
   green,
+  lightGreen,
   lightRed,
   magenta,
   red,
@@ -47,13 +49,25 @@ const FRAMEWORKS = [
     variants: [
       {
         name: 'vue',
-        display: 'JavaScript',
+        display: 'Basic JavaScript',
         color: yellow
       },
       {
         name: 'vue-ts',
-        display: 'TypeScript',
+        display: 'Basic TypeScript',
         color: blue
+      },
+      {
+        name: 'custom-create-vue',
+        display: 'Customize with create-vue',
+        color: green,
+        customCommand: 'npm create vue@latest TARGET_DIR'
+      },
+      {
+        name: 'custom-nuxt',
+        display: 'Nuxt',
+        color: lightGreen,
+        customCommand: 'npx nuxi init TARGET_DIR'
       }
     ]
   },
@@ -115,13 +129,19 @@ const FRAMEWORKS = [
     variants: [
       {
         name: 'svelte',
-        display: 'JavaScript',
+        display: 'Basic JavaScript',
         color: yellow
       },
       {
         name: 'svelte-ts',
-        display: 'TypeScript',
+        display: 'Basic TypeScript',
         color: blue
+      },
+      {
+        name: 'custom-svelte-kit',
+        display: 'SvelteKit',
+        color: red,
+        customCommand: 'npm create svelte@latest TARGET_DIR'
       }
     ]
   }
@@ -243,6 +263,33 @@ async function init() {
   // determine template
   template = variant || framework || template
 
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+
+  if (template.startsWith('custom-')) {
+    const getCustomCommand = (name) => {
+      for (const f of FRAMEWORKS) {
+        for (const v of f.variants || []) {
+          if (v.name === name) {
+            return v.customCommand
+          }
+        }
+      }
+    }
+    const customCommand = getCustomCommand(template)
+    const fullCustomCommand = customCommand
+      .replace('TARGET_DIR', targetDir)
+      .replace(/^npm /, `${pkgManager} `)
+      // Only yarn doesn't support `@version` in the `create` command
+      .replace('@latest', () => (pkgManager === 'yarn' ? '' : '@latest'))
+
+    const [command, ...args] = fullCustomCommand.split(' ')
+    const { status } = spawnSync(command, args, {
+      stdio: 'inherit'
+    })
+    process.exit(status ?? 0)
+  }
+
   console.log(`\nScaffolding project in ${root}...`)
 
   const templateDir = path.resolve(
@@ -274,9 +321,6 @@ async function init() {
   pkg.name = packageName || getProjectName()
 
   write('package.json', JSON.stringify(pkg, null, 2))
-
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
