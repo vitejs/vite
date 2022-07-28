@@ -1,15 +1,14 @@
 # Troubleshooting
 
-See [rollup's troubleshooting](https://rollupjs.org/guide/en/#troubleshooting) too.
+See [Rollup's troubleshooting](https://rollupjs.org/guide/en/#troubleshooting) guide for more information too.
 
-If you didn't make it work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or discussioning the issue in #help channel on [Vite Land Discord](https://chat.vitejs.dev).
+If the suggestions here don't work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or in the `#help` channel of [Vite Land Discord](https://chat.vitejs.dev).
 
 ## CLI
 
 ### `Error: Cannot find module 'C:\foo\bar&baz\vite\bin\vite.js'`
 
-Probably the path to your project folder includes `?`.
-There is a bug in `npm` when using Windows and the path including `?` ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
+The path to your project folder may include `?`, which doesn't work with `npm` on Windows ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
 
 You will need to either:
 
@@ -20,8 +19,7 @@ You will need to either:
 
 ### Requests are stalled forever
 
-If you are using linux, file descriptor limits and inotify limits may be affecting.
-Because Vite does not bundle most of the files, browsers requests many files and this requires many file descriptors.
+If you are using Linux, file descriptor limits and inotify limits may be causing the issue. As Vite does not bundle most of the files, browsers may request many files which require many file descriptors, going over the limit.
 
 To solve this:
 
@@ -46,8 +44,7 @@ Related issue: [#964](https://github.com/vitejs/vite/issues/964)
 
 ### Vite does not detect a file change
 
-If you are running Vite with WSL2, Vite cannot watch file changes in some conditions.
-See [`server.watch` option](/config/server-options.md#server-watch).
+If you are running Vite with WSL2, Vite cannot watch file changes in some conditions. See [`server.watch` option](/config/server-options.md#server-watch).
 
 ### A full reload happens instead of HMR
 
