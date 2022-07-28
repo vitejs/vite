@@ -25,6 +25,7 @@ const cwd = process.cwd()
 const FRAMEWORKS = [
   {
     name: 'vanilla',
+    display: 'Vanilla',
     color: yellow,
     variants: [
       {
@@ -41,6 +42,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'vue',
+    display: 'Vue',
     color: green,
     variants: [
       {
@@ -57,6 +59,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'react',
+    display: 'React',
     color: cyan,
     variants: [
       {
@@ -73,6 +76,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'preact',
+    display: 'Preact',
     color: magenta,
     variants: [
       {
@@ -89,6 +93,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'lit',
+    display: 'Lit',
     color: lightRed,
     variants: [
       {
@@ -105,6 +110,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'svelte',
+    display: 'Svelte',
     color: red,
     variants: [
       {
