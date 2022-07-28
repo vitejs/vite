@@ -12,7 +12,7 @@ The path to your project folder may include `?`, which doesn't work with `npm` o
 
 You will need to either:
 
-- Switch to other package manager (e.g. `pnpm`, `yarn`)
+- Switch to another package manager (e.g. `pnpm`, `yarn`)
 - Remove `?` from the path to your project
 
 ## Dev Server
@@ -48,8 +48,7 @@ To solve this:
 
 ### Vite detects a file change but the HMR is not working
 
-Probably you are importing a file with different case.
-For example, `src/foo.js` exists and `src/bar.js` contains:
+You may be importing a file with a different case. For example, `src/foo.js` exists and `src/bar.js` contains:
 
 ```js
 import './Foo.js' // should be './foo.js'
