@@ -227,11 +227,9 @@ function handleParseError(
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
-  const [preHooks, postHooks] = resolveHtmlTransforms([
-    preImportMapHook(config),
-    ...config.plugins,
-    postImportMapHook()
-  ])
+  const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
+  preHooks.unshift(preImportMapHook(config))
+  postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
     url.startsWith('#') ||
@@ -797,7 +795,9 @@ export function preImportMapHook(
     if (!moduleScriptIndex) return
 
     if (moduleScriptIndex < importMapIndex) {
-      const relativeHtml = normalizePath(path.relative(config.root, ctx.filename))
+      const relativeHtml = normalizePath(
+        path.relative(config.root, ctx.filename)
+      )
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(
