@@ -74,10 +74,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
           server._importGlobMap.set(id, allGlobs)
-          result.files.forEach((file) => {
-            // update watcher
-            server!.watcher.add(dirname(file))
-          })
         }
         return transformStableResult(result.s, id, config)
       }
