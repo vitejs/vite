@@ -145,6 +145,8 @@ Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
 When `server.hmr.server` is defined, Vite will process the HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
 
+Check out [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-catalogue) for some examples.
+
 ::: tip NOTE
 
 With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fallback to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
