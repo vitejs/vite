@@ -227,7 +227,11 @@ function handleParseError(
  * Compiles index.html into an entry js module
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
-  const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
+  const [preHooks, postHooks] = resolveHtmlTransforms([
+    preImportMapHook(config),
+    ...config.plugins,
+    postImportMapHook()
+  ])
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
     url.startsWith('#') ||
@@ -259,14 +263,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
 
         // pre-transform
-        html = await applyHtmlTransforms(
-          html,
-          [preImportMapHook(config), ...preHooks],
-          {
-            path: publicPath,
-            filename: id
-          }
-        )
+        html = await applyHtmlTransforms(html, preHooks, {
+          path: publicPath,
+          filename: id
+        })
 
         let js = ''
         const s = new MagicString(html)
@@ -712,16 +712,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (s) {
           result = s.toString()
         }
-        result = await applyHtmlTransforms(
-          result,
-          [...postHooks, postImportMapHook()],
-          {
-            path: '/' + relativeUrlPath,
-            filename: id,
-            bundle,
-            chunk
-          }
-        )
+        result = await applyHtmlTransforms(result, postHooks, {
+          path: '/' + relativeUrlPath,
+          filename: id,
+          bundle,
+          chunk
+        })
         // resolve asset url references
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return (
