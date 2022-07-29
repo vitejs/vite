@@ -191,18 +191,10 @@ export function setClientErrorHandler(
 ): void {
   server.on('clientError', (err, socket) => {
     if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
-      if (!socket.writableEnded) {
-        socket.end(
-          'HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n' +
-            'Request Header was too large. Node.js limits request header size. ' +
-            'Use https://nodejs.org/api/cli.html#--max-http-header-sizesize to change max header size.'
-        )
-      }
       logger.warn(
         colors.yellow(
-          'Server / WS server responded with "431 Request Header Fields Too Large." ' +
-            'Node.js limits request header size and the request was dropped. ' +
-            'Use https://nodejs.org/api/cli.html#--max-http-header-sizesize to change max header size.'
+          'Server responded with status code 431. ' +
+            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.'
         )
       )
     }
