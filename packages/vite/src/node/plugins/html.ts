@@ -797,7 +797,7 @@ export function preImportMapHook(
     if (!moduleScriptIndex) return
 
     if (moduleScriptIndex < importMapIndex) {
-      const relativeHtml = path.relative(config.root, ctx.filename)
+      const relativeHtml = normalizePath(path.relative(config.root, ctx.filename))
       config.logger.warnOnce(
         colors.yellow(
           colors.bold(

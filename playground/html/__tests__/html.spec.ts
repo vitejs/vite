@@ -251,7 +251,7 @@ describe.runIf(isServe)('invalid', () => {
   })
 })
 
-test.runIf(isServe)('importmap', () => {
+test('importmap', () => {
   expect(browserLogs).not.toContain(
     'An import map is added after module script load was triggered.'
   )

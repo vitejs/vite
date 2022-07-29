@@ -1,6 +1,6 @@
 import { browserLogs, isBuild, isServe, page } from '~utils'
 
-test.runIf(isServe)('importmap', () => {
+test('importmap', () => {
   expect(browserLogs).not.toContain(
     'An import map is added after module script load was triggered.'
   )
