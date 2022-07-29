@@ -229,6 +229,13 @@ export function getAssetFilename(
   return assetHashToFilenameMap.get(config)?.get(hash)
 }
 
+export function getPublicAssetFilename(
+  hash: string,
+  config: ResolvedConfig
+): string | undefined {
+  return publicAssetUrlCache.get(config)?.get(hash)
+}
+
 export function resolveAssetFileNames(
   config: ResolvedConfig
 ): string | ((chunkInfo: PreRenderedAsset) => string) {

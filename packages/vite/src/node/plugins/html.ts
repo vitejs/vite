@@ -34,6 +34,8 @@ import {
   assetUrlRE,
   checkPublicFile,
   getAssetFilename,
+  getPublicAssetFilename,
+  publicAssetUrlRE,
   urlToBuiltUrl
 } from './asset'
 import { isCSSRequest } from './css'
@@ -613,13 +615,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         const relativeUrlPath = path.posix.relative(config.root, id)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
-        const toOutputAssetFilePath = (filename: string) => {
+        const toOutputFilePath = (
+          filename: string,
+          type: 'asset' | 'public'
+        ) => {
           if (isExternalUrl(filename)) {
             return filename
           } else {
             return toOutputFilePathInHtml(
               filename,
-              'asset',
+              type,
               relativeUrlPath,
               'html',
               config,
@@ -627,6 +632,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
+
+        const toOutputAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'asset')
+
+        const toOutputPublicAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
@@ -713,6 +724,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         result = result.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           return (
             toOutputAssetFilePath(getAssetFilename(fileHash, config)!) + postfix
+          )
+        })
+
+        result = result.replace(publicAssetUrlRE, (_, fileHash) => {
+          return normalizePath(
+            toOutputPublicAssetFilePath(
+              getPublicAssetFilename(fileHash, config)!
+            )
           )
         })
 
