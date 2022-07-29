@@ -55,6 +55,7 @@ function detectScriptRel() {
 }
 
 declare const scriptRel: string
+
 function preload(
   baseModule: () => Promise<{}>,
   deps?: string[],
@@ -65,6 +66,8 @@ function preload(
     return baseModule()
   }
 
+  const documentLinkUrls = Array.from(document.querySelectorAll('link')).map((link) => link.href);
+
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
@@ -74,9 +77,8 @@ function preload(
       // @ts-ignore
       seen[dep] = true
       const isCss = dep.endsWith('.css')
-      const cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
-      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+      if (documentLinkUrls.includes(dep)) {
         return
       }
       // @ts-ignore
