@@ -1,4 +1,4 @@
-import { browserLogs, isBuild, isServe, page } from '~utils'
+import { browserLogs, isBuild, page } from '~utils'
 
 test('importmap', () => {
   expect(browserLogs).not.toContain(
