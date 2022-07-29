@@ -5,12 +5,10 @@ import type { SourceMapInput } from 'rollup'
 import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
 import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
-import type {
-  IndexHtmlTransformHook} from '../../plugins/html';
+import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
-  applyHtmlTransforms
-,
+  applyHtmlTransforms,
   assetAttrsConfig,
   getScriptInfo,
   postImportMapHook,
