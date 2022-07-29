@@ -129,7 +129,7 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, ws }: ViteDevServer
+  server: ViteDevServer
 ): void {
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
@@ -162,11 +162,11 @@ export function updateModules(
   }
 
   if (needFullReload) {
-    config.logger.info(colors.green(`page reload `) + colors.dim(file), {
+    server.config.logger.info(colors.green(`page reload `) + colors.dim(file), {
       clear: true,
       timestamp: true
     })
-    ws.send({
+    server.ws.send({
       type: 'full-reload'
     })
     return
@@ -177,13 +177,14 @@ export function updateModules(
     return
   }
 
-  config.logger.info(
+  server.config.logger.info(
     updates
       .map(({ path }) => colors.green(`hmr update `) + colors.dim(path))
       .join('\n'),
     { clear: true, timestamp: true }
   )
-  ws.send({
+  server.printUrls()
+  server.ws.send({
     type: 'update',
     updates
   })

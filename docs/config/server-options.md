@@ -73,6 +73,12 @@ export default defineConfig({
 })
 ```
 
+**Note:** when opening Google Chrome on macOS, Vite will try to re-use an existing tab if your application is already open. This requires that Vite is unpacked on your file system. If you're using yarn PnP, packages are compressed and only made available through a virtual file system. To enable re-using the Chrome tab while using yarn PnP, you can [unplug](https://yarnpkg.com/cli/unplug) Vite so that it is available on disk:
+
+```
+yarn unplug --all --recursive vite
+```
+
 ## server.proxy
 
 - **Type:** `Record<string, string | ProxyOptions>`
