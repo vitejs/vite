@@ -12,6 +12,7 @@ import requireAbsolute from 'require-absolute'
 import noExternalCjs from 'no-external-cjs'
 import importBuiltinCjs from 'import-builtin-cjs'
 import { hello as linkedNoExternal } from 'linked-no-external'
+import virtualMessage from 'pkg-exports/virtual'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
 import 'non-optimized-with-nested-external'
@@ -78,6 +79,8 @@ export async function render(url, rootDir) {
 
   const linkedNoExternalMessage = linkedNoExternal()
   html += `\n<p class="linked-no-external">message from linked-no-external: ${linkedNoExternalMessage}</p>`
+
+  html += `\n<p class="dep-virtual">message from dep-virtual: ${virtualMessage}</p>`
 
   return html + '\n'
 }

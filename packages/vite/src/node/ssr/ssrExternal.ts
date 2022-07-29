@@ -129,20 +129,25 @@ export function createIsConfiguredAsSsrExternal(
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
-    return !!tryNodeResolve(
-      id,
-      undefined,
-      resolveOptions,
-      ssr?.target === 'webworker',
-      undefined,
-      true,
-      // try to externalize, will return undefined or an object without
-      // a external flag if it isn't externalizable
-      true,
-      // Allow linked packages to be externalized if they are explicitly
-      // configured as external
-      !!configuredAsExternal
-    )?.external
+    try {
+      return !!tryNodeResolve(
+        id,
+        undefined,
+        resolveOptions,
+        ssr?.target === 'webworker',
+        undefined,
+        true,
+        // try to externalize, will return undefined or an object without
+        // a external flag if it isn't externalizable
+        true,
+        // Allow linked packages to be externalized if they are explicitly
+        // configured as external
+        !!configuredAsExternal
+      )?.external
+    } catch (e) {
+      // may be an invalid import that's resolved by a plugin
+      return false
+    }
   }
 
   // Returns true if it is configured as external, false if it is filtered

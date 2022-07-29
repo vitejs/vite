@@ -27,7 +27,8 @@
     "optimized-cjs-with-nested-external": "file:./optimized-with-nested-external",
     "external-using-external-entry": "file:./external-using-external-entry",
     "external-entry": "file:./external-entry",
-    "linked-no-external": "link:./linked-no-external"
+    "linked-no-external": "link:./linked-no-external",
+    "pkg-exports": "file:./pkg-exports"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

@@ -45,7 +45,23 @@ export async function createServer(root = process.cwd(), hmrPort) {
       optimizeDeps: {
         disabled: 'build'
       }
-    }
+    },
+    plugins: [
+      {
+        name: 'dep-virtual',
+        enforce: 'pre',
+        resolveId(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'pkg-exports/virtual'
+          }
+        },
+        load(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'export default "[success]"'
+          }
+        }
+      }
+    ]
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
