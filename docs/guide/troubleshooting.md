@@ -65,3 +65,17 @@ If you are running Vite with WSL2, Vite cannot watch file changes in some condit
 If HMR is not handled by Vite or a plugin, a full reload will happen.
 
 Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
+
+## Others
+
+### Syntax Error / Type Error happens
+
+Vite cannot handle and does not support code that only runs on non-strict mode (sloppy mode). This is because Vite uses ESM and it is always [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) inside ESM.
+
+For example, you might see these errors.
+
+> [ERROR] With statements cannot be used with the "esm" output format due to strict mode
+
+> TypeError: Cannot create property 'foo' on boolean 'false'
+
+If these code are used inside dependecies, you could use [`patch-package`](https://github.com/ds300/patch-package) (or [`yarn patch`](https://yarnpkg.com/cli/patch) or [`pnpm patch`](https://pnpm.io/cli/patch)) for an escape hatch.
