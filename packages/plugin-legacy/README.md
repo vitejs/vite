@@ -117,6 +117,13 @@ npm add -D terser
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
+### `noModule`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+  Enabling this option will only output the legacy bundles that support all target browsers (loaded via plain <script>s)
+
 ## Dynamic Import
 
 The legacy plugin offers a way to use native `import()` in the modern build while falling back to the legacy build in browsers with native ESM but without dynamic import support (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:
