@@ -789,10 +789,10 @@ export function preImportMapHook(
 ): IndexHtmlTransformHook {
   return (html, ctx) => {
     const importMapIndex = html.match(importMapRE)?.index
-    if (!importMapIndex) return
+    if (importMapIndex === undefined) return
 
     const moduleScriptIndex = html.match(moduleScriptRE)?.index
-    if (!moduleScriptIndex) return
+    if (moduleScriptIndex === undefined) return
 
     if (moduleScriptIndex < importMapIndex) {
       const relativeHtml = normalizePath(
