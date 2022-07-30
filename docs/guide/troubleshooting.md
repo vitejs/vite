@@ -70,8 +70,7 @@ Also if there is a dependency loop, a full reload will happen. To solve this, tr
 
 ### Syntax Error / Type Error happens
 
-Vite cannot handle and does not support code that only runs on non-strict mode (sloppy mode).
-This is because Vite uses ESM and it is always [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) inside ESM.
+Vite cannot handle and does not support code that only runs on non-strict mode (sloppy mode). This is because Vite uses ESM and it is always [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode) inside ESM.
 
 For example, you might see these errors.
 
