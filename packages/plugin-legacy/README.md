@@ -27,7 +27,7 @@ export default {
 }
 ```
 
-Terser must be installed because plugin-legacy uses Terser for minification.
+If `renderLegacyChunks` is not `false`, Terser must be installed because plugin-legacy uses Terser to minify legacy chunks.
 
 ```sh
 npm add -D terser

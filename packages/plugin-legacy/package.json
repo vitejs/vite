@@ -45,6 +45,11 @@
     "terser": "^5.4.0",
     "vite": "^3.0.0"
   },
+  "peerDependenciesMeta": {
+    "terser": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@babel/core": "^7.18.9",
     "vite": "workspace:*"

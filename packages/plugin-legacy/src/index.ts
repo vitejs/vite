@@ -648,7 +648,9 @@ async function buildPolyfillChunk(
   excludeSystemJS?: boolean
 ) {
   let { minify, assetsDir } = buildOptions
-  minify = minify ? 'terser' : false
+  if (format === 'iife') {
+    minify = minify ? 'terser' : false
+  }
   const res = await build({
     // so that everything is resolved from here
     root: path.dirname(fileURLToPath(import.meta.url)),
