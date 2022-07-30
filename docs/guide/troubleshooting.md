@@ -50,10 +50,9 @@ When the server / WebSocket server receives a large HTTP header, the request wil
 
 > Server responded with status code 431. See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.
 
-This is because Node.js limits request header size to mitigate CVE-2018-12121.
+This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
 
-To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it.
-Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
+To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
 
 ## HMR
 
