@@ -166,6 +166,11 @@ export function updateModules(
       clear: true,
       timestamp: true
     })
+    try {
+      server.printUrls()
+    } catch (e) {
+      // Printing URLs can fail if the server isn't started yet
+    }
     server.ws.send({
       type: 'full-reload'
     })
@@ -183,7 +188,11 @@ export function updateModules(
       .join('\n'),
     { clear: true, timestamp: true }
   )
-  server.printUrls()
+  try {
+    server.printUrls()
+  } catch (e) {
+    // Printing URLs can fail if the server isn't started yet
+  }
   server.ws.send({
     type: 'update',
     updates
