@@ -4,4 +4,4 @@
 [build]
   publish = "docs/.vitepress/dist"
   command = "npx pnpm i --store=node_modules/.pnpm-store --frozen-lockfile && npm run ci-docs"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF docs package.json pnpm-lock.yaml netlify.toml"
+  ignore = "./scripts/docs-check.sh"
