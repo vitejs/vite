@@ -312,8 +312,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
-          !Array.isArray(options.modernPolyfills)
-          && !noModule
+          !Array.isArray(options.modernPolyfills) &&
+          !noModule
         ) {
           // analyze and record modern polyfills
           await detectPolyfills(raw, { esmodules: true }, modernPolyfills)
