@@ -47,15 +47,13 @@ import {
 import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
-  assetFileNamesToFileName,
   assetUrlRE,
   checkPublicFile,
   fileToUrl,
   getAssetFilename,
   publicAssetUrlCache,
   publicAssetUrlRE,
-  publicFileToBuiltUrl,
-  resolveAssetFileNames
+  publicFileToBuiltUrl
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 
@@ -543,14 +541,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
+          const fileName = chunk.name + '.css'
           const fileHandle = this.emitFile({
             name: isPreProcessor(lang) ? cssAssetName : cssFileName,
-            fileName: assetFileNamesToFileName(
-              resolveAssetFileNames(config),
-              cssFileName,
-              getHash(chunkCSS),
-              chunkCSS
-            ),
+            fileName,
             type: 'asset',
             source: chunkCSS
           })
