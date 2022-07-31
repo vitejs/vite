@@ -42,18 +42,6 @@ module.exports = defineConfig({
         tryExtensions: ['.ts', '.js', '.jsx', '.tsx', '.d.ts']
       }
     ],
-    'node/no-restricted-require': [
-      'error',
-      Object.keys(require('./packages/vite/package.json').devDependencies).map(
-        (d) => ({
-          name: d,
-          message:
-            `devDependencies can only be imported using ESM syntax so ` +
-            `that they are included in the rollup bundle. If you are trying to ` +
-            `lazy load a dependency, use (await import('dependency')).default instead.`
-        })
-      )
-    ],
     'node/no-extraneous-import': [
       'error',
       {
@@ -108,6 +96,30 @@ module.exports = defineConfig({
   },
   overrides: [
     {
+      files: ['packages/**'],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+      }
+    },
+    {
+      files: 'packages/vite/**/*.*',
+      rules: {
+        'node/no-restricted-require': [
+          'error',
+          Object.keys(
+            require('./packages/vite/package.json').devDependencies
+          ).map((d) => ({
+            name: d,
+            message:
+              `devDependencies can only be imported using ESM syntax so ` +
+              `that they are included in the rollup bundle. If you are trying to ` +
+              `lazy load a dependency, use (await import('dependency')).default instead.`
+          }))
+        ]
+      }
+    },
+    {
       files: ['packages/vite/src/node/**'],
       rules: {
         'no-console': ['error']
@@ -120,9 +132,11 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/plugin-*/**/*'],
+      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
       rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
+        'no-undef': 'off',
+        'node/no-missing-import': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
     },
     {
@@ -132,7 +146,6 @@ module.exports = defineConfig({
         'node/no-extraneous-require': 'off',
         'node/no-missing-import': 'off',
         'node/no-missing-require': 'off',
-        'no-undef': 'off',
         // engine field doesn't exist in playgrounds
         'node/no-unsupported-features/es-builtins': [
           'error',
@@ -145,17 +158,22 @@ module.exports = defineConfig({
           {
             version: '^14.18.0 || >=16.0.0'
           }
-        ]
+        ],
+        '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
     },
     {
-      files: ['packages/create-vite/template-*/**', '**/build.config.ts'],
+      files: ['playground/**'],
+      excludedFiles: '**/__tests__/**',
       rules: {
-        'node/no-missing-import': 'off'
+        'no-undef': 'off',
+        'no-empty': 'off',
+        'no-constant-condition': 'off',
+        '@typescript-eslint/no-empty-function': 'off'
       }
     },
     {
-      files: ['playground/**', '*.js'],
+      files: ['*.js'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }
@@ -164,12 +182,6 @@ module.exports = defineConfig({
       files: ['*.d.ts'],
       rules: {
         '@typescript-eslint/triple-slash-reference': 'off'
-      }
-    },
-    {
-      files: 'packages/vite/**/*.*',
-      rules: {
-        'no-restricted-globals': ['error', 'require', '__dirname', '__filename']
       }
     }
   ],
