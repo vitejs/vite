@@ -65,7 +65,7 @@
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.47",
     "eslint": "^8.20.0",
-    "eslint-define-config": "^1.5.1",
+    "eslint-define-config": "^1.6.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^6.1.0",
