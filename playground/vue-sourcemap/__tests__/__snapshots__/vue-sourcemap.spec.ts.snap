@@ -189,8 +189,7 @@ exports[`serve:vue-sourcemap > less with additionalData > serve-less-with-additi
 
 exports[`serve:vue-sourcemap > no script > serve-no-script 1`] = `
 {
-  "mappings": ";;;wBACE,oBAAwB,WAArB,aAAiB",
-  "sourceRoot": "",
+  "mappings": ";;;wBACE",
   "sources": [
     "/root/NoScript.vue",
   ],
@@ -206,7 +205,7 @@ exports[`serve:vue-sourcemap > no script > serve-no-script 1`] = `
 
 exports[`serve:vue-sourcemap > no template > serve-no-template 1`] = `
 {
-  "mappings": "AACA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;",
+  "mappings": "AACA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC",
   "sources": [
     "/root/NoTemplate.vue",
   ],
