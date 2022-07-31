@@ -16,7 +16,7 @@
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
     "format": "prettier --write --cache .",
-    "lint": "eslint --cache packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**",
+    "lint": "eslint --cache packages/*/{src,types,__tests__}/** playground/**/__tests__/**/*.ts scripts/**/*.ts",
     "typecheck": "tsc -p scripts --noEmit && tsc -p playground --noEmit",
     "test": "run-s test-unit test-serve test-build",
     "test-serve": "vitest run -c vitest.config.e2e.ts",
