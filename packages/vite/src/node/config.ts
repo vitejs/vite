@@ -976,7 +976,7 @@ async function bundleConfigFile(
               if (path.relative(idPkgDir, fileName).startsWith('..')) {
                 return {
                   // normalize actual import after bundled as a single vite config
-                  path: idFsPath,
+                  path: pathToFileURL(idFsPath).href,
                   external: true
                 }
               }
