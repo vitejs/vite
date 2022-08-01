@@ -122,4 +122,26 @@ describe('restore-jsx', () => {
       React__default.createElement(Foo, {hi: there})`)
     ).toMatch(`<Foo hi={there} />;`)
   })
+
+  it('should handle Fragment', async () => {
+    expect(
+      await jsx(`import R, { Fragment } from 'react';
+        R.createElement(F1)
+      `)
+    ).toMatchInlineSnapshot(`
+      "import R, { Fragment } from 'react';
+      <F1 />;"
+    `)
+  })
+
+  it('should handle Fragment alias', async () => {
+    expect(
+      await jsx(`import RA, { Fragment as F } from 'react';
+        RA.createElement(F, null, RA.createElement(RA.Fragment))
+      `)
+    ).toMatchInlineSnapshot(`
+      "import RA, { Fragment as F } from 'react';
+      <F><></></F>;"
+    `)
+  })
 })
