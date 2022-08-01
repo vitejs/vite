@@ -390,6 +390,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
+          const fileDeps: string[] = [];
+
+          const addFileDep = (url: string): number => {
+            if (!fileDeps.includes(url)) {
+              fileDeps.push(url);
+            }
+
+            return fileDeps.indexOf(url);
+          };
+
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
               // To handle escape sequences in specifier strings, the .n field will be provided where possible.
@@ -407,7 +417,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps: Set<number> = new Set()
               let hasRemovedPureCssChunk = false
 
               if (url) {
@@ -420,9 +430,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   analyzed.add(filename)
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
-                    deps.add(chunk.fileName)
+                    deps.add(addFileDep(chunk.fileName))
                     chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.add(file)
+                      deps.add(addFileDep(file))
                     })
                     chunk.imports.forEach(addDeps)
                   } else {
@@ -432,7 +442,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     if (chunk) {
                       if (chunk.viteMetadata.importedCss.size) {
                         chunk.viteMetadata.importedCss.forEach((file) => {
-                          deps.add(file)
+                          deps.add(addFileDep(file))
                         })
                         hasRemovedPureCssChunk = true
                       }
@@ -466,15 +476,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps]
-                        .map((d) =>
-                          JSON.stringify(
-                            relativePreloadUrls
-                              ? path.relative(path.dirname(file), d)
-                              : d
-                          )
-                        )
-                        .join(',')}]`
+                    ? `__viteFile([${[...deps].join(',')}])`
                     : `[]`,
                   { contentOnly: true }
                 )
@@ -482,6 +484,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
             }
           }
+
+          s.append(`function __viteFile (indexes) {
+            const fileDeps = ${JSON.stringify(fileDeps.map((fileDep) => relativePreloadUrls
+              ? path.relative(path.dirname(file), fileDep)
+              : fileDep))};
+            return indexes.map((index) => fileDeps[index]);
+          }`);
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
