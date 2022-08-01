@@ -39,7 +39,7 @@ importers:
       cross-env: ^7.0.3
       esbuild: ^0.14.47
       eslint: ^8.20.0
-      eslint-define-config: ^1.5.1
+      eslint-define-config: ^1.6.0
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
       execa: ^6.1.0
@@ -97,7 +97,7 @@ importers:
       cross-env: 7.0.3
       esbuild: 0.14.47
       eslint: 8.20.0
-      eslint-define-config: 1.5.1
+      eslint-define-config: 1.6.0
       eslint-plugin-import: 2.26.0_xconv27bia2733zao6ipggqv2i
       eslint-plugin-node: 11.1.0_eslint@8.20.0
       execa: 6.1.0
@@ -4766,8 +4766,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  /eslint-define-config/1.5.1:
-    resolution: {integrity: sha512-6gxrmN7aKGffaO8dCtMMKyo3IxbWymMQ248p4lf8GbaFRcLsqOXHFdUhhM0Hcy1NudvnpwHcfbDf7Nh9pIm1TA==}
+  /eslint-define-config/1.6.0:
+    resolution: {integrity: sha512-3qulYnwDRGYQHXHGdXBSRcfpI7m37ilBoERzTUYI8fBUoK/46yfUVNkGwM9cF/aoBrGgIDcBSz/HyPQJTHI/+w==}
     engines: {node: '>= 14.6.0', npm: '>= 6.0.0', pnpm: '>= 7.0.0'}
     dev: true
 
