@@ -50,7 +50,7 @@
     "@types/hash-sum": "^1.0.0",
     "@types/less": "^3.0.3",
     "@types/micromatch": "^4.0.2",
-    "@types/mime": "^2.0.3",
+    "@types/mime": "^3.0.0",
     "@types/minimist": "^1.2.2",
     "@types/node": "^17.0.42",
     "@types/prompts": "^2.4.0",
