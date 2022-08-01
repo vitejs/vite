@@ -543,12 +543,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           // emit corresponding css file
-          const chunkFile = chunk.name + '.css'
           const fileHandle = this.emitFile({
             name: isPreProcessor(lang) ? cssAssetName : cssFileName,
             fileName: assetFileNamesToFileName(
               resolveAssetFileNames(config),
-              chunkFile,
+              cssFileName,
               getHash(chunkCSS),
               chunkCSS
             ),
