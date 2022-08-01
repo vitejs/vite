@@ -390,15 +390,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
-          const fileDeps: string[] = [];
+          const fileDeps: string[] = []
 
           const addFileDep = (url: string): number => {
             if (!fileDeps.includes(url)) {
-              fileDeps.push(url);
+              fileDeps.push(url)
             }
 
-            return fileDeps.indexOf(url);
-          };
+            return fileDeps.indexOf(url)
+          }
 
           if (imports.length) {
             for (let index = 0; index < imports.length; index++) {
@@ -486,11 +486,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           s.append(`function __viteFile (indexes) {
-            const fileDeps = ${JSON.stringify(fileDeps.map((fileDep) => relativePreloadUrls
-              ? path.relative(path.dirname(file), fileDep)
-              : fileDep))};
+            const fileDeps = ${JSON.stringify(
+              fileDeps.map((fileDep) =>
+                relativePreloadUrls
+                  ? path.relative(path.dirname(file), fileDep)
+                  : fileDep
+              )
+            )};
             return indexes.map((index) => fileDeps[index]);
-          }`);
+          }`)
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
