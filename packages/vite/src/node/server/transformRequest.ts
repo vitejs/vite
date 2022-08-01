@@ -5,6 +5,7 @@ import getEtag from 'etag'
 import * as convertSourceMap from 'convert-source-map'
 import type { SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
+import MagicString from 'magic-string'
 import type { ViteDevServer } from '..'
 import {
   cleanUrl,
@@ -249,6 +250,11 @@ async function loadAndTransform(
     isDebug && debugTransform(`${timeFrom(transformStart)} ${prettyUrl}`)
     code = transformResult.code!
     map = transformResult.map
+
+    // To enable debugging create a sourcemap for known modified JS files without one:
+    if (!map && mod.file && mod.type === 'js' && code !== originalCode) {
+      map = new MagicString(code).generateMap({ source: mod.file })
+    }
   }
 
   if (map && mod.file) {

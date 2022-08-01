@@ -15,7 +15,7 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
-import MagicString from 'magic-string'
+import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
@@ -1102,26 +1102,19 @@ function normalizeSingleAlias({
 
 /**
  * Transforms transpiled code result where line numbers aren't altered,
- * so we can skip full sourcemap generation during dev, however we still
- * have to make a minimal sourcemap with the source property set to the
- * original file so debuggers know which one to step into.
+ * so we can skip sourcemap generation during dev
  */
 export function transformStableResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
 ): TransformResult {
-  let map
-  if (config.command === 'build') {
-    map = config.build.sourcemap
-      ? s.generateMap({ hires: true, source: id })
-      : null
-  } else {
-    map = new MagicString(s.toString()).generateMap({ hires: true, source: id })
-  }
   return {
     code: s.toString(),
-    map
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
 }
 
