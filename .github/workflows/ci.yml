@@ -81,13 +81,13 @@ jobs:
         run: pnpm run build
 
       - name: Test unit
-        run: pnpm run test-unit
+        run: bash ./scripts/retry.sh "pnpm --color=always test-unit"
 
       - name: Test serve
-        run: pnpm run test-serve
+        run: bash ./scripts/retry.sh "pnpm --color=always test-serve"
 
       - name: Test build
-        run: pnpm run test-build
+        run: bash ./scripts/retry.sh "pnpm --color=always test-build"
 
       - name: Test docs
         run: pnpm run test-docs
