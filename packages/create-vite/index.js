@@ -49,12 +49,12 @@ const FRAMEWORKS = [
     variants: [
       {
         name: 'vue',
-        display: 'Basic JavaScript',
+        display: 'JavaScript',
         color: yellow
       },
       {
         name: 'vue-ts',
-        display: 'Basic TypeScript',
+        display: 'TypeScript',
         color: blue
       },
       {
@@ -129,12 +129,12 @@ const FRAMEWORKS = [
     variants: [
       {
         name: 'svelte',
-        display: 'Basic JavaScript',
+        display: 'JavaScript',
         color: yellow
       },
       {
         name: 'svelte-ts',
-        display: 'Basic TypeScript',
+        display: 'TypeScript',
         color: blue
       },
       {
