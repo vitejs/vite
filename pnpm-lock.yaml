@@ -24,7 +24,7 @@ importers:
       '@types/hash-sum': ^1.0.0
       '@types/less': ^3.0.3
       '@types/micromatch': ^4.0.2
-      '@types/mime': ^2.0.3
+      '@types/mime': ^3.0.0
       '@types/minimist': ^1.2.2
       '@types/node': ^17.0.42
       '@types/prompts': ^2.4.0
@@ -82,7 +82,7 @@ importers:
       '@types/hash-sum': 1.0.0
       '@types/less': 3.0.3
       '@types/micromatch': 4.0.2
-      '@types/mime': 2.0.3
+      '@types/mime': 3.0.0
       '@types/minimist': 1.2.2
       '@types/node': 17.0.42
       '@types/prompts': 2.4.0
@@ -2702,8 +2702,8 @@ packages:
       '@types/braces': 3.0.1
     dev: true
 
-  /@types/mime/2.0.3:
-    resolution: {integrity: sha512-Jus9s4CDbqwocc5pOAnh8ShfrnMcPHuJYzVcSUU7lrh8Ni5HuIqX3oilL86p3dlTrk0LzHRCgA/GQ7uNCw6l2Q==}
+  /@types/mime/3.0.0:
+    resolution: {integrity: sha512-fccbsHKqFDXClBZTDLA43zl0+TbxyIwyzIzwwhvoJvhNjOErCdeX2xJbURimv2EbSVUGav001PaCJg4mZxMl4w==}
     dev: true
 
   /@types/minimist/1.2.2:
