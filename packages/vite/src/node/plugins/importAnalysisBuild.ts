@@ -487,12 +487,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           s.append(`\
 function __viteFile(indexes) {
-  const fileDeps = ${JSON.stringify(
+  const deps = ${JSON.stringify(
     fileDeps.map((fileDep) =>
       relativePreloadUrls ? path.relative(path.dirname(file), fileDep) : fileDep
     )
   )}
-  return indexes.map((index) => fileDeps[index])
+  return indexes.map((i) => deps[i])
 }`)
 
           // there may still be markers due to inlined dynamic imports, remove
