@@ -8,27 +8,26 @@ import {
   untilUpdated
 } from '~utils'
 
+test('should load the worker', async () => {
+  await untilUpdated(() => page.textContent('.worker-message'), 'module')
+})
+
 test('should work', async () => {
-  expect(await page.textContent('#app')).toMatch('Hello')
+  await untilUpdated(() => page.textContent('#app'), 'Hello')
 })
 
 test('import.meta.env.LEGACY', async () => {
-  expect(await page.textContent('#env')).toMatch(isBuild ? 'true' : 'false')
-})
-
-test('should load the worker', async () => {
-  expect(await page.textContent('.worker-message')).toMatchInlineSnapshot(
-    '"\\"module\\""'
-  )
+  await untilUpdated(() => page.textContent('#env'), isBuild ? 'true' : 'false')
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  expect(await page.textContent('#iterators')).toMatch('hello')
+  await untilUpdated(() => page.textContent('#iterators'), 'hello')
 })
 
 test('wraps with iife', async () => {
-  expect(await page.textContent('#babel-helpers')).toMatch(
+  await untilUpdated(
+    () => page.textContent('#babel-helpers'),
     'exposed babel helpers: false'
   )
 })
@@ -54,8 +53,7 @@ test('generates assets', async () => {
           'immutable-chunk: 404',
           'immutable-chunk-legacy: 404',
           'polyfills-legacy: 404'
-        ].join('\n'),
-    true
+        ].join('\n')
   )
 })
 

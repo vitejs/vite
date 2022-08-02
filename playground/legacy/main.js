@@ -57,6 +57,7 @@ function text(el, text) {
 }
 
 const worker = new MyWorker()
+worker.postMessage('ping')
 worker.addEventListener('message', (ev) => {
   text('.worker-message', JSON.stringify(ev.data))
 })

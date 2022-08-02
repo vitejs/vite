@@ -1,3 +1,5 @@
 import { module } from './module'
 
-self.postMessage(module)
+self.onmessage = () => {
+  self.postMessage(module)
+}
