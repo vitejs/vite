@@ -308,7 +308,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk, opts) {
+    renderChunk(code, chunk) {
       let s: MagicString
       const result = () => {
         return (
