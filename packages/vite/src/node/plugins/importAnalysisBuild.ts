@@ -476,7 +476,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   deps.size > 1 ||
                     // main chunk is removed
                     (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `__viteFile([${[...deps].join(',')}])`
+                    ? `__viteMapDep([${[...deps].join(',')}])`
                     : `[]`,
                   { contentOnly: true }
                 )
@@ -486,7 +486,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           s.append(`\
-function __viteFile(indexes) {
+function __viteMapDep(indexes) {
   const deps = ${JSON.stringify(
     fileDeps.map((fileDep) =>
       relativePreloadUrls ? path.relative(path.dirname(file), fileDep) : fileDep
