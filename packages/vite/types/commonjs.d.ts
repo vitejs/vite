@@ -7,17 +7,17 @@
  */
 export interface RollupCommonJSOptions {
   /**
-   * A picomatch pattern, or array of patterns, which specifies the files in
+   * A minimatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should operate on. By default, all files with
-   * extension `".cjs"` or those in `extensions` are included, but you can narrow
-   * this list by only including specific files. These files will be analyzed
-   * and transpiled if either the analysis does not find ES module specific
-   * statements or `transformMixedEsModules` is `true`.
+   * extension `".cjs"` or those in `extensions` are included, but you can
+   * narrow this list by only including specific files. These files will be
+   * analyzed and transpiled if either the analysis does not find ES module
+   * specific statements or `transformMixedEsModules` is `true`.
    * @default undefined
    */
   include?: string | RegExp | readonly (string | RegExp)[]
   /**
-   * A picomatch pattern, or array of patterns, which specifies the files in
+   * A minimatch pattern, or array of patterns, which specifies the files in
    * the build the plugin should _ignore_. By default, all files with
    * extensions other than those in `extensions` or `".cjs"` are ignored, but you
    * can exclude additional files. See also the `include` option.
@@ -37,7 +37,8 @@ export interface RollupCommonJSOptions {
    */
   ignoreGlobal?: boolean
   /**
-   * If false, skips source map generation for CommonJS modules. This will improve performance.
+   * If false, skips source map generation for CommonJS modules. This will
+   * improve performance.
    * @default true
    */
   sourceMap?: boolean
@@ -66,6 +67,39 @@ export interface RollupCommonJSOptions {
    */
   transformMixedEsModules?: boolean
   /**
+   * By default, this plugin will try to hoist `require` statements as imports
+   * to the top of each file. While this works well for many code bases and
+   * allows for very efficient ESM output, it does not perfectly capture
+   * CommonJS semantics as the order of side effects like log statements may
+   * change. But it is especially problematic when there are circular `require`
+   * calls between CommonJS modules as those often rely on the lazy execution of
+   * nested `require` calls.
+   *
+   * Setting this option to `true` will wrap all CommonJS files in functions
+   * which are executed when they are required for the first time, preserving
+   * NodeJS semantics. Note that this can have an impact on the size and
+   * performance of the generated code.
+   *
+   * The default value of `"auto"` will only wrap CommonJS files when they are
+   * part of a CommonJS dependency cycle, e.g. an index file that is required by
+   * many of its dependencies. All other CommonJS files are hoisted. This is the
+   * recommended setting for most code bases.
+   *
+   * `false` will entirely prevent wrapping and hoist all files. This may still
+   * work depending on the nature of cyclic dependencies but will often cause
+   * problems.
+   *
+   * You can also provide a minimatch pattern, or array of patterns, to only
+   * specify a subset of files which should be wrapped in functions for proper
+   * `require` semantics.
+   *
+   * `"debug"` works like `"auto"` but after bundling, it will display a warning
+   * containing a list of ids that have been wrapped which can be used as
+   * minimatch pattern for fine-tuning.
+   * @default "auto"
+   */
+  strictRequires?: boolean | string | RegExp | readonly (string | RegExp)[]
+  /**
    * Sometimes you have to leave require statements unconverted. Pass an array
    * containing the IDs or a `id => boolean` function.
    * @default []
@@ -75,14 +109,16 @@ export interface RollupCommonJSOptions {
    * In most cases, where `require` calls are inside a `try-catch` clause,
    * they should be left unconverted as it requires an optional dependency
    * that may or may not be installed beside the rolled up package.
-   * Due to the conversion of `require` to a static `import` - the call is hoisted
-   * to the top of the file, outside of the `try-catch` clause.
+   * Due to the conversion of `require` to a static `import` - the call is
+   * hoisted to the top of the file, outside of the `try-catch` clause.
    *
    * - `true`: All `require` calls inside a `try` will be left unconverted.
-   * - `false`: All `require` calls inside a `try` will be converted as if the `try-catch` clause is not there.
+   * - `false`: All `require` calls inside a `try` will be converted as if the
+   *   `try-catch` clause is not there.
    * - `remove`: Remove all `require` calls from inside any `try` block.
    * - `string[]`: Pass an array containing the IDs to left unconverted.
-   * - `((id: string) => boolean|'remove')`: Pass a function that control individual IDs.
+   * - `((id: string) => boolean|'remove')`: Pass a function that control
+   *   individual IDs.
    *
    * @default false
    */
@@ -165,12 +201,17 @@ export interface RollupCommonJSOptions {
     | 'preferred'
     | 'namespace'
     | ((id: string) => boolean | 'auto' | 'preferred' | 'namespace')
+
+  /**
+   * @default "auto"
+   */
+  defaultIsModuleExports?: boolean | 'auto' | ((id: string) => boolean | 'auto')
   /**
    * Some modules contain dynamic `require` calls, or require modules that
    * contain circular dependencies, which are not handled well by static
    * imports. Including those modules as `dynamicRequireTargets` will simulate a
-   * CommonJS (NodeJS-like)  environment for them with support for dynamic and
-   * circular dependencies.
+   * CommonJS (NodeJS-like)  environment for them with support for dynamic
+   * dependencies. It also enables `strictRequires` for those modules.
    *
    * Note: In extreme cases, this feature may result in some paths being
    * rendered as absolute in the final bundle. The plugin tries to avoid
@@ -179,4 +220,11 @@ export interface RollupCommonJSOptions {
    * replacing strings like `"/Users/John/Desktop/foo-project/"` -\> `"/"`.
    */
   dynamicRequireTargets?: string | ReadonlyArray<string>
+  /**
+   * To avoid long paths when using the `dynamicRequireTargets` option, you can use this option to specify a directory
+   * that is a common parent for all files that use dynamic require statements. Using a directory higher up such as `/`
+   * may lead to unnecessarily long paths in the generated code and may expose directory names on your machine like your
+   * home directory name. By default it uses the current working directory.
+   */
+  dynamicRequireRoot?: string
 }
