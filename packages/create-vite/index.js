@@ -67,7 +67,7 @@ const FRAMEWORKS = [
         name: 'custom-nuxt',
         display: 'Nuxt',
         color: lightGreen,
-        customCommand: 'npx nuxi init TARGET_DIR'
+        customCommand: 'npm exec nuxi init TARGET_DIR'
       }
     ]
   },
@@ -265,6 +265,7 @@ async function init() {
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   if (template.startsWith('custom-')) {
     const getCustomCommand = (name) => {
@@ -279,9 +280,21 @@ async function init() {
     const customCommand = getCustomCommand(template)
     const fullCustomCommand = customCommand
       .replace('TARGET_DIR', targetDir)
-      .replace(/^npm /, `${pkgManager} `)
-      // Only yarn doesn't support `@version` in the `create` command
-      .replace('@latest', () => (pkgManager === 'yarn' ? '' : '@latest'))
+      .replace(/^npm create/, `${pkgManager} create`)
+      // Only Yarn 1.x doesn't support `@version` in the `create` command
+      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
+      .replace('^npm exec', () => {
+        // Prefer `pnpm dlx` or `yarn dlx`
+        if (pkgManager === 'pnpm') {
+          return 'pnpm dlx'
+        }
+        if (pkgManager === 'yarn' && !isYarn1) {
+          return 'yarn dlx'
+        }
+        // Use `npm exec` in all other cases,
+        // including Yarn 1.x and other custom npm clients.
+        return 'npm exec'
+      })
 
     const [command, ...args] = fullCustomCommand.split(' ')
     const { status } = spawn.sync(command, args, {
