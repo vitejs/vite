@@ -492,7 +492,7 @@ const __viteFileDeps = ${JSON.stringify(
   )
 )}
 function __viteMapDep(indexes) {
-  return __viteFileDeps.map((i) => deps[i])
+  return indexes.map((i) => __viteFileDeps[i])
 }`)
 
           // there may still be markers due to inlined dynamic imports, remove
