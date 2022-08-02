@@ -6,7 +6,7 @@ module.exports = {
   base: './',
   plugins: [
     legacy({
-      targets: 'IE 11, CHROME 52',
+      targets: 'IE 11',
       modernPolyfills: true
     })
   ],
