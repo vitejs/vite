@@ -16,6 +16,12 @@ test('import.meta.env.LEGACY', async () => {
   expect(await page.textContent('#env')).toMatch(isBuild ? 'true' : 'false')
 })
 
+test('should load the worker', async () => {
+  expect(await page.textContent('.worker-message')).toMatchInlineSnapshot(
+    '"\\"module\\""'
+  )
+})
+
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
   expect(await page.textContent('#iterators')).toMatch('hello')

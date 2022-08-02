@@ -1,5 +1,6 @@
 import './style.css'
 import './vite.svg'
+import MyWorker from './worker?worker'
 
 async function run() {
   const { fn } = await import('./async.js')
@@ -54,3 +55,8 @@ document
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
+
+const worker = new MyWorker()
+worker.addEventListener('message', (ev) => {
+  text('.worker-message', JSON.stringify(ev.data))
+})
