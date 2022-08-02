@@ -49,7 +49,7 @@ It's often helpful to get feedback on your concept before diving into the level 
 
 In short, to get a major feature added to Vite, one must first get the RFC merged into the RFC repo as a markdown file. At that point the RFC is accepted and may be implemented with the goal of eventual inclusion into Vite.
 
-1.  Work on your proposal based on the template [`rfcs/0000-template.md`]() found in this repo.
+1.  Work on your proposal based on the template [`rfcs/0000-template.md`](./0000-template.md) found in this repo.
 
     - Put care into the details: **RFCs that do not present convincing motivation, demonstrate understanding of the impact of the design, or are disingenuous about the drawbacks or alternatives tend to be poorly-received**.
 
@@ -63,9 +63,9 @@ In short, to get a major feature added to Vite, one must first get the RFC merge
     - Create your proposal as `rfcs/0000-my-feature.md` (where "my-feature" is descriptive. don't assign an RFC number yet).
     - Submit a pull request. Make sure to link to the discussion thread.
 
-4.  Eventually, the [core team](https://vitejs.dev/team.html) will decide whether the RFC is a candidate for inclusion in Vite.
+4.  Eventually, the [core team] will decide whether the RFC is a candidate for inclusion in Vite.
 
-    - An RFC can be modified based upon feedback from the [core team](https://vitejs.dev/team.html) and community. Significant modifications may trigger a new final comment period.
+    - An RFC can be modified based upon feedback from the [core team] and community. Significant modifications may trigger a new final comment period.
     - An RFC may be rejected after public discussion has settled and comments have been made summarizing the rationale for rejection. A member of the [core team] should then mark the RFC as `rejected`.
     - An RFC may be accepted at the close of its final comment period. A [core team] member will merge the RFC's associated pull request, at which point the RFC will become 'accepted'.
 

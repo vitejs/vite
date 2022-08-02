@@ -1,0 +1,98 @@
+name: RFC Pull Request
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            const RFC_CAT_ID = 'DIC_kwDOD1jqbs4CQg5P'
+
+            const files_url = context.payload.pull_request.url + '/files'
+            const diff = await github.request(files_url)
+            const addedFiles = diff.data.filter(i => i.status === 'added')
+            const rfcFile = addedFiles.find(i => i.filename.startsWith('rfcs/') && i.filename.endsWith('.md'))
+
+            if (!rfcFile) {
+              console.log('No RFC file found. Skipped.')
+              return
+            }
+
+            function escapeRegExp(string) {
+              return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            }
+
+            const repoUrl = context.payload.pull_request.base.repo.html_url
+            const discussionUrlRegex = new RegExp(escapeRegExp(repoUrl + '/discussions/') + '\\d+')
+            const renderedUrl = context.payload.pull_request.head.repo.html_url + '/blob/' + context.payload.pull_request.head.ref + '/' + rfcFile.filename
+            let discussionUrl
+
+            console.log('RFC file found ' + renderedUrl)
+
+            const existingDiscussion = context.payload.pull_request.body?.match(discussionUrlRegex)
+            if (existingDiscussion?.[0]) {
+              discussionUrl = existingDiscussion?.[0]
+              console.log('Existing Discussion found ' + discussionUrl)
+            }
+            else {
+              const discussionBody = [
+                `This is an [RFC](https://github.com/vitejs/vite/rfcs) proposal by @${context.payload.pull_request.user.login}. To participle the process, please read thoroughly about the proposal and then provide feedback or join the discussions below.`,
+                '',
+                `- [📖 Full Rendered Proposal](${renderedUrl})`,
+                '',
+                `- 🧑‍💻 Pull Request ${context.payload.pull_request.html_url}`
+              ].join('\\n')
+              const query = `mutation {
+                createDiscussion(input: { repositoryId: "${context.payload.pull_request.base.repo.node_id}", categoryId: "${RFC_CAT_ID}", body: "${discussionBody}", title: "${context.payload.pull_request.title}"}) {
+                  discussion {
+                    url
+                  }
+                }
+              }`
+              const result = await github.graphql(query)
+              discussionUrl = result.createDiscussion.discussion.url
+              console.log('Discussion created ' + discussionUrl)
+            }
+
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['rfc: proposed']
+            })
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                'This is an [RFC](https://github.com/vitejs/vite/rfcs) pull request. To participle the process, please read thoroughly about the proposal and provide feedback in the discussion thread with the link below.',
+                '',
+                `[📖 Full Rendered Proposal](${renderedUrl})`,
+                '',
+                `[💬 Discussion Thread](${discussionUrl})`,
+                '<br>',
+                '',
+                '> **Note**',
+                '> **Do NOT comment on this PR. Please use the discussion thread linked above to provide feedback, as it provides branched discussions that are easier to follow. This also makes the edit history of the PR clearer.**'
+              ].join('\n')
+            })
+
+# To get category ID, execute following GraphQL in https://docs.github.com/en/graphql/overview/explorer
+# query {
+#   repository(owner: "vitejs", name: "vite") {
+#     discussionCategories(first: 10) {
+#       edges {
+#         node {
+#           name
+#           id
+#         }
+#       }
+#     }
+#   }
+# }
