@@ -103,7 +103,7 @@ This will provide the following type shims:
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
-To override the default typing, declare it before the triple-slash reference. For example, to make a default import of `*.svg` a React component:
+To override the default typing, declare it before the triple-slash reference. For example, to make the default import of `*.svg` a React component:
 
 ```ts
 declare module '*.svg' {
