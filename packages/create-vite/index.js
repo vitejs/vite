@@ -4,7 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
+import spawn from 'cross-spawn'
 import minimist from 'minimist'
 import prompts from 'prompts'
 import {
@@ -284,7 +284,7 @@ async function init() {
       .replace('@latest', () => (pkgManager === 'yarn' ? '' : '@latest'))
 
     const [command, ...args] = fullCustomCommand.split(' ')
-    const { status } = spawnSync(command, args, {
+    const { status } = spawn.sync(command, args, {
       stdio: 'inherit'
     })
     process.exit(status ?? 0)
