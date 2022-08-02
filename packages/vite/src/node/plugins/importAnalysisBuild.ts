@@ -486,13 +486,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           s.append(`\
+const __viteFileDeps = ${JSON.stringify(
+  fileDeps.map((fileDep) =>
+    relativePreloadUrls ? path.relative(path.dirname(file), fileDep) : fileDep
+  )
+)}
 function __viteMapDep(indexes) {
-  const deps = ${JSON.stringify(
-    fileDeps.map((fileDep) =>
-      relativePreloadUrls ? path.relative(path.dirname(file), fileDep) : fileDep
-    )
-  )}
-  return indexes.map((i) => deps[i])
+  return __viteFileDeps.map((i) => deps[i])
 }`)
 
           // there may still be markers due to inlined dynamic imports, remove
