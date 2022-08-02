@@ -26,7 +26,10 @@ if (!isBuild) {
           "/root/qux.js",
         ],
         "sourcesContent": [
-          null,
+          "import foo from './foo'
+
+export const qux = 'qux'
+",
         ],
         "version": 3,
       }
