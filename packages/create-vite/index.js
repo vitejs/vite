@@ -283,7 +283,7 @@ async function init() {
       .replace(/^npm create/, `${pkgManager} create`)
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace('^npm exec', () => {
+      .replace(/^npm exec/, () => {
         // Prefer `pnpm dlx` or `yarn dlx`
         if (pkgManager === 'pnpm') {
           return 'pnpm dlx'
