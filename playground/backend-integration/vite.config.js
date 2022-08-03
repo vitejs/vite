@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 const glob = require('fast-glob')
 const normalizePath = require('vite').normalizePath
 

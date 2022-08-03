@@ -1,7 +1,7 @@
 // @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD

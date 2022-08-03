@@ -1,4 +1,5 @@
 // @ts-check
+const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
 
 module.exports = defineConfig({
@@ -81,6 +82,10 @@ module.exports = defineConfig({
       { prefer: 'type-imports' }
     ],
 
+    'import/no-nodejs-modules': [
+      'error',
+      { allow: builtinModules.map((mod) => `node:${mod}`) }
+    ],
     'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [

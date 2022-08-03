@@ -95,16 +95,16 @@ export async function resolveHttpServer(
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
   if (!httpsOptions) {
-    const { createServer } = await import('http')
+    const { createServer } = await import('node:http')
     return createServer(app)
   }
 
   // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    const { createServer } = await import('https')
+    const { createServer } = await import('node:https')
     return createServer(httpsOptions, app)
   } else {
-    const { createSecureServer } = await import('http2')
+    const { createSecureServer } = await import('node:http2')
     return createSecureServer(
       {
         // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM

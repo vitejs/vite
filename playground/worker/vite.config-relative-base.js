@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 const vite = require('vite')
 
