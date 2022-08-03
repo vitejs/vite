@@ -126,11 +126,11 @@ describe('restore-jsx', () => {
   it('should handle Fragment', async () => {
     expect(
       await jsx(`import R, { Fragment } from 'react';
-        R.createElement(F1)
+        R.createElement(Fragment)
       `)
     ).toMatchInlineSnapshot(`
       "import R, { Fragment } from 'react';
-      <F1 />;"
+      <Fragment />;"
     `)
   })
 
