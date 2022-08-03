@@ -558,8 +558,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
-          // the vite:asset plugin, don't call resolveAssetUrlsInCss here
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
 
           const style = `__vite_style__`

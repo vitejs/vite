@@ -10,10 +10,10 @@ export default defineConfig({
     }
   },
   plugins: [
-    vuePlugin(),
     legacyPlugin({
       targets: ['defaults', 'not IE 11', 'chrome > 48']
-    })
+    }),
+    vuePlugin()
   ],
   build: {
     minify: false

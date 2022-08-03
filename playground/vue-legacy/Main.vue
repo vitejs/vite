@@ -5,6 +5,9 @@
 </template>
 <style scoped>
 .container {
-  background-image: url('@/assets/asset.png');
+  height: 100vh;
+  background: url('@/assets/asset.png') no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 </style>
