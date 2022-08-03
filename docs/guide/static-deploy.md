@@ -331,3 +331,26 @@ Install the extension in VS Code and navigate to your app root. Open the Static 
 Follow the wizard started by the extension to give your app a name, choose a framework preset, and designate the app root (usually `/`) and built file location `/dist`. The wizard will run and will create a GitHub action in your repo in a `.github` folder.
 
 The action will work to deploy your app (watch its progress in your repo's Actions tab) and, when successfully completed, you can view your app in the address provided in the extension's progress window by clicking the 'Browse Website' button that appears when the GitHub action has run.
+
+## Render
+
+You can deploy your Vite app as a Static Site on [Render](https://render.com/).
+
+1. Create a [Render account](https://dashboard.render.com/register).
+
+2. In the [Dashboard](https://dashboard.render.com/), click the **New** button and select **Static Site**.
+
+3. Connect your GitHub/GitLab account or use a public repository.
+
+4. Specify a project name and branch.
+
+   - **Build Command**: `npm run build`
+   - **Publish Directory**: `dist`
+
+5. Click **Create Static Site**.
+
+   Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
+
+By default, any new commit pushed to the specified branch will automatically trigger a new deploy. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
+
+You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
