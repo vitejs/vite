@@ -932,6 +932,7 @@ async function bundleConfigFile(
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
+    target: ['node14.18', 'node16'],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
@@ -975,7 +976,7 @@ async function bundleConfigFile(
               if (path.relative(idPkgDir, fileName).startsWith('..')) {
                 return {
                   // normalize actual import after bundled as a single vite config
-                  path: idFsPath,
+                  path: pathToFileURL(idFsPath).href,
                   external: true
                 }
               }

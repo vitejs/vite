@@ -47,6 +47,7 @@ text('.charset-css', charset)
 import './dep.css'
 import './glob-dep.css'
 
+// eslint-disable-next-line import/order
 import { barModuleClasses } from 'css-js-dep'
 document
   .querySelector('.css-js-dep-module')

@@ -76,7 +76,7 @@
     "@rollup/plugin-dynamic-import-vars": "^1.4.3",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
-    "@rollup/plugin-typescript": "^8.3.3",
+    "@rollup/plugin-typescript": "^8.3.4",
     "@rollup/pluginutils": "^4.2.1",
     "@vue/compiler-dom": "^3.2.37",
     "acorn": "^8.8.0",

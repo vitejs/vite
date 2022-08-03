@@ -15,8 +15,7 @@ async function createServer(
   /**
    * @type {import('vite').ViteDevServer}
    */
-  let vite
-  vite = await require('vite').createServer({
+  const vite = await require('vite').createServer({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {

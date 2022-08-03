@@ -39,6 +39,7 @@ export namespace Terser {
 
   export interface ParseOptions {
     bare_returns?: boolean
+    /** @deprecated legacy option. Currently, all supported EcmaScript is valid to parse. */
     ecma?: ECMA
     html5_comments?: boolean
     shebang?: boolean
@@ -113,22 +114,59 @@ export namespace Terser {
     keep_classnames?: boolean | RegExp
     keep_fnames?: boolean | RegExp
     module?: boolean
+    nth_identifier?: SimpleIdentifierMangler | WeightedIdentifierMangler
     properties?: boolean | ManglePropertiesOptions
     reserved?: string[]
     safari10?: boolean
     toplevel?: boolean
   }
 
+  /**
+   * An identifier mangler for which the output is invariant with respect to the source code.
+   */
+  export interface SimpleIdentifierMangler {
+    /**
+     * Obtains the nth most favored (usually shortest) identifier to rename a variable to.
+     * The mangler will increment n and retry until the return value is not in use in scope, and is not a reserved word.
+     * This function is expected to be stable; Evaluating get(n) === get(n) should always return true.
+     * @param n - The ordinal of the identifier.
+     */
+    get(n: number): string
+  }
+
+  /**
+   * An identifier mangler that leverages character frequency analysis to determine identifier precedence.
+   */
+  export interface WeightedIdentifierMangler extends SimpleIdentifierMangler {
+    /**
+     * Modifies the internal weighting of the input characters by the specified delta.
+     * Will be invoked on the entire printed AST, and then deduct mangleable identifiers.
+     * @param chars - The characters to modify the weighting of.
+     * @param delta - The numeric weight to add to the characters.
+     */
+    consider(chars: string, delta: number): number
+    /**
+     * Resets character weights.
+     */
+    reset(): void
+    /**
+     * Sorts identifiers by character frequency, in preparation for calls to get(n).
+     */
+    sort(): void
+  }
+
   export interface ManglePropertiesOptions {
     builtins?: boolean
     debug?: boolean
     keep_quoted?: boolean | 'strict'
+    nth_identifier?: SimpleIdentifierMangler | WeightedIdentifierMangler
     regex?: RegExp | string
     reserved?: string[]
   }
 
   export interface FormatOptions {
     ascii_only?: boolean
+    /** @deprecated Not implemented anymore */
     beautify?: boolean
     braces?: boolean
     comments?:
@@ -148,6 +186,7 @@ export namespace Terser {
         ) => boolean)
     ecma?: ECMA
     ie8?: boolean
+    keep_numbers?: boolean
     indent_level?: number
     indent_start?: number
     inline_script?: boolean
@@ -178,6 +217,7 @@ export namespace Terser {
   export interface MinifyOptions {
     compress?: boolean | CompressOptions
     ecma?: ECMA
+    enclose?: boolean | string
     ie8?: boolean
     keep_classnames?: boolean | RegExp
     keep_fnames?: boolean | RegExp
@@ -185,6 +225,8 @@ export namespace Terser {
     module?: boolean
     nameCache?: object
     format?: FormatOptions
+    /** @deprecated deprecated */
+    output?: FormatOptions
     parse?: ParseOptions
     safari10?: boolean
     sourceMap?: boolean | SourceMapOptions
@@ -194,6 +236,7 @@ export namespace Terser {
   export interface MinifyOutput {
     code?: string
     map?: object | string
+    decoded_map?: object | null
   }
 
   export interface SourceMapOptions {
