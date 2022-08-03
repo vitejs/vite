@@ -1090,12 +1090,14 @@ importers:
 
   playground/ssr-webworker:
     specifiers:
+      cross-env: ^7.0.3
       miniflare: ^1.4.1
       react: ^18.2.0
       resolve-linked: workspace:*
     dependencies:
       react: 18.2.0
     devDependencies:
+      cross-env: 7.0.3
       miniflare: 1.4.1
       resolve-linked: link:../resolve-linked
 
