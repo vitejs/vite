@@ -35,10 +35,11 @@ function findErrors() {
   done
 }
 
+TMPFILE=$(mktemp)
 for i in `seq ${NUM_RETRIES}`; do
-  ${COMMAND_TO_RUN} 2>&1 | tee ${NPM_SCRIPT_COMMAND}.log
+  ${COMMAND_TO_RUN} 2>&1 | tee ${TMPFILE}
 
-  error=$(findErrors ${NPM_SCRIPT_COMMAND}.log)
+  error=$(findErrors ${TMPFILE})
   if [[ ! -z "$error" ]]; then
     echo -e "${FG_BOLD_WHITE}${BG_RED} FLAKE DETECTED: ${FG_RED} ${error} ${NC}"
 
