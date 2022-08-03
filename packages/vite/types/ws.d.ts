@@ -26,7 +26,7 @@ import type {
 } from 'node:http'
 import type { Server as HTTPSServer } from 'node:https'
 import type { Duplex, DuplexOptions } from 'node:stream'
-import type { SecureContextOptions } from 'tls'
+import type { SecureContextOptions } from 'node:tls'
 import type { URL } from 'node:url'
 import type { ZlibOptions } from 'node:zlib'
 
