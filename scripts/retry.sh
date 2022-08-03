@@ -11,10 +11,10 @@
 COMMAND_TO_RUN=${1?Missing command argument}
 NUM_RETRIES=${2:-3}
 
-FG_BOLD_WHITE='\033[1;37m'
+FG_BLACK='\033[0;30m'
 FG_RED='\033[0;31m'
 FG_BLUE='\033[0;34m'
-FG_GRAY='\033[1;30m'
+FG_GRAY='\033[0;37m'
 BG_RED='\033[41m'
 BG_BLUE='\033[44m'
 NC='\033[0m' # No Color
@@ -41,11 +41,11 @@ for i in `seq ${NUM_RETRIES}`; do
 
   error=$(findErrors ${TMPFILE})
   if [[ ! -z "$error" ]]; then
-    echo -e "${FG_BOLD_WHITE}${BG_RED} FLAKE DETECTED: ${FG_RED} ${error} ${NC}"
+    echo -e "${FG_BLACK}${BG_RED} FLAKE DETECTED: ${FG_RED} ${error} ${NC}"
 
     # use GitHub Action annotation to highlight flake
     echo -e "::warning::FLAKE DETECTED: ${error}"
-    echo -e "${FG_BOLD_WHITE}${BG_BLUE} RETRYING: ${NC} ${FG_GRAY}(${i} of ${NUM_RETRIES})${FG_BLUE} ${COMMAND_TO_RUN}${NC}";
+    echo -e "${FG_BLACK}${BG_BLUE} RETRYING: ${NC} ${FG_GRAY}(${i} of ${NUM_RETRIES})${FG_BLUE} ${COMMAND_TO_RUN}${NC}";
   else
     break
   fi
