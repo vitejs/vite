@@ -71,7 +71,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: [
-                'This is an [RFC](https://github.com/vitejs/vite/rfcs) pull request. To participle the process, please read thoroughly about the proposal and provide feedback in the discussion thread with the link below.',
+                'This is an [RFC](https://github.com/vitejs/vite/rfcs) pull request. To participate in the process, please read the proposal, and provide feedback in the discussion thread with the link below.',
                 '',
                 `[📖 Full Rendered Proposal](${renderedUrl})`,
                 '',
