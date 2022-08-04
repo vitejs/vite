@@ -161,7 +161,7 @@ $ ntl deploy --prod
 2. [Import the Project](https://app.netlify.com/start) to Netlify.
 3. Choose the branch, output directory and set up Env variables if applicable.
 4. Click on **Deploy**.
-5. Your Vite app is deployed! 
+5. Your Vite app is deployed!
 
 After your project has been imported and deployed, all subsequent pushes to branches other than the production branch along with pull requests will generate [Preview Deployments](https://docs.netlify.com/site-deploys/deploy-previews/), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://docs.netlify.com/site-deploys/overview/#definitions).
 
