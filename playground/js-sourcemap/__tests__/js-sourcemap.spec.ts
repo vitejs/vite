@@ -26,7 +26,7 @@ if (!isBuild) {
           "/root/qux.js",
         ],
         "sourcesContent": [
-          "import foo from './foo'
+          "import { foo } from './foo'
 
 export const qux = 'qux'
 ",
