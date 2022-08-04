@@ -1,3 +1,4 @@
+
 # @vitejs/plugin-react [![npm](https://img.shields.io/npm/v/@vitejs/plugin-react.svg)](https://npmjs.com/package/@vitejs/plugin-react)
 
 The all-in-one Vite plugin for React projects.
@@ -8,6 +9,12 @@ The all-in-one Vite plugin for React projects.
 - dedupe the `react` and `react-dom` packages
 - use custom Babel plugins/presets
 
+## Installation
+```
+$ npm i @vitejs/plugin-react
+```
+
+## Configuration File
 ```js
 // vite.config.js
 import { defineConfig } from 'vite'
