@@ -157,7 +157,7 @@ $ ntl deploy --prod
 
 ### Netlify with Git
 
-1. Push your code to a git repository (GitHub, GitLab, BitBucket).
+1. Push your code to a git repository (GitHub, GitLab, BitBucket, Azure DevOps).
 2. [Import the Project](https://app.netlify.com/start) to Netlify.
 3. Choose the branch, output directory and set up Env variables if applicable.
 4. Click on **Deploy**.
