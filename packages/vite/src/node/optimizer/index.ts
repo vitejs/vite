@@ -542,10 +542,16 @@ export async function runOptimizeDeps(
   // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
   // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
   // later replaced by the define plugin
-  const define = {
+  const define: Record<string, string> = {
     'process.env.NODE_ENV': isBuild
       ? '__vite_process_env_NODE_ENV'
       : JSON.stringify(process.env.NODE_ENV || config.mode)
+  }
+  // replace define eagerly without define plugin so esbuild can treeshake
+  // unused modules when scanning, which prevents prebundling optional deps
+  for (const key in config.define) {
+    const value = config.define[key]
+    define[key] = typeof value === 'string' ? value : JSON.stringify(value)
   }
 
   const platform =
