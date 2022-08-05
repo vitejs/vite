@@ -159,7 +159,7 @@ $ ntl deploy --prod
 
 1. Push your code to a git repository (GitHub, GitLab, BitBucket, Azure DevOps).
 2. [Import the project](https://app.netlify.com/start) to Netlify.
-3. Choose the branch, output directory and set up Env variables if applicable.
+3. Choose the branch, output directory, and set up environment variables if applicable.
 4. Click on **Deploy**.
 5. Your Vite app is deployed!
 
