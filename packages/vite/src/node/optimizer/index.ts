@@ -601,7 +601,6 @@ export async function runOptimizeDeps(
           }
         : undefined,
     target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
-    external,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,

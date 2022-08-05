@@ -161,3 +161,7 @@ test.runIf(isServe)('error on builtin modules usage', () => {
     ])
   )
 })
+
+test('import file inside external module', async () => {
+  expect(await page.textContent('.external')).toBe('bar')
+})

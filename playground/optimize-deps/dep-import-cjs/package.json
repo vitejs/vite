@@ -1,0 +1,10 @@
+{
+  "name": "dep-import-cjs",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "dep-external-cjs": "file:../dep-external-cjs"
+  }
+}

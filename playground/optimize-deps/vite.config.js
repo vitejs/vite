@@ -48,6 +48,9 @@ module.exports = {
     // Avoid @rollup/plugin-commonjs
     commonjsOptions: {
       include: []
+    },
+    rollupOptions: {
+      external: ['dep-external-cjs']
     }
   },
 

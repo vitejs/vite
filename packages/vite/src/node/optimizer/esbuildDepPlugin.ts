@@ -9,7 +9,6 @@ import {
   isBuiltin,
   isExternalUrl,
   isRunningWithYarnPnp,
-  moduleListContains,
   normalizePath
 } from '../utils'
 import { browserExternalId } from '../plugins/resolve'
@@ -167,7 +166,7 @@ export function esbuildDepPlugin(
       build.onResolve(
         { filter: /^[\w@][^:]/ },
         async ({ path: id, importer, kind }) => {
-          if (moduleListContains(external, id)) {
+          if (external.includes(id)) {
             return {
               path: id,
               external: true

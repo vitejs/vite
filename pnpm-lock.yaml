@@ -620,6 +620,7 @@ importers:
       dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
       dep-cjs-with-assets: file:./dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:./dep-esbuild-plugin-transform
+      dep-import-cjs: file:./dep-import-cjs
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
       dep-node-env: file:./dep-node-env
@@ -647,6 +648,7 @@ importers:
       dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
       dep-cjs-with-assets: file:playground/optimize-deps/dep-cjs-with-assets
       dep-esbuild-plugin-transform: file:playground/optimize-deps/dep-esbuild-plugin-transform
+      dep-import-cjs: file:playground/optimize-deps/dep-import-cjs
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
       dep-node-env: file:playground/optimize-deps/dep-node-env
@@ -683,6 +685,15 @@ importers:
 
   playground/optimize-deps/dep-esbuild-plugin-transform:
     specifiers: {}
+
+  playground/optimize-deps/dep-external-cjs:
+    specifiers: {}
+
+  playground/optimize-deps/dep-import-cjs:
+    specifiers:
+      dep-external-cjs: file:../dep-external-cjs
+    dependencies:
+      dep-external-cjs: file:playground/optimize-deps/dep-external-cjs
 
   playground/optimize-deps/dep-linked:
     specifiers:
@@ -9083,6 +9094,20 @@ packages:
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
     name: dep-esbuild-plugin-transform
     version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-external-cjs:
+    resolution: {directory: playground/optimize-deps/dep-external-cjs, type: directory}
+    name: dep-external-cjs
+    version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-import-cjs:
+    resolution: {directory: playground/optimize-deps/dep-import-cjs, type: directory}
+    name: dep-import-cjs
+    version: 1.0.0
+    dependencies:
+      dep-external-cjs: file:playground/optimize-deps/dep-external-cjs
     dev: false
 
   file:playground/optimize-deps/dep-node-env:
