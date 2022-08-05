@@ -46,7 +46,7 @@ In addition, environment variables that already exist when Vite is executed have
 
 Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
+To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
 
 ```
 VITE_SOME_KEY=123
@@ -60,7 +60,7 @@ console.log(import.meta.env.VITE_SOME_KEY) // 123
 console.log(import.meta.env.DB_PASSWORD) // undefined
 ```
 
-If you want to customize env variables prefix, see [envPrefix](/config/shared-options.html#envprefix) option.
+If you want to customize the env variables prefix, see the [envPrefix](/config/shared-options.html#envprefix) option.
 
 :::warning SECURITY NOTES
 
@@ -71,9 +71,9 @@ If you want to customize env variables prefix, see [envPrefix](/config/shared-op
 
 ### IntelliSense for TypeScript
 
-By default, Vite provides type definition for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
+By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -98,7 +98,7 @@ If your code relies on types from browser environments such as [DOM](https://git
 
 ## Modes
 
-By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` command runs in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 
