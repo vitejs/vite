@@ -548,7 +548,7 @@ export async function runOptimizeDeps(
       : JSON.stringify(process.env.NODE_ENV || config.mode)
   }
   // replace define eagerly without define plugin so esbuild can treeshake
-  // unused modules when scanning, which prevents prebundling optional deps
+  // unused modules when scanning and prebundling
   for (const key in config.define) {
     const value = config.define[key]
     define[key] = typeof value === 'string' ? value : JSON.stringify(value)
