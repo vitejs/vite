@@ -1,6 +1,5 @@
-import { getBg, page } from '~utils'
+import { untilUpdated } from '~utils'
 
 test('vue legacy assets', async () => {
-  const el = await page.$('.container')
-  expect(await getBg(el)).not.toMatch('__VITE_ASSET__')
+  untilUpdated(() => '.container', 'asset')
 })
