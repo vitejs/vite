@@ -467,7 +467,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      function resolveAssetUrlsInCss(chunkCSS: string, cssAssetName: string) {
+      function resolveAssetUrlsInCss(
+        chunkCSS: string,
+        cssAssetName: string,
+        relativeFromPage: boolean = false
+      ) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
 
         const relative = config.base === './' || config.base === ''
@@ -479,9 +483,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const toRelative = (filename: string, importer: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
-          return relativePath.startsWith('.')
+          const resolvedRelativePath = relativePath.startsWith('.')
             ? relativePath
             : './' + relativePath
+          return relativeFromPage
+            ? `\${relativeFromPage('${filename}')}`
+            : resolvedRelativePath
         }
 
         // replace asset url references with resolved url.
@@ -558,13 +565,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name)
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name, true)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
-
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `var relativeFromPage = (u) => new URL(u, self.location).href;` +
+            `${style}.innerHTML = \`${chunkCSS}\`;` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
             const s = new MagicString(code)
