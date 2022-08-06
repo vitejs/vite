@@ -737,7 +737,7 @@ export async function resolveConfig(
       plugins: resolved.plugins.map((p) => p.name),
       worker: {
         ...resolved.worker,
-        plugins: resolved.worker.plugins.map((p) => p.name),
+        plugins: resolved.worker.plugins.map((p) => p.name)
       }
     })
   }
