@@ -565,6 +565,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
+          // the entry css will be inlined in the html template
+          // so don't need to generate the css insert script
+          if (chunk.isEntry) {
+            return { code }
+          }
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name, true)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           const style = `__vite_style__`

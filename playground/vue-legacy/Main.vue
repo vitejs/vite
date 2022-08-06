@@ -1,6 +1,25 @@
+<script>
+import { defineComponent } from 'vue'
+import css from './inline.css?inline'
+
+export default defineComponent({
+  components: {
+    module: () => import('./module.vue')
+  },
+  setup() {
+    return {
+      css
+    }
+  }
+})
+</script>
 <template>
   <div class="container">
     <p>hello</p>
+    <module />
+    <code>
+      {{ css }}
+    </code>
   </div>
 </template>
 <style scoped>
