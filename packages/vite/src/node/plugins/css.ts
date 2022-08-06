@@ -493,7 +493,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // replace asset url references with resolved url.
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
-          const filename = getAssetFilename(fileHash, config) + postfix
+          const filename = getAssetFilename(fileHash, config)! + postfix
           chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
           return toOutputFilePathInCss(
             filename,
