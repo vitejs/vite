@@ -112,7 +112,7 @@ import('./async-modules/blue')
 import('./async-modules/red')
 import('./async-modules/green')
 setTimeout(() => {
-  import('./async-modules/yellow')
+  import('./async-modules/blue50')
 })
 
 // async css module with normal css
