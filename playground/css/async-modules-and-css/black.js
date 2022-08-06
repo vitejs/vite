@@ -1,9 +1,8 @@
-import styles from './black.module.css'
+import { makeText } from './make-text'
 import './hotpink.css'
+import styles from './black.module.css'
 
-const div = document.createElement('div')
-div.className = `base ${styles.black} async-modules-and-css-black`
-document.body.appendChild(div)
-div.textContent = `async css modules and normal css (black) ${
-  getComputedStyle(div).color
-}`
+makeText(
+  `hotpink ${styles.black} async-modules-and-css-black`,
+  'async css modules and normal css (black)'
+)
