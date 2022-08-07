@@ -65,6 +65,7 @@ export async function bundleWorkerEntry(
     const {
       output: [outputChunk, ...outputChunks]
     } = await bundle.generate({
+      hoistTransitiveImports: false,
       entryFileNames: path.posix.join(
         config.build.assetsDir,
         '[name].[hash].js'

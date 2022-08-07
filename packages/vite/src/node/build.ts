@@ -479,6 +479,9 @@ async function doBuild(
           output.format === 'umd' ||
           output.format === 'iife' ||
           (ssrWorkerBuild && typeof input === 'string'),
+        // vite hoist by `importAnalysisBuild`
+        // https://rollupjs.org/guide/en/#outputhoisttransitiveimports
+        hoistTransitiveImports: false,
         ...output
       }
     }
