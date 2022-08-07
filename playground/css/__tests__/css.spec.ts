@@ -462,7 +462,7 @@ test('async css modules', async () => {
   // NOTE: the match inline snapshot should generate by build mode
   expect(await getColor(green)).toMatchInlineSnapshot('"green"')
   expect(await getColor(blue2)).toMatchInlineSnapshot('"red"')
-  expect(await getColor(_black)).toMatchInlineSnapshot('"black"')
+  expect(await getColor(_black)).toMatchInlineSnapshot('"hotpink"')
   expect(await getColor(_blue)).toMatchInlineSnapshot('"blue"')
   expect(await getColor(blue)).toMatchInlineSnapshot('"black"')
   expect(await getColor(red)).toMatchInlineSnapshot('"red"')
@@ -473,6 +473,6 @@ test('async css modules with normal css', async () => {
   const blue = await page.$('.async-modules-and-css-blue')
 
   // NOTE: the match inline snapshot should generate by build mode
-  expect(await getColor(black)).toMatchInlineSnapshot('"black"')
+  expect(await getColor(black)).toMatchInlineSnapshot('"hotpink"')
   expect(await getColor(blue)).toMatchInlineSnapshot('"blue"')
 })

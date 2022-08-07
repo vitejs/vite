@@ -399,7 +399,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
           `const __vite__entry = ${JSON.stringify(entryPoint)}`,
-          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry)`,
+          `const __mod__depth = ${moduleNode.depth}`,
+          `__vite__updateStyle(__vite__id, __vite__css, __vite__entry, __mod__depth)`,
           // css modules exports change on edit so it can't self accept
           `${
             modulesCode ||

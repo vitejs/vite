@@ -37,16 +37,34 @@ export class ModuleNode {
   lastInvalidationTimestamp = 0
   /**
    * entryPoint of the module
-   *   - null - no init
-   *   - dynamic - it's entry pointer (the ModuleNode which is imported by dynamic import)
-   *   - main - it's import by main entry point
-   *   - ModuleNode - it's imported by dynamic import and the entry point is this field
+   *  - null - no init
+   *  - dynamic - it's entry pointer (the ModuleNode which is imported by dynamic import)
+   *  - main - it's import by main entry point
+   *  - ModuleNode - it's imported by dynamic import and the entry point is this field
    */
   entryPoint: ModuleNode | 'dynamic' | 'main' | null = null
+  /**
+   * first importer of the module
+   */
+  firstImporter: ModuleNode | null = null
   /**
    * lower weight had higher priority
    */
   weight: number = 0
+  /*
+   * from entry point to module depth
+   *  - 0 - after bundle this module will in the entry point
+   *  - 1 - after bundle this module will be an chunk and import by entry point
+   *  - n - after bundle this module will be an chunk and import by chunk ... chunk
+   */
+  get depth(): number {
+    if (this.firstImporter) {
+      // https://rollupjs.org/guide/en/#code-splitting
+      // Rollup will never duplicate code and instead create additional chunks to only ever load the bare minimum necessary.
+      return this.importers.size > 1 ? this.firstImporter.depth + 1 : 0
+    }
+    return 0
+  }
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -181,25 +199,27 @@ export class ModuleGraph {
       }
     })
     // ensure the module entry point
-    mod.importers.forEach((importerMod) => {
+    for (const importerMod of mod.importers) {
       if (importerMod.entryPoint === 'dynamic') {
-        if (mod.entryPoint) {
-          mod.entryPoint =
-            importerMod.weight < mod.weight ? importerMod : mod.entryPoint
-        } else {
+        if (
+          (mod.entryPoint && importerMod.weight < mod.weight) ||
+          !mod.entryPoint
+        ) {
           mod.entryPoint = importerMod
+          mod.weight = importerMod.weight
+          mod.firstImporter = importerMod
         }
       } else if (importerMod.entryPoint instanceof ModuleNode) {
-        if (mod.entryPoint) {
-          mod.entryPoint =
-            importerMod.entryPoint.weight < mod.weight
-              ? importerMod.entryPoint
-              : mod.entryPoint
-        } else {
+        if (
+          (mod.entryPoint && importerMod.entryPoint.weight < mod.weight) ||
+          !mod.entryPoint
+        ) {
           mod.entryPoint = importerMod.entryPoint
+          mod.weight = importerMod.entryPoint.weight
+          mod.firstImporter = importerMod
         }
       }
-    })
+    }
     if (mod.entryPoint == null) {
       mod.entryPoint = 'main'
       mod.weight = 0

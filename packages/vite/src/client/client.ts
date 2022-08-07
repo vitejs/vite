@@ -322,6 +322,7 @@ const supportsConstructedSheet = (() => {
 const sheetsMap = new Map<string, StyleNode | CSSStyleSheet | undefined>()
 
 interface StyleNode extends HTMLStyleElement {
+  depth: number
   weight: number
 }
 
@@ -345,10 +346,29 @@ export function dynamicImportModule(
 }
 
 const styleList: StyleNode[] = []
+function insertNode(weight: number, depth: number, style: StyleNode) {
+  // for debugging
+  style.setAttribute('w', weight.toString())
+  style.setAttribute('d', depth.toString())
+  const nodeIdx = styleList.findIndex(
+    (node) =>
+      (node.weight === weight && node.depth > depth) || node.weight > weight
+  )
+  if (nodeIdx !== -1) {
+    const node = styleList[nodeIdx]
+    document.head.insertBefore(style, node)
+    styleList.splice(nodeIdx, 0, style)
+  } else {
+    document.head.appendChild(style)
+    styleList.push(style)
+  }
+}
+
 export function updateStyle(
   id: string,
   content: string,
-  entryPoint: string
+  entryPoint: string,
+  depth: number
 ): void {
   let style = sheetsMap.get(id)
   // TODO inject the truth order(small weight in head) for stylesheet
@@ -378,20 +398,11 @@ export function updateStyle(
       style = document.createElement('style') as StyleNode
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
-      const entryWeight = entryPointWeightMap.get(entryPoint) || 0
-      // for debugging
-      style.setAttribute('w', entryWeight.toString())
-      if (entryWeight) {
-        const nodeIdx = styleList.findIndex((node) => node.weight > entryWeight)
-        const node = styleList[nodeIdx]
-        style.weight = entryWeight
-        if (nodeIdx !== -1) {
-          document.head.insertBefore(style, node)
-          styleList.splice(nodeIdx, 0, style)
-        } else {
-          document.head.appendChild(style)
-          styleList.push(style)
-        }
+      const weight = entryPointWeightMap.get(entryPoint) || 0
+      style.weight = weight
+      style.depth = depth
+      if (weight) {
+        insertNode(weight, depth, style)
       } else {
         document.head.appendChild(style)
       }
