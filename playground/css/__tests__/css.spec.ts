@@ -8,7 +8,8 @@ import {
   page,
   removeFile,
   serverLogs,
-  untilUpdated
+  untilUpdated,
+  withRetry
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -460,12 +461,24 @@ test('async css modules', async () => {
   const _blue = await page.$('.async-modules-and-css-blue')
 
   // NOTE: the match inline snapshot should generate by build mode
-  expect(await getColor(green)).toMatchInlineSnapshot('"green"')
-  expect(await getColor(blue2)).toMatchInlineSnapshot('"red"')
-  expect(await getColor(_black)).toMatchInlineSnapshot('"hotpink"')
-  expect(await getColor(_blue)).toMatchInlineSnapshot('"blue"')
-  expect(await getColor(blue)).toMatchInlineSnapshot('"black"')
-  expect(await getColor(red)).toMatchInlineSnapshot('"red"')
+  withRetry(async () =>
+    expect(await getColor(green)).toMatchInlineSnapshot('"green"')
+  )
+  withRetry(async () =>
+    expect(await getColor(blue2)).toMatchInlineSnapshot('"red"')
+  )
+  withRetry(async () =>
+    expect(await getColor(_black)).toMatchInlineSnapshot('"hotpink"')
+  )
+  withRetry(async () =>
+    expect(await getColor(_blue)).toMatchInlineSnapshot('"blue"')
+  )
+  withRetry(async () =>
+    expect(await getColor(blue)).toMatchInlineSnapshot('"black"')
+  )
+  withRetry(async () =>
+    expect(await getColor(red)).toMatchInlineSnapshot('"red"')
+  )
 })
 
 test('async css modules with normal css', async () => {
@@ -473,6 +486,10 @@ test('async css modules with normal css', async () => {
   const blue = await page.$('.async-modules-and-css-blue')
 
   // NOTE: the match inline snapshot should generate by build mode
-  expect(await getColor(black)).toMatchInlineSnapshot('"hotpink"')
-  expect(await getColor(blue)).toMatchInlineSnapshot('"blue"')
+  withRetry(async () =>
+    expect(await getColor(black)).toMatchInlineSnapshot('"hotpink"')
+  )
+  withRetry(async () =>
+    expect(await getColor(blue)).toMatchInlineSnapshot('"blue"')
+  )
 })
