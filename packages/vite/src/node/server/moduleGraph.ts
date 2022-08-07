@@ -61,7 +61,7 @@ export class ModuleNode {
     if (this.firstImporter) {
       // https://rollupjs.org/guide/en/#code-splitting
       // Rollup will never duplicate code and instead create additional chunks to only ever load the bare minimum necessary.
-      return this.importers.size > 1 ? this.firstImporter.depth + 1 : 0
+      return this.firstImporter.depth + +(this.importers.size > 1)
     }
     return 0
   }
