@@ -44,7 +44,7 @@ export interface Options {
    * Toggles whether or not to throw an error if an XML namespaced tag name is used.
    * @default true
    */
-  throwIfNamespace?: boolean;
+  throwIfNamespace?: boolean
   /**
    * Babel configuration applied in both dev and prod.
    */
