@@ -107,14 +107,5 @@ document
 
 import './unsupported.css'
 
-// async css modules
-import('./async-modules/blue')
-import('./async-modules/red')
-import('./async-modules/green')
-setTimeout(() => {
-  import('./async-modules/blue50')
-})
-
-// async css module with normal css
-import('./async-modules-and-css/black')
-import('./async-modules-and-css/blue')
+import './async-module/weight'
+import './async-module/depth'

@@ -451,33 +451,35 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
   })
 })
 
+// NOTE: the match inline snapshot should generate by build mode
 test('async css modules', async () => {
-  const green = await page.$('.async-modules-green')
-  const blue2 = await page.$('.async-modules-blue2')
-  const red = await page.$('.async-modules-red')
-  const blue = await page.$('.async-modules-blue')
-
-  const _black = await page.$('.async-modules-and-css-black')
-  const _blue = await page.$('.async-modules-and-css-blue')
-
-  // NOTE: the match inline snapshot should generate by build mode
-  withRetry(async () => {
-    expect(await getColor(green)).toMatchInlineSnapshot('"green"')
-    expect(await getColor(blue2)).toMatchInlineSnapshot('"red"')
-    expect(await getColor(_black)).toMatchInlineSnapshot('"hotpink"')
-    expect(await getColor(_blue)).toMatchInlineSnapshot('"blue"')
-    expect(await getColor(blue)).toMatchInlineSnapshot('"black"')
-    expect(await getColor(red)).toMatchInlineSnapshot('"red"')
-  })
+  await withRetry(async () => {
+    expect(await getColor('.async-modules-green')).toMatchInlineSnapshot(
+      '"green"'
+    )
+    expect(await getColor('.async-modules-blue2')).toMatchInlineSnapshot(
+      '"red"'
+    )
+    expect(await getColor('.async-modules-red')).toMatchInlineSnapshot('"red"')
+    expect(await getColor('.async-modules-blue')).toMatchInlineSnapshot(
+      '"black"'
+    )
+  }, true)
 })
 
 test('async css modules with normal css', async () => {
-  const black = await page.$('.async-modules-and-css-black')
-  const blue = await page.$('.async-modules-and-css-blue')
-
-  // NOTE: the match inline snapshot should generate by build mode
-  withRetry(async () => {
-    expect(await getColor(black)).toMatchInlineSnapshot('"hotpink"')
-    expect(await getColor(blue)).toMatchInlineSnapshot('"blue"')
-  })
+  await withRetry(async () => {
+    expect(await getColor('.async-modules-and-css-blue')).toMatchInlineSnapshot(
+      '"rgb(51, 51, 51)"'
+    )
+    expect(
+      await getColor('.async-modules-and-css-blue50')
+    ).toMatchInlineSnapshot('"rgb(0, 136, 255)"')
+    expect(
+      await getColor('.async-modules-and-css-fuchsia')
+    ).toMatchInlineSnapshot('"red"')
+    expect(
+      await getColor('.async-modules-and-css-purple')
+    ).toMatchInlineSnapshot('"purple"')
+  }, true)
 })
