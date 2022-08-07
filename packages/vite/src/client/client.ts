@@ -327,19 +327,16 @@ interface StyleNode extends HTMLStyleElement {
 }
 
 let weight = 0
-const entryPointWeightMap = new Map<string, number>()
+const entryPointWeightMap = new Set<string>()
 
 export function dynamicImportModule(
   moduleLoad: () => Promise<any>,
   id: string
 ): Promise<any> {
-  let entryPointWeight = entryPointWeightMap.get(id)
-  if (!entryPointWeight) {
-    entryPointWeight = ++weight
-    entryPointWeightMap.set(id, entryPointWeight)
+  if (!entryPointWeightMap.has(id)) {
     sendMessage('entry-point-weight', {
       id,
-      weight: entryPointWeight
+      weight: ++weight
     })
   }
   return moduleLoad()
@@ -367,7 +364,7 @@ function insertNode(weight: number, depth: number, style: StyleNode) {
 export function updateStyle(
   id: string,
   content: string,
-  entryPoint: string,
+  weight: number,
   depth: number
 ): void {
   let style = sheetsMap.get(id)
@@ -398,7 +395,6 @@ export function updateStyle(
       style = document.createElement('style') as StyleNode
       style.setAttribute('type', 'text/css')
       style.innerHTML = content
-      const weight = entryPointWeightMap.get(entryPoint) || 0
       style.weight = weight
       style.depth = depth
       if (weight) {

@@ -387,18 +387,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const devBase = config.base
         const moduleNode = serve.moduleGraph.getModuleById(id)!
 
-        const entryPoint =
-          typeof moduleNode.entryPoint === 'string'
-            ? moduleNode.entryPoint
-            : moduleNode?.entryPoint?.id || 'main'
-
         return [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(devBase, CLIENT_PUBLIC_PATH)
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
           `const __vite__css = ${JSON.stringify(cssContent)}`,
-          `const __vite__entry = ${JSON.stringify(entryPoint)}`,
+          `const __vite__entry = ${moduleNode.weight}`,
           `const __mod__depth = ${moduleNode.depth}`,
           `__vite__updateStyle(__vite__id, __vite__css, __vite__entry, __mod__depth)`,
           // css modules exports change on edit so it can't self accept
