@@ -492,9 +492,9 @@ function attrsToQuery(
     query +=
       `lang` in attrs
         ? forceLangFallback
-          ? `&lang.${langFallback}`
-          : `&lang.${attrs.lang}`
-        : `&lang.${langFallback}`
+          ? `&lang.${langFallback}=1`
+          : `&lang.${attrs.lang}=1`
+        : `&lang.${langFallback}=1`
   }
   return query
 }

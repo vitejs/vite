@@ -47,7 +47,7 @@ export async function handleHotUpdate(
       const scriptModuleRE = new RegExp(
         `type=script.*&lang\.${
           descriptor.scriptSetup?.lang || descriptor.script?.lang
-        }$`
+        }=1$`
       )
       scriptModule = modules.find((m) => scriptModuleRE.test(m.url))
     }
@@ -96,7 +96,7 @@ export async function handleHotUpdate(
       const mod = modules.find(
         (m) =>
           m.url.includes(`type=style&index=${i}`) &&
-          m.url.endsWith(`.${next.lang || 'css'}`) &&
+          m.url.endsWith(`.${next.lang || 'css'}=1`) &&
           !directRequestRE.test(m.url)
       )
       if (mod) {

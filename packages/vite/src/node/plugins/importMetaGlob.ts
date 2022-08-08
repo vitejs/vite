@@ -407,7 +407,7 @@ export async function transformGlobImport(
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
               if (fileExtension && restoreQueryExtension)
-                importQuery = `${importQuery}&lang.${fileExtension}`
+                importQuery = `${importQuery}&lang.${fileExtension}=1`
             }
 
             importPath = `${importPath}${importQuery}`
