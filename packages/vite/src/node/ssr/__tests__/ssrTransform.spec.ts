@@ -125,6 +125,18 @@ test('export default', async () => {
   ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
 })
 
+test('export then import minified', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `export * from 'vue';import {createApp} from 'vue';`
+    )
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "
+  `)
+})
+
 test('import.meta', async () => {
   expect(
     await ssrTransformSimpleCode(`console.log(import.meta.url)`)
