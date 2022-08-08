@@ -1,4 +1,3 @@
-import { expect, test } from 'vitest'
 import { page } from '~utils'
 
 test('from source code', async () => {

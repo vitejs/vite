@@ -1,4 +1,3 @@
-import { expect, test } from 'vitest'
 import { editFile, getColor, page, untilUpdated } from '~utils'
 
 test('fs', async () => {

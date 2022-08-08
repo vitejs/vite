@@ -15,7 +15,6 @@ import { build, createServer, mergeConfig } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
-import { beforeAll } from 'vitest'
 
 // #region env
 

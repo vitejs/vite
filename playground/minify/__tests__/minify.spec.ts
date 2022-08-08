@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { expect, test } from 'vitest'
 import { isBuild, readFile, testDir } from '~utils'
 
 test.runIf(isBuild)('no minifySyntax', () => {

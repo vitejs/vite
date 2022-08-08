@@ -11,7 +11,6 @@ import type { ConsoleMessage, ElementHandle } from 'playwright-chromium'
 import type { Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
-import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
 

@@ -1,4 +1,3 @@
-import { describe, test } from 'vitest'
 import { page } from '~utils'
 
 describe('syntax preserve', () => {

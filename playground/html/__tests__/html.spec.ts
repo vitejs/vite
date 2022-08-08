@@ -1,4 +1,3 @@
-import { beforeAll, describe, expect, test } from 'vitest'
 import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
 
 function testPage(isNested: boolean) {
