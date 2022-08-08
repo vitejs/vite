@@ -131,6 +131,8 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 ## Netlify
 
+### Netlify CLI
+
 1. Install the [Netlify CLI](https://cli.netlify.com/).
 2. Create a new site using `ntl init`.
 3. Deploy using `ntl deploy`.
@@ -152,6 +154,16 @@ The Netlify CLI will share with you a preview URL to inspect. When you are ready
 # Deploy the site into production
 $ ntl deploy --prod
 ```
+
+### Netlify with Git
+
+1. Push your code to a git repository (GitHub, GitLab, BitBucket, Azure DevOps).
+2. [Import the project](https://app.netlify.com/start) to Netlify.
+3. Choose the branch, output directory, and set up environment variables if applicable.
+4. Click on **Deploy**.
+5. Your Vite app is deployed!
+
+After your project has been imported and deployed, all subsequent pushes to branches other than the production branch along with pull requests will generate [Preview Deployments](https://docs.netlify.com/site-deploys/deploy-previews/), and all changes made to the Production Branch (commonly “main”) will result in a [Production Deployment](https://docs.netlify.com/site-deploys/overview/#definitions).
 
 ## Vercel
 
