@@ -8,12 +8,12 @@ If the suggestions here don't work, please try posting questions on [GitHub Disc
 
 ### `Error: Cannot find module 'C:\foo\bar&baz\vite\bin\vite.js'`
 
-The path to your project folder may include `?`, which doesn't work with `npm` on Windows ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
+The path to your project folder may include `&`, which doesn't work with `npm` on Windows ([npm/cmd-shim#45](https://github.com/npm/cmd-shim/issues/45)).
 
 You will need to either:
 
 - Switch to another package manager (e.g. `pnpm`, `yarn`)
-- Remove `?` from the path to your project
+- Remove `&` from the path to your project
 
 ## Dev Server
 

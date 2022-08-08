@@ -208,7 +208,7 @@ A user may choose to deploy in three different paths:
 
 A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
-```js
+```ts
 experimental: {
   renderBuiltUrl: (filename: string, { hostType: 'js' | 'css' | 'html' }) => {
     if (hostType === 'js') {
@@ -220,9 +220,9 @@ experimental: {
 }
 ```
 
-If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the third `context` param given to the function.
+If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
-```js
+```ts
 experimental: {
   renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
     if (type === 'public') {
