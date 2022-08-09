@@ -115,11 +115,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         return id
       }
 
-      // fast path for commonjs proxy modules
-      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
-        return
-      }
-
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
