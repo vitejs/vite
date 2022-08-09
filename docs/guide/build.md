@@ -208,9 +208,9 @@ A user may choose to deploy in three different paths:
 
 A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
-```js
+```ts
 experimental: {
-  renderBuiltUrl: (filename: string, { hostType: 'js' | 'css' | 'html' }) => {
+  renderBuiltUrl(filename: string, { hostType }: { hostType: 'js' | 'css' | 'html' }) {
     if (hostType === 'js') {
       return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
     } else {
