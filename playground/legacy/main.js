@@ -1,5 +1,5 @@
 import './style.css'
-import './vite.svg'
+import viteSvgPath from './vite.svg'
 
 async function run() {
   const { fn } = await import('./async.js')
@@ -50,6 +50,8 @@ document
     await import('./dynamic.css')
     text('#dynamic-css', 'dynamic import css')
   })
+
+text('#asset-path', viteSvgPath)
 
 function text(el, text) {
   document.querySelector(el).textContent = text

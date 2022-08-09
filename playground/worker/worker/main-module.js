@@ -17,6 +17,7 @@ worker.addEventListener('message', (e) => {
   text('.pong', e.data.msg)
   text('.mode', e.data.mode)
   text('.bundle-with-plugin', e.data.bundleWithPlugin)
+  text('.asset-url', e.data.viteSvg)
 })
 
 const inlineWorker = new InlineWorker()

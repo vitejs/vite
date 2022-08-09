@@ -14,6 +14,11 @@ test('normal', async () => {
     'worker bundle with plugin success!',
     true
   )
+  await untilUpdated(
+    () => page.textContent('.asset-url'),
+    isBuild ? '/es/assets/vite.svg' : '/es/vite.svg',
+    true
+  )
 })
 
 test('TS output', async () => {
@@ -51,7 +56,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(27)
+    expect(files.length).toBe(28)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))

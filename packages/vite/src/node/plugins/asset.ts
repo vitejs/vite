@@ -90,7 +90,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
 
@@ -115,7 +115,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           'asset',
           chunk.fileName,
           'js',
-          config
+          config,
+          outputOptions.format
         )
         const replacementString =
           typeof replacement === 'string'
@@ -138,7 +139,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           'public',
           chunk.fileName,
           'js',
-          config
+          config,
+          outputOptions.format
         )
         const replacementString =
           typeof replacement === 'string'

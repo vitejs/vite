@@ -308,7 +308,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
@@ -334,7 +334,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             'asset',
             chunk.fileName,
             'js',
-            config
+            config,
+            outputOptions.format
           )
           const replacementString =
             typeof replacement === 'string'
@@ -348,12 +349,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               contentOnly: true
             }
           )
-        }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
         }
       }
       if (!isWorker) {

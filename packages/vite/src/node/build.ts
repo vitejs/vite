@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type {
   ExternalOption,
+  InternalModuleFormat,
   ModuleFormat,
   OutputOptions,
   Plugin,
@@ -826,6 +827,50 @@ function injectSsrFlag<T extends Record<string, any>>(
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
 
+/*
+  The following functions are copied from rollup
+  https://github.com/rollup/rollup/blob/c5269747cd3dd14c4b306e8cea36f248d9c1aa01/src/ast/nodes/MetaProperty.ts#L189-L232
+
+  https://github.com/rollup/rollup
+  The MIT License (MIT)
+  Copyright (c) 2017 [these people](https://github.com/rollup/rollup/graphs/contributors)
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
+
+const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
+  getResolveUrl(
+    `'${relativePath}', ${
+      umd ? `typeof document === 'undefined' ? location.href : ` : ''
+    }document.currentScript && document.currentScript.src || document.baseURI`
+  )
+
+const relativeUrlMechanisms: Record<
+  InternalModuleFormat,
+  (relativePath: string) => string
+> = {
+  amd: (relativePath) => {
+    if (relativePath[0] !== '.') relativePath = './' + relativePath
+    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+  },
+  cjs: (relativePath) =>
+    `(typeof document === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath)})`,
+  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
+  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  umd: (relativePath) =>
+    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath, true)})`
+}
+/* end of copy */
+
 export type RenderBuiltAssetUrl = (
   filename: string,
   type: {
@@ -842,10 +887,13 @@ export function toOutputFilePathInString(
   hostId: string,
   hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
+  format: InternalModuleFormat,
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = toImportMetaURLBasedRelativePath
+  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
+    format
+  )
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -873,15 +921,15 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
-function toImportMetaURLBasedRelativePath(
-  filename: string,
-  importer: string
-): { runtime: string } {
-  return {
-    runtime: `new URL(${JSON.stringify(
+function getToImportMetaURLBasedRelativePath(
+  format: InternalModuleFormat
+): (filename: string, importer: string) => { runtime: string } {
+  const toRelativePath = relativeUrlMechanisms[format]
+  return (filename, importer) => ({
+    runtime: toRelativePath(
       path.posix.relative(path.dirname(importer), filename)
-    )},import.meta.url).href`
-  }
+    )
+  })
 }
 
 export function toOutputFilePathWithoutRuntime(
