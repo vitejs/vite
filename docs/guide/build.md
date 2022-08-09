@@ -210,7 +210,7 @@ A single static [base](#public-base-path) isn't enough in these scenarios. Vite 
 
 ```ts
 experimental: {
-  renderBuiltUrl: (filename: string, { hostType: 'js' | 'css' | 'html' }) => {
+  renderBuiltUrl(filename: string, { hostType }: { hostType: 'js' | 'css' | 'html' }) {
     if (hostType === 'js') {
       return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
     } else {
@@ -224,11 +224,11 @@ If the hashed assets and public files aren't deployed together, options for each
 
 ```ts
 experimental: {
-  renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
+  renderBuiltUrl(filename: string, { hostId, hostType, type }: { hostId: string, hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
     if (type === 'public') {
       return 'https://www.domain.com/' + filename
     }
-    else if (path.extname(importer) === '.js') {
+    else if (path.extname(hostId) === '.js') {
       return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
     }
     else {
