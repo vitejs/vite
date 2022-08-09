@@ -222,13 +222,13 @@ experimental: {
 
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the third `context` param given to the function.
 
-```js
+```ts
 experimental: {
-  renderBuiltUrl(filename: string, { hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
+  renderBuiltUrl(filename: string, { hostId, hostType, type }: { hostId: string, hostType: 'js' | 'css' | 'html', type: 'public' | 'asset' }) {
     if (type === 'public') {
       return 'https://www.domain.com/' + filename
     }
-    else if (path.extname(importer) === '.js') {
+    else if (path.extname(hostId) === '.js') {
       return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
     }
     else {
