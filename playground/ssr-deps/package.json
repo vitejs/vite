@@ -9,6 +9,7 @@
     "debug": "node --inspect-brk server"
   },
   "dependencies": {
+    "@vitejs/css-lib": "file:./css-lib",
     "bcrypt": "^5.0.1",
     "define-properties-exports": "file:./define-properties-exports",
     "define-property-exports": "file:./define-property-exports",
