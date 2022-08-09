@@ -490,7 +490,9 @@ function __viteMapDep(indexes) {
   if (!__viteMapDep.viteFileDeps) {
     __viteMapDep.viteFileDeps = ${JSON.stringify(
       fileDeps.map((fileDep) =>
-        relativePreloadUrls ? path.relative(path.dirname(file), fileDep) : fileDep
+        relativePreloadUrls
+          ? path.relative(path.dirname(file), fileDep)
+          : fileDep
       )
     )}
   }
