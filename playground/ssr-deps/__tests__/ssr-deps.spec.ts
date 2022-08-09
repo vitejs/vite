@@ -103,3 +103,8 @@ test('msg from linked no external', async () => {
   await page.goto(url)
   expect(await page.textContent('.linked-no-external')).toMatch('Hello World!')
 })
+
+test('msg from linked no external', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.dep-virtual')).toMatch('[success]')
+})

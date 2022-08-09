@@ -101,7 +101,7 @@ The theme is now shared by all templates. This should help better convey the sco
 
 ### Vite CLI
 
-<pre style="background-color: var(--vp-code-block-bg);padding:2em;border-radius:8px;max-width: 100%">
+<pre style="background-color: var(--vp-code-block-bg);padding:2em;border-radius:8px;max-width:100%;overflow-x:auto;">
   <span style="color:lightgreen"><b>VITE</b></span> <span style="color:lightgreen">v3.0.0</span>  <span style="color:gray">ready in <b>320</b> ms</span>
 
   <span style="color:lightgreen"><b>➜</b></span>  <span style="color:white"><b>Local</b>:</span>   <span style="color:cyan">http://127.0.0.1:5173/</span>

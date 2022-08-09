@@ -11,7 +11,7 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import fg from 'fast-glob'
 import { sync as resolve } from 'resolve'
-import type { Plugin } from 'rollup'
+import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
 import pkg from './package.json'
 
@@ -185,7 +185,7 @@ function createCjsConfig(isProduction: boolean) {
   })
 }
 
-export default (commandLineArgs: any) => {
+export default (commandLineArgs: any): RollupOptions[] => {
   const isDev = commandLineArgs.watch
   const isProduction = !isDev
 
