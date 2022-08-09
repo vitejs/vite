@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.10.0"
+    "preact": "^10.10.1"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.3.0",
