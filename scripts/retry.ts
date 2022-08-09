@@ -15,7 +15,7 @@
  *   npx tsx ./retry.ts pnpm test
  *   npx tsx ./retry.ts -r 5 pnpm --color=always test
  */
-import path from 'path'
+import path from 'path' // eslint-disable-line
 import colors from 'picocolors'
 import minimist from 'minimist'
 import { execa } from 'execa'
