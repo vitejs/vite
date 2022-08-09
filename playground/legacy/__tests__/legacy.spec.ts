@@ -63,6 +63,12 @@ test('should load dynamic import with css', async () => {
   await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
 })
 
+test('asset url', async () => {
+  expect(await page.textContent('#asset-path')).toMatch(
+    isBuild ? /\/assets\/vite\.\w+\.svg/ : '/vite.svg'
+  )
+})
+
 describe.runIf(isBuild)('build', () => {
   test('should generate correct manifest', async () => {
     const manifest = readManifest()
