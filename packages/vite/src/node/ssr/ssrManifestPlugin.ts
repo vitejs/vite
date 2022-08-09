@@ -68,7 +68,9 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   join(dirname(chunk.fileName), url.slice(1, -1))
                 )
                 addDeps(normalizedFile)
-                ssrManifest[basename(name!)] = deps
+                if (name) {
+                  ssrManifest[basename(name!)] = deps
+                }
               }
             }
           }
