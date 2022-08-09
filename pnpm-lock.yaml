@@ -227,7 +227,7 @@ importers:
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
       es-module-lexer: ^0.10.5
-      esbuild: ^0.14.53
+      esbuild: ^0.14.47
       estree-walker: ^3.0.1
       etag: ^1.8.1
       fast-glob: ^3.2.11
@@ -262,7 +262,7 @@ importers:
       ufo: ^0.8.5
       ws: ^8.8.1
     dependencies:
-      esbuild: 0.14.47
+      esbuild: 0.14.53
       postcss: 8.4.16
       resolve: 1.22.1
       rollup: 2.75.6
@@ -2125,7 +2125,7 @@ packages:
   /@esbuild-kit/core-utils/2.1.0:
     resolution: {integrity: sha512-fZirrc2KjeTumVjE4bpleWOk2gD83b7WuGeQqOceKFQL+heNKKkNB5G5pekOUTLzfSBc0hP7hCSBoD9TuR0hLw==}
     dependencies:
-      esbuild: 0.14.50
+      esbuild: 0.14.53
       source-map-support: 0.5.21
     dev: true
 
