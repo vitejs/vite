@@ -894,6 +894,7 @@ importers:
 
   playground/ssr-deps:
     specifiers:
+      '@vitejs/css-lib': file:./css-lib
       bcrypt: ^5.0.1
       cross-env: ^7.0.3
       define-properties-exports: file:./define-properties-exports
@@ -917,6 +918,7 @@ importers:
       require-absolute: file:./require-absolute
       ts-transpiled-exports: file:./ts-transpiled-exports
     dependencies:
+      '@vitejs/css-lib': file:playground/ssr-deps/css-lib
       bcrypt: 5.0.1
       define-properties-exports: file:playground/ssr-deps/define-properties-exports
       define-property-exports: file:playground/ssr-deps/define-property-exports
@@ -940,6 +942,9 @@ importers:
     devDependencies:
       cross-env: 7.0.3
       express: 4.18.1
+
+  playground/ssr-deps/css-lib:
+    specifiers: {}
 
   playground/ssr-deps/define-properties-exports:
     specifiers: {}
@@ -9216,6 +9221,12 @@ packages:
   file:playground/react/jsx-entry:
     resolution: {directory: playground/react/jsx-entry, type: directory}
     name: jsx-entry
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-deps/css-lib:
+    resolution: {directory: playground/ssr-deps/css-lib, type: directory}
+    name: '@vitejs/css-lib'
     version: 0.0.0
     dev: false
 
