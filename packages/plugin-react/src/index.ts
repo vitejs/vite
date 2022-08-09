@@ -122,13 +122,27 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
   const viteBabel: Plugin = {
     name: 'vite:react-babel',
     enforce: 'pre',
-    config() {
+    config(_, { mode }) {
+      const isProduction =
+        (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
+        'production'
+
       if (opts.jsxRuntime === 'classic') {
         return {
           esbuild: {
             logOverride: {
               'this-is-undefined-in-esm': 'silent'
-            }
+            },
+            jsx: 'transform',
+            jsxImportSource: opts.jsxImportSource
+          }
+        }
+      } else {
+        return {
+          esbuild: {
+            jsxDev: !isProduction,
+            jsx: 'automatic',
+            jsxImportSource: opts.jsxImportSource
           }
         }
       }
@@ -240,18 +254,6 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 : [null, false]
 
             if (isJSX || (ast = restoredAst)) {
-              plugins.push([
-                await loadPlugin(
-                  '@babel/plugin-transform-react-jsx' +
-                    (isProduction ? '' : '-development')
-                ),
-                {
-                  runtime: 'automatic',
-                  importSource: opts.jsxImportSource,
-                  pure: opts.jsxPure !== false
-                }
-              ])
-
               // Avoid inserting `import` statements into CJS modules.
               if (isCommonJS) {
                 plugins.push(babelImportToRequire)
