@@ -567,7 +567,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // the entry css(style.css) will be inlined in the html template
           // so don't need to generate the css insert script
           if (chunk.isEntry) {
-            return { code }
+            return null
           }
           chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name, true)
           chunkCSS = await finalizeCss(chunkCSS, true, config)
