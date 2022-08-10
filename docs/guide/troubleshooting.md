@@ -44,6 +44,16 @@ To solve this:
   $ sudo sysctl fs.inotify.max_user_watches=524288
   ```
 
+### 431 Request Header Fields Too Large
+
+When the server / WebSocket server receives a large HTTP header, the request will be dropped and the following warning will be shown.
+
+> Server responded with status code 431. See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.
+
+This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
+
+To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
