@@ -363,7 +363,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const depModule = await moduleGraph.ensureEntryFromUrl(
               url,
               ssr,
-              canSkipImportAnalysis(url)
+              canSkipImportAnalysis(removeImportQuery(url))
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
