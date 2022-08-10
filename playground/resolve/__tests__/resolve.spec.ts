@@ -87,6 +87,14 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
+test('Resolve browser field even if module field exists', async () => {
+  expect(await page.textContent('.browser-module1')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely UMD or CJS', async () => {
+  expect(await page.textContent('.browser-module2')).toMatch('[success]')
+})
+
 test('css entry', async () => {
   expect(await page.textContent('.css')).toMatch('[success]')
 })

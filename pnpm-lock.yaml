@@ -845,6 +845,8 @@ importers:
       normalize.css: ^8.0.1
       require-pkg-with-module-field: link:./require-pkg-with-module-field
       resolve-browser-field: link:./browser-field
+      resolve-browser-module-field1: link:./browser-module-field1
+      resolve-browser-module-field2: link:./browser-module-field2
       resolve-custom-condition: link:./custom-condition
       resolve-custom-main-field: link:./custom-main-field
       resolve-exports-env: link:./exports-env
@@ -856,6 +858,8 @@ importers:
       normalize.css: 8.0.1
       require-pkg-with-module-field: link:require-pkg-with-module-field
       resolve-browser-field: link:browser-field
+      resolve-browser-module-field1: link:browser-module-field1
+      resolve-browser-module-field2: link:browser-module-field2
       resolve-custom-condition: link:custom-condition
       resolve-custom-main-field: link:custom-main-field
       resolve-exports-env: link:exports-env
@@ -869,6 +873,12 @@ importers:
     specifiers: {}
 
   playground/resolve/browser-field:
+    specifiers: {}
+
+  playground/resolve/browser-module-field1:
+    specifiers: {}
+
+  playground/resolve/browser-module-field2:
     specifiers: {}
 
   playground/resolve/custom-condition:

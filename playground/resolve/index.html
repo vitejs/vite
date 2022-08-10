@@ -76,6 +76,12 @@
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
 
+<h2>Resolve browser field even if module field exists</h2>
+<p class="browser-module1">fail</p>
+
+<h2>Resolve module field if browser field is likely UMD or CJS</h2>
+<p class="browser-module2">fail</p>
+
 <h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
 <p class="require-pkg-with-module-field">fail</p>
 
@@ -212,6 +218,12 @@
   ) {
     text('.browser', main)
   }
+
+  import browserModule1 from 'resolve-browser-module-field1'
+  text('.browser-module1', browserModule1)
+
+  import browserModule2 from 'resolve-browser-module-field2'
+  text('.browser-module2', browserModule2)
 
   import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
