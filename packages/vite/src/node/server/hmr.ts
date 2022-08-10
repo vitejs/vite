@@ -231,6 +231,11 @@ function propagateUpdate(
   // if the imports of `node` have not been analyzed, then `node` has not
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
+    debugHmr(
+      `[propagate update] stop propagation because not analyzed: ${colors.dim(
+        node.id
+      )}`
+    )
     return false
   }
 
