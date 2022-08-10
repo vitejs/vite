@@ -9,26 +9,31 @@ import {
 } from '~utils'
 
 test('should load the worker', async () => {
-  await untilUpdated(() => page.textContent('.worker-message'), 'module')
+  await untilUpdated(() => page.textContent('.worker-message'), 'module', true)
 })
 
 test('should work', async () => {
-  await untilUpdated(() => page.textContent('#app'), 'Hello')
+  await untilUpdated(() => page.textContent('#app'), 'Hello', true)
 })
 
 test('import.meta.env.LEGACY', async () => {
-  await untilUpdated(() => page.textContent('#env'), isBuild ? 'true' : 'false')
+  await untilUpdated(
+    () => page.textContent('#env'),
+    isBuild ? 'true' : 'false',
+    true
+  )
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  await untilUpdated(() => page.textContent('#iterators'), 'hello')
+  await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
 })
 
 test('wraps with iife', async () => {
   await untilUpdated(
     () => page.textContent('#babel-helpers'),
-    'exposed babel helpers: false'
+    'exposed babel helpers: false',
+    true
   )
 })
 
