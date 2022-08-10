@@ -69,7 +69,7 @@ const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
-const skipRE = /\.(map|json)$/
+const skipRE = /\.(map|json)($|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
@@ -363,7 +363,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const depModule = await moduleGraph.ensureEntryFromUrl(
               url,
               ssr,
-              canSkipImportAnalysis(removeImportQuery(url))
+              canSkipImportAnalysis(url)
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
