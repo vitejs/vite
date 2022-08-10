@@ -33,34 +33,12 @@ export async function restoreJSX(
     return jsxNotFound
   }
 
-  let hasCompiledJsx = false
+  const reactJsxRE = new RegExp(
+    `\\b${reactAlias}\\.(createElement|Fragment)\\b`,
+    'g'
+  )
 
-  const fragmentPattern = `\\b${reactAlias}\\.Fragment\\b`
-  const createElementPattern = `\\b${reactAlias}\\.createElement\\(\\s*([A-Z"'][\\w$.]*["']?)`
-
-  // Replace the alias with "React" so JSX can be reverse compiled.
-  code = code
-    .replace(new RegExp(fragmentPattern, 'g'), () => {
-      hasCompiledJsx = true
-      return 'React.Fragment'
-    })
-    .replace(new RegExp(createElementPattern, 'g'), (original, component) => {
-      if (/^[a-z][\w$]*$/.test(component)) {
-        // Take care not to replace the alias for `createElement` calls whose
-        // component is a lowercased variable, since the `restoreJSX` Babel
-        // plugin leaves them untouched.
-        return original
-      }
-      hasCompiledJsx = true
-      return (
-        'React.createElement(' +
-        // Assume `Fragment` is equivalent to `React.Fragment` so modules
-        // that use `import {Fragment} from 'react'` are reverse compiled.
-        (component === 'Fragment' ? 'React.Fragment' : component)
-      )
-    })
-
-  if (!hasCompiledJsx) {
+  if (!reactJsxRE.test(code)) {
     return jsxNotFound
   }
 
@@ -73,7 +51,7 @@ export async function restoreJSX(
     parserOpts: {
       plugins: ['jsx']
     },
-    plugins: [await getBabelRestoreJSX()]
+    plugins: [[await getBabelRestoreJSX(), { reactAlias }]]
   })
 
   return [result?.ast, isCommonJS]
