@@ -230,7 +230,7 @@ async function ssrTransformScript(
         // { foo } -> { foo: __import_x__.foo }
         // skip for destructuring patterns
         if (
-          !isNodeInPatternWeakMap.get(parent) ||
+          !isNodeInPattern(parent) ||
           isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
@@ -305,7 +305,10 @@ interface Visitors {
   onDynamicImport: (node: Node) => void
 }
 
-const isNodeInPatternWeakMap = new WeakMap<_Node, boolean>()
+const isNodeInPatternWeakSet = new WeakSet<_Node>()
+const setIsNodeInPattern = (node: Property) => isNodeInPatternWeakSet.add(node)
+const isNodeInPattern = (node: _Node): node is Property =>
+  isNodeInPatternWeakSet.has(node)
 
 /**
  * Same logic from \@vue/compiler-core & \@vue/compiler-sfc
@@ -425,7 +428,7 @@ function walk(
         })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
-        isNodeInPatternWeakMap.set(node, true)
+        setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentFunction(parentStack)
         if (parentFunction) {
@@ -474,8 +477,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // property key
-  // this also covers object destructuring pattern
-  if (isStaticPropertyKey(id, parent) || isNodeInPatternWeakMap.get(parent)) {
+  if (isStaticPropertyKey(id, parent)) {
+    return false
+  }
+
+  // object destructuring pattern
+  if (isNodeInPattern(parent) && parent.value === id) {
     return false
   }
 
