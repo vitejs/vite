@@ -1,5 +1,6 @@
 import './style.css'
 import viteSvgPath from './vite.svg'
+import MyWorker from './worker?worker'
 
 async function run() {
   const { fn } = await import('./async.js')
@@ -56,3 +57,9 @@ text('#asset-path', viteSvgPath)
 function text(el, text) {
   document.querySelector(el).textContent = text
 }
+
+const worker = new MyWorker()
+worker.postMessage('ping')
+worker.addEventListener('message', (ev) => {
+  text('.worker-message', JSON.stringify(ev.data))
+})
