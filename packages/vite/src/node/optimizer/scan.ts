@@ -143,7 +143,8 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
         ? []
         : [`**/__tests__/**`, `**/coverage/**`])
     ],
-    absolute: true
+    absolute: true,
+    suppressErrors: true // suppress EACCES errors
   })
 }
 
