@@ -53,7 +53,8 @@ test('generates assets', async () => {
           'immutable-chunk: 404',
           'immutable-chunk-legacy: 404',
           'polyfills-legacy: 404'
-        ].join('\n')
+        ].join('\n'),
+    true
   )
 })
 
