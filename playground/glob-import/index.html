@@ -13,6 +13,10 @@
 <pre class="relative-glob-raw"></pre>
 <h2>Side effect</h2>
 <pre class="side-effect-result"></pre>
+<h2>Tree shake Eager CSS</h2>
+<p class="tree-shake-eager-css">Should be orange</p>
+<p class="no-tree-shake-eager-css">Should be orange</p>
+<pre class="no-tree-shake-eager-css-result"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
@@ -106,4 +110,11 @@
       "Syntax generated from 'import.meta.glob' must do ASI.")
   const notInvocation = neverInvoke
   import.meta.glob('/side-effect/**', { eager: true })
+</script>
+
+<script type="module">
+  import.meta.glob('/tree-shake.css', { eager: true })
+  const results = import.meta.glob('/no-tree-shake.css', { eager: true })
+  document.querySelector('.no-tree-shake-eager-css-result').textContent =
+    results['/no-tree-shake.css'].default
 </script>

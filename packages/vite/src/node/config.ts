@@ -734,7 +734,11 @@ export async function resolveConfig(
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
       ...resolved,
-      plugins: resolved.plugins.map((p) => p.name)
+      plugins: resolved.plugins.map((p) => p.name),
+      worker: {
+        ...resolved.worker,
+        plugins: resolved.worker.plugins.map((p) => p.name)
+      }
     })
   }
 
@@ -1035,7 +1039,11 @@ async function loadConfigFromBundledFile(
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
-      fs.unlinkSync(fileNameTmp)
+      try {
+        fs.unlinkSync(fileNameTmp)
+      } catch {
+        // already removed if this function is called twice simultaneously
+      }
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`

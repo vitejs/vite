@@ -115,11 +115,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         return id
       }
 
-      // fast path for commonjs proxy modules
-      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
-        return
-      }
-
       const targetWeb = !ssr || ssrTarget === 'webworker'
 
       // this is passed by @rollup/plugin-commonjs
@@ -657,18 +652,22 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
-    // dont external symlink packages
+    // don't external symlink packages
     if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
+    // don't external non-js imports
+    if (
+      resolvedExt &&
+      resolvedExt !== '.js' &&
+      resolvedExt !== '.mjs' &&
+      resolvedExt !== '.cjs'
+    ) {
+      return resolved
+    }
     let resolvedId = id
     if (isDeepImport) {
-      // check ext before externalizing - only externalize
-      // extension-less imports and explicit .js imports
-      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
-        return resolved
-      }
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
         resolvedId += resolvedExt
       }

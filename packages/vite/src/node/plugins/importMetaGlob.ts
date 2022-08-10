@@ -438,7 +438,9 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `Object.assign({${objectProps.join(',')}})`
+          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ','
+          )}})`
           s.overwrite(start, end, replacement)
 
           return staticImports

@@ -740,7 +740,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           delete bundle[chunk.fileName]
         }
 
-        const shortEmitName = path.relative(config.root, id)
+        const shortEmitName = normalizePath(path.relative(config.root, id))
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,
