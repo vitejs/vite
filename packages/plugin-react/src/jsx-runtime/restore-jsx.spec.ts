@@ -81,7 +81,10 @@ describe('restore-jsx', () => {
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement(foo)`)
-    ).toBeNull()
+    ).toMatchInlineSnapshot(`
+      "import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
+      React__default.createElement(foo);"
+    `)
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement("h1")`)
@@ -104,7 +107,12 @@ describe('restore-jsx', () => {
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement(foo, {hi: there})`)
-    ).toBeNull()
+    ).toMatchInlineSnapshot(`
+      "import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
+      React__default.createElement(foo, {
+        hi: there
+      });"
+    `)
     expect(
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
     React__default.createElement("h1", {hi: there})`)
@@ -113,5 +121,27 @@ describe('restore-jsx', () => {
       await jsx(`import React__default, { PureComponent, Component, forwardRef, memo, createElement } from 'react';
       React__default.createElement(Foo, {hi: there})`)
     ).toMatch(`<Foo hi={there} />;`)
+  })
+
+  it('should handle Fragment', async () => {
+    expect(
+      await jsx(`import R, { Fragment } from 'react';
+        R.createElement(Fragment)
+      `)
+    ).toMatchInlineSnapshot(`
+      "import R, { Fragment } from 'react';
+      <Fragment />;"
+    `)
+  })
+
+  it('should handle Fragment alias', async () => {
+    expect(
+      await jsx(`import RA, { Fragment as F } from 'react';
+        RA.createElement(F, null, RA.createElement(RA.Fragment))
+      `)
+    ).toMatchInlineSnapshot(`
+      "import RA, { Fragment as F } from 'react';
+      <F><></></F>;"
+    `)
   })
 })
