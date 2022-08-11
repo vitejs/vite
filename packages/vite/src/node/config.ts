@@ -980,7 +980,7 @@ async function bundleConfigFile(
               if (path.relative(idPkgDir, fileName).startsWith('..')) {
                 return {
                   // normalize actual import after bundled as a single vite config
-                  path: pathToFileURL(idFsPath).href,
+                  path: isESM ? pathToFileURL(idFsPath).href : idFsPath,
                   external: true
                 }
               }
