@@ -1144,22 +1144,3 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
 }
-
-/**
- * returns `true` for WSL2 including docker running on WSL2
- *
- * https://github.com/microsoft/WSL/issues/423#issuecomment-844418910
- */
-export const isWSL2 = (() => {
-  const release = os.release()
-  // Example: `5.10.102.1-microsoft-standard-WSL2`
-  if (release.includes('WSL2')) {
-    // "Docker Desktop for Windows with WSL2 backend" and "Docker installed in WSL" comes here too
-    return true
-  }
-
-  // Windows Example: `10.0.19044`
-  // WSL1 Example: `4.4.0-19041-Microsoft`
-  // Docker Desktop for Windows with WSL2 backend Example: `5.10.76-linuxkit`
-  return false
-})()

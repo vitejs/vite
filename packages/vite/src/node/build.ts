@@ -506,9 +506,7 @@ async function doBuild(
       }
 
       const resolvedChokidarOptions = resolveChokidarOptions(
-        config.logger,
-        config.build.watch.chokidar,
-        'build.watch.chokidar'
+        config.build.watch.chokidar
       )
 
       const { watch } = await import('rollup')

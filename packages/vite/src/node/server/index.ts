@@ -301,11 +301,10 @@ export async function createServer(
   )
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions(
-    config.logger,
-    { disableGlobbing: true, ...serverConfig.watch },
-    'server.watch'
-  )
+  const resolvedWatchOptions = resolveChokidarOptions({
+    disableGlobbing: true,
+    ...serverConfig.watch
+  })
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
