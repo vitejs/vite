@@ -1,9 +1,5 @@
 # Server-Side Rendering
 
-:::warning Experimental
-SSR support is still experimental and you may encounter bugs and unsupported use cases. Proceed at your own risk.
-:::
-
 :::tip Note
 SSR specifically refers to front-end frameworks (for example React, Preact, Vue, and Svelte) that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. If you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
 
@@ -65,11 +61,14 @@ When building an SSR app, you likely want to have full control over your main se
 
 **server.js**
 
-```js{17-19}
+```js{15-18}
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
-import {createServer as createViteServer} from 'vite'
+import { createServer as createViteServer } from 'vite'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 async function createServer() {
   const app = express()
@@ -210,17 +209,9 @@ If the routes and the data needed for certain routes are known ahead of time, we
 
 ## SSR Externals
 
-Many dependencies ship both ESM and CommonJS files. When running SSR, a dependency that provides CommonJS builds can be "externalized" from Vite's SSR transform / module system to speed up both dev and build. For example, instead of pulling in the pre-bundled ESM version of React and then transforming it back to be Node.js-compatible, it is more efficient to simply `require('react')` instead. It also greatly improves the speed of the SSR bundle build.
+Dependencies are "externalized" from Vite's SSR transform module system by default when running SSR. This speeds up both dev and build.
 
-Vite performs automated SSR externalization based on the following heuristics:
-
-- If a dependency's resolved ESM entry point and its default Node entry point are different, its default Node entry is probably a CommonJS build that can be externalized. For example, `vue` will be automatically externalized because it ships both ESM and CommonJS builds.
-
-- Otherwise, Vite will check whether the package's entry point contains valid ESM syntax - if not, the package is likely CommonJS and will be externalized. As an example, `react-dom` will be automatically externalized because it only specifies a single entry which is in CommonJS format.
-
-If this heuristics leads to errors, you can manually adjust SSR externals using `ssr.external` and `ssr.noExternal` config options.
-
-In the future, this heuristics will likely improve to detect if the project has `type: "module"` enabled, so that Vite can also externalize dependencies that ship Node-compatible ESM builds by importing them via dynamic `import()` during SSR.
+If a dependency needs to be transformed by Vite's pipeline, for example, because Vite features are used untranspiled in them, they can be added to [`ssr.noExternal`](../config/ssr-options.md#ssr-noexternal).
 
 :::warning Working with Aliases
 If you have configured aliases that redirects one package to another, you may want to alias the actual `node_modules` packages instead to make it work for SSR externalized dependencies. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
@@ -273,3 +264,7 @@ The CLI commands `$ vite dev` and `$ vite preview` can also be used for SSR apps
 :::tip Note
 Use a post hook so that your SSR middleware runs _after_ Vite's middlewares.
 :::
+
+## SSR Format
+
+By default, Vite generates the SSR bundle in ESM. There is experimental support for configuring `ssr.format`, but it isn't recommended. Future efforts around SSR development will be based on ESM, and CommonJS remain available for backward compatibility. If using ESM for SSR isn't possible in your project, you can set `legacy.buildSsrCjsExternalHeuristics: true` to generate a CJS bundle using the same [externalization heuristics of Vite v2](https://v2.vitejs.dev/guide/ssr.html#ssr-externals).

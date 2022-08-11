@@ -84,6 +84,15 @@ import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
 })
 
+// prettier-ignore
+import(
+  /* this messes with */
+  `../alias/${base}.js`
+  /* es-module-lexer */
+).then((mod) => {
+  text('.dynamic-import-with-vars-multiline', mod.hello())
+})
+
 import(`../alias/${base}.js?raw`).then((mod) => {
   text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
 })

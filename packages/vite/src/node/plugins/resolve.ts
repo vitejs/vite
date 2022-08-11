@@ -28,6 +28,7 @@ import {
   isObject,
   isPossibleTsOutput,
   isTsRequest,
+  isWindows,
   nestedResolveFrom,
   normalizePath,
   resolveFrom,
@@ -112,11 +113,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       if (id.startsWith(browserExternalId)) {
         return id
-      }
-
-      // fast path for commonjs proxy modules
-      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
-        return
       }
 
       const targetWeb = !ssr || ssrTarget === 'webworker'
@@ -239,6 +235,17 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               moduleSideEffects: pkg.hasSideEffects(res)
             }
           }
+          return res
+        }
+      }
+
+      // drive relative fs paths (only windows)
+      if (isWindows && id.startsWith('/')) {
+        const basedir = importer ? path.dirname(importer) : process.cwd()
+        const fsPath = path.resolve(basedir, id)
+        if ((res = tryFsResolve(fsPath, options))) {
+          isDebug &&
+            debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return res
         }
       }
@@ -544,7 +551,8 @@ export function tryNodeResolve(
   targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr?: boolean,
-  externalize?: boolean
+  externalize?: boolean,
+  allowLinkedExternal: boolean = true
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -644,14 +652,22 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
+    // don't external symlink packages
+    if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
+      return resolved
+    }
     const resolvedExt = path.extname(resolved.id)
+    // don't external non-js imports
+    if (
+      resolvedExt &&
+      resolvedExt !== '.js' &&
+      resolvedExt !== '.mjs' &&
+      resolvedExt !== '.cjs'
+    ) {
+      return resolved
+    }
     let resolvedId = id
     if (isDeepImport) {
-      // check ext before externalizing - only externalize
-      // extension-less imports and explicit .js imports
-      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
-        return
-      }
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
         resolvedId += resolvedExt
       }
@@ -851,6 +867,8 @@ export function resolvePackageEntry(
             ) {
               // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
               entryPoint = data.module
+            } else {
+              entryPoint = browserEntry
             }
           }
         } else {

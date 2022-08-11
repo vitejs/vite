@@ -143,7 +143,8 @@ function globEntries(pattern: string | string[], config: ResolvedConfig) {
         ? []
         : [`**/__tests__/**`, `**/coverage/**`])
     ],
-    absolute: true
+    absolute: true,
+    suppressErrors: true // suppress EACCES errors
   })
 }
 
@@ -379,14 +380,18 @@ function esbuildScanPlugin(
           // avoid matching windows volume
           filter: /^[\w@][^:]/
         },
-        async ({ path: id, importer }) => {
+        async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-          const resolved = await resolve(id, importer)
+          const resolved = await resolve(id, importer, {
+            custom: {
+              depScan: { loader: pluginData?.htmlType?.loader }
+            }
+          })
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
@@ -419,10 +424,10 @@ function esbuildScanPlugin(
       // they are done after the bare import resolve because a package name
       // may end with these extensions
 
-      // css & json
+      // css & json & wasm
       build.onResolve(
         {
-          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json)$/
+          filter: /\.(css|less|sass|scss|styl|stylus|pcss|postcss|json|wasm)$/
         },
         externalUnlessEntry
       )

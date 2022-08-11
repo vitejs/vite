@@ -158,8 +158,8 @@ describe('image', () => {
     srcset.split(', ').forEach((s) => {
       expect(s).toMatch(
         isBuild
-          ? /other-assets\/asset\.\w{8}\.png \d{1}x/
-          : /\.\/nested\/asset\.png \d{1}x/
+          ? /other-assets\/asset\.\w{8}\.png \dx/
+          : /\.\/nested\/asset\.png \dx/
       )
     })
   })

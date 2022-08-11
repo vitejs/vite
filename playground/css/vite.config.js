@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
@@ -6,6 +6,11 @@ const path = require('path')
 module.exports = {
   build: {
     cssTarget: 'chrome61'
+  },
+  esbuild: {
+    logOverride: {
+      'unsupported-css-property': 'silent'
+    }
   },
   resolve: {
     alias: {

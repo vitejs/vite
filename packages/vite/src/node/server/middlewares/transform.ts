@@ -218,9 +218,9 @@ export function transformMiddleware(
         }
         // We don't need to log an error in this case, the request
         // is outdated because new dependencies were discovered and
-        // the new pre-bundle dependendencies have changed.
+        // the new pre-bundle dependencies have changed.
         // A full-page reload has been issued, and these old requests
-        // can't be properly fullfilled. This isn't an unexpected
+        // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
         return
       }

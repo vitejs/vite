@@ -21,7 +21,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       format: 'esm',
       keepNames: true,
       minify: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -62,7 +66,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: false,
       minifySyntax: true,
       minifyWhitespace: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -87,7 +95,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: false,
       minifySyntax: false,
       minifyWhitespace: false,
-      treeShaking: false
+      treeShaking: false,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -114,7 +126,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -138,7 +154,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       format: 'cjs',
       keepNames: true,
       minify: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -167,7 +187,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: true,
       minifyWhitespace: false,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 
@@ -197,7 +221,11 @@ describe('resolveEsbuildTranspileOptions', () => {
       minifyIdentifiers: true,
       minifySyntax: false,
       minifyWhitespace: true,
-      treeShaking: true
+      treeShaking: true,
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true
+      }
     })
   })
 })

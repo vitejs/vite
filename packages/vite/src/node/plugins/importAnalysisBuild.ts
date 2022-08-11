@@ -189,7 +189,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile
@@ -380,7 +380,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
           const code = chunk.code
-          let imports: ImportSpecifier[]
+          let imports: ImportSpecifier[] = []
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e: any) {

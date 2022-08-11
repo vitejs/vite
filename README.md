@@ -23,7 +23,7 @@
 - 🔩 Universal Plugin Interface
 - 🔑 Fully Typed APIs
 
-Vite (French word for "quick", pronounced [`/vit/`](https://cdn.jsdelivr.net/gh/vitejs/vite@main/docs/public/vite.mp3), like "veet") is a new breed of frontend build tool that significantly improves the frontend development experience. It consists of two major parts:
+Vite (French word for "quick", pronounced [`/vit/`](https://cdn.jsdelivr.net/gh/vitejs/vite@main/docs/public/vite.mp3), like "veet") is a new breed of frontend build tooling that significantly improves the frontend development experience. It consists of two major parts:
 
 - A dev server that serves your source files over [native ES modules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules), with [rich built-in features](https://vitejs.dev/guide/features.html) and astonishingly fast [Hot Module Replacement (HMR)](https://vitejs.dev/guide/features.html#hot-module-replacement).
 
@@ -32,17 +32,6 @@ Vite (French word for "quick", pronounced [`/vit/`](https://cdn.jsdelivr.net/gh/
 In addition, Vite is highly extensible via its [Plugin API](https://vitejs.dev/guide/api-plugin.html) and [JavaScript API](https://vitejs.dev/guide/api-javascript.html) with full typing support.
 
 [Read the Docs to Learn More](https://vitejs.dev).
-
-## v3.0
-
-Current Status: **Beta** (for internal testing, not recommended for production)
-
-The `main` branch is now for v3.0, if you are looking for current stable releases, check the [`v2` branch](https://github.com/vitejs/vite/tree/v2) branch instead.
-
-We will start drafting release notes and migration guide for v3.0 when we enter the beta stage. Before that you can check:
-
-- [v3.0 Milestone](https://github.com/vitejs/vite/milestone/5)
-- [Breaking Change List](https://github.com/vitejs/vite/issues?q=label%3A%22breaking+change%22+is%3Aclosed+milestone%3A3.0)
 
 ## Packages
 

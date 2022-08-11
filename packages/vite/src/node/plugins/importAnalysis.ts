@@ -69,7 +69,7 @@ const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
-const skipRE = /\.(map|json)$/
+const skipRE = /\.(map|json)($|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
@@ -294,7 +294,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile

@@ -1,4 +1,4 @@
-import { isBuild, page } from '~utils'
+import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -75,8 +75,24 @@ test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
 
+test.runIf(isWindows)('drive-relative path', async () => {
+  expect(await page.textContent('.drive-relative')).toMatch('[success]')
+})
+
+test('absolute path', async () => {
+  expect(await page.textContent('.absolute')).toMatch('[success]')
+})
+
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
+})
+
+test('Resolve browser field even if module field exists', async () => {
+  expect(await page.textContent('.browser-module1')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely UMD or CJS', async () => {
+  expect(await page.textContent('.browser-module2')).toMatch('[success]')
 })
 
 test('css entry', async () => {

@@ -34,6 +34,8 @@ import {
   assetUrlRE,
   checkPublicFile,
   getAssetFilename,
+  getPublicAssetFilename,
+  publicAssetUrlRE,
   urlToBuiltUrl
 } from './asset'
 import { isCSSRequest } from './css'
@@ -45,7 +47,7 @@ interface ScriptAssetsUrl {
   url: string
 }
 
-const htmlProxyRE = /\?html-proxy=?[&inline\-css]*&index=(\d+)\.(js|css)$/
+const htmlProxyRE = /\?html-proxy=?(?:&inline-css)?&index=(\d+)\.(js|css)$/
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 // Do not allow preceding '.', but do allow preceding '...' for spread operations
 const inlineImportRE =
@@ -354,7 +356,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value.content)
                 if (!isExcludedUrl(url)) {
-                  if (node.tag === 'link' && isCSSRequest(url)) {
+                  if (
+                    node.tag === 'link' &&
+                    isCSSRequest(url) &&
+                    // should not be converted if following attributes are present (#6748)
+                    !node.props.some(
+                      (p) => p.name === 'media' || p.name === 'disabled'
+                    )
+                  ) {
                     // CSS references, convert to import
                     const importExpression = `\nimport ${JSON.stringify(url)}`
                     styleUrls.push({
@@ -606,13 +615,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       for (const [id, html] of processedHtml) {
         const relativeUrlPath = path.posix.relative(config.root, id)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
-        const toOutputAssetFilePath = (filename: string) => {
+        const toOutputFilePath = (
+          filename: string,
+          type: 'asset' | 'public'
+        ) => {
           if (isExternalUrl(filename)) {
             return filename
           } else {
             return toOutputFilePathInHtml(
               filename,
-              'asset',
+              type,
               relativeUrlPath,
               'html',
               config,
@@ -620,6 +632,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
+
+        const toOutputAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'asset')
+
+        const toOutputPublicAssetFilePath = (filename: string) =>
+          toOutputFilePath(filename, 'public')
 
         const isAsync = isAsyncScriptMap.get(config)!.get(id)!
 
@@ -709,12 +727,20 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           )
         })
 
+        result = result.replace(publicAssetUrlRE, (_, fileHash) => {
+          return normalizePath(
+            toOutputPublicAssetFilePath(
+              getPublicAssetFilename(fileHash, config)!
+            )
+          )
+        })
+
         if (chunk && canInlineEntry) {
           // all imports from entry have been inlined to html, prevent rollup from outputting it
           delete bundle[chunk.fileName]
         }
 
-        const shortEmitName = path.relative(config.root, id)
+        const shortEmitName = normalizePath(path.relative(config.root, id))
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,

@@ -1,3 +1,26 @@
+## <small>3.0.2 (2022-08-11)</small>
+
+* chore: fix code typos (#9033) ([ed02861](https://github.com/vitejs/vite/commit/ed02861)), closes [#9033](https://github.com/vitejs/vite/issues/9033)
+* chore: narrow down rollup version (#9637) ([fcf4d98](https://github.com/vitejs/vite/commit/fcf4d98)), closes [#9637](https://github.com/vitejs/vite/issues/9637)
+
+
+
+## <small>3.0.1 (2022-07-18)</small>
+
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(vue): remove ssr.external config (#9128) ([ec91f98](https://github.com/vitejs/vite/commit/ec91f98)), closes [#9128](https://github.com/vitejs/vite/issues/9128)
+* refactor(vue): limit passable compilerOptions (#8994) ([b7b3e65](https://github.com/vitejs/vite/commit/b7b3e65)), closes [#8994](https://github.com/vitejs/vite/issues/8994)
+
+
+
+## 3.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* fix(vue): handle undefined on import.meta.hot.accept (fixes #8625) (#9011) ([70af44a](https://github.com/vitejs/vite/commit/70af44a)), closes [#8625](https://github.com/vitejs/vite/issues/8625) [#9011](https://github.com/vitejs/vite/issues/9011)
+* docs: cleanup changes (#8989) ([07aef1b](https://github.com/vitejs/vite/commit/07aef1b)), closes [#8989](https://github.com/vitejs/vite/issues/8989)
+
+
+
 ## 3.0.0-beta.1 (2022-07-06)
 
 * fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)

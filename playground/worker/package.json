@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev": "vite --config ./vite.config-iife.js",
+    "build": "vite --config ./vite.config-iife.js build",
+    "preview": "vite --config ./vite.config-iife.js preview",
     "dev:es": "vite --config ./vite.config-es.js dev",
     "build:es": "vite --config ./vite.config-es.js build",
     "preview:es": "vite --config ./vite.config-es.js preview",

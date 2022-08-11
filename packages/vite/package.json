@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "3.0.0-beta.9",
+  "version": "3.0.6",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -32,7 +32,7 @@
     "types"
   ],
   "engines": {
-    "node": ">=14.18.0"
+    "node": "^14.18.0 || >=16.0.0"
   },
   "repository": {
     "type": "git",
@@ -59,27 +59,27 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.14.47",
-    "postcss": "^8.4.14",
+    "postcss": "^8.4.16",
     "resolve": "^1.22.1",
-    "rollup": "^2.75.6"
+    "rollup": ">=2.75.6 <2.77.0 || ~2.77.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.2.0",
-    "@babel/parser": "^7.18.6",
-    "@babel/types": "^7.18.7",
+    "@babel/parser": "^7.18.11",
+    "@babel/types": "^7.18.10",
     "@jridgewell/trace-mapping": "^0.3.14",
     "@rollup/plugin-alias": "^3.1.9",
-    "@rollup/plugin-commonjs": "^22.0.1",
-    "@rollup/plugin-dynamic-import-vars": "^1.4.3",
+    "@rollup/plugin-commonjs": "^22.0.2",
+    "@rollup/plugin-dynamic-import-vars": "^1.4.4",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
-    "@rollup/plugin-typescript": "^8.3.3",
+    "@rollup/plugin-typescript": "^8.3.4",
     "@rollup/pluginutils": "^4.2.1",
     "@vue/compiler-dom": "^3.2.37",
-    "acorn": "^8.7.1",
+    "acorn": "^8.8.0",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
     "connect": "^3.7.0",
@@ -96,10 +96,10 @@
     "fast-glob": "^3.2.11",
     "http-proxy": "^1.18.1",
     "json5": "^2.2.1",
-    "launch-editor-middleware": "^2.4.0",
+    "launch-editor-middleware": "^2.5.0",
     "magic-string": "^0.26.2",
     "micromatch": "^4.0.5",
-    "mlly": "^0.5.4",
+    "mlly": "^0.5.7",
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
@@ -118,8 +118,8 @@
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
     "types": "link:./types",
-    "ufo": "^0.8.4",
-    "ws": "^8.8.0"
+    "ufo": "^0.8.5",
+    "ws": "^8.8.1"
   },
   "peerDependencies": {
     "less": "*",

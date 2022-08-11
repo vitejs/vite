@@ -92,6 +92,7 @@ export function isRefreshBoundary(ast: t.File): boolean {
     }
     const { declaration, specifiers } = node
     if (declaration) {
+      if (declaration.type === 'ClassDeclaration') return false
       if (declaration.type === 'VariableDeclaration') {
         return declaration.declarations.every((variable) =>
           isComponentLikeIdentifier(variable.id)

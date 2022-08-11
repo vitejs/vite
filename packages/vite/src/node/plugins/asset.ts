@@ -90,17 +90,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let match: RegExpExecArray | null
       let s: MagicString | undefined
-
-      const toRelative = (filename: string, importer: string) => {
-        return {
-          runtime: `new URL(${JSON.stringify(
-            path.posix.relative(path.dirname(importer), filename)
-          )},import.meta.url).href`
-        }
-      }
 
       // Urls added with JS using e.g.
       // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
@@ -124,7 +116,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           chunk.fileName,
           'js',
           config,
-          toRelative
+          outputOptions.format
         )
         const replacementString =
           typeof replacement === 'string'
@@ -148,7 +140,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           chunk.fileName,
           'js',
           config,
-          toRelative
+          outputOptions.format
         )
         const replacementString =
           typeof replacement === 'string'
@@ -237,6 +229,13 @@ export function getAssetFilename(
   config: ResolvedConfig
 ): string | undefined {
   return assetHashToFilenameMap.get(config)?.get(hash)
+}
+
+export function getPublicAssetFilename(
+  hash: string,
+  config: ResolvedConfig
+): string | undefined {
+  return publicAssetUrlCache.get(config)?.get(hash)
 }
 
 export function resolveAssetFileNames(

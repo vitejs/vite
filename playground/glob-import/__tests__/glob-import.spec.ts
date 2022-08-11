@@ -1,4 +1,13 @@
-import { addFile, editFile, isBuild, page, removeFile, withRetry } from '~utils'
+import {
+  addFile,
+  editFile,
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  removeFile,
+  withRetry
+} from '~utils'
 
 const filteredResult = {
   './alias.js': {
@@ -92,6 +101,12 @@ test('import glob raw', async () => {
   )
 })
 
+test('import property access', async () => {
+  expect(await page.textContent('.property-access')).toBe(
+    JSON.stringify(rawResult['/dir/baz.json'], null, 2)
+  )
+})
+
 test('import relative glob raw', async () => {
   expect(await page.textContent('.relative-glob-raw')).toBe(
     JSON.stringify(relativeRawResult, null, 2)
@@ -152,3 +167,16 @@ if (!isBuild) {
     })
   })
 }
+
+test('tree-shake eager css', async () => {
+  expect(await getColor('.tree-shake-eager-css')).toBe('orange')
+  expect(await getColor('.no-tree-shake-eager-css')).toBe('orange')
+  expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
+    '.no-tree-shake-eager-css'
+  )
+
+  if (isBuild) {
+    const content = findAssetFile(/index\.\w+\.js/)
+    expect(content).not.toMatch('.tree-shake-eager-css')
+  }
+})

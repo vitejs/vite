@@ -442,3 +442,10 @@ test('aliased css has content', async () => {
   // expect(await page.textContent('.aliased-content')).toMatch('.aliased')
   expect(await getColor('.aliased-module')).toBe('blue')
 })
+
+test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('unsupported-css-property')
+  })
+})
