@@ -230,7 +230,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           bundle,
           facadeToModernPolyfillMap,
           config.build,
-          options.externalSystemJS
+          'es',
+          opts,
+          !useSystemJS || options.externalSystemJS
         )
         return
       }
@@ -265,7 +267,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // force using terser for legacy polyfill minification, since esbuild
           // isn't legacy-safe
           config.build,
-          options.externalSystemJS
+          'iife',
+          opts,
+          !useSystemJS || options.externalSystemJS
         )
       }
     }
@@ -514,7 +518,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         chunk.facadeModuleId
       )
       if (legacyEntryFilename) {
-        tags.push({
+        const legacyEntryConfig = {
           tag: 'script',
           attrs: {
             nomodule: true,
@@ -530,11 +534,19 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         if (useSystemJS) {
           // @ts-ignore
-          legacyEntryConfig.attrs['data-src'] = src
+          legacyEntryConfig.attrs['data-src'] = toAssetPathFromHtml(
+            legacyEntryFilename,
+            chunk.facadeModuleId!,
+            config
+          )
           legacyEntryConfig.children = systemJSInlineCode
         } else {
           // @ts-ignore
-          legacyEntryConfig.attrs.src = src
+          legacyEntryConfig.attrs.src = toAssetPathFromHtml(
+            legacyEntryFilename,
+            chunk.facadeModuleId!,
+            config
+          )
         }
 
         tags.push(legacyEntryConfig)
