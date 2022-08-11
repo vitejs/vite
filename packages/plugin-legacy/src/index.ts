@@ -227,7 +227,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'es',
           opts,
-          !useSystemJS || options.externalSystemJS
+          true
         )
         return
       }
@@ -714,7 +714,7 @@ async function buildPolyfillChunk(
     codeChunksName.includes('.js')
   )
 
-  if (codeChunksNames.length == 1 && mergePolyfillWithLegacyCode) {
+  if (codeChunksNames.length === 1 && mergePolyfillWithLegacyCode) {
     const appChunk = bundle[codeChunksNames[0]] as OutputChunk
     appChunk.code = polyfillChunk.code + appChunk.code
   } else {
