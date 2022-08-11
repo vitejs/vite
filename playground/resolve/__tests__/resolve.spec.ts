@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
