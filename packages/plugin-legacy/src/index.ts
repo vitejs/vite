@@ -701,26 +701,38 @@ async function buildPolyfillChunk(
   if (!('output' in _polyfillChunk)) return
   const polyfillChunk = _polyfillChunk.output[0]
 
-  // associate the polyfill chunk to every entry chunk so that we can retrieve
-  // the polyfill filename in index html transform
-  for (const key in bundle) {
-    const chunk = bundle[key]
-    if (chunk.type === 'chunk' && chunk.facadeModuleId) {
-      facadeToChunkMap.set(chunk.facadeModuleId, polyfillChunk.fileName)
-    }
-  }
-
-  const codeChunksNames = Object.keys(bundle).filter((codeChunksName) =>
-    codeChunksName.includes('.js')
-  )
-
-  if (codeChunksNames.length === 1 && mergePolyfillWithLegacyCode) {
-    const appChunk = bundle[codeChunksNames[0]] as OutputChunk
+  if (mergePolyfillWithLegacyCode) {
+    const appChunk = bundle[getEntryChunkBundleKey(bundle)] as OutputChunk
     appChunk.code = polyfillChunk.code + appChunk.code
   } else {
+    // associate the polyfill chunk to every entry chunk so that we can retrieve
+    // the polyfill filename in index html transform
+    for (const key in bundle) {
+      const chunk = bundle[key]
+      if (chunk.type === 'chunk' && chunk.facadeModuleId) {
+        facadeToChunkMap.set(chunk.facadeModuleId, polyfillChunk.fileName)
+      }
+    }
     // add the chunk to the bundle
     bundle[polyfillChunk.name] = polyfillChunk
   }
+}
+
+function getEntryChunkBundleKey(bundle: OutputBundle): string {
+  const codeChunksNames = Object.keys(bundle).filter((chunkKey) => {
+    if (bundle[chunkKey].type === 'chunk') {
+      const chunk = bundle[chunkKey] as OutputChunk
+      return (
+        chunk.fileName.match(/.[cm]?js$/) &&
+        chunk.type === 'chunk' &&
+        chunk.isEntry
+      )
+    }
+
+    return false
+  })
+
+  return codeChunksNames[0]
 }
 
 const polyfillId = '\0vite/legacy-polyfills'
