@@ -51,7 +51,7 @@ importers:
       prettier: 2.7.1
       prompts: ^2.4.2
       rimraf: ^3.0.2
-      rollup: ^2.75.6
+      rollup: '>=2.75.6 <2.77.0 || ~2.77.0'
       semver: ^7.3.7
       simple-git-hooks: ^2.8.0
       tslib: ^2.4.0
@@ -65,7 +65,7 @@ importers:
     devDependencies:
       '@babel/types': 7.18.10
       '@microsoft/api-extractor': 7.29.0
-      '@rollup/plugin-typescript': 8.3.4_uct5nfewsakxkk4livyn3qaf3e
+      '@rollup/plugin-typescript': 8.3.4_nzsoit4cp576bo3qoi6msb73em
       '@types/babel__core': 7.1.19
       '@types/babel__standalone': 7.1.4
       '@types/convert-source-map': 1.5.2
@@ -104,7 +104,7 @@ importers:
       prettier: 2.7.1
       prompts: 2.4.2
       rimraf: 3.0.2
-      rollup: 2.75.6
+      rollup: 2.77.0
       semver: 7.3.7
       simple-git-hooks: 2.8.0
       tslib: 2.4.0
@@ -171,7 +171,7 @@ importers:
       '@jridgewell/gen-mapping': ^0.3.2
       '@jridgewell/trace-mapping': ^0.3.14
       debug: ^4.3.4
-      rollup: ^2.75.6
+      rollup: '>=2.75.6 <2.77.0 || ~2.77.0'
       slash: ^4.0.0
       source-map: ^0.6.1
       vite: workspace:*
@@ -180,7 +180,7 @@ importers:
       '@jridgewell/gen-mapping': 0.3.2
       '@jridgewell/trace-mapping': 0.3.14
       debug: 4.3.4
-      rollup: 2.75.6
+      rollup: 2.77.0
       slash: 4.0.0
       source-map: 0.6.1
       vite: link:../vite
@@ -2457,6 +2457,24 @@ packages:
       rollup: 2.77.0
     dev: true
 
+  /@rollup/plugin-typescript/8.3.4_nzsoit4cp576bo3qoi6msb73em:
+    resolution: {integrity: sha512-wt7JnYE9antX6BOXtsxGoeVSu4dZfw0dU3xykfOQ4hC3EddxRbVG/K0xiY1Wup7QOHJcjLYXWAn0Kx9Z1SBHHg==}
+    engines: {node: '>=8.0.0'}
+    peerDependencies:
+      rollup: ^2.14.0
+      tslib: '*'
+      typescript: '>=3.7.0'
+    peerDependenciesMeta:
+      tslib:
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.77.0
+      resolve: 1.22.1
+      rollup: 2.77.0
+      tslib: 2.4.0
+      typescript: 4.6.4
+    dev: true
+
   /@rollup/plugin-typescript/8.3.4_rollup@2.77.0+tslib@2.4.0:
     resolution: {integrity: sha512-wt7JnYE9antX6BOXtsxGoeVSu4dZfw0dU3xykfOQ4hC3EddxRbVG/K0xiY1Wup7QOHJcjLYXWAn0Kx9Z1SBHHg==}
     engines: {node: '>=8.0.0'}
@@ -2472,36 +2490,6 @@ packages:
       resolve: 1.22.1
       rollup: 2.77.0
       tslib: 2.4.0
-    dev: true
-
-  /@rollup/plugin-typescript/8.3.4_uct5nfewsakxkk4livyn3qaf3e:
-    resolution: {integrity: sha512-wt7JnYE9antX6BOXtsxGoeVSu4dZfw0dU3xykfOQ4hC3EddxRbVG/K0xiY1Wup7QOHJcjLYXWAn0Kx9Z1SBHHg==}
-    engines: {node: '>=8.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      tslib:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.75.6
-      resolve: 1.22.1
-      rollup: 2.75.6
-      tslib: 2.4.0
-      typescript: 4.6.4
-    dev: true
-
-  /@rollup/pluginutils/3.1.0_rollup@2.75.6:
-    resolution: {integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg==}
-    engines: {node: '>= 8.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0
-    dependencies:
-      '@types/estree': 0.0.39
-      estree-walker: 1.0.1
-      picomatch: 2.3.1
-      rollup: 2.75.6
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.77.0:
@@ -7710,14 +7698,6 @@ packages:
       rollup: 2.77.0
       spdx-expression-validate: 2.0.0
       spdx-satisfies: 5.0.1
-    dev: true
-
-  /rollup/2.75.6:
-    resolution: {integrity: sha512-OEf0TgpC9vU6WGROJIk1JA3LR5vk/yvqlzxqdrE2CzzXnqKXNzbAwlWUXis8RS3ZPe7LAq+YUxsRa0l3r27MLA==}
-    engines: {node: '>=10.0.0'}
-    hasBin: true
-    optionalDependencies:
-      fsevents: 2.3.2
     dev: true
 
   /rollup/2.77.0:
