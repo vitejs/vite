@@ -262,3 +262,9 @@ describe('vue worker', () => {
     expect(await page.textContent('.vue-worker')).toMatch('worker load!')
   })
 })
+
+test('the same literally value as define varialbe should keep itself', async () => {
+  expect((await page.textContent('.define-variable')) + '-string').toMatch(
+    'import.meta.env-string'
+  )
+})

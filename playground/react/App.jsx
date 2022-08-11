@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
 import Button from 'jsx-entry'
+import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
+import DefineVariable from './components/DefineVariable'
 
 function App() {
   const [count, setCount] = useState(0)
+
   return (
     <div className="App">
       <header className="App-header">
@@ -27,6 +29,7 @@ function App() {
       </header>
 
       <Dummy />
+      <DefineVariable />
       <Button>button</Button>
     </div>
   )

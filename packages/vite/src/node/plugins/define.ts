@@ -1,4 +1,6 @@
 import MagicString from 'magic-string'
+import { parse as parseJS } from 'acorn'
+import { findNodeAround } from 'acorn-walk'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { transformStableResult } from '../utils'
@@ -135,11 +137,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       let match: RegExpExecArray | null
 
       while ((match = pattern.exec(code))) {
-        hasReplaced = true
-        const start = match.index
-        const end = start + match[0].length
-        const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement, { contentOnly: true })
+        const ast = parseJS(code, {
+          ecmaVersion: 'latest',
+          sourceType: 'module'
+        }) as any
+        const { type } = findNodeAround(ast, match.index)!.node
+
+        if (type !== 'Literal') {
+          hasReplaced = true
+          const start = match.index
+          const end = start + match[0].length
+          const replacement = '' + replacements[match[1]]
+          s.overwrite(start, end, replacement, { contentOnly: true })
+        }
       }
 
       if (!hasReplaced) {

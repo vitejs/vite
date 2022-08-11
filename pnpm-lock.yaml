@@ -216,6 +216,7 @@ importers:
       '@rollup/pluginutils': ^4.2.1
       '@vue/compiler-dom': ^3.2.37
       acorn: ^8.8.0
+      acorn-walk: ^8.2.0
       cac: ^6.7.12
       chokidar: ^3.5.3
       connect: ^3.7.0
@@ -282,6 +283,7 @@ importers:
       '@rollup/pluginutils': 4.2.1
       '@vue/compiler-dom': 3.2.37
       acorn: 8.8.0
+      acorn-walk: 8.2.0
       cac: 6.7.12
       chokidar: 3.5.3
       connect: 3.7.0
@@ -5227,6 +5229,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5609,7 +5624,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
