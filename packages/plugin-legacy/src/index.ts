@@ -145,12 +145,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
-  // System JS relies on the Promise interface. It needs to be polyfilled for IE 11. (array.iterator is mandatory for supporting Promise.all)
-  const DEFAULT_LEGACY_POLYFILL = [
-    'core-js/modules/es.promise',
-    'core-js/modules/es.array.iterator'
-  ]
-  const legacyPolyfills = new Set(DEFAULT_LEGACY_POLYFILL)
+  const legacyPolyfills = new Set<string>()
 
   if (Array.isArray(options.modernPolyfills)) {
     options.modernPolyfills.forEach((i) => {
