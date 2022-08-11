@@ -159,19 +159,29 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    apply: 'build',
-    config(config) {
-      if (!config.build) {
-        config.build = {}
+    config(config, env) {
+      if (env.command === 'build') {
+        if (!config.build) {
+          config.build = {}
+        }
+
+        if (!config.build.cssTarget) {
+          // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
+          // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
+          // But note that only the `HexRGBA` feature affects the minify outcome.
+          // HSL & rebeccapurple values will be minified away regardless the target.
+          // So targeting `chrome61` suffices to fix the compatibility issue.
+          config.build.cssTarget = 'chrome61'
+        }
       }
 
-      if (!config.build.cssTarget) {
-        // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
-        // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
-        // But note that only the `HexRGBA` feature affects the minify outcome.
-        // HSL & rebeccapurple values will be minified away regardless the target.
-        // So targeting `chrome61` suffices to fix the compatibility issue.
-        config.build.cssTarget = 'chrome61'
+      return {
+        define: {
+          'import.meta.env.LEGACY':
+            env.command === 'serve' || config.build?.ssr
+              ? false
+              : legacyEnvVarMarker
+        }
       }
     }
   }
@@ -547,41 +557,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
-  let envInjectionFailed = false
-  const legacyEnvPlugin: Plugin = {
-    name: 'vite:legacy-env',
-
-    config(config, env) {
-      if (env) {
-        return {
-          define: {
-            'import.meta.env.LEGACY':
-              env.command === 'serve' || config.build?.ssr
-                ? false
-                : legacyEnvVarMarker
-          }
-        }
-      } else {
-        envInjectionFailed = true
-      }
-    },
-
-    configResolved(config) {
-      if (envInjectionFailed) {
-        config.logger.warn(
-          `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
-            `to incompatible vite version (requires vite@^2.0.0-beta.69).`
-        )
-      }
-    }
-  }
-
-  return [
-    legacyConfigPlugin,
-    legacyGenerateBundlePlugin,
-    legacyPostPlugin,
-    legacyEnvPlugin
-  ]
+  return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
 }
 
 export async function detectPolyfills(
@@ -667,8 +643,7 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
-          entryFileNames: rollupOutputOptions.entryFileNames,
-          manualChunks: undefined
+          entryFileNames: rollupOutputOptions.entryFileNames
         }
       }
     }
