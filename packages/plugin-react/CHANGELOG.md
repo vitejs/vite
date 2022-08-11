@@ -1,3 +1,14 @@
+## <small>2.0.1 (2022-08-11)</small>
+
+* fix: don't count class declarations as react fast refresh boundry (fixes #3675) (#8887) ([5a18284](https://github.com/vitejs/vite/commit/5a18284)), closes [#3675](https://github.com/vitejs/vite/issues/3675) [#8887](https://github.com/vitejs/vite/issues/8887)
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* fix(plugin-react): wrong substitution causes `React is not defined` (#9386) ([8a5b575](https://github.com/vitejs/vite/commit/8a5b575)), closes [#9386](https://github.com/vitejs/vite/issues/9386)
+* docs: fix server options link (#9242) ([29db3ea](https://github.com/vitejs/vite/commit/29db3ea)), closes [#9242](https://github.com/vitejs/vite/issues/9242)
+
+
+
 ## 2.0.0 (2022-07-13)
 
 * chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
