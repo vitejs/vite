@@ -111,7 +111,8 @@
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",
-      "@vitejs/plugin-vue": "workspace:*"
+      "@vitejs/plugin-vue": "workspace:*",
+      "rollup": "file:/Users/antfu/f/rollup"
     },
     "packageExtensions": {
       "postcss-load-config": {

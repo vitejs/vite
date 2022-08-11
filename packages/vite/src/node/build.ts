@@ -16,7 +16,6 @@ import type {
   WarningHandler,
   WatcherOptions
 } from 'rollup'
-import type Rollup from 'rollup'
 import type { Terser } from 'types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
@@ -312,7 +311,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
-    ],
+    ] as Plugin[],
     post: [
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
@@ -321,7 +320,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
       loadFallbackPlugin()
-    ]
+    ] as Plugin[]
   }
 }
 
@@ -387,7 +386,9 @@ async function doBuild(
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
-    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+    ssr
+      ? config.plugins.map((p) => injectSsrFlagToHooks(p as Plugin))
+      : config.plugins
   ) as Plugin[]
 
   const userExternal = options.rollupOptions?.external
@@ -791,33 +792,59 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
   }
 }
 
-function wrapSsrResolveId(
-  fn?: Rollup.ResolveIdHook
-): Rollup.ResolveIdHook | undefined {
-  if (!fn) return
+function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+  if (!hook) return
 
-  return function (id, importer, options) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['resolveId']
+  } else {
+    return handler
   }
 }
 
-function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
-  if (!fn) return
+function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+  if (!hook) return
 
-  return function (id, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['load']
+  } else {
+    return handler
+  }
 }
 
-function wrapSsrTransform(
-  fn?: Rollup.TransformHook
-): Rollup.TransformHook | undefined {
-  if (!fn) return
+function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+  if (!hook) return
 
-  return function (code, importer, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['transform']
+  } else {
+    return handler
   }
 }
 

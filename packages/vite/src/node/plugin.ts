@@ -1,6 +1,7 @@
 import type {
   CustomPluginOptions,
   LoadResult,
+  ObjectHook,
   PluginContext,
   ResolveIdResult,
   Plugin as RollupPlugin,
@@ -128,29 +129,35 @@ export interface Plugin extends RollupPlugin {
   /**
    * extend hooks with ssr flag
    */
-  resolveId?: (
-    this: PluginContext,
-    source: string,
-    importer: string | undefined,
-    options: {
-      custom?: CustomPluginOptions
-      ssr?: boolean
-      /**
-       * @internal
-       */
-      scan?: boolean
-      isEntry: boolean
-    }
-  ) => Promise<ResolveIdResult> | ResolveIdResult
-  load?: (
-    this: PluginContext,
-    id: string,
-    options?: { ssr?: boolean }
-  ) => Promise<LoadResult> | LoadResult
-  transform?: (
-    this: TransformPluginContext,
-    code: string,
-    id: string,
-    options?: { ssr?: boolean }
-  ) => Promise<TransformResult> | TransformResult
+  resolveId?: ObjectHook<
+    (
+      this: PluginContext,
+      source: string,
+      importer: string | undefined,
+      options: {
+        custom?: CustomPluginOptions
+        ssr?: boolean
+        /**
+         * @internal
+         */
+        scan?: boolean
+        isEntry: boolean
+      }
+    ) => Promise<ResolveIdResult> | ResolveIdResult
+  >
+  load?: ObjectHook<
+    (
+      this: PluginContext,
+      id: string,
+      options?: { ssr?: boolean }
+    ) => Promise<LoadResult> | LoadResult
+  >
+  transform?: ObjectHook<
+    (
+      this: TransformPluginContext,
+      code: string,
+      id: string,
+      options?: { ssr?: boolean }
+    ) => Promise<TransformResult> | TransformResult
+  >
 }
