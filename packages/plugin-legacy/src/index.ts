@@ -710,6 +710,21 @@ function polyfillsPlugin(
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
+    },
+    renderChunk(_, __, opts) {
+      // systemjs includes code that can't be minified down to es5 by esbuild
+      if (!excludeSystemJS) {
+        // @ts-ignore avoid esbuild transform on legacy chunks since it produces
+        // legacy-unsafe code - e.g. rewriting object properties into shorthands
+        opts.__vite_skip_esbuild__ = true
+
+        // @ts-ignore force terser for legacy chunks. This only takes effect if
+        // minification isn't disabled, because that leaves out the terser plugin
+        // entirely.
+        opts.__vite_force_terser__ = true
+      }
+
+      return null
     }
   }
 }
