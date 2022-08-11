@@ -118,6 +118,11 @@
         "peerDependencies": {
           "postcss": "*"
         }
+      },
+      "acorn-walk": {
+        "peerDependencies": {
+          "acorn": "*"
+        }
       }
     }
   }
