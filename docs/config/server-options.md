@@ -188,7 +188,7 @@ export default defineConfig({
 
 ::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
 
-When running Vite on WSL2, file system watching does not work when a file is edited by Windows applications (non-WSL2 process). This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739).
+When running Vite on WSL2, file system watching does not work when a file is edited by Windows applications (non-WSL2 process). This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739). This also applies to running on Docker with a WSL2 backend.
 
 To fix it, you could either:
 
