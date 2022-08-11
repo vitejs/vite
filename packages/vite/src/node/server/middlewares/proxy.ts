@@ -71,7 +71,7 @@ export function proxyMiddleware(
       }
     })
 
-    if (opts.configure) {
+    if (opts && opts.configure) {
       opts.configure(proxy, opts)
     }
     // clone before saving because http-proxy mutates the options
