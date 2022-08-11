@@ -264,7 +264,7 @@ describe('vue worker', () => {
 })
 
 test('the same literally value as define varialbe should keep itself', async () => {
-  expect((await page.textContent('.define-variable')) + '-string').toMatch(
-    'import.meta.env-string'
+  expect((await page.textContent('.define-variable')) + 'placeholder').toMatch(
+    'import.meta.envplaceholder'
   )
 })
