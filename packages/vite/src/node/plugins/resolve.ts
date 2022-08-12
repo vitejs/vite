@@ -811,6 +811,8 @@ export async function tryOptimizedResolve(
   }
 }
 
+const importExportRE = /\b(?:import|export)\s/
+
 export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
@@ -850,9 +852,9 @@ export function resolvePackageEntry(
         ) {
           // if both are present, we may have a problem: some package points both
           // to ESM, with "module" targeting Node.js, while some packages points
-          // "module" to browser ESM and "browser" to UMD.
+          // "module" to browser ESM and "browser" to UMD/IIFE.
           // the heuristics here is to actually read the browser entry when
-          // possible and check for hints of UMD. If it is UMD, prefer "module"
+          // possible and check for hints of ESM. If it is not ESM, prefer "module"
           // instead; Otherwise, assume it's ESM and use it.
           const resolvedBrowserEntry = tryFsResolve(
             path.join(dir, browserEntry),
@@ -860,12 +862,11 @@ export function resolvePackageEntry(
           )
           if (resolvedBrowserEntry) {
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-            if (
-              (/typeof exports\s*==/.test(content) &&
-                /typeof module\s*==/.test(content)) ||
-              /module\.exports\s*=/.test(content)
-            ) {
-              // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
+            if (importExportRE.test(content)) {
+              // likely ESM, prefer browser
+              entryPoint = browserEntry
+            } else {
+              // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
               entryPoint = data.module
             }
           }

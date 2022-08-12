@@ -88,8 +88,7 @@ test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })
 
-// TODO: skip because #9459 is reverted
-test.skip('Resolve browser field even if module field exists', async () => {
+test('Resolve browser field even if module field exists', async () => {
   expect(await page.textContent('.browser-module1')).toMatch('[success]')
 })
 
