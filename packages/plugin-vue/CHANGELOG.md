@@ -1,3 +1,10 @@
+## <small>2.3.4 (2022-08-12)</small>
+
+* chore: narrow down rollup version (#9651) ([ed8d6a7](https://github.com/vitejs/vite/commit/ed8d6a7)), closes [#9651](https://github.com/vitejs/vite/issues/9651)
+* chore(lint): sort for imports (#8113) ([4bd1531](https://github.com/vitejs/vite/commit/4bd1531)), closes [#8113](https://github.com/vitejs/vite/issues/8113)
+
+
+
 ## <small>2.3.3 (2022-05-11)</small>
 
 * fix(plugin-vue): allow overwriting template.transformAssetUrls.includeAbsolute (fix #4836) (#6779) ([443acf9](https://github.com/vitejs/vite/commit/443acf9)), closes [#4836](https://github.com/vitejs/vite/issues/4836) [#6779](https://github.com/vitejs/vite/issues/6779)
