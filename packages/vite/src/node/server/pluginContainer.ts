@@ -137,6 +137,8 @@ type PluginContext = Omit<
   | 'load'
 >
 
+type ObjectHookNames = AsyncPluginHooks & ParallelPluginHooks
+
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
@@ -261,24 +263,21 @@ export async function createPluginContainer(
   }
 
   // parallel, ignores returns
-  async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
+  async function hookParallel<H extends ObjectHookNames>(
     hookName: H,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of getSortedPlugins(hookName)) {
-      if (!plugin[hookName]) continue
-      // @ts-expect-error
-      const handler =
-        'handler' in plugin[hookName]
-          ? plugin[hookName]!.handler
-          : plugin[hookName]
-      if ((plugin[hookName] as { sequential?: boolean }).sequential) {
+      const hook = plugin[hookName]
+      if (!hook) continue
+      const handler: Function = 'handler' in hook ? hook.handler : hook
+      if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
-        await handler.call(...args(plugin))
+        await handler.call(args(plugin))
       } else {
-        parallelPromises.push(handler.call(...args(plugin)))
+        parallelPromises.push(handler.call(args(plugin)))
       }
     }
     await Promise.all(parallelPromises)

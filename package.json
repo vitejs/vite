@@ -112,7 +112,7 @@
     "overrides": {
       "vite": "workspace:*",
       "@vitejs/plugin-vue": "workspace:*",
-      "rollup": "file:/Users/antfu/f/rollup"
+      "rollup": "rollup/rollup#object-hooks"
     },
     "packageExtensions": {
       "postcss-load-config": {
