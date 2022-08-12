@@ -140,7 +140,13 @@ type PluginContext = Omit<
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
-  { plugins, logger, root, build: { rollupOptions } }: ResolvedConfig,
+  {
+    getSortedPluginHooks,
+    getSortedPlugins,
+    logger,
+    root,
+    build: { rollupOptions }
+  }: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
@@ -182,41 +188,6 @@ export async function createPluginContainer(
         .version,
       watchMode: true
     }
-  }
-
-  const sortedPluginsCache = new Map<keyof Plugin, Plugin[]>()
-  function getSortedPlugins(hookName: keyof Plugin): Plugin[] {
-    if (sortedPluginsCache.has(hookName))
-      return sortedPluginsCache.get(hookName)!
-    const sorted = getSortedValidatedPlugins(hookName, plugins)
-    sortedPluginsCache.set(hookName, sorted)
-    return sorted
-  }
-
-  function getSortedValidatedPlugins(
-    hookName: keyof Plugin,
-    plugins: readonly Plugin[]
-  ): Plugin[] {
-    const pre: Plugin[] = []
-    const normal: Plugin[] = []
-    const post: Plugin[] = []
-    for (const plugin of plugins) {
-      const hook = plugin[hookName]
-      if (hook) {
-        if (typeof hook === 'object') {
-          if (hook.order === 'pre') {
-            pre.push(plugin)
-            continue
-          }
-          if (hook.order === 'post') {
-            post.push(plugin)
-            continue
-          }
-        }
-        normal.push(plugin)
-      }
-    }
-    return [...pre, ...normal, ...post]
   }
 
   function warnIncompatibleMethod(method: string, plugin: string) {
@@ -559,11 +530,8 @@ export async function createPluginContainer(
   const container: PluginContainer = {
     options: await (async () => {
       let options = rollupOptions
-      for (const plugin of getSortedPlugins('options')) {
-        if (!plugin.options) continue
-        const handler =
-          'handler' in plugin.options ? plugin.options.handler : plugin.options
-        options = (await handler.call(minimalContext, options)) || options
+      for (const optionsHook of getSortedPluginHooks('options')) {
+        options = (await optionsHook.call(minimalContext, options)) || options
       }
       if (options.acornInjectPlugins) {
         parser = acorn.Parser.extend(

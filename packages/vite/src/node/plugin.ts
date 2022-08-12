@@ -71,7 +71,7 @@ export interface Plugin extends RollupPlugin {
   /**
    * Use this hook to read and store the final resolved vite config.
    */
-  configResolved?: (config: ResolvedConfig) => void | Promise<void>
+  configResolved?: ObjectHook<(config: ResolvedConfig) => void | Promise<void>>
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
@@ -81,7 +81,7 @@ export interface Plugin extends RollupPlugin {
    * can return a post hook that will be called after internal middlewares
    * are applied. Hook can be async functions and will be called in series.
    */
-  configureServer?: ServerHook
+  configureServer?: ObjectHook<ServerHook>
   /**
    * Configure the preview server. The hook receives the connect server and
    * its underlying http server.
@@ -90,7 +90,7 @@ export interface Plugin extends RollupPlugin {
    * return a post hook that will be called after other middlewares are
    * applied. Hooks can be async functions and will be called in series.
    */
-  configurePreviewServer?: PreviewServerHook
+  configurePreviewServer?: ObjectHook<PreviewServerHook>
   /**
    * Transform index.html.
    * The hook receives the following arguments:
@@ -161,3 +161,5 @@ export interface Plugin extends RollupPlugin {
     ) => Promise<TransformResult> | TransformResult
   >
 }
+
+export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T

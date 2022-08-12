@@ -8,7 +8,7 @@ import type { Alias, AliasOptions } from 'types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
-import type { Plugin } from './plugin'
+import type { HookHandler, Plugin } from './plugin'
 import type {
   BuildOptions,
   RenderBuiltAssetUrl,
@@ -33,7 +33,7 @@ import {
   normalizeAlias,
   normalizePath
 } from './utils'
-import { resolvePlugins } from './plugins'
+import { createPluginHookUtils, resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import {
   CLIENT_ENTRY,
@@ -289,7 +289,7 @@ export interface LegacyOptions {
   buildSsrCjsExternalHeuristics?: boolean
 }
 
-export interface ResolveWorkerOptions {
+export interface ResolveWorkerOptions extends PluginHookUtils {
   format: 'es' | 'iife'
   plugins: Plugin[]
   rollupOptions: RollupOptions
@@ -334,8 +334,15 @@ export type ResolvedConfig = Readonly<
     worker: ResolveWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-  }
+  } & PluginHookUtils
 >
+
+export interface PluginHookUtils {
+  getSortedPlugins: (hookName: keyof Plugin) => Plugin[]
+  getSortedPluginHooks: <K extends keyof Plugin>(
+    hookName: K
+  ) => NonNullable<HookHandler<Plugin[K]>>[]
+}
 
 export type ResolveFn = (
   id: string,
@@ -609,7 +616,9 @@ export async function resolveConfig(
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
-    rollupOptions: workerConfig.worker?.rollupOptions || {}
+    rollupOptions: workerConfig.worker?.rollupOptions || {},
+    getSortedPlugins: undefined!,
+    getSortedPluginHooks: undefined!
   }
 
   const resolvedConfig: ResolvedConfig = {
@@ -660,7 +669,9 @@ export async function resolveConfig(
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
       ...config.experimental
-    }
+    },
+    getSortedPlugins: undefined!,
+    getSortedPluginHooks: undefined!
   }
   const resolved: ResolvedConfig = {
     ...config,
@@ -673,6 +684,7 @@ export async function resolveConfig(
     normalPlugins,
     postPlugins
   )
+  Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
   const workerResolved: ResolvedConfig = {
     ...workerConfig,
@@ -680,24 +692,26 @@ export async function resolveConfig(
     isWorker: true,
     mainConfig: resolved
   }
-
   resolvedConfig.worker.plugins = await resolvePlugins(
     workerResolved,
     workerPrePlugins,
     workerNormalPlugins,
     workerPostPlugins
   )
+  Object.assign(
+    resolvedConfig.worker,
+    createPluginHookUtils(resolvedConfig.worker.plugins)
+  )
 
   // call configResolved hooks
-  await Promise.all(
-    userPlugins
-      .map((p) => p.configResolved?.(resolved))
-      .concat(
-        resolvedConfig.worker.plugins.map((p) =>
-          p.configResolved?.(workerResolved)
-        )
-      )
-  )
+  await Promise.all([
+    ...resolved
+      .getSortedPluginHooks('configResolved')
+      .map((hook) => hook(resolved)),
+    ...resolvedConfig.worker
+      .getSortedPluginHooks('configResolved')
+      .map((hook) => hook(workerResolved))
+  ])
 
   // validate config
 
