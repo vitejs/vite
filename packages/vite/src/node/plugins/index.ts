@@ -108,7 +108,7 @@ export function createPluginHookUtils(
   function getSortedPlugins(hookName: keyof Plugin): Plugin[] {
     if (sortedPluginsCache.has(hookName))
       return sortedPluginsCache.get(hookName)!
-    const sorted = getSortedValidatedPlugins(hookName, plugins)
+    const sorted = getSortedPluginsByHook(hookName, plugins)
     sortedPluginsCache.set(hookName, sorted)
     return sorted
   }
@@ -131,7 +131,7 @@ export function createPluginHookUtils(
   }
 }
 
-function getSortedValidatedPlugins(
+export function getSortedPluginsByHook(
   hookName: keyof Plugin,
   plugins: readonly Plugin[]
 ): Plugin[] {

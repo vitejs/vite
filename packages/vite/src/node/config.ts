@@ -33,7 +33,11 @@ import {
   normalizeAlias,
   normalizePath
 } from './utils'
-import { createPluginHookUtils, resolvePlugins } from './plugins'
+import {
+  createPluginHookUtils,
+  getSortedPluginsByHook,
+  resolvePlugins
+} from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import {
   CLIENT_ENTRY,
@@ -438,9 +442,11 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  for (const p of userPlugins) {
-    if (p.config) {
-      const res = await p.config(config, configEnv)
+  for (const p of getSortedPluginsByHook('config', userPlugins)) {
+    const hook = p.config
+    const handler = hook && 'handler' in hook ? hook.handler : hook
+    if (handler) {
+      const res = await handler(config, configEnv)
       if (res) {
         config = mergeConfig(config, res)
       }
@@ -595,7 +601,7 @@ export async function resolveConfig(
   const BASE_URL = resolvedBase
 
   // resolve worker
-  let workerConfig = mergeConfig({}, config)
+  const workerConfig = mergeConfig({}, config)
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(rawWorkerUserPlugins)
 
@@ -605,11 +611,13 @@ export async function resolveConfig(
     ...workerNormalPlugins,
     ...workerPostPlugins
   ]
-  for (const p of workerUserPlugins) {
-    if (p.config) {
-      const res = await p.config(workerConfig, configEnv)
+  for (const p of getSortedPluginsByHook('config', workerUserPlugins)) {
+    const hook = p.config
+    const handler = hook && 'handler' in hook ? hook.handler : hook
+    if (handler) {
+      const res = await handler(workerConfig, configEnv)
       if (res) {
-        workerConfig = mergeConfig(workerConfig, res)
+        config = mergeConfig(config, res)
       }
     }
   }

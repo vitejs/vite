@@ -64,10 +64,12 @@ export interface Plugin extends RollupPlugin {
    * Note: User plugins are resolved before running this hook so injecting other
    * plugins inside  the `config` hook will have no effect.
    */
-  config?: (
-    config: UserConfig,
-    env: ConfigEnv
-  ) => UserConfig | null | void | Promise<UserConfig | null | void>
+  config?: ObjectHook<
+    (
+      config: UserConfig,
+      env: ConfigEnv
+    ) => UserConfig | null | void | Promise<UserConfig | null | void>
+  >
   /**
    * Use this hook to read and store the final resolved vite config.
    */
@@ -122,9 +124,11 @@ export interface Plugin extends RollupPlugin {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?(
-    ctx: HmrContext
-  ): Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  handleHotUpdate?: ObjectHook<
+    (
+      ctx: HmrContext
+    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
 
   /**
    * extend hooks with ssr flag
