@@ -867,8 +867,6 @@ export function resolvePackageEntry(
             ) {
               // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
               entryPoint = data.module
-            } else {
-              entryPoint = browserEntry
             }
           }
         } else {
