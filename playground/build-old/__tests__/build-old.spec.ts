@@ -1,4 +1,4 @@
-import { describe, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { page } from '~utils'
 
 describe('syntax preserve', () => {

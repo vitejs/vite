@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fetch from 'node-fetch'
+import { expect, test, vi } from 'vitest'
 import { port } from './serve'
 import {
   browserLogs,

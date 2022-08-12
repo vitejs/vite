@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { createServer } from 'vite'
+import { expect, test } from 'vitest'
 import { getBgColor, getColor, page, ports } from '~utils'
 
 // Regression test for https://github.com/vitejs/vite/issues/4000

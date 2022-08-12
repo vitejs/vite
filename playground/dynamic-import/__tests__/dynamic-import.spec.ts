@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { getColor, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {

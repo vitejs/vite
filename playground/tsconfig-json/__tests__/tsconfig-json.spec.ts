@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { transformWithEsbuild } from 'vite'
+import { describe, expect, test } from 'vitest'
 import { browserLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {

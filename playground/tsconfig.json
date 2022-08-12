@@ -13,7 +13,7 @@
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",
-    "types": ["vite/client", "vitest/globals", "node"],
+    "types": ["vite/client", "node"],
     "paths": {
       "~utils": ["./test-utils.ts"]
     }

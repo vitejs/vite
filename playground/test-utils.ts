@@ -1,9 +1,6 @@
 // test utils used in e2e tests for playgrounds.
 // `import { getColor } from '~utils'`
 
-// TODO: explicitly import APIs and remove this
-/// <reference types="vitest/globals"/>
-
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'

@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { createServer } from 'vite'
+import { expect, test } from 'vitest'
 import { getColor, page, ports } from '~utils'
 
 test('postcss config', async () => {

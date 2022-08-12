@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { expect, test } from 'vitest'
 import testJson from '../test.json'
 import hmrJson from '../hmr.json'
 import { editFile, isBuild, isServe, page, untilUpdated } from '~utils'

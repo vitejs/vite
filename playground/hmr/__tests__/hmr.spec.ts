@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it, test } from 'vitest'
 import {
   browserLogs,
   editFile,

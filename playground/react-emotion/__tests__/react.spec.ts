@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { editFile, page, untilUpdated } from '~utils'
 
 test('should render', async () => {
