@@ -15,7 +15,6 @@ export default defineConfig({
     globalSetup: ['./playground/vitestGlobalSetup.ts'],
     testTimeout: timeout,
     hookTimeout: timeout,
-    globals: true,
     reporters: 'dot',
     onConsoleLog(log) {
       if (log.match(/experimental|jit engine|emitted file|tailwind/i))

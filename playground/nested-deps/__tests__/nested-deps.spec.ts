@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { page } from '~utils'
 
 test('handle nested package', async () => {

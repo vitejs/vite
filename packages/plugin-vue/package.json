@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-vue",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -42,7 +42,7 @@
     "@jridgewell/gen-mapping": "^0.3.2",
     "@jridgewell/trace-mapping": "^0.3.14",
     "debug": "^4.3.4",
-    "rollup": "^2.75.6",
+    "rollup": ">=2.75.6 <2.77.0 || ~2.77.0",
     "slash": "^4.0.0",
     "source-map": "^0.6.1",
     "vite": "workspace:*",

@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { build } from 'vite'
+import { describe, expect, test } from 'vitest'
 import type { OutputChunk, RollupOutput } from 'rollup'
 
 describe('vue component library', () => {
