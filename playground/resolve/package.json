@@ -16,6 +16,7 @@
     "resolve-browser-field": "link:./browser-field",
     "resolve-browser-module-field1": "link:./browser-module-field1",
     "resolve-browser-module-field2": "link:./browser-module-field2",
+    "resolve-browser-module-field3": "link:./browser-module-field3",
     "resolve-custom-condition": "link:./custom-condition",
     "resolve-custom-main-field": "link:./custom-main-field",
     "resolve-exports-env": "link:./exports-env",

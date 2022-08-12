@@ -847,6 +847,7 @@ importers:
       resolve-browser-field: link:./browser-field
       resolve-browser-module-field1: link:./browser-module-field1
       resolve-browser-module-field2: link:./browser-module-field2
+      resolve-browser-module-field3: link:./browser-module-field3
       resolve-custom-condition: link:./custom-condition
       resolve-custom-main-field: link:./custom-main-field
       resolve-exports-env: link:./exports-env
@@ -860,6 +861,7 @@ importers:
       resolve-browser-field: link:browser-field
       resolve-browser-module-field1: link:browser-module-field1
       resolve-browser-module-field2: link:browser-module-field2
+      resolve-browser-module-field3: link:browser-module-field3
       resolve-custom-condition: link:custom-condition
       resolve-custom-main-field: link:custom-main-field
       resolve-exports-env: link:exports-env
@@ -879,6 +881,9 @@ importers:
     specifiers: {}
 
   playground/resolve/browser-module-field2:
+    specifiers: {}
+
+  playground/resolve/browser-module-field3:
     specifiers: {}
 
   playground/resolve/custom-condition:
