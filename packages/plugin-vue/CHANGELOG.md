@@ -1,3 +1,8 @@
+## <small>3.0.3 (2022-08-12)</small>
+
+
+
+
 ## <small>3.0.2 (2022-08-11)</small>
 
 * chore: fix code typos (#9033) ([ed02861](https://github.com/vitejs/vite/commit/ed02861)), closes [#9033](https://github.com/vitejs/vite/issues/9033)
