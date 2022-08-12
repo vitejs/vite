@@ -204,6 +204,7 @@ export async function createPluginContainer(
   // parallel, ignores returns
   async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
     hookName: H,
+    context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
@@ -214,9 +215,9 @@ export async function createPluginContainer(
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
         parallelPromises.length = 0
-        await handler.call(args(plugin))
+        await handler.apply(context(plugin), args(plugin))
       } else {
-        parallelPromises.push(handler.call(args(plugin)))
+        parallelPromises.push(handler.apply(context(plugin), args(plugin)))
       }
     }
     await Promise.all(parallelPromises)
@@ -550,11 +551,8 @@ export async function createPluginContainer(
     async buildStart() {
       await hookParallel(
         'buildStart',
-        (plugin) =>
-          [
-            new Context(plugin),
-            container.options as NormalizedInputOptions
-          ] as any
+        (plugin) => new Context(plugin),
+        () => [container.options as NormalizedInputOptions]
       )
     },
 
@@ -701,8 +699,16 @@ export async function createPluginContainer(
     async close() {
       if (closed) return
       const ctx = new Context()
-      await hookParallel('buildEnd', () => [ctx] as any)
-      await hookParallel('closeBundle', () => [ctx] as any)
+      await hookParallel(
+        'buildEnd',
+        () => ctx,
+        () => []
+      )
+      await hookParallel(
+        'closeBundle',
+        () => ctx,
+        () => []
+      )
       closed = true
     }
   }
