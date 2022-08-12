@@ -1,3 +1,8 @@
+## <small>3.0.2 (2022-08-12)</small>
+
+
+
+
 ## <small>3.0.1 (2022-08-11)</small>
 
 * fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
