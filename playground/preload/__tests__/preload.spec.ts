@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { browserLogs, isBuild, page, viteTestUrl } from '~utils'
 
 test('should have no 404s', () => {
