@@ -59,6 +59,11 @@ describe('main', () => {
       expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
     })
 
+    test('safe fs fetch with query', async () => {
+      expect(await page.textContent('.safe-fs-fetch-query')).toBe(stringified)
+      expect(await page.textContent('.safe-fs-fetch-query-status')).toBe('200')
+    })
+
     test('safe fs fetch with special characters', async () => {
       expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
         stringified
