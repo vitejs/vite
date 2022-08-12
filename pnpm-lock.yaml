@@ -37,7 +37,7 @@ importers:
       prettier: 2.6.2
       prompts: ^2.4.2
       rimraf: ^3.0.2
-      rollup: ^2.59.0
+      rollup: '>=2.59.0 <2.78.0'
       semver: ^7.3.7
       simple-git-hooks: ^2.7.0
       sirv: ^2.0.2
@@ -804,7 +804,7 @@ importers:
       '@types/hash-sum': ^1.0.0
       debug: ^4.3.4
       hash-sum: ^2.0.0
-      rollup: ^2.59.0
+      rollup: '>=2.59.0 <2.78.0'
       slash: ^4.0.0
       source-map: ^0.6.1
       vue: ^3.2.33
@@ -895,7 +895,7 @@ importers:
       postcss-modules: ^4.3.1
       resolve: ^1.22.0
       resolve.exports: ^1.1.0
-      rollup: ^2.59.0
+      rollup: '>=2.59.0 <2.78.0'
       rollup-plugin-license: ^2.7.0
       sirv: ^2.0.2
       source-map-js: ^1.0.2
