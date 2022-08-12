@@ -82,6 +82,9 @@
 <h2>Resolve module field if browser field is likely UMD or CJS</h2>
 <p class="browser-module2">fail</p>
 
+<h2>Resolve module field if browser field is likely IIFE</h2>
+<p class="browser-module3">fail</p>
+
 <h2>Don't resolve to the `module` field if the importer is a `require` call</h2>
 <p class="require-pkg-with-module-field">fail</p>
 
@@ -224,6 +227,9 @@
 
   import browserModule2 from 'resolve-browser-module-field2'
   text('.browser-module2', browserModule2)
+
+  import browserModule3 from 'resolve-browser-module-field3'
+  text('.browser-module3', browserModule3)
 
   import { msg as requireButWithModuleFieldMsg } from 'require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)
