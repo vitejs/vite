@@ -137,8 +137,6 @@ type PluginContext = Omit<
   | 'load'
 >
 
-type ObjectHookNames = AsyncPluginHooks & ParallelPluginHooks
-
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
@@ -186,45 +184,18 @@ export async function createPluginContainer(
     }
   }
 
-  function getOrCreate<K, V>(map: Map<K, V>, key: K, init: () => V): V {
-    const existing = map.get(key)
-    if (existing) {
-      return existing
-    }
-    const value = init()
-    map.set(key, value)
-    return value
-  }
-
-  const sortedPlugins = new Map<AsyncPluginHooks, Plugin[]>()
-
-  function getSortedPlugins(
-    hookName: keyof Plugin,
-    validateHandler?: (
-      handler: unknown,
-      hookName: string,
-      plugin: Plugin
-    ) => void
-  ): Plugin[] {
-    return getOrCreate(sortedPlugins, hookName, () =>
-      getSortedValidatedPlugins(hookName, plugins, validateHandler)
-    )
-  }
-
-  function validateFunctionPluginHandler(
-    handler: unknown,
-    hookName: string,
-    plugin: Plugin
-  ) {
-    if (typeof handler !== 'function') {
-      // TODO:
-    }
+  const sortedPluginsCache = new Map<keyof Plugin, Plugin[]>()
+  function getSortedPlugins(hookName: keyof Plugin): Plugin[] {
+    if (sortedPluginsCache.has(hookName))
+      return sortedPluginsCache.get(hookName)!
+    const sorted = getSortedValidatedPlugins(hookName, plugins)
+    sortedPluginsCache.set(hookName, sorted)
+    return sorted
   }
 
   function getSortedValidatedPlugins(
     hookName: keyof Plugin,
-    plugins: readonly Plugin[],
-    validateHandler = validateFunctionPluginHandler
+    plugins: readonly Plugin[]
   ): Plugin[] {
     const pre: Plugin[] = []
     const normal: Plugin[] = []
@@ -233,7 +204,6 @@ export async function createPluginContainer(
       const hook = plugin[hookName]
       if (hook) {
         if (typeof hook === 'object') {
-          validateHandler(hook.handler, hookName, plugin)
           if (hook.order === 'pre') {
             pre.push(plugin)
             continue
@@ -242,8 +212,6 @@ export async function createPluginContainer(
             post.push(plugin)
             continue
           }
-        } else {
-          validateHandler(hook, hookName, plugin)
         }
         normal.push(plugin)
       }
@@ -263,7 +231,7 @@ export async function createPluginContainer(
   }
 
   // parallel, ignores returns
-  async function hookParallel<H extends ObjectHookNames>(
+  async function hookParallel<H extends AsyncPluginHooks & ParallelPluginHooks>(
     hookName: H,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>
   ): Promise<void> {
