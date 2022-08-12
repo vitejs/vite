@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
   DEFAULT_EXTENSIONS,
@@ -811,8 +812,6 @@ export async function tryOptimizedResolve(
   }
 }
 
-const importExportRE = /\b(?:import|export)\s/
-
 export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
@@ -862,7 +861,7 @@ export function resolvePackageEntry(
           )
           if (resolvedBrowserEntry) {
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-            if (importExportRE.test(content)) {
+            if (hasESMSyntax(content)) {
               // likely ESM, prefer browser
               entryPoint = browserEntry
             } else {
