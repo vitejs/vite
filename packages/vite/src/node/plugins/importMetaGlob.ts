@@ -485,7 +485,7 @@ export async function toAbsoluteGlob(
   if (isAbsolute(resolved)) return pre + resolved
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must starts with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
   )
 }
 
