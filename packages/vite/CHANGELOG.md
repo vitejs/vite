@@ -1,3 +1,12 @@
+## <small>2.9.15 (2022-08-12)</small>
+
+* fix: backport make `resolveConfig()` concurrent safe (#9224) (#9229) ([7f01a00](https://github.com/vitejs/vite/commit/7f01a00)), closes [#9224](https://github.com/vitejs/vite/issues/9224) [#9229](https://github.com/vitejs/vite/issues/9229)
+* fix: fs serve only edit pathname (fixes #9148) (#9654) ([521bb39](https://github.com/vitejs/vite/commit/521bb39)), closes [#9148](https://github.com/vitejs/vite/issues/9148) [#9654](https://github.com/vitejs/vite/issues/9654)
+* fix(ssr-manifest): check name before saving to ssrManifest (#9595) ([e361a80](https://github.com/vitejs/vite/commit/e361a80)), closes [#9595](https://github.com/vitejs/vite/issues/9595)
+* chore: narrow down rollup version (#9651) ([ed8d6a7](https://github.com/vitejs/vite/commit/ed8d6a7)), closes [#9651](https://github.com/vitejs/vite/issues/9651)
+
+
+
 ## <small>2.9.14 (2022-07-08)</small>
 
 * fix: backport #8979, re-encode url to prevent fs.allow bypass (fixes #8498) (#8990) ([adb61c5](https://github.com/vitejs/vite/commit/adb61c5)), closes [#8498](https://github.com/vitejs/vite/issues/8498) [#8990](https://github.com/vitejs/vite/issues/8990)
