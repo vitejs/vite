@@ -49,6 +49,7 @@ import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import { resolveChokidarOptions } from './watch'
 
 export interface BuildOptions {
   /**
@@ -504,23 +505,17 @@ async function doBuild(
         output.push(buildOutputOptions(outputs))
       }
 
-      const watcherOptions = config.build.watch
+      const resolvedChokidarOptions = resolveChokidarOptions(
+        config.build.watch.chokidar
+      )
+
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
-          ...watcherOptions,
-          chokidar: {
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar,
-            ignored: [
-              '**/node_modules/**',
-              '**/.git/**',
-              ...(watcherOptions?.chokidar?.ignored || [])
-            ]
-          }
+          ...config.build.watch,
+          chokidar: resolvedChokidarOptions
         }
       })
 
