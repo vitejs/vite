@@ -169,8 +169,6 @@ The error that appears in the Browser when the fallback happens can be ignored. 
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-When running Vite on Windows Subsystem for Linux (WSL) 2, if the project folder resides in a Windows filesystem, you'll need to set this option to `{ usePolling: true }`. This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739) with the Windows filesystem.
-
 The Vite server watcher skips `.git/` and `node_modules/` directories by default. If you want to watch a package inside `node_modules/`, you can pass a negated glob pattern to `server.watch.ignored`. That is:
 
 ```js
@@ -187,6 +185,19 @@ export default defineConfig({
   }
 })
 ```
+
+::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
+
+When running Vite on WSL2, file system watching does not work when a file is edited by Windows applications (non-WSL2 process). This is due to [a WSL2 limitation](https://github.com/microsoft/WSL/issues/4739). This also applies to running on Docker with a WSL2 backend.
+
+To fix it, you could either:
+
+- **Recommended**: Use WSL2 applications to edit your files.
+  - It is also recommended to move the project folder outside of a Windows filesystem. Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
+- Set `{ usePolling: true }`.
+  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar#performance).
+
+:::
 
 ## server.middlewareMode
 

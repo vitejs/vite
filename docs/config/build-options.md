@@ -193,3 +193,10 @@ Limit for chunk size warnings (in kbs).
 - **Default:** `null`
 
 Set to `{}` to enable rollup watcher. This is mostly used in cases that involve build-only plugins or integrations processes.
+
+::: warning Using Vite on Windows Subsystem for Linux (WSL) 2
+
+There are cases that file system watching does not work with WSL2.
+See [`server.watch`](./server-options.md#server-watch) for more details.
+
+:::
