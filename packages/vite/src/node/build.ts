@@ -312,7 +312,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
-    ] as Plugin[],
+    ],
     post: [
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
@@ -321,7 +321,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
       buildReporterPlugin(config),
       loadFallbackPlugin()
-    ] as Plugin[]
+    ]
   }
 }
 
@@ -386,11 +386,9 @@ async function doBuild(
   const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
-  const plugins = (
-    ssr
-      ? config.plugins.map((p) => injectSsrFlagToHooks(p as Plugin))
-      : config.plugins
-  ) as Plugin[]
+  const plugins = ssr
+    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
+    : config.plugins
 
   const userExternal = options.rollupOptions?.external
   let external = userExternal
