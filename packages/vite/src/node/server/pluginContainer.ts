@@ -77,6 +77,7 @@ import {
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
+import { createPluginHookUtils } from '../plugins'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph } from './moduleGraph'
 
@@ -140,17 +141,19 @@ type PluginContext = Omit<
 export let parser = acorn.Parser
 
 export async function createPluginContainer(
-  {
-    getSortedPluginHooks,
-    getSortedPlugins,
-    logger,
-    root,
-    build: { rollupOptions }
-  }: ResolvedConfig,
+  config: ResolvedConfig,
   moduleGraph?: ModuleGraph,
   watcher?: FSWatcher
 ): Promise<PluginContainer> {
   const isDebug = process.env.DEBUG
+  const {
+    plugins,
+    logger,
+    root,
+    build: { rollupOptions }
+  } = config
+  const { getSortedPluginHooks, getSortedPlugins } =
+    createPluginHookUtils(plugins)
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
