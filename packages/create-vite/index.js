@@ -355,6 +355,9 @@ function emptyDir(dir) {
     return
   }
   for (const file of fs.readdirSync(dir)) {
+    if (file === '.git') {
+      continue
+    }
     fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
 }
