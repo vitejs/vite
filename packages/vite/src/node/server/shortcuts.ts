@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'picocolors'
 import type { ViteDevServer } from '..'
 import { openBrowser, resolveBrowserUrl } from './openBrowser'
 
@@ -74,7 +74,7 @@ export const SHORTCUTS: Shortcut[] = [
        */
       config.server.hmr = config.server.hmr !== true
       config.logger.info(
-        chalk.cyanBright(`hmr ${config.server.hmr ? `enabled` : `disabled`}`)
+        colors.cyan(`hmr ${config.server.hmr ? `enabled` : `disabled`}`)
       )
     }
   }
