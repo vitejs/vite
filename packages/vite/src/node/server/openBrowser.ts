@@ -41,9 +41,9 @@ export function openBrowser(
   return false
 }
 
-export function resolveBrowserUrl(server: ViteDevServer): string {
+export async function resolveBrowserUrl(server: ViteDevServer): Promise<string> {
   const options = server.config.server
-  const hostname = resolveHostname(options.host)
+  const hostname = await resolveHostname(options.host)
   const port = options.port || 3000
   const protocol = options.https ? 'https' : 'http'
   const path =

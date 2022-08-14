@@ -35,7 +35,7 @@ export function bindShortcuts(server: ViteDevServer): void {
 export interface Shortcut {
   key: string
   name: string
-  action(server: ViteDevServer): void
+  action(server: ViteDevServer): void | Promise<void>
 }
 
 export const SHORTCUTS: Shortcut[] = [
@@ -49,8 +49,9 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: 'o',
     name: 'open browser',
-    action(server: ViteDevServer): void {
-      openBrowser(resolveBrowserUrl(server), true, server.config.logger)
+    async action(server: ViteDevServer): Promise<void> {
+      const url = await resolveBrowserUrl(server)
+      openBrowser(url, true, server.config.logger)
     }
   },
   {
