@@ -601,7 +601,7 @@ export async function resolveConfig(
   const BASE_URL = resolvedBase
 
   // resolve worker
-  const workerConfig = mergeConfig({}, config)
+  let workerConfig = mergeConfig({}, config)
   const [workerPrePlugins, workerNormalPlugins, workerPostPlugins] =
     sortUserPlugins(rawWorkerUserPlugins)
 
@@ -617,7 +617,7 @@ export async function resolveConfig(
     if (handler) {
       const res = await handler(workerConfig, configEnv)
       if (res) {
-        config = mergeConfig(config, res)
+        workerConfig = mergeConfig(workerConfig, res)
       }
     }
   }
