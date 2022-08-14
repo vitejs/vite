@@ -386,9 +386,9 @@ async function doBuild(
   const outDir = resolve(options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
-  const plugins = ssr
-    ? config.plugins.map((p) => injectSsrFlagToHooks(p))
-    : config.plugins
+  const plugins = (
+    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+  ) as Plugin[]
 
   const userExternal = options.rollupOptions?.external
   let external = userExternal
