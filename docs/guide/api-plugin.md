@@ -441,14 +441,14 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
 ## Plugin Ordering
 
-A Vite plugin can additionally specify an `enforce` property (similar to webpack loaders) to adjust its application order. The value of `enforce` can be either `"pre"` or `"post"`. The resolved plugins will be in the following order:
+A Vite plugin can additionally specify an `order` property (similar to webpack loaders) to adjust its application order. The value of `order` can be either `"pre"` or `"post"`. The resolved plugins will be in the following order:
 
 - Alias
-- User plugins with `enforce: 'pre'`
+- User plugins with `order: 'pre'`
 - Vite core plugins
-- User plugins without enforce value
+- User plugins without `order` value
 - Vite build plugins
-- User plugins with `enforce: 'post'`
+- User plugins with `order: 'post'`
 - Vite post build plugins (minify, manifest, reporting)
 
 ## Conditional Application
@@ -482,7 +482,7 @@ In general, as long as a Rollup plugin fits the following criteria then it shoul
 - It doesn't use the [`moduleParsed`](https://rollupjs.org/guide/en/#moduleparsed) hook.
 - It doesn't have strong coupling between bundle-phase hooks and output-phase hooks.
 
-If a Rollup plugin only makes sense for the build phase, then it can be specified under `build.rollupOptions.plugins` instead. It will work the same as a Vite plugin with `enforce: 'post'` and `apply: 'build'`.
+If a Rollup plugin only makes sense for the build phase, then it can be specified under `build.rollupOptions.plugins` instead. It will work the same as a Vite plugin with `order: 'post'` and `apply: 'build'`.
 
 You can also augment an existing Rollup plugin with Vite-only properties:
 
@@ -495,7 +495,7 @@ export default defineConfig({
   plugins: [
     {
       ...example(),
-      enforce: 'post',
+      order: 'post',
       apply: 'build'
     }
   ]

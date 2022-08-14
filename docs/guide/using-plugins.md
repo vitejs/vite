@@ -40,7 +40,7 @@ You can also find plugins that follow the [recommended conventions](./api-plugin
 
 ## Enforcing Plugin Ordering
 
-For compatibility with some Rollup plugins, it may be needed to enforce the order of the plugin or only apply at build time. This should be an implementation detail for Vite plugins. You can enforce the position of a plugin with the `enforce` modifier:
+For compatibility with some Rollup plugins, it may be needed to enforce the order of the plugin or only apply at build time. This should be an implementation detail for Vite plugins. You can change the position of a plugin with the `order` modifier:
 
 - `pre`: invoke plugin before Vite core plugins
 - default: invoke plugin after Vite core plugins
@@ -55,13 +55,13 @@ export default defineConfig({
   plugins: [
     {
       ...image(),
-      enforce: 'pre'
+      order: 'pre'
     }
   ]
 })
 ```
 
-Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `enforce` label and usage instructions for popular plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
+Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed information, and look out for the `order` label and usage instructions for popular plugins in the [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) compatibility listing.
 
 ## Conditional Application
 

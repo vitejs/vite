@@ -67,7 +67,7 @@ export default defineConfig(({ command, ssrBuild }) => ({
       const virtualId = '\0virtual:ssr-vue-built-url'
       return {
         name: 'built-url',
-        enforce: 'post',
+        order: 'post',
         configResolved(_config) {
           config = _config
         },

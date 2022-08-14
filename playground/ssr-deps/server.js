@@ -49,7 +49,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
     plugins: [
       {
         name: 'dep-virtual',
-        enforce: 'pre',
+        order: 'pre',
         resolveId(id) {
           if (id === 'pkg-exports/virtual') {
             return 'pkg-exports/virtual'

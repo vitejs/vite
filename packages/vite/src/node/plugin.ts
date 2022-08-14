@@ -39,16 +39,20 @@ import type { ConfigEnv, ResolvedConfig } from './'
  */
 export interface Plugin extends RollupPlugin {
   /**
-   * Enforce plugin invocation tier similar to webpack loaders.
+   * Change plugin invocation order similar to webpack loaders.
    *
    * Plugin invocation order:
    * - alias resolution
-   * - `enforce: 'pre'` plugins
+   * - `order: 'pre'` plugins
    * - vite core plugins
    * - normal plugins
    * - vite build plugins
-   * - `enforce: 'post'` plugins
+   * - `order: 'post'` plugins
    * - vite build post plugins
+   */
+  order?: 'pre' | 'post' | null
+  /**
+   * @deprecated renamed to `order`
    */
   enforce?: 'pre' | 'post'
   /**

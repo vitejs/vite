@@ -3,7 +3,6 @@ const vite = require('vite')
 
 module.exports = vite.defineConfig({
   base: '/es/',
-  enforce: 'pre',
   worker: {
     format: 'es',
     plugins: [vueJsx()],
@@ -28,7 +27,6 @@ module.exports = vite.defineConfig({
   plugins: [
     {
       name: 'resolve-format-es',
-
       transform(code, id) {
         if (id.includes('main.js')) {
           return code.replace(

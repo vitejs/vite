@@ -79,7 +79,7 @@ module.exports = {
     {
       name: 'polyfill-named-fs-build',
       apply: 'build',
-      enforce: 'pre',
+      order: 'pre',
       load(id) {
         if (id === '__vite-browser-external') {
           return `export default {}; export function readFileSync() {}`

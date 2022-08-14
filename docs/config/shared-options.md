@@ -297,7 +297,7 @@ Specify additional [picomatch patterns](https://github.com/micromatch/picomatch#
 
 - They will be excluded from the plugin transform pipeline when referenced from HTML or directly requested over `fetch` or XHR.
 
-- Importing them from JS will return their resolved URL string (this can be overwritten if you have a `enforce: 'pre'` plugin to handle the asset type differently).
+- Importing them from JS will return their resolved URL string (this can be overwritten if you have a `order: 'pre'` plugin to handle the asset type differently).
 
 The built-in asset type list can be found [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts).
 
