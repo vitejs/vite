@@ -51,7 +51,7 @@ importers:
       prettier: 2.7.1
       prompts: ^2.4.2
       rimraf: ^3.0.2
-      rollup: ^2.78.0
+      rollup: ~2.78.0
       semver: ^7.3.7
       simple-git-hooks: ^2.8.0
       tslib: ^2.4.0
@@ -171,7 +171,7 @@ importers:
       '@jridgewell/gen-mapping': ^0.3.2
       '@jridgewell/trace-mapping': ^0.3.14
       debug: ^4.3.4
-      rollup: ^2.78.0
+      rollup: ~2.78.0
       slash: ^4.0.0
       source-map: ^0.6.1
       vite: workspace:*
