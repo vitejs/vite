@@ -838,7 +838,7 @@ export function sortUserPlugins(
 
   if (plugins) {
     plugins.flat().forEach((p) => {
-      const order = p.order || p.enforce
+      const order = p.order ?? p.enforce
       if (order === 'pre') prePlugins.push(p)
       else if (order === 'post') postPlugins.push(p)
       else normalPlugins.push(p)
