@@ -59,7 +59,6 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.14.47",
-    "parse5": "^7.0.0",
     "postcss": "^8.4.16",
     "resolve": "^1.22.1",
     "rollup": ">=2.75.6 <2.77.0 || ~2.77.0"
@@ -103,6 +102,7 @@
     "mrmime": "^1.0.1",
     "okie": "^1.0.1",
     "open": "^8.4.0",
+    "parse5": "^7.0.0",
     "periscopic": "^3.0.4",
     "picocolors": "^1.0.0",
     "postcss-import": "^14.1.0",
