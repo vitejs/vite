@@ -39,7 +39,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             const code = chunk.code
             let imports: ImportSpecifier[]
             try {
-              imports = parseImports(code)[0].filter((i) => i.d > -1)
+              imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
             } catch (e: any) {
               this.error(e, e.idx)
             }
