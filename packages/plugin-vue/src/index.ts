@@ -186,7 +186,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         const descriptor = getDescriptor(filename, options)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
-          // handle <scrip> + <script setup> merge via compileScript()
+          // handle <script> + <script setup> merge via compileScript()
           block = getResolvedScript(descriptor, ssr)
         } else if (query.type === 'template') {
           block = descriptor.template!
