@@ -117,6 +117,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
     name: 'vite:react-babel',
     enforce: 'pre',
     config(_, { mode }) {
+      // Copied from https://github.com/vitejs/vite/blob/4e9bdd4fb3654a9d43917e1cb682d3d2bad25115/packages/vite/src/node/config.ts#L488-L490
       const isProduction =
         (process.env.NODE_ENV || process.env.VITE_USER_NODE_ENV || mode) ===
         'production'
