@@ -59,6 +59,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.14.47",
+    "parse5": "^7.0.0",
     "postcss": "^8.4.16",
     "resolve": "^1.22.1",
     "rollup": ">=2.75.6 <2.77.0 || ~2.77.0"
@@ -78,7 +79,6 @@
     "@rollup/plugin-node-resolve": "13.3.0",
     "@rollup/plugin-typescript": "^8.3.4",
     "@rollup/pluginutils": "^4.2.1",
-    "@vue/compiler-dom": "^3.2.37",
     "acorn": "^8.8.0",
     "cac": "^6.7.12",
     "chokidar": "^3.5.3",
