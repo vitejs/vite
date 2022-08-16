@@ -3,6 +3,7 @@ import { parse as parseUrl } from 'node:url'
 import fs, { promises as fsp } from 'node:fs'
 import * as mrmime from 'mrmime'
 import type {
+  NormalizedOutputOptions,
   OutputOptions,
   PluginContext,
   PreRenderedAsset,
@@ -45,6 +46,7 @@ export function renderAssetUrl(
   ctx: PluginContext,
   config: ResolvedConfig,
   chunk: RenderedChunk,
+  opts: NormalizedOutputOptions,
   code: string,
   assetFileName: string,
   hostType: 'js' | 'css' | 'html',
@@ -83,6 +85,7 @@ export function renderAssetUrl(
       assetFileName,
       hostType,
       config,
+      opts.format,
       toAssetsRelative
     )
     const replacementString =
@@ -107,6 +110,7 @@ export function renderAssetUrl(
       assetFileName,
       hostType,
       config,
+      opts.format,
       toPublicAssetsRelative
         ? (filename, hostType) =>
             toPublicAssetsRelative(publicUrl, filename, hostType)
@@ -178,8 +182,16 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code, chunk) {
-      const s = renderAssetUrl(this, config, chunk, code, chunk.fileName, 'js')
+    renderChunk(code, chunk, opts) {
+      const s = renderAssetUrl(
+        this,
+        config,
+        chunk,
+        opts,
+        code,
+        chunk.fileName,
+        'js'
+      )
 
       if (s) {
         return {

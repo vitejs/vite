@@ -495,6 +495,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             this,
             config,
             chunk,
+            opts,
             chunkCSS,
             cssAssetName,
             'css',
