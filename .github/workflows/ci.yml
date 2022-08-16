@@ -6,6 +6,8 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
   # install playwright binary manually (because pnpm only runs install script once)
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  # Vitest auto retry on flaky segfault
+  VITEST_SEGFAULT_RETRY: 3
 
 on:
   push:
