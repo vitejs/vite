@@ -340,9 +340,7 @@ export async function createServer(
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, code, {
-        json: { stringify: server.config.json?.stringify }
-      })
+      return ssrTransform(code, inMap, url, code, server.config)
     },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
