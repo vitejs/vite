@@ -39,6 +39,9 @@ export function proxyMiddleware(
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
+    if (!opts) {
+      return
+    }
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
     }
