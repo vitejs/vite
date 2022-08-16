@@ -37,8 +37,8 @@ export function proxyMiddleware(
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
-  for(let context in options) {
-    if(!options[context]) continue
+ for (let context in options) {
+    if (!options[context]) continue
     let opts = options[context]
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
