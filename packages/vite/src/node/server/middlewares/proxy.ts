@@ -37,7 +37,8 @@ export function proxyMiddleware(
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
-  Object.keys(options).forEach((context) => {
+  for(let context in options) {
+    if(!options[context]) continue
     let opts = options[context]
     if (typeof opts === 'string') {
       opts = { target: opts, changeOrigin: true } as ProxyOptions
@@ -76,7 +77,7 @@ export function proxyMiddleware(
     }
     // clone before saving because http-proxy mutates the options
     proxies[context] = [proxy, { ...opts }]
-  })
+  }
 
   if (httpServer) {
     httpServer.on('upgrade', (req, socket, head) => {
