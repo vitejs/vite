@@ -10,6 +10,10 @@ export {
   splitVendorChunkPlugin,
   splitVendorChunk
 } from './plugins/splitVendorChunk'
+export {
+  assetFileNamesToFileName,
+  resolveAssetFileNames
+} from './plugins/asset'
 export { normalizePath, mergeConfig, mergeAlias, createFilter } from './utils'
 export { send } from './server/send'
 export { createLogger } from './logger'
