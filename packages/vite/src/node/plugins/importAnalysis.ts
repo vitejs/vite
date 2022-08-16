@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type { ExportSpecifier, ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
@@ -189,7 +189,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
-      let exports: readonly string[] = []
+      let exports: readonly ExportSpecifier[] = []
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
@@ -676,7 +676,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           !isSelfAccepting &&
           isPartiallySelfAccepting &&
           acceptedExports.size >= exports.length &&
-          exports.every((name) => acceptedExports.has(name))
+          exports.every((e) => acceptedExports.has(e.n))
         ) {
           isSelfAccepting = true
         }
