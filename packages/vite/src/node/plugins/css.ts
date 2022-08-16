@@ -467,9 +467,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         relativeFromPage: boolean = false
       ): string => {
         const relative = config.base === './' || config.base === ''
-        const cssAssetDirname = relative
-          ? getCssAssetDirname(cssAssetName)
-          : undefined
+        const encodedPublicUrls = encodePublicUrlsInCSS(config)
+        const cssAssetDirname =
+          encodedPublicUrls || relative
+            ? getCssAssetDirname(cssAssetName)
+            : undefined
 
         const toRelative = (filename: string) => {
           // relative base + extracted CSS
