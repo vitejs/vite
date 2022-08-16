@@ -126,7 +126,7 @@ function cleanUrl(pathname: string): string {
 }
 
 let isFirstUpdate = true
-const invalidLinkTags = new Set<HTMLLinkElement>()
+const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -169,7 +169,7 @@ async function handleMessage(payload: HMRPayload) {
             document.querySelectorAll<HTMLLinkElement>('link')
           ).find(
             (e) =>
-              !invalidLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
+              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
           )
           if (el) {
             const newPath = `${base}${searchUrl.slice(1)}${
@@ -183,13 +183,10 @@ async function handleMessage(payload: HMRPayload) {
             // directly, as the new stylesheet has not yet been loaded.
             const newLinkTag = el.cloneNode() as HTMLLinkElement
             newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => {
-              el.remove()
-              invalidLinkTags.delete(el)
-            }
+            const removeOldEl = () => el.remove()
             newLinkTag.addEventListener('load', removeOldEl)
             newLinkTag.addEventListener('error', removeOldEl)
-            invalidLinkTags.add(el)
+            outdatedLinkTags.add(el)
             el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
