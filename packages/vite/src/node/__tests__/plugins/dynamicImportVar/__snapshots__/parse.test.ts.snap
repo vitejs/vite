@@ -8,6 +8,10 @@ exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelp
 
 exports[`parse positives > basic 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;
 
+exports[`parse positives > with ../ and itself 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"../dynamicImportVar/*.js\\")), \`./\${name}.js\`)"`;
+
+exports[`parse positives > with multi ../ and itself 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"../../plugins/dynamicImportVar/*.js\\")), \`./\${name}.js\`)"`;
+
 exports[`parse positives > with query raw 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\", {\\"as\\":\\"raw\\",\\"import\\":\\"*\\"})), \`./mods/\${base}.js\`)"`;
 
 exports[`parse positives > with query url 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob(\\"./mods/*.js\\")), \`./mods/\${base}.js\`)"`;

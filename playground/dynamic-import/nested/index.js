@@ -102,4 +102,13 @@ import(`@/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars-alias', mod.hi())
 })
 
+base = 'self'
+import(`../nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-self', mod.self)
+})
+
+import(`../nested/nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-nested-self', mod.self)
+})
+
 console.log('index.js')
