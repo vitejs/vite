@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { resolve as _resolveExports } from 'resolve.exports'
+import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
   DEFAULT_EXTENSIONS,
@@ -113,11 +114,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
       if (id.startsWith(browserExternalId)) {
         return id
-      }
-
-      // fast path for commonjs proxy modules
-      if (/\?commonjs/.test(id) || id === 'commonjsHelpers.js') {
-        return
       }
 
       const targetWeb = !ssr || ssrTarget === 'webworker'
@@ -657,18 +653,22 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
-    // dont external symlink packages
+    // don't external symlink packages
     if (!allowLinkedExternal && !resolved.id.includes('node_modules')) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
+    // don't external non-js imports
+    if (
+      resolvedExt &&
+      resolvedExt !== '.js' &&
+      resolvedExt !== '.mjs' &&
+      resolvedExt !== '.cjs'
+    ) {
+      return resolved
+    }
     let resolvedId = id
     if (isDeepImport) {
-      // check ext before externalizing - only externalize
-      // extension-less imports and explicit .js imports
-      if (resolvedExt && !resolved.id.match(/(.js|.mjs|.cjs)$/)) {
-        return resolved
-      }
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
         resolvedId += resolvedExt
       }
@@ -851,9 +851,9 @@ export function resolvePackageEntry(
         ) {
           // if both are present, we may have a problem: some package points both
           // to ESM, with "module" targeting Node.js, while some packages points
-          // "module" to browser ESM and "browser" to UMD.
+          // "module" to browser ESM and "browser" to UMD/IIFE.
           // the heuristics here is to actually read the browser entry when
-          // possible and check for hints of UMD. If it is UMD, prefer "module"
+          // possible and check for hints of ESM. If it is not ESM, prefer "module"
           // instead; Otherwise, assume it's ESM and use it.
           const resolvedBrowserEntry = tryFsResolve(
             path.join(dir, browserEntry),
@@ -861,12 +861,11 @@ export function resolvePackageEntry(
           )
           if (resolvedBrowserEntry) {
             const content = fs.readFileSync(resolvedBrowserEntry, 'utf-8')
-            if (
-              (/typeof exports\s*==/.test(content) &&
-                /typeof module\s*==/.test(content)) ||
-              /module\.exports\s*=/.test(content)
-            ) {
-              // likely UMD or CJS(!!! e.g. firebase 7.x), prefer module
+            if (hasESMSyntax(content)) {
+              // likely ESM, prefer browser
+              entryPoint = browserEntry
+            } else {
+              // non-ESM, UMD or IIFE or CJS(!!! e.g. firebase 7.x), prefer module
               entryPoint = data.module
             }
           }

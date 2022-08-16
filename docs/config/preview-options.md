@@ -65,7 +65,7 @@ Automatically open the app in the browser on server start. When the value is a s
 - **Type:** `Record<string, string | ProxyOptions>`
 - **Default:** [`server.proxy`](./server-options#server-proxy)
 
-Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+Configure custom proxy rules for the preview server. Expects an object of `{ key: options }` pairs. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
 
 Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options [here](https://github.com/http-party/node-http-proxy#options).
 
@@ -74,4 +74,4 @@ Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options
 - **Type:** `boolean | CorsOptions`
 - **Default:** [`server.cors`](./server-options#server-cors)
 
-Configure CORS for the dev server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.
+Configure CORS for the preview server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors) to fine tune the behavior or `false` to disable.

@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 
-import readline from 'readline'
+import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'

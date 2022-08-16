@@ -1,4 +1,14 @@
-import { addFile, editFile, isBuild, page, removeFile, withRetry } from '~utils'
+import { expect, test } from 'vitest'
+import {
+  addFile,
+  editFile,
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  removeFile,
+  withRetry
+} from '~utils'
 
 const filteredResult = {
   './alias.js': {
@@ -158,3 +168,16 @@ if (!isBuild) {
     })
   })
 }
+
+test('tree-shake eager css', async () => {
+  expect(await getColor('.tree-shake-eager-css')).toBe('orange')
+  expect(await getColor('.no-tree-shake-eager-css')).toBe('orange')
+  expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
+    '.no-tree-shake-eager-css'
+  )
+
+  if (isBuild) {
+    const content = findAssetFile(/index\.\w+\.js/)
+    expect(content).not.toMatch('.tree-shake-eager-css')
+  }
+})

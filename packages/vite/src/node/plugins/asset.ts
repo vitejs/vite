@@ -180,6 +180,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     renderChunk(code, chunk) {
       const s = renderAssetUrl(this, config, chunk, code, chunk.fileName, 'js')
+
       if (s) {
         return {
           code: s.toString(),

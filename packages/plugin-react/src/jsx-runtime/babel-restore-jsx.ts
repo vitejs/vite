@@ -4,6 +4,10 @@
  */
 import type * as babel from '@babel/core'
 
+interface PluginOptions {
+  reactAlias: string
+}
+
 /**
  * Visitor factory for babel, converting React.createElement(...) to <jsx ...>...</jsx>
  *
@@ -17,7 +21,10 @@ import type * as babel from '@babel/core'
  *
  * Any of those arguments might also be missing (undefined) and/or invalid.
  */
-export default function ({ types: t }: typeof babel): babel.PluginObj {
+export default function (
+  { types: t }: typeof babel,
+  { reactAlias = 'React' }: PluginOptions
+): babel.PluginObj {
   /**
    * Get a `JSXElement` from a `CallExpression`.
    * Returns `null` if this impossible.
@@ -48,7 +55,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     if (
       t.isJSXMemberExpression(name) &&
       t.isJSXIdentifier(name.object) &&
-      name.object.name === 'React' &&
+      name.object.name === reactAlias &&
       name.property.name === 'Fragment'
     ) {
       return t.jsxFragment(
@@ -182,7 +189,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
   const isReactCreateElement = (node: any) =>
     t.isCallExpression(node) &&
     t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.object, { name: 'React' }) &&
+    t.isIdentifier(node.callee.object, { name: reactAlias }) &&
     t.isIdentifier(node.callee.property, { name: 'createElement' }) &&
     !node.callee.computed
 

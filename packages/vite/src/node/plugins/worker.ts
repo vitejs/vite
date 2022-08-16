@@ -308,7 +308,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
@@ -334,7 +334,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             'asset',
             chunk.fileName,
             'js',
-            config
+            config,
+            outputOptions.format
           )
           const replacementString =
             typeof replacement === 'string'
@@ -349,21 +350,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           )
         }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
-        }
-      }
-      if (!isWorker) {
-        const workerMap = workerCache.get(config)!
-        workerMap.assets.forEach((asset) => {
-          this.emitFile(asset)
-          workerMap.assets.delete(asset.fileName!)
-        })
       }
       return result()
+    },
+
+    generateBundle(opts) {
+      // @ts-ignore asset emits are skipped in legacy bundle
+      if (opts.__vite_skip_asset_emit__ || isWorker) {
+        return
+      }
+      const workerMap = workerCache.get(config)!
+      workerMap.assets.forEach((asset) => {
+        this.emitFile(asset)
+        workerMap.assets.delete(asset.fileName!)
+      })
     }
   }
 }

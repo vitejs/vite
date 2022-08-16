@@ -6,6 +6,7 @@ import type {
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'types/connect'
+import colors from 'picocolors'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
@@ -95,16 +96,16 @@ export async function resolveHttpServer(
   httpsOptions?: HttpsServerOptions
 ): Promise<HttpServer> {
   if (!httpsOptions) {
-    const { createServer } = await import('http')
+    const { createServer } = await import('node:http')
     return createServer(app)
   }
 
   // #484 fallback to http1 when proxy is needed.
   if (proxy) {
-    const { createServer } = await import('https')
+    const { createServer } = await import('node:https')
     return createServer(httpsOptions, app)
   } else {
-    const { createSecureServer } = await import('http2')
+    const { createSecureServer } = await import('node:http2')
     return createSecureServer(
       {
         // Manually increase the session memory to prevent 502 ENHANCE_YOUR_CALM
@@ -181,5 +182,21 @@ export async function httpServerStart(
       httpServer.removeListener('error', onError)
       resolve(port)
     })
+  })
+}
+
+export function setClientErrorHandler(
+  server: HttpServer,
+  logger: Logger
+): void {
+  server.on('clientError', (err, socket) => {
+    if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
+      logger.warn(
+        colors.yellow(
+          'Server responded with status code 431. ' +
+            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.'
+        )
+      )
+    }
   })
 }

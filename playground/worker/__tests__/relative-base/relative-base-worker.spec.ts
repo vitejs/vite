@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { describe, expect, test } from 'vitest'
 import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
@@ -14,13 +15,19 @@ test('normal', async () => {
     'worker bundle with plugin success!',
     true
   )
+  await untilUpdated(
+    () => page.textContent('.asset-url'),
+    isBuild ? '/other-assets/vite' : '/vite.svg',
+    true
+  )
 })
 
 test('TS output', async () => {
   await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
 })
 
-test('inlined', async () => {
+// TODO: inline worker should inline assets
+test.skip('inlined', async () => {
   await untilUpdated(() => page.textContent('.pong-inline'), 'pong', true)
 })
 
@@ -65,7 +72,7 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // worker should have all imports resolved and no exports
-    expect(workerContent).not.toMatch(`import`)
+    expect(workerContent).not.toMatch(/import(?!\.)/) // accept import.meta.url
     expect(workerContent).not.toMatch(`export`)
     // chunk
     expect(content).toMatch(`new Worker(""+new URL("../worker-entries/`)
