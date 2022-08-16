@@ -2,7 +2,12 @@ import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
 import fs, { promises as fsp } from 'node:fs'
 import * as mrmime from 'mrmime'
-import type { OutputOptions, PluginContext, PreRenderedAsset } from 'rollup'
+import type {
+  OutputOptions,
+  PluginContext,
+  PreRenderedAsset,
+  RenderedChunk
+} from 'rollup'
 import MagicString from 'magic-string'
 import { toOutputFilePathInString } from '../build'
 import type { Plugin } from '../plugin'
@@ -34,6 +39,89 @@ export function registerCustomMime(): void {
   mrmime.mimes['aac'] = 'audio/aac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
+}
+
+export function renderAssetUrl(
+  ctx: PluginContext,
+  code: string,
+  assetFileName: string,
+  chunk: RenderedChunk,
+  config: ResolvedConfig,
+  hostType: 'js' | 'css' | 'html',
+  toAssetsRelative?: (
+    filename: string,
+    hostType: string
+  ) => string | { runtime: string },
+  toPublicAssetsRelative?: (
+    publicUrl: string,
+    filename: string,
+    hostType: string
+  ) => string | { runtime: string }
+): MagicString | undefined {
+  let match: RegExpExecArray | null
+  let s: MagicString | undefined
+
+  // Urls added with JS using e.g.
+  // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
+
+  // Urls added in CSS that is imported in JS end up like
+  // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
+
+  // In both cases, the wrapping should already be fine
+
+  while ((match = assetUrlRE.exec(code))) {
+    s = s || (s = new MagicString(code))
+    const [full, hash, postfix = ''] = match
+    // some internal plugins may still need to emit chunks (e.g. worker) so
+    // fallback to this.getFileName for that. TODO: remove, not needed
+    const file = getAssetFilename(hash, config) || ctx.getFileName(hash)
+    chunk.viteMetadata.importedAssets.add(cleanUrl(file))
+    const filename = file + postfix
+    const replacement = toOutputFilePathInString(
+      filename,
+      'asset',
+      assetFileName,
+      hostType,
+      config,
+      toAssetsRelative
+    )
+    const replacementString =
+      typeof replacement === 'string'
+        ? JSON.stringify(replacement).slice(1, -1)
+        : `"+${replacement.runtime}+"`
+    s.overwrite(match.index, match.index + full.length, replacementString, {
+      contentOnly: true
+    })
+  }
+
+  // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
+
+  const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+  while ((match = publicAssetUrlRE.exec(code))) {
+    s = s || (s = new MagicString(code))
+    const [full, hash] = match
+    const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+    const replacement = toOutputFilePathInString(
+      publicUrl,
+      'public',
+      assetFileName,
+      hostType,
+      config,
+      toPublicAssetsRelative
+        ? (filename, hostType) =>
+            toPublicAssetsRelative(publicUrl, filename, hostType)
+        : undefined
+    )
+    const replacementString =
+      typeof replacement === 'string'
+        ? JSON.stringify(replacement).slice(1, -1)
+        : `"+${replacement.runtime}+"`
+    s.overwrite(match.index, match.index + full.length, replacementString, {
+      contentOnly: true
+    })
+  }
+
+  return s
 }
 
 /**
@@ -91,64 +179,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      let match: RegExpExecArray | null
-      let s: MagicString | undefined
-
-      // Urls added with JS using e.g.
-      // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
-
-      // Urls added in CSS that is imported in JS end up like
-      // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
-
-      // In both cases, the wrapping should already be fine
-
-      while ((match = assetUrlRE.exec(code))) {
-        s = s || (s = new MagicString(code))
-        const [full, hash, postfix = ''] = match
-        // some internal plugins may still need to emit chunks (e.g. worker) so
-        // fallback to this.getFileName for that. TODO: remove, not needed
-        const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const filename = file + postfix
-        const replacement = toOutputFilePathInString(
-          filename,
-          'asset',
-          chunk.fileName,
-          'js',
-          config
-        )
-        const replacementString =
-          typeof replacement === 'string'
-            ? JSON.stringify(replacement).slice(1, -1)
-            : `"+${replacement.runtime}+"`
-        s.overwrite(match.index, match.index + full.length, replacementString, {
-          contentOnly: true
-        })
-      }
-
-      // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
-
-      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
-      while ((match = publicAssetUrlRE.exec(code))) {
-        s = s || (s = new MagicString(code))
-        const [full, hash] = match
-        const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-        const replacement = toOutputFilePathInString(
-          publicUrl,
-          'public',
-          chunk.fileName,
-          'js',
-          config
-        )
-        const replacementString =
-          typeof replacement === 'string'
-            ? JSON.stringify(replacement).slice(1, -1)
-            : `"+${replacement.runtime}+"`
-        s.overwrite(match.index, match.index + full.length, replacementString, {
-          contentOnly: true
-        })
-      }
-
+      const s = renderAssetUrl(this, code, chunk.fileName, chunk, config, 'js')
       if (s) {
         return {
           code: s.toString(),
