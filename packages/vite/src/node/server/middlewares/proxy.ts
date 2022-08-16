@@ -39,6 +39,7 @@ export function proxyMiddleware(
 
   Object.keys(options).forEach((context) => {
     let opts = options[context]
+    // When opts is undefined, return
     if (!opts) {
       return
     }
