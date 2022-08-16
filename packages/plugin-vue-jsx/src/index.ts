@@ -38,6 +38,9 @@ function vueJsxPlugin(options: Options = {}): Plugin {
   let needHmr = false
   let needSourceMap = true
 
+  const { include, exclude, babelPlugins = [], ...babelPluginOptions } = options
+  const filter = createFilter(include || /\.[jt]sx$/, exclude)
+
   return {
     name: 'vite:vue-jsx',
 
@@ -75,14 +78,6 @@ function vueJsxPlugin(options: Options = {}): Plugin {
 
     async transform(code, id, opt) {
       const ssr = opt?.ssr === true
-      const {
-        include,
-        exclude,
-        babelPlugins = [],
-        ...babelPluginOptions
-      } = options
-
-      const filter = createFilter(include || /\.[jt]sx$/, exclude)
       const [filepath] = id.split('?')
 
       // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
