@@ -259,9 +259,13 @@ async function loadAndTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url, originalCode, {
-        json: { stringify: !!server.config.json?.stringify }
-      })
+    ? await ssrTransform(
+        code,
+        map as SourceMap,
+        url,
+        originalCode,
+        server.config
+      )
     : ({
         code,
         map,
