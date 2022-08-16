@@ -64,7 +64,7 @@ export interface ImportGlobFunction {
   /**
    * Import a list of files with a glob pattern.
    *
-   * Overload: 3 Module generic provided, infer the type from `eager: true`
+   * Overload 3: Module generic provided, infer the type from `eager: true`
    */
   <M>(
     glob: string | string[],
