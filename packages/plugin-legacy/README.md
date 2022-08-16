@@ -124,6 +124,25 @@ The legacy plugin offers a way to use native `import()` in the modern build whil
 - Modern bundle is downloaded in all ESM browsers
 - Modern bundle throws `SyntaxError` in browsers without dynamic import
 
+### `protocol`
+
+- **Type:** `'http'` | `'file'`
+- **Default:** `'http'`
+
+  Set protocol as `file` to support local app, which host on file protocol:
+
+  ```js
+  import legacy from '@vitejs/plugin-legacy'
+
+  export default {
+    plugins: [
+      legacy({
+        protocol: 'file'
+      })
+    ]
+  }
+  ```
+
 ## Polyfill Specifiers
 
 Polyfill specifier strings for `polyfills` and `modernPolyfills` can be either of the following:

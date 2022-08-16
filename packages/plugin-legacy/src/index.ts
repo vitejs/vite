@@ -121,6 +121,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const targets = options.targets || 'defaults'
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
+  const isFileProtocol = options.protocol === 'file'
 
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
@@ -434,18 +435,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       )
 
       if (modernPolyfillFilename) {
-        tags.push({
-          tag: 'script',
-          attrs: {
-            type: 'module',
-            crossorigin: true,
-            src: toAssetPathFromHtml(
-              modernPolyfillFilename,
-              chunk.facadeModuleId!,
-              config
-            )
-          }
-        })
+        if (!isFileProtocol) {
+          tags.push({
+            tag: 'script',
+            attrs: {
+              type: 'module',
+              crossorigin: true,
+              src: toAssetPathFromHtml(
+                modernPolyfillFilename,
+                chunk.facadeModuleId!,
+                config
+              )
+            }
+          })
+        }
       } else if (modernPolyfills.size) {
         throw new Error(
           `No corresponding modern polyfill chunk found for ${htmlFilename}`
@@ -459,7 +462,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       // 2. inject Safari 10 nomodule fix
       tags.push({
         tag: 'script',
-        attrs: { nomodule: true },
+        attrs: isFileProtocol ? {} : { nomodule: true },
         children: safari10NoModuleFix,
         injectTo: 'body'
       })
@@ -472,7 +475,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         tags.push({
           tag: 'script',
           attrs: {
-            nomodule: true,
+            ...(isFileProtocol ? {} : { nomodule: true }),
             crossorigin: true,
             id: legacyPolyfillId,
             src: toAssetPathFromHtml(
@@ -498,7 +501,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         tags.push({
           tag: 'script',
           attrs: {
-            nomodule: true,
+            ...(isFileProtocol ? {} : { nomodule: true }),
             crossorigin: true,
             // we set the entry path on the element as an attribute so that the
             // script content will stay consistent - which allows using a constant
@@ -536,7 +539,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       return {
-        html,
+        html: isFileProtocol ? html.replace(/<script[\s\S]*js">/g, '') : html,
         tags
       }
     },
