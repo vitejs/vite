@@ -260,8 +260,8 @@ export function resolveAssetFileNames(
 }
 
 /**
- * converts the source filepath of the asset to the output filename based on the assetFileNames option. \
- * this function imitates the behavior of rollup.js. \
+ * converts the source filepath of the asset to the output filename based on the assetFileNames option.
+ * this function imitates the behavior of rollup.js.
  * https://rollupjs.org/guide/en/#outputassetfilenames
  *
  * @example
@@ -276,10 +276,10 @@ export function resolveAssetFileNames(
  * // fileName: 'assets/file.982d9e3e.txt'
  * ```
  *
- * @param assetFileNames filename pattern. e.g. `'assets/[name].[hash][extname]'`
- * @param file filepath of the asset
- * @param contentHash hash of the asset. used for `'[hash]'` placeholder
- * @param content content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
+ * @param assetFileNames - filename pattern. e.g. `'assets/[name].[hash][extname]'`
+ * @param file - filepath of the asset
+ * @param contentHash - hash of the asset. used for `'[hash]'` placeholder
+ * @param content - content of the asset. passed to `assetFileNames` if `assetFileNames` is a function
  * @returns output filename
  */
 export function assetFileNamesToFileName(
