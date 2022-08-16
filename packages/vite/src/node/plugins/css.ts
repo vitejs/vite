@@ -491,10 +491,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return (
           renderAssetUrl(
             this,
+            config,
+            chunk,
             chunkCSS,
             cssAssetName,
-            chunk,
-            config,
             'css',
             toRelative,
             (publicUrl) => `${relativePathToPublicFromCSS}/${publicUrl}`

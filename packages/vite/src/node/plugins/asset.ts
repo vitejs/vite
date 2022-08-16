@@ -43,10 +43,10 @@ export function registerCustomMime(): void {
 
 export function renderAssetUrl(
   ctx: PluginContext,
+  config: ResolvedConfig,
+  chunk: RenderedChunk,
   code: string,
   assetFileName: string,
-  chunk: RenderedChunk,
-  config: ResolvedConfig,
   hostType: 'js' | 'css' | 'html',
   toAssetsRelative?: (
     filename: string,
@@ -179,7 +179,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk) {
-      const s = renderAssetUrl(this, code, chunk.fileName, chunk, config, 'js')
+      const s = renderAssetUrl(this, config, chunk, code, chunk.fileName, 'js')
       if (s) {
         return {
           code: s.toString(),
