@@ -557,16 +557,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
-          chunkCSS =
+          chunkCSS = await finalizeCss(chunkCSS, true, config)
+          let cssString = JSON.stringify(chunkCSS)
             renderAssetUrlInJS(
               this,
               config,
               chunk,
               opts,
-              chunkCSS,
+              cssString,
               '`'
-            )?.toString() || chunkCSS
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
+            )?.toString() || cssString
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
