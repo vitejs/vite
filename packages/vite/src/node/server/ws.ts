@@ -25,7 +25,7 @@ export interface WebSocketServer {
    */
   clients: Set<WebSocketClient>
   /**
-   * Boardcast events to all clients
+   * Broadcast events to all clients
    */
   send(payload: HMRPayload): void
   /**
