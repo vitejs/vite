@@ -42,13 +42,12 @@ export function registerCustomMime(): void {
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
 
-export function renderAssetUrl(
+export function renderAssetUrlInJS(
   ctx: PluginContext,
   config: ResolvedConfig,
   chunk: RenderedChunk,
   opts: NormalizedOutputOptions,
   code: string,
-  assetFileName: string,
   mark: '"' | "'" | '`' = '"'
 ): MagicString | undefined {
   let match: RegExpExecArray | null
@@ -73,7 +72,7 @@ export function renderAssetUrl(
     const replacement = toOutputFilePathInString(
       filename,
       'asset',
-      assetFileName,
+      chunk.fileName,
       'js',
       config,
       opts.format
@@ -97,7 +96,7 @@ export function renderAssetUrl(
     const replacement = toOutputFilePathInString(
       publicUrl,
       'public',
-      assetFileName,
+      chunk.fileName,
       'js',
       config,
       opts.format
@@ -169,7 +168,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, opts) {
-      const s = renderAssetUrl(this, config, chunk, opts, code, chunk.fileName)
+      const s = renderAssetUrlInJS(this, config, chunk, opts, code)
 
       if (s) {
         return {

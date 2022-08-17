@@ -55,7 +55,7 @@ import {
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
-  renderAssetUrl,
+  renderAssetUrlInJS,
   resolveAssetFileNames
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
@@ -558,13 +558,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
           chunkCSS =
-            renderAssetUrl(
+            renderAssetUrlInJS(
               this,
               config,
               chunk,
               opts,
               chunkCSS,
-              chunk.name,
               '`'
             )?.toString() || chunkCSS
           chunkCSS = await finalizeCss(chunkCSS, true, config)
