@@ -559,18 +559,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
+          cssString =
             renderAssetUrlInJS(
               this,
               config,
               chunk,
               opts,
-              cssString,
-              '`'
+              cssString
             )?.toString() || cssString
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = \`${chunkCSS}\`;` +
+            `${style}.innerHTML = ${cssString};` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
             const s = new MagicString(code)

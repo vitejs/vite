@@ -47,8 +47,7 @@ export function renderAssetUrlInJS(
   config: ResolvedConfig,
   chunk: RenderedChunk,
   opts: NormalizedOutputOptions,
-  code: string,
-  mark: '"' | "'" | '`' = '"'
+  code: string
 ): MagicString | undefined {
   let match: RegExpExecArray | null
   let s: MagicString | undefined
@@ -80,7 +79,7 @@ export function renderAssetUrlInJS(
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
-        : `${mark}+${replacement.runtime}+${mark}`
+        : `"+${replacement.runtime}+"`
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
@@ -104,7 +103,7 @@ export function renderAssetUrlInJS(
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
-        : `${mark}+${replacement.runtime}+${mark}`
+        : `"+${replacement.runtime}+"`
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
