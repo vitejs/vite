@@ -1,6 +1,6 @@
 import { test } from 'vitest'
-import { untilUpdated } from '~utils'
+import { getBg, untilUpdated } from '~utils'
 
 test('vue legacy assets', async () => {
-  untilUpdated(() => '.container', 'asset', true)
+  await untilUpdated(() => getBg('.container'), 'assets/asset', true)
 })
