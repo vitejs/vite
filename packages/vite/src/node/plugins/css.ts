@@ -572,8 +572,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.innerHTML = ${cssString};` +
             `document.head.appendChild(${style});`
+          const wrapIdx = code.indexOf('System.register')
           const insertMark = "'use strict';"
-          const insertIdx = code.indexOf(insertMark)
+          const insertIdx = code.indexOf(insertMark, wrapIdx)
           const s = new MagicString(code)
           s.appendLeft(insertIdx + insertMark.length, injectCode)
           if (config.build.sourcemap) {
