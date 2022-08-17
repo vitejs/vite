@@ -895,7 +895,7 @@ See [2.9.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v2.9.0-beta.0/p
 * **glob:** css imports injecting a ?used query to export the css string ([#6949](https://github.com/vitejs/vite/issues/6949)) ([0b3f4ef](https://github.com/vitejs/vite/commit/0b3f4ef231004e072bf1b037f63bc4ef169d938e))
 * **hmr:** hmr style tag no support in html ([#7052](https://github.com/vitejs/vite/issues/7052)) ([a9dfce3](https://github.com/vitejs/vite/commit/a9dfce38108e796e0de0e3b43ced34d60883cef3))
 * image -> image/x-icon ([#7120](https://github.com/vitejs/vite/issues/7120)) ([065ceca](https://github.com/vitejs/vite/commit/065ceca5c7b8f1843e220fbdbe8a0da4cbb78935))
-* import with query with exports field ([#7073](https://github.com/vitejs/vite/issues/7073)) ([88dead7f](https://github.com/vitejs/vite/commit/88ded7f16382d83603511de043785e01ee1e4a3a))
+* import with query with exports field ([#7073](https://github.com/vitejs/vite/issues/7073)) ([88ded7f](https://github.com/vitejs/vite/commit/88ded7f16382d83603511de043785e01ee1e4a3a))
 * prebundle dep with colon ([#7006](https://github.com/vitejs/vite/issues/7006)) ([2136f2b](https://github.com/vitejs/vite/commit/2136f2bb960d1a81ac3b3ca04d9ebd89dba44661))
 * recycle serve to avoid preventing Node self-exit ([#6895](https://github.com/vitejs/vite/issues/6895)) ([d6b2c53](https://github.com/vitejs/vite/commit/d6b2c53c6f0bcc4ffa9cdf48375f9bbcc98f79f7))
 * resolve [@import](https://github.com/import) of the proxied <style> ([#7031](https://github.com/vitejs/vite/issues/7031)) ([c7aad02](https://github.com/vitejs/vite/commit/c7aad0287ce24f299f538828c090819ce0ca1468))
@@ -1219,7 +1219,7 @@ See [2.8.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v2.8.0-beta.0/p
 
 * **html:** empty script ([#6057](https://github.com/vitejs/vite/issues/6057)) ([1487223](https://github.com/vitejs/vite/commit/1487223f39b7555b1050b660d847eabf4d20249f))
 * **lexGlobPattern:** edge case of glob import ([#6022](https://github.com/vitejs/vite/issues/6022)) ([d4c5cff](https://github.com/vitejs/vite/commit/d4c5cff551ad9fb721243f8abdbf0c78f5b5a7ec))
-* ws types ([#6083](https://github.com/vitejs/vite/issues/6083)) ([1dead1a8](https://github.com/vitejs/vite/commit/1ded1a835bfb64f2c70c8c153e979b7911c9a8c1))
+* ws types ([#6083](https://github.com/vitejs/vite/issues/6083)) ([1ded1a8](https://github.com/vitejs/vite/commit/1ded1a835bfb64f2c70c8c153e979b7911c9a8c1))
 
 
 
@@ -2680,7 +2680,7 @@ To get camelCase exports like before, explicitly set
 
 * **css:** hoist external [@import](https://github.com/import) in concatenated css ([000ee62](https://github.com/vitejs/vite/commit/000ee62ef41e4964d1002ab7862303cec0419c47)), closes [#1845](https://github.com/vitejs/vite/issues/1845)
 * **css:** respect sass partial import convention ([cb7b6be](https://github.com/vitejs/vite/commit/cb7b6becd0a566c58aca6cc47ae785ac2c4b4482))
-* **vite:** close server and exit if stdin ends ([#1857](https://github.com/vitejs/vite/issues/1857)) ([b065edge](https://github.com/vitejs/vite/commit/b065ede3cca3bc72d3bb3e6f9cd945d1b36ccb42))
+* **vite:** close server and exit if stdin ends ([#1857](https://github.com/vitejs/vite/issues/1857)) ([b065ede](https://github.com/vitejs/vite/commit/b065ede3cca3bc72d3bb3e6f9cd945d1b36ccb42))
 * consistently use mode for NODE_ENV in deps ([cd13ef0](https://github.com/vitejs/vite/commit/cd13ef009abd23d2676dda470638c81895034a91))
 * do not shim process with actual object ([8ad7ecd](https://github.com/vitejs/vite/commit/8ad7ecd1029bdc0b47e55877db10ac630829c7e5))
 * make ssr external behavior consistent between dev/build ([e089eff](https://github.com/vitejs/vite/commit/e089eff8f8108fa5463e2e42e16244f7edfd5a1e))
