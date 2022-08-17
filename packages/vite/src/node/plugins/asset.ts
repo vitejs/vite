@@ -49,16 +49,7 @@ export function renderAssetUrl(
   opts: NormalizedOutputOptions,
   code: string,
   assetFileName: string,
-  hostType: 'js' | 'css' | 'html',
-  toAssetsRelative?: (
-    filename: string,
-    hostType: string
-  ) => string | { runtime: string },
-  toPublicAssetsRelative?: (
-    publicUrl: string,
-    filename: string,
-    hostType: string
-  ) => string | { runtime: string }
+  mark: '"' | "'" | '`' = '"'
 ): MagicString | undefined {
   let match: RegExpExecArray | null
   let s: MagicString | undefined
@@ -83,15 +74,14 @@ export function renderAssetUrl(
       filename,
       'asset',
       assetFileName,
-      hostType,
+      'js',
       config,
-      opts.format,
-      toAssetsRelative
+      opts.format
     )
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+        : `${mark}+${replacement.runtime}+${mark}`
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
@@ -108,18 +98,14 @@ export function renderAssetUrl(
       publicUrl,
       'public',
       assetFileName,
-      hostType,
+      'js',
       config,
-      opts.format,
-      toPublicAssetsRelative
-        ? (filename, hostType) =>
-            toPublicAssetsRelative(publicUrl, filename, hostType)
-        : undefined
+      opts.format
     )
     const replacementString =
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+        : `${mark}+${replacement.runtime}+${mark}`
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
@@ -183,15 +169,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, opts) {
-      const s = renderAssetUrl(
-        this,
-        config,
-        chunk,
-        opts,
-        code,
-        chunk.fileName,
-        'js'
-      )
+      const s = renderAssetUrl(this, config, chunk, opts, code, chunk.fileName)
 
       if (s) {
         return {

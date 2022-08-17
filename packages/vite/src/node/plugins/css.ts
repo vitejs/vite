@@ -25,6 +25,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
+import { toOutputFilePathInCss } from '../build'
 import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -47,8 +48,12 @@ import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetFileNamesToFileName,
+  assetUrlRE,
   checkPublicFile,
   fileToUrl,
+  getAssetFilename,
+  publicAssetUrlCache,
+  publicAssetUrlRE,
   publicFileToBuiltUrl,
   renderAssetUrl,
   resolveAssetFileNames
@@ -458,22 +463,25 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (!chunkCSS) {
         return null
       }
+
       const cssEntryFiles = cssEntryFilesCache.get(config)!
+      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
       // resolve asset URL placeholders to their built file URLs
-      const resolveAssetUrlsInCss = (
+      function resolveAssetUrlsInCss(
         chunkCSS: string,
         cssAssetName: string,
         relativeFromPage: boolean = false
-      ): string => {
-        const relative = config.base === './' || config.base === ''
+      ) {
         const encodedPublicUrls = encodePublicUrlsInCSS(config)
+
+        const relative = config.base === './' || config.base === ''
         const cssAssetDirname =
           encodedPublicUrls || relative
             ? getCssAssetDirname(cssAssetName)
             : undefined
 
-        const toRelative = (filename: string) => {
+        const toRelative = (filename: string, importer: string) => {
           // relative base + extracted CSS
           const relativePath = path.posix.relative(cssAssetDirname!, filename)
           const resolvedRelativePath = relativePath.startsWith('.')
@@ -484,25 +492,38 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             : resolvedRelativePath
         }
 
-        // resolve public URL from CSS paths
-        const relativePathToPublicFromCSS = path.posix.relative(
-          cssAssetDirname!,
-          ''
-        )
-
-        return (
-          renderAssetUrl(
-            this,
-            config,
-            chunk,
-            opts,
-            chunkCSS,
+        // replace asset url references with resolved url.
+        chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
+          const filename = getAssetFilename(fileHash, config)! + postfix
+          chunk.viteMetadata.importedAssets.add(cleanUrl(filename))
+          return toOutputFilePathInCss(
+            filename,
+            'asset',
             cssAssetName,
             'css',
-            toRelative,
-            (publicUrl) => `${relativePathToPublicFromCSS}/${publicUrl}`
-          )?.toString() || chunkCSS
-        )
+            config,
+            toRelative
+          )
+        })
+        // resolve public URL from CSS paths
+        if (encodedPublicUrls) {
+          const relativePathToPublicFromCSS = path.posix.relative(
+            cssAssetDirname!,
+            ''
+          )
+          chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
+            const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+            return toOutputFilePathInCss(
+              publicUrl,
+              'public',
+              cssAssetName,
+              'css',
+              config,
+              () => `${relativePathToPublicFromCSS}/${publicUrl}`
+            )
+          })
+        }
+        return chunkCSS
       }
 
       function ensureFileExt(name: string, ext: string) {
@@ -543,12 +564,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, chunk.name, true)
+          chunkCSS =
+            renderAssetUrl(
+              this,
+              config,
+              chunk,
+              opts,
+              chunkCSS,
+              chunk.name,
+              '`'
+            )?.toString() || chunkCSS
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `var relativeFromPage = (u) => new URL(u, self.location).href;` +
             `${style}.innerHTML = \`${chunkCSS}\`;` +
             `document.head.appendChild(${style});`
           if (config.build.sourcemap) {
