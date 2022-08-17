@@ -25,7 +25,7 @@ export interface WebSocketServer {
    */
   clients: Set<WebSocketClient>
   /**
-   * Boardcast events to all clients
+   * Broadcast events to all clients
    */
   send(payload: HMRPayload): void
   /**
@@ -108,7 +108,7 @@ export function createWebSocketServer(
     const port = hmrPort || 24678
     const host = (hmr && hmr.host) || undefined
     if (httpsOptions) {
-      // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
+      // if we're serving the middlewares over https, the ws library doesn't support automatically creating a https server, so we need to do it ourselves
       // create an inline https server and mount the websocket server to it
       httpsServer = createHttpsServer(httpsOptions, (req, res) => {
         const statusCode = 426
