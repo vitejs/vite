@@ -572,16 +572,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             `var ${style} = document.createElement('style');` +
             `${style}.innerHTML = ${cssString};` +
             `document.head.appendChild(${style});`
+          const insertMark = "'use strict';"
+          const insertIdx = code.indexOf(insertMark)
+          const s = new MagicString(code)
+          s.appendLeft(insertIdx + insertMark.length, injectCode)
           if (config.build.sourcemap) {
-            const s = new MagicString(code)
-            s.prepend(injectCode)
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
               map: s.generateMap({ hires: true })
             }
           } else {
-            return { code: injectCode + code }
+            return { code: s.toString() }
           }
         }
       } else {
