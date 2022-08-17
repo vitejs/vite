@@ -230,9 +230,9 @@ export async function logRecentCommits(pkgName: string): Promise<void> {
   console.log()
 }
 
-export async function updateTemplateVersions(): Promise<void> {
-  const viteVersion = (
-    await fs.readJSON(path.resolve(__dirname, '../packages/vite/package.json'))
+export function updateTemplateVersions(): void {
+  const viteVersion = fs.readJSONSync(
+    path.resolve(__dirname, '../packages/vite/package.json')
   ).version
   if (/beta|alpha|rc/.test(viteVersion)) return
 
@@ -248,19 +248,15 @@ export async function updateTemplateVersions(): Promise<void> {
     if (template.startsWith('template-vue')) {
       pkg.devDependencies['@vitejs/plugin-vue'] =
         `^` +
-        (
-          await fs.readJSON(
-            path.resolve(__dirname, '../packages/plugin-vue/package.json')
-          )
+        fs.readJSONSync(
+          path.resolve(__dirname, '../packages/plugin-vue/package.json')
         ).version
     }
     if (template.startsWith('template-react')) {
       pkg.devDependencies['@vitejs/plugin-react'] =
         `^` +
-        (
-          await fs.readJSON(
-            path.resolve(__dirname, '../packages/plugin-react/package.json')
-          )
+        fs.readJSONSync(
+          path.resolve(__dirname, '../packages/plugin-react/package.json')
         ).version
     }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
