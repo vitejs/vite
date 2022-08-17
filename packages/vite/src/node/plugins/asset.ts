@@ -89,7 +89,7 @@ export function renderAssetUrlInJS(
 
   const publicAssetUrlMap = publicAssetUrlCache.get(config)!
   while ((match = publicAssetUrlRE.exec(code))) {
-    s = s || (s = new MagicString(code))
+    s ||= new MagicString(code)
     const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
     const replacement = toOutputFilePathInString(
