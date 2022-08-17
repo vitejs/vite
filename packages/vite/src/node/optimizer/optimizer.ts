@@ -232,7 +232,7 @@ async function createDepsOptimizer(
     }
   }
 
-  async function startNextDiscoveredBatch() {
+  function startNextDiscoveredBatch() {
     newDepsDiscovered = false
 
     // Add the current depOptimizationProcessing to the queue, these
