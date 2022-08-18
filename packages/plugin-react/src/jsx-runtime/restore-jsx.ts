@@ -49,7 +49,7 @@ export async function restoreJSX(
     code: false,
     filename,
     parserOpts: {
-      plugins: ['jsx']
+      plugins: ['typescript', 'jsx']
     },
     plugins: [[await getBabelRestoreJSX(), { reactAlias }]]
   })
