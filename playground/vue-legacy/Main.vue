@@ -14,7 +14,7 @@ export default defineComponent({
 })
 </script>
 <template>
-  <div class="container">
+  <div class="main">
     <p>hello</p>
     <module />
     <code>
@@ -23,7 +23,7 @@ export default defineComponent({
   </div>
 </template>
 <style scoped>
-.container {
+.main {
   height: 100vh;
   background: url('@/assets/asset.png') no-repeat;
   background-size: contain;
