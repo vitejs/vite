@@ -1,5 +1,5 @@
+const { resolve } = require('node:path')
 const { normalizePath } = require('vite')
-const { resolve } = require('path')
 
 let transformCount = 1
 
