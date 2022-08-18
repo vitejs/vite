@@ -243,7 +243,6 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    // @ts-ignore
     viteTestUrl = await startStaticServer(resolvedConfig, config)
     await page.goto(viteTestUrl)
   }
