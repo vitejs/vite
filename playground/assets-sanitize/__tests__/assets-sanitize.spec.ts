@@ -21,7 +21,7 @@ if (!isBuild) {
     )
     expect(plusCircleAsset).toMatch('/_circle')
     expect(underscoreCircleAsset).toMatch('/_circle')
-    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
+    expect(plusCircleAsset).not.toEqual(underscoreCircleAsset)
     expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
 }
