@@ -6,5 +6,5 @@ test('vue legacy assets', async () => {
 })
 
 test('async vue legacy assets', async () => {
-  await untilUpdated(() => getBg('.module'), 'assets/asset2', true)
+  await untilUpdated(() => getBg('.module'), 'assets/asset', true)
 })
