@@ -15,7 +15,7 @@ export default defineComponent({
 </script>
 <template>
   <div class="main">
-    <p>hello</p>
+    <p>Main.vue</p>
     <module />
     <code>
       {{ css }}

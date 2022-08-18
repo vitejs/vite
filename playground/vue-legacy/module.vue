@@ -1,9 +1,6 @@
 <template>
   <div class="module">
     <p>module.vue</p>
-    <code>
-      {{ css }}
-    </code>
   </div>
 </template>
 <style scoped>
