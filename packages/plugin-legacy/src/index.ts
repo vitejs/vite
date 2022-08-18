@@ -205,6 +205,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills
           )
         await buildPolyfillChunk(
+          config.mode,
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
@@ -237,6 +238,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           )
 
         await buildPolyfillChunk(
+          config.mode,
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
@@ -615,6 +617,7 @@ function createBabelPresetEnvOptions(
 }
 
 async function buildPolyfillChunk(
+  mode: string,
   imports: Set<string>,
   bundle: OutputBundle,
   facadeToChunkMap: Map<string, string>,
@@ -635,7 +638,7 @@ async function buildPolyfillChunk(
     // overwrite process.env.NODE_ENV. From there on, the server build will have the correct config.mode value, but the global
     // import.env.NODE_ENV will assume the wrong value as mutated by resolveConfig
     // If process.env.NODE_ENV is undefined, the mode and mutation will assume the default value and should not break people's projects
-    mode: process.env.NODE_ENV,
+    mode,
     // so that everything is resolved from here
     root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
