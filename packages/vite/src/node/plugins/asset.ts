@@ -61,7 +61,7 @@ export function renderAssetUrlInJS(
   // In both cases, the wrapping should already be fine
 
   while ((match = assetUrlRE.exec(code))) {
-    s ||= s = new MagicString(code)
+    s ||= new MagicString(code)
     const [full, hash, postfix = ''] = match
     // some internal plugins may still need to emit chunks (e.g. worker) so
     // fallback to this.getFileName for that. TODO: remove, not needed
