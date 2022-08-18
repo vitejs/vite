@@ -1,20 +1,27 @@
 import { expect, test } from 'vitest'
-import { getBg, isBuild, listAssets, page } from '~utils'
+import { getBg, isBuild, page, readManifest } from '~utils'
 
 if (!isBuild) {
-  test('importing asset with special char in filename works', async () => {
-    expect(await getBg('.circle-bg')).toContain('+circle.svg')
-    expect(await page.textContent('.circle-bg')).toMatch('+circle.svg')
+  test('importing asset with special char in filename works in dev', async () => {
+    expect(await getBg('.plus-circle')).toContain('+circle.svg')
+    expect(await page.textContent('.plus-circle')).toMatch('+circle.svg')
+    expect(await getBg('.underscore-circle')).toContain('_circle.svg')
+    expect(await page.textContent('.underscore-circle')).toMatch('_circle.svg')
   })
 } else {
-  const expected_asset_name_RE = /_circle\.[\w]+\.svg/
-  test('importing asset with special char in filename works', async () => {
-    expect(await getBg('.circle-bg')).toMatch(expected_asset_name_RE)
-    expect(await page.textContent('.circle-bg')).toMatch(expected_asset_name_RE)
-  })
-  test('asset with special char in filename gets sanitized', async () => {
-    const svgs = listAssets().filter((a) => a.endsWith('.svg'))
-    expect(svgs[0]).toMatch(expected_asset_name_RE)
-    expect(svgs.length).toBe(1)
+  test('importing asset with special char in filename works in build', async () => {
+    const manifest = readManifest()
+    const plusCircleAsset = manifest['+circle.svg'].file
+    const underscoreCircleAsset = manifest['_circle.svg'].file
+    expect(await getBg('.plus-circle')).toMatch(plusCircleAsset)
+    expect(await page.textContent('.plus-circle')).toMatch(plusCircleAsset)
+    expect(await getBg('.underscore-circle')).toMatch(underscoreCircleAsset)
+    expect(await page.textContent('.underscore-circle')).toMatch(
+      underscoreCircleAsset
+    )
+    expect(plusCircleAsset).toMatch('/_circle')
+    expect(underscoreCircleAsset).toMatch('/_circle')
+    expect(plusCircleAsset).not.toBe(underscoreCircleAsset)
+    expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
 }
