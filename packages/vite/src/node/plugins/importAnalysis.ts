@@ -163,6 +163,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   let server: ViteDevServer
+  const seen = new Map<string, string>()
 
   return {
     name: 'vite:import-analysis',
@@ -377,6 +378,21 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // prepend base (dev base is guaranteed to have ending slash)
           url = base + url.replace(/^\//, '')
+        }
+
+        // 2503, #7621 bare import and direct import from node_modules for the
+        // same module will get different urls, use map to dedupe
+        if (
+          resolved.id.includes('node_modules') &&
+          // exclude cache dir
+          !resolved.id.startsWith(getDepsCacheDirPrefix(config))
+        ) {
+          const file = cleanUrl(resolved.id)
+          if (seen.has(file)) {
+            url = seen.get(file)!
+          } else {
+            seen.set(file, url)
+          }
         }
 
         return [url, resolved.id]

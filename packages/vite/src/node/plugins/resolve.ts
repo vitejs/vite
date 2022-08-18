@@ -198,26 +198,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return normalizedFsPath
         }
 
-        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
-        if (pathFromBasedir.startsWith('/node_modules/')) {
-          // normalize direct imports from node_modules to bare imports, so the
-          // hashing logic is shared and we avoid duplicated modules #2503
-          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
-          if (
-            (res = tryNodeResolve(
-              bareImport,
-              importer,
-              options,
-              targetWeb,
-              depsOptimizer,
-              ssr
-            )) &&
-            res.id.startsWith(normalizedFsPath)
-          ) {
-            return res
-          }
-        }
-
         if (
           targetWeb &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
