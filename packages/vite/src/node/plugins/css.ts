@@ -196,7 +196,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-      const ssr = options?.ssr === true
+      const ssr = options?.ssr || false
 
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         if (checkPublicFile(url, config)) {
@@ -259,7 +259,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
                       (
                         await fileToUrl(file, config, this)
                       ).replace((config.server?.origin ?? '') + devBase, '/'),
-                      ssr
+                      !!ssr
                     )
               )
             }
@@ -272,7 +272,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
               new Set(),
               null,
               isSelfAccepting,
-              ssr
+              !!ssr
             )
             for (const file of deps) {
               this.addWatchFile(file)

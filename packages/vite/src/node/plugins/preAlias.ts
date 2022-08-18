@@ -22,8 +22,8 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
-      const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const ssr = options?.ssr || false
+      const depsOptimizer = getDepsOptimizer(config, !!ssr)
       if (
         importer &&
         depsOptimizer &&

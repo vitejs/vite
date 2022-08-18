@@ -21,7 +21,8 @@
       "types": "./client.d.ts"
     },
     "./dist/client/*": "./dist/client/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./loader": "./dist/node/loader.js"
   },
   "files": [
     "bin",

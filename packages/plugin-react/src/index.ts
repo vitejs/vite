@@ -182,7 +182,7 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
       }
     },
     async transform(code, id, options) {
-      const ssr = options?.ssr === true
+      const ssr = !!options?.ssr
       // File extension could be mocked/overridden in querystring.
       const [filepath, querystring = ''] = id.split('?')
       const [extension = ''] =

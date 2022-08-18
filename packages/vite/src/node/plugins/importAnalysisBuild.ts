@@ -156,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = getDepsOptimizer(config, !!ssr)
 
       const normalizeUrl = async (
         url: string,

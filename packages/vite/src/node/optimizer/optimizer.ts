@@ -56,7 +56,7 @@ export async function initDepsOptimizer(
 ): Promise<void> {
   // Non Dev SSR Optimizer
   const ssr = config.command === 'build' && !!config.build.ssr
-  if (!getDepsOptimizer(config, ssr)) {
+  if (!getDepsOptimizer(config, !!ssr)) {
     await createDepsOptimizer(config, server)
   }
 }
@@ -78,10 +78,10 @@ export async function initDevSsrDepsOptimizer(
     // If ssrLoadModule is called before server.listen(), the main deps optimizer
     // will not be yet created
     const ssr = false
-    if (!getDepsOptimizer(config, ssr)) {
+    if (!getDepsOptimizer(config, !!ssr)) {
       await initDepsOptimizer(config, server)
     }
-    await getDepsOptimizer(config, ssr)!.scanProcessing
+    await getDepsOptimizer(config, !!ssr)!.scanProcessing
 
     await createDevSsrDepsOptimizer(config)
     creatingDevSsrOptimizer = undefined

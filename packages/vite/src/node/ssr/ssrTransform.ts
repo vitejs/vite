@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
@@ -26,6 +27,7 @@ interface TransformOptions {
   json?: {
     stringify?: boolean
   }
+  loader?: boolean
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`
@@ -44,7 +46,7 @@ export async function ssrTransform(
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
   }
-  return ssrTransformScript(code, inMap, url, originalCode)
+  return ssrTransformScript(code, inMap, url, originalCode, options?.loader)
 }
 
 async function ssrTransformJSON(
@@ -63,7 +65,8 @@ async function ssrTransformScript(
   code: string,
   inMap: SourceMap | null,
   url: string,
-  originalCode: string
+  originalCode: string,
+  loader?: boolean
 ): Promise<TransformResult | null> {
   const s = new MagicString(code)
 
@@ -109,112 +112,121 @@ async function ssrTransformScript(
     )
   }
 
-  // 1. check all import statements and record id -> importName map
-  for (const node of ast.body as Node[]) {
-    // import foo from 'foo' --> foo -> __import_foo__.default
-    // import { baz } from 'foo' --> baz -> __import_foo__.baz
-    // import * as ok from 'foo' --> ok -> __import_foo__
-    if (node.type === 'ImportDeclaration') {
-      s.remove(node.start, node.end)
-      const importId = defineImport(node, node.source.value as string)
-      for (const spec of node.specifiers) {
-        if (spec.type === 'ImportSpecifier') {
-          idToImportMap.set(
-            spec.local.name,
-            `${importId}.${spec.imported.name}`
-          )
-        } else if (spec.type === 'ImportDefaultSpecifier') {
-          idToImportMap.set(spec.local.name, `${importId}.default`)
-        } else {
-          // namespace specifier
-          idToImportMap.set(spec.local.name, importId)
+  if (!loader) {
+    // 1. check all import statements and record id -> importName map
+    for (const node of ast.body as Node[]) {
+      // import foo from 'foo' --> foo -> __import_foo__.default
+      // import { baz } from 'foo' --> baz -> __import_foo__.baz
+      // import * as ok from 'foo' --> ok -> __import_foo__
+      if (node.type === 'ImportDeclaration') {
+        s.remove(node.start, node.end)
+        const importId = defineImport(node, node.source.value as string)
+        for (const spec of node.specifiers) {
+          if (spec.type === 'ImportSpecifier') {
+            idToImportMap.set(
+              spec.local.name,
+              `${importId}.${spec.imported.name}`
+            )
+          } else if (spec.type === 'ImportDefaultSpecifier') {
+            idToImportMap.set(spec.local.name, `${importId}.default`)
+          } else {
+            // namespace specifier
+            idToImportMap.set(spec.local.name, importId)
+          }
         }
       }
     }
-  }
 
-  // 2. check all export statements and define exports
-  for (const node of ast.body as Node[]) {
-    // named exports
-    if (node.type === 'ExportNamedDeclaration') {
-      if (node.declaration) {
-        if (
-          node.declaration.type === 'FunctionDeclaration' ||
-          node.declaration.type === 'ClassDeclaration'
-        ) {
-          // export function foo() {}
-          defineExport(node.end, node.declaration.id!.name)
+    // 2. check all export statements and define exports
+    for (const node of ast.body as Node[]) {
+      // named exports
+      if (node.type === 'ExportNamedDeclaration') {
+        if (node.declaration) {
+          if (
+            node.declaration.type === 'FunctionDeclaration' ||
+            node.declaration.type === 'ClassDeclaration'
+          ) {
+            // export function foo() {}
+            defineExport(node.end, node.declaration.id!.name)
+          } else {
+            // export const foo = 1, bar = 2
+            for (const declaration of node.declaration.declarations) {
+              const names = extractNames(declaration.id as any)
+              for (const name of names) {
+                defineExport(node.end, name)
+              }
+            }
+          }
+          s.remove(node.start, (node.declaration as Node).start)
         } else {
-          // export const foo = 1, bar = 2
-          for (const declaration of node.declaration.declarations) {
-            const names = extractNames(declaration.id as any)
-            for (const name of names) {
-              defineExport(node.end, name)
+          s.remove(node.start, node.end)
+          if (node.source) {
+            // export { foo, bar } from './foo'
+            const importId = defineImport(node, node.source.value as string)
+            for (const spec of node.specifiers) {
+              defineExport(
+                node.end,
+                spec.exported.name,
+                `${importId}.${spec.local.name}`
+              )
+            }
+          } else {
+            // export { foo, bar }
+            for (const spec of node.specifiers) {
+              const local = spec.local.name
+              const binding = idToImportMap.get(local)
+              defineExport(node.end, spec.exported.name, binding || local)
             }
           }
         }
-        s.remove(node.start, (node.declaration as Node).start)
-      } else {
-        s.remove(node.start, node.end)
-        if (node.source) {
-          // export { foo, bar } from './foo'
-          const importId = defineImport(node, node.source.value as string)
-          for (const spec of node.specifiers) {
-            defineExport(
-              node.end,
-              spec.exported.name,
-              `${importId}.${spec.local.name}`
-            )
-          }
+      }
+
+      // default export
+      if (node.type === 'ExportDefaultDeclaration') {
+        const expressionTypes = ['FunctionExpression', 'ClassExpression']
+        if (
+          'id' in node.declaration &&
+          node.declaration.id &&
+          !expressionTypes.includes(node.declaration.type)
+        ) {
+          // named hoistable/class exports
+          // export default function foo() {}
+          // export default class A {}
+          const { name } = node.declaration.id
+          s.remove(node.start, node.start + 15 /* 'export default '.length */)
+          s.append(
+            `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
+              `{ enumerable: true, configurable: true, value: ${name} });`
+          )
         } else {
-          // export { foo, bar }
-          for (const spec of node.specifiers) {
-            const local = spec.local.name
-            const binding = idToImportMap.get(local)
-            defineExport(node.end, spec.exported.name, binding || local)
-          }
+          // anonymous default exports
+          s.overwrite(
+            node.start,
+            node.start + 14 /* 'export default'.length */,
+            `${ssrModuleExportsKey}.default =`,
+            { contentOnly: true }
+          )
+        }
+      }
+
+      // export * from './foo'
+      if (node.type === 'ExportAllDeclaration') {
+        s.remove(node.start, node.end)
+        const importId = defineImport(node, node.source.value as string)
+        if (node.exported) {
+          defineExport(node.end, node.exported.name, `${importId}`)
+        } else {
+          s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
         }
       }
     }
-
-    // default export
-    if (node.type === 'ExportDefaultDeclaration') {
-      const expressionTypes = ['FunctionExpression', 'ClassExpression']
-      if (
-        'id' in node.declaration &&
-        node.declaration.id &&
-        !expressionTypes.includes(node.declaration.type)
-      ) {
-        // named hoistable/class exports
-        // export default function foo() {}
-        // export default class A {}
-        const { name } = node.declaration.id
-        s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`
-        )
-      } else {
-        // anonymous default exports
-        s.overwrite(
-          node.start,
-          node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
-          { contentOnly: true }
-        )
-      }
-    }
-
-    // export * from './foo'
-    if (node.type === 'ExportAllDeclaration') {
-      s.remove(node.start, node.end)
-      const importId = defineImport(node, node.source.value as string)
-      if (node.exported) {
-        defineExport(node.end, node.exported.name, `${importId}`)
-      } else {
-        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
-      }
-    }
+  } else {
+    s.prependLeft(
+      0,
+      `const ${ssrImportMetaKey} = { url:${JSON.stringify(
+        pathToFileURL(url).href
+      )} };\n`
+    )
   }
 
   // 3. convert references to import bindings & import.meta references
@@ -251,12 +263,15 @@ async function ssrTransformScript(
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
-    },
-    onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+      s.overwrite(node.start, node.end, ssrImportMetaKey, {
         contentOnly: true
       })
+    },
+    onDynamicImport(node) {
+      if (!loader)
+        s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
+          contentOnly: true
+        })
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }

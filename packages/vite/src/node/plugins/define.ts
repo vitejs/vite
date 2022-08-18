@@ -100,7 +100,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     transform(code, id, options) {
-      const ssr = options?.ssr === true
+      const ssr = options?.ssr || false
       if (!ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost.

@@ -94,7 +94,7 @@ export interface PluginContainer {
     options?: {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
-      ssr?: boolean
+      ssr?: boolean | 'loader'
       /**
        * @internal
        */
@@ -107,7 +107,7 @@ export interface PluginContainer {
     id: string,
     options?: {
       inMap?: SourceDescription['map']
-      ssr?: boolean
+      ssr?: boolean | 'loader'
     }
   ): Promise<SourceDescription | null>
   load(
@@ -236,7 +236,7 @@ export async function createPluginContainer(
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
-    ssr = false
+    ssr: boolean | 'loader' = false
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -537,7 +537,7 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const scan = !!options?.scan
       const ctx = new Context()
-      ctx.ssr = !!ssr
+      ctx.ssr = ssr || false
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = isDebug ? performance.now() : 0

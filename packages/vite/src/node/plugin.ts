@@ -134,7 +134,7 @@ export interface Plugin extends RollupPlugin {
     importer: string | undefined,
     options: {
       custom?: CustomPluginOptions
-      ssr?: boolean
+      ssr?: boolean | 'loader'
       /**
        * @internal
        */
@@ -151,6 +151,6 @@ export interface Plugin extends RollupPlugin {
     this: TransformPluginContext,
     code: string,
     id: string,
-    options?: { ssr?: boolean }
+    options?: { ssr?: boolean | 'loader' }
   ) => Promise<TransformResult> | TransformResult
 }

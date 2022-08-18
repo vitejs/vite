@@ -35,7 +35,7 @@ export interface TransformResult {
 }
 
 export interface TransformOptions {
-  ssr?: boolean
+  ssr?: boolean | 'loader'
   html?: boolean
 }
 
@@ -71,7 +71,7 @@ export function transformRequest(
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
     return server.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
+      .getModuleByUrl(removeTimestampQuery(url), !!options.ssr)
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
@@ -141,11 +141,13 @@ async function doTransform(
 
   // resolve
   const id =
-    (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
+    options.ssr === 'loader'
+      ? url
+      : (await pluginContainer.resolveId(url, undefined, { ssr }))?.id || url
 
   const result = loadAndTransform(id, url, server, options, timestamp)
 
-  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+  getDepsOptimizer(config, !!ssr)?.delayDepsOptimizerUntil(id, () => result)
 
   return result
 }
@@ -233,7 +235,7 @@ async function loadAndTransform(
   const transformStart = isDebug ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
-    ssr
+    ssr: options.ssr
   })
   const originalCode = code
   if (
@@ -259,13 +261,10 @@ async function loadAndTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(
-        code,
-        map as SourceMap,
-        url,
-        originalCode,
-        server.config
-      )
+    ? await ssrTransform(code, map as SourceMap, url, originalCode, {
+        json: server.config.json,
+        loader: options.ssr === 'loader'
+      })
     : ({
         code,
         map,

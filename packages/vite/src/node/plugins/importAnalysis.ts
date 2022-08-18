@@ -178,7 +178,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const ssr = options?.ssr === true
+      const ssr = options?.ssr || false
       const prettyImporter = prettifyUrl(importer, root)
 
       if (canSkipImportAnalysis(importer)) {
@@ -215,7 +215,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )
       }
 
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = getDepsOptimizer(config, !!ssr)
 
       const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
@@ -269,7 +269,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
 
-        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        const optimizeDeps = getDepOptimizationConfig(config, !!ssr)
         if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
@@ -496,7 +496,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 depsOptimizer.metadata,
                 file,
                 config,
-                ssr
+                !!ssr
               )
 
               if (needsInterop === undefined) {
@@ -641,7 +641,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       for (const { url, start, end } of acceptedUrls) {
         const [normalized] = await moduleGraph.resolveUrl(
           toAbsoluteUrl(markExplicitImport(url)),
-          ssr
+          !!ssr
         )
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized), {
@@ -687,7 +687,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           normalizedAcceptedUrls,
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
-          ssr
+          !!ssr
         )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)
