@@ -231,7 +231,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         throwOutdatedRequest(importer)
       }
 
-      if (!imports.length) {
+      if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         isDebug &&
           debug(
@@ -263,7 +263,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const normalizeUrl = async (
         url: string,
-        pos: number
+        pos: number,
+        forceSkipImportAnalysis: boolean = false
       ): Promise<[string, string]> => {
         url = stripBase(url, base)
 
@@ -364,7 +365,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             const depModule = await moduleGraph.ensureEntryFromUrl(
               unwrapId(url),
               ssr,
-              canSkipImportAnalysis(url)
+              canSkipImportAnalysis(url) || forceSkipImportAnalysis
             )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
@@ -667,7 +668,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           ;(
             await Promise.all(
-              [...pluginImports].map((id) => normalizeUrl(id, 0))
+              [...pluginImports].map((id) => normalizeUrl(id, 0, true))
             )
           ).forEach(([url]) => importedUrls.add(url))
         }
