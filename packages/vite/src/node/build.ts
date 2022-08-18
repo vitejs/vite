@@ -252,6 +252,13 @@ export interface LibraryOptions {
    * format as an argument.
    */
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  /**
+   * We replace asset to base64 for lib mode by default, It can handle most of the contexts.
+   * But it will add a lot of size in JS/CSS. When you enable this option, vite will emit asset to file and generate original import code in JS.
+   * When user use this lib with bundler, it can get correct image url.
+   * @default false
+   */
+  emitAssetsWithModule?: boolean
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
@@ -1056,7 +1063,8 @@ export function toOutputFilePathInJS(
   ) => string | { runtime: string },
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
-  let relative = config.base === '' || config.base === './'
+  const base = config.build.lib && config.build.lib.emitAssetsWithModule ? './' : config.base
+  let relative = base === '' || base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,
@@ -1078,7 +1086,7 @@ export function toOutputFilePathInJS(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   }
-  return joinUrlSegments(config.base, filename)
+  return joinUrlSegments(base, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(
@@ -1101,7 +1109,8 @@ export function toOutputFilePathWithoutRuntime(
   toRelative: (filename: string, hostId: string) => string,
 ): string {
   const { renderBuiltUrl } = config.experimental
-  let relative = config.base === '' || config.base === './'
+  const base = config.build.lib && config.build.lib.emitAssetsWithModule ? './' : config.base
+  let relative = base === '' || base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,
@@ -1125,7 +1134,7 @@ export function toOutputFilePathWithoutRuntime(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return joinUrlSegments(config.base, filename)
+    return joinUrlSegments(base, filename)
   }
 }
 

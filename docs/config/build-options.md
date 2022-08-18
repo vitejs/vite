@@ -145,10 +145,35 @@ Options to pass on to [@rollup/plugin-dynamic-import-vars](https://github.com/ro
 
 ## build.lib
 
-- **Type:** `{ entry: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string) }`
+- **Type:** `{ entry: string | string[] | { [entryAlias: string]: string }, name?: string, formats?: ('es' | 'cjs' | 'umd' | 'iife')[], fileName?: string | ((format: ModuleFormat, entryName: string) => string), emitAssetsWithModule?: boolean }`
 - **Related:** [Library Mode](/guide/build#library-mode)
 
 Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`, or `['es', 'cjs']`, if multiple entries are used. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` and `entryAlias` as arguments.
+Build as a library. `entry` is required since the library cannot use HTML as entry. `name` is the exposed global variable and is required when `formats` includes `'umd'` or `'iife'`. Default `formats` are `['es', 'umd']`. `fileName` is the name of the package file output, default `fileName` is the name option of package.json, it can also be defined as function taking the `format` as an argument.
+
+The `emitAssetsWithModule` will try to generate module with assets. When enable this option, please use bundler in user project.
+
+### Generate example
+
+```javascript
+// Code
+import image from '@/assets/image/banner.jpg'
+// Generate
+import img from './assets/banner.87342es.jpg'
+// Use bundler to resolve it. Ex: Vite, Webpack (url-loader)
+```
+
+```css
+/* Code */
+body {
+  background-image: url('../assets/image/banner.jpg');
+}
+/* Generate */
+body {
+  background-image: url('./assets/banner.87342es.jpg');
+}
+/* Use bundler to resolve it. Ex: Vite, Webpack (css-loader) */
+```
 
 ## build.manifest
 

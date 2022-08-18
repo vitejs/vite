@@ -6,4 +6,11 @@ export default function myLib(sel) {
 
   // Env vars should not be replaced
   console.log(process.env.NODE_ENV)
+
+  document.querySelector(
+    '.emitAssetsWithModule-default'
+  ).style.backgroundImage = `url(${new URL(
+    `../../assets/nested/asset.png`,
+    import.meta.url
+  )})`
 }

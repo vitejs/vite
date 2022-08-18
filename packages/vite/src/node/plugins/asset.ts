@@ -20,6 +20,7 @@ import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
+const assetUrlRENoGFlag = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -127,6 +128,9 @@ export function renderAssetUrlInJS(
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
+  const isEmitAssetsWithModule =
+    config.build.lib && config.build.lib.emitAssetsWithModule
+
   return {
     name: 'vite:asset',
 
@@ -136,6 +140,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId(id) {
+      if (assetUrlRENoGFlag.test(id)) {
+        return { id, external: 'absolute' }
+      }
       if (!config.assetsInclude(cleanUrl(id))) {
         return
       }
@@ -169,6 +176,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
       const url = await fileToUrl(id, config, this)
+      if (isEmitAssetsWithModule) {
+        return `import img from ${JSON.stringify(url)};export default img;`
+      }
       return `export default ${JSON.stringify(url)}`
     },
 
@@ -323,7 +333,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (
-    config.build.lib ||
+    (config.build.lib && !config.build.lib.emitAssetsWithModule) ||
     (!file.endsWith('.svg') &&
       !file.endsWith('.html') &&
       content.length < Number(config.build.assetsInlineLimit) &&
