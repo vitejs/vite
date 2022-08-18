@@ -19,9 +19,6 @@ const filteredResult = {
   },
   "./quote'.js": {
     msg: 'single-quote'
-  },
-  './quote".js': {
-    msg: 'double-quote'
   }
 }
 
@@ -71,9 +68,6 @@ const allResult = {
   },
   "/dir/quote'.js": {
     msg: 'single-quote'
-  },
-  '/dir/quote".js': {
-    msg: 'double-quote'
   }
 }
 
