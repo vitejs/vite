@@ -291,14 +291,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                str().overwrite(
-                  start,
-                  end,
-                  isDynamicImport ? `'${file}'` : file,
-                  {
-                    contentOnly: true
-                  }
-                )
+                let rewrittenUrl = JSON.stringify(file)
+                if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
+                str().overwrite(start, end, rewrittenUrl, {
+                  contentOnly: true
+                })
               }
             }
           }

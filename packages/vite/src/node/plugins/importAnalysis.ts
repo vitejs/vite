@@ -527,7 +527,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               rewriteDone = true
             }
             if (!rewriteDone) {
-              str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
+              let rewrittenUrl = JSON.stringify(url)
+              if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
+              str().overwrite(start, end, rewrittenUrl, {
                 contentOnly: true
               })
             }
