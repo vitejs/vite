@@ -555,7 +555,7 @@ async function doBuild(
     for (const output of normalizedOutputs) {
       res.push(await generate(output))
     }
-    return res
+    return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
