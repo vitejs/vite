@@ -260,21 +260,11 @@ export async function startDefaultServe(): Promise<void> {
 }
 
 function startStaticServer(
-  resolved: ResolvedConfig,
-  config?: InlineConfig
+  resolved: ResolvedConfig, // resolved config which load by test root dir
+  config?: InlineConfig // user config which near by test file
 ): Promise<string> {
-  if (!config) {
-    // check if the test project has base config
-    const configFile = findConfigFile(rootDir)
-    if (configFile) {
-      try {
-        config = require(configFile)
-      } catch (e) {}
-    }
-  }
-
   // fallback internal base to ''
-  let base = config?.base
+  let base = config?.base || resolved.base
   if (!base || base === '/' || base === './') {
     base = ''
   }
@@ -290,8 +280,12 @@ function startStaticServer(
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
-  const baseDir = config?.testConfig?.baseRoute
+  const serve = sirv(resolve(rootDir, 'dist'), {
+    dev: !!config?.build?.watch || !!resolved.build.watch
+  })
+  // @ts-ignore
+  const baseDir =
+    config?.testConfig?.baseRoute || resolved?.testconfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
