@@ -312,7 +312,9 @@ export function injectQuery(url: string, queryToInject: string): string {
     resolvedUrl = pathToFileURL(url)
   }
   let { protocol, pathname, search, hash } = resolvedUrl
-  if (protocol === 'file:') {
+  // pathname must startWith '/'
+  // if url[0] is not '/' should be relative path
+  if (protocol === 'file:' || url[0] !== '/') {
     pathname = pathname.slice(1)
   }
   pathname = decodeURIComponent(pathname)

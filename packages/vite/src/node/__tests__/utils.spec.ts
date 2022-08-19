@@ -19,6 +19,24 @@ describe('injectQuery', () => {
     })
   }
 
+  test('relative path ""', () => {
+    expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
+      'usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('relative path "./"', () => {
+    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
+      'usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('file path', () => {
+    expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
+      new RegExp(`${process.cwd().slice(1)}/file:/usr/vite/%20a%20\\?direct`)
+    )
+  })
+
   test('path with multiple spaces', () => {
     expect(injectQuery('/usr/vite/path with space', 'direct')).toEqual(
       '/usr/vite/path with space?direct'
