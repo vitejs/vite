@@ -243,12 +243,15 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(config)
+    viteTestUrl = await startStaticServer(resolvedConfig, config)
     await page.goto(viteTestUrl)
   }
 }
 
-function startStaticServer(config?: InlineConfig): Promise<string> {
+function startStaticServer(
+  resolved: ResolvedConfig,
+  config?: InlineConfig
+): Promise<string> {
   if (!config) {
     // check if the test project has base config
     const configFile = resolve(rootDir, 'vite.config.js')
@@ -267,6 +270,10 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   if (config && config.__test__) {
     // @ts-ignore
     config.__test__()
+    // @ts-ignore
+  } else if (resolved && resolved.__test__) {
+    // @ts-ignore
+    resolved.__test__()
   }
 
   // start static file server

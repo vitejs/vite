@@ -1182,6 +1182,17 @@ importers:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../packages/plugin-vue-jsx
 
+  playground/vue-legacy:
+    specifiers:
+      '@vitejs/plugin-legacy': workspace:*
+      '@vitejs/plugin-vue': workspace:*
+      vue: ^3.2.37
+    dependencies:
+      vue: 3.2.37
+    devDependencies:
+      '@vitejs/plugin-legacy': link:../../packages/plugin-legacy
+      '@vitejs/plugin-vue': link:../../packages/plugin-vue
+
   playground/vue-lib:
     specifiers:
       '@vitejs/plugin-vue': workspace:*

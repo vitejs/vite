@@ -55,6 +55,7 @@ import {
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
+  renderAssetUrlInJS,
   resolveAssetFileNames
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
@@ -556,27 +557,34 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
-          // legacy build and inline css
-
-          // __VITE_ASSET__ and __VITE_PUBLIC_ASSET__ urls are processed by
-          // the vite:asset plugin, don't call resolveAssetUrlsInCss here
           chunkCSS = await finalizeCss(chunkCSS, true, config)
-
+          let cssString = JSON.stringify(chunkCSS)
+          cssString =
+            renderAssetUrlInJS(
+              this,
+              config,
+              chunk,
+              opts,
+              cssString
+            )?.toString() || cssString
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
-            `${style}.innerHTML = ${JSON.stringify(chunkCSS)};` +
+            `${style}.innerHTML = ${cssString};` +
             `document.head.appendChild(${style});`
+          const wrapIdx = code.indexOf('System.register')
+          const insertMark = "'use strict';"
+          const insertIdx = code.indexOf(insertMark, wrapIdx)
+          const s = new MagicString(code)
+          s.appendLeft(insertIdx + insertMark.length, injectCode)
           if (config.build.sourcemap) {
-            const s = new MagicString(code)
-            s.prepend(injectCode)
             // resolve public URL from CSS paths, we need to use absolute paths
             return {
               code: s.toString(),
               map: s.generateMap({ hires: true })
             }
           } else {
-            return { code: injectCode + code }
+            return { code: s.toString() }
           }
         }
       } else {
