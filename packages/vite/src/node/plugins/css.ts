@@ -645,17 +645,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
-        const fileName = assetFileNames
-          ? assetFileNamesToFileName(
-              assetFileNames,
-              cssBundleName,
-              getHash(extractedCss),
-              extractedCss
-            )
-          : cssBundleName
         this.emitFile({
           name: cssBundleName,
-          fileName,
           type: 'asset',
           source: extractedCss
         })
