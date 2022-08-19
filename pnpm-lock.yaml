@@ -1172,8 +1172,8 @@ importers:
         specifier: file:./no-external-css
         version: file:playground/ssr-deps/no-external-css
       '@vitejs/test-non-optimized-with-nested-external':
-        specifier: file:./non-optimized-with-nested-external
-        version: file:playground/ssr-deps/non-optimized-with-nested-external
+        specifier: workspace:*
+        version: link:non-optimized-with-nested-external
       '@vitejs/test-object-assigned-exports':
         specifier: file:./object-assigned-exports
         version: file:playground/ssr-deps/object-assigned-exports
@@ -1237,6 +1237,8 @@ importers:
 
   playground/ssr-deps/nested-external: {}
 
+  playground/ssr-deps/nested-external-cjs: {}
+
   playground/ssr-deps/no-external-cjs: {}
 
   playground/ssr-deps/no-external-css: {}
@@ -1246,6 +1248,9 @@ importers:
       nested-external:
         specifier: file:../nested-external
         version: file:playground/ssr-deps/nested-external
+      nested-external-cjs:
+        specifier: file:../nested-external-cjs
+        version: file:playground/ssr-deps/nested-external-cjs
 
   playground/ssr-deps/object-assigned-exports: {}
 
@@ -10713,6 +10718,12 @@ packages:
     version: 0.0.0
     dev: false
 
+  file:playground/ssr-deps/nested-external-cjs:
+    resolution: {directory: playground/ssr-deps/nested-external-cjs, type: directory}
+    name: nested-external-cjs
+    version: 0.0.0
+    dev: false
+
   file:playground/ssr-deps/no-external-cjs:
     resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
     name: '@vitejs/test-no-external-cjs'
@@ -10723,14 +10734,6 @@ packages:
     resolution: {directory: playground/ssr-deps/no-external-css, type: directory}
     name: '@vitejs/test-no-external-css'
     version: 0.0.0
-    dev: false
-
-  file:playground/ssr-deps/non-optimized-with-nested-external:
-    resolution: {directory: playground/ssr-deps/non-optimized-with-nested-external, type: directory}
-    name: '@vitejs/test-non-optimized-with-nested-external'
-    version: 0.0.0
-    dependencies:
-      nested-external: file:playground/ssr-deps/nested-external
     dev: false
 
   file:playground/ssr-deps/object-assigned-exports:
