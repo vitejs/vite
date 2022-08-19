@@ -50,6 +50,7 @@ import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
+import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 
 export interface BuildOptions {
   /**
@@ -305,6 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     commonjsOptions?.include.length !== 0
   return {
     pre: [
+      completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
@@ -857,6 +859,7 @@ const relativeUrlMechanisms: Record<
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
+  // NOTE: make sure rollup generate `module` params
   system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
