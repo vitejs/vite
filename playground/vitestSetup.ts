@@ -283,8 +283,8 @@ function startStaticServer(
   const serve = sirv(resolve(rootDir, 'dist'), {
     dev: !!config?.build?.watch || !!resolved.build.watch
   })
-  // @ts-ignore
   const baseDir =
+    // @ts-ignore
     config?.testConfig?.baseRoute || resolved?.testconfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
