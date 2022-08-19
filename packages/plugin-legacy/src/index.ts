@@ -633,8 +633,6 @@ async function buildPolyfillChunk(
     plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
-      // if a value above 'es5' is set, esbuild injects helper functions which uses es2015 features
-      target: 'es5',
       minify,
       assetsDir,
       rollupOptions: {
@@ -645,6 +643,18 @@ async function buildPolyfillChunk(
           format,
           entryFileNames: rollupOutputOptions.entryFileNames
         }
+      }
+    },
+    // Don't run esbuild for transpilation or minification
+    // because we don't want to transpile code.
+    esbuild: false,
+    optimizeDeps: {
+      esbuildOptions: {
+        // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+        // This limits the input code not to include es2015+ codes.
+        // But core-js is the only dependency which includes commonjs code
+        // and core-js doesn't include es2015+ codes.
+        target: 'es5'
       }
     }
   })
@@ -685,21 +695,6 @@ function polyfillsPlugin(
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
-    },
-    renderChunk(_, __, opts) {
-      // systemjs includes code that can't be minified down to es5 by esbuild
-      if (!excludeSystemJS) {
-        // @ts-ignore avoid esbuild transform on legacy chunks since it produces
-        // legacy-unsafe code - e.g. rewriting object properties into shorthands
-        opts.__vite_skip_esbuild__ = true
-
-        // @ts-ignore force terser for legacy chunks. This only takes effect if
-        // minification isn't disabled, because that leaves out the terser plugin
-        // entirely.
-        opts.__vite_force_terser__ = true
-      }
-
-      return null
     }
   }
 }
