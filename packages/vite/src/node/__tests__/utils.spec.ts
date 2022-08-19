@@ -33,7 +33,7 @@ describe('injectQuery', () => {
 
   test('file path', () => {
     expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
-      isWindows
+      !isWindows
         ? // d/a/vite/vite/file:/usr/vite/%20a%20?direct
           new RegExp(
             `${process.cwd().slice(1)}/file:/usr/vite/%20a%20\\?direct`
