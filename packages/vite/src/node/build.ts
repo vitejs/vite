@@ -491,19 +491,21 @@ async function doBuild(
       libOptions,
       config.logger
     )
+    const normalizedOutputs: OutputOptions[] = []
+
+    if (Array.isArray(outputs)) {
+      for (const resolvedOutput of outputs) {
+        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
+      }
+    } else {
+      normalizedOutputs.push(buildOutputOptions(outputs))
+    }
+
+    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
-
-      const output: OutputOptions[] = []
-      if (Array.isArray(outputs)) {
-        for (const resolvedOutput of outputs) {
-          output.push(buildOutputOptions(resolvedOutput))
-        }
-      } else {
-        output.push(buildOutputOptions(outputs))
-      }
 
       const resolvedChokidarOptions = resolveChokidarOptions(
         config.build.watch.chokidar
@@ -512,7 +514,7 @@ async function doBuild(
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
-        output,
+        output: normalizedOutputs,
         watch: {
           ...config.build.watch,
           chokidar: resolvedChokidarOptions
@@ -523,7 +525,7 @@ async function doBuild(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDir, options.emptyOutDir, config)
+            prepareOutDir(outDirs, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -542,55 +544,75 @@ async function doBuild(
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](
-        buildOutputOptions(output)
-      )
+      return bundle[options.write ? 'write' : 'generate'](output)
     }
 
     if (options.write) {
-      prepareOutDir(outDir, options.emptyOutDir, config)
+      prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
-      }
-      return res
-    } else {
-      return await generate(outputs)
+    const res = []
+    for (const output of normalizedOutputs) {
+      res.push(await generate(output))
     }
+    return res
   } catch (e) {
     outputBuildError(e)
     throw e
   }
 }
 
+function parseShouldEmptyDirs(outDirs: string[]) {
+  const sortedOutDirs = Array.from(new Set(outDirs))
+    .filter(Boolean)
+    .sort((p, n) => p.length - n.length)
+  const removedIndex = new Set<number>()
+
+  // if there have dirs like ['a/b/c', 'b/c', 'c'], only the `a/b/c` should be emptied
+  for (let i = 0; i < sortedOutDirs.length - 1; ++i) {
+    if (removedIndex.has(i)) continue
+
+    for (let j = i + 1; j < sortedOutDirs.length; ++j) {
+      if (removedIndex.has(j)) continue
+
+      if (sortedOutDirs[i].includes(sortedOutDirs[j])) {
+        removedIndex.add(j)
+      }
+    }
+  }
+
+  return sortedOutDirs.filter((_, i) => !removedIndex.has(i))
+}
+
 function prepareOutDir(
-  outDir: string,
+  outDirs: string[],
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  if (fs.existsSync(outDir)) {
-    if (
-      emptyOutDir == null &&
-      !normalizePath(outDir).startsWith(config.root + '/')
-    ) {
-      // warn if outDir is outside of root
-      config.logger.warn(
-        colors.yellow(
-          `\n${colors.bold(`(!)`)} outDir ${colors.white(
-            colors.dim(outDir)
-          )} is not inside project root and will not be emptied.\n` +
-            `Use --emptyOutDir to override.\n`
+  const shouldEmptyDirs = parseShouldEmptyDirs(outDirs)
+
+  for (const outDir of outDirs) {
+    if (fs.existsSync(outDir)) {
+      if (
+        emptyOutDir == null &&
+        !normalizePath(outDir).startsWith(config.root + '/')
+      ) {
+        // warn if outDir is outside of root
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(`(!)`)} outDir ${colors.white(
+              colors.dim(outDir)
+            )} is not inside project root and will not be emptied.\n` +
+              `Use --emptyOutDir to override.\n`
+          )
         )
-      )
-    } else if (emptyOutDir !== false) {
-      emptyDir(outDir, ['.git'])
+      } else if (emptyOutDir !== false && shouldEmptyDirs.includes(outDir)) {
+        emptyDir(outDir, ['.git'])
+      }
     }
-  }
-  if (config.publicDir && fs.existsSync(config.publicDir)) {
-    copyDir(config.publicDir, outDir)
+    if (config.publicDir && fs.existsSync(config.publicDir)) {
+      copyDir(config.publicDir, outDir)
+    }
   }
 }
 
