@@ -14,7 +14,8 @@ export function completeSystemWrapPlugin(): Plugin {
         return {
           code: code.replace(SystemJSWrapRE, (s, s1) =>
             s.replace(s1, 'exports, module')
-          )
+          ),
+          map: null
         }
       }
     }
