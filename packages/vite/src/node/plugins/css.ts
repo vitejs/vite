@@ -557,6 +557,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           })
           chunk.viteMetadata.importedCss.add(this.getFileName(fileHandle))
         } else if (!config.build.ssr) {
+          // legacy build and inline css
+
+          // simple build will collect all entry module css into chunk.viteMetadata.importedCss
+          // and inject into the `index.html` same with legacy
+          // legacy build should avoid insert the entry module css again
+          if (chunk.isEntry) {
+            return null
+          }
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
           cssString =
