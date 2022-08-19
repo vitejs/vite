@@ -178,10 +178,21 @@ beforeAll(async (s) => {
   }
 })
 
+function findConfigFile(dir: string): string | null {
+  for (const ext of ['.js', '.ts', '.mjs', '.mts', '.cjs', '.cts']) {
+    const configPath = resolve(dir, 'vite.config' + ext)
+    if (fs.existsSync(configPath)) {
+      return configPath
+    }
+  }
+  return null
+}
+
 export async function startDefaultServe(): Promise<void> {
-  const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
   let config: InlineConfig | undefined
-  if (fs.existsSync(testCustomConfig)) {
+  // config file near the *.spec.ts
+  const testCustomConfig = findConfigFile(dirname(testPath))
+  if (testCustomConfig) {
     // test has custom server configuration.
     config = await import(testCustomConfig).then((r) => r.default)
   }
@@ -254,10 +265,12 @@ function startStaticServer(
 ): Promise<string> {
   if (!config) {
     // check if the test project has base config
-    const configFile = resolve(rootDir, 'vite.config.js')
-    try {
-      config = require(configFile)
-    } catch (e) {}
+    const configFile = findConfigFile(rootDir)
+    if (configFile) {
+      try {
+        config = require(configFile)
+      } catch (e) {}
+    }
   }
 
   // fallback internal base to ''
