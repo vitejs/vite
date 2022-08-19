@@ -562,35 +562,11 @@ async function doBuild(
   }
 }
 
-function parseShouldEmptyDirs(outDirs: string[]) {
-  const sortedOutDirs = Array.from(new Set(outDirs))
-    .filter(Boolean)
-    .sort((p, n) => p.length - n.length)
-  const removedIndex = new Set<number>()
-
-  // if there have dirs like ['a/b/c', 'b/c', 'c'], only the `a/b/c` should be emptied
-  for (let i = 0; i < sortedOutDirs.length - 1; ++i) {
-    if (removedIndex.has(i)) continue
-
-    for (let j = i + 1; j < sortedOutDirs.length; ++j) {
-      if (removedIndex.has(j)) continue
-
-      if (sortedOutDirs[i].includes(sortedOutDirs[j])) {
-        removedIndex.add(j)
-      }
-    }
-  }
-
-  return sortedOutDirs.filter((_, i) => !removedIndex.has(i))
-}
-
 function prepareOutDir(
   outDirs: string[],
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  const shouldEmptyDirs = parseShouldEmptyDirs(outDirs)
-
   for (const outDir of outDirs) {
     if (fs.existsSync(outDir)) {
       if (
@@ -606,8 +582,22 @@ function prepareOutDir(
               `Use --emptyOutDir to override.\n`
           )
         )
-      } else if (emptyOutDir !== false && shouldEmptyDirs.includes(outDir)) {
-        emptyDir(outDir, ['.git'])
+      } else if (emptyOutDir !== false) {
+        // skip those other outDirs which are nested in current outDir
+        const skipDirs = outDirs
+          .map((dir) => {
+            const relative = path.relative(outDir, dir)
+            if (
+              relative &&
+              !relative.startsWith('..') &&
+              !path.isAbsolute(relative)
+            ) {
+              return relative
+            }
+            return ''
+          })
+          .filter(Boolean)
+        emptyDir(outDir, [...skipDirs, '.git'])
       }
     }
     if (config.publicDir && fs.existsSync(config.publicDir)) {

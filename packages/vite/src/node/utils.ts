@@ -534,14 +534,27 @@ export function isFileReadable(filename: string): boolean {
 
 /**
  * Delete every file and subdirectory. **The given directory must exist.**
- * Pass an optional `skip` array to preserve files in the root directory.
+ * Pass an optional `skip` array to preserve files under the root directory.
  */
-export function emptyDir(dir: string, skip?: string[]): void {
+export function emptyDir(dir: string, skip: string[] = []): void {
+  const nested: string[] = []
   for (const file of fs.readdirSync(dir)) {
-    if (skip?.includes(file)) {
+    const matched = skip.find((f) => f.startsWith(file))
+    if (matched) {
+      if (matched !== file) {
+        nested.push(`${dir}/${file}`)
+      }
       continue
     }
     fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
+  }
+  if (nested.length) {
+    skip = skip
+      .filter((f) => path.dirname(f) !== '.')
+      .map((f) => f.replace(/.+?[\\/]/, ''))
+    for (const dir of nested) {
+      emptyDir(dir, skip)
+    }
   }
 }
 
