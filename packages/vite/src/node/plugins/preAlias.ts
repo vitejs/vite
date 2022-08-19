@@ -69,7 +69,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
-              !(isBuild && ssr && isConfiguredAsExternal(id)) &&
+              !(isBuild && ssr && isConfiguredAsExternal(id, importer)) &&
               (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized
