@@ -82,7 +82,7 @@ export interface CSSOptions {
    * css bundle name.
    * @default style.css
    */
-  bundleName: string
+  bundleName?: string
 }
 
 export interface CSSModulesOptions {
