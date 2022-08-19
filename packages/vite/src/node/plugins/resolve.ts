@@ -30,6 +30,7 @@ import {
   isPossibleTsOutput,
   isTsRequest,
   isWindows,
+  lookupFile,
   nestedResolveFrom,
   normalizePath,
   resolveFrom,
@@ -44,6 +45,8 @@ import { loadPackageData, resolvePackageData } from '../packages'
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
 export const browserExternalId = '__vite-browser-external'
+// special id for packages that are optional peer deps
+export const optionalPeerDepId = '__vite-optional-peer-dep'
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -365,6 +368,14 @@ export default new Proxy({}, {
 })`
         }
       }
+      if (id.startsWith(optionalPeerDepId)) {
+        if (isProduction) {
+          return `export default {}`
+        } else {
+          const [, peerDep, parentDep] = id.split(':')
+          return `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
+        }
+      }
     }
   }
 }
@@ -618,6 +629,30 @@ export function tryNodeResolve(
   })!
 
   if (!pkg) {
+    // if import can't be found, check if it's an optional peer dep.
+    // if so, we can resolve to a special id that errors only when imported.
+    if (
+      basedir !== root && // root has no peer dep
+      !isBuiltin(id) &&
+      !id.includes('\0') &&
+      bareImportRE.test(id)
+    ) {
+      // find package.json with `name` as main
+      const mainPackageJson = lookupFile(basedir, ['package.json'], {
+        predicate: (content) => !!JSON.parse(content).name
+      })
+      if (mainPackageJson) {
+        const mainPkg = JSON.parse(mainPackageJson)
+        if (
+          mainPkg.peerDependencies?.[id] &&
+          mainPkg.peerDependenciesMeta?.[id]?.optional
+        ) {
+          return {
+            id: `${optionalPeerDepId}:${id}:${mainPkg.name}`
+          }
+        }
+      }
+    }
     return
   }
 

@@ -628,6 +628,7 @@ importers:
       dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:./dep-with-builtin-module-esm
       dep-with-dynamic-import: file:./dep-with-dynamic-import
+      dep-with-optional-peer-dep: file:./dep-with-optional-peer-dep
       lodash: ^4.17.21
       lodash-es: ^4.17.21
       lodash.clonedeep: ^4.5.0
@@ -655,6 +656,7 @@ importers:
       dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
       dep-with-builtin-module-esm: file:playground/optimize-deps/dep-with-builtin-module-esm
       dep-with-dynamic-import: file:playground/optimize-deps/dep-with-dynamic-import
+      dep-with-optional-peer-dep: file:playground/optimize-deps/dep-with-optional-peer-dep_vue@3.2.37
       lodash: 4.17.21
       lodash-es: 4.17.21
       lodash.clonedeep: 4.5.0
@@ -712,6 +714,9 @@ importers:
     specifiers: {}
 
   playground/optimize-deps/dep-with-dynamic-import:
+    specifiers: {}
+
+  playground/optimize-deps/dep-with-optional-peer-dep:
     specifiers: {}
 
   playground/optimize-deps/nested-exclude:
@@ -9362,6 +9367,21 @@ packages:
     resolution: {directory: playground/optimize-deps/dep-with-dynamic-import, type: directory}
     name: dep-with-dynamic-import
     version: 0.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-with-optional-peer-dep_vue@3.2.37:
+    resolution: {directory: playground/optimize-deps/dep-with-optional-peer-dep, type: directory}
+    id: file:playground/optimize-deps/dep-with-optional-peer-dep
+    name: dep-with-optional-peer-dep
+    version: 0.0.0
+    peerDependencies:
+      test: '*'
+      vue: ^3.2.37
+    peerDependenciesMeta:
+      test:
+        optional: true
+    dependencies:
+      vue: 3.2.37
     dev: false
 
   file:playground/optimize-deps/nested-exclude:

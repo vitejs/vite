@@ -23,6 +23,7 @@
     "dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
     "dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",
     "dep-with-dynamic-import": "file:./dep-with-dynamic-import",
+    "dep-with-optional-peer-dep": "file:./dep-with-optional-peer-dep",
     "added-in-entries": "file:./added-in-entries",
     "lodash-es": "^4.17.21",
     "nested-exclude": "file:./nested-exclude",
