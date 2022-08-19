@@ -6,6 +6,7 @@ import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
+  normalizePath,
   resolveHostname
 } from '../utils'
 
@@ -39,7 +40,9 @@ describe('injectQuery', () => {
             `${process.cwd().slice(1)}/file:/usr/vite/%20a%20\\?direct`
           )
         : // D:/a/vite/vite/file:/usr/vite/%20a%20?direct
-          new RegExp(`${process.cwd()}/file:/usr/vite/%20a%20\\?direct`)
+          new RegExp(
+            `${normalizePath(process.cwd())}/file:/usr/vite/%20a%20\\?direct`
+          )
     )
   })
 
