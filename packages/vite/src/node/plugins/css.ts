@@ -114,7 +114,7 @@ const inlineCSSRE = /(\?|&)inline-css\b/
 const usedRE = /(\?|&)used\b/
 const varRE = /^var\(/i
 
-const cssBundleName = 'style.css'
+export const cssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -645,8 +645,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (extractedCss && !hasEmitted) {
         hasEmitted = true
         extractedCss = await finalizeCss(extractedCss, true, config)
+        const fileName = assetFileNames
+          ? assetFileNamesToFileName(
+              assetFileNames,
+              cssBundleName,
+              getHash(extractedCss),
+              extractedCss
+            )
+          : cssBundleName
         this.emitFile({
           name: cssBundleName,
+          fileName,
           type: 'asset',
           source: extractedCss
         })
