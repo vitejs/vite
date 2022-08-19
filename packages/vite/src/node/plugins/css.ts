@@ -559,9 +559,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         } else if (!config.build.ssr) {
           // legacy build and inline css
 
-          // simple build will collect all entry module css into chunk.viteMetadata.importedCss
-          // and inject into the `index.html` same with legacy
-          // legacy build should avoid insert the entry module css again
+          // the legacy build should avoid inserting entry CSS modules here, they
+          // will be collected into `chunk.viteMetadata.importedCss` and injected
+          // later by the `'vite:build-html'` plugin into the `index.html`
           if (chunk.isEntry) {
             return null
           }
