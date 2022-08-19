@@ -23,7 +23,7 @@ test('should load dynamic import with module', async () => {
 
 describe.runIf(isBuild)('build', () => {
   test('should emit style.css named by assetFileNames', () => {
-    expect(findAssetFile(/style\.hash\.css$/).trim()).not.toBe('')
+    expect(findAssetFile(/index\.hash\.css$/).trim()).not.toBe('')
   })
 
   test('should remove empty chunk', async () => {
