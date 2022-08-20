@@ -15,32 +15,29 @@ describe('injectQuery', () => {
     // this test will work incorrectly on unix systems
     test('normalize windows path', () => {
       expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
-        'C:/User/Vite/Project?direct'
+        'C:\\User\\Vite\\Project?direct'
       )
     })
   }
 
-  test('relative path ""', () => {
+  test('relative path', () => {
     expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
       'usr/vite/%20a%20?direct'
     )
-  })
-
-  test('relative path "./"', () => {
     expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
       './usr/vite/%20a%20?direct'
     )
-  })
-
-  test('relative path "../"', () => {
     expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
       '../usr/vite/%20a%20?direct'
     )
   })
 
-  test('file path', () => {
+  test('path with protocol', () => {
     expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
-      new RegExp(`file:///usr/vite/%20a%20\\?direct`)
+      'file:///usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('http://usr.vite/%20a%20', 'direct')).toMatch(
+      'http://usr.vite/%20a%20?direct'
     )
   })
 
