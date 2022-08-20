@@ -312,9 +312,11 @@ export function injectQuery(url: string, queryToInject: string): string {
     resolvedUrl = pathToFileURL(url)
   }
   const { search, hash } = resolvedUrl
-  return `${url.split('?')[0]}?${queryToInject}${
-    search ? `&` + search.slice(1) : ''
-  }${hash ?? ''}`
+  let pathname = normalizePath(url.replace(/#.*$/, '').replace(/\?.*$/, ''))
+  pathname = isWindows ? slash(pathname) : pathname
+  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
+    hash ?? ''
+  }`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/

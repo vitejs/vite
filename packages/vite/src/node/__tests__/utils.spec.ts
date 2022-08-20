@@ -6,7 +6,6 @@ import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
-  normalizePath,
   resolveHostname
 } from '../utils'
 
@@ -15,7 +14,7 @@ describe('injectQuery', () => {
     // this test will work incorrectly on unix systems
     test('normalize windows path', () => {
       expect(injectQuery('C:\\User\\Vite\\Project', 'direct')).toEqual(
-        'C:\\User\\Vite\\Project?direct'
+        'C:/User/Vite/Project?direct'
       )
     })
   }
@@ -29,6 +28,12 @@ describe('injectQuery', () => {
     )
     expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
       '../usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('path with hash', () => {
+    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toEqual(
+      '/usr/vite/path with space/?direct#1?2/'
     )
   })
 
