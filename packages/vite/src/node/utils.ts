@@ -537,23 +537,30 @@ export function isFileReadable(filename: string): boolean {
  * Pass an optional `skip` array to preserve files under the root directory.
  */
 export function emptyDir(dir: string, skip: string[] = []): void {
-  const nested: string[] = []
+  let nested: Map<string, string[]> | null = null
+  skip = skip.map(slash)
   for (const file of fs.readdirSync(dir)) {
-    const matched = skip.find((f) => f.startsWith(file))
+    const matched = skip.find((f) => f === file || f.startsWith(`${file}/`))
     if (matched) {
       if (matched !== file) {
-        nested.push(`${dir}/${file}`)
+        nested ??= new Map()
+        let nestedSkip = nested.get(`${dir}/${file}`)
+        if (!nestedSkip) {
+          nestedSkip = []
+          nested.set(`${dir}/${file}`, nestedSkip)
+        }
+        const skipPath = matched.replace(`${file}/`, '')
+        if (!nestedSkip.includes(skipPath)) {
+          nestedSkip.push(skipPath)
+        }
       }
       continue
     }
     fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
   }
-  if (nested.length) {
-    skip = skip
-      .filter((f) => path.dirname(f) !== '.')
-      .map((f) => f.replace(/.+?[\\/]/, ''))
-    for (const dir of nested) {
-      emptyDir(dir, skip)
+  if (nested?.size) {
+    for (const [dir, nestedSkip] of nested) {
+      emptyDir(dir, nestedSkip)
     }
   }
 }
