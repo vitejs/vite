@@ -180,12 +180,19 @@ beforeAll(async (s) => {
 })
 
 export async function startDefaultServe(): Promise<void> {
+  let config: UserConfig | null = null
   // config file near the *.spec.ts
-  const { config } = await loadConfigFromFile(
-    null,
+  const res = await loadConfigFromFile(
+    {
+      command: isBuild ? 'build' : 'serve',
+      mode: isBuild ? 'production' : 'development'
+    },
     undefined,
     dirname(testPath)
   )
+  if (res) {
+    config = res.config
+  }
 
   const options: InlineConfig = {
     root: rootDir,
@@ -253,7 +260,7 @@ export async function startDefaultServe(): Promise<void> {
   }
 }
 
-function startStaticServer(config?: UserConfig): Promise<string> {
+function startStaticServer(config: UserConfig): Promise<string> {
   // fallback internal base to ''
   let base = config?.base
   if (!base || base === '/' || base === './') {
