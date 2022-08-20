@@ -28,21 +28,19 @@ describe('injectQuery', () => {
 
   test('relative path "./"', () => {
     expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
-      'usr/vite/%20a%20?direct'
+      './usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('relative path "../"', () => {
+    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
+      '../usr/vite/%20a%20?direct'
     )
   })
 
   test('file path', () => {
     expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
-      !isWindows
-        ? // d/a/vite/vite/file:/usr/vite/%20a%20?direct
-          new RegExp(
-            `${process.cwd().slice(1)}/file:/usr/vite/%20a%20\\?direct`
-          )
-        : // D:/a/vite/vite/file:/usr/vite/%20a%20?direct
-          new RegExp(
-            `${normalizePath(process.cwd())}/file:/usr/vite/%20a%20\\?direct`
-          )
+      new RegExp(`file:///usr/vite/%20a%20\\?direct`)
     )
   })
 

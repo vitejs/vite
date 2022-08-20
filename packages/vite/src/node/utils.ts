@@ -311,16 +311,10 @@ export function injectQuery(url: string, queryToInject: string): string {
   if (resolvedUrl.protocol !== 'relative:') {
     resolvedUrl = pathToFileURL(url)
   }
-  let { protocol, pathname, search, hash } = resolvedUrl
-  // pathname must startWith '/'
-  // if url[0] is not '/' should be relative path
-  if (protocol === 'file:' || url[0] !== '/') {
-    pathname = pathname.slice(1)
-  }
-  pathname = decodeURIComponent(pathname)
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash ?? ''
-  }`
+  const { search, hash } = resolvedUrl
+  return `${url.split('?')[0]}?${queryToInject}${
+    search ? `&` + search.slice(1) : ''
+  }${hash ?? ''}`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
