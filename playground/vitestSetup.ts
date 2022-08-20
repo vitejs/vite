@@ -199,7 +199,7 @@ export async function startDefaultServe(): Promise<void> {
   }
   // config file from test root dir
   if (!config) {
-    const res = await loadConfigFromDir(dirname(rootDir))
+    const res = await loadConfigFromDir(rootDir)
     if (res) {
       config = res.config
     }
