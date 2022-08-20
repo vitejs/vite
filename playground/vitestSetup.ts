@@ -9,9 +9,10 @@ import type {
   Logger,
   PluginOption,
   ResolvedConfig,
+  UserConfig,
   ViteDevServer
 } from 'vite'
-import { build, createServer, mergeConfig } from 'vite'
+import { build, createServer, loadConfigFromFile, mergeConfig } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
@@ -178,24 +179,13 @@ beforeAll(async (s) => {
   }
 })
 
-function findConfigFile(dir: string): string | null {
-  for (const ext of ['.js', '.ts', '.mjs', '.mts', '.cjs', '.cts']) {
-    const configPath = resolve(dir, 'vite.config' + ext)
-    if (fs.existsSync(configPath)) {
-      return configPath
-    }
-  }
-  return null
-}
-
 export async function startDefaultServe(): Promise<void> {
-  let config: InlineConfig | undefined
   // config file near the *.spec.ts
-  const testCustomConfig = findConfigFile(dirname(testPath))
-  if (testCustomConfig) {
-    // test has custom server configuration.
-    config = await import(testCustomConfig).then((r) => r.default)
-  }
+  const { config } = await loadConfigFromFile(
+    null,
+    undefined,
+    dirname(testPath)
+  )
 
   const options: InlineConfig = {
     root: rootDir,
@@ -236,10 +226,14 @@ export async function startDefaultServe(): Promise<void> {
     }`
     await page.goto(viteTestUrl)
   } else {
+    let rootConfig: UserConfig
     process.env.VITE_INLINE = 'inline-build'
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
+      config(config) {
+        rootConfig = config // => mergeConfig(<root dir config file>, testConfig)
+      },
       configResolved(config) {
         resolvedConfig = config
       }
@@ -254,17 +248,14 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(resolvedConfig, config)
+    viteTestUrl = await startStaticServer(rootConfig)
     await page.goto(viteTestUrl)
   }
 }
 
-function startStaticServer(
-  resolved: ResolvedConfig, // resolved config which load by test root dir
-  config?: InlineConfig // user config which near by test file
-): Promise<string> {
+function startStaticServer(config?: UserConfig): Promise<string> {
   // fallback internal base to ''
-  let base = config?.base || resolved.base
+  let base = config?.base
   if (!base || base === '/' || base === './') {
     base = ''
   }
@@ -273,19 +264,14 @@ function startStaticServer(
   if (config && config.__test__) {
     // @ts-ignore
     config.__test__()
-    // @ts-ignore
-  } else if (resolved && resolved.__test__) {
-    // @ts-ignore
-    resolved.__test__()
   }
 
   // start static file server
   const serve = sirv(resolve(rootDir, 'dist'), {
-    dev: !!config?.build?.watch || !!resolved.build.watch
+    dev: !!config?.build?.watch
   })
-  const baseDir =
-    // @ts-ignore
-    config?.testConfig?.baseRoute || resolved?.testconfig?.baseRoute
+  // @ts-ignore
+  const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
       res.statusCode = 200
