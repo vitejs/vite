@@ -185,7 +185,7 @@ export class ModuleGraph {
     setIsSelfAccepting = true
   ): Promise<ModuleNode> {
     const [url, resolvedId, meta] = await this.resolveUrl(rawUrl, ssr)
-    let mod = this.urlToModuleMap.get(url)
+    let mod = this.idToModuleMap.get(resolvedId)
     if (!mod) {
       mod = new ModuleNode(url, setIsSelfAccepting)
       if (meta) mod.meta = meta
@@ -199,6 +199,11 @@ export class ModuleGraph {
         this.fileToModulesMap.set(file, fileMappedModules)
       }
       fileMappedModules.add(mod)
+    }
+    // multiple urls can map to the same module and id, make sure we register
+    // the url to the existing module in that case
+    else if (!this.urlToModuleMap.has(url)) {
+      this.urlToModuleMap.set(url, mod)
     }
     return mod
   }

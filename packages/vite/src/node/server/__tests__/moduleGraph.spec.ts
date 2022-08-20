@@ -1,14 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ModuleGraph } from '../moduleGraph'
-let moduleGraph: ModuleGraph
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
-    beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => Promise.resolve({ id }))
-    })
-
     it('removes an ssrError', async () => {
+      const moduleGraph = new ModuleGraph(async (url) => ({ id: url }))
       const entryUrl = '/x.js'
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
@@ -17,6 +13,22 @@ describe('moduleGraph', () => {
       expect(entryModule.ssrError).to.be.a('error')
       moduleGraph.invalidateModule(entryModule)
       expect(entryModule.ssrError).toBe(null)
+    })
+
+    it('ensureEntryFromUrl should based on resolvedId', async () => {
+      const moduleGraph = new ModuleGraph(async (url) => {
+        if (url === '/xx.js') {
+          return { id: '/x.js' }
+        } else {
+          return { id: url }
+        }
+      })
+      const meta = { vite: 'test' }
+
+      const mod1 = await moduleGraph.ensureEntryFromUrl('/x.js', false)
+      mod1.meta = meta
+      const mod2 = await moduleGraph.ensureEntryFromUrl('/xx.js', false)
+      expect(mod2.meta).to.equal(meta)
     })
   })
 })
