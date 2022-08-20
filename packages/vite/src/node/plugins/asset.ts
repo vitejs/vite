@@ -137,7 +137,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = checkPublicFile(id, config)
       if (publicFile) {
-        return id
+        return { id: publicFile, meta: { publicUrl: id } }
       }
     },
 
@@ -148,15 +148,18 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const moduleInfo = this.getModuleInfo(id)
+      const meta = (moduleInfo?.meta || {}) as { publicUrl?: string }
+
       // raw requests, read from disk
-      if (rawRE.test(id)) {
-        const file = checkPublicFile(id, config) || cleanUrl(id)
-        // raw query, read file and return as string
+      if (rawRE.test(meta.publicUrl || id)) {
+        const file = meta.publicUrl ? id : cleanUrl(id)
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8')
         )}`
       }
 
+      id = meta.publicUrl || id
       if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
         return
       }
