@@ -179,24 +179,36 @@ beforeAll(async (s) => {
   }
 })
 
-export async function startDefaultServe(): Promise<void> {
-  let config: UserConfig | null = null
-  // config file near the *.spec.ts
-  const res = await loadConfigFromFile(
+function loadConfigFromDir(dir: string) {
+  return loadConfigFromFile(
     {
       command: isBuild ? 'build' : 'serve',
       mode: isBuild ? 'production' : 'development'
     },
     undefined,
-    dirname(testPath)
+    dir
   )
+}
+
+export async function startDefaultServe(): Promise<void> {
+  let config: UserConfig | null = null
+  // config file near the *.spec.ts
+  const res = await loadConfigFromDir(dirname(testPath))
   if (res) {
     config = res.config
+  }
+  // config file from test root dir
+  if (!config) {
+    const res = await loadConfigFromDir(dirname(rootDir))
+    if (res) {
+      config = res.config
+    }
   }
 
   const options: InlineConfig = {
     root: rootDir,
     logLevel: 'silent',
+    configFile: false,
     server: {
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
@@ -233,14 +245,10 @@ export async function startDefaultServe(): Promise<void> {
     }`
     await page.goto(viteTestUrl)
   } else {
-    let rootConfig: UserConfig
     process.env.VITE_INLINE = 'inline-build'
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
-      config(config) {
-        rootConfig = config // => mergeConfig(<root dir config file>, testConfig)
-      },
       configResolved(config) {
         resolvedConfig = config
       }
@@ -255,7 +263,7 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(rootConfig)
+    viteTestUrl = await startStaticServer(testConfig)
     await page.goto(viteTestUrl)
   }
 }
