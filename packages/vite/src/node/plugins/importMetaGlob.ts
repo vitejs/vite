@@ -74,10 +74,6 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
           server._importGlobMap.set(id, allGlobs)
-          result.files.forEach((file) => {
-            // update watcher
-            server!.watcher.add(dirname(file))
-          })
         }
         return transformStableResult(result.s, id, config)
       }
@@ -442,7 +438,9 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `Object.assign({${objectProps.join(',')}})`
+          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ','
+          )}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -487,7 +485,7 @@ export async function toAbsoluteGlob(
   if (isAbsolute(resolved)) return pre + resolved
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must starts with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
   )
 }
 

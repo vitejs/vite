@@ -59,6 +59,9 @@
 <h2>Import from dependency with dynamic import</h2>
 <div class="dep-with-dynamic-import"></div>
 
+<h2>Import from dependency with optional peer dep</h2>
+<div class="dep-with-optional-peer-dep"></div>
+
 <h2>Dep w/ special file format supported via plugins</h2>
 <div class="plugin"></div>
 
@@ -150,6 +153,13 @@
 <script type="module">
   const reusedName = 'reused'
   text('.reused-variable-names', reusedName)
+</script>
+
+<script type="module">
+  import { callItself, callPeerDep } from 'dep-with-optional-peer-dep'
+  text('.dep-with-optional-peer-dep', callItself())
+  // expect error as optional peer dep not installed
+  callPeerDep()
 </script>
 
 <script type="module">

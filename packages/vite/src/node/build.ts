@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type {
   ExternalOption,
+  InternalModuleFormat,
   ModuleFormat,
   OutputOptions,
   Plugin,
@@ -48,6 +49,8 @@ import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import { resolveChokidarOptions } from './watch'
+import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 
 export interface BuildOptions {
   /**
@@ -303,6 +306,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     commonjsOptions?.include.length !== 0
   return {
     pre: [
+      completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
@@ -444,11 +448,13 @@ async function doBuild(
         )
       }
 
-      const ssrWorkerBuild = ssr && config.ssr?.target !== 'webworker'
-      const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const ssrNodeBuild = ssr && config.ssr.target === 'node'
+      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
+      const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
+
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
-        ssrWorkerBuild || libOptions
+        ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
       return {
@@ -501,23 +507,17 @@ async function doBuild(
         output.push(buildOutputOptions(outputs))
       }
 
-      const watcherOptions = config.build.watch
+      const resolvedChokidarOptions = resolveChokidarOptions(
+        config.build.watch.chokidar
+      )
+
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
         output,
         watch: {
-          ...watcherOptions,
-          chokidar: {
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar,
-            ignored: [
-              '**/node_modules/**',
-              '**/.git/**',
-              ...(watcherOptions?.chokidar?.ignored || [])
-            ]
-          }
+          ...config.build.watch,
+          chokidar: resolvedChokidarOptions
         }
       })
 
@@ -824,6 +824,51 @@ function injectSsrFlag<T extends Record<string, any>>(
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
 
+/*
+  The following functions are copied from rollup
+  https://github.com/rollup/rollup/blob/c5269747cd3dd14c4b306e8cea36f248d9c1aa01/src/ast/nodes/MetaProperty.ts#L189-L232
+
+  https://github.com/rollup/rollup
+  The MIT License (MIT)
+  Copyright (c) 2017 [these people](https://github.com/rollup/rollup/graphs/contributors)
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
+
+const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
+  getResolveUrl(
+    `'${relativePath}', ${
+      umd ? `typeof document === 'undefined' ? location.href : ` : ''
+    }document.currentScript && document.currentScript.src || document.baseURI`
+  )
+
+const relativeUrlMechanisms: Record<
+  InternalModuleFormat,
+  (relativePath: string) => string
+> = {
+  amd: (relativePath) => {
+    if (relativePath[0] !== '.') relativePath = './' + relativePath
+    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+  },
+  cjs: (relativePath) =>
+    `(typeof document === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath)})`,
+  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
+  // NOTE: make sure rollup generate `module` params
+  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  umd: (relativePath) =>
+    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath, true)})`
+}
+/* end of copy */
+
 export type RenderBuiltAssetUrl = (
   filename: string,
   type: {
@@ -840,10 +885,13 @@ export function toOutputFilePathInString(
   hostId: string,
   hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
+  format: InternalModuleFormat,
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = toImportMetaURLBasedRelativePath
+  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
+    format
+  )
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -871,15 +919,15 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
-function toImportMetaURLBasedRelativePath(
-  filename: string,
-  importer: string
-): { runtime: string } {
-  return {
-    runtime: `new URL(${JSON.stringify(
+function getToImportMetaURLBasedRelativePath(
+  format: InternalModuleFormat
+): (filename: string, importer: string) => { runtime: string } {
+  const toRelativePath = relativeUrlMechanisms[format]
+  return (filename, importer) => ({
+    runtime: toRelativePath(
       path.posix.relative(path.dirname(importer), filename)
-    )},import.meta.url).href`
-  }
+    )
+  })
 }
 
 export function toOutputFilePathWithoutRuntime(

@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { browserLogs, isBuild, page } from '~utils'
 
 test('importmap', () => {

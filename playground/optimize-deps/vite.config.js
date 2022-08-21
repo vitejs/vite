@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('node:fs')
 const vue = require('@vitejs/plugin-vue')
 
 // Overriding the NODE_ENV set by vitest

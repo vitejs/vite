@@ -14,7 +14,7 @@ export namespace Connect {
   export type ServerHandle = HandleFunction | http.Server
 
   export class IncomingMessage extends http.IncomingMessage {
-    originalUrl?: http.IncomingMessage['url']
+    originalUrl?: http.IncomingMessage['url'] | undefined
   }
 
   export type NextFunction = (err?: any) => void

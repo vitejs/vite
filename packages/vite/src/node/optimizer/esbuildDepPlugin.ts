@@ -12,7 +12,7 @@ import {
   moduleListContains,
   normalizePath
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
+import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
@@ -91,6 +91,12 @@ export function esbuildDepPlugin(
       return {
         path: id,
         namespace: 'browser-external'
+      }
+    }
+    if (resolved.startsWith(optionalPeerDepId)) {
+      return {
+        path: resolved,
+        namespace: 'optional-peer-dep'
       }
     }
     if (ssr && isBuiltin(resolved)) {
@@ -274,6 +280,22 @@ module.exports = Object.create(new Proxy({}, {
     }
   }
 }))`
+            }
+          }
+        }
+      )
+
+      build.onLoad(
+        { filter: /.*/, namespace: 'optional-peer-dep' },
+        ({ path }) => {
+          if (config.isProduction) {
+            return {
+              contents: 'module.exports = {}'
+            }
+          } else {
+            const [, peerDep, parentDep] = path.split(':')
+            return {
+              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
             }
           }
         }

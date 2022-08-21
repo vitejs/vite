@@ -3,7 +3,7 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type { ExportSpecifier, ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
@@ -69,7 +69,7 @@ const debug = createDebugger('vite:import-analysis')
 
 const clientDir = normalizePath(CLIENT_DIR)
 
-const skipRE = /\.(map|json)$/
+const skipRE = /\.(map|json)($|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
 
@@ -189,7 +189,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const start = performance.now()
       await init
       let imports: readonly ImportSpecifier[] = []
-      let exports: readonly string[] = []
+      let exports: readonly ExportSpecifier[] = []
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
@@ -527,7 +527,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               rewriteDone = true
             }
             if (!rewriteDone) {
-              str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
+              let rewrittenUrl = JSON.stringify(url)
+              if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
+              str().overwrite(start, end, rewrittenUrl, {
                 contentOnly: true
               })
             }
@@ -551,42 +553,46 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // for pre-transforming
             staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
           }
-        } else if (!importer.startsWith(clientDir) && !ssr) {
-          // check @vite-ignore which suppresses dynamic import warning
-          const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
-            // complete expression inside parens
-            source.slice(dynamicIndex + 1, end)
-          )
-
-          const url = rawUrl
-            .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
-            .trim()
-          if (!hasViteIgnore) {
-            this.warn(
-              `\n` +
-                colors.cyan(importerModule.file) +
+        } else if (!importer.startsWith(clientDir)) {
+          if (!importer.includes('node_modules')) {
+            // check @vite-ignore which suppresses dynamic import warning
+            const hasViteIgnore = /\/\*\s*@vite-ignore\s*\*\//.test(
+              // complete expression inside parens
+              source.slice(dynamicIndex + 1, end)
+            )
+            if (!hasViteIgnore) {
+              this.warn(
                 `\n` +
-                generateCodeFrame(source, start) +
-                `\nThe above dynamic import cannot be analyzed by vite.\n` +
-                `See ${colors.blue(
-                  `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
-                )} ` +
-                `for supported dynamic import formats. ` +
-                `If this is intended to be left as-is, you can use the ` +
-                `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
-            )
+                  colors.cyan(importerModule.file) +
+                  `\n` +
+                  generateCodeFrame(source, start) +
+                  `\nThe above dynamic import cannot be analyzed by Vite.\n` +
+                  `See ${colors.blue(
+                    `https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations`
+                  )} ` +
+                  `for supported dynamic import formats. ` +
+                  `If this is intended to be left as-is, you can use the ` +
+                  `/* @vite-ignore */ comment inside the import() call to suppress this warning.\n`
+              )
+            }
           }
-          if (
-            !/^('.*'|".*"|`.*`)$/.test(url) ||
-            isExplicitImportRequired(url.slice(1, -1))
-          ) {
-            needQueryInjectHelper = true
-            str().overwrite(
-              start,
-              end,
-              `__vite__injectQuery(${url}, 'import')`,
-              { contentOnly: true }
-            )
+
+          if (!ssr) {
+            const url = rawUrl
+              .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '')
+              .trim()
+            if (
+              !/^('.*'|".*"|`.*`)$/.test(url) ||
+              isExplicitImportRequired(url.slice(1, -1))
+            ) {
+              needQueryInjectHelper = true
+              str().overwrite(
+                start,
+                end,
+                `__vite__injectQuery(${url}, 'import')`,
+                { contentOnly: true }
+              )
+            }
           }
         }
       }
@@ -676,7 +682,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           !isSelfAccepting &&
           isPartiallySelfAccepting &&
           acceptedExports.size >= exports.length &&
-          exports.every((name) => acceptedExports.has(name))
+          exports.every((e) => acceptedExports.has(e.n))
         ) {
           isSelfAccepting = true
         }

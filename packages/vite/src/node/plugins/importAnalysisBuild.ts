@@ -291,14 +291,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                str().overwrite(
-                  start,
-                  end,
-                  isDynamicImport ? `'${file}'` : file,
-                  {
-                    contentOnly: true
-                  }
-                )
+                let rewrittenUrl = JSON.stringify(file)
+                if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
+                str().overwrite(start, end, rewrittenUrl, {
+                  contentOnly: true
+                })
               }
             }
           }
@@ -380,7 +377,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
           const code = chunk.code
-          let imports: ImportSpecifier[]
+          let imports: ImportSpecifier[] = []
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e: any) {

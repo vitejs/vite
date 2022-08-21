@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest'
 import { findAssetFile, getColor, isBuild, page, readManifest } from '~utils'
 
 test('should load all stylesheets', async () => {

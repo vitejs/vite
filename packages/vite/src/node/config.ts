@@ -734,7 +734,11 @@ export async function resolveConfig(
   if (process.env.DEBUG) {
     debug(`using resolved config: %O`, {
       ...resolved,
-      plugins: resolved.plugins.map((p) => p.name)
+      plugins: resolved.plugins.map((p) => p.name),
+      worker: {
+        ...resolved.worker,
+        plugins: resolved.worker.plugins.map((p) => p.name)
+      }
     })
   }
 
@@ -932,6 +936,7 @@ async function bundleConfigFile(
     entryPoints: [fileName],
     outfile: 'out.js',
     write: false,
+    target: ['node14.18', 'node16'],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
@@ -975,7 +980,7 @@ async function bundleConfigFile(
               if (path.relative(idPkgDir, fileName).startsWith('..')) {
                 return {
                   // normalize actual import after bundled as a single vite config
-                  path: idFsPath,
+                  path: isESM ? pathToFileURL(idFsPath).href : idFsPath,
                   external: true
                 }
               }
@@ -1034,7 +1039,11 @@ async function loadConfigFromBundledFile(
     try {
       return (await dynamicImport(fileUrl)).default
     } finally {
-      fs.unlinkSync(fileNameTmp)
+      try {
+        fs.unlinkSync(fileNameTmp)
+      } catch {
+        // already removed if this function is called twice simultaneously
+      }
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
