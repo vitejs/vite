@@ -9,9 +9,10 @@ import type {
   Logger,
   PluginOption,
   ResolvedConfig,
+  UserConfig,
   ViteDevServer
 } from 'vite'
-import { build, createServer, mergeConfig } from 'vite'
+import { build, createServer, loadConfigFromFile, mergeConfig } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
@@ -178,17 +179,36 @@ beforeAll(async (s) => {
   }
 })
 
+function loadConfigFromDir(dir: string) {
+  return loadConfigFromFile(
+    {
+      command: isBuild ? 'build' : 'serve',
+      mode: isBuild ? 'production' : 'development'
+    },
+    undefined,
+    dir
+  )
+}
+
 export async function startDefaultServe(): Promise<void> {
-  const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
-  let config: InlineConfig | undefined
-  if (fs.existsSync(testCustomConfig)) {
-    // test has custom server configuration.
-    config = await import(testCustomConfig).then((r) => r.default)
+  let config: UserConfig | null = null
+  // config file near the *.spec.ts
+  const res = await loadConfigFromDir(dirname(testPath))
+  if (res) {
+    config = res.config
+  }
+  // config file from test root dir
+  if (!config) {
+    const res = await loadConfigFromDir(rootDir)
+    if (res) {
+      config = res.config
+    }
   }
 
   const options: InlineConfig = {
     root: rootDir,
     logLevel: 'silent',
+    configFile: false,
     server: {
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
@@ -243,23 +263,12 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(resolvedConfig, config)
+    viteTestUrl = await startStaticServer(testConfig)
     await page.goto(viteTestUrl)
   }
 }
 
-function startStaticServer(
-  resolved: ResolvedConfig,
-  config?: InlineConfig
-): Promise<string> {
-  if (!config) {
-    // check if the test project has base config
-    const configFile = resolve(rootDir, 'vite.config.js')
-    try {
-      config = require(configFile)
-    } catch (e) {}
-  }
-
+function startStaticServer(config: UserConfig): Promise<string> {
   // fallback internal base to ''
   let base = config?.base
   if (!base || base === '/' || base === './') {
@@ -270,14 +279,13 @@ function startStaticServer(
   if (config && config.__test__) {
     // @ts-ignore
     config.__test__()
-    // @ts-ignore
-  } else if (resolved && resolved.__test__) {
-    // @ts-ignore
-    resolved.__test__()
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const serve = sirv(resolve(rootDir, 'dist'), {
+    dev: !!config?.build?.watch
+  })
+  // @ts-ignore
   const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {
