@@ -220,7 +220,8 @@ export interface ViteDevServer {
   ssrTransform(
     code: string,
     inMap: SourceMap | null,
-    url: string
+    url: string,
+    originalCode?: string
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -339,8 +340,13 @@ export async function createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
-    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, code, server.config)
+    ssrTransform(
+      code: string,
+      inMap: SourceMap | null,
+      url: string,
+      originalCode = code
+    ) {
+      return ssrTransform(code, inMap, url, originalCode, server.config)
     },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
