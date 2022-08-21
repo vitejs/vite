@@ -312,7 +312,7 @@ export function injectQuery(url: string, queryToInject: string): string {
     resolvedUrl = pathToFileURL(url)
   }
   const { search, hash } = resolvedUrl
-  let pathname = normalizePath(cleanUrl(url))
+  let pathname = cleanUrl(url)
   pathname = isWindows ? slash(pathname) : pathname
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash ?? ''
