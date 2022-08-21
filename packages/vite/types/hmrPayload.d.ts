@@ -20,7 +20,6 @@ export interface Update {
   path: string
   acceptedPath: string
   timestamp: number
-  explicitImportRequired: boolean | undefined
 }
 
 export interface PrunePayload {
