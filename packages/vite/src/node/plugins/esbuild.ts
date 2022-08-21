@@ -404,7 +404,7 @@ const tsconfckParseOptions: TSConfckParseOptions = {
 
 async function initTSConfck(config: ResolvedConfig) {
   const workspaceRoot = searchForWorkspaceRoot(config.root)
-  debug(`init TSConfck (root: ${colors.cyan(workspaceRoot)})`)
+  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
 
   tsconfckParseOptions.cache!.clear()
   tsconfckParseOptions.root = workspaceRoot
@@ -413,7 +413,7 @@ async function initTSConfck(config: ResolvedConfig) {
       skip: (dir) => dir === 'node_modules' || dir === '.git'
     }))
   ])
-  debug(`init TSConfck end`)
+  debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(
