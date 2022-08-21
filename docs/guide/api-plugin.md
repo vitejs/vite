@@ -54,7 +54,7 @@ export default defineConfig({
 
 Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
 
-`plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
+`plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
 // framework-plugin
@@ -214,7 +214,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(config: ResolvedConfig) => void | Promise<void>`
 - **Kind:** `async`, `parallel`
 
-  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
+  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based on the command being run.
 
   **Example:**
 

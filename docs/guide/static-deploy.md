@@ -40,9 +40,9 @@ $ npm run build
 $ npm run preview
 ```
 
-The `vite preview` command will boot up local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
+The `vite preview` command will boot up a local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
 
-You may configure the port of the server by passing `--port` flag as an argument.
+You may configure the port of the server by passing the `--port` flag as an argument.
 
 ```json
 {
@@ -363,6 +363,6 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
    Your app should be deployed at `https://<PROJECTNAME>.onrender.com/`.
 
-By default, any new commit pushed to the specified branch will automatically trigger a new deploy. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
+By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.

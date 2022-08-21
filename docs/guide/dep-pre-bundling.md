@@ -60,7 +60,7 @@ export default defineConfig({
 When making changes to the linked dep, restart the dev server with the `--force` command line option for the changes to take effect.
 
 ::: warning Deduping
-Due to differences in linked dependency resolution, transitive dependencies can deduplicated incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
+Due to differences in linked dependency resolution, transitive dependencies can deduplicate incorrectly, causing issues when used in runtime. If you stumble on this issue, use `npm pack` on the linked dependency to fix it.
 :::
 
 ## Customizing the Behavior

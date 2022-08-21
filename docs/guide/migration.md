@@ -113,7 +113,7 @@ can be removed by passing `build.commonjsOptions: { include: [] }`
 
 ## Advanced
 
-There are some changes which only affects plugin/tool creators.
+There are some changes which only affect plugin/tool creators.
 
 - [[#5868] refactor: remove deprecated api for 3.0](https://github.com/vitejs/vite/pull/5868)
   - `printHttpServerUrls` is removed

@@ -336,10 +336,10 @@ See [here](/guide/env-and-mode#env-files) for more about environment files.
 - **Type:** `string | string[]`
 - **Default:** `VITE_`
 
-Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+Env variables starting with `envPrefix` will be exposed to your client source code via import.meta.env.
 
 :::warning SECURITY NOTES
-`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
 :::
 
 ## appType
