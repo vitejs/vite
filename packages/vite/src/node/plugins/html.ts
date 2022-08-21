@@ -191,7 +191,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   return { src, sourceCodeLocation, isModule, isAsync }
 }
 
-const attrValueWithQuotesStartRE = /=[\s\t\n\r]*"/
+const attrValueStartRE = /=[\s\t\n\r]*(["']|.)/
 
 export function overwriteAttrValue(
   s: MagicString,
@@ -202,12 +202,18 @@ export function overwriteAttrValue(
     sourceCodeLocation!.startOffset,
     sourceCodeLocation!.endOffset
   )
-  const valueWithQuotes = srcString.match(attrValueWithQuotesStartRE)
-  const valueOffset =
-    1 + (valueWithQuotes ? srcString.indexOf('"') : srcString.indexOf('='))
+  const valueStart = srcString.match(attrValueStartRE)
+  if (!valueStart) {
+    // overwrite attr value can only be called for a well-defined value
+    throw new Error(
+      `[vite:html] internal error, failed to overwrite attribute value`
+    )
+  }
+  const wrapOffset = valueStart[1] ? 1 : 0
+  const valueOffset = valueStart.index! + valueStart[0].length - 1
   s.overwrite(
-    sourceCodeLocation.startOffset + valueOffset,
-    sourceCodeLocation.endOffset + (valueWithQuotes ? -1 : 0),
+    sourceCodeLocation.startOffset + valueOffset + wrapOffset,
+    sourceCodeLocation.endOffset - wrapOffset,
     newValue,
     { contentOnly: true }
   )
