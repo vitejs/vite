@@ -7,6 +7,7 @@ import type {
   SourceMapInput
 } from 'rollup'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
 import type {
   AttributeNode,
   CompilerError,
@@ -53,6 +54,10 @@ const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
 const inlineImportRE =
   /(?<!(?<!\.\.)\.)\bimport\s*\(("([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*')\)/g
 const htmlLangRE = /\.(html|htm)$/
+
+const importMapRE =
+  /[ \t]*<script[^>]*type\s*=\s*["']?importmap["']?[^>]*>.*?<\/script>/is
+const moduleScriptRE = /[ \t]*<script[^>]*type\s*=\s*["']?module["']?[^>]*>/is
 
 export const isHTMLProxy = (id: string): boolean => htmlProxyRE.test(id)
 
@@ -225,6 +230,8 @@ function handleParseError(
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, postHooks] = resolveHtmlTransforms(config.plugins)
+  preHooks.unshift(preImportMapHook(config))
+  postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
   const isExcludedUrl = (url: string) =>
     url.startsWith('#') ||
@@ -795,6 +802,51 @@ export type IndexHtmlTransform =
       enforce?: 'pre' | 'post'
       transform: IndexHtmlTransformHook
     }
+
+export function preImportMapHook(
+  config: ResolvedConfig
+): IndexHtmlTransformHook {
+  return (html, ctx) => {
+    const importMapIndex = html.match(importMapRE)?.index
+    if (importMapIndex === undefined) return
+
+    const moduleScriptIndex = html.match(moduleScriptRE)?.index
+    if (moduleScriptIndex === undefined) return
+
+    if (moduleScriptIndex < importMapIndex) {
+      const relativeHtml = normalizePath(
+        path.relative(config.root, ctx.filename)
+      )
+      config.logger.warnOnce(
+        colors.yellow(
+          colors.bold(
+            `(!) <script type="importmap"> should come before <script type="module"> in /${relativeHtml}`
+          )
+        )
+      )
+    }
+  }
+}
+
+/**
+ * Move importmap before the first module script
+ */
+export function postImportMapHook(): IndexHtmlTransformHook {
+  return (html) => {
+    if (!moduleScriptRE.test(html)) return
+
+    let importMap: string | undefined
+    html = html.replace(importMapRE, (match) => {
+      importMap = match
+      return ''
+    })
+    if (importMap) {
+      html = html.replace(moduleScriptRE, (match) => `${importMap}\n${match}`)
+    }
+
+    return html
+  }
+}
 
 export function resolveHtmlTransforms(
   plugins: readonly Plugin[]
