@@ -126,6 +126,7 @@ function cleanUrl(pathname: string): string {
 }
 
 let isFirstUpdate = true
+const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -166,7 +167,10 @@ async function handleMessage(payload: HMRPayload) {
           // URL for the include check.
           const el = Array.from(
             document.querySelectorAll<HTMLLinkElement>('link')
-          ).find((e) => cleanUrl(e.href).includes(searchUrl))
+          ).find(
+            (e) =>
+              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
+          )
           if (el) {
             const newPath = `${base}${searchUrl.slice(1)}${
               searchUrl.includes('?') ? '&' : '?'
@@ -182,6 +186,7 @@ async function handleMessage(payload: HMRPayload) {
             const removeOldEl = () => el.remove()
             newLinkTag.addEventListener('load', removeOldEl)
             newLinkTag.addEventListener('error', removeOldEl)
+            outdatedLinkTags.add(el)
             el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
