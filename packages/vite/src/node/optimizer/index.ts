@@ -42,6 +42,7 @@ const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
   hasImports: boolean
+  // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   facade: boolean
   // es-module-lexer has a facade detection but isn't always accurate for our
@@ -941,7 +942,7 @@ export async function extractExportsData(
     const [imports, exports, facade] = parse(result.outputFiles[0].text)
     return {
       hasImports: imports.length > 0,
-      exports,
+      exports: exports.map((e) => e.n),
       facade
     }
   }
@@ -973,7 +974,7 @@ export async function extractExportsData(
   const [imports, exports, facade] = parseResult
   const exportsData: ExportsData = {
     hasImports: imports.length > 0,
-    exports,
+    exports: exports.map((e) => e.n),
     facade,
     hasReExports: imports.some(({ ss, se }) => {
       const exp = entryContent.slice(ss, se)

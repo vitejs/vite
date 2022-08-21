@@ -96,6 +96,10 @@ test('Resolve module field if browser field is likely UMD or CJS', async () => {
   expect(await page.textContent('.browser-module2')).toMatch('[success]')
 })
 
+test('Resolve module field if browser field is likely IIFE', async () => {
+  expect(await page.textContent('.browser-module3')).toMatch('[success]')
+})
+
 test('css entry', async () => {
   expect(await page.textContent('.css')).toMatch('[success]')
 })

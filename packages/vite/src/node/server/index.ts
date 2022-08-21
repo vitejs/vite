@@ -43,6 +43,7 @@ import { CLIENT_DIR } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
+import { resolveChokidarOptions } from '../watch'
 import type { PluginContainer } from './pluginContainer'
 import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -219,7 +220,8 @@ export interface ViteDevServer {
   ssrTransform(
     code: string,
     inMap: SourceMap | null,
-    url: string
+    url: string,
+    originalCode?: string
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -300,6 +302,11 @@ export async function createServer(
   )
   const { middlewareMode } = serverConfig
 
+  const resolvedWatchOptions = resolveChokidarOptions({
+    disableGlobbing: true,
+    ...serverConfig.watch
+  })
+
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
@@ -310,19 +317,10 @@ export async function createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const { ignored = [], ...watchOptions } = serverConfig.watch || {}
-  const watcher = chokidar.watch(path.resolve(root), {
-    ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
-      ...(Array.isArray(ignored) ? ignored : [ignored])
-    ],
-    ignoreInitial: true,
-    ignorePermissionErrors: true,
-    disableGlobbing: true,
-    ...watchOptions
-  }) as FSWatcher
+  const watcher = chokidar.watch(
+    path.resolve(root),
+    resolvedWatchOptions
+  ) as FSWatcher
 
   const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
     container.resolveId(url, undefined, { ssr })
@@ -342,10 +340,13 @@ export async function createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
-    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, code, {
-        json: { stringify: server.config.json?.stringify }
-      })
+    ssrTransform(
+      code: string,
+      inMap: SourceMap | null,
+      url: string,
+      originalCode = code
+    ) {
+      return ssrTransform(code, inMap, url, originalCode, server.config)
     },
     transformRequest(url, options) {
       return transformRequest(url, server, options)

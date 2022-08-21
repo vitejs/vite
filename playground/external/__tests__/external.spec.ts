@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import { isBuild, page } from '~utils'
+import { browserLogs, isBuild, page } from '~utils'
+
+test('importmap', () => {
+  expect(browserLogs).not.toContain(
+    'An import map is added after module script load was triggered.'
+  )
+})
 
 describe.runIf(isBuild)('build', () => {
   test('should externalize imported packages', async () => {

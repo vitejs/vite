@@ -16,7 +16,6 @@ import {
   timeFrom
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
-import { ssrTransform } from '../ssr/ssrTransform'
 import { getDepsOptimizer } from '../optimizer'
 import { injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
@@ -259,9 +258,7 @@ async function loadAndTransform(
   }
 
   const result = ssr
-    ? await ssrTransform(code, map as SourceMap, url, originalCode, {
-        json: { stringify: !!server.config.json?.stringify }
-      })
+    ? await server.ssrTransform(code, map as SourceMap, url, originalCode)
     : ({
         code,
         map,

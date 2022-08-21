@@ -242,10 +242,3 @@ describe.runIf(isServe)('invalid', () => {
     expect(content).toBeTruthy()
   })
 })
-
-describe('valid html', () => {
-  test('duplicated attrs', async () => {
-    await page.goto(viteTestUrl + '/valid.html')
-    expect(await getColor('#duplicated-attrs')).toBe('green')
-  })
-})
