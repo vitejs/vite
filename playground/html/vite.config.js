@@ -160,6 +160,25 @@ ${
           }
         ]
       }
+    },
+    {
+      name: 'head-prepend-importmap',
+      transformIndexHtml() {
+        return [
+          {
+            tag: 'script',
+            attrs: { type: 'importmap' },
+            children: `
+              {
+                "imports": {
+                  "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+                }
+              }
+            `,
+            injectTo: 'head'
+          }
+        ]
+      }
     }
   ]
 }

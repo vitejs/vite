@@ -11,6 +11,8 @@ import {
   applyHtmlTransforms,
   assetAttrsConfig,
   getScriptInfo,
+  postImportMapHook,
+  preImportMapHook,
   resolveHtmlTransforms,
   traverseHtml
 } from '../../plugins/html'
@@ -43,12 +45,22 @@ export function createDevHtmlTransformFn(
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
   const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
   return (url: string, html: string, originalUrl: string): Promise<string> => {
-    return applyHtmlTransforms(html, [...preHooks, devHtmlHook, ...postHooks], {
-      path: url,
-      filename: getHtmlFilename(url, server),
-      server,
-      originalUrl
-    })
+    return applyHtmlTransforms(
+      html,
+      [
+        preImportMapHook(server.config),
+        ...preHooks,
+        devHtmlHook,
+        ...postHooks,
+        postImportMapHook()
+      ],
+      {
+        path: url,
+        filename: getHtmlFilename(url, server),
+        server,
+        originalUrl
+      }
+    )
   }
 }
 
