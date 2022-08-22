@@ -107,7 +107,7 @@
     "picocolors": "^1.0.0",
     "postcss-import": "^14.1.0",
     "postcss-load-config": "^4.0.1",
-    "postcss-modules": "^4.3.1",
+    "postcss-modules": "^5.0.0",
     "resolve.exports": "^1.1.0",
     "rollup-plugin-license": "^2.8.1",
     "sirv": "^2.0.2",
