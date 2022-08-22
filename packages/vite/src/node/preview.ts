@@ -87,12 +87,8 @@ export async function preview(
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of config.plugins) {
-    if (plugin.configurePreviewServer) {
-      postHooks.push(
-        await plugin.configurePreviewServer({ middlewares: app, httpServer })
-      )
-    }
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook({ middlewares: app, httpServer }))
   }
 
   // cors

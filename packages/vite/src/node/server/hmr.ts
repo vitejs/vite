@@ -93,12 +93,10 @@ export async function handleHMRUpdate(
     server
   }
 
-  for (const plugin of config.plugins) {
-    if (plugin.handleHotUpdate) {
-      const filteredModules = await plugin.handleHotUpdate(hmrContext)
-      if (filteredModules) {
-        hmrContext.modules = filteredModules
-      }
+  for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
+    const filteredModules = await hook(hmrContext)
+    if (filteredModules) {
+      hmrContext.modules = filteredModules
     }
   }
 
