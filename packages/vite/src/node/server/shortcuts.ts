@@ -21,11 +21,11 @@ export function bindShortcuts(server: ViteDevServer): void {
     shortcut?.action(server)
   }
 
-  process.stdin
-    .on('data', onInput)
-    .setEncoding('utf8')
-    .setRawMode(true)
-    .resume()
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true)
+  }
+
+  process.stdin.on('data', onInput).setEncoding('utf8').resume()
 
   server.httpServer.on('close', () => {
     process.stdin.off('data', onInput).pause()
