@@ -1,6 +1,6 @@
 import colors from 'picocolors'
 import type { ViteDevServer } from '..'
-import { openBrowser, resolveBrowserUrl } from './openBrowser'
+import { openBrowser } from './openBrowser'
 
 export function bindShortcuts(server: ViteDevServer): void {
   if (!server.httpServer) return
@@ -49,8 +49,15 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: 'o',
     name: 'open browser',
-    async action(server: ViteDevServer): Promise<void> {
-      const url = await resolveBrowserUrl(server)
+    action(server: ViteDevServer): void {
+      const url = server.resolvedUrls?.local[0]
+
+      if (!url) {
+        return server.config.logger.warn(
+          colors.yellow(`cannot open in browser; no server URLs registered.`)
+        )
+      }
+
       openBrowser(url, true, server.config.logger)
     }
   },

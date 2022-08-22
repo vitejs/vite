@@ -15,8 +15,6 @@ import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
-import type { ViteDevServer } from './index'
-import { resolveHostname } from '../utils'
 
 // https://github.com/sindresorhus/open#app
 const OSX_CHROME = 'google chrome'
@@ -39,16 +37,6 @@ export function openBrowser(
     return startBrowserProcess(browser, url)
   }
   return false
-}
-
-export async function resolveBrowserUrl(server: ViteDevServer): Promise<string> {
-  const options = server.config.server
-  const hostname = await resolveHostname(options.host)
-  const port = options.port || 3000
-  const protocol = options.https ? 'https' : 'http'
-  const path =
-    typeof options.open === 'string' ? options.open : server.config.base
-  return `${protocol}://${hostname.name}:${port}${path}`
 }
 
 function executeNodeScript(scriptPath: string, url: string, logger: Logger) {
