@@ -9,6 +9,7 @@ import { createDebugger, normalizePath, unique } from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -156,6 +157,10 @@ export function updateModules(
         type: `${boundary.type}-update` as const,
         timestamp,
         path: boundary.url,
+        explicitImportRequired:
+          boundary.type === 'js'
+            ? isExplicitImportRequired(boundary.url)
+            : undefined,
         acceptedPath: acceptedVia.url
       }))
     )

@@ -388,7 +388,12 @@ export function removeStyle(id: string): void {
   }
 }
 
-async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
+async function fetchUpdate({
+  path,
+  acceptedPath,
+  timestamp,
+  explicitImportRequired
+}: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
@@ -421,7 +426,6 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     return deps.some((dep) => modulesToUpdate.has(dep))
   })
 
-  const needImportQuery = isExplicitImportRequired(path)
   await Promise.all(
     Array.from(modulesToUpdate).map(async (dep) => {
       const disposer = disposeMap.get(dep)
@@ -432,7 +436,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
           /* @vite-ignore */
           base +
             path.slice(1) +
-            `?${needImportQuery ? 'import&' : ''}t=${timestamp}${
+            `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
               query ? `&${query}` : ''
             }`
         )
@@ -582,35 +586,6 @@ export function createHotContext(ownerPath: string): ViteHotContext {
   }
 
   return hot
-}
-
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
-
-const isCSSRequest = (request: string): boolean => cssLangRE.test(request)
-
-const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
-
-const pathExtname = (url: string) => {
-  const parts = url.split('/')
-  const lastPart = parts[parts.length - 1]
-  const dotPos = lastPart.lastIndexOf('.')
-  return dotPos === -1 ? '' : lastPart.slice(dotPos)
-}
-
-const isJSRequest = (url: string): boolean => {
-  url = cleanUrl(url)
-  if (knownJsSrcRE.test(url)) {
-    return true
-  }
-  if (!pathExtname(url) && !url.endsWith('/')) {
-    return true
-  }
-  return false
-}
-
-function isExplicitImportRequired(url: string) {
-  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
 }
 
 /**
