@@ -55,13 +55,6 @@ export const SHORTCUTS: Shortcut[] = [
     }
   },
   {
-    key: 'f',
-    name: 'force restart',
-    action(server: ViteDevServer): void {
-      server.restart(true)
-    }
-  },
-  {
     key: 'h',
     name: 'toggle hmr',
     action({ config }: ViteDevServer): void {
