@@ -119,7 +119,7 @@ export interface ServerOptions extends CommonServerOptions {
    * Disable key bindings for the server by setting this to `false`. This can be
    * useful if you need the `process.stdin` stream for another purpose.
    *
-   * @default true
+   * @default true in CLI, `false` in programmatic usage
    */
   bindShortcuts?: boolean
 }
