@@ -43,7 +43,7 @@ export async function restoreJSX(
   }
 
   const flowRE = /(\/\/\s*@flow|\/\*\s*@flow\s*\*\/)/
-  const special = flowRE ? 'flow' : 'typescript'
+  const special = flowRE.test(code) ? 'flow' : 'typescript'
 
   const result = await babel.transformAsync(code, {
     babelrc: false,
