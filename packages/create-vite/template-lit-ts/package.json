@@ -17,10 +17,10 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "lit": "^2.3.0"
+    "lit": "^2.3.1"
   },
   "devDependencies": {
     "typescript": "^4.6.4",
-    "vite": "^3.0.8"
+    "vite": "^3.0.9"
   }
 }
