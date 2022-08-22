@@ -77,7 +77,7 @@
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
     "rimraf": "^3.0.2",
-    "rollup": ">=2.75.6 <2.77.0 || ~2.77.0",
+    "rollup": "~2.78.0",
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.8.0",
     "tslib": "^2.4.0",

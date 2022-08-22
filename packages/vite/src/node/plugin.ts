@@ -1,6 +1,7 @@
 import type {
   CustomPluginOptions,
   LoadResult,
+  ObjectHook,
   PluginContext,
   ResolveIdResult,
   Plugin as RollupPlugin,
@@ -63,14 +64,16 @@ export interface Plugin extends RollupPlugin {
    * Note: User plugins are resolved before running this hook so injecting other
    * plugins inside  the `config` hook will have no effect.
    */
-  config?: (
-    config: UserConfig,
-    env: ConfigEnv
-  ) => UserConfig | null | void | Promise<UserConfig | null | void>
+  config?: ObjectHook<
+    (
+      config: UserConfig,
+      env: ConfigEnv
+    ) => UserConfig | null | void | Promise<UserConfig | null | void>
+  >
   /**
    * Use this hook to read and store the final resolved vite config.
    */
-  configResolved?: (config: ResolvedConfig) => void | Promise<void>
+  configResolved?: ObjectHook<(config: ResolvedConfig) => void | Promise<void>>
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
@@ -80,7 +83,7 @@ export interface Plugin extends RollupPlugin {
    * can return a post hook that will be called after internal middlewares
    * are applied. Hook can be async functions and will be called in series.
    */
-  configureServer?: ServerHook
+  configureServer?: ObjectHook<ServerHook>
   /**
    * Configure the preview server. The hook receives the connect server and
    * its underlying http server.
@@ -89,7 +92,7 @@ export interface Plugin extends RollupPlugin {
    * return a post hook that will be called after other middlewares are
    * applied. Hooks can be async functions and will be called in series.
    */
-  configurePreviewServer?: PreviewServerHook
+  configurePreviewServer?: ObjectHook<PreviewServerHook>
   /**
    * Transform index.html.
    * The hook receives the following arguments:
@@ -121,36 +124,46 @@ export interface Plugin extends RollupPlugin {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?(
-    ctx: HmrContext
-  ): Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  handleHotUpdate?: ObjectHook<
+    (
+      ctx: HmrContext
+    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
 
   /**
    * extend hooks with ssr flag
    */
-  resolveId?: (
-    this: PluginContext,
-    source: string,
-    importer: string | undefined,
-    options: {
-      custom?: CustomPluginOptions
-      ssr?: boolean
-      /**
-       * @internal
-       */
-      scan?: boolean
-      isEntry: boolean
-    }
-  ) => Promise<ResolveIdResult> | ResolveIdResult
-  load?: (
-    this: PluginContext,
-    id: string,
-    options?: { ssr?: boolean }
-  ) => Promise<LoadResult> | LoadResult
-  transform?: (
-    this: TransformPluginContext,
-    code: string,
-    id: string,
-    options?: { ssr?: boolean }
-  ) => Promise<TransformResult> | TransformResult
+  resolveId?: ObjectHook<
+    (
+      this: PluginContext,
+      source: string,
+      importer: string | undefined,
+      options: {
+        custom?: CustomPluginOptions
+        ssr?: boolean
+        /**
+         * @internal
+         */
+        scan?: boolean
+        isEntry: boolean
+      }
+    ) => Promise<ResolveIdResult> | ResolveIdResult
+  >
+  load?: ObjectHook<
+    (
+      this: PluginContext,
+      id: string,
+      options?: { ssr?: boolean }
+    ) => Promise<LoadResult> | LoadResult
+  >
+  transform?: ObjectHook<
+    (
+      this: TransformPluginContext,
+      code: string,
+      id: string,
+      options?: { ssr?: boolean }
+    ) => Promise<TransformResult> | TransformResult
+  >
 }
+
+export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T

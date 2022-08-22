@@ -50,7 +50,7 @@ export type {
   SSRFormat,
   SSRTarget
 } from './ssr'
-export type { Plugin } from './plugin'
+export type { Plugin, HookHandler } from './plugin'
 export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
