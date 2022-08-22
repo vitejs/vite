@@ -12,13 +12,27 @@ export function bindShortcuts(server: ViteDevServer): void {
       }).join(', ')
   )
 
-  const onInput = (input: string) => {
+  let actionRunning = false
+
+  const onInput = async (input: string) => {
     // ctrl+c or ctrl+d
     if (input === '\x03' || input === '\x04') {
       return process.kill(process.pid, 'SIGINT')
     }
+
     const shortcut = SHORTCUTS.find((shortcut) => shortcut.key === input)
-    shortcut?.action(server)
+
+    if (!shortcut) {
+      return
+    }
+
+    if (actionRunning) {
+      return
+    }
+
+    actionRunning = true
+    await shortcut.action(server)
+    actionRunning = false
   }
 
   if (process.stdin.isTTY) {
@@ -42,8 +56,8 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: 'r',
     name: 'restart',
-    action(server: ViteDevServer): void {
-      server.restart()
+    action(server: ViteDevServer): Promise<void> {
+      return server.restart()
     }
   },
   {
