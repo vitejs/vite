@@ -51,5 +51,15 @@ describe('definePlugin', () => {
     "import\0.meta.env.FOO"
     \`;`)
     ).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    'import\0.meta.env.FOO'
+    \`;`)
+    ).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    \`import\0.meta.env.FOO\`
+    \`;`)
+    ).toBe(null)
   })
 })
