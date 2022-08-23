@@ -137,14 +137,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
       if (maybeNeedsReplacement) {
         code = stripLiteral(code)
-      }
 
-      while ((match = pattern.exec(code))) {
-        hasReplaced = true
-        const start = match.index
-        const end = start + match[0].length
-        const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement, { contentOnly: true })
+        while ((match = pattern.exec(code))) {
+          hasReplaced = true
+          const start = match.index
+          const end = start + match[0].length
+          const replacement = '' + replacements[match[1]]
+          s.overwrite(start, end, replacement, { contentOnly: true })
+        }
       }
 
       if (!hasReplaced) {
