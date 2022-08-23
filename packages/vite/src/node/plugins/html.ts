@@ -184,8 +184,10 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   let isAsync = false
   for (const p of node.attrs) {
     if (p.name === 'src') {
-      src = p
-      sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+      if (!src) {
+        src = p
+        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+      }
     } else if (p.name === 'type' && p.value && p.value === 'module') {
       isModule = true
     } else if (p.name === 'async') {
