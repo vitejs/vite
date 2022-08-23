@@ -38,10 +38,39 @@ describe('definePlugin', () => {
     )
   })
 
-  test('ignores import\0.meta.env inside strings', async () => {
+  test('ignores import\0.meta.env inside strings for non-SSR', async () => {
     const transform = await createDefinePluginTransform({
       'import\0.meta.env': '{}'
     })
+    // transform() returns null when no replacement is made
+    expect(await transform(`const isFoo = "import\0.meta.env.FOO";`)).toBe(null)
+    expect(await transform(`const isFoo = 'import\0.meta.env.FOO';`)).toBe(null)
+    expect(await transform('const isFoo = `import\0.meta.env.FOO`;')).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    "import\0.meta.env.FOO"
+    \`;`)
+    ).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    'import\0.meta.env.FOO'
+    \`;`)
+    ).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    \`import\0.meta.env.FOO\`
+    \`;`)
+    ).toBe(null)
+  })
+
+  test('ignores import\0.meta.env inside strings for SSR', async () => {
+    const transform = await createDefinePluginTransform(
+      {
+        'import\0.meta.env': '{}'
+      },
+      true,
+      true
+    )
     // transform() returns null when no replacement is made
     expect(await transform(`const isFoo = "import\0.meta.env.FOO";`)).toBe(null)
     expect(await transform(`const isFoo = 'import\0.meta.env.FOO';`)).toBe(null)
