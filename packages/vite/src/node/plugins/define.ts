@@ -128,9 +128,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
       if (ssr && !isBuild && !maybeNeedsReplacement) {
         // ssr + dev, simple replace
-        return code.replace(pattern, (_, match) => {
-          return '' + replacements[match]
-        })
+        return code
       }
 
       const s = new MagicString(code)
