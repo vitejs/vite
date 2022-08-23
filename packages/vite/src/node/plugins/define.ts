@@ -124,11 +124,23 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const maybeNeedsReplacement = new RegExp(pattern).test(code)
+
+      if (ssr && !isBuild && !maybeNeedsReplacement) {
+        // ssr + dev, simple replace
+        return code.replace(pattern, (_, match) => {
+          return '' + replacements[match]
+        })
+      }
+
       const s = new MagicString(code)
       let hasReplaced = false
       let match: RegExpExecArray | null
 
-      code = stripLiteral(code)
+      if (maybeNeedsReplacement) {
+        code = stripLiteral(code)
+      }
+
       while ((match = pattern.exec(code))) {
         hasReplaced = true
         const start = match.index
