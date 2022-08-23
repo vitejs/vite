@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Dummy from './components/Dummy?qs-should-not-break-plugin-react'
+import DefineVariable from './components/DefineVariable'
 import Button from 'jsx-entry'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
       </header>
 
       <Dummy />
+      <DefineVariable />
       <Button>button</Button>
     </div>
   )
