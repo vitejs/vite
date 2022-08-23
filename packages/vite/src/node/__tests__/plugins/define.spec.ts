@@ -42,17 +42,14 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform({
       'import\0.meta.env': '{}'
     })
-    const inputs = [
-      `const isFoo = "import\0.meta.env.FOO";`,
-      `const isFoo = 'import\0.meta.env.FOO';`,
-      'const isFoo = `import\0.meta.env.FOO`;',
-      `const isFoo = \`
-"import.meta.env.FOO"
-\`;`
-    ]
-    for (const input of inputs) {
-      // transform() returns null when no replacement is made
-      expect(await transform(input)).toBe(null)
-    }
+    // transform() returns null when no replacement is made
+    expect(await transform(`const isFoo = "import\0.meta.env.FOO";`)).toBe(null)
+    expect(await transform(`const isFoo = 'import\0.meta.env.FOO';`)).toBe(null)
+    expect(await transform('const isFoo = `import\0.meta.env.FOO`;')).toBe(null)
+    expect(
+      await transform(`const isFoo = \`
+    "import\0.meta.env.FOO"
+    \`;`)
+    ).toBe(null)
   })
 })
