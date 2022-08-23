@@ -54,11 +54,11 @@ export interface Options {
 
   /**
    * Enable Vue reactivity transform (experimental).
-   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
+   * https://vuejs.org/guide/extras/reactivity-transform.html
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
-   *                      node_modules, so specify directories in necessary)
+   *                      node_modules, so specify directories if necessary)
    * - `false`: disable in all cases
    *
    * @default false
@@ -186,7 +186,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         const descriptor = getDescriptor(filename, options)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
-          // handle <scrip> + <script setup> merge via compileScript()
+          // handle <script> + <script setup> merge via compileScript()
           block = getResolvedScript(descriptor, ssr)
         } else if (query.type === 'template') {
           block = descriptor.template!

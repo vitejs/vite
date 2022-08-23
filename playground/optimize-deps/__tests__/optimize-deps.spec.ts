@@ -88,6 +88,19 @@ test('dep with dynamic import', async () => {
   )
 })
 
+test('dep with optional peer dep', async () => {
+  expect(await page.textContent('.dep-with-optional-peer-dep')).toMatch(
+    `[success]`
+  )
+  if (isServe) {
+    expect(browserErrors.map((error) => error.message)).toEqual(
+      expect.arrayContaining([
+        'Could not resolve "foobar" imported by "dep-with-optional-peer-dep". Is it installed?'
+      ])
+    )
+  }
+})
+
 test('dep with css import', async () => {
   expect(await getColor('.dep-linked-include')).toBe('red')
 })

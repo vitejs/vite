@@ -14,7 +14,7 @@ This can be set via the CLI using `--host 0.0.0.0` or `--host`.
 
 There are cases when other servers might respond instead of Vite.
 
-The first case is when `localhost` is used. Node.js under v17 reorders the result of DNS-resolved address by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening. Vite prints the resolved address when it differs.
+The first case is when `localhost` is used. Node.js under v17 reorders the result of DNS-resolved addresses by default. When accessing `localhost`, browsers use DNS to resolve the address and that address might differ from the address which Vite is listening to. Vite prints the resolved address when it differs.
 
 You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Vite will then print the address as `localhost`.
 
@@ -30,7 +30,7 @@ export default defineConfig({
 })
 ```
 
-The second case is when wildcard hosts (e.g. `0.0.0.0`) is used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
+The second case is when wildcard hosts (e.g. `0.0.0.0`) are used. This is because servers listening on non-wildcard hosts take priority over those listening on wildcard hosts.
 
 :::
 
@@ -149,7 +149,7 @@ Check out [`vite-setup-catalogue`](https://github.com/sapphi-red/vite-setup-cata
 
 ::: tip NOTE
 
-With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fallback to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
+With the default configuration, reverse proxies in front of Vite are expected to support proxying WebSocket. If the Vite HMR client fails to connect WebSocket, the client will fall back to connecting the WebSocket directly to the Vite HMR server bypassing the reverse proxies:
 
 ```
 Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.
@@ -255,7 +255,7 @@ Restrict serving files outside of workspace root.
 
 Restrict files that could be served via `/@fs/`. When `server.fs.strict` is set to `true`, accessing files outside this directory list that aren't imported from an allowed file will result in a 403.
 
-Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fallback to the [project root](/guide/#index-html-and-project-root).
+Vite will search for the root of the potential workspace and use it as default. A valid workspace met the following conditions, otherwise will fall back to the [project root](/guide/#index-html-and-project-root).
 
 - contains `workspaces` field in `package.json`
 - contains one of the following file
