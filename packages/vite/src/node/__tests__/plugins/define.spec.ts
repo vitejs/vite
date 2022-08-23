@@ -37,4 +37,22 @@ describe('definePlugin', () => {
       'const isSSR = false;'
     )
   })
+
+  test('ignores import\0.meta.env inside strings', async () => {
+    const transform = await createDefinePluginTransform({
+      'import\0.meta.env': '{}'
+    })
+    const inputs = [
+      `const isFoo = "import\0.meta.env.FOO";`,
+      `const isFoo = 'import\0.meta.env.FOO';`,
+      'const isFoo = `import\0.meta.env.FOO`;',
+      `const isFoo = \`
+"import.meta.env.FOO"
+\`;`
+    ]
+    for (const input of inputs) {
+      // transform() returns null when no replacement is made
+      expect(await transform(input)).toBe(null)
+    }
+  })
 })
