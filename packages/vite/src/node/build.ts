@@ -372,12 +372,14 @@ async function doBuild(
   )
 
   const resolve = (p: string) => path.resolve(config.root, p)
-  const input = libOptions
+  let input = libOptions
     ? resolve(libOptions.entry)
     : typeof options.ssr === 'string'
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
-
+  if (input === 'index.html') {
+    input = resolve(input)
+  }
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
