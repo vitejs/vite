@@ -182,8 +182,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   let sourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
-  for (let i = 0; i < node.attrs.length; i++) {
-    const p = node.attrs[i]
+  for (const p of node.attrs) {
     if (p.name === 'src') {
       src = p
       sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
