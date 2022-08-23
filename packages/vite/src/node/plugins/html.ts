@@ -205,8 +205,8 @@ export function overwriteAttrValue(
   newValue: string
 ): MagicString {
   const srcString = s.slice(
-    sourceCodeLocation!.startOffset,
-    sourceCodeLocation!.endOffset
+    sourceCodeLocation.startOffset,
+    sourceCodeLocation.endOffset
   )
   const valueStart = srcString.match(attrValueStartRE)
   if (!valueStart) {
