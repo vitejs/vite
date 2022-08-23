@@ -21,6 +21,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
+import type MagicString from 'magic-string'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
@@ -902,7 +903,10 @@ export type RenderBuiltAssetUrl = (
     hostType: 'js' | 'css' | 'html'
     ssr: boolean
   }
-) => string | { relative?: boolean; runtime?: string } | undefined
+) =>
+  | string
+  | { relative?: boolean; runtime?: string; needModuleParam?: boolean }
+  | undefined
 
 export function toOutputFilePathInString(
   filename: string,
@@ -914,10 +918,13 @@ export function toOutputFilePathInString(
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
-    format
-  )
-): string | { runtime: string } {
+  ) =>
+    | string
+    | {
+        runtime: string
+        needModuleParam: boolean
+      } = getToImportMetaURLBasedRelativePath(format)
+): string | { runtime: string; needModuleParam: boolean } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
@@ -929,7 +936,10 @@ export function toOutputFilePathInString(
     })
     if (typeof result === 'object') {
       if (result.runtime) {
-        return { runtime: result.runtime }
+        return {
+          runtime: result.runtime,
+          needModuleParam: !!result.needModuleParam
+        }
       }
       if (typeof result.relative === 'boolean') {
         relative = result.relative
@@ -944,14 +954,45 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
+export function ensureHavingSystemJSModuleParam(
+  s: MagicString,
+  code: string
+): void {
+  const wrapIdx = code.indexOf('System.register')
+  if (wrapIdx < 0) return
+  const functionStr = 'function ('
+  const functionIdx = code.indexOf(functionStr, wrapIdx)
+  if (functionIdx < 0) return
+  const functionParameterStartIdx = functionIdx + functionStr.length
+  const functionParameterEndIdx = code.indexOf(')', functionParameterStartIdx)
+  const functionParameterModuleIdx = code.indexOf(
+    'module',
+    functionParameterStartIdx
+  )
+  const hasModuleParameter =
+    functionParameterModuleIdx >= 0 &&
+    functionParameterModuleIdx < functionParameterEndIdx
+  if (!hasModuleParameter) {
+    s.overwrite(
+      functionParameterStartIdx - 1,
+      functionParameterEndIdx + 1,
+      '(exports, module)'
+    )
+  }
+}
+
 function getToImportMetaURLBasedRelativePath(
   format: InternalModuleFormat
-): (filename: string, importer: string) => { runtime: string } {
+): (
+  filename: string,
+  importer: string
+) => { runtime: string; needModuleParam: boolean } {
   const toRelativePath = relativeUrlMechanisms[format]
   return (filename, importer) => ({
     runtime: toRelativePath(
       path.posix.relative(path.dirname(importer), filename)
-    )
+    ),
+    needModuleParam: format === 'system'
   })
 }
 

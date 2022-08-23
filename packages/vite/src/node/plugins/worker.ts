@@ -6,7 +6,11 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning, toOutputFilePathInString } from '../build'
+import {
+  ensureHavingSystemJSModuleParam,
+  onRollupWarning,
+  toOutputFilePathInString
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -320,6 +324,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
         let match: RegExpExecArray | null
         s = new MagicString(code)
+        let needModuleParam = false
 
         // Replace "__VITE_WORKER_ASSET__5aa0ddc0__" using relative paths
         const workerMap = workerCache.get(config.mainConfig || config)!
@@ -336,10 +341,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             config,
             outputOptions.format
           )
-          const replacementString =
-            typeof replacement === 'string'
-              ? JSON.stringify(replacement).slice(1, -1)
-              : `"+${replacement.runtime}+"`
+          let replacementString: string
+          if (typeof replacement === 'string') {
+            replacementString = JSON.stringify(replacement).slice(1, -1)
+          } else {
+            replacementString = `"+${replacement.runtime}+"`
+            needModuleParam ||= replacement.needModuleParam
+          }
           s.overwrite(
             match.index,
             match.index + full.length,
@@ -348,6 +356,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               contentOnly: true
             }
           )
+        }
+        if (needModuleParam) {
+          ensureHavingSystemJSModuleParam(s, code)
         }
       }
       return result()

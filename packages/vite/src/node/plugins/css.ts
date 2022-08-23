@@ -25,7 +25,10 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
-import { toOutputFilePathInCss } from '../build'
+import {
+  ensureHavingSystemJSModuleParam,
+  toOutputFilePathInCss
+} from '../build'
 import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -567,14 +570,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
           chunkCSS = await finalizeCss(chunkCSS, true, config)
           let cssString = JSON.stringify(chunkCSS)
-          cssString =
-            renderAssetUrlInJS(
-              this,
-              config,
-              chunk,
-              opts,
-              cssString
-            )?.toString() || cssString
+          const cssRendered = renderAssetUrlInJS(
+            this,
+            config,
+            chunk,
+            opts,
+            cssString
+          )
+          cssString = cssRendered?.s.toString() || cssString
           const style = `__vite_style__`
           const injectCode =
             `var ${style} = document.createElement('style');` +
@@ -585,6 +588,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const insertIdx = code.indexOf(insertMark, wrapIdx)
           const s = new MagicString(code)
           s.appendLeft(insertIdx + insertMark.length, injectCode)
+          if (cssRendered?.needModuleParam) {
+            ensureHavingSystemJSModuleParam(s, code)
+          }
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths
             return {

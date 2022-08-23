@@ -10,7 +10,10 @@ import type {
   RenderedChunk
 } from 'rollup'
 import MagicString from 'magic-string'
-import { toOutputFilePathInString } from '../build'
+import {
+  ensureHavingSystemJSModuleParam,
+  toOutputFilePathInString
+} from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
@@ -48,9 +51,10 @@ export function renderAssetUrlInJS(
   chunk: RenderedChunk,
   opts: NormalizedOutputOptions,
   code: string
-): MagicString | undefined {
+): { s: MagicString; needModuleParam: boolean } | undefined {
   let match: RegExpExecArray | null
   let s: MagicString | undefined
+  let needModuleParam = false
 
   // Urls added with JS using e.g.
   // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
@@ -76,10 +80,13 @@ export function renderAssetUrlInJS(
       config,
       opts.format
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+    let replacementString: string
+    if (typeof replacement === 'string') {
+      replacementString = JSON.stringify(replacement).slice(1, -1)
+    } else {
+      replacementString = `"+${replacement.runtime}+"`
+      needModuleParam ||= replacement.needModuleParam
+    }
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
@@ -100,16 +107,19 @@ export function renderAssetUrlInJS(
       config,
       opts.format
     )
-    const replacementString =
-      typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
-        : `"+${replacement.runtime}+"`
+    let replacementString: string
+    if (typeof replacement === 'string') {
+      replacementString = JSON.stringify(replacement).slice(1, -1)
+    } else {
+      replacementString = `"+${replacement.runtime}+"`
+      needModuleParam ||= replacement.needModuleParam
+    }
     s.overwrite(match.index, match.index + full.length, replacementString, {
       contentOnly: true
     })
   }
 
-  return s
+  return s && { s, needModuleParam }
 }
 
 /**
@@ -167,9 +177,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, opts) {
-      const s = renderAssetUrlInJS(this, config, chunk, opts, code)
+      const result = renderAssetUrlInJS(this, config, chunk, opts, code)
 
-      if (s) {
+      if (result) {
+        const { s, needModuleParam } = result
+        if (needModuleParam) {
+          ensureHavingSystemJSModuleParam(s, code)
+        }
         return {
           code: s.toString(),
           map: config.build.sourcemap ? s.generateMap({ hires: true }) : null
