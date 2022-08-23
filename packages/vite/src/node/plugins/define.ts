@@ -1,4 +1,5 @@
 import MagicString from 'magic-string'
+import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { transformStableResult } from '../utils'
@@ -134,6 +135,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       let hasReplaced = false
       let match: RegExpExecArray | null
 
+      code = stripLiteral(code)
       while ((match = pattern.exec(code))) {
         hasReplaced = true
         const start = match.index
