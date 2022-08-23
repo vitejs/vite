@@ -532,7 +532,7 @@ export function isFileReadable(filename: string): boolean {
   }
 }
 
-const splitFirstDirRE = /(.+)?[\\/](.+)/
+const splitFirstDirRE = /(.+?)[\\/](.+)/
 
 /**
  * Delete every file and subdirectory. **The given directory must exist.**
