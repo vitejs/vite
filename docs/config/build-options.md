@@ -53,8 +53,10 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
+Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent.
+
 ::: tip Note
-If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size.
+If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size or being a Git LFS placeholder.
 :::
 
 ## build.cssCodeSplit

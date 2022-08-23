@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
 import fs, { promises as fsp } from 'node:fs'
+import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
@@ -398,6 +399,13 @@ export function publicFileToBuiltUrl(
   return `__VITE_PUBLIC_ASSET__${hash}__`
 }
 
+const GIT_LFS_PREFIX = Buffer.from('version https://git-lfs.github.com')
+function isGitLfsPlaceholder(content: Buffer): boolean {
+  if (content.length < GIT_LFS_PREFIX.length) return false
+  // Check whether the content begins with the characteristic string of Git LFS placeholders
+  return GIT_LFS_PREFIX.compare(content, 0, GIT_LFS_PREFIX.length) === 0
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -426,7 +434,8 @@ async function fileToBuiltUrl(
     config.build.lib ||
     (!file.endsWith('.svg') &&
       !file.endsWith('.html') &&
-      content.length < Number(config.build.assetsInlineLimit))
+      content.length < Number(config.build.assetsInlineLimit) &&
+      !isGitLfsPlaceholder(content))
   ) {
     const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
     // base64 inlined as a string
