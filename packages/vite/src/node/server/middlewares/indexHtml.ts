@@ -43,7 +43,9 @@ interface AssetNode {
 export function createDevHtmlTransformFn(
   server: ViteDevServer
 ): (url: string, html: string, originalUrl: string) => Promise<string> {
-  const [preHooks, postHooks] = resolveHtmlTransforms(server.config.plugins)
+  const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
+    server.config.plugins
+  )
   return (url: string, html: string, originalUrl: string): Promise<string> => {
     return applyHtmlTransforms(
       html,
@@ -51,6 +53,7 @@ export function createDevHtmlTransformFn(
         preImportMapHook(server.config),
         ...preHooks,
         devHtmlHook,
+        ...normalHooks,
         ...postHooks,
         postImportMapHook()
       ],
