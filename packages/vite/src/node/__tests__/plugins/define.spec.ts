@@ -119,45 +119,41 @@ describe('definePlugin', () => {
       const transform = await createDefinePluginTransform()
 
       // FIXME: These tests are failing for some reason. I'm in the middle of figuring out why.
-      const focusedSpecialDefineKeys = specialDefineKeys.filter(
+      const keysToTest = specialDefineKeys.filter(
         (key) => !key.includes('meta.env') && !key.startsWith('process.env')
       )
 
-      test.each(focusedSpecialDefineKeys)('%s', async (key) => {
-        expect(await transform('let x = `${' + key + '}`')).toBe(
-          'let x = `${' + specialDefines[key] + '}`'
-        )
+      test.each(keysToTest)('%s', async (key) => {
+        const result = await transform('let x = `${' + key + '}`')
+        expect(result).toBe('let x = `${' + specialDefines[key] + '}`')
       })
-      test.each(focusedSpecialDefineKeys)('%s', async (key) => {
-        expect(await transform('let x = `\n${' + key + '}\n`')).toBe(
-          'let x = `\n${' + specialDefines[key] + '}\n`'
-        )
+      test.each(keysToTest)('%s', async (key) => {
+        const result = await transform('let x = `\n${' + key + '}\n`')
+        expect(result).toBe('let x = `\n${' + specialDefines[key] + '}\n`')
       })
     })
     describe('SSR', async () => {
       // FIXME: These tests are failing for some reason. I'm in the middle of figuring out why.
-      const focusedSpecialDefineKeys = specialDefineKeysSSR.filter(
+      const keysToTest = specialDefineKeysSSR.filter(
         (key) => !key.includes('meta.env') && !key.startsWith('process.env')
       )
 
       const transform = await createDefinePluginTransform({}, true, true)
-      test.each(focusedSpecialDefineKeys)('%s', async (key) => {
-        if (specialDefinesSSR[key]) {
-          expect(await transform('let x = `${' + key + '}`')).toBe(
-            'let x = `${' + specialDefinesSSR[key] + '}`'
-          )
-        } else {
-          expect(await transform('let x = `${' + key + '}`')).toBe(null)
-        }
+      test.each(keysToTest)('%s', async (key) => {
+        const result = await transform('let x = `${' + key + '}`')
+        expect(result).toBe(
+          specialDefinesSSR[key]
+            ? 'let x = `${' + specialDefinesSSR[key] + '}`'
+            : null
+        )
       })
-      test.each(focusedSpecialDefineKeys)('%s', async (key) => {
-        if (specialDefinesSSR[key]) {
-          expect(await transform('let x = `\n${' + key + '}\n`')).toBe(
-            'let x = `\n${' + specialDefinesSSR[key] + '}\n`'
-          )
-        } else {
-          expect(await transform('let x = `\n${' + key + '}\n`')).toBe(null)
-        }
+      test.each(keysToTest)('%s', async (key) => {
+        const result = await transform('let x = `\n${' + key + '}\n`')
+        expect(result).toBe(
+          specialDefinesSSR[key]
+            ? 'let x = `\n${' + specialDefinesSSR[key] + '}\n`'
+            : null
+        )
       })
     })
   })
