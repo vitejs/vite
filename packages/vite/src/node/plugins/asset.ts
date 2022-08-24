@@ -11,6 +11,7 @@ import type {
   RenderedChunk
 } from 'rollup'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
 import { toOutputFilePathInString } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -437,6 +438,12 @@ async function fileToBuiltUrl(
       content.length < Number(config.build.assetsInlineLimit) &&
       !isGitLfsPlaceholder(content))
   ) {
+    if (config.build.lib && isGitLfsPlaceholder(content)) {
+      config.logger.warn(
+        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`)
+      )
+    }
+
     const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
     // base64 inlined as a string
     url = `data:${mimeType};base64,${content.toString('base64')}`
