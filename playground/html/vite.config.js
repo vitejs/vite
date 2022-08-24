@@ -26,7 +26,8 @@ module.exports = {
           __dirname,
           'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
         ),
-        linkProps: resolve(__dirname, 'link-props/index.html')
+        linkProps: resolve(__dirname, 'link-props/index.html'),
+        valid: resolve(__dirname, 'valid.html')
       }
     }
   },
