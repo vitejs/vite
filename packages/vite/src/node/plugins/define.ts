@@ -46,7 +46,10 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...config.env,
       SSR: !!config.build.ssr
     }
-    const importMetaEnv = 'import\0.meta.env'.replace(/\0/g, '')
+
+    // FIXME: Use string concatenation to workaround Vite define-replacement of import\.meta.env in string literals
+    const importMetaEnv = 'import' + '.meta.env'
+
     for (const key in env) {
       importMetaKeys[`${importMetaEnv}.${key}`] = JSON.stringify(env[key])
     }

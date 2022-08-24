@@ -19,8 +19,8 @@ async function createDefinePluginTransform(
   }
 }
 
-// FIXME: Insert \0 to prevent Vite from replacing special constants in string literals
-const importMetaEnv = 'import\0.meta.env'.replace(/\0/g, '')
+// FIXME: Use string concatenation to workaround Vite define-replacement of import\.meta.env in string literals
+const importMetaEnv = 'import' + '.meta.env'
 
 describe('definePlugin', () => {
   test('replaces custom define', async () => {
