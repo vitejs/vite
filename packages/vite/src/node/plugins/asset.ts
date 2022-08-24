@@ -182,7 +182,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         const { s, needModuleParam } = result
         if (needModuleParam) {
-          ensureHavingSystemJSModuleParam(s, code)
+          ensureHavingSystemJSModuleParam(s, code, opts)
         }
         return {
           code: s.toString(),

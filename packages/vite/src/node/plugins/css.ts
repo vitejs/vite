@@ -589,7 +589,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const s = new MagicString(code)
           s.appendLeft(insertIdx + insertMark.length, injectCode)
           if (cssRendered?.needModuleParam) {
-            ensureHavingSystemJSModuleParam(s, code)
+            ensureHavingSystemJSModuleParam(s, code, opts)
           }
           if (config.build.sourcemap) {
             // resolve public URL from CSS paths, we need to use absolute paths

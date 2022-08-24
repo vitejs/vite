@@ -5,6 +5,7 @@ import type {
   ExternalOption,
   InternalModuleFormat,
   ModuleFormat,
+  NormalizedOutputOptions,
   OutputOptions,
   Plugin,
   RollupBuild,
@@ -956,8 +957,10 @@ export function toOutputFilePathInString(
 
 export function ensureHavingSystemJSModuleParam(
   s: MagicString,
-  code: string
+  code: string,
+  opts: NormalizedOutputOptions
 ): void {
+  if (opts.format !== 'system') return
   const wrapIdx = code.indexOf('System.register')
   if (wrapIdx < 0) return
   const functionStr = 'function ('

@@ -358,7 +358,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           )
         }
         if (needModuleParam) {
-          ensureHavingSystemJSModuleParam(s, code)
+          ensureHavingSystemJSModuleParam(s, code, outputOptions)
         }
       }
       return result()
