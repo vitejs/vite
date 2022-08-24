@@ -629,15 +629,6 @@ async function buildPolyfillChunk(
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
-    // Because Vite's build function defaults to calling resolveConfig with defaultMode = 'production'
-    // And as Vite's resolveConfig function will overwrite import.env.NODE_ENV if === 'production'
-    // We must pass the current value of process.env.NODE_ENV as mode, to prevent it from being overwritten
-    // by a default value, even if it has been previously set to something else by the user
-    // This problem manifests itself when programmatically running Vite's build function twice - client & server build
-    // with the legacy plugin enabled - it will first build the client version, then build the client fallback, and in the process,
-    // overwrite process.env.NODE_ENV. From there on, the server build will have the correct config.mode value, but the global
-    // import.env.NODE_ENV will assume the wrong value as mutated by resolveConfig
-    // If process.env.NODE_ENV is undefined, the mode and mutation will assume the default value and should not break people's projects
     mode,
     // so that everything is resolved from here
     root: path.dirname(fileURLToPath(import.meta.url)),
