@@ -19,7 +19,7 @@ import type {
 import type { Terser } from 'types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
-import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { RollupDynamicImportVarsOptions } from 'types/dynamic-import-vars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'

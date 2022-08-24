@@ -107,7 +107,7 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload
-} from 'types/hmrPayload'
+} from 'types/hmr-payload'
 export type { Connect } from 'types/connect'
 export type { WebSocket, WebSocketAlias } from 'types/ws'
 export type { HttpProxy } from 'types/http-proxy'
@@ -118,15 +118,18 @@ export type {
 } from 'types/chokidar'
 export type { Terser } from 'types/terser'
 export type { RollupCommonJSOptions } from 'types/commonjs'
-export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
-export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
+export type { RollupDynamicImportVarsOptions } from 'types/dynamic-import-vars'
+export type {
+  CustomEventMap,
+  InferCustomEventPayload
+} from 'types/custom-event'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
   ImportGlobOptions,
   KnownAsTypeMap
-} from 'types/importGlob'
+} from 'types/import-glob'
 
 declare module 'rollup' {
   export interface RenderedChunk {

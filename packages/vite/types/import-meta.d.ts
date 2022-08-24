@@ -18,11 +18,11 @@ interface ImportMeta {
 
   readonly env: ImportMetaEnv
 
-  glob: import('./importGlob').ImportGlobFunction
+  glob: import('./import-glob').ImportGlobFunction
   /**
    * @deprecated Use `import.meta.glob('*', { eager: true })` instead
    */
-  globEager: import('./importGlob').ImportGlobEagerFunction
+  globEager: import('./import-glob').ImportGlobEagerFunction
 }
 
 interface ImportMetaEnv {
