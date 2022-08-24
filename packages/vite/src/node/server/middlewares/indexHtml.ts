@@ -2,15 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { AttributeNode, ElementNode, TextNode } from '@vue/compiler-dom'
-import { NodeTypes } from '@vue/compiler-dom'
 import type { Connect } from 'types/connect'
+import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
   assetAttrsConfig,
   getScriptInfo,
+  nodeIsElement,
+  overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
   resolveHtmlTransforms,
@@ -76,14 +77,15 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
 
 const startsWithSingleSlashRE = /^\/(?!\/)/
 const processNodeUrl = (
-  node: AttributeNode,
+  attr: Token.Attribute,
+  sourceCodeLocation: Token.Location,
   s: MagicString,
   config: ResolvedConfig,
   htmlPath: string,
   originalUrl?: string,
   moduleGraph?: ModuleGraph
 ) => {
-  let url = node.value?.content || ''
+  let url = attr.value || ''
 
   if (moduleGraph) {
     const mod = moduleGraph.urlToModuleMap.get(url)
@@ -94,12 +96,7 @@ const processNodeUrl = (
   const devBase = config.base
   if (startsWithSingleSlashRE.test(url)) {
     // prefix with base (dev only, base is never relative)
-    s.overwrite(
-      node.value!.loc.start.offset,
-      node.value!.loc.end.offset,
-      `"${devBase + url.slice(1)}"`,
-      { contentOnly: true }
-    )
+    overwriteAttrValue(s, sourceCodeLocation, devBase + url.slice(1))
   } else if (
     url.startsWith('.') &&
     originalUrl &&
@@ -117,13 +114,12 @@ const processNodeUrl = (
     // path will add `/a/` prefix, it will caused 404.
     // rewrite before `./index.js` -> `localhost:5173/a/index.js`.
     // rewrite after `../index.js` -> `localhost:5173/index.js`.
-    s.overwrite(
-      node.value!.loc.start.offset,
-      node.value!.loc.end.offset,
-      node.name === 'srcset'
-        ? `"${processSrcSetSync(url, ({ url }) => replacer(url))}"`
-        : `"${replacer(url)}"`
-    )
+
+    const processedUrl =
+      attr.name === 'srcset'
+        ? processSrcSetSync(url, ({ url }) => replacer(url))
+        : replacer(url)
+    overwriteAttrValue(s, sourceCodeLocation, processedUrl)
   }
 }
 const devHtmlHook: IndexHtmlTransformHook = async (
@@ -159,17 +155,23 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
 
-  const addInlineModule = (node: ElementNode, ext: 'js') => {
+  const addInlineModule = (
+    node: DefaultTreeAdapterMap['element'],
+    ext: 'js'
+  ) => {
     inlineModuleIndex++
 
-    const contentNode = node.children[0] as TextNode
+    const contentNode = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
 
-    const code = contentNode.content
+    const code = contentNode.value
 
     let map: SourceMapInput | undefined
     if (!proxyModulePath.startsWith('\0')) {
       map = new MagicString(html)
-        .snip(contentNode.loc.start.offset, contentNode.loc.end.offset)
+        .snip(
+          contentNode.sourceCodeLocation!.startOffset,
+          contentNode.sourceCodeLocation!.endOffset
+        )
         .generateMap({ hires: true })
       map.sources = [filename]
       map.file = filename
@@ -187,48 +189,59 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       server?.moduleGraph.invalidateModule(module)
     }
     s.overwrite(
-      node.loc.start.offset,
-      node.loc.end.offset,
+      node.sourceCodeLocation!.startOffset,
+      node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
       { contentOnly: true }
     )
   }
 
   await traverseHtml(html, htmlPath, (node) => {
-    if (node.type !== NodeTypes.ELEMENT) {
+    if (!nodeIsElement(node)) {
       return
     }
 
     // script tags
-    if (node.tag === 'script') {
-      const { src, isModule } = getScriptInfo(node)
+    if (node.nodeName === 'script') {
+      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
 
       if (src) {
-        processNodeUrl(src, s, config, htmlPath, originalUrl, moduleGraph)
-      } else if (isModule && node.children.length) {
+        processNodeUrl(
+          src,
+          sourceCodeLocation!,
+          s,
+          config,
+          htmlPath,
+          originalUrl,
+          moduleGraph
+        )
+      } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
       }
     }
 
-    if (node.tag === 'style' && node.children.length) {
-      const children = node.children[0] as TextNode
+    if (node.nodeName === 'style' && node.childNodes.length) {
+      const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
       styleUrl.push({
-        start: children.loc.start.offset,
-        end: children.loc.end.offset,
-        code: children.content
+        start: children.sourceCodeLocation!.startOffset,
+        end: children.sourceCodeLocation!.endOffset,
+        code: children.value
       })
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.tag]
+    const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
-      for (const p of node.props) {
-        if (
-          p.type === NodeTypes.ATTRIBUTE &&
-          p.value &&
-          assetAttrs.includes(p.name)
-        ) {
-          processNodeUrl(p, s, config, htmlPath, originalUrl)
+      for (const p of node.attrs) {
+        if (p.value && assetAttrs.includes(p.name)) {
+          processNodeUrl(
+            p,
+            node.sourceCodeLocation!.attrs![p.name],
+            s,
+            config,
+            htmlPath,
+            originalUrl
+          )
         }
       }
     }
