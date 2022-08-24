@@ -21,6 +21,7 @@ export const ports = {
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
+  'legacy/client-and-ssr': 9523,
   'ssr-deps': 9600,
   'ssr-html': 9601,
   'ssr-pug': 9602,
