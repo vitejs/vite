@@ -13,7 +13,6 @@ module.exports = {
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
-      input: 'index.html',
       output: {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name].[hash].js',
