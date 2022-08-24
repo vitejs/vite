@@ -267,7 +267,7 @@ describe('vue worker', () => {
 describe('defined/reserved words', () => {
   test('are preserved in string literals', async () => {
     expect(await page.textContent('.define-variable')).toBe(
-      // FIXME: insert \0 to prevent Vite from replacing import.meta.env
+      // FIXME: insert \0 to prevent Vite from replacing import\0.meta.env
       'import\0.meta.env'.replace('\0', '')
     )
   })
