@@ -15,6 +15,9 @@ async function createDefinePluginTransform(
   }
 }
 
+// FIXME: Insert \0 to prevent Vite from replacing special constants in string literals
+const importMetaEnv = 'import\0.meta.env'.replace(/\0/g, '')
+
 describe('definePlugin', () => {
   test('replaces custom define', async () => {
     const transform = await createDefinePluginTransform({
@@ -28,12 +31,12 @@ describe('definePlugin', () => {
     )
   })
 
-  test('replaces import.meta.env.SSR with false', async () => {
+  test(`replaces ${importMetaEnv}.SSR with false`, async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const isSSR = import.meta.env.SSR ;')).toBe(
+    expect(await transform(`const isSSR = ${importMetaEnv}.SSR ;`)).toBe(
       'const isSSR = false ;'
     )
-    expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
+    expect(await transform(`const isSSR = ${importMetaEnv}.SSR;`)).toBe(
       'const isSSR = false;'
     )
   })
@@ -47,9 +50,9 @@ describe('definePlugin', () => {
     'global.process.env.NODE_ENV': '"test"',
     'globalThis.process.env.NODE_ENV': '"test"',
     __vite_process_env_NODE_ENV: '"test"',
-    // FIXME: Insert \0 to prevent Vite from replacing special constants in string literals
-    ['import\0.meta.env.'.replace(/\0/g, '')]: '({}).',
-    ['import\0.meta.env'.replace(/\0/g, '')]: '({})',
+    [importMetaEnv + '.']: '({}).',
+    [importMetaEnv]:
+      '{"BASE_URL":"/","MODE":"development","DEV":true,"PROD":false}',
     'import.meta.hot': 'false'
   }
   const specialDefineKeys = Object.keys(specialDefines)
@@ -62,9 +65,9 @@ describe('definePlugin', () => {
     'global.process.env.NODE_ENV': null,
     'globalThis.process.env.NODE_ENV': null,
     __vite_process_env_NODE_ENV: 'process.env.NODE_ENV',
-    // FIXME: Insert \0 to prevent Vite from replacing special constants in string literals
-    ['import\0.meta.env.'.replace(/\0/g, '')]: '({}).',
-    ['import\0.meta.env'.replace(/\0/g, '')]: '({})',
+    [importMetaEnv + '.']: '({}).',
+    [importMetaEnv]:
+      '{"BASE_URL":"/","MODE":"development","DEV":true,"PROD":false}',
     'import.meta.hot': 'false'
   }
   const specialDefineKeysSSR = Object.keys(specialDefinesSSR)
@@ -118,37 +121,27 @@ describe('definePlugin', () => {
     describe('non-SSR', async () => {
       const transform = await createDefinePluginTransform()
 
-      // FIXME: These tests are failing for some reason. I'm in the middle of figuring out why.
-      const keysToTest = specialDefineKeys.filter(
-        (key) => !key.includes('meta.env') && !key.startsWith('process.env')
-      )
-
-      test.each(keysToTest)('%s', async (key) => {
+      test.each(specialDefineKeys)('%s', async (key) => {
         const result = await transform('let x = `${' + key + '}`')
         expect(result).toBe('let x = `${' + specialDefines[key] + '}`')
       })
-      test.each(keysToTest)('%s', async (key) => {
+      test.each(specialDefineKeys)('%s', async (key) => {
         const result = await transform('let x = `\n${' + key + '}\n`')
         expect(result).toBe('let x = `\n${' + specialDefines[key] + '}\n`')
       })
     })
     describe('SSR', async () => {
-      // FIXME: These tests are failing for some reason. I'm in the middle of figuring out why.
-      const keysToTest = specialDefineKeysSSR.filter(
-        (key) => !key.includes('meta.env') && !key.startsWith('process.env')
-      )
-
-      const transform = await createDefinePluginTransform({}, true, true)
-      test.each(keysToTest)('%s', async (key) => {
-        const result = await transform('let x = `${' + key + '}`')
+      const ssrTransform = await createDefinePluginTransform({}, true, true)
+      test.each(specialDefineKeysSSR)('%s', async (key) => {
+        const result = await ssrTransform('let x = `${' + key + '}`')
         expect(result).toBe(
           specialDefinesSSR[key]
             ? 'let x = `${' + specialDefinesSSR[key] + '}`'
             : null
         )
       })
-      test.each(keysToTest)('%s', async (key) => {
-        const result = await transform('let x = `\n${' + key + '}\n`')
+      test.each(specialDefineKeysSSR)('%s', async (key) => {
+        const result = await ssrTransform('let x = `\n${' + key + '}\n`')
         expect(result).toBe(
           specialDefinesSSR[key]
             ? 'let x = `\n${' + specialDefinesSSR[key] + '}\n`'
