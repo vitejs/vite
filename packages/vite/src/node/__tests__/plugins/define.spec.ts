@@ -58,21 +58,19 @@ describe('definePlugin', () => {
   const specialDefineKeys = Object.keys(specialDefines)
 
   const specialDefinesSSR = {
+    ...specialDefines,
+    // process.env is not replaced in SSR
     'process.env.': null,
     'global.process.env.': null,
     'globalThis.process.env.': null,
     'process.env.NODE_ENV': null,
     'global.process.env.NODE_ENV': null,
     'globalThis.process.env.NODE_ENV': null,
-    __vite_process_env_NODE_ENV: 'process.env.NODE_ENV',
-    [importMetaEnv + '.']: '({}).',
-    [importMetaEnv]:
-      '{"BASE_URL":"/","MODE":"development","DEV":true,"PROD":false}',
-    'import.meta.hot': 'false'
+    // __vite_process_env_NODE_ENV is a special variable to resolves to process.env.NODE_ENV, which is not replaced in SSR
+    __vite_process_env_NODE_ENV: 'process.env.NODE_ENV'
   }
-  const specialDefineKeysSSR = Object.keys(specialDefinesSSR)
 
-  describe('ignores specially defined constants in string literals', async () => {
+  describe('ignores defined constants in string literals', async () => {
     const singleQuotedDefines = specialDefineKeys
       .map((define) => `let x = '${define}'`)
       .join(';\n')
@@ -103,16 +101,17 @@ describe('definePlugin', () => {
 
     describe('non-SSR', async () => {
       const transform = await createDefinePluginTransform()
-      test.each(inputs)('in %s', async (label, input) => {
+      test.each(inputs)('%s', async (label, input) => {
         // transform() returns null when no replacement is made
         expect(await transform(input)).toBe(null)
       })
     })
+
     describe('SSR', async () => {
-      const transform = await createDefinePluginTransform({}, true, true)
-      test.each(inputs)('in %s', async (label, input) => {
+      const ssrTransform = await createDefinePluginTransform({}, true, true)
+      test.each(inputs)('%s', async (label, input) => {
         // transform() returns null when no replacement is made
-        expect(await transform(input)).toBe(null)
+        expect(await ssrTransform(input)).toBe(null)
       })
     })
   })
@@ -125,6 +124,8 @@ describe('definePlugin', () => {
         const result = await transform('let x = `${' + key + '}`')
         expect(result).toBe('let x = `${' + specialDefines[key] + '}`')
       })
+
+      // multiline tests
       test.each(specialDefineKeys)('%s', async (key) => {
         const result = await transform('let x = `\n${' + key + '}\n`')
         expect(result).toBe('let x = `\n${' + specialDefines[key] + '}\n`')
@@ -132,7 +133,8 @@ describe('definePlugin', () => {
     })
     describe('SSR', async () => {
       const ssrTransform = await createDefinePluginTransform({}, true, true)
-      test.each(specialDefineKeysSSR)('%s', async (key) => {
+
+      test.each(specialDefineKeys)('%s', async (key) => {
         const result = await ssrTransform('let x = `${' + key + '}`')
         expect(result).toBe(
           specialDefinesSSR[key]
@@ -140,7 +142,9 @@ describe('definePlugin', () => {
             : null
         )
       })
-      test.each(specialDefineKeysSSR)('%s', async (key) => {
+
+      // multiline tests
+      test.each(specialDefineKeys)('%s', async (key) => {
         const result = await ssrTransform('let x = `\n${' + key + '}\n`')
         expect(result).toBe(
           specialDefinesSSR[key]
