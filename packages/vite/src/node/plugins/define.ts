@@ -46,12 +46,13 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ...config.env,
       SSR: !!config.build.ssr
     }
+    const importMetaEnv = 'import\0.meta.env'.replace(/\0/g, '')
     for (const key in env) {
-      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
+      importMetaKeys[`${importMetaEnv}.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
-      'import.meta.env.': `({}).`,
-      'import.meta.env': JSON.stringify(config.env),
+      [importMetaEnv + '.']: `({}).`,
+      [importMetaEnv]: JSON.stringify(config.env),
       'import.meta.hot': `false`
     })
   }
