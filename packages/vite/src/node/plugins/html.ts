@@ -806,12 +806,22 @@ export type IndexHtmlTransform =
   | IndexHtmlTransformHook
   | {
       order?: 'pre' | 'post' | null
-      handler: IndexHtmlTransformHook
       /**
        * @deprecated renamed to `order`
        */
       enforce?: 'pre' | 'post'
+      /**
+       * @deprecated renamed to `handler`
+       */
       transform: IndexHtmlTransformHook
+    }
+  | {
+      order?: 'pre' | 'post' | null
+      /**
+       * @deprecated renamed to `order`
+       */
+      enforce?: 'pre' | 'post'
+      handler: IndexHtmlTransformHook
     }
 
 export function preImportMapHook(
