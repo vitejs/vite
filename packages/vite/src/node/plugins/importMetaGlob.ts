@@ -466,7 +466,11 @@ type IdResolver = (
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
   // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-  return normalizePath(path).replace(/[$^*+?()[\]]/g, '\\$&')
+
+  // full list of chars to escape $^*+?()[] according to the docs above
+  // ^,$,+ leads to errors, but surprisingly not escaping them works
+  // ? escaping isn't needed as vite doesn't work with ? in paths
+  return normalizePath(path).replace(/[*()[\]]/g, '\\$&')
 }
 
 export async function toAbsoluteGlob(
@@ -487,8 +491,6 @@ export async function toAbsoluteGlob(
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  // moved normalizePath into globSafePath, but a problem arises here if glob is starting with an alias, we escape too much
-  // `~alias/**/*.js` gets resolved to `/some/path/**.*.js and we have to escape the /some/path part without touching the user supplied part
   const resolved = normalizePath((await resolveId(glob, importer)) || glob)
   if (isAbsolute(resolved)) {
     // we have to escape special glob characters in the resolved path, but keep the user specified globby suffix

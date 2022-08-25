@@ -190,7 +190,7 @@ test('tree-shake eager css', async () => {
   }
 })
 
-test.only('escapes special chars in globs without mangling user supplied glob suffix', async () => {
+test('escapes special chars in globs without mangling user supplied glob suffix', async () => {
   // the escape dir contains subdirectories where each has a name that needs escaping for glob safety
   // inside each of them is a glob.js that expprts the result of a relative glob `./**/*.js`
   // and an alias glob `@escape_<dirname>_mod/**/*.js`. The matching aliases are generated in vite.config.ts
