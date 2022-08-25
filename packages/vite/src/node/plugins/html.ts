@@ -887,6 +887,10 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
+      // `enforce` had only two possible values for the `transformIndexHtml` hook
+      // `'pre'` and `'post'` (the default). `order` now works with three values
+      // to align with other hooks (`'pre'`, normal, and `'post'`). We map 
+      // both `enforce: 'post'` to `order: undefined` to avoid a breaking change  
       const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
       // @ts-expect-error union type
       const handler = hook.handler ?? hook.transform
