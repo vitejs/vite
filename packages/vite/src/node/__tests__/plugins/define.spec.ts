@@ -90,17 +90,13 @@ describe('definePlugin', () => {
     const doubleQuotedDefinesMultilineNested = specialDefineKeys
       .map((define) => `let x = \`\n"${define}"\n\``)
       .join(';\n')
-    const backtickedDefinesMultilineNested = specialDefineKeys
-      .map((define) => `let x = \`\n${define}\n\``)
-      .join(';\n')
 
     const inputs = [
       ['double-quoted', doubleQuotedDefines],
       ['single-quoted', singleQuotedDefines],
       ['backticked', backtickedDefines],
       ['multiline nested double-quoted', doubleQuotedDefinesMultilineNested],
-      ['multiline nested single-quoted', singleQuotedDefinesMultilineNested],
-      ['multiline nested backticked', backtickedDefinesMultilineNested]
+      ['multiline nested single-quoted', singleQuotedDefinesMultilineNested]
     ]
 
     describe('non-SSR', async () => {
