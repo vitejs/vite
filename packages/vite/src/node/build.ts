@@ -567,7 +567,7 @@ function prepareOutDir(
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  for (const outDir of outDirs) {
+  for (const outDir of new Set(outDirs)) {
     if (fs.existsSync(outDir)) {
       if (
         emptyOutDir == null &&
