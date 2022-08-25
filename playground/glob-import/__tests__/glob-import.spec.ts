@@ -1,3 +1,5 @@
+import path from 'node:path'
+import { readdir } from 'node:fs/promises'
 import { expect, test } from 'vitest'
 import {
   addFile,
@@ -186,4 +188,19 @@ test('tree-shake eager css', async () => {
     const content = findAssetFile(/index\.\w+\.js/)
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
+})
+
+test.only('escape special glob chars in path', async () => {
+  // escape contains subdirectories where each has a name that needs escaping for glob safety
+  // in each of them is a glob.js that imports a child with `./**/*.js`
+  // TODO testcase for an alias glob
+  const files = await readdir(path.join(__dirname, '..', 'escape'), {
+    withFileTypes: true
+  })
+  const expectedNames = files
+    .filter((f) => f.isDirectory())
+    .map((f) => `/escape/${f.name}/glob.js`)
+    .sort()
+  const foundNames = (await page.textContent('.escape')).split('\n').sort()
+  expect(expectedNames).toEqual(foundNames)
 })
