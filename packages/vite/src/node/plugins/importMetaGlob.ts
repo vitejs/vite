@@ -466,11 +466,7 @@ type IdResolver = (
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
   // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-
-  // full list of chars to escape $^*+?()[] according to the docs above
-  // ^,$,+ leads to errors, but surprisingly not escaping them works
-  // ? escaping isn't needed as vite doesn't work with ? in paths
-  return normalizePath(path).replace(/[*()[\]]/g, '\\$&')
+  return fg.escapePath(normalizePath(path))
 }
 
 export async function toAbsoluteGlob(
