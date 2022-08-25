@@ -85,10 +85,10 @@ describe('definePlugin', () => {
       .map((define) => `let x = \`${define}\``)
       .join(';\n')
     const singleQuotedDefinesMultilineNested = specialDefineKeys
-      .map((define) => `let x = \n'${define}'\n\``)
+      .map((define) => `let x = \`\n'${define}'\n\``)
       .join(';\n')
     const doubleQuotedDefinesMultilineNested = specialDefineKeys
-      .map((define) => `let x = \n"${define}"\n\``)
+      .map((define) => `let x = \`\n"${define}"\n\``)
       .join(';\n')
     const backtickedDefinesMultilineNested = specialDefineKeys
       .map((define) => `let x = \`\n${define}\n\``)
