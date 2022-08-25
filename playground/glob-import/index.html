@@ -17,8 +17,11 @@
 <p class="tree-shake-eager-css">Should be orange</p>
 <p class="no-tree-shake-eager-css">Should be orange</p>
 <pre class="no-tree-shake-eager-css-result"></pre>
-<h2>Escape</h2>
-<pre class="escape"></pre>
+<h2>Escape relative glob</h2>
+<pre class="escape-relative"></pre>
+<h2>Escape alias glob</h2>
+<pre class="escape-alias"></pre>
+
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
   function useImports(modules, selector) {
@@ -122,11 +125,18 @@
 
 <script type="module">
   const globs = import.meta.glob('/escape/**/glob.js', {
-    eager: true,
-    import: 'default'
+    eager: true
   })
-  const matched = Object.entries(globs)
-    .filter(([_, modules]) => modules?.['./mod/index.js'] != null)
+  console.log(globs)
+  globalThis.globs = globs
+  const relative = Object.entries(globs)
+    .filter(([_, mod]) => Object.keys(mod?.relative ?? {}).length === 1)
     .map(([glob]) => glob)
-  document.querySelector('.escape').textContent = matched.sort().join('\n')
+  document.querySelector('.escape-relative').textContent = relative
+    .sort()
+    .join('\n')
+  const alias = Object.entries(globs)
+    .filter(([_, mod]) => Object.keys(mod?.alias ?? {}).length === 1)
+    .map(([glob]) => glob)
+  document.querySelector('.escape-alias').textContent = alias.sort().join('\n')
 </script>
