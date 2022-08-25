@@ -887,7 +887,7 @@ export function resolveHtmlTransforms(
     if (typeof hook === 'function') {
       normalHooks.push(hook)
     } else {
-      const order = hook.order ?? hook.enforce
+      const order = hook.order ?? (hook.enforce === 'pre' ? 'pre' : undefined)
       // @ts-expect-error union type
       const handler = hook.handler ?? hook.transform
       if (order === 'pre') {
