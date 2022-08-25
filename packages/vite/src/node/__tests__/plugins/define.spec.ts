@@ -70,7 +70,7 @@ describe('definePlugin', () => {
     'process.env.NODE_ENV': null,
     'global.process.env.NODE_ENV': null,
     'globalThis.process.env.NODE_ENV': null,
-    // __vite_process_env_NODE_ENV is a special variable to resolves to process.env.NODE_ENV, which is not replaced in SSR
+    // __vite_process_env_NODE_ENV is a special variable that resolves to process.env.NODE_ENV, which is not replaced in SSR
     __vite_process_env_NODE_ENV: 'process.env.NODE_ENV'
   }
 
