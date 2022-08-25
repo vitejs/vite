@@ -276,7 +276,7 @@ module.exports = Object.create(new Proxy({}, {
       key !== 'constructor' &&
       key !== 'splice'
     ) {
-      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+      console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
     }
   }
 }))`
