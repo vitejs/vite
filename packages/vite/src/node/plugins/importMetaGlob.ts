@@ -489,8 +489,26 @@ export async function toAbsoluteGlob(
 
   // moved normalizePath into globSafePath, but a problem arises here if glob is starting with an alias, we escape too much
   // `~alias/**/*.js` gets resolved to `/some/path/**.*.js and we have to escape the /some/path part without touching the user supplied part
-  const resolved = globSafePath((await resolveId(glob, importer)) || glob)
-  if (isAbsolute(resolved)) return pre + resolved
+  const resolved = normalizePath((await resolveId(glob, importer)) || glob)
+  if (isAbsolute(resolved)) {
+    // we have to escape special glob characters in the resolved path, but keep the user specified globby suffix
+    // walk back both strings until a character difference is found
+    // then slice up the resolved path at that pos and escape the first part
+    let similarEndLength = 0
+    while (
+      resolved.charAt(resolved.length - 1 - similarEndLength) ===
+        glob.charAt(glob.length - 1 - similarEndLength) &&
+      similarEndLength < glob.length &&
+      similarEndLength < resolved.length
+    ) {
+      similarEndLength += 1
+    }
+    const staticPartEnd = resolved.length - similarEndLength
+    const staticPart = resolved.slice(0, staticPartEnd)
+    const dynamicPart = resolved.slice(staticPartEnd)
+    const safeResolved = globSafePath(staticPart) + dynamicPart
+    return pre + safeResolved
+  }
 
   throw new Error(
     `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
