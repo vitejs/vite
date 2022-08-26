@@ -38,8 +38,6 @@
     __vite_process_env_NODE_ENV
     <code class="__vite_process_env_NODE_ENV"></code>
   </p>
-  <p>import.meta.env. <code class="import-meta-env-dot"></code></p>
-  <p>import.meta.env <code class="import-meta-env"></code></p>
   <p>import.meta.hot <code class="import-meta-hot"></code></p>
 </section>
 
@@ -63,8 +61,6 @@
     __vite_process_env_NODE_ENV
     <code class="__vite_process_env_NODE_ENV"></code>
   </p>
-  <p>import.meta.env. <code class="import-meta-env-dot"></code></p>
-  <p>import.meta.env <code class="import-meta-env"></code></p>
   <p>import.meta.hot <code class="import-meta-hot"></code></p>
 </section>
 
@@ -124,11 +120,9 @@
     'globalThis.process.env.NODE_ENV'
   )
   text(
-    '.ignores-string-literals .vite-process-env-NODE_ENV',
+    '.ignores-string-literals .__vite_process_env_NODE_ENV',
     '__vite_process_env_NODE_ENV'
   )
-  text('.ignores-string-literals .import-meta-env-dot', 'import.meta.env.')
-  text('.ignores-string-literals .import-meta-env', 'import.meta.env')
   text('.ignores-string-literals .import-meta-hot', 'import.meta.hot')
 
   text(
@@ -136,40 +130,8 @@
     `${process.env.SOMEVAR}`
   )
   text(
-    '.replaces-constants-in-template-literal-expressions .global-process-env-dot',
-    `${global.process.env.SOMEVAR}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .globalThis-process-env-dot',
-    `${globalThis.process.env.SOMEVAR}`
-  )
-  text(
     '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
     `${process.env.NODE_ENV}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .global-process-env-NODE_ENV',
-    `${global.process.env.NODE_ENV}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .globalThis-process-env-NODE_ENV',
-    `${globalThis.process.env.NODE_ENV}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .vite-process-env-NODE_ENV',
-    `${__vite_process_env_NODE_ENV}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .import-meta-env-dot',
-    `${import.meta.env.SOMEVAR}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .import-meta-env',
-    `${import.meta.env}`
-  )
-  text(
-    '.replaces-constants-in-template-literal-expressions .import-meta-hot',
-    `${import.meta.hot}`
   )
 </script>
 

@@ -77,65 +77,19 @@ test('ignores constants in string literals', async () => {
     )
   ).toBe('__vite_process_env_NODE_ENV')
   expect(
-    await page.textContent('.ignores-string-literals .import-meta-env-dot')
-  ).toBe('import.meta.env.')
-  expect(
-    await page.textContent('.ignores-string-literals .import-meta-env')
-  ).toBe('import.meta.env')
-  expect(
     await page.textContent('.ignores-string-literals .import-meta-hot')
-  ).toBe('import.meta.hot')
+  ).toBe('import' + '.meta.hot')
 })
 
-test('replaces strings in template literal expressions', async () => {
+test('replaces constants in template literal expressions', async () => {
   expect(
     await page.textContent(
       '.replaces-constants-in-template-literal-expressions .process-env-dot'
     )
-  ).toBe(defines.process.env.SOMEVAR)
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .global-process-env-dot'
-    )
-  ).toBe(defines.process.env.SOMEVAR)
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .globalThis-process-env-dot'
-    )
-  ).toBe(defines.process.env.SOMEVAR)
+  ).toBe(JSON.parse(defines['process.env.SOMEVAR']))
   expect(
     await page.textContent(
       '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV'
     )
-  ).toBe('"test"')
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .global-process-env-NODE_ENV'
-    )
-  ).toBe('"test"')
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .globalThis-process-env-NODE_ENV'
-    )
-  ).toBe('"test"')
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .__vite_process_env_NODE_ENV'
-    )
-  ).toBe('"test"')
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .import-meta-env-dot'
-    )
-  ).toBe(defines.process.env.SOMEVAR)
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .import-meta-env'
-    )
-  ).toBe('({})')
-  expect(
-    await page.textContent(
-      '.replaces-constants-in-template-literal-expressions .import-meta-hot'
-    )
-  ).toBe('false')
+  ).toBe('dev')
 })
