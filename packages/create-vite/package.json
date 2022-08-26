@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "dependencies": {
+    "cross-spawn": "^7.0.3",
     "kolorist": "^1.5.1",
     "minimist": "^1.2.6",
     "prompts": "^2.4.2"

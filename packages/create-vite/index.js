@@ -4,12 +4,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import spawn from 'cross-spawn'
 import minimist from 'minimist'
 import prompts from 'prompts'
 import {
   blue,
   cyan,
   green,
+  lightGreen,
   lightRed,
   magenta,
   red,
@@ -25,6 +27,7 @@ const cwd = process.cwd()
 const FRAMEWORKS = [
   {
     name: 'vanilla',
+    display: 'Vanilla',
     color: yellow,
     variants: [
       {
@@ -41,6 +44,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'vue',
+    display: 'Vue',
     color: green,
     variants: [
       {
@@ -52,11 +56,24 @@ const FRAMEWORKS = [
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue
+      },
+      {
+        name: 'custom-create-vue',
+        display: 'Customize with create-vue',
+        color: green,
+        customCommand: 'npm create vue@latest TARGET_DIR'
+      },
+      {
+        name: 'custom-nuxt',
+        display: 'Nuxt',
+        color: lightGreen,
+        customCommand: 'npm exec nuxi init TARGET_DIR'
       }
     ]
   },
   {
     name: 'react',
+    display: 'React',
     color: cyan,
     variants: [
       {
@@ -73,6 +90,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'preact',
+    display: 'Preact',
     color: magenta,
     variants: [
       {
@@ -89,6 +107,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'lit',
+    display: 'Lit',
     color: lightRed,
     variants: [
       {
@@ -105,6 +124,7 @@ const FRAMEWORKS = [
   },
   {
     name: 'svelte',
+    display: 'Svelte',
     color: red,
     variants: [
       {
@@ -116,6 +136,12 @@ const FRAMEWORKS = [
         name: 'svelte-ts',
         display: 'TypeScript',
         color: blue
+      },
+      {
+        name: 'custom-svelte-kit',
+        display: 'SvelteKit',
+        color: red,
+        customCommand: 'npm create svelte@latest TARGET_DIR'
       }
     ]
   }
@@ -191,7 +217,7 @@ async function init() {
           choices: FRAMEWORKS.map((framework) => {
             const frameworkColor = framework.color
             return {
-              title: frameworkColor(framework.name),
+              title: frameworkColor(framework.display || framework.name),
               value: framework
             }
           })
@@ -206,7 +232,7 @@ async function init() {
             framework.variants.map((variant) => {
               const variantColor = variant.color
               return {
-                title: variantColor(variant.name),
+                title: variantColor(variant.display || variant.name),
                 value: variant.name
               }
             })
@@ -236,6 +262,46 @@ async function init() {
 
   // determine template
   template = variant || framework || template
+
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+
+  if (template.startsWith('custom-')) {
+    const getCustomCommand = (name) => {
+      for (const f of FRAMEWORKS) {
+        for (const v of f.variants || []) {
+          if (v.name === name) {
+            return v.customCommand
+          }
+        }
+      }
+    }
+    const customCommand = getCustomCommand(template)
+    const fullCustomCommand = customCommand
+      .replace('TARGET_DIR', targetDir)
+      .replace(/^npm create/, `${pkgManager} create`)
+      // Only Yarn 1.x doesn't support `@version` in the `create` command
+      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
+      .replace(/^npm exec/, () => {
+        // Prefer `pnpm dlx` or `yarn dlx`
+        if (pkgManager === 'pnpm') {
+          return 'pnpm dlx'
+        }
+        if (pkgManager === 'yarn' && !isYarn1) {
+          return 'yarn dlx'
+        }
+        // Use `npm exec` in all other cases,
+        // including Yarn 1.x and other custom npm clients.
+        return 'npm exec'
+      })
+
+    const [command, ...args] = fullCustomCommand.split(' ')
+    const { status } = spawn.sync(command, args, {
+      stdio: 'inherit'
+    })
+    process.exit(status ?? 0)
+  }
 
   console.log(`\nScaffolding project in ${root}...`)
 
@@ -268,9 +334,6 @@ async function init() {
   pkg.name = packageName || getProjectName()
 
   write('package.json', JSON.stringify(pkg, null, 2))
-
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
 
   console.log(`\nDone. Now run:\n`)
   if (root !== cwd) {
