@@ -394,7 +394,7 @@ function tryFsResolve(
 
   let res: string | undefined
 
-  // if we found postfix exist, we should first try resolving file with postfix. details see #4703.
+  // if a postfix exists, we should first try resolving file with postfix. details see #4703.
   if (
     postfix &&
     (res = tryResolveFile(
