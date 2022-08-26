@@ -53,6 +53,8 @@ export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
 
+const nodeModulesInPathRE = /(^|\/)node_modules\//
+
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true
@@ -173,7 +175,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // as if they would have been imported through a bare import
           // Use the original id to do the check as the resolved id may be the real
           // file path after symlinks resolution
-          const isNodeModule = normalizePath(id).includes('/node_modules/')
+          const isNodeModule = !!normalizePath(id).match(nodeModulesInPathRE)
           if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
             const versionHash = depsOptimizer.metadata.browserHash
             if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
