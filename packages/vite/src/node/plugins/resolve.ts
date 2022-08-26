@@ -6,9 +6,11 @@ import { resolve as _resolveExports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
+  CLIENT_ENTRY,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
   DEP_VERSION_RE,
+  ENV_ENTRY,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
   SPECIAL_QUERY_RE
@@ -41,6 +43,9 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
+
+const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
@@ -156,7 +161,14 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       const ensureVersionQuery = (resolved: string): string => {
-        if (!options.isBuild && depsOptimizer) {
+        if (
+          !options.isBuild &&
+          depsOptimizer &&
+          !(
+            resolved === normalizedClientEntry ||
+            resolved === normalizedEnvEntry
+          )
+        ) {
           // Ensure that direct imports of node_modules have the same version query
           // as if they would have been imported through a bare import
           // Use the original id to do the check as the resolved id may be the real
