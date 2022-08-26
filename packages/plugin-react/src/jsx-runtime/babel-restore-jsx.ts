@@ -19,16 +19,6 @@ import type * as babel from '@babel/core'
  */
 export default function ({ types: t }: typeof babel): babel.PluginObj {
   /**
-   * If the props contains '__self' or '__source', it is not transform to JSX.
-   */
-  const isInvalidProps = (props: any[]) =>
-    props.some(
-      (prop) =>
-        t.isJSXIdentifier(prop.name) &&
-        (prop.name.name === '__self' || prop.name.name === '__source')
-    )
-
-  /**
    * Get a `JSXElement` from a `CallExpression`.
    * Returns `null` if this impossible.
    */
@@ -46,7 +36,7 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     }
 
     const props = getJSXProps(propsNode)
-    if (props == null || isInvalidProps(props)) {
+    if (props == null) {
       return null //no props → [], invalid → null
     }
 
@@ -129,14 +119,20 @@ export default function ({ types: t }: typeof babel): babel.PluginObj {
     if (!isPlainObjectExpression(node)) {
       return null
     }
-    return node.properties.map((prop: any) =>
-      t.isObjectProperty(prop)
-        ? t.jsxAttribute(
-            getJSXIdentifier(prop.key)!,
-            getJSXAttributeValue(prop.value)
-          )
-        : t.jsxSpreadAttribute(prop.argument)
-    )
+    return node.properties
+      .map((prop: any) =>
+        t.isObjectProperty(prop)
+          ? t.jsxAttribute(
+              getJSXIdentifier(prop.key)!,
+              getJSXAttributeValue(prop.value)
+            )
+          : t.jsxSpreadAttribute(prop.argument)
+      )
+      .filter((prop: any) =>
+        t.isJSXIdentifier(prop.name)
+          ? prop.name.name !== '__self' && prop.name.name !== '__source'
+          : true
+      )
   }
 
   function getJSXChild(node: any) {

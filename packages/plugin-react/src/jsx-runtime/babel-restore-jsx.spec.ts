@@ -117,12 +117,9 @@ describe('babel-restore-jsx', () => {
   })
 
   it('should not handle contains __self prop', () => {
-    expect(jsx('React.createElement(Provider, { __self: this })'))
-      .toMatchInlineSnapshot(`
-      "React.createElement(Provider, {
-        __self: this
-      });"
-    `)
+    expect(
+      jsx('React.createElement(Provider, { __self: this })')
+    ).toMatchInlineSnapshot('"<Provider />;"')
   })
 
   it('should not handle contains __source prop', () => {
@@ -130,13 +127,6 @@ describe('babel-restore-jsx', () => {
       jsx(
         'React.createElement(Provider, { __source: { fileName: _jsxFileName, lineNumber: 133 }})'
       )
-    ).toMatchInlineSnapshot(`
-      "React.createElement(Provider, {
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 133
-        }
-      });"
-    `)
+    ).toMatchInlineSnapshot('"<Provider />;"')
   })
 })
