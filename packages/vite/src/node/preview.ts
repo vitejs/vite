@@ -54,8 +54,6 @@ export interface PreviewServer {
   httpServer: http.Server
   /**
    * The resolved urls Vite prints on the CLI
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls
   /**
