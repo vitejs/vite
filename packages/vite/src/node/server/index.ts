@@ -542,7 +542,7 @@ export async function createServer(
   middlewares.use(serveStaticMiddleware(root, server))
 
   // spa fallback
-  if (config.appType === 'spa') {
+  if (config.appType === 'spa' || config.appType === 'mpa') {
     middlewares.use(spaFallbackMiddleware(root))
   }
 
