@@ -22,6 +22,10 @@ Base public path when served in development or production. Valid values include:
 
 See [Public Base Path](/guide/build#public-base-path) for more details.
 
+::: tip Note
+In `''` or `'./'` option, `dynamic import` and `import.meta` are always supported for internal use. If you need these to be polyfill use plugin-legacy.
+:::
+
 ## mode
 
 - **Type:** `string`
