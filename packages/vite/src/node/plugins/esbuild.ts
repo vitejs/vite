@@ -127,7 +127,11 @@ export async function transformWithEsbuild(
     sourcefile: filename,
     ...options,
     loader,
-    tsconfigRaw
+    tsconfigRaw,
+    // esbuild uses ascii only by default, in which mode Rollup
+    // hash placeholder chars are escaped. We need to keep these
+    // placeholders intact for rollup to be able to replace them
+    charset: 'utf8'
   } as ESBuildOptions
 
   delete resolvedOptions.include

@@ -61,7 +61,7 @@
     "esbuild": "^0.14.47",
     "postcss": "^8.4.16",
     "resolve": "^1.22.1",
-    "rollup": "~2.78.0"
+    "rollup": "3.0.0-4"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.2"
@@ -76,7 +76,7 @@
     "@rollup/plugin-dynamic-import-vars": "^1.4.4",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
-    "@rollup/plugin-typescript": "^8.3.4",
+    "@rollup/plugin-typescript": "^8.4.0",
     "@rollup/pluginutils": "^4.2.1",
     "acorn": "^8.8.0",
     "cac": "^6.7.12",

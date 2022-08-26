@@ -688,12 +688,12 @@ export function onRollupWarning(
   config: ResolvedConfig
 ): void {
   if (warning.code === 'UNRESOLVED_IMPORT') {
-    const id = warning.source
-    const importer = warning.importer
+    const id = warning.id
+    const exporter = warning.exporter
     // throw unless it's commonjs external...
-    if (!importer || !/\?commonjs-external$/.test(importer)) {
+    if (!id || !/\?commonjs-external$/.test(id)) {
       throw new Error(
-        `[vite]: Rollup failed to resolve import "${id}" from "${importer}".\n` +
+        `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
           `This is most likely unintended because it can break your application at runtime.\n` +
           `If you do want to externalize this module explicitly add it to\n` +
           `\`build.rollupOptions.external\``
