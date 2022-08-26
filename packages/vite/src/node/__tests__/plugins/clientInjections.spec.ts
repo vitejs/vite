@@ -36,6 +36,13 @@ describe('clientInjectionsPlugin', () => {
     )
   })
 
+  test('replaces process.env.NODE_ENV inside template literal expressions for non-SSR', async () => {
+    const { transform } = await createClientInjectionPluginTransform()
+    expect(await transform('let x = `${process.env.NODE_ENV}`;')).toBe(
+      'let x = `${"test"}`;'
+    )
+  })
+
   test('ignores process.env.NODE_ENV for SSR', async () => {
     const { transform: ssrTransform } =
       await createClientInjectionPluginTransform({
