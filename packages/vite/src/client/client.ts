@@ -189,7 +189,7 @@ async function handleMessage(payload: HMRPayload) {
             outdatedLinkTags.add(el)
             el.after(newLinkTag)
           }
-          console.log(`[vite] css hot updated: ${searchUrl}`)
+          console.debug(`[vite] css hot updated: ${searchUrl}`)
         }
       })
       break
@@ -445,7 +445,7 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
     const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-    console.log(`[vite] hot updated: ${loggedPath}`)
+    console.debug(`[vite] hot updated: ${loggedPath}`)
   }
 }
 
