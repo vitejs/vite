@@ -543,7 +543,7 @@ export async function createServer(
 
   // spa fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(spaFallbackMiddleware(root))
+    middlewares.use(spaFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks

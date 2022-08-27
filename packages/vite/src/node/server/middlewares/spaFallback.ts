@@ -5,7 +5,8 @@ import type { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'
 
 export function spaFallbackMiddleware(
-  root: string
+  root: string,
+  spaFallback: boolean
 ): Connect.NextHandleFunction {
   const historySpaFallbackMiddleware = history({
     logger: createDebugger('vite:spa-fallback'),
@@ -20,7 +21,9 @@ export function spaFallbackMiddleware(
           if (fs.existsSync(path.join(root, rewritten))) {
             return rewritten
           } else {
-            return `/index.html`
+            if (spaFallback) {
+              return `/index.html`
+            }
           }
         }
       }
