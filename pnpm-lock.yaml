@@ -634,6 +634,7 @@ importers:
       dep-linked: link:./dep-linked
       dep-linked-include: link:./dep-linked-include
       dep-node-env: file:./dep-node-env
+      dep-non-optimized: file:./dep-non-optimized
       dep-not-js: file:./dep-not-js
       dep-relative-to-main: file:./dep-relative-to-main
       dep-with-builtin-module-cjs: file:./dep-with-builtin-module-cjs
@@ -662,6 +663,7 @@ importers:
       dep-linked: link:dep-linked
       dep-linked-include: link:dep-linked-include
       dep-node-env: file:playground/optimize-deps/dep-node-env
+      dep-non-optimized: file:playground/optimize-deps/dep-non-optimized
       dep-not-js: file:playground/optimize-deps/dep-not-js
       dep-relative-to-main: file:playground/optimize-deps/dep-relative-to-main
       dep-with-builtin-module-cjs: file:playground/optimize-deps/dep-with-builtin-module-cjs
@@ -710,6 +712,9 @@ importers:
       react: 18.2.0
 
   playground/optimize-deps/dep-node-env:
+    specifiers: {}
+
+  playground/optimize-deps/dep-non-optimized:
     specifiers: {}
 
   playground/optimize-deps/dep-not-js:
@@ -9301,6 +9306,12 @@ packages:
   file:playground/optimize-deps/dep-node-env:
     resolution: {directory: playground/optimize-deps/dep-node-env, type: directory}
     name: dep-node-env
+    version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-non-optimized:
+    resolution: {directory: playground/optimize-deps/dep-non-optimized, type: directory}
+    name: dep-non-optimized
     version: 1.0.0
     dev: false
 
