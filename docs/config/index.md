@@ -29,9 +29,11 @@ Since Vite ships with TypeScript typings, you can leverage your IDE's intellisen
 
 ```js
 /** @type {import('vite').UserConfig} */
-export default {
+const config = {
   // ...
 }
+
+export default config
 ```
 
 Alternatively, you can use the `defineConfig` helper which should provide intellisense without the need for jsdoc annotations:
