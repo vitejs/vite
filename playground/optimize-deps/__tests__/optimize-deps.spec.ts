@@ -146,6 +146,12 @@ test('flatten id should generate correctly', async () => {
   expect(await page.textContent('.clonedeep-dot')).toBe('clonedeep-dot')
 })
 
+test('non optimized module is not duplicated', async () => {
+  expect(
+    await page.textContent('.non-optimized-module-is-not-duplicated')
+  ).toBe('from-absolute-path, from-relative-path')
+})
+
 test.runIf(isServe)('error on builtin modules usage', () => {
   expect(browserLogs).toEqual(
     expect.arrayContaining([

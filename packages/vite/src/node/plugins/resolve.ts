@@ -6,9 +6,11 @@ import { resolve as _resolveExports } from 'resolve.exports'
 import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
+  CLIENT_ENTRY,
   DEFAULT_EXTENSIONS,
   DEFAULT_MAIN_FIELDS,
   DEP_VERSION_RE,
+  ENV_ENTRY,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
   SPECIAL_QUERY_RE
@@ -42,11 +44,16 @@ import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
 
+const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
+const normalizedEnvEntry = normalizePath(ENV_ENTRY)
+
 // special id for paths marked with browser: false
 // https://github.com/defunctzombie/package-browser-field-spec#ignore-a-module
 export const browserExternalId = '__vite-browser-external'
 // special id for packages that are optional peer deps
 export const optionalPeerDepId = '__vite-optional-peer-dep'
+
+const nodeModulesInPathRE = /(^|\/)node_modules\//
 
 const isDebug = process.env.DEBUG
 const debug = createDebugger('vite:resolve-details', {
@@ -155,6 +162,30 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         return optimizedPath
       }
 
+      const ensureVersionQuery = (resolved: string): string => {
+        if (
+          !options.isBuild &&
+          depsOptimizer &&
+          !(
+            resolved === normalizedClientEntry ||
+            resolved === normalizedEnvEntry
+          )
+        ) {
+          // Ensure that direct imports of node_modules have the same version query
+          // as if they would have been imported through a bare import
+          // Use the original id to do the check as the resolved id may be the real
+          // file path after symlinks resolution
+          const isNodeModule = !!normalizePath(id).match(nodeModulesInPathRE)
+          if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
+            const versionHash = depsOptimizer.metadata.browserHash
+            if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+              resolved = injectQuery(resolved, `v=${versionHash}`)
+            }
+          }
+        }
+        return resolved
+      }
+
       // explicit fs paths that starts with /@fs/*
       if (asSrc && id.startsWith(FS_PREFIX)) {
         const fsPath = fsPathFromId(id)
@@ -162,7 +193,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         isDebug && debug(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404
-        return res || fsPath
+        return ensureVersionQuery(res || fsPath)
       }
 
       // URL
@@ -171,7 +202,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug && debug(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return res
+          return ensureVersionQuery(res)
         }
       }
 
@@ -201,26 +232,6 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           return normalizedFsPath
         }
 
-        const pathFromBasedir = normalizedFsPath.slice(basedir.length)
-        if (pathFromBasedir.startsWith('/node_modules/')) {
-          // normalize direct imports from node_modules to bare imports, so the
-          // hashing logic is shared and we avoid duplicated modules #2503
-          const bareImport = pathFromBasedir.slice('/node_modules/'.length)
-          if (
-            (res = tryNodeResolve(
-              bareImport,
-              importer,
-              options,
-              targetWeb,
-              depsOptimizer,
-              ssr
-            )) &&
-            res.id.startsWith(normalizedFsPath)
-          ) {
-            return res
-          }
-        }
-
         if (
           targetWeb &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
@@ -229,6 +240,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
+          res = ensureVersionQuery(res)
           isDebug &&
             debug(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           const pkg = importer != null && idToPkgMap.get(importer)
@@ -250,7 +262,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if ((res = tryFsResolve(fsPath, options))) {
           isDebug &&
             debug(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return res
+          return ensureVersionQuery(res)
         }
       }
 
@@ -260,7 +272,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         (res = tryFsResolve(id, options))
       ) {
         isDebug && debug(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return res
+        return ensureVersionQuery(res)
       }
 
       // external
@@ -405,7 +417,7 @@ function tryFsResolve(
 
   let res: string | undefined
 
-  // if we fould postfix exist, we should first try resolving file with postfix. details see #4703.
+  // if there is a postfix, try resolving it as a complete path first (#4703)
   if (
     postfix &&
     (res = tryResolveFile(

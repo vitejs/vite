@@ -87,6 +87,9 @@
 <div class="clonedeep-slash"></div>
 <div class="clonedeep-dot"></div>
 
+<h2>Non Optimized Module isn't duplicated</h2>
+<div class="non-optimized-module-is-not-duplicated"></div>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text
@@ -145,6 +148,18 @@
   text('.url', parse('https://vitejs.dev').hostname)
 
   import './index.astro'
+
+  // All these imports should end up resolved to the same URL (same ?v= injected on them)
+  import { add as addFromDirectAbsolutePath } from '/node_modules/dep-non-optimized/index.js'
+  import { add as addFromDirectRelativePath } from './node_modules/dep-non-optimized/index.js'
+  import { get as getFromBareImport } from 'dep-non-optimized'
+
+  addFromDirectAbsolutePath('from-absolute-path')
+  addFromDirectRelativePath('from-relative-path')
+  text(
+    '.non-optimized-module-is-not-duplicated',
+    getFromBareImport().join(', ')
+  )
 </script>
 
 <script type="module">

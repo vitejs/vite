@@ -8,7 +8,12 @@ import type {
 } from '..'
 import type { Plugin } from '../plugin'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
-import { bareImportRE, isOptimizable, moduleListContains } from '../utils'
+import {
+  bareImportRE,
+  cleanUrl,
+  isOptimizable,
+  moduleListContains
+} from '../utils'
 import { getDepsOptimizer } from '../optimizer'
 import { tryOptimizedResolve } from './resolve'
 
@@ -48,7 +53,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           })
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
-            const resolvedId = resolved.id
+            const resolvedId = cleanUrl(resolved.id)
             const isVirtual = resolvedId === id || resolvedId.includes('\0')
             if (
               !isVirtual &&
