@@ -19,8 +19,7 @@ import {
   isDataUrl,
   isExternalUrl,
   normalizePath,
-  processSrcSet,
-  slash
+  processSrcSet
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInHtml } from '../build'
@@ -297,7 +296,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const relativeUrlPath = slash(path.relative(config.root, id))
+        const relativeUrlPath = path.posix.relative(
+          config.root,
+          normalizePath(id)
+        )
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -669,7 +671,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [id, html] of processedHtml) {
-        const relativeUrlPath = path.posix.relative(config.root, id)
+        const relativeUrlPath = path.posix.relative(
+          config.root,
+          normalizePath(id)
+        )
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
