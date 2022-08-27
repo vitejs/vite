@@ -4,7 +4,7 @@ import history from 'connect-history-api-fallback'
 import type { Connect } from 'types/connect'
 import { createDebugger } from '../../utils'
 
-export function spaFallbackMiddleware(
+export function rewriteUrlMiddleware(
   root: string,
   spaFallback: boolean
 ): Connect.NextHandleFunction {

@@ -50,7 +50,7 @@ import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
-import { spaFallbackMiddleware } from './middlewares/spaFallback'
+import { rewriteUrlMiddleware } from './middlewares/rewriteUrl'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
@@ -543,7 +543,7 @@ export async function createServer(
 
   // spa fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(spaFallbackMiddleware(root, config.appType === 'spa'))
+    middlewares.use(rewriteUrlMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks
