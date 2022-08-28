@@ -159,7 +159,7 @@ export function updateModules(
         path: boundary.url,
         explicitImportRequired:
           boundary.type === 'js'
-            ? isExplicitImportRequired(boundary.url)
+            ? isExplicitImportRequired(acceptedVia.url)
             : undefined,
         acceptedPath: acceptedVia.url
       }))
