@@ -405,17 +405,8 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   let moduleToUpdate: string | undefined
 
   const tmp = mod.callbacks.filter(({ deps }) => deps.includes(acceptedPath))
-  if (isSelfUpdate) {
-    moduleToUpdate = acceptedPath
-    qualifiedCallbacks = tmp
-  } else {
-    if (tmp.length > 0) {
-      moduleToUpdate = acceptedPath
-      qualifiedCallbacks = tmp
-    } else {
-      qualifiedCallbacks = tmp
-    }
-  }
+  moduleToUpdate = isSelfUpdate || tmp.length > 0 ? acceptedPath : undefined
+  qualifiedCallbacks = tmp
 
   if (moduleToUpdate !== undefined) {
     const dep = moduleToUpdate
