@@ -401,12 +401,12 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const isSelfUpdate = path === acceptedPath
 
   // determine the qualified callbacks before we re-import the modules
-  let qualifiedCallbacks: HotCallback[] = []
-  let moduleToUpdate: string | undefined
+  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) =>
+    deps.includes(acceptedPath)
+  )
 
-  const tmp = mod.callbacks.filter(({ deps }) => deps.includes(acceptedPath))
-  moduleToUpdate = isSelfUpdate || tmp.length > 0 ? acceptedPath : undefined
-  qualifiedCallbacks = tmp
+  const moduleToUpdate =
+    isSelfUpdate || qualifiedCallbacks.length > 0 ? acceptedPath : undefined
 
   if (moduleToUpdate !== undefined) {
     const dep = moduleToUpdate
