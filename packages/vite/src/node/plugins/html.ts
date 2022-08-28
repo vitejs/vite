@@ -846,6 +846,7 @@ export interface IndexHtmlTransformContext {
 }
 
 export type IndexHtmlTransformHook = (
+  this: void,
   html: string,
   ctx: IndexHtmlTransformContext
 ) => IndexHtmlTransformResult | void | Promise<IndexHtmlTransformResult | void>
