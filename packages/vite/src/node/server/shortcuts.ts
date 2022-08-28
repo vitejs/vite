@@ -113,8 +113,12 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: 'q',
     description: 'quit',
-    action(server: ViteDevServer): void {
-      server.close()
+    async action(server: ViteDevServer): Promise<void> {
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
     }
   }
 ]
