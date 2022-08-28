@@ -400,40 +400,37 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
-  let modulesToUpdate: Set<string>
+  let moduleToUpdate: string | undefined
   if (isSelfUpdate) {
-    modulesToUpdate = new Set<string>([acceptedPath])
+    moduleToUpdate = acceptedPath
   } else {
     if (mod.callbacks.some(({ deps }) => deps.includes(acceptedPath))) {
-      modulesToUpdate = new Set<string>([acceptedPath])
-    } else {
-      modulesToUpdate = new Set<string>()
+      moduleToUpdate = acceptedPath
     }
   }
 
   // determine the qualified callbacks before we re-import the modules
   const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
-    return deps.some((dep) => modulesToUpdate.has(dep))
+    return moduleToUpdate !== undefined && deps.includes(moduleToUpdate)
   })
 
-  await Promise.all(
-    Array.from(modulesToUpdate).map(async (dep) => {
-      const disposer = disposeMap.get(dep)
-      if (disposer) await disposer(dataMap.get(dep))
-      const [path, query] = dep.split(`?`)
-      try {
-        const newMod: ModuleNamespace = await import(
-          /* @vite-ignore */
-          base +
-            path.slice(1) +
-            `?import&t=${timestamp}${query ? `&${query}` : ''}`
-        )
-        moduleMap.set(dep, newMod)
-      } catch (e) {
-        warnFailedFetch(e, dep)
-      }
-    })
-  )
+  if (moduleToUpdate !== undefined) {
+    const dep = moduleToUpdate
+    const disposer = disposeMap.get(dep)
+    if (disposer) await disposer(dataMap.get(dep))
+    const [path, query] = dep.split(`?`)
+    try {
+      const newMod: ModuleNamespace = await import(
+        /* @vite-ignore */
+        base +
+          path.slice(1) +
+          `?import&t=${timestamp}${query ? `&${query}` : ''}`
+      )
+      moduleMap.set(dep, newMod)
+    } catch (e) {
+      warnFailedFetch(e, dep)
+    }
+  }
 
   return () => {
     for (const { deps, fn } of qualifiedCallbacks) {
