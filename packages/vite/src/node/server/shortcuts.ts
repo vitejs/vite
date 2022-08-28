@@ -73,8 +73,9 @@ export const SHORTCUTS: Shortcut[] = [
   {
     key: 'r',
     description: 'restart the server',
-    action(server: ViteDevServer): Promise<void> {
-      return server.restart()
+    async action(server: ViteDevServer): Promise<void> {
+      await server.restart()
+      server.bindShortcuts()
     }
   },
   {
