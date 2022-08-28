@@ -9,8 +9,14 @@ export function bindShortcuts(server: ViteDevServer): void {
     colors.dim('press ') +
     colors.reset(colors.bold('h')) +
     colors.dim(' to show help')
+  const quitInfo =
+    colors.dim('press ') +
+    colors.reset(colors.bold('q')) +
+    colors.dim(' to quit')
 
-  server.config.logger.info(colors.dim(`  ${colors.green('➜')}  ${helpInfo}`))
+  server.config.logger.info(
+    colors.dim(`  ${colors.green('➜')}  ${helpInfo}, ${quitInfo}`)
+  )
 
   let actionRunning = false
 
@@ -101,6 +107,13 @@ export const SHORTCUTS: Shortcut[] = [
       config.logger.info(
         colors.cyan(`  hmr ${config.server.hmr ? `enabled` : `disabled`}`)
       )
+    }
+  },
+  {
+    key: 'q',
+    description: 'quit',
+    action(server: ViteDevServer): void {
+      server.close()
     }
   }
 ]
