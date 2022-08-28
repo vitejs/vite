@@ -5,14 +5,14 @@
   "license": "MIT",
   "author": "Evan You",
   "bin": {
-    "create-vite": "index.js",
-    "cva": "index.js"
+    "create-vite": "src/index.js",
+    "cva": "src/index.js"
   },
   "files": [
     "index.js",
     "template-*"
   ],
-  "main": "index.js",
+  "main": "src/index.js",
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
   },
