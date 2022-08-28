@@ -410,9 +410,12 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   }
 
   // determine the qualified callbacks before we re-import the modules
-  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
-    return moduleToUpdate !== undefined && deps.includes(moduleToUpdate)
-  })
+  let qualifiedCallbacks: HotCallback[] = []
+  if (moduleToUpdate !== undefined) {
+    qualifiedCallbacks = mod.callbacks.filter(({ deps }) =>
+      deps.includes(moduleToUpdate!)
+    )
+  }
 
   if (moduleToUpdate !== undefined) {
     const dep = moduleToUpdate
