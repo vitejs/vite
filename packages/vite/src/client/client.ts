@@ -405,11 +405,8 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
     deps.includes(acceptedPath)
   )
 
-  const moduleToUpdate =
-    isSelfUpdate || qualifiedCallbacks.length > 0 ? acceptedPath : undefined
-
-  if (moduleToUpdate !== undefined) {
-    const dep = moduleToUpdate
+  if (isSelfUpdate || qualifiedCallbacks.length > 0) {
+    const dep = acceptedPath
     const disposer = disposeMap.get(dep)
     if (disposer) await disposer(dataMap.get(dep))
     const [path, query] = dep.split(`?`)
