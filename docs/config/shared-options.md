@@ -342,6 +342,17 @@ Env variables starting with `envPrefix` will be exposed to your client source co
 `envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
 :::
 
+## dangerouslyAllowEmptyEnvPrefix
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Set to `true` to allow `envPrefix` to be set as `''`. See [envPrefix](/config/shared-options.html#envprefix) for more information.
+
+:::warning SECURITY NOTES
+This option circumvents the error thrown when using `''` as `envPrefix`. This option exposes your application to a serious security risk and should only be used as a last resort.
+:::
+
 ## appType
 
 - **Type:** `'spa' | 'mpa' | 'custom'`

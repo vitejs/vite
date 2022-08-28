@@ -203,6 +203,14 @@ describe('resolveEnvPrefix', () => {
     const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
     expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
+
+  test('should not throw an error if empty, but dangerouslyAllowEmptyEnvPrefix is set to true', () => {
+    const config: UserConfig = {
+      envPrefix: '',
+      dangerouslyAllowEmptyEnvPrefix: true
+    }
+    expect(resolveEnvPrefix(config)).toMatchObject([''])
+  })
 })
 
 describe('preview config', () => {

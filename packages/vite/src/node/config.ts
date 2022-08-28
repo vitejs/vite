@@ -230,6 +230,12 @@ export interface UserConfig {
    */
   envPrefix?: string | string[]
   /**
+   * Dangerously allow envPrefix to be set to an empty string.
+   * WARNING: This option can potentially expose your secret environment variables to your client source code.
+   * @default false
+   */
+  dangerouslyAllowEmptyEnvPrefix?: boolean
+  /**
    * Worker bundle options
    */
   worker?: {
