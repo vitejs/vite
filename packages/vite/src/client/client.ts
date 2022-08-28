@@ -400,19 +400,14 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
-  // make sure we only import each dep once
-  const modulesToUpdate = new Set<string>()
+  let modulesToUpdate: Set<string>
   if (isSelfUpdate) {
-    // self update - only update self
-    modulesToUpdate.add(path)
+    modulesToUpdate = new Set<string>([acceptedPath])
   } else {
-    // dep update
-    for (const { deps } of mod.callbacks) {
-      deps.forEach((dep) => {
-        if (acceptedPath === dep) {
-          modulesToUpdate.add(dep)
-        }
-      })
+    if (mod.callbacks.some(({ deps }) => deps.includes(acceptedPath))) {
+      modulesToUpdate = new Set<string>([acceptedPath])
+    } else {
+      modulesToUpdate = new Set<string>()
     }
   }
 
