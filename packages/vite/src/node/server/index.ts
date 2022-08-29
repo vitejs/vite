@@ -151,6 +151,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
+  this: void,
   server: ViteDevServer
 ) => (() => void) | void | Promise<(() => void) | void>
 
