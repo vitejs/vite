@@ -55,7 +55,10 @@ export interface Plugin extends RollupPlugin {
   /**
    * Apply the plugin only for serve or build, or on certain conditions.
    */
-  apply?: 'serve' | 'build' | ((config: UserConfig, env: ConfigEnv) => boolean)
+  apply?:
+    | 'serve'
+    | 'build'
+    | ((this: void, config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be
@@ -66,6 +69,7 @@ export interface Plugin extends RollupPlugin {
    */
   config?: ObjectHook<
     (
+      this: void,
       config: UserConfig,
       env: ConfigEnv
     ) => UserConfig | null | void | Promise<UserConfig | null | void>
@@ -73,7 +77,9 @@ export interface Plugin extends RollupPlugin {
   /**
    * Use this hook to read and store the final resolved vite config.
    */
-  configResolved?: ObjectHook<(config: ResolvedConfig) => void | Promise<void>>
+  configResolved?: ObjectHook<
+    (this: void, config: ResolvedConfig) => void | Promise<void>
+  >
   /**
    * Configure the vite server. The hook receives the {@link ViteDevServer}
    * instance. This can also be used to store a reference to the server
@@ -126,6 +132,7 @@ export interface Plugin extends RollupPlugin {
    */
   handleHotUpdate?: ObjectHook<
     (
+      this: void,
       ctx: HmrContext
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >

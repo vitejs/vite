@@ -62,10 +62,13 @@ export interface PreviewServer {
   printUrls(): void
 }
 
-export type PreviewServerHook = (server: {
-  middlewares: Connect.Server
-  httpServer: http.Server
-}) => (() => void) | void | Promise<(() => void) | void>
+export type PreviewServerHook = (
+  this: void,
+  server: {
+    middlewares: Connect.Server
+    httpServer: http.Server
+  }
+) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
