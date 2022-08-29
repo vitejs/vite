@@ -126,14 +126,20 @@ export default function (
     if (!isPlainObjectExpression(node)) {
       return null
     }
-    return node.properties.map((prop: any) =>
-      t.isObjectProperty(prop)
-        ? t.jsxAttribute(
-            getJSXIdentifier(prop.key)!,
-            getJSXAttributeValue(prop.value)
-          )
-        : t.jsxSpreadAttribute(prop.argument)
-    )
+    return node.properties
+      .map((prop: any) =>
+        t.isObjectProperty(prop)
+          ? t.jsxAttribute(
+              getJSXIdentifier(prop.key)!,
+              getJSXAttributeValue(prop.value)
+            )
+          : t.jsxSpreadAttribute(prop.argument)
+      )
+      .filter((prop: any) =>
+        t.isJSXIdentifier(prop.name)
+          ? prop.name.name !== '__self' && prop.name.name !== '__source'
+          : true
+      )
   }
 
   function getJSXChild(node: any) {
