@@ -1,5 +1,13 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { editFile, getColor, isBuild, isServe, page, viteTestUrl } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  getColor,
+  isBuild,
+  isServe,
+  page,
+  viteTestUrl
+} from '~utils'
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -241,4 +249,10 @@ describe.runIf(isServe)('invalid', () => {
     const content = await page.waitForSelector('text=Good HTML')
     expect(content).toBeTruthy()
   })
+})
+
+test('importmap', () => {
+  expect(browserLogs).not.toContain(
+    'An import map is added after module script load was triggered.'
+  )
 })

@@ -237,7 +237,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-
         return {
           code: injectEnv + raw
         }

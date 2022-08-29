@@ -16,7 +16,6 @@ import type {
   WarningHandler,
   WatcherOptions
 } from 'rollup'
-import type Rollup from 'rollup'
 import type { Terser } from 'types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'types/commonjs'
@@ -50,6 +49,7 @@ import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
+import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 
 export interface BuildOptions {
   /**
@@ -305,6 +305,7 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     commonjsOptions?.include.length !== 0
   return {
     pre: [
+      completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
@@ -786,33 +787,59 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
   }
 }
 
-function wrapSsrResolveId(
-  fn?: Rollup.ResolveIdHook
-): Rollup.ResolveIdHook | undefined {
-  if (!fn) return
+function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+  if (!hook) return
 
-  return function (id, importer, options) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['resolveId']
+  } else {
+    return handler
   }
 }
 
-function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
-  if (!fn) return
+function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+  if (!hook) return
 
-  return function (id, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['load']
+  } else {
+    return handler
+  }
 }
 
-function wrapSsrTransform(
-  fn?: Rollup.TransformHook
-): Rollup.TransformHook | undefined {
-  if (!fn) return
+function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+  if (!hook) return
 
-  return function (code, importer, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['transform']
+  } else {
+    return handler
   }
 }
 
@@ -857,6 +884,7 @@ const relativeUrlMechanisms: Record<
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
+  // NOTE: make sure rollup generate `module` params
   system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(

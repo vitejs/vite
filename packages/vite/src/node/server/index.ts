@@ -151,6 +151,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
+  this: void,
   server: ViteDevServer
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -194,8 +195,6 @@ export interface ViteDevServer {
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -220,7 +219,8 @@ export interface ViteDevServer {
   ssrTransform(
     code: string,
     inMap: SourceMap | null,
-    url: string
+    url: string,
+    originalCode?: string
   ): Promise<TransformResult | null>
   /**
    * Load a given URL as an instantiated module for SSR.
@@ -339,8 +339,13 @@ export async function createServer(
     ws,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
-    ssrTransform(code: string, inMap: SourceMap | null, url: string) {
-      return ssrTransform(code, inMap, url, code, server.config)
+    ssrTransform(
+      code: string,
+      inMap: SourceMap | null,
+      url: string,
+      originalCode = code
+    ) {
+      return ssrTransform(code, inMap, url, originalCode, server.config)
     },
     transformRequest(url, options) {
       return transformRequest(url, server, options)
@@ -487,10 +492,8 @@ export async function createServer(
 
   // apply server configuration hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of config.plugins) {
-    if (plugin.configureServer) {
-      postHooks.push(await plugin.configureServer(server))
-    }
+  for (const hook of config.getSortedPluginHooks('configureServer')) {
+    postHooks.push(await hook(server))
   }
 
   // Internal middlewares ------------------------------------------------------

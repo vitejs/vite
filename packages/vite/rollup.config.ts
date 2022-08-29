@@ -5,7 +5,6 @@ import nodeResolve from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
-import alias from '@rollup/plugin-alias'
 import license from 'rollup-plugin-license'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
@@ -79,14 +78,6 @@ function createNodePlugins(
   declarationDir: string | false
 ): Plugin[] {
   return [
-    alias({
-      // packages with "module" field that doesn't play well with cjs bundles
-      entries: {
-        '@vue/compiler-dom': require.resolve(
-          '@vue/compiler-dom/dist/compiler-dom.cjs.js'
-        )
-      }
-    }),
     nodeResolve({ preferBuiltins: true }),
     typescript({
       tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
