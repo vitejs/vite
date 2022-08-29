@@ -1,3 +1,13 @@
+## 3.1.0-beta.0 (2022-08-29)
+
+* docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
+* feat: support object style hooks (#9634) ([757a92f](https://github.com/vitejs/vite/commit/757a92f)), closes [#9634](https://github.com/vitejs/vite/issues/9634)
+* chore: fix typo (#9684) ([d30f881](https://github.com/vitejs/vite/commit/d30f881)), closes [#9684](https://github.com/vitejs/vite/issues/9684)
+* chore(deps): update all non-major dependencies (#9675) ([4e56e87](https://github.com/vitejs/vite/commit/4e56e87)), closes [#9675](https://github.com/vitejs/vite/issues/9675)
+* chore(plugin-vue): update reactivityTransform comment docs [ci skip] ([d04784b](https://github.com/vitejs/vite/commit/d04784b))
+
+
+
 ## <small>3.0.3 (2022-08-12)</small>
 
 
