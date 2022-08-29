@@ -41,6 +41,7 @@ importers:
       eslint-plugin-import: ^2.26.0
       eslint-plugin-node: ^11.1.0
       execa: ^6.1.0
+      fast-glob: ^3.2.11
       fs-extra: ^10.1.0
       lint-staged: ^13.0.3
       minimist: ^1.2.6
@@ -50,8 +51,10 @@ importers:
       pnpm: ^7.9.5
       prettier: 2.7.1
       prompts: ^2.4.2
+      resolve: ^1.22.1
       rimraf: ^3.0.2
       rollup: ~2.78.0
+      rollup-plugin-license: ^2.8.1
       semver: ^7.3.7
       simple-git-hooks: ^2.8.0
       tslib: ^2.4.0
@@ -94,6 +97,7 @@ importers:
       eslint-plugin-import: 2.26.0_kavhtzjob4obuugpatbfgsyfbm
       eslint-plugin-node: 11.1.0_eslint@8.23.0
       execa: 6.1.0
+      fast-glob: 3.2.11
       fs-extra: 10.1.0
       lint-staged: 13.0.3
       minimist: 1.2.6
@@ -103,8 +107,10 @@ importers:
       pnpm: 7.9.5
       prettier: 2.7.1
       prompts: 2.4.2
+      resolve: 1.22.1
       rimraf: 3.0.2
       rollup: 2.78.0
+      rollup-plugin-license: 2.8.1_rollup@2.78.0
       semver: 7.3.7
       simple-git-hooks: 2.8.0
       tslib: 2.4.0
@@ -122,7 +128,7 @@ importers:
       kolorist: ^1.5.1
       minimist: ^1.2.6
       prompts: ^2.4.2
-    dependencies:
+    devDependencies:
       cross-spawn: 7.0.3
       kolorist: 1.5.1
       minimist: 1.2.6
@@ -252,7 +258,6 @@ importers:
       resolve: ^1.22.1
       resolve.exports: ^1.1.0
       rollup: ~2.78.0
-      rollup-plugin-license: ^2.8.1
       sirv: ^2.0.2
       source-map-js: ^1.0.2
       source-map-support: ^0.5.21
@@ -313,7 +318,6 @@ importers:
       postcss-load-config: 4.0.1_postcss@8.4.16
       postcss-modules: 5.0.0_postcss@8.4.16
       resolve.exports: 1.1.0
-      rollup-plugin-license: 2.8.1_rollup@2.78.0
       sirv: 2.0.2
       source-map-js: 1.0.2
       source-map-support: 0.5.21
@@ -4059,6 +4063,7 @@ packages:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+    dev: true
 
   /crosspath/0.0.8:
     resolution: {integrity: sha512-IKlS3MpP0fhJ50M6ltyLO7Q4NzwfhafpmolMH0EDKyyaY81HutF2mH4hLpCdm3fKZ/TSTW5qPIdTy62YnefEyQ==}
@@ -5112,7 +5117,7 @@ packages:
       is-glob: 4.0.3
       minimatch: 3.1.2
       object.values: 1.1.5
-      resolve: 1.22.0
+      resolve: 1.22.1
       tsconfig-paths: 3.14.1
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
@@ -5131,7 +5136,7 @@ packages:
       eslint-utils: 2.1.0
       ignore: 5.2.0
       minimatch: 3.1.2
-      resolve: 1.22.0
+      resolve: 1.22.1
       semver: 6.3.0
     dev: true
 
@@ -6193,6 +6198,7 @@ packages:
 
   /isexe/2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+    dev: true
 
   /jiti/1.14.0:
     resolution: {integrity: sha512-4IwstlaKQc9vCTC+qUXLM1hajy2ImiL9KnLvVYiaHOtS/v3wRjhLlGl121AmgDgx/O43uKmxownJghS5XMya2A==}
@@ -6304,6 +6310,7 @@ packages:
   /kleur/3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
+    dev: true
 
   /kleur/4.1.4:
     resolution: {integrity: sha512-8QADVssbrFjivHWQU7KkMgptGTl6WAcSdlbBPY4uNF+mWr6DGcKrvY2w4FQJoXch7+fKMjj0dRrL75vk3k23OA==}
@@ -6312,7 +6319,7 @@ packages:
 
   /kolorist/1.5.1:
     resolution: {integrity: sha512-lxpCM3HTvquGxKGzHeknB/sUjuVoUElLlfYnXZT73K8geR9jQbroGlSCFBax9/0mpGoD3kzcMLnOlGQPJJNyqQ==}
-    dev: false
+    dev: true
 
   /launch-editor-middleware/2.6.0:
     resolution: {integrity: sha512-K2yxgljj5TdCeRN1lBtO3/J26+AIDDDw+04y6VAiZbWcTdBwsYN6RrZBnW5DN/QiSIdKNjKdATLUUluWWFYTIA==}
@@ -7194,6 +7201,7 @@ packages:
   /path-key/3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
+    dev: true
 
   /path-key/4.0.0:
     resolution: {integrity: sha512-haREypq7xkM7ErfgIyA0z+Bj4AGKlMSdlQE2jvJo6huWD1EdkKYV+G/T4nq0YEF2vgTT8kqMFKo1uHn950r4SQ==}
@@ -7524,6 +7532,7 @@ packages:
     dependencies:
       kleur: 3.0.3
       sisteransi: 1.0.5
+    dev: true
 
   /prop-types/15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
@@ -8134,6 +8143,7 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       shebang-regex: 3.0.0
+    dev: true
 
   /shebang-regex/1.0.0:
     resolution: {integrity: sha1-2kL0l0DAtC2yypcoVxyxkMmO/qM=}
@@ -8143,6 +8153,7 @@ packages:
   /shebang-regex/3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+    dev: true
 
   /shell-exec/1.0.2:
     resolution: {integrity: sha512-jyVd+kU2X+mWKMmGhx4fpWbPsjvD53k9ivqetutVW/BQ+WIZoDoP4d8vUMGezV6saZsiNoW2f9GIhg9Dondohg==}
@@ -8188,6 +8199,7 @@ packages:
 
   /sisteransi/1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+    dev: true
 
   /slash/3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
@@ -9144,6 +9156,7 @@ packages:
     hasBin: true
     dependencies:
       isexe: 2.0.0
+    dev: true
 
   /wide-align/1.1.5:
     resolution: {integrity: sha512-eDMORYaPNZ4sQIuuYPDHdQvf4gyCF9rEEV/yPxGfwPkRodwEgiMUUXTx/dex+Me0wxx53S+NgUHaP7y3MGlDmg==}
