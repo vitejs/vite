@@ -198,7 +198,11 @@ export async function getLatestTag(pkgName: string): Promise<string> {
 }
 
 export async function getActiveVersion(pkgName: string): Promise<string> {
-  return (await run('npm', ['info', pkgName, 'version'], { stdio: 'pipe' }))
+  const npmName =
+    pkgName === 'vite' || pkgName === 'create-vite'
+      ? pkgName
+      : `@vitejs/${pkgName}`
+  return (await run('npm', ['info', npmName, 'version'], { stdio: 'pipe' }))
     .stdout
 }
 
