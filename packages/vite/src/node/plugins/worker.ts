@@ -14,7 +14,7 @@ interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
 
-  // worker bundle don't deps on any more worker runtime info an id only had an result.
+  // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, fileName>
   bundle: Map<string, string>
@@ -217,7 +217,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
-        // if import worker by worker constructor will had query.type
+        // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
