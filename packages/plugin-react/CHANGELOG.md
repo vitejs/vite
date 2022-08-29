@@ -1,3 +1,11 @@
+## 2.1.0-beta.0 (2022-08-29)
+
+* docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
+* fix: add `react` to `optimizeDeps` (#9056) ([bc4a627](https://github.com/vitejs/vite/commit/bc4a627)), closes [#9056](https://github.com/vitejs/vite/issues/9056)
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+
+
+
 ## <small>2.0.1 (2022-08-11)</small>
 
 * fix: don't count class declarations as react fast refresh boundry (fixes #3675) (#8887) ([5a18284](https://github.com/vitejs/vite/commit/5a18284)), closes [#3675](https://github.com/vitejs/vite/issues/3675) [#8887](https://github.com/vitejs/vite/issues/8887)
