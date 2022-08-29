@@ -109,7 +109,6 @@
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^5.0.0",
     "resolve.exports": "^1.1.0",
-    "rollup-plugin-license": "^2.8.1",
     "sirv": "^2.0.2",
     "source-map-js": "^1.0.2",
     "source-map-support": "^0.5.21",
