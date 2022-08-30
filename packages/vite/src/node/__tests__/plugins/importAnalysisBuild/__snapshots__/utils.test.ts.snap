@@ -1,0 +1,53 @@
+// Vitest Snapshot v1
+
+exports[`parse import system js > complicated 1`] = `
+[
+  {
+    "a": -1,
+    "d": 122,
+    "e": 153,
+    "n": "./chunks/0-legacy-921506b6.js",
+    "s": 124,
+    "se": 156,
+    "ss": 109,
+  },
+  {
+    "a": -1,
+    "d": 290,
+    "e": 321,
+    "n": "./chunks/1-legacy-9e4b989c.js",
+    "s": 292,
+    "se": 324,
+    "ss": 277,
+  },
+  {
+    "a": -1,
+    "d": 452,
+    "e": 483,
+    "n": "./chunks/2-legacy-30850d7a.js",
+    "s": 454,
+    "se": 486,
+    "ss": 439,
+  },
+  {
+    "a": -1,
+    "d": 619,
+    "e": 650,
+    "n": "./chunks/3-legacy-0c6db4bc.js",
+    "s": 621,
+    "se": 653,
+    "ss": 606,
+  },
+  {
+    "a": -1,
+    "d": 789,
+    "e": 820,
+    "n": "./chunks/4-legacy-df9013b8.js",
+    "s": 791,
+    "se": 823,
+    "ss": 776,
+  },
+]
+`;
+
+exports[`parse import system js > hello 1`] = `[]`;

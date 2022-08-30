@@ -530,7 +530,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // this is a shared CSS-only chunk that is empty.
           pureCssChunks.add(chunk.fileName)
         }
-        if (opts.format === 'es' || opts.format === 'cjs') {
+        if (
+          opts.format === 'es' ||
+          opts.format === 'cjs' ||
+          opts.format === 'system'
+        ) {
           const cssAssetName = chunk.facadeModuleId
             ? normalizePath(path.relative(config.root, chunk.facadeModuleId))
             : chunk.name
@@ -619,12 +623,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
-        const emptyChunkRE = new RegExp(
-          opts.format === 'es'
-            ? `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
-            : `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
-          'g'
-        )
+        const importExp = () => {
+          switch (opts.format) {
+            case 'es':
+              return `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+            case 'system':
+              return `\\bmodule.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+            default:
+              return `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
+          }
+        }
+        const emptyChunkRE = new RegExp(importExp(), 'g')
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
