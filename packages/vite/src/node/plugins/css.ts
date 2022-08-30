@@ -380,7 +380,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const cssContent = await getContentWithSourcemap(css)
         const devBase = config.base
-        return [
+        const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(devBase, CLIENT_PUBLIC_PATH)
           )}`,
@@ -394,6 +394,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }`,
           `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
         ].join('\n')
+        return { code, map: { mappings: '' } }
       }
 
       // build CSS handling ----------------------------------------------------
