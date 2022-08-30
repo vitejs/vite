@@ -5,16 +5,51 @@ on:
     types: [created]
 
 jobs:
-  trigger-all:
+  trigger:
     runs-on: ubuntu-latest
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - uses: actions/github-script@v6
-        id: trigger
         with:
-          # this token needs "repo" scope
-          github-token: ${{ secrets.ECOSYSTEM_CI_TRIGGER_GITHUB_PAT }}
-          result-encoding: string
+          script: |
+            const user = context.payload.sender.login
+            console.log(`Validate user: ${user}`)
+
+            const allowedUsers = new Set([
+              'yyx990803',
+              'patak-dev',
+              'antfu',
+              'sodatea',
+              'Shinigami92',
+              'aleclarson',
+              'bluwy',
+              'poyoho',
+              'sapphi-red',
+              'ygj6',
+              'Niputi'
+            ])
+
+            if (allowedUsers.has(user)) {
+              console.log('Allowed')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '+1',
+              })
+            } else {
+              console.log('Not allowed')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '-1',
+              })
+              throw new Error('not allowed')
+            }
+      - uses: actions/github-script@v6
+        id: get-pr-data
+        with:
           script: |
             console.log(`Get PR info: ${context.repo.owner}/${context.repo.repo}#${context.issue.number}`)
             const { data: pr } = await github.rest.pulls.get({
@@ -22,48 +57,39 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
+            return {
+              num: context.issue.number,
+              branchName: pr.head.ref,
+              repo: pr.head.repo.full_name
+            }
+      - id: generate-token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
+          repository: "vitejs/vite-ecosystem-ci"
+      - uses: actions/github-script@v6
+        id: trigger
+        env:
+          COMMENT: ${{ github.event.comment.body }}
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
+          result-encoding: string
+          script: |
+            const comment = process.env.COMMENT.trim()
+            const prData = ${{ steps.get-pr-data.outputs.result }}
 
-            const startDate = new Date()
+            const suite = comment.replace(/^\/ecosystem-ci run/, '').trim()
 
-            console.log(`Trigger ${context.repo.owner}/vite-ecosystem-ci ecosystem-ci.yml`)
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: 'vite-ecosystem-ci',
-              workflow_id: 'ecosystem-ci.yml',
+              workflow_id: 'ecosystem-ci-from-pr.yml',
               ref: 'main',
               inputs: {
-                refType: 'branch',
-                ref: pr.head.ref,
-                repo: pr.head.repo.full_name
+                prNumber: prData.num,
+                branchName: prData.branchName,
+                repo: prData.repo,
+                suite: suite === '' ? '-' : suite
               }
-            })
-
-            await new Promise(resolve => setTimeout(resolve, 10 * 1000))
-
-            console.log(`Get lastest workflow run`)
-            // assumes the first one is the one triggered
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: 'vite-ecosystem-ci',
-              workflow_id: 'ecosystem-ci.yml',
-              event: 'workflow_dispatch',
-              created: `>${startDate.toISOString()}`,
-              per_page: 1
-            })
-
-            const workflowURL = runs.workflow_runs.length > 0 ? runs.workflow_runs[0].html_url : ''
-            return workflowURL
-
-      - uses: actions/github-script@v6
-        env:
-          WORKFLOW_URL: ${{ steps.trigger.outputs.result }}
-        with:
-          script: |
-            const url = process.env.WORKFLOW_URL
-            const urlLink = url === '' ? '(failed to obtain workflow run URL)' : `[Open](${url})`
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `⏳ Triggered ecosystem CI: ${urlLink} (**always check whether the link is correct**)`
             })
