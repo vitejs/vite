@@ -170,6 +170,10 @@ describe('posToNumber', () => {
     const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
     expect(actual).toBe(3)
   })
+  test('out of range', () => {
+    const actual = posToNumber('a\nb', { line: 4, column: 0 })
+    expect(actual).toBe(4)
+  })
 })
 
 describe('getHash', () => {
