@@ -436,6 +436,8 @@ export function posToNumber(
   for (let i = 0; i < line - 1; i++) {
     if (lines[i]) {
       start += lines[i].length + 1
+    } else {
+      start++
     }
   }
   return start + column
