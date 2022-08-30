@@ -433,10 +433,8 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line - 1; i++) {
-    if (lines[i]) {
-      start += lines[i].length + 1
-    }
+  for (let i = 0; i < line - 1 && i < lines.length; i++) {
+    start += lines[i].length + 1
   }
   return start + column
 }
