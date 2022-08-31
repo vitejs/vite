@@ -105,7 +105,7 @@
     "parse5": "^7.0.0",
     "periscopic": "^3.0.4",
     "picocolors": "^1.0.0",
-    "postcss-import": "^14.1.0",
+    "postcss-import": "^15.0.0",
     "postcss-load-config": "^4.0.1",
     "postcss-modules": "^5.0.0",
     "resolve.exports": "^1.1.0",
