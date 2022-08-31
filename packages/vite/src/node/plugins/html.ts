@@ -581,8 +581,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
+        const { modulePreload } = config.build
         if (
-          config.build.polyfillModulePreload &&
+          (modulePreload === true ||
+            (typeof modulePreload === 'object' && modulePreload.polyfill)) &&
           (someScriptsAreAsync || someScriptsAreDefer)
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`

@@ -73,8 +73,15 @@ export interface BuildOptions {
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
+   * @deprecated use `modulePreload.polyfill` instead
    */
   polyfillModulePreload?: boolean
+  /**
+   * Configure module preload
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  modulePreload?: boolean | ModulePreloadOptions
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -229,16 +236,59 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<BuildOptions>
+export interface ModulePreloadOptions {
+  /**
+   * whether to inject module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfill?: boolean
+  /**
+   * Resolve the list of dependencies to preload for
+   * a given dynamic import
+   * @experimental
+   */
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+
+export type ResolveModulePreloadDependenciesFn = (
+  url: string,
+  deps: string[],
+  context: {
+    importer: string
+  }
+) => (string | { runtime?: string; relative?: string })[]
+
+export type ResolvedBuildOptions = Required<
+  Omit<BuildOptions, 'polyfillModulePreload'>
+>
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   isBuild: boolean,
   logger: Logger
 ): ResolvedBuildOptions {
+  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  if (raw) {
+    const { polyfillModulePreload, ...rest } = raw
+    raw = rest
+    if (deprecatedPolyfillModulePreload !== undefined) {
+      logger.warn(
+        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.'
+      )
+    }
+    if (
+      deprecatedPolyfillModulePreload === false &&
+      raw.modulePreload === undefined
+    ) {
+      raw.modulePreload = { polyfill: false }
+    }
+  }
+
+  const modulePreload = raw?.modulePreload
+
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -267,7 +317,14 @@ export function resolveBuildOptions(
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    modulePreload:
+      typeof modulePreload === 'object'
+        ? {
+            polyfill: true,
+            ...modulePreload
+          }
+        : modulePreload ?? true
   }
 
   // handle special build targets

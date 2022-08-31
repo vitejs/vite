@@ -17,20 +17,64 @@ The transform is performed with esbuild and the value should be a valid [esbuild
 
 Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
-## build.polyfillModulePreload
+## build.modulePreload
 
-- **Type:** `boolean`
+- **Type:** `boolean | { polyfill?: boolean, resolveDependencies?: ResolveModulePreloadDependenciesFn }`
 - **Default:** `true`
 
-Whether to automatically inject [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
-
-If set to `true`, the polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
+By default, a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill) is automatically injected. The polyfill is auto injected into the proxy module of each `index.html` entry. If the build is configured to use a non-html custom entry via `build.rollupOptions.input`, then it is necessary to manually import the polyfill in your custom entry:
 
 ```js
 import 'vite/modulepreload-polyfill'
 ```
 
 Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mode). If you need to support browsers without native dynamic import, you should probably avoid using it in your library.
+
+The polyfill can be disabled using `{ polyfill: false }`.
+
+The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depends on final the deployed base.
+
+There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. It expects a function of type `ResolveModulePreloadDependenciesFn`
+
+```ts
+type ResolveModulePreloadDependenciesFn = (
+  url: string,
+  deps: string[],
+  context: {
+    importer: string
+  }
+) => (string | { runtime?: string })[]
+```
+
+The `resolveDependencies` function will be called for each dynamic import with a list of the chunks it depends on. A new dependencies array can be returned with these filtered or more dependencies injected, and their paths modified. The `deps` paths are relative to the `build.outDir`.
+
+```js
+    modulePreload: {
+        resolveDependencies: (url, deps, { importer }) => {
+            return deps.map((dep) => {
+                if (...) {
+                    // a relative path to the importer makes the dependency independent of the base
+                    // this is the default
+                    return { relative: dep } // ~ `path.relative(path.dirname(importer), dep)`
+                }
+                else if (...) {
+                    // a runtime expression can be returned
+                    return { runtime: `globalThis.__preloadPath(${dep}, import.meta.url)` }
+                }
+                // returning the dep as is defaults to the regular resolution
+                return dep
+            })
+        }
+    }
+```
+
+## build.polyfillModulePreload
+
+- **Type:** `boolean`
+- **Default:** `true`
+- **Deprecated** use `build.modulePreload.polyfill` instead
+
+Whether to automatically inject [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
 
 ## build.outDir
 

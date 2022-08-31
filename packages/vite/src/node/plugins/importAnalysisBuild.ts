@@ -108,13 +108,26 @@ function preload(
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const ssr = !!config.build.ssr
   const isWorker = config.isWorker
-  const insertPreload = !(ssr || !!config.build.lib || isWorker)
+  const insertPreload = !(
+    ssr ||
+    !!config.build.lib ||
+    isWorker ||
+    config.build.modulePreload === false
+  )
 
-  const relativePreloadUrls = config.base === './' || config.base === ''
+  const customResolveModulePreloadDependencies =
+    typeof config.build.modulePreload === 'object' &&
+    config.build.modulePreload.resolveDependencies
+  const isRelativeBase = config.base === './' || config.base === ''
+  const relativePreloadUrls =
+    isRelativeBase || customResolveModulePreloadDependencies
 
-  const scriptRel = config.build.polyfillModulePreload
-    ? `'modulepreload'`
-    : `(${detectScriptRel.toString()})()`
+  const { modulePreload } = config.build
+  const scriptRel =
+    modulePreload === true ||
+    (typeof modulePreload === 'object' && modulePreload.polyfill)
+      ? `'modulepreload'`
+      : `(${detectScriptRel.toString()})()`
   const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
     : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
@@ -367,7 +380,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr || isWorker) {
+      if (
+        format !== 'es' ||
+        ssr ||
+        isWorker ||
+        config.build.modulePreload === false
+      ) {
         return
       }
 
@@ -454,25 +472,56 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               }
 
               if (markerStartPos > 0) {
+                const { modulePreload } = config.build
+                // the dep list includes the main chunk, so only need to reload when there are actual other deps.
+                const depsArray =
+                  deps.size > 1 ||
+                  // main chunk is removed
+                  (hasRemovedPureCssChunk && deps.size > 0)
+                    ? [...deps]
+                    : []
+                const toRelative = (dep: string) =>
+                  path.relative(path.dirname(file), dep)
+                const resolvedDependencies =
+                  url &&
+                  typeof modulePreload === 'object' &&
+                  modulePreload.resolveDependencies
+                    ? modulePreload
+                        .resolveDependencies(url, depsArray, { importer: file })
+                        .map((dep) => {
+                          if (typeof dep === 'object') {
+                            if (dep.runtime) {
+                              return dep.runtime
+                            }
+                            if (dep.relative) {
+                              return JSON.stringify(toRelative(dep.relative))
+                            }
+                            throw new Error(
+                              `Invalid dependency object, no runtime or relative option specified`
+                            )
+                          }
+                          return JSON.stringify(
+                            depsArray.includes(dep)
+                              ? isRelativeBase
+                                ? toRelative(dep)
+                                : config.base + dep
+                              : dep
+                          )
+                        })
+                    : depsArray.map((d) =>
+                        // Don't include the assets dir if the default asset file names
+                        // are used, the path will be reconstructed by the import preload helper
+                        JSON.stringify(
+                          relativePreloadUrls
+                            ? path.relative(path.dirname(file), d)
+                            : d
+                        )
+                      )
+
                 s.overwrite(
                   markerStartPos,
                   markerStartPos + preloadMarkerWithQuote.length,
-                  // the dep list includes the main chunk, so only need to reload when there are
-                  // actual other deps. Don't include the assets dir if the default asset file names
-                  // are used, the path will be reconstructed by the import preload helper
-                  deps.size > 1 ||
-                    // main chunk is removed
-                    (hasRemovedPureCssChunk && deps.size > 0)
-                    ? `[${[...deps]
-                        .map((d) =>
-                          JSON.stringify(
-                            relativePreloadUrls
-                              ? path.relative(path.dirname(file), d)
-                              : d
-                          )
-                        )
-                        .join(',')}]`
-                    : `[]`,
+                  `[${resolvedDependencies.join(',')}]`,
                   { contentOnly: true }
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
