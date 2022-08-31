@@ -850,7 +850,7 @@ async function compileCSS(
           return id
         },
         nameLayer(index) {
-          return `anon-layer-${getHash(id)}-${index}`
+          return `vite--anon-layer-${getHash(id)}-${index}`
         }
       })
     )
