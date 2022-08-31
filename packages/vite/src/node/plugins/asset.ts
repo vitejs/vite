@@ -5,6 +5,7 @@ import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
+  OutputAsset,
   OutputOptions,
   PluginContext,
   PreRenderedAsset,
@@ -24,6 +25,8 @@ const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
+const duplicateAssets: OutputAsset[] = []
 
 const assetHashToFilenameMap = new WeakMap<
   ResolvedConfig,
@@ -182,6 +185,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(_, bundle) {
+      duplicateAssets.forEach((asset) => {
+        bundle[asset.name!] = asset
+      })
+
       // do not emit assets for SSR build
       if (config.command === 'build' && config.build.ssr) {
         for (const file in bundle) {
@@ -470,8 +477,8 @@ async function fileToBuiltUrl(
       map.set(contentHash, fileName)
     }
     const emittedSet = emittedHashMap.get(config)!
+    const name = normalizePath(path.relative(config.root, file))
     if (!emittedSet.has(contentHash)) {
-      const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
         name,
         fileName,
@@ -479,6 +486,14 @@ async function fileToBuiltUrl(
         source: content
       })
       emittedSet.add(contentHash)
+    } else {
+      duplicateAssets.push({
+        name,
+        fileName,
+        type: 'asset',
+        source: content,
+        isAsset: true
+      })
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
