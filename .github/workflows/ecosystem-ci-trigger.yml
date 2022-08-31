@@ -85,7 +85,7 @@ jobs:
               owner: context.repo.owner,
               repo: 'vite-ecosystem-ci',
               workflow_id: 'ecosystem-ci-from-pr.yml',
-              ref: 'feat/run-from-pr-comment', // TODO
+              ref: 'main',
               inputs: {
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
