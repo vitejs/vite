@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
@@ -8,7 +7,6 @@ import {
   flattenId,
   isBuiltin,
   isExternalUrl,
-  isRunningWithYarnPnp,
   moduleListContains,
   normalizePath
 } from '../utils'
@@ -300,30 +298,6 @@ module.exports = Object.create(new Proxy({}, {
           }
         }
       )
-
-      // yarn 2 pnp compat
-      if (isRunningWithYarnPnp) {
-        build.onResolve(
-          { filter: /.*/ },
-          async ({ path: id, importer, kind, resolveDir, namespace }) => {
-            const resolved = await resolve(
-              id,
-              importer,
-              kind,
-              // pass along resolveDir for entries
-              namespace === 'dep' ? resolveDir : undefined
-            )
-            if (resolved) {
-              return resolveResult(id, resolved)
-            }
-          }
-        )
-
-        build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await fs.readFile(args.path),
-          loader: 'default'
-        }))
-      }
     }
   }
 }
