@@ -547,21 +547,52 @@ export function parseImportsSystemJS(
       .source +
     preloadMarker +
     /".*?\)/.source
-  const re = new RegExp(regExp, 'dgs')
+
+  // When Vite stop supporting NodeJS 14, the following simple code can be used:
+
+  // const re = new RegExp(regExp, 'dgs')
+  // let match
+  // const imports: ImportSpecifier[] = []
+
+  // while ((match = re.exec(code)) != null) {
+  //   const { parenthesesStart, importDirective, path1, path2 } = (match as any)
+  //     .indices.groups as { [key: string]: [number, number] | undefined }
+  //   const path = path1 || path2
+  //   imports.push({
+  //     n: code.slice(path![0], path![1]),
+  //     s: path![0],
+  //     e: path![1],
+  //     ss: importDirective![0],
+  //     se: importDirective![1],
+  //     d: parenthesesStart![0],
+  //     a: -1
+  //   })
+  // }
+
+  // But for supporting NodeJS 14 we don't use the modifier 'd' in RegExp that gives us the indices,
+  //  but rather search them by ourself instead
+
+  const re = new RegExp(regExp, 'gs')
   let match
   const imports: ImportSpecifier[] = []
 
   while ((match = re.exec(code)) != null) {
-    const { parenthesesStart, importDirective, path1, path2 } = (match as any)
-      .indices.groups as { [key: string]: [number, number] | undefined }
-    const path = path1 || path2
+    const { index } = match as any
+    const { importDirective, path1, path2 } = (match as any).groups as {
+      [key: string]: string | undefined
+    }
+    const importDirectiveS = code.indexOf(importDirective!, index)
+    const path = (path1 || path2)!
+    const pathS =
+      code.indexOf(path1 ? `'${path}'` : `"${path}"`, importDirectiveS) + 1
+    const pathE = pathS + path.length
     imports.push({
-      n: code.slice(path![0], path![1]),
-      s: path![0],
-      e: path![1],
-      ss: importDirective![0],
-      se: importDirective![1],
-      d: parenthesesStart![0],
+      n: code.slice(pathS, pathE),
+      s: pathS,
+      e: pathE,
+      ss: importDirectiveS,
+      se: importDirectiveS + importDirective!.length,
+      d: code.indexOf('(', importDirectiveS),
       a: -1
     })
   }
