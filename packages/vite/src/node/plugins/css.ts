@@ -848,6 +848,9 @@ async function compileCSS(
             return path.resolve(resolved)
           }
           return id
+        },
+        nameLayer(index) {
+          return `vite--anon-layer-${getHash(id)}-${index}`
         }
       })
     )
