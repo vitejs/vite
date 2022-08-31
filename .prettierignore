@@ -8,3 +8,4 @@ pnpm-workspace.yaml
 playground/tsconfig-json-load-error/has-error/tsconfig.json
 playground/html/invalid.html
 playground/worker/classic-worker.js
+packages/vite/src/node/__tests__/plugins/importAnalysisBuild/system-format-input/*
