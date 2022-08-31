@@ -848,6 +848,9 @@ async function compileCSS(
             return path.resolve(resolved)
           }
           return id
+        },
+        nameLayer(index) {
+          return `anon-layer-${getHash(id)}-${index}`
         }
       })
     )

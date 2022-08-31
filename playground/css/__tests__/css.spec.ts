@@ -259,6 +259,11 @@ test.runIf(isBuild)('@charset hoist', async () => {
   })
 })
 
+test('layers', async () => {
+  expect(await getColor('.layers-blue')).toMatch('blue')
+  expect(await getColor('.layers-green')).toMatch('green')
+})
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
