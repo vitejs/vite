@@ -6,6 +6,7 @@ import {
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
+  replaceInCode,
   resolveHostname
 } from '../utils'
 
@@ -175,5 +176,26 @@ describe('asyncFlatten', () => {
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])])
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  })
+})
+
+describe('replaceInCode', () => {
+  test('replaces pattern with string', () => {
+    expect(replaceInCode('let a1 = 1;', /\d/g, 'b')?.toString()).toBe(
+      'let ab = b;'
+    )
+  })
+
+  test('replaces pattern with replacement object', () => {
+    expect(
+      replaceInCode('let a1 = 2;', /\d/g, {
+        '1': 'b',
+        '2': 'c'
+      })?.toString()
+    ).toBe('let ab = c;')
+  })
+
+  test('returns null if no replacement', () => {
+    expect(replaceInCode('let a = b;', /\d/g, {})).toBe(null)
   })
 })

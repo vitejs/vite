@@ -8,6 +8,7 @@ import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import { stripLiteral } from 'strip-literal'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -15,7 +16,7 @@ import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'types/alias'
-import type MagicString from 'magic-string'
+import MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
@@ -1149,4 +1150,46 @@ const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
 export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
+}
+
+/**
+ * Replaces strings within JS code without touching string literals or comments
+ *
+ * @param code JavaScript to analyze
+ * @param pattern regular expression to match in code
+ * @param replacements a map of strings to replace matches with; or a string
+ * @returns transformed code
+ */
+export function replaceInCode(
+  code: string,
+  pattern: RegExp,
+  replacements: Record<string, string | undefined> | string
+): MagicString | null {
+  const maybeNeedsReplacement = new RegExp(pattern).test(code)
+  if (!maybeNeedsReplacement) {
+    return null
+  }
+
+  const s = new MagicString(code)
+  let hasReplaced = false
+  let match: RegExpExecArray | null
+
+  code = stripLiteral(code)
+
+  while ((match = pattern.exec(code))) {
+    hasReplaced = true
+    const start = match.index
+    const end = start + match[0].length
+    const replacement =
+      typeof replacements === 'string'
+        ? replacements
+        : replacements[match[0]] ?? ''
+    s.overwrite(start, end, replacement, { contentOnly: true })
+  }
+
+  if (!hasReplaced) {
+    return null
+  }
+
+  return s
 }

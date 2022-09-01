@@ -1,8 +1,6 @@
-import MagicString from 'magic-string'
-import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { transformStableResult } from '../utils'
+import { replaceInCode, transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -128,30 +126,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const maybeNeedsReplacement = new RegExp(pattern).test(code)
-      if (!maybeNeedsReplacement) {
-        return null
-      }
-
-      const s = new MagicString(code)
-      let hasReplaced = false
-      let match: RegExpExecArray | null
-
-      code = stripLiteral(code)
-
-      while ((match = pattern.exec(code))) {
-        hasReplaced = true
-        const start = match.index
-        const end = start + match[0].length
-        const replacement = '' + replacements[match[1]]
-        s.overwrite(start, end, replacement, { contentOnly: true })
-      }
-
-      if (!hasReplaced) {
-        return null
-      }
-
-      return transformStableResult(s, id, config)
+      const s = replaceInCode(code, pattern, replacements)
+      return s ? transformStableResult(s, id, config) : null
     }
   }
 }
