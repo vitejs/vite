@@ -19,7 +19,7 @@ async function createDefinePluginTransform(
   }
 }
 
-// FIXME: Use string concatenation to workaround Vite define-replacement of import\.meta.env in string literals
+// FIXME: Use string concatenation to workaround https://github.com/vitest-dev/vitest/issues/1941
 const importMetaEnv = 'import' + '.meta.env'
 
 describe('definePlugin', () => {
