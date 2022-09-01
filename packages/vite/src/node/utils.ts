@@ -1158,7 +1158,7 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
  * @param code JavaScript to analyze
  * @param pattern regular expression to match in code
  * @param replacements a map of strings to replace matches with; or a string
- * @returns transformed code
+ * @returns MagicString of transformed code; or null if no replacements were made
  */
 export function replaceInCode(
   code: string,
