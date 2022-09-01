@@ -18,9 +18,11 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
 
-It will also replace these strings appearing in JavaScript strings and Vue templates. This should be a rare case, but it can be unintended. You may see errors like `Missing Semicolon` or `Unexpected token` in this case, for example when `"process.env.`<wbr>`NODE_ENV"` is transformed to `""development": "`. There are ways to work around this behavior:
+Before version 3.1.0, Vite also replaces environment variables (and other [defined constants](/config/shared-options.html#define)) within string literals and comments. This could result in unintentional changes to your string literals that result in invalid JavaScript syntax, causing errors like `Missing ) after argument list`, `Missing semicolon`, or `Unexpected token`. For example, you'd see an error when `console.log("This is process.env.`<wbr>`NODE_ENV")` is transformed to `console.log("This is "development"")`.
 
-- For JavaScript strings, you can break the string up with a Unicode zero-width space, e.g. `'import.meta\u200b.env.MODE'`.
+There are ways to work around this string replacement behavior:
+
+- For JavaScript strings, you can break the string up with a Unicode zero-width space, e.g. `'import.meta\0.env.MODE'` or use string concatenation, e.g. `'import' + '.meta.env.MODE'`.
 
 - For Vue templates or other HTML that gets compiled into JavaScript strings, you can use the [`<wbr>` tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr), e.g. `import.meta.<wbr>env.MODE`.
 
