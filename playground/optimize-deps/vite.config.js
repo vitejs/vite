@@ -22,7 +22,7 @@ module.exports = {
       // will throw if optimized (should log warning instead)
       'non-optimizable-include'
     ],
-    exclude: ['nested-exclude'],
+    exclude: ['nested-exclude', 'dep-non-optimized'],
     esbuildOptions: {
       plugins: [
         {
