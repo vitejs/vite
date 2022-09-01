@@ -218,6 +218,32 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Counter 1')
   })
 
+  // #2255
+  test('importing reloaded', async () => {
+    await page.goto(viteTestUrl)
+    const outputEle = await page.$('.importing-reloaded')
+    const getOutput = () => {
+      return outputEle.innerHTML()
+    }
+
+    await untilUpdated(getOutput, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
+
+    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
+    await untilUpdated(
+      getOutput,
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>')
+    )
+
+    editFile('importing-updated/b.js', (code) =>
+      code.replace('`b0,${a}`', '`b1,${a}`')
+    )
+    // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
+    await untilUpdated(
+      getOutput,
+      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>')
+    )
+  })
+
   describe('acceptExports', () => {
     const HOT_UPDATED = /hot updated/
     const CONNECTED = /connected/
