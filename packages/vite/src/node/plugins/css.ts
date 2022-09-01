@@ -652,11 +652,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            chunk.code = chunk.code.replace(
-              emptyChunkRE,
-              // remove css import while preserving source map location
-              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
-            )
+            if (opts.format !== 'system') {
+              chunk.code = chunk.code.replace(
+                emptyChunkRE,
+                // remove css import while preserving source map location
+                (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
+              )
+            }
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
