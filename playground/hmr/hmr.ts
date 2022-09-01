@@ -1,4 +1,5 @@
 import { foo as depFoo, nestedFoo } from './hmrDep'
+import './importing-updated'
 
 export const foo = 1
 text('.app', foo)

@@ -388,7 +388,12 @@ export function removeStyle(id: string): void {
   }
 }
 
-async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
+async function fetchUpdate({
+  path,
+  acceptedPath,
+  timestamp,
+  explicitImportRequired
+}: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
@@ -415,7 +420,9 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
         /* @vite-ignore */
         base +
           path.slice(1) +
-          `?import&t=${timestamp}${query ? `&${query}` : ''}`
+          `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+            query ? `&${query}` : ''
+          }`
       )
       moduleMap.set(dep, newMod)
     } catch (e) {
