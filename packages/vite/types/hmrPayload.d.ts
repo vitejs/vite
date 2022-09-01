@@ -20,6 +20,9 @@ export interface Update {
   path: string
   acceptedPath: string
   timestamp: number
+  /**
+   * @internal
+   */
   explicitImportRequired: boolean | undefined
 }
 
