@@ -110,6 +110,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
+      if (!pattern) {
+        return null
+      }
+
       if (
         // exclude html, css and static assets for performance
         isHTMLRequest(id) ||
@@ -118,12 +123,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         config.assetsInclude(id)
       ) {
         return
-      }
-
-      const [replacements, pattern] = ssr ? ssrPattern : defaultPattern
-
-      if (!pattern) {
-        return null
       }
 
       const s = replaceInCode(code, pattern, replacements)
