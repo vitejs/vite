@@ -54,8 +54,6 @@ export interface PreviewServer {
   httpServer: http.Server
   /**
    * The resolved urls Vite prints on the CLI
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls
   /**
@@ -64,10 +62,13 @@ export interface PreviewServer {
   printUrls(): void
 }
 
-export type PreviewServerHook = (server: {
-  middlewares: Connect.Server
-  httpServer: http.Server
-}) => (() => void) | void | Promise<(() => void) | void>
+export type PreviewServerHook = (
+  this: void,
+  server: {
+    middlewares: Connect.Server
+    httpServer: http.Server
+  }
+) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
@@ -87,12 +88,8 @@ export async function preview(
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of config.plugins) {
-    if (plugin.configurePreviewServer) {
-      postHooks.push(
-        await plugin.configurePreviewServer({ middlewares: app, httpServer })
-      )
-    }
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook({ middlewares: app, httpServer }))
   }
 
   // cors
