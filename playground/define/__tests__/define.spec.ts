@@ -58,20 +58,19 @@ test('ignores constants in string literals', async () => {
       '.ignores-string-literals .globalThis-process-env-dot'
     )
   ).toBe('globalThis.process.env.')
-  // FIXME: Skip tests until vitejs/vite#9829 is fixed
-  // expect(
-  //   await page.textContent('.ignores-string-literals .process-env-NODE_ENV')
-  // ).toBe('process.env.NODE_ENV')
-  // expect(
-  //   await page.textContent(
-  //     '.ignores-string-literals .global-process-env-NODE_ENV'
-  //   )
-  // ).toBe('global.process.env.NODE_ENV')
-  // expect(
-  //   await page.textContent(
-  //     '.ignores-string-literals .globalThis-process-env-NODE_ENV'
-  //   )
-  // ).toBe('globalThis.process.env.NODE_ENV')
+  expect(
+    await page.textContent('.ignores-string-literals .process-env-NODE_ENV')
+  ).toBe('process.env.NODE_ENV')
+  expect(
+    await page.textContent(
+      '.ignores-string-literals .global-process-env-NODE_ENV'
+    )
+  ).toBe('global.process.env.NODE_ENV')
+  expect(
+    await page.textContent(
+      '.ignores-string-literals .globalThis-process-env-NODE_ENV'
+    )
+  ).toBe('globalThis.process.env.NODE_ENV')
   expect(
     await page.textContent(
       '.ignores-string-literals .__vite_process_env_NODE_ENV'
