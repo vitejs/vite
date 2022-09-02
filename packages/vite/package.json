@@ -117,7 +117,7 @@
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
     "dep-types": "link:./src/dep-types",
-    "types": "link:./types",
+    "types": "link:./src/types",
     "ufo": "^0.8.5",
     "ws": "^8.8.1"
   },

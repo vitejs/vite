@@ -125,6 +125,7 @@ export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
   ImportGlobOptions,
+  GeneralImportGlobOptions,
   KnownAsTypeMap
 } from 'types/importGlob'
 

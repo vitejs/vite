@@ -9,7 +9,7 @@ import MagicString from 'magic-string'
 
 const dir = dirname(fileURLToPath(import.meta.url))
 const tempDir = resolve(dir, '../temp/node')
-const typesDir = resolve(dir, '../types')
+const typesDir = resolve(dir, '../src/types')
 const depTypesDir = resolve(dir, '../src/dep-types')
 
 // walk through the temp dts dir, find all import/export of types/*, deps-types/*

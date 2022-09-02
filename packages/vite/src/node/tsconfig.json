@@ -1,12 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": [
-    "./",
-    "../dep-types",
-    "../../types/customEvent",
-    "../../types/hmrPayload",
-    "../../types/importGlob"
-  ],
+  "include": ["./", "../dep-types", "../types"],
   "exclude": ["**/__tests__"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"]
