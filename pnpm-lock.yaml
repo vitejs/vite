@@ -231,6 +231,7 @@ importers:
       cors: ^2.8.5
       cross-spawn: ^7.0.3
       debug: ^4.3.4
+      dep-types: link:./src/dep-types
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
       es-module-lexer: ^1.0.3
@@ -296,6 +297,7 @@ importers:
       cors: 2.8.5
       cross-spawn: 7.0.3
       debug: 4.3.4
+      dep-types: link:src/dep-types
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
       es-module-lexer: 1.0.3

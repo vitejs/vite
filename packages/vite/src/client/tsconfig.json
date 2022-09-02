@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../../types"],
+  "include": [
+    "./",
+    "../../types/customEvent",
+    "../../types/hmrPayload",
+    "../../types/importGlob"
+  ],
   "compilerOptions": {
     "types": [],
     "target": "ES2019",

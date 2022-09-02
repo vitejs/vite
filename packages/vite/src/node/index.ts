@@ -65,7 +65,7 @@ export type {
   ResolverFunction,
   ResolverObject,
   Alias
-} from 'types/alias'
+} from 'dep-types/alias'
 export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
@@ -108,19 +108,19 @@ export type {
   PrunePayload,
   ErrorPayload
 } from 'types/hmrPayload'
-export type { Connect } from 'types/connect'
-export type { WebSocket, WebSocketAlias } from 'types/ws'
-export type { HttpProxy } from 'types/http-proxy'
+export type { Connect } from 'dep-types/connect'
+export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
+export type { HttpProxy } from 'dep-types/http-proxy'
 export type {
   FSWatcher,
   WatchOptions,
   AwaitWriteFinishOptions
-} from 'types/chokidar'
-export type { Terser } from 'types/terser'
-export type { RollupCommonJSOptions } from 'types/commonjs'
-export type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+} from 'dep-types/chokidar'
+export type { Terser } from 'dep-types/terser'
+export type { RollupCommonJSOptions } from 'dep-types/commonjs'
+export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
-export type { Matcher, AnymatchPattern, AnymatchFn } from 'types/anymatch'
+export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
