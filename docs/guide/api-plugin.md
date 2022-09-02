@@ -595,12 +595,21 @@ It is possible to type custom events by extending the `CustomEventMap` interface
 
 ```ts
 // events.d.ts
+import 'vite'
 import 'vite/client/types'
 
+interface MyCustomEventMap {
+  'custom:foo': { msg: string }
+  // 'event-key': payload
+}
+
+// extend interface for server-side
+declare module 'vite' {
+  interface CustomEventMap extends MyCustomEventMap {}
+}
+
+// extend interface for client-side
 declare module 'vite/client/types' {
-  interface CustomEventMap {
-    'custom:foo': { msg: string }
-    // 'event-key': payload
-  }
+  interface CustomEventMap extends MyCustomEventMap {}
 }
 ```
