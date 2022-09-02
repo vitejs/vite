@@ -4,6 +4,7 @@ import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
 import { cssEntryFilesCache } from './css'
+import { duplicateAssets } from './asset'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -16,6 +17,7 @@ export interface ManifestChunk {
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
+  isDuplicate?: true
 }
 
 export function manifestPlugin(config: ResolvedConfig): Plugin {
@@ -121,6 +123,12 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
           manifest[chunk.name] = createAsset(chunk)
         }
       }
+
+      duplicateAssets.forEach((asset) => {
+        const chunk = createAsset(asset)
+        chunk.isDuplicate = true
+        manifest[asset.name!] = chunk
+      })
 
       outputCount++
       const output = config.build.rollupOptions?.output

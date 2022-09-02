@@ -21,12 +21,12 @@ import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
+export const duplicateAssets: OutputAsset[] = []
+
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
-
-const duplicateAssets: OutputAsset[] = []
 
 const assetHashToFilenameMap = new WeakMap<
   ResolvedConfig,
@@ -185,10 +185,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(_, bundle) {
-      duplicateAssets.forEach((asset) => {
-        bundle[asset.name!] = asset
-      })
-
       // do not emit assets for SSR build
       if (config.command === 'build' && config.build.ssr) {
         for (const file in bundle) {
