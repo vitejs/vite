@@ -489,7 +489,7 @@ async function fileToBuiltUrl(
     } else {
       duplicateAssets.push({
         name,
-        fileName,
+        fileName: map.get(contentHash)!,
         type: 'asset',
         source: content,
         isAsset: true
