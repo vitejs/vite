@@ -61,12 +61,6 @@ export type {
   LoggerOptions
 } from './logger'
 export type {
-  AliasOptions,
-  ResolverFunction,
-  ResolverObject,
-  Alias
-} from 'dep-types/alias'
-export type {
   IndexHtmlTransform,
   IndexHtmlTransformHook,
   IndexHtmlTransformContext,
@@ -108,6 +102,23 @@ export type {
   PrunePayload,
   ErrorPayload
 } from 'types/hmrPayload'
+export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
+// [deprecated: use vite/client/types instead]
+export type {
+  ImportGlobFunction,
+  ImportGlobEagerFunction,
+  ImportGlobOptions,
+  GeneralImportGlobOptions,
+  KnownAsTypeMap
+} from 'types/importGlob'
+
+// dep types
+export type {
+  AliasOptions,
+  ResolverFunction,
+  ResolverObject,
+  Alias
+} from 'dep-types/alias'
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
@@ -119,15 +130,7 @@ export type {
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
-export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type {
-  ImportGlobFunction,
-  ImportGlobEagerFunction,
-  ImportGlobOptions,
-  GeneralImportGlobOptions,
-  KnownAsTypeMap
-} from 'types/importGlob'
 
 declare module 'rollup' {
   export interface RenderedChunk {
