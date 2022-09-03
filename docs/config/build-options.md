@@ -32,7 +32,7 @@ Note: the polyfill does **not** apply to [Library Mode](/guide/build#library-mod
 
 The polyfill can be disabled using `{ polyfill: false }`.
 
-The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depends on final the deployed base.
+The list of chunks to preload for each dynamic import is computed by Vite. By default, an absolute path including the `base` will be used when loading these dependencies. If the `base` is relative (`''` or `'./'`), `import.meta.url` is used at runtime to avoid absolute paths that depend on the final deployed base.
 
 There is experimental support for fine grained control over the dependencies list and their paths using the `resolveDependencies` function. It expects a function of type `ResolveModulePreloadDependenciesFn`
 
