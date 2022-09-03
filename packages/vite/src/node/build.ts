@@ -252,12 +252,13 @@ export interface ModulePreloadOptions {
 }
 
 export type ResolveModulePreloadDependenciesFn = (
-  url: string,
+  filename: string,
   deps: string[],
   context: {
-    importer: string
+    hostId: string
+    hostType: 'html' | 'js'
   }
-) => (string | { runtime?: string; relative?: string })[]
+) => string[]
 
 export type ResolvedBuildOptions = Required<
   Omit<BuildOptions, 'polyfillModulePreload'>
@@ -962,19 +963,16 @@ export type RenderBuiltAssetUrl = (
   }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
-export function toOutputFilePathInString(
+export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
   hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
-  format: InternalModuleFormat,
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
-    format
-  )
+  ) => string | { runtime: string }
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -1002,7 +1000,7 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
-function getToImportMetaURLBasedRelativePath(
+export function createToImportMetaURLBasedRelativeRuntime(
   format: InternalModuleFormat
 ): (filename: string, importer: string) => { runtime: string } {
   const toRelativePath = relativeUrlMechanisms[format]

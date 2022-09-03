@@ -19,6 +19,7 @@ describe.runIf(isBuild)('build', () => {
     expect(html).toMatch(
       /link rel="modulepreload".*?href="http.*?\/Hello\.\w{8}\.js"/
     )
+    expect(html).toMatch(/link rel="modulepreload".*?href="\/preloaded.js"/)
     expect(html).toMatch(
       /link rel="stylesheet".*?href="http.*?\/Hello\.\w{8}\.css"/
     )

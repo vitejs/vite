@@ -1,4 +1,3 @@
-import path from 'node:path'
 import vuePlugin from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
@@ -15,17 +14,20 @@ export default defineConfig({
       }
     },
     modulePreload: {
-      resolveDependencies(url, deps, { importer }) {
-        return deps.map((dep) => {
-          return dep.includes('.js')
-            ? { relative: dep }
-            : {
-                runtime: `new URL(${JSON.stringify(
-                  path.relative(path.dirname(importer), dep)
-                )},import.meta.url).href`
-              }
-        })
+      resolveDependencies(filename, deps, { hostId, hostType }) {
+        if (filename.includes('Hello')) {
+          return [...deps, 'preloaded.js']
+        }
+        return deps
       }
+    }
+  },
+  experimental: {
+    renderBuiltUrl(filename, { hostId, hostType }) {
+      if (filename.includes('preloaded')) {
+        return { runtime: `""+${JSON.stringify('/' + filename)}` }
+      }
+      return { relative: true }
     }
   }
 })
