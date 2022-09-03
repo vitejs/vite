@@ -20,6 +20,9 @@
     "./client": {
       "types": "./client.d.ts"
     },
+    "./import-meta": {
+      "types": "./import-meta.d.ts"
+    },
     "./client/types": {
       "types": "./client/types.d.ts"
     },
