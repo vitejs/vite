@@ -1,7 +1,16 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
+// set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
+:host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .backdrop {
   position: fixed;
   z-index: 99999;
