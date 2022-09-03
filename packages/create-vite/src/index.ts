@@ -1,4 +1,3 @@
-// @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -19,10 +18,27 @@ import {
 
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
-const argv = minimist(process.argv.slice(2), { string: ['_'] })
+const argv = minimist<{
+  t?: string
+  template?: string
+}>(process.argv.slice(2), { string: ['_'] })
 const cwd = process.cwd()
 
-const FRAMEWORKS = [
+type ColorFunc = (str: string | number) => string
+type Framework = {
+  name: string
+  display: string
+  color: ColorFunc
+  variants: FrameworkVariant[]
+}
+type FrameworkVariant = {
+  name: string
+  display: string
+  color: ColorFunc
+  customCommand?: string
+}
+
+const FRAMEWORKS: Framework[] = [
   {
     name: 'vanilla',
     display: 'Vanilla',
@@ -149,25 +165,29 @@ const TEMPLATES = FRAMEWORKS.map(
   (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
 ).reduce((a, b) => a.concat(b), [])
 
-const renameFiles = {
+const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore'
 }
 
-async function init() {
-  let targetDir = formatTargetDir(argv._[0])
-  let template = argv.template || argv.t
+const defaultTargetDir = 'vite-project'
 
-  const defaultTargetDir = 'vite-project'
+async function init() {
+  const argTargetDir = formatTargetDir(argv._[0])
+  const argTemplate = argv.template || argv.t
+
+  let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
     targetDir === '.' ? path.basename(path.resolve()) : targetDir
 
-  let result = {}
+  let result: prompts.Answers<
+    'projectName' | 'overwrite' | 'packageName' | 'framework' | 'variant'
+  >
 
   try {
     result = await prompts(
       [
         {
-          type: targetDir ? null : 'text',
+          type: argTargetDir ? null : 'text',
           name: 'projectName',
           message: reset('Project name:'),
           initial: defaultTargetDir,
@@ -186,7 +206,7 @@ async function init() {
             ` is not empty. Remove existing files and continue?`
         },
         {
-          type: (_, { overwrite } = {}) => {
+          type: (_, { overwrite }: { overwrite?: boolean }) => {
             if (overwrite === false) {
               throw new Error(red('✖') + ' Operation cancelled')
             }
@@ -203,12 +223,13 @@ async function init() {
             isValidPackageName(dir) || 'Invalid package.json name'
         },
         {
-          type: template && TEMPLATES.includes(template) ? null : 'select',
+          type:
+            argTemplate && TEMPLATES.includes(argTemplate) ? null : 'select',
           name: 'framework',
           message:
-            typeof template === 'string' && !TEMPLATES.includes(template)
+            typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
               ? reset(
-                  `"${template}" isn't a valid template. Please choose from below: `
+                  `"${argTemplate}" isn't a valid template. Please choose from below: `
                 )
               : reset('Select a framework:'),
           initial: 0,
@@ -221,12 +242,11 @@ async function init() {
           })
         },
         {
-          type: (framework) =>
+          type: (framework: Framework) =>
             framework && framework.variants ? 'select' : null,
           name: 'variant',
           message: reset('Select a variant:'),
-          // @ts-ignore
-          choices: (framework) =>
+          choices: (framework: Framework) =>
             framework.variants.map((variant) => {
               const variantColor = variant.color
               return {
@@ -242,7 +262,7 @@ async function init() {
         }
       }
     )
-  } catch (cancelled) {
+  } catch (cancelled: any) {
     console.log(cancelled.message)
     return
   }
@@ -259,23 +279,15 @@ async function init() {
   }
 
   // determine template
-  template = variant || framework || template
+  const template: string = variant || framework || argTemplate
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
-  if (template.startsWith('custom-')) {
-    const getCustomCommand = (name) => {
-      for (const f of FRAMEWORKS) {
-        for (const v of f.variants || []) {
-          if (v.name === name) {
-            return v.customCommand
-          }
-        }
-      }
-    }
-    const customCommand = getCustomCommand(template)
+  const { customCommand } =
+    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+  if (customCommand) {
     const fullCustomCommand = customCommand
       .replace('TARGET_DIR', targetDir)
       .replace(/^npm create/, `${pkgManager} create`)
@@ -309,10 +321,8 @@ async function init() {
     `template-${template}`
   )
 
-  const write = (file, content) => {
-    const targetPath = renameFiles[file]
-      ? path.join(root, renameFiles[file])
-      : path.join(root, file)
+  const write = (file: string, content?: string) => {
+    const targetPath = path.join(root, renameFiles[file] ?? file)
     if (content) {
       fs.writeFileSync(targetPath, content)
     } else {
@@ -350,14 +360,11 @@ async function init() {
   console.log()
 }
 
-/**
- * @param {string | undefined} targetDir
- */
-function formatTargetDir(targetDir) {
+function formatTargetDir(targetDir: string | undefined) {
   return targetDir?.trim().replace(/\/+$/g, '')
 }
 
-function copy(src, dest) {
+function copy(src: string, dest: string) {
   const stat = fs.statSync(src)
   if (stat.isDirectory()) {
     copyDir(src, dest)
@@ -366,19 +373,13 @@ function copy(src, dest) {
   }
 }
 
-/**
- * @param {string} projectName
- */
-function isValidPackageName(projectName) {
+function isValidPackageName(projectName: string) {
   return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
     projectName
   )
 }
 
-/**
- * @param {string} projectName
- */
-function toValidPackageName(projectName) {
+function toValidPackageName(projectName: string) {
   return projectName
     .trim()
     .toLowerCase()
@@ -387,11 +388,7 @@ function toValidPackageName(projectName) {
     .replace(/[^a-z0-9-~]+/g, '-')
 }
 
-/**
- * @param {string} srcDir
- * @param {string} destDir
- */
-function copyDir(srcDir, destDir) {
+function copyDir(srcDir: string, destDir: string) {
   fs.mkdirSync(destDir, { recursive: true })
   for (const file of fs.readdirSync(srcDir)) {
     const srcFile = path.resolve(srcDir, file)
@@ -400,18 +397,12 @@ function copyDir(srcDir, destDir) {
   }
 }
 
-/**
- * @param {string} path
- */
-function isEmpty(path) {
+function isEmpty(path: string) {
   const files = fs.readdirSync(path)
   return files.length === 0 || (files.length === 1 && files[0] === '.git')
 }
 
-/**
- * @param {string} dir
- */
-function emptyDir(dir) {
+function emptyDir(dir: string) {
   if (!fs.existsSync(dir)) {
     return
   }
@@ -423,11 +414,7 @@ function emptyDir(dir) {
   }
 }
 
-/**
- * @param {string | undefined} userAgent process.env.npm_config_user_agent
- * @returns object | undefined
- */
-function pkgFromUserAgent(userAgent) {
+function pkgFromUserAgent(userAgent: string | undefined) {
   if (!userAgent) return undefined
   const pkgSpec = userAgent.split(' ')[0]
   const pkgSpecArr = pkgSpec.split('/')
