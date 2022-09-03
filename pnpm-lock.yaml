@@ -25,7 +25,7 @@ importers:
       '@types/micromatch': ^4.0.2
       '@types/minimist': ^1.2.2
       '@types/node': ^17.0.42
-      '@types/prompts': ^2.4.0
+      '@types/prompts': ^2.0.14
       '@types/resolve': ^1.20.2
       '@types/sass': ~1.43.1
       '@types/semver': ^7.3.12
@@ -81,7 +81,7 @@ importers:
       '@types/micromatch': 4.0.2
       '@types/minimist': 1.2.2
       '@types/node': 17.0.42
-      '@types/prompts': 2.4.0
+      '@types/prompts': 2.0.14
       '@types/resolve': 1.20.2
       '@types/sass': 1.43.1
       '@types/semver': 7.3.12
@@ -2807,8 +2807,10 @@ packages:
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
 
-  /@types/prompts/2.4.0:
-    resolution: {integrity: sha512-7th8Opn+0XlN0O6qzO7dXOPwL6rigq/EwRS2DntaTHwSw8cLaYKeAPt5dWEKHSL+ffVSUl1itTPUC06+FlsV4Q==}
+  /@types/prompts/2.0.14:
+    resolution: {integrity: sha512-HZBd99fKxRWpYCErtm2/yxUZv6/PBI9J7N4TNFffl5JbrYMHBwF25DjQGTW3b3jmXq+9P6/8fCIb2ee57BFfYA==}
+    dependencies:
+      '@types/node': 17.0.42
     dev: true
 
   /@types/resolve/1.17.1:
