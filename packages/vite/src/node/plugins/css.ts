@@ -623,17 +623,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           .map((file) => path.basename(file))
           .join('|')
           .replace(/\./g, '\\.')
-        const importExp = () => {
+        const importExp = (() => {
           switch (opts.format) {
             case 'es':
               return `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             case 'system':
               return `\\module.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
-            default:
+            case 'cjs':
               return `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
+            default:
+              return null
           }
-        }
-        const emptyChunkRE = new RegExp(importExp(), 'g')
+        })()
+        const emptyChunkRE = importExp ? new RegExp(importExp, 'g') : null
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
@@ -652,11 +654,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            chunk.code = chunk.code.replace(
-              emptyChunkRE,
-              // remove css import while preserving source map location
-              (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
-            )
+            if (emptyChunkRE) {
+              chunk.code = chunk.code.replace(
+                emptyChunkRE,
+                // remove css import while preserving source map location
+                (m) => `/* empty css ${''.padEnd(m.length - 15)}*/`
+              )
+            }
           }
         }
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
