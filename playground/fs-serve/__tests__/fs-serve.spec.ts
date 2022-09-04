@@ -1,3 +1,4 @@
+import fetch from 'node-fetch'
 import { beforeAll, describe, expect, test } from 'vitest'
 import testJSON from '../safe.json'
 import { isServe, page, viteTestUrl } from '~utils'
@@ -95,5 +96,12 @@ describe.runIf(isServe)('main', () => {
 
   test('denied', async () => {
     expect(await page.textContent('.unsafe-dotenv')).toBe('404')
+  })
+})
+
+describe('fetch', () => {
+  test('serve with configured headers', async () => {
+    const res = await fetch(viteTestUrl + '/src/')
+    expect(res.headers.get('x-served-by')).toBe('vite')
   })
 })
