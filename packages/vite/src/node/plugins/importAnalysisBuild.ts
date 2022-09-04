@@ -78,13 +78,14 @@ function preload(
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
-      const possibleLinks = document.querySelectorAll(
+      const possibleLinks = document.querySelectorAll<HTMLLinkElement>(
         `link[href$="${shortDep}"]${cssSelector}`
       )
       for (let i = 0; i < possibleLinks.length; ++i) {
+        const currentPath = possibleLinks[i].href
         if (
-          new URL((possibleLinks[i] as HTMLLinkElement).href, importerUrl)
-            .href === fullDep
+          currentPath === dep ||
+          new URL(currentPath, importerUrl).href === fullDep
         ) {
           return
         }
