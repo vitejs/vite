@@ -628,7 +628,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             case 'es':
               return `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             case 'system':
-              return `\\bSystem.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+              return `\\module.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
             default:
               return `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
           }
