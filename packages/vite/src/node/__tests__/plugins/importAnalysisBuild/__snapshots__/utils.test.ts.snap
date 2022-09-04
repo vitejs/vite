@@ -1,6 +1,8 @@
 // Vitest Snapshot v1
 
-exports[`parse import system js > complicated 1`] = `
+exports[`parse import system js > hello 1`] = `[]`;
+
+exports[`parse import system js > svelte-legacy-part 1`] = `
 [
   {
     "a": -1,
@@ -50,4 +52,16 @@ exports[`parse import system js > complicated 1`] = `
 ]
 `;
 
-exports[`parse import system js > hello 1`] = `[]`;
+exports[`parse import system js > vue-legacy-part 1`] = `
+[
+  {
+    "a": -1,
+    "d": 130,
+    "e": 159,
+    "n": "./module-legacy.de1a4764.js",
+    "s": 132,
+    "se": 161,
+    "ss": 117,
+  },
+]
+`;

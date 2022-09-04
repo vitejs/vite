@@ -12,19 +12,14 @@ const readInputFile = (filename: string) =>
     flag: 'r'
   })
 
-const inputs = {
-  hello: readInputFile('hello.js'),
-  complicated: readInputFile('complicated.js')
-}
-
-const run = (name: string) => parseImportsSystemJS(inputs[name])
+const snippets = ['hello', 'svelte-legacy-part', 'vue-legacy-part']
 
 describe('parse import system js', () => {
-  it('hello', () => {
-    expect(run('hello')).toMatchSnapshot()
-  })
-
-  it('complicated', () => {
-    expect(run('complicated')).toMatchSnapshot()
+  snippets.forEach((snippet) => {
+    it(snippet, () => {
+      expect(
+        parseImportsSystemJS(readInputFile(`${snippet}.js`))
+      ).toMatchSnapshot()
+    })
   })
 })
