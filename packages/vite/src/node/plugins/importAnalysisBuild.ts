@@ -89,6 +89,13 @@ function preload(
         }
       }
 
+      const preloadInImg = (res: () => void) => {
+        const img = new Image()
+        img.onerror = () => res()
+        img.onload = () => res()
+        img.src = dep
+      }
+
       const loadLink = () => {
         // @ts-ignore
         const link = document.createElement('link')
@@ -101,50 +108,60 @@ function preload(
         link.href = dep
         // @ts-ignore
         document.head.appendChild(link)
-        if (isCss) {
-          // @ts-ignore
-          if (__VITE_IS_MODERN__) {
-            return new Promise<void>((res, rej) => {
-              link.addEventListener('load', () => res())
-              link.addEventListener('error', () =>
-                rej(new Error(`Unable to preload CSS for ${dep}`))
-              )
-            })
-          } else {
-            return Promise.all<void>([
-              new Promise((res, rej) => {
-                // We query the path (that should be cached already), for knowing if there is an error while downloading it.
-                const req = new XMLHttpRequest()
-                req.addEventListener('load', () => res())
-                req.addEventListener('error', () =>
-                  rej(
-                    new Error(
-                      `Unable to preload CSS (via XMLHttpRequest) for ${dep}`
-                    )
+        return link
+      }
+
+      const waitForLoad = (link: HTMLLinkElement) => {
+        // @ts-ignore
+        if (__VITE_IS_MODERN__) {
+          return new Promise<void>((res, rej) => {
+            link.addEventListener('load', () => res())
+            link.addEventListener('error', () =>
+              rej(new Error(`Unable to preload CSS for ${dep}`))
+            )
+          })
+        } else {
+          return Promise.all<void>([
+            new Promise((res, rej) => {
+              // We query the path (that should be cached already), for knowing if there is an error while downloading it. (this is the only reason)
+              const req = new XMLHttpRequest()
+              req.addEventListener('load', () => res())
+              req.addEventListener('error', () =>
+                rej(
+                  new Error(
+                    `Unable to preload CSS (via XMLHttpRequest) for ${dep}`
                   )
                 )
-                req.open('GET', dep)
-                req.send()
-              }),
-              new Promise((res) => {
-                // On legacy browsers, let them a chance to process the newly referred CSS link.
-                setTimeout(res)
-              })
-            ]) as unknown as Promise<void>
-          }
+              )
+              req.open('GET', dep)
+              req.send()
+            }),
+            new Promise((res) => {
+              // On legacy browsers, let them a chance to process the newly referred CSS link.
+              setTimeout(res)
+            })
+          ]) as unknown as Promise<void>
         }
+      }
+
+      const loadLinkAndWait = () => {
+        return waitForLoad(loadLink())
       }
 
       // @ts-ignore
       if (__VITE_IS_MODERN__) {
-        return loadLink()
+        if (isCss) {
+          return loadLinkAndWait()
+        } else {
+          loadLink()
+        }
       } else {
-        return new Promise<void>((res) => {
-          const img = new Image()
-          img.onerror = () => res()
-          img.onload = () => res()
-          img.src = dep
-        }).then(loadLink)
+        if (isCss) {
+          return new Promise<void>(preloadInImg).then(loadLinkAndWait)
+        } else {
+          preloadInImg(() => {})
+          loadLink()
+        }
       }
     })
   ).then(() => baseModule())
