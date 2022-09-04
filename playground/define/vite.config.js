@@ -20,6 +20,7 @@ module.exports = {
     $DOLLAR: 456,
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false,
-    __STRINGIFIED_OBJ__: JSON.stringify({ foo: true })
+    __STRINGIFIED_OBJ__: JSON.stringify({ foo: true }),
+    'KEY-INCLUDES-DASH': true
   }
 }

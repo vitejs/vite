@@ -17,6 +17,7 @@
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 <p>define in dep: <code class="define-in-dep"></code></p>
+<p>key includes dash: <code class="key-includes-dash"></code></p>
 
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
@@ -54,6 +55,8 @@
 
   import { defined } from 'dep'
   text('.define-in-dep', JSON.stringify(defined))
+
+  text('.key-includes-dash', 'KEY-INCLUDES-DASH')
 </script>
 
 <style>

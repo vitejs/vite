@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
-import { page } from '~utils'
+import { isBuild, page } from '~utils'
 
 test('string', async () => {
   const defines = viteConfig.define
@@ -44,4 +44,11 @@ test('string', async () => {
   expect(await page.textContent('.define-in-dep')).toBe(
     defines.__STRINGIFIED_OBJ__
   )
+
+  // only possible through text replacement in build mode, not with global vars in dev (client/env.ts)
+  if (isBuild) {
+    expect(await page.textContent('.key-includes-dash')).toBe(
+      String(defines['KEY-INCLUDES-DASH'])
+    )
+  }
 })

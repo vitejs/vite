@@ -80,7 +80,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
           '(?<![\\p{L}\\p{N}_$]|(?<!\\.\\.)\\.)(' +
             replacementsKeys
               .map((str) => {
-                return str.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+                return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
               })
               .join('|') +
             // Mustn't be followed by a char that can be part of an identifier
