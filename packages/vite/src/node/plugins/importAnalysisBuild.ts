@@ -68,6 +68,8 @@ function preload(
     deps.map((dep) => {
       // @ts-ignore
       dep = assetsURL(dep, importerUrl)
+      const seperatorIdx = dep.lastIndexOf('/')
+      const shortDep = seperatorIdx >= 0 ? dep.slice(seperatorIdx + 1) : dep
       // @ts-ignore
       if (dep in seen) return
       // @ts-ignore
@@ -75,8 +77,16 @@ function preload(
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
-      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
-        return
+      const possibleLinks = document.querySelectorAll(
+        `link[href$="${shortDep}"]${cssSelector}`
+      )
+      for (let i = 0; i < possibleLinks.length; ++i) {
+        if (
+          new URL((possibleLinks[i] as HTMLLinkElement).href, importerUrl)
+            .href === dep
+        ) {
+          return
+        }
       }
       // @ts-ignore
       const link = document.createElement('link')
