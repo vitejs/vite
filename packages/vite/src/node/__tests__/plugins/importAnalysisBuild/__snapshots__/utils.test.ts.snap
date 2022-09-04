@@ -56,12 +56,12 @@ exports[`parse import system js > vue-legacy-part 1`] = `
 [
   {
     "a": -1,
-    "d": 129,
-    "e": 158,
+    "d": 124,
+    "e": 153,
     "n": "./module-legacy.de1a4764.js",
-    "s": 131,
-    "se": 160,
-    "ss": 116,
+    "s": 126,
+    "se": 155,
+    "ss": 111,
   },
 ]
 `;
