@@ -74,7 +74,6 @@ function preload(
       seen[dep] = true
       const seperatorIdx = dep.lastIndexOf('/')
       const shortDep = seperatorIdx >= 0 ? dep.slice(seperatorIdx + 1) : dep
-      const fullDep = new URL(dep, importerUrl).href
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
       // @ts-ignore check if the file is already preloaded by SSR markup
@@ -85,7 +84,7 @@ function preload(
         const currentPath = possibleLinks[i].href
         if (
           currentPath === dep ||
-          new URL(currentPath, importerUrl).href === fullDep
+          new URL(currentPath, importerUrl).href === dep
         ) {
           return
         }
