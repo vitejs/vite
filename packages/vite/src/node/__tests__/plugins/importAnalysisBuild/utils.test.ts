@@ -10,7 +10,7 @@ const readInputFile = (filename: string) =>
   readFileSync(resolve(__dirname, 'system-format-input', filename), {
     encoding: 'utf8',
     flag: 'r'
-  })
+  }).replace('\r\n', '\n')
 
 const snippets = ['hello', 'svelte-legacy-part', 'vue-legacy-part']
 
