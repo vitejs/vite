@@ -539,38 +539,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 export function parseImportsSystemJS(
   code: string
 ): ReadonlyArray<ImportSpecifier> {
-  // Resolves to:
-  // /__vitePreload\((.+?(?<importDirective>module\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);).+?),\s*"__VITE_PRELOAD__".*?\)/
   const regExp =
-    preloadMethod +
-    /\((.+?(?<importDirective>module\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);).+?),\s*"/
-      .source +
-    preloadMarker +
-    /".*?\)/.source
-
-  // When Vite stop supporting NodeJS 14, the following simple code can be used:
-
-  // const re = new RegExp(regExp, 'dgs')
-  // let match
-  // const imports: ImportSpecifier[] = []
-
-  // while ((match = re.exec(code)) != null) {
-  //   const { parenthesesStart, importDirective, path1, path2 } = (match as any)
-  //     .indices.groups as { [key: string]: [number, number] | undefined }
-  //   const path = path1 || path2
-  //   imports.push({
-  //     n: code.slice(path![0], path![1]),
-  //     s: path![0],
-  //     e: path![1],
-  //     ss: importDirective![0],
-  //     se: importDirective![1],
-  //     d: parenthesesStart![0],
-  //     a: -1
-  //   })
-  // }
-
-  // But for supporting NodeJS 14 we don't use the modifier 'd' in RegExp that gives us the indices,
-  //  but rather search them by ourself instead
+    /__vitePreload\((.+?(?<importDirective>module\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/
 
   const re = new RegExp(regExp, 'gs')
   let match
