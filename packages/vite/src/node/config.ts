@@ -442,16 +442,7 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  for (const p of getSortedPluginsByHook('config', userPlugins)) {
-    const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
-    if (handler) {
-      const res = await handler(config, configEnv)
-      if (res) {
-        config = mergeConfig(config, res)
-      }
-    }
-  }
+  config = await runConfigHook(config, userPlugins, configEnv)
 
   if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config = mergeConfig(config, {
@@ -611,16 +602,7 @@ export async function resolveConfig(
     ...workerNormalPlugins,
     ...workerPostPlugins
   ]
-  for (const p of getSortedPluginsByHook('config', workerUserPlugins)) {
-    const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
-    if (handler) {
-      const res = await handler(workerConfig, configEnv)
-      if (res) {
-        workerConfig = mergeConfig(workerConfig, res)
-      }
-    }
-  }
+  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -1087,6 +1069,27 @@ async function loadConfigFromBundledFile(
     _require.extensions[loaderExt] = defaultLoader
     return raw.__esModule ? raw.default : raw
   }
+}
+
+async function runConfigHook(
+  config: InlineConfig,
+  plugins: Plugin[],
+  configEnv: ConfigEnv
+): Promise<InlineConfig> {
+  let conf = config
+
+  for (const p of getSortedPluginsByHook('config', plugins)) {
+    const hook = p.config
+    const handler = hook && 'handler' in hook ? hook.handler : hook
+    if (handler) {
+      const res = await handler(conf, configEnv)
+      if (res) {
+        conf = mergeConfig(conf, res)
+      }
+    }
+  }
+
+  return conf
 }
 
 export function getDepOptimizationConfig(
