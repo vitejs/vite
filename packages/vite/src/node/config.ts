@@ -442,7 +442,7 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  config = await mergeHookConfig(config, userPlugins, configEnv)
+  config = await runConfigHook(config, userPlugins, configEnv)
 
   if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config = mergeConfig(config, {
@@ -602,11 +602,7 @@ export async function resolveConfig(
     ...workerNormalPlugins,
     ...workerPostPlugins
   ]
-  workerConfig = await mergeHookConfig(
-    workerConfig,
-    workerUserPlugins,
-    configEnv
-  )
+  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -1075,7 +1071,7 @@ async function loadConfigFromBundledFile(
   }
 }
 
-async function mergeHookConfig(
+async function runConfigHook(
   config: InlineConfig,
   plugins: Plugin[],
   configEnv: ConfigEnv
