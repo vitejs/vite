@@ -1,3 +1,8 @@
+## 3.1.0 (2022-09-05)
+
+
+
+
 ## 3.1.0-beta.2 (2022-09-02)
 
 * fix(css): remove css-post plugin sourcemap (#9914) ([c9521e7](https://github.com/vitejs/vite/commit/c9521e7)), closes [#9914](https://github.com/vitejs/vite/issues/9914)
