@@ -12,7 +12,7 @@
     "preact": "^10.10.6"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.3.0",
+    "@preact/preset-vite": "^2.3.1",
     "vite": "^3.1.0"
   }
 }

@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "lodash-es": "^4.17.21",
-    "vue": "^3.2.37"
+    "vue": "^3.2.38"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "workspace:*",
     "js-yaml": "^4.1.0",
     "less": "^4.1.3",
     "pug": "^3.0.2",
-    "sass": "^1.54.5",
+    "sass": "^1.54.8",
     "stylus": "^0.59.0"
   }
 }
