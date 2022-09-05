@@ -1,4 +1,4 @@
 dist
 playground-temp
 temp
-packages/vite/src/node/__tests__/plugins/importAnalysisBuild/system-format-input/*
+packages/vite/src/node/__tests__/test-input/
