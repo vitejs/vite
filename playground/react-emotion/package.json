@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.10.0",
+    "@emotion/react": "^11.10.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-switch": "^7.0.0"

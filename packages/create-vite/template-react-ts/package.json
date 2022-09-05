@@ -13,7 +13,7 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.17",
+    "@types/react": "^18.0.18",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^2.1.0",
     "typescript": "^4.6.4",
