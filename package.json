@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.18.13",
-    "@microsoft/api-extractor": "^7.29.5",
+    "@microsoft/api-extractor": "^7.30.0",
     "@rollup/plugin-typescript": "^8.4.0",
     "@types/babel__core": "^7.1.19",
     "@types/babel__standalone": "^7.1.4",
@@ -57,13 +57,13 @@
     "@types/semver": "^7.3.12",
     "@types/stylus": "^0.48.38",
     "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.35.1",
-    "@typescript-eslint/parser": "^5.35.1",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
     "conventional-changelog-cli": "^2.2.2",
     "cross-env": "^7.0.3",
     "esbuild": "^0.14.47",
     "eslint": "^8.23.0",
-    "eslint-define-config": "^1.6.0",
+    "eslint-define-config": "^1.7.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
     "execa": "^6.1.0",
@@ -74,7 +74,7 @@
     "npm-run-all": "^4.1.5",
     "picocolors": "^1.0.0",
     "playwright-chromium": "^1.25.1",
-    "pnpm": "^7.9.5",
+    "pnpm": "^7.11.0",
     "prettier": "2.7.1",
     "prompts": "^2.4.2",
     "resolve": "^1.22.1",
@@ -84,13 +84,13 @@
     "semver": "^7.3.7",
     "simple-git-hooks": "^2.8.0",
     "tslib": "^2.4.0",
-    "tsx": "^3.8.2",
+    "tsx": "^3.9.0",
     "typescript": "^4.6.4",
-    "unbuild": "^0.8.9",
+    "unbuild": "^0.8.10",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.12",
-    "vitest": "^0.22.1",
-    "vue": "^3.2.37"
+    "vitepress": "^1.0.0-alpha.13",
+    "vitest": "^0.23.1",
+    "vue": "^3.2.38"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
@@ -110,7 +110,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@7.9.5",
+  "packageManager": "pnpm@7.11.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*",

@@ -37,9 +37,9 @@
   "dependencies": {
     "@babel/standalone": "^7.18.13",
     "core-js": "^3.25.0",
-    "magic-string": "^0.26.2",
+    "magic-string": "^0.26.3",
     "regenerator-runtime": "^0.13.9",
-    "systemjs": "^6.12.4"
+    "systemjs": "^6.12.6"
   },
   "peerDependencies": {
     "terser": "^5.4.0",
