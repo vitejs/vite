@@ -1,3 +1,8 @@
+## 2.1.0 (2022-09-05)
+
+
+
+
 ## 2.1.0-beta.0 (2022-08-29)
 
 * fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
