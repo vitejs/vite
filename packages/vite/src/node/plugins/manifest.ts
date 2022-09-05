@@ -17,7 +17,6 @@ export interface ManifestChunk {
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
-  isDuplicate?: true
 }
 
 export function manifestPlugin(config: ResolvedConfig): Plugin {
@@ -126,7 +125,6 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
       duplicateAssets.forEach((asset) => {
         const chunk = createAsset(asset)
-        chunk.isDuplicate = true
         manifest[asset.name!] = chunk
       })
 
