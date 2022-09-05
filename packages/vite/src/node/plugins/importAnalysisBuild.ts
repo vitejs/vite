@@ -6,6 +6,7 @@ import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
+  analyzeSystemRegisteration,
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
@@ -584,19 +585,24 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 export function parseImportsSystemJS(
   code: string
 ): ReadonlyArray<ImportSpecifier> {
-  const regExp =
-    /__vitePreload\((.+?(?<importDirective>module\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/
+  const moduleParam = analyzeSystemRegisteration(code)?.moduleParam
 
-  const re = new RegExp(regExp, 'gs')
+  const re =
+    /\((.+?(?<importDirective>\b\w+\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/gs
+
   let match
   const imports: ImportSpecifier[] = []
 
   while ((match = re.exec(code)) != null) {
     const { index } = match as any
     const { importDirective, path1, path2 } = (match as any).groups as {
+      importDirective: string
       [key: string]: string | undefined
     }
-    const importDirectiveS = code.indexOf(importDirective!, index)
+    if (!importDirective.startsWith(moduleParam + '.import')) {
+      continue // This is not a module import, it's just another parameter invocation
+    }
+    const importDirectiveS = code.indexOf(importDirective, index)
     const path = (path1 || path2)!
     const pathS =
       code.indexOf(path1 ? `'${path}'` : `"${path}"`, importDirectiveS) + 1

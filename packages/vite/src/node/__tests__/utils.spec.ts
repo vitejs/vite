@@ -1,5 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
+  analyzeSystemRegisteration,
   asyncFlatten,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
@@ -8,6 +12,21 @@ import {
   isWindows,
   resolveHostname
 } from '../utils'
+
+const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+
+const readInputFile = (filename: string) =>
+  readFileSync(resolve(__dirname, 'test-input/system-format', filename), {
+    encoding: 'utf8',
+    flag: 'r'
+  })
+
+const system_format_snippets = [
+  'hello',
+  'svelte-legacy-part',
+  'vue-legacy-part',
+  'minified'
+]
 
 describe('injectQuery', () => {
   if (isWindows) {
@@ -175,5 +194,15 @@ describe('asyncFlatten', () => {
       Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])])
     ])
     expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  })
+})
+
+describe('analyzeSystemRegisteration', () => {
+  system_format_snippets.forEach((snippet) => {
+    test(snippet, () => {
+      expect(
+        analyzeSystemRegisteration(readInputFile(`${snippet}.js`))
+      ).toMatchSnapshot()
+    })
   })
 })

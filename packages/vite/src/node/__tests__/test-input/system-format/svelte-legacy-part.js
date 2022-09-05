@@ -1,3 +1,6 @@
+System.register(['./chunks/index-legacy-60db70ad.js', './chunks/singletons-legacy-4fba2acb.js'], function (exports, module) {
+  'use strict';
+
 const __vitePreload = 0
 
 var nodes = [function () {
@@ -18,3 +21,5 @@ return __vitePreload(function () { return module.import('./chunks/1-legacy-b7de9
   return __vitePreload(function () {
     return module.import("/chunks/4-legacy-5f612355.js");},     "__VITE_PRELOAD__" ,   module.meta.url);
 }];
+
+})

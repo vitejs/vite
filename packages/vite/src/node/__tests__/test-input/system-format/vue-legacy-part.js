@@ -1,4 +1,7 @@
-const _sfc_main = defineComponent({
+System.register([], function (exports, module) {
+  'use strict';
+  
+  const _sfc_main = defineComponent({
   components: {
     module: defineAsyncComponent(() => __vitePreload(() => module.import('./module-legacy.de1a4764.js'), "__VITE_PRELOAD__", module.meta.url))
   },
@@ -10,3 +13,5 @@ const _sfc_main = defineComponent({
   }
 
 });
+
+})

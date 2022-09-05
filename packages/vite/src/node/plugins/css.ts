@@ -30,6 +30,7 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
+  analyzeSystemRegisteration,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -581,16 +582,32 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const importExp = (() => {
           switch (opts.format) {
             case 'es':
-              return `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+              return new RegExp(
+                `\\bimport\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`,
+                'g'
+              )
             case 'system':
-              return `\\module.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`
+              return (code: string) => {
+                const moduleParam =
+                  analyzeSystemRegisteration(code)?.moduleParam
+                return moduleParam !== undefined
+                  ? new RegExp(
+                      `\\b${moduleParam}.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`,
+                      'g'
+                    )
+                  : null
+              }
             case 'cjs':
-              return `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`
+              return new RegExp(
+                `\\brequire\\(\\s*["'][^"']*(?:${emptyChunkFiles})["']\\);\n?`,
+                'g'
+              )
             default:
               return null
           }
         })()
-        const emptyChunkRE = importExp ? new RegExp(importExp, 'g') : null
+        const emptyChunkREConst =
+          typeof importExp === 'function' ? null : importExp
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
@@ -609,6 +626,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
+            const emptyChunkRE =
+              emptyChunkREConst ||
+              (typeof importExp === 'function' ? importExp(chunk.code) : null)
             if (emptyChunkRE) {
               chunk.code = chunk.code.replace(
                 emptyChunkRE,

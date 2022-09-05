@@ -1150,3 +1150,44 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
   if (!isWindows) return p.startsWith('/')
   return windowsDrivePathPrefixRE.test(p)
 }
+
+/**
+ * Analyze the SystemJS module registration `System.register` in the code.
+ */
+export function analyzeSystemRegisteration(code: string):
+  | {
+      chunkListCode: string
+      paramsCode: string
+      exportParam?: string
+      moduleParam?: string
+    }
+  | undefined {
+  const re =
+    /System\.register\s*\(\s*(?<chunkList>\[.*?(?<!\\)\])\s*,\s*(function)?\s*(?<params>\(.*?\))/s
+  const match = code.match(re)
+  if (!match) {
+    return undefined
+  }
+
+  const { chunkList: chunkListCode, params: paramsCodeUnfixed } = match.groups!
+  // Sometimes, there could be by minification a code like `(function(export,module){...})`,
+  //  and so the reg expression couldn't treat the whole expression as the `params` code
+  const paramsCode = paramsCodeUnfixed.slice(paramsCodeUnfixed.lastIndexOf('('))
+  const paramsCodeSplitted = paramsCode
+    .slice(1, -1)
+    .split(',')
+    .map((str) => str.trim())
+  const exportParam =
+    paramsCodeSplitted.length >= 1 ? paramsCodeSplitted[0] : undefined
+  const moduleParam =
+    paramsCodeSplitted.length >= 2 ? paramsCodeSplitted[1] : undefined
+  return {
+    chunkListCode,
+    paramsCode,
+    exportParam,
+    moduleParam
+  }
+
+  // TODO If someone wants to parse more details, e.g. parse the chunk list,
+  //  then just add another value to the returned object.
+}

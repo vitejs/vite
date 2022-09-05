@@ -7,12 +7,12 @@ import { parseImportsSystemJS } from '../../../plugins/importAnalysisBuild'
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 const readInputFile = (filename: string) =>
-  readFileSync(resolve(__dirname, 'system-format-input', filename), {
+  readFileSync(resolve(__dirname, '../../test-input/system-format', filename), {
     encoding: 'utf8',
     flag: 'r'
   })
 
-const snippets = ['hello', 'svelte-legacy-part', 'vue-legacy-part']
+const snippets = ['hello', 'svelte-legacy-part', 'vue-legacy-part', 'minified']
 
 describe('parse import system js', () => {
   snippets.forEach((snippet) => {
