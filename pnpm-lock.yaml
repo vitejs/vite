@@ -1100,6 +1100,18 @@ importers:
       express: 4.18.1
       serve-static: 1.15.0
 
+  playground/ssr-resolve:
+    specifiers:
+      autosuggest-highlight: ^3.3.4
+      lodash: ^4.17.21
+      react: ^18.2.0
+      react-dom: ^18.2.0
+    dependencies:
+      autosuggest-highlight: 3.3.4
+      lodash: 4.17.21
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+
   playground/ssr-vue:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
@@ -3370,6 +3382,12 @@ packages:
       normalize-range: 0.1.2
       picocolors: 1.0.0
       postcss-value-parser: 4.2.0
+    dev: false
+
+  /autosuggest-highlight/3.3.4:
+    resolution: {integrity: sha512-j6RETBD2xYnrVcoV1S5R4t3WxOlWZKyDQjkwnggDPSjF5L4jV98ZltBpvPvbkM1HtoSe5o+bNrTHyjPbieGeYA==}
+    dependencies:
+      remove-accents: 0.4.2
     dev: false
 
   /axios/0.27.2:
@@ -8115,6 +8133,9 @@ packages:
     resolution: {integrity: sha512-pq2bWo9mVD43nbts2wGv17XLiNLya+GklZ8kaDLV2Z08gDCsGpnKn9BFMepvWuHCbyVvY7J5o5+BVvoQbmlJLg==}
     engines: {node: '>=8'}
     dev: true
+
+  /remove-accents/0.4.2:
+    resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
 
   /require-directory/2.1.1:
     resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
