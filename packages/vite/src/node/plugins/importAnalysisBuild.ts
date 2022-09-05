@@ -90,11 +90,13 @@ function preload(
         }
       }
 
-      const preloadInImg = (res: () => void) => {
-        const img = new Image()
-        img.onerror = () => res()
-        img.onload = () => res()
-        img.src = dep
+      const preloadInImg = () => {
+        return new Promise<void>((res) => {
+          const img = new Image()
+          img.onerror = () => res()
+          img.onload = () => res()
+          img.src = dep
+        })
       }
 
       const loadLink = () => {
@@ -113,56 +115,33 @@ function preload(
       }
 
       const waitForLoad = (link: HTMLLinkElement) => {
-        // @ts-ignore
-        if (__VITE_IS_MODERN__) {
-          return new Promise<void>((res, rej) => {
+        return new Promise<void>((res, rej) => {
+          // @ts-ignore
+          if (__VITE_IS_MODERN__) {
             link.addEventListener('load', () => res())
             link.addEventListener('error', () =>
               rej(new Error(`Unable to preload CSS for ${dep}`))
             )
-          })
-        } else {
-          return Promise.all<void>([
-            new Promise((res, rej) => {
-              // We query the path (that should be cached already), for knowing if there is an error while downloading it. (this is the only reason)
-              const req = new XMLHttpRequest()
-              req.addEventListener('load', () => res())
-              req.addEventListener('error', () =>
-                rej(
-                  new Error(
-                    `Unable to preload CSS (via XMLHttpRequest) for ${dep}`
-                  )
-                )
-              )
-              req.open('GET', dep)
-              req.send()
-            }),
-            new Promise((res) => {
-              // On legacy browsers, let them a chance to process the newly referred CSS link.
-              setTimeout(res)
-            })
-          ]) as unknown as Promise<void>
-        }
+          } else {
+            // On legacy browsers, let them a chance to process the newly referred CSS link.
+            setTimeout(res)
+          }
+        })
       }
 
       const loadLinkAndWait = () => {
         return waitForLoad(loadLink())
       }
 
-      // @ts-ignore
-      if (__VITE_IS_MODERN__) {
-        if (isCss) {
+      if (isCss) {
+        // @ts-ignore
+        if (__VITE_IS_MODERN__) {
           return loadLinkAndWait()
         } else {
-          loadLink()
+          return preloadInImg().then(loadLinkAndWait)
         }
       } else {
-        if (isCss) {
-          return new Promise<void>(preloadInImg).then(loadLinkAndWait)
-        } else {
-          preloadInImg(() => {})
-          loadLink()
-        }
+        loadLink()
       }
     })
   ).then(() => baseModule())
