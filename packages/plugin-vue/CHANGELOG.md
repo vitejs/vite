@@ -1,3 +1,8 @@
+## 3.1.0 (2022-09-05)
+
+
+
+
 ## 3.1.0-beta.0 (2022-08-29)
 
 * docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
