@@ -111,12 +111,20 @@ export async function preview(
 
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
+  const headers = config.preview.headers
   app.use(
     previewBase,
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: config.appType === 'spa'
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
+        }
+      }
     })
   )
 

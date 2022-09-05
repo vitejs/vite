@@ -18,6 +18,14 @@ module.exports = {
     },
     hmr: {
       overlay: false
+    },
+    headers: {
+      'x-served-by': 'vite'
+    }
+  },
+  preview: {
+    headers: {
+      'x-served-by': 'vite'
     }
   },
   define: {
