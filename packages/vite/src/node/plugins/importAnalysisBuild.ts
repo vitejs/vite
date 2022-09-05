@@ -90,14 +90,13 @@ function preload(
         }
       }
 
-      const preloadInImg = () => {
-        return new Promise<void>((res) => {
+      const preloadInImg = () =>
+        new Promise<void>((res) => {
           const img = new Image()
           img.onerror = () => res()
           img.onload = () => res()
           img.src = dep
         })
-      }
 
       const loadLink = () => {
         // @ts-ignore
