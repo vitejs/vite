@@ -1,3 +1,9 @@
+## 2.1.0 (2022-09-05)
+
+* fix(plugin-react): duplicate __self prop and __source prop (#9387) ([c89de3a](https://github.com/vitejs/vite/commit/c89de3a)), closes [#9387](https://github.com/vitejs/vite/issues/9387)
+
+
+
 ## 2.1.0-beta.0 (2022-08-29)
 
 * docs: fix typo (#9855) ([583f185](https://github.com/vitejs/vite/commit/583f185)), closes [#9855](https://github.com/vitejs/vite/issues/9855)
