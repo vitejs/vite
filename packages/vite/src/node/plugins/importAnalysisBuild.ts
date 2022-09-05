@@ -91,14 +91,6 @@ function preload(
         }
       }
 
-      const preloadInImg = () =>
-        new Promise<void>((res) => {
-          const img = new Image()
-          img.onerror = () => res()
-          img.onload = () => res()
-          img.src = dep
-        })
-
       const loadLink = () => {
         // @ts-ignore
         const link = document.createElement('link')
@@ -114,31 +106,30 @@ function preload(
         return link
       }
 
-      const waitForLoad = (link: HTMLLinkElement) => {
-        return new Promise<void>((res, rej) => {
-          // @ts-ignore
-          if (__VITE_IS_MODERN__) {
+      if (isCss) {
+        // @ts-ignore
+        if (__VITE_IS_MODERN__) {
+          return new Promise<void>((res, rej) => {
+            const link = loadLink()
             link.addEventListener('load', () => res())
             link.addEventListener('error', () =>
               rej(new Error(`Unable to preload CSS for ${dep}`))
             )
-          } else {
-            // On legacy browsers, let them a chance to process the newly referred CSS link.
-            setTimeout(res)
-          }
-        })
-      }
-
-      const loadLinkAndWait = () => {
-        return waitForLoad(loadLink())
-      }
-
-      if (isCss) {
-        // @ts-ignore
-        if (__VITE_IS_MODERN__) {
-          return loadLinkAndWait()
+          })
         } else {
-          return preloadInImg().then(loadLinkAndWait)
+          return new Promise<void>((res) => {
+            const img = new Image()
+            img.onerror = () => res()
+            img.onload = () => res()
+            img.src = dep
+          }).then(
+            () =>
+              new Promise<void>((res) => {
+                loadLink()
+                // On legacy browsers, let them a chance to process the newly referred CSS link.
+                setTimeout(res)
+              })
+          )
         }
       } else {
         loadLink()
