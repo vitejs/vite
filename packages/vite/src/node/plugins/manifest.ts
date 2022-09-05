@@ -123,7 +123,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      duplicateAssets.forEach((asset) => {
+      duplicateAssets.get(config)!.forEach((asset) => {
         const chunk = createAsset(asset)
         manifest[asset.name!] = chunk
       })

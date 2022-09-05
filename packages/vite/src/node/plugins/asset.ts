@@ -21,7 +21,7 @@ import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
-export const duplicateAssets: OutputAsset[] = []
+export const duplicateAssets = new WeakMap<ResolvedConfig, OutputAsset[]>()
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -132,6 +132,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       emittedHashMap.set(config, new Set())
+      duplicateAssets.set(config, [])
     },
 
     resolveId(id) {
@@ -473,6 +474,7 @@ async function fileToBuiltUrl(
       map.set(contentHash, fileName)
     }
     const emittedSet = emittedHashMap.get(config)!
+    const duplicates = duplicateAssets.get(config)!
     const name = normalizePath(path.relative(config.root, file))
     if (!emittedSet.has(contentHash)) {
       pluginContext.emitFile({
@@ -483,7 +485,7 @@ async function fileToBuiltUrl(
       })
       emittedSet.add(contentHash)
     } else {
-      duplicateAssets.push({
+      duplicates.push({
         name,
         fileName: map.get(contentHash)!,
         type: 'asset',
