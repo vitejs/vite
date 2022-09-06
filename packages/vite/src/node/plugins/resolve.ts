@@ -175,7 +175,10 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // as if they would have been imported through a bare import
           // Use the original id to do the check as the resolved id may be the real
           // file path after symlinks resolution
-          const isNodeModule = !!normalizePath(id).match(nodeModulesInPathRE)
+          const isNodeModule =
+            nodeModulesInPathRE.test(normalizePath(id)) ||
+            nodeModulesInPathRE.test(normalizePath(resolved))
+
           if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
             const versionHash = depsOptimizer.metadata.browserHash
             if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
