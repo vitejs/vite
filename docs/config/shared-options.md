@@ -39,14 +39,14 @@ Define global constant replacements. Entries will be defined as globals during d
 
 - Starting from `2.0.0-beta.70`, string values will be used as raw expressions, so if defining a string constant, it needs to be explicitly quoted (e.g. with `JSON.stringify`).
 
-- Starting from `3.1.0`, defined constants within string literals and comments are ignored. For example, `process.env.NODE_ENV` is not replaced in `console.log('mode is process.env.NODE_ENV') /* process.env.NODE_ENV */`.
+- Starting from `3.2.0`, defined constants within string literals and comments are ignored. For example, `process.env.NODE_ENV` is not replaced in `console.log('mode is process.env.NODE_ENV') /* process.env.NODE_ENV */`.
 
 - To be consistent with [esbuild behavior](https://esbuild.github.io/api/#define), expressions must either be a JSON object (null, boolean, number, string, array, or object) or a single identifier.
 
 - Replacements are performed only when the match isn't surrounded by other letters, numbers, `_` or `$`.
 
 ::: warning
-Because it's implemented as straightforward text replacements without any syntax analysis (pre Vite 3.1.0), we recommend using `define` for CONSTANTS only.
+Because it's implemented as straightforward text replacements without any syntax analysis (pre Vite 3.2.0), we recommend using `define` for CONSTANTS only.
 
 For example, `process.env.FOO` and `__APP_VERSION__` are good fits. But `process` or `global` should not be put into this option. Variables can be shimmed or polyfilled instead.
 :::

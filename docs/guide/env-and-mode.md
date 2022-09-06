@@ -18,7 +18,7 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 During production, these env variables are **statically replaced**. It is therefore necessary to always reference them using the full static string. For example, dynamic key access like `import.meta.env[key]` will not work.
 
-Before version 3.1.0, Vite also replaces environment variables (and other [defined constants](/config/shared-options.html#define)) within string literals and comments. This could result in unintentional changes to your string literals that result in invalid JavaScript syntax, causing errors like `Missing ) after argument list`, `Missing semicolon`, or `Unexpected token`. For example, you'd see an error when `console.log("This is process.env.`<wbr>`NODE_ENV")` is transformed to `console.log("This is "development"")`.
+Before version 3.2.0, Vite also replaces environment variables (and other [defined constants](/config/shared-options.html#define)) within string literals and comments. This could result in unintentional changes to your string literals that result in invalid JavaScript syntax, causing errors like `Missing ) after argument list`, `Missing semicolon`, or `Unexpected token`. For example, you'd see an error when `console.log("This is process.env.`<wbr>`NODE_ENV")` is transformed to `console.log("This is "development"")`.
 
 There are ways to work around this string replacement behavior:
 
