@@ -1,8 +1,17 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
+// set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
 :host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.backdrop {
   position: fixed;
   z-index: 99999;
   top: 0;
@@ -99,15 +108,17 @@ code {
   cursor: pointer;
 }
 </style>
-<div class="window">
-  <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
-  <pre class="file"></pre>
-  <pre class="frame"></pre>
-  <pre class="stack"></pre>
-  <div class="tip">
-    Click outside or fix the code to dismiss.<br>
-    You can also disable this overlay by setting
-    <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+<div class="backdrop">
+  <div class="window">
+    <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
+    <pre class="file"></pre>
+    <pre class="frame"></pre>
+    <pre class="stack"></pre>
+    <div class="tip">
+      Click outside or fix the code to dismiss.<br>
+      You can also disable this overlay by setting
+      <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+    </div>
   </div>
 </div>
 `
