@@ -1,12 +1,12 @@
-// no `exports` key, should resolve to autosuggest-highlight/match/index.js
-import match from 'autosuggest-highlight/match'
-// no `exports` key, should resolve to lodash/isInteger.js
-import isInteger from 'lodash/isInteger'
-// has `exports` key, should resolve to react-dom/server
-import { version } from 'react-dom/server'
+// no `exports` key, should resolve to entries/dir/index.js
+import dirEntry from 'entries/dir'
+// no `exports` key, should resolve to entries/file.js
+import fileEntry from 'entries/file'
+// has `exports` key, should resolve to pkg-exports/entry
+import pkgExportsEntry from 'pkg-exports/entry'
 
 export default `
-  Matches: ${match('some text', 'te')}
-  React: ${version}
-  Lodash: ${isInteger(42)}
+  entries/dir: ${dirEntry}
+  entries/file: ${fileEntry}
+  pkg-exports/entry: ${pkgExportsEntry}
 `

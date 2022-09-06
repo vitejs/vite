@@ -3,9 +3,6 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    ssr: true,
-    rollupOptions: {
-      input: resolve(__dirname, 'main.js')
-    }
+    ssr: './main.js'
   }
 })

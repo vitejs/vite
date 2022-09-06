@@ -1,14 +1,13 @@
 import { expect, test } from 'vitest'
-import { isBuild, testDir } from '~utils'
+import { isBuild, readFile, testDir } from '~utils'
 
 test.runIf(isBuild)('correctly resolve entrypoints', async () => {
-  const { default: output } = await import(`${testDir}/dist/main.mjs`)
+  const contents = readFile('dist/main.mjs')
 
-  expect(output).toMatchInlineSnapshot(`
-    "
-      Matches: 5,7
-      React: 18.2.0
-      Lodash: true
-    "
-  `)
+  const _ = `['"]`
+  expect(contents).toMatch(new RegExp(`from ${_}entries/dir/index.js${_}`))
+  expect(contents).toMatch(new RegExp(`from ${_}entries/file.js${_}`))
+  expect(contents).toMatch(new RegExp(`from ${_}pkg-exports/entry${_}`))
+
+  await expect(import(`${testDir}/dist/main.mjs`)).resolves.toBeTruthy()
 })

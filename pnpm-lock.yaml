@@ -1102,15 +1102,17 @@ importers:
 
   playground/ssr-resolve:
     specifiers:
-      autosuggest-highlight: 3.3.4
-      lodash: 4.17.21
-      react: 18.2.0
-      react-dom: 18.2.0
+      entries: file:./entries
+      pkg-exports: file:./pkg-exports
     dependencies:
-      autosuggest-highlight: 3.3.4
-      lodash: 4.17.21
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
+      entries: file:playground/ssr-resolve/entries
+      pkg-exports: file:playground/ssr-resolve/pkg-exports
+
+  playground/ssr-resolve/entries:
+    specifiers: {}
+
+  playground/ssr-resolve/pkg-exports:
+    specifiers: {}
 
   playground/ssr-vue:
     specifiers:
@@ -3382,12 +3384,6 @@ packages:
       normalize-range: 0.1.2
       picocolors: 1.0.0
       postcss-value-parser: 4.2.0
-    dev: false
-
-  /autosuggest-highlight/3.3.4:
-    resolution: {integrity: sha512-j6RETBD2xYnrVcoV1S5R4t3WxOlWZKyDQjkwnggDPSjF5L4jV98ZltBpvPvbkM1HtoSe5o+bNrTHyjPbieGeYA==}
-    dependencies:
-      remove-accents: 0.4.2
     dev: false
 
   /axios/0.27.2:
@@ -8134,9 +8130,6 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /remove-accents/0.4.2:
-    resolution: {integrity: sha512-7pXIJqJOq5tFgG1A2Zxti3Ht8jJF337m4sowbuHsW30ZnkQFnDzy9qBNhgzX8ZLW4+UBcXiiR7SwR6pokHsxiA==}
-
   /require-directory/2.1.1:
     resolution: {integrity: sha1-jGStX9MNqxyXbiNE/+f3kqam30I=}
     engines: {node: '>=0.10.0'}
@@ -9860,6 +9853,18 @@ packages:
   file:playground/ssr-deps/ts-transpiled-exports:
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
     name: ts-transpiled-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-resolve/entries:
+    resolution: {directory: playground/ssr-resolve/entries, type: directory}
+    name: entries
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-resolve/pkg-exports:
+    resolution: {directory: playground/ssr-resolve/pkg-exports, type: directory}
+    name: pkg-exports-cjs
     version: 0.0.0
     dev: false
 
