@@ -45,15 +45,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       SSR: !!config.build.ssr
     }
 
-    // FIXME: Use string concatenation to workaround https://github.com/vitest-dev/vitest/issues/1941
-    const importMetaEnv = 'import' + '.meta.env'
-
     for (const key in env) {
-      importMetaKeys[`${importMetaEnv}.${key}`] = JSON.stringify(env[key])
+      importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
     Object.assign(importMetaFallbackKeys, {
-      [importMetaEnv + '.']: `({}).`,
-      [importMetaEnv]: JSON.stringify(config.env),
+      'import.meta.env.': `({}).`,
+      'import.meta.env': JSON.stringify(config.env),
       'import.meta.hot': `false`
     })
   }

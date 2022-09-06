@@ -19,9 +19,6 @@ async function createDefinePluginTransform(
   }
 }
 
-// FIXME: Use string concatenation to workaround https://github.com/vitest-dev/vitest/issues/1941
-const importMetaEnv = 'import' + '.meta.env'
-
 describe('definePlugin', () => {
   test('replaces custom define', async () => {
     const transform = await createDefinePluginTransform({
@@ -35,12 +32,12 @@ describe('definePlugin', () => {
     )
   })
 
-  test(`replaces ${importMetaEnv}.SSR with false`, async () => {
+  test('replaces import.meta.env.SSR with false', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform(`const isSSR = ${importMetaEnv}.SSR ;`)).toBe(
+    expect(await transform('const isSSR = import.meta.env.SSR ;')).toBe(
       'const isSSR = false ;'
     )
-    expect(await transform(`const isSSR = ${importMetaEnv}.SSR;`)).toBe(
+    expect(await transform('const isSSR = import.meta.env.SSR;')).toBe(
       'const isSSR = false;'
     )
   })
@@ -54,8 +51,8 @@ describe('definePlugin', () => {
     'global.process.env.NODE_ENV': '"test"',
     'globalThis.process.env.NODE_ENV': '"test"',
     __vite_process_env_NODE_ENV: '"test"',
-    [importMetaEnv + '.']: '({}).',
-    [importMetaEnv]:
+    'import.meta.env.': '({}).',
+    'import.meta.env':
       '{"BASE_URL":"/","MODE":"development","DEV":true,"PROD":false}',
     'import.meta.hot': 'false'
   }

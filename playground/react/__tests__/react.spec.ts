@@ -39,7 +39,5 @@ test.runIf(isServe)(
 )
 
 test('defined/reserved words are preserved in string literals', async () => {
-  expect(await page.textContent('.define-variable')).toBe(
-    'import' + '.meta.env' // FIXME: Use string concatenation to workaround https://github.com/vitest-dev/vitest/issues/1941
-  )
+  expect(await page.textContent('.define-variable')).toBe('import.meta.env')
 })

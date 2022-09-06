@@ -266,8 +266,6 @@ describe('vue worker', () => {
 
 describe('defined/reserved words', () => {
   test('are preserved in string literals', async () => {
-    expect(await page.textContent('.define-variable')).toBe(
-      'import' + '.meta.env' // FIXME: Workaround Vite replacement of import\0.meta.env
-    )
+    expect(await page.textContent('.define-variable')).toBe('import.meta.env')
   })
 })
