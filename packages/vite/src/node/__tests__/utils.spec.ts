@@ -245,4 +245,16 @@ describe('replaceInCode', () => {
   test('returns null if no replacement', () => {
     expect(replaceInCode('let a = b;', /\d/g, {})).toBe(null)
   })
+
+  test('ignores string literals', () => {
+    expect(replaceInCode('let a1 = "1";', /\d/g, 'b')?.toString()).toBe(
+      'let ab = "1";'
+    )
+  })
+
+  test('ignores comments', () => {
+    expect(
+      replaceInCode('let a /* 1 */ = 1; // 1', /\d/g, 'b')?.toString()
+    ).toBe('let a /* 1 */ = b; // 1')
+  })
 })
