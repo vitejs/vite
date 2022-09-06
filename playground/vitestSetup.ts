@@ -172,7 +172,7 @@ beforeAll(async (s) => {
     serverLogs.length = 0
     await page?.close()
     await server?.close()
-    watcher?.close()
+    await watcher?.close()
     if (browser) {
       await browser.close()
     }

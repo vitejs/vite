@@ -87,7 +87,7 @@ function markExplicitImport(url: string) {
   return url
 }
 
-async function extractImportedBindings(
+function extractImportedBindings(
   id: string,
   source: string,
   importSpec: ImportSpecifier,

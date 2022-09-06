@@ -272,7 +272,7 @@ describe.runIf(isBuild)('encodeURI', () => {
   test('img src with encodeURI', async () => {
     const img = await page.$('.encodeURI')
     expect(
-      await (await img.getAttribute('src')).startsWith('data:image/png;base64')
+      (await img.getAttribute('src')).startsWith('data:image/png;base64')
     ).toBe(true)
   })
 })
