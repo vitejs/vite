@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "dev:classic": "cross-env USE_CLASSIC=1 vite",
+    "dev:classic": "USE_CLASSIC=1 vite",
     "build": "vite build",
-    "build:classic": "cross-env USE_CLASSIC=1 vite build",
+    "build:classic": "USE_CLASSIC=1 vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
@@ -15,7 +15,6 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "workspace:*",
-    "cross-env": "^7.0.3"
+    "@vitejs/plugin-react": "workspace:*"
   }
 }
