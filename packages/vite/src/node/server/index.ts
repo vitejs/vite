@@ -395,6 +395,8 @@ export async function createServer(
         watcher.close(),
         ws.close(),
         container.close(),
+        getDepsOptimizer(server.config)?.close(),
+        getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer()
       ])
       server.resolvedUrls = null
