@@ -34,7 +34,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^5.36.1
       '@typescript-eslint/parser': ^5.36.1
       conventional-changelog-cli: ^2.2.2
-      cross-env: ^7.0.3
       esbuild: ^0.14.47
       eslint: ^8.23.0
       eslint-define-config: ^1.7.0
@@ -90,7 +89,6 @@ importers:
       '@typescript-eslint/eslint-plugin': 5.36.1_g2qdd2k5igsxhudjjarcmw5o7e
       '@typescript-eslint/parser': 5.36.1_pyvvhc3zqdua4akflcggygkl44
       conventional-changelog-cli: 2.2.2
-      cross-env: 7.0.3
       esbuild: 0.14.47
       eslint: 8.23.0
       eslint-define-config: 1.7.0
@@ -457,10 +455,7 @@ importers:
     specifiers: {}
 
   playground/env:
-    specifiers:
-      cross-env: ^7.0.3
-    devDependencies:
-      cross-env: 7.0.3
+    specifiers: {}
 
   playground/env-nested:
     specifiers: {}
@@ -533,12 +528,10 @@ importers:
 
   playground/json:
     specifiers:
-      cross-env: ^7.0.3
       express: ^4.18.1
       json-module: file:./json-module
       vue: ^3.2.38
     devDependencies:
-      cross-env: 7.0.3
       express: 4.18.1
       json-module: file:playground/json/json-module
       vue: 3.2.38
@@ -850,7 +843,6 @@ importers:
   playground/react-sourcemap:
     specifiers:
       '@vitejs/plugin-react': workspace:*
-      cross-env: ^7.0.3
       react: ^18.2.0
       react-dom: ^18.2.0
     dependencies:
@@ -858,7 +850,6 @@ importers:
       react-dom: 18.2.0_react@18.2.0
     devDependencies:
       '@vitejs/plugin-react': link:../../packages/plugin-react
-      cross-env: 7.0.3
 
   playground/react/jsx-entry:
     specifiers: {}
@@ -936,7 +927,6 @@ importers:
     specifiers:
       '@vitejs/css-lib': file:./css-lib
       bcrypt: ^5.0.1
-      cross-env: ^7.0.3
       define-properties-exports: file:./define-properties-exports
       define-property-exports: file:./define-property-exports
       express: ^4.18.1
@@ -980,7 +970,6 @@ importers:
       require-absolute: file:playground/ssr-deps/require-absolute
       ts-transpiled-exports: file:playground/ssr-deps/ts-transpiled-exports
     devDependencies:
-      cross-env: 7.0.3
       express: 4.18.1
 
   playground/ssr-deps/css-lib:
@@ -1063,19 +1052,15 @@ importers:
 
   playground/ssr-html:
     specifiers:
-      cross-env: ^7.0.3
       express: ^4.18.1
     devDependencies:
-      cross-env: 7.0.3
       express: 4.18.1
 
   playground/ssr-pug:
     specifiers:
-      cross-env: ^7.0.3
       express: ^4.18.1
       pug: ^3.0.2
     devDependencies:
-      cross-env: 7.0.3
       express: 4.18.1
       pug: 3.0.2
 
@@ -1083,7 +1068,6 @@ importers:
     specifiers:
       '@vitejs/plugin-react': workspace:*
       compression: ^1.7.4
-      cross-env: ^7.0.3
       express: ^4.18.1
       react: ^18.2.0
       react-dom: ^18.2.0
@@ -1096,7 +1080,6 @@ importers:
     devDependencies:
       '@vitejs/plugin-react': link:../../packages/plugin-react
       compression: 1.7.4
-      cross-env: 7.0.3
       express: 4.18.1
       serve-static: 1.15.0
 
@@ -1105,7 +1088,6 @@ importers:
       '@vitejs/plugin-vue': workspace:*
       '@vitejs/plugin-vue-jsx': workspace:*
       compression: ^1.7.4
-      cross-env: ^7.0.3
       dep-import-type: link:./dep-import-type
       example-external-component: file:example-external-component
       express: ^4.18.1
@@ -1122,7 +1104,6 @@ importers:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../packages/plugin-vue-jsx
       compression: 1.7.4
-      cross-env: 7.0.3
       dep-import-type: link:dep-import-type
       express: 4.18.1
       serve-static: 1.15.0
@@ -1135,14 +1116,12 @@ importers:
 
   playground/ssr-webworker:
     specifiers:
-      cross-env: ^7.0.3
       miniflare: ^1.4.1
       react: ^18.2.0
       resolve-linked: workspace:*
     dependencies:
       react: 18.2.0
     devDependencies:
-      cross-env: 7.0.3
       miniflare: 1.4.1
       resolve-linked: link:../resolve-linked
 
@@ -4028,14 +4007,6 @@ packages:
 
   /create-require/1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
-
-  /cross-env/7.0.3:
-    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
-    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
-    hasBin: true
-    dependencies:
-      cross-spawn: 7.0.3
-    dev: true
 
   /cross-spawn/6.0.5:
     resolution: {integrity: sha512-eTVLrBSt7fjbDygz805pMnstIs2VTBNkRm0qxZd+M7A5XDdxVRWO5MxGBXZhjY4cqLYLdtrGqRf8mBPmzwSpWQ==}
