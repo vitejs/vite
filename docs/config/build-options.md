@@ -152,7 +152,7 @@ Note the `build.minify` option does not minify whitespaces when using the `'es'`
 Terser must be installed when it is set to `'terser'`.
 
 ```sh
-npm add -D terser
+npm install -D terser
 ```
 
 ## build.terserOptions

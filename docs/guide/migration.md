@@ -52,7 +52,7 @@ Also [`build.rollupOptions.output.inlineDynamicImports`](https://rollupjs.org/gu
 - JS file extensions in SSR and lib mode now use a valid extension (`js`, `mjs`, or `cjs`) for output JS entries and chunks based on their format and the package type.
 - Terser is now an optional dependency. If you are using `build.minify: 'terser'`, you need to install it.
   ```shell
-  npm add -D terser
+  npm install -D terser
   ```
 
 ### `import.meta.glob`
