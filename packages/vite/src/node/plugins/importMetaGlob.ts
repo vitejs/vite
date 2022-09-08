@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import type {
   ArrayExpression,
@@ -23,8 +23,6 @@ import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { normalizePath, slash, transformStableResult } from '../utils'
 
-const { isMatch, scan } = micromatch
-
 export interface ParsedImportGlob {
   match: RegExpMatchArray
   index: number
@@ -42,8 +40,8 @@ export function getAffectedGlobModules(
   server: ViteDevServer
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
+  for (const [id, allGlobsMatch] of server._importGlobMap!) {
+    if (allGlobsMatch(file))
       modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
   }
   modules.forEach((i) => {
@@ -72,8 +70,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       )
       if (result) {
         if (server) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, allGlobs)
+          const allGlobsMatch = picomatch(
+            result.matches.flatMap((i) => i.globsResolved)
+          )
+          server._importGlobMap.set(id, allGlobsMatch)
         }
         return transformStableResult(result.s, id, config)
       }
@@ -523,7 +523,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => !g.startsWith('!'))
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 

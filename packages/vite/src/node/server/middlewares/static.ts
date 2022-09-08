@@ -3,7 +3,6 @@ import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'types/connect'
-import micromatch from 'micromatch'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
@@ -17,8 +16,6 @@ import {
   isWindows,
   slash
 } from '../../utils'
-
-const { isMatch } = micromatch
 
 const sirvOptions = (headers?: OutgoingHttpHeaders): Options => {
   return {
@@ -158,8 +155,6 @@ export function serveRawFsMiddleware(
   }
 }
 
-const _matchOptions = { matchBase: true }
-
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer
@@ -168,8 +163,7 @@ export function isFileServingAllowed(
 
   const file = fsPathFromUrl(url)
 
-  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
-    return false
+  if (server._fsDenyGlob(file)) return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
