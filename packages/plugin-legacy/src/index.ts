@@ -107,7 +107,7 @@ const legacyEntryId = 'vite-legacy-entry'
 const systemJSInlineCode = `System.import(document.getElementById('${legacyEntryId}').getAttribute('data-src'))`
 
 const detectModernBrowserVarName = '__vite_is_modern_browser'
-const detectModernBrowserCode = `try{import.meta.url;import("_").catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
+const detectModernBrowserCode = `try{import.meta.url;import("_").catch(()=>1);eval("try{}catch{}");}catch(e){}window.${detectModernBrowserVarName}=true;`
 const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy build because dynamic import or import.meta.url is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
 const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
