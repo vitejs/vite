@@ -1,5 +1,5 @@
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const legacy = require('@vitejs/plugin-legacy').default
 
 module.exports = {
@@ -15,12 +15,15 @@ module.exports = {
     cssCodeSplit: false,
     manifest: true,
     rollupOptions: {
+      input: {
+        index: path.resolve(__dirname, 'index.html'),
+        nested: path.resolve(__dirname, 'nested/index.html')
+      },
       output: {
         chunkFileNames(chunkInfo) {
           if (chunkInfo.name === 'immutable-chunk') {
             return `assets/${chunkInfo.name}.js`
           }
-
           return `assets/chunk-[name].[hash].js`
         }
       }

@@ -1,3 +1,77 @@
+## 2.1.0 (2022-09-05)
+
+
+
+
+## 2.1.0-beta.0 (2022-08-29)
+
+* fix(deps): update all non-major dependencies (#9888) ([e35a58b](https://github.com/vitejs/vite/commit/e35a58b)), closes [#9888](https://github.com/vitejs/vite/issues/9888)
+* fix(plugin-legacy): prevent global process.env.NODE_ENV mutation (#9741) ([a8279af](https://github.com/vitejs/vite/commit/a8279af)), closes [#9741](https://github.com/vitejs/vite/issues/9741)
+* chore(deps): update all non-major dependencies (#9675) ([4e56e87](https://github.com/vitejs/vite/commit/4e56e87)), closes [#9675](https://github.com/vitejs/vite/issues/9675)
+* chore(deps): update all non-major dependencies (#9778) ([aceaefc](https://github.com/vitejs/vite/commit/aceaefc)), closes [#9778](https://github.com/vitejs/vite/issues/9778)
+* refactor(legacy): build polyfill chunk (#9639) ([7ba0c9f](https://github.com/vitejs/vite/commit/7ba0c9f)), closes [#9639](https://github.com/vitejs/vite/issues/9639)
+* refactor(legacy): remove code for Vite 2 (#9640) ([b1bbc5b](https://github.com/vitejs/vite/commit/b1bbc5b)), closes [#9640](https://github.com/vitejs/vite/issues/9640)
+
+
+
+## <small>2.0.1 (2022-08-11)</small>
+
+* fix: mention that Node.js 13/15 support is dropped (fixes #9113) (#9116) ([2826303](https://github.com/vitejs/vite/commit/2826303)), closes [#9113](https://github.com/vitejs/vite/issues/9113) [#9116](https://github.com/vitejs/vite/issues/9116)
+* fix(deps): update all non-major dependencies (#9176) ([31d3b70](https://github.com/vitejs/vite/commit/31d3b70)), closes [#9176](https://github.com/vitejs/vite/issues/9176)
+* fix(deps): update all non-major dependencies (#9575) ([8071325](https://github.com/vitejs/vite/commit/8071325)), closes [#9575](https://github.com/vitejs/vite/issues/9575)
+* fix(legacy): skip esbuild transform for systemjs (#9635) ([ac16abd](https://github.com/vitejs/vite/commit/ac16abd)), closes [#9635](https://github.com/vitejs/vite/issues/9635)
+* chore: fix code typos (#9033) ([ed02861](https://github.com/vitejs/vite/commit/ed02861)), closes [#9033](https://github.com/vitejs/vite/issues/9033)
+* chore(deps): update all non-major dependencies (#9347) ([2fcb027](https://github.com/vitejs/vite/commit/2fcb027)), closes [#9347](https://github.com/vitejs/vite/issues/9347)
+* chore(deps): update all non-major dependencies (#9478) ([c530d16](https://github.com/vitejs/vite/commit/c530d16)), closes [#9478](https://github.com/vitejs/vite/issues/9478)
+
+
+
+## 2.0.0 (2022-07-13)
+
+* chore: 3.0 release notes and bump peer deps (#9072) ([427ba26](https://github.com/vitejs/vite/commit/427ba26)), closes [#9072](https://github.com/vitejs/vite/issues/9072)
+* chore(deps): update all non-major dependencies (#9022) ([6342140](https://github.com/vitejs/vite/commit/6342140)), closes [#9022](https://github.com/vitejs/vite/issues/9022)
+* docs: cleanup changes (#8989) ([07aef1b](https://github.com/vitejs/vite/commit/07aef1b)), closes [#8989](https://github.com/vitejs/vite/issues/8989)
+
+
+
+## 2.0.0-beta.1 (2022-07-06)
+
+* fix(deps): update all non-major dependencies (#8802) ([a4a634d](https://github.com/vitejs/vite/commit/a4a634d)), closes [#8802](https://github.com/vitejs/vite/issues/8802)
+* feat: experimental.renderBuiltUrl (revised build base options) (#8762) ([895a7d6](https://github.com/vitejs/vite/commit/895a7d6)), closes [#8762](https://github.com/vitejs/vite/issues/8762)
+* chore: use `tsx` directly instead of indirect `esno` (#8773) ([f018f13](https://github.com/vitejs/vite/commit/f018f13)), closes [#8773](https://github.com/vitejs/vite/issues/8773)
+
+
+
+## 2.0.0-beta.0 (2022-06-21)
+
+* feat: bump minimum node version to 14.18.0 (#8662) ([8a05432](https://github.com/vitejs/vite/commit/8a05432)), closes [#8662](https://github.com/vitejs/vite/issues/8662)
+* feat: experimental.buildAdvancedBaseOptions (#8450) ([8ef7333](https://github.com/vitejs/vite/commit/8ef7333)), closes [#8450](https://github.com/vitejs/vite/issues/8450)
+* chore: use node prefix (#8309) ([60721ac](https://github.com/vitejs/vite/commit/60721ac)), closes [#8309](https://github.com/vitejs/vite/issues/8309)
+* chore(deps): update all non-major dependencies (#8669) ([628863d](https://github.com/vitejs/vite/commit/628863d)), closes [#8669](https://github.com/vitejs/vite/issues/8669)
+* fix(plugin-legacy): prevent esbuild injecting arrow function (#8660) ([c0e74e5](https://github.com/vitejs/vite/commit/c0e74e5)), closes [#8660](https://github.com/vitejs/vite/issues/8660)
+
+
+
+## 2.0.0-alpha.2 (2022-06-19)
+
+* fix(build): use crossorigin for nomodule (#8322) ([7f59989](https://github.com/vitejs/vite/commit/7f59989)), closes [#8322](https://github.com/vitejs/vite/issues/8322)
+* fix(deps): update all non-major dependencies (#8281) ([c68db4d](https://github.com/vitejs/vite/commit/c68db4d)), closes [#8281](https://github.com/vitejs/vite/issues/8281)
+* fix(deps): update all non-major dependencies (#8391) ([842f995](https://github.com/vitejs/vite/commit/842f995)), closes [#8391](https://github.com/vitejs/vite/issues/8391)
+* fix(plugin-legacy): disable babel.compact when minify is disabled (#8244) ([742188c](https://github.com/vitejs/vite/commit/742188c)), closes [#8244](https://github.com/vitejs/vite/issues/8244)
+* fix(plugin-legacy): don't include SystemJS in modern polyfills (#6902) ([eb47b1e](https://github.com/vitejs/vite/commit/eb47b1e)), closes [#6902](https://github.com/vitejs/vite/issues/6902)
+* fix(plugin-legacy): empty base makes import fail (fixes #4212) (#8387) ([1a16f12](https://github.com/vitejs/vite/commit/1a16f12)), closes [#4212](https://github.com/vitejs/vite/issues/4212) [#8387](https://github.com/vitejs/vite/issues/8387)
+* fix(plugin-legacy): modern polyfill latest features (fixes #8399) (#8408) ([ed25817](https://github.com/vitejs/vite/commit/ed25817)), closes [#8399](https://github.com/vitejs/vite/issues/8399) [#8408](https://github.com/vitejs/vite/issues/8408)
+* fix(plugin-legacy): prevent failed to load module (#8285) ([d671811](https://github.com/vitejs/vite/commit/d671811)), closes [#8285](https://github.com/vitejs/vite/issues/8285)
+* fix(plugin-legacy): respect `entryFileNames` for polyfill chunks (#8247) ([baa9632](https://github.com/vitejs/vite/commit/baa9632)), closes [#8247](https://github.com/vitejs/vite/issues/8247)
+* chore: enable `@typescript-eslint/explicit-module-boundary-types` (#8372) ([104caf9](https://github.com/vitejs/vite/commit/104caf9)), closes [#8372](https://github.com/vitejs/vite/issues/8372)
+* chore: update major deps (#8572) ([0e20949](https://github.com/vitejs/vite/commit/0e20949)), closes [#8572](https://github.com/vitejs/vite/issues/8572)
+* chore: use `esno` to replace `ts-node` (#8162) ([c18a5f3](https://github.com/vitejs/vite/commit/c18a5f3)), closes [#8162](https://github.com/vitejs/vite/issues/8162)
+* chore(deps): update all non-major dependencies (#8474) ([6d0ede7](https://github.com/vitejs/vite/commit/6d0ede7)), closes [#8474](https://github.com/vitejs/vite/issues/8474)
+* refactor!: make terser an optional dependency (#8049) ([164f528](https://github.com/vitejs/vite/commit/164f528)), closes [#8049](https://github.com/vitejs/vite/issues/8049)
+* refactor(plugin-legacy): improve default polyfill (#8312) ([4370d91](https://github.com/vitejs/vite/commit/4370d91)), closes [#8312](https://github.com/vitejs/vite/issues/8312)
+
+
+
 ## 2.0.0-alpha.1 (2022-05-19)
 
 * fix: rewrite CJS specific funcs/vars in plugins (#8227) ([9baa70b](https://github.com/vitejs/vite/commit/9baa70b)), closes [#8227](https://github.com/vitejs/vite/issues/8227)

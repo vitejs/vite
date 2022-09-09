@@ -1,8 +1,9 @@
-import path from 'path'
-import type { OutputChunk } from 'rollup'
+import path from 'node:path'
+import type { OutputAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath } from '../utils'
+import { cssEntryFilesCache } from './css'
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -99,10 +100,25 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         return manifestChunk
       }
 
+      function createAsset(chunk: OutputAsset): ManifestChunk {
+        const manifestChunk: ManifestChunk = {
+          file: chunk.fileName,
+          src: chunk.name
+        }
+
+        if (cssEntryFiles.has(chunk.name!)) manifestChunk.isEntry = true
+
+        return manifestChunk
+      }
+
+      const cssEntryFiles = cssEntryFilesCache.get(config)!
+
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
+        } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
+          manifest[chunk.name] = createAsset(chunk)
         }
       }
 

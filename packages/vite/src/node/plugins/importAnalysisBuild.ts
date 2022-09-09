@@ -1,5 +1,4 @@
-// import fs from 'fs'
-import path from 'path'
+import path from 'node:path'
 import MagicString from 'magic-string'
 import type { ImportSpecifier } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
@@ -7,18 +6,19 @@ import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
+  bareImportRE,
   cleanUrl,
   combineSourcemaps,
   isDataUrl,
   isExternalUrl,
-  isRelativeBase,
   moduleListContains
 } from '../utils'
 import type { Plugin } from '../plugin'
+import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import { genSourceMapUrl } from '../server/sourcemap'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { removedPureCssFilesCache } from './css'
+import { isCSSRequest, removedPureCssFilesCache } from './css'
 import { interopNamedImports } from './importAnalysis'
 
 /**
@@ -110,12 +110,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const relativeBase = isRelativeBase(config.base)
+  const relativePreloadUrls = config.base === './' || config.base === ''
 
   const scriptRel = config.build.polyfillModulePreload
     ? `'modulepreload'`
     : `(${detectScriptRel.toString()})()`
-  const assetsURL = relativeBase
+  const assetsURL = relativePreloadUrls
     ? `function(dep,importerUrl) { return new URL(dep, importerUrl).href }`
     : `function(dep) { return ${JSON.stringify(config.base)}+dep }`
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
@@ -156,7 +156,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const { root } = config
-      const depsOptimizer = getDepsOptimizer(config)
+      const depsOptimizer = getDepsOptimizer(config, ssr)
 
       const normalizeUrl = async (
         url: string,
@@ -164,7 +164,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       ): Promise<[string, string]> => {
         let importerFile = importer
 
-        if (moduleListContains(config.optimizeDeps?.exclude, url)) {
+        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
 
@@ -188,7 +189,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (ssr) {
             return [url, url]
           }
-          this.error(
+          return this.error(
             `Failed to resolve import "${url}" from "${path.relative(
               process.cwd(),
               importerFile
@@ -224,10 +225,16 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           ss: expStart,
           se: expEnd,
           n: specifier,
-          d: dynamicIndex
+          d: dynamicIndex,
+          a: assertIndex
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
+
+        // strip import assertions as we can process them ourselves
+        if (!isDynamicImport && assertIndex > -1) {
+          str().remove(end + 1, expEnd)
+        }
 
         if (isDynamicImport && insertPreload) {
           needPreloadHelper = true
@@ -235,18 +242,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().appendRight(
             expEnd,
             `,${isModernFlag}?"${preloadMarker}":void 0${
-              relativeBase ? ',import.meta.url' : ''
+              relativePreloadUrls ? ',import.meta.url' : ''
             })`
           )
         }
 
-        if (!depsOptimizer) {
-          continue
-        }
-
         // static import or valid string in dynamic import
         // If resolvable, let's resolve it
-        if (specifier) {
+        if (depsOptimizer && specifier) {
           // skip external / data uri
           if (isExternalUrl(specifier) || isDataUrl(specifier)) {
             continue
@@ -265,7 +268,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               const needsInterop = await optimizedDepNeedsInterop(
                 depsOptimizer.metadata,
                 file,
-                config
+                config,
+                ssr
               )
 
               let rewriteDone = false
@@ -287,17 +291,35 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                str().overwrite(
-                  start,
-                  end,
-                  isDynamicImport ? `'${file}'` : file,
-                  {
-                    contentOnly: true
-                  }
-                )
+                let rewrittenUrl = JSON.stringify(file)
+                if (!isDynamicImport) rewrittenUrl = rewrittenUrl.slice(1, -1)
+                str().overwrite(start, end, rewrittenUrl, {
+                  contentOnly: true
+                })
               }
             }
           }
+        }
+
+        // Differentiate CSS imports that use the default export from those that
+        // do not by injecting a ?used query - this allows us to avoid including
+        // the CSS string when unnecessary (esbuild has trouble tree-shaking
+        // them)
+        if (
+          specifier &&
+          isCSSRequest(specifier) &&
+          // always inject ?used query when it is a dynamic import
+          // because there is no way to check whether the default export is used
+          (source.slice(expStart, start).includes('from') || isDynamicImport) &&
+          // already has ?used query (by import.meta.glob)
+          !specifier.match(/\?used(&|$)/) &&
+          // edge case for package names ending with .css (e.g normalize.css)
+          !(bareImportRE.test(specifier) && !specifier.includes('/'))
+        ) {
+          const url = specifier.replace(/\?|$/, (m) => `?used${m ? '&' : ''}`)
+          str().overwrite(start, end, isDynamicImport ? `'${url}'` : url, {
+            contentOnly: true
+          })
         }
       }
 
@@ -355,7 +377,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
           const code = chunk.code
-          let imports: ImportSpecifier[]
+          let imports: ImportSpecifier[] = []
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
           } catch (e: any) {
@@ -444,7 +466,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     ? `[${[...deps]
                         .map((d) =>
                           JSON.stringify(
-                            relativeBase
+                            relativePreloadUrls
                               ? path.relative(path.dirname(file), d)
                               : d
                           )

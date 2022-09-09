@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
@@ -24,18 +25,18 @@ test('should load data URL of `data:`', async () => {
   await untilUpdated(() => page.textContent('.view'), 'data', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd', async () => {
   await page.click('.mxd')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
 
 // in this case, it is not possible to detect the correct module
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxd2', async () => {
   await page.click('.mxd2')
   await untilUpdated(() => page.textContent('.view'), 'false', true)
 })
 
-test('should have same reference on static and dynamic js import', async () => {
+test('should have same reference on static and dynamic js import, .mxdjson', async () => {
   await page.click('.mxdjson')
   await untilUpdated(() => page.textContent('.view'), 'true', true)
 })
@@ -61,6 +62,14 @@ test('should load dynamic import with css', async () => {
 })
 
 test('should load dynamic import with vars', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars'),
+    'hello',
+    true
+  )
+})
+
+test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars'),
     'hello',
@@ -103,4 +112,20 @@ test('should load dynamic import with vars worker', async () => {
 test('should load dynamic import with css in package', async () => {
   await page.click('.pkg-css')
   await untilUpdated(() => getColor('.pkg-css'), 'blue', true)
+})
+
+test('should work with load ../ and itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-self'),
+    'dynamic-import-self-content',
+    true
+  )
+})
+
+test('should work with load ../ and contain itself directory', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-nested-self'),
+    'dynamic-import-nested-self-content',
+    true
+  )
 })

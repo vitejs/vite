@@ -1,4 +1,4 @@
-import { join } from 'path'
+import { join } from 'node:path'
 import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { mkdirpSync, readdirSync, remove, writeFileSync } from 'fs-extra'
@@ -11,8 +11,8 @@ const genPath = join(__dirname, projectName)
 
 const run = (
   args: string[],
-  options: SyncOptions<string> = {}
-): ExecaSyncReturnValue<string> => {
+  options: SyncOptions = {}
+): ExecaSyncReturnValue => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
 

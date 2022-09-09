@@ -1,7 +1,7 @@
 // @ts-check
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
@@ -37,7 +37,7 @@ export async function createServer(
       root,
       logLevel: isTest ? 'error' : 'info',
       server: {
-        middlewareMode: 'ssr',
+        middlewareMode: true,
         watch: {
           // During tests we edit the files too fast and sometimes chokidar
           // misses change events, so enforce polling for consistency
@@ -47,7 +47,8 @@ export async function createServer(
         hmr: {
           port: hmrPort
         }
-      }
+      },
+      appType: 'custom'
     })
     // use vite's connect instance as middleware
     app.use(vite.middlewares)

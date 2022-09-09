@@ -1,4 +1,5 @@
-import { isBuild, page } from '~utils'
+import { expect, test } from 'vitest'
+import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -17,7 +18,7 @@ test('deep import with exports field', async () => {
 })
 
 test('deep import with query with exports field', async () => {
-  // since it is imported with `?url` it should return a url
+  // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.exports-deep-query')).toMatch(
     isBuild ? /base64/ : '/exports-path/deep.json'
   )
@@ -75,8 +76,28 @@ test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
 
+test.runIf(isWindows)('drive-relative path', async () => {
+  expect(await page.textContent('.drive-relative')).toMatch('[success]')
+})
+
+test('absolute path', async () => {
+  expect(await page.textContent('.absolute')).toMatch('[success]')
+})
+
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
+})
+
+test('Resolve browser field even if module field exists', async () => {
+  expect(await page.textContent('.browser-module1')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely UMD or CJS', async () => {
+  expect(await page.textContent('.browser-module2')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely IIFE', async () => {
+  expect(await page.textContent('.browser-module3')).toMatch('[success]')
 })
 
 test('css entry', async () => {

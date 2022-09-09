@@ -1,7 +1,7 @@
 import MagicString from 'magic-string'
-import type { TransformResult } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -25,7 +25,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     Object.assign(processNodeEnv, {
       'process.env.NODE_ENV': JSON.stringify(nodeEnv),
       'global.process.env.NODE_ENV': JSON.stringify(nodeEnv),
-      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv)
+      'globalThis.process.env.NODE_ENV': JSON.stringify(nodeEnv),
+      __vite_process_env_NODE_ENV: JSON.stringify(nodeEnv)
     })
   }
 
@@ -38,6 +39,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   // during dev, import.meta properties are handled by importAnalysis plugin.
   // ignore replace import.meta.env in lib build
   const importMetaKeys: Record<string, string> = {}
+  const importMetaFallbackKeys: Record<string, string> = {}
   if (isBuild) {
     const env: Record<string, any> = {
       ...config.env,
@@ -46,7 +48,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     for (const key in env) {
       importMetaKeys[`import.meta.env.${key}`] = JSON.stringify(env[key])
     }
-    Object.assign(importMetaKeys, {
+    Object.assign(importMetaFallbackKeys, {
       'import.meta.env.': `({}).`,
       'import.meta.env': JSON.stringify(config.env),
       'import.meta.hot': `false`
@@ -60,9 +62,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     const replacements: Record<string, string> = {
       ...(replaceProcessEnv ? processNodeEnv : {}),
-      ...userDefine,
       ...importMetaKeys,
+      ...userDefine,
+      ...importMetaFallbackKeys,
       ...(replaceProcessEnv ? processEnv : {})
+    }
+
+    if (isBuild && !replaceProcessEnv) {
+      replacements['__vite_process_env_NODE_ENV'] = 'process.env.NODE_ENV'
     }
 
     const replacementsKeys = Object.keys(replacements)
@@ -139,11 +146,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const result: TransformResult = { code: s.toString() }
-      if (config.build.sourcemap) {
-        result.map = s.generateMap({ hires: true })
-      }
-      return result
+      return transformStableResult(s, id, config)
     }
   }
 }

@@ -6,11 +6,13 @@ Vite exposes env variables on the special **`import.meta.env`** object. Some bui
 
 - **`import.meta.env.MODE`**: {string} the [mode](#modes) the app is running in.
 
-- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/#base).
+- **`import.meta.env.BASE_URL`**: {string} the base url the app is being served from. This is determined by the [`base` config option](/config/shared-options.md#base).
 
 - **`import.meta.env.PROD`**: {boolean} whether the app is running in production.
 
 - **`import.meta.env.DEV`**: {boolean} whether the app is running in development (always the opposite of `import.meta.env.PROD`)
+
+- **`import.meta.env.SSR`**: {boolean} whether the app is running in the [server](./ssr.md#conditional-logic).
 
 ### Production Replacement
 
@@ -24,7 +26,7 @@ It will also replace these strings appearing in JavaScript strings and Vue templ
 
 ## `.env` Files
 
-Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/#envdir):
+Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional environment variables from the following files in your [environment directory](/config/shared-options.md#envdir):
 
 ```
 .env                # loaded in all cases
@@ -44,16 +46,21 @@ In addition, environment variables that already exist when Vite is executed have
 
 Loaded env variables are also exposed to your client source code via `import.meta.env` as strings.
 
-To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. the following file:
+To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
 
 ```
-DB_PASSWORD=foobar
 VITE_SOME_KEY=123
+DB_PASSWORD=foobar
 ```
 
 Only `VITE_SOME_KEY` will be exposed as `import.meta.env.VITE_SOME_KEY` to your client source code, but `DB_PASSWORD` will not.
 
-If you want to customize env variables prefix, see [envPrefix](/config/index#envprefix) option.
+```js
+console.log(import.meta.env.VITE_SOME_KEY) // 123
+console.log(import.meta.env.DB_PASSWORD) // undefined
+```
+
+If you want to customize the env variables prefix, see the [envPrefix](/config/shared-options.html#envprefix) option.
 
 :::warning SECURITY NOTES
 
@@ -64,9 +71,9 @@ If you want to customize env variables prefix, see [envPrefix](/config/index#env
 
 ### IntelliSense for TypeScript
 
-By default, Vite provides type definition for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables which prefixed with `VITE_`.
+By default, Vite provides type definitions for `import.meta.env` in [`vite/client.d.ts`](https://github.com/vitejs/vite/blob/main/packages/vite/client.d.ts). While you can define more custom env variables in `.env.[mode]` files, you may want to get TypeScript IntelliSense for user-defined env variables that are prefixed with `VITE_`.
 
-To achieve, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
+To achieve this, you can create an `env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -91,7 +98,7 @@ If your code relies on types from browser environments such as [DOM](https://git
 
 ## Modes
 
-By default, the dev server (`dev` command) runs in `development` mode and the `build` command run in `production` mode.
+By default, the dev server (`dev` command) runs in `development` mode and the `build` command runs in `production` mode.
 
 This means when running `vite build`, it will load the env variables from `.env.production` if there is one:
 

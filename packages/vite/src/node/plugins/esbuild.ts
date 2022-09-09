@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import colors from 'picocolors'
 import type {
   Loader,
@@ -8,7 +8,7 @@ import type {
 } from 'esbuild'
 import { transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
-import type { SourceMap } from 'rollup'
+import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseOptions, TSConfckParseResult } from 'tsconfck'
 import { TSConfckParseError, findAll, parse } from 'tsconfck'
 import {
@@ -27,9 +27,9 @@ import { searchForWorkspaceRoot } from '..'
 const debug = createDebugger('vite:esbuild')
 
 const INJECT_HELPERS_IIFE_RE =
-  /(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)(.*)/s
+  /^(.*)((?:const|var) [^\s]+=function\([^)]*?\){"use strict";)/s
 const INJECT_HELPERS_UMD_RE =
-  /(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)(.*)/s
+  /^(.*)(\(function\([^)]*?\){.+amd.+function\([^)]*?\){"use strict";)/s
 
 let server: ViteDevServer
 
@@ -37,6 +37,10 @@ export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
   jsxInject?: string
+  /**
+   * This option is not respected. Use `build.minify` instead.
+   */
+  minify?: never
 }
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
@@ -74,6 +78,8 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
+    } else if (ext === 'cts' || ext === 'mts') {
+      loader = 'ts'
     } else {
       loader = ext as Loader
     }
@@ -81,7 +87,7 @@ export async function transformWithEsbuild(
 
   let tsconfigRaw = options?.tsconfigRaw
 
-  // if options provide tsconfigraw in string, it takes highest precedence
+  // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
@@ -166,9 +172,24 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
+
+  // Remove optimization options for dev as we only need to transpile them,
+  // and for build as the final optimization is in `buildEsbuildPlugin`
+  const transformOptions: TransformOptions = {
+    ...options,
+    minify: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
+    treeShaking: false,
+    // keepNames is not needed when minify is disabled.
+    // Also transforming multiple times with keepNames enabled breaks
+    // tree-shaking. (#9164)
+    keepNames: false
+  }
 
   return {
     name: 'vite:esbuild',
@@ -188,7 +209,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, options)
+        const result = await transformWithEsbuild(code, id, transformOptions)
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -236,29 +257,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
-      const target = config.build.target
-      const minify =
-        config.build.minify === 'esbuild' &&
-        // Do not minify ES lib output since that would remove pure annotations
-        // and break tree-shaking
-        // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
-        !(config.build.lib && opts.format === 'es')
+      const options = resolveEsbuildTranspileOptions(config, opts.format)
 
-      if ((!target || target === 'esnext') && !minify) {
+      if (!options) {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, {
-        ...config.esbuild,
-        target: target || undefined,
-        ...(minify
-          ? {
-              minify,
-              treeShaking: true,
-              format: rollupToEsbuildFormatMap[opts.format]
-            }
-          : undefined)
-      })
+      const res = await transformWithEsbuild(code, chunk.fileName, options)
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
@@ -275,11 +280,101 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         if (injectHelpers) {
           res.code = res.code.replace(
             injectHelpers,
-            (_, helpers, header, rest) => header + helpers + rest
+            (_, helpers, header) => header + helpers
           )
         }
       }
       return res
+    }
+  }
+}
+
+export function resolveEsbuildTranspileOptions(
+  config: ResolvedConfig,
+  format: InternalModuleFormat
+): TransformOptions | null {
+  const target = config.build.target
+  const minify = config.build.minify === 'esbuild'
+
+  if ((!target || target === 'esnext') && !minify) {
+    return null
+  }
+
+  // Do not minify whitespace for ES lib output since that would remove
+  // pure annotations and break tree-shaking
+  // https://github.com/vuejs/core/issues/2860#issuecomment-926882793
+  const isEsLibBuild = config.build.lib && format === 'es'
+  const esbuildOptions = config.esbuild || {}
+  const options: TransformOptions = {
+    ...esbuildOptions,
+    target: target || undefined,
+    format: rollupToEsbuildFormatMap[format],
+    // the final build should always support dynamic import and import.meta.
+    // if they need to be polyfilled, plugin-legacy should be used.
+    // plugin-legacy detects these two features when checking for modern code.
+    supported: {
+      'dynamic-import': true,
+      'import-meta': true,
+      ...esbuildOptions.supported
+    }
+  }
+
+  // If no minify, disable all minify options
+  if (!minify) {
+    return {
+      ...options,
+      minify: false,
+      minifyIdentifiers: false,
+      minifySyntax: false,
+      minifyWhitespace: false,
+      treeShaking: false
+    }
+  }
+
+  // If user enable fine-grain minify options, minify with their options instead
+  if (
+    options.minifyIdentifiers != null ||
+    options.minifySyntax != null ||
+    options.minifyWhitespace != null
+  ) {
+    if (isEsLibBuild) {
+      // Disable minify whitespace as it breaks tree-shaking
+      return {
+        ...options,
+        minify: false,
+        minifyIdentifiers: options.minifyIdentifiers ?? true,
+        minifySyntax: options.minifySyntax ?? true,
+        minifyWhitespace: false,
+        treeShaking: true
+      }
+    } else {
+      return {
+        ...options,
+        minify: false,
+        minifyIdentifiers: options.minifyIdentifiers ?? true,
+        minifySyntax: options.minifySyntax ?? true,
+        minifyWhitespace: options.minifyWhitespace ?? true,
+        treeShaking: true
+      }
+    }
+  }
+
+  // Else apply default minify options
+  if (isEsLibBuild) {
+    // Minify all except whitespace as it breaks tree-shaking
+    return {
+      ...options,
+      minify: false,
+      minifyIdentifiers: true,
+      minifySyntax: true,
+      minifyWhitespace: false,
+      treeShaking: true
+    }
+  } else {
+    return {
+      ...options,
+      minify: true,
+      treeShaking: true
     }
   }
 }
@@ -308,14 +403,17 @@ const tsconfckParseOptions: TSConfckParseOptions = {
 }
 
 async function initTSConfck(config: ResolvedConfig) {
-  tsconfckParseOptions.cache!.clear()
   const workspaceRoot = searchForWorkspaceRoot(config.root)
+  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
+
+  tsconfckParseOptions.cache!.clear()
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
     ...(await findAll(workspaceRoot, {
       skip: (dir) => dir === 'node_modules' || dir === '.git'
     }))
   ])
+  debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(
@@ -348,7 +446,7 @@ function reloadOnTsconfigChange(changedFile: string) {
       tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
       { clear: server.config.clearScreen, timestamp: true }
     )
 
@@ -357,11 +455,14 @@ function reloadOnTsconfigChange(changedFile: string) {
 
     // reset tsconfck so that recompile works with up2date configs
     initTSConfck(server.config).finally(() => {
-      // force full reload
-      server.ws.send({
-        type: 'full-reload',
-        path: '*'
-      })
+      // server may not be available if vite config is updated at the same time
+      if (server) {
+        // force full reload
+        server.ws.send({
+          type: 'full-reload',
+          path: '*'
+        })
+      }
     })
   }
 }

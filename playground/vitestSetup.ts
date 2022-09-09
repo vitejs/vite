@@ -1,6 +1,6 @@
-import * as http from 'http'
-import path, { dirname, resolve } from 'path'
-import os from 'os'
+import * as http from 'node:http'
+import path, { dirname, join, resolve } from 'node:path'
+import os from 'node:os'
 import sirv from 'sirv'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
@@ -9,9 +9,10 @@ import type {
   Logger,
   PluginOption,
   ResolvedConfig,
+  UserConfig,
   ViteDevServer
 } from 'vite'
-import { build, createServer, mergeConfig } from 'vite'
+import { build, createServer, loadConfigFromFile, mergeConfig } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
@@ -19,7 +20,7 @@ import { beforeAll } from 'vitest'
 
 // #region env
 
-export const workspaceRoot = path.resolve(__dirname, '../')
+export const workspaceRoot = resolve(__dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
@@ -35,6 +36,10 @@ export const viteBinPath = path.posix.join(
 
 let server: ViteDevServer | http.Server
 
+/**
+ * Vite Dev Server when testing serve
+ */
+export let viteServer: ViteDevServer
 /**
  * Root of the Vite fixture
  */
@@ -84,7 +89,7 @@ export function setViteUrl(url: string): void {
 
 // #endregion
 
-const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
+const DIR = join(os.tmpdir(), 'vitest_playwright_global_setup')
 
 beforeAll(async (s) => {
   const suite = s as File
@@ -93,7 +98,7 @@ beforeAll(async (s) => {
     return
   }
 
-  const wsEndpoint = fs.readFileSync(path.join(DIR, 'wsEndpoint'), 'utf-8')
+  const wsEndpoint = fs.readFileSync(join(DIR, 'wsEndpoint'), 'utf-8')
   if (!wsEndpoint) {
     throw new Error('wsEndpoint not found')
   }
@@ -146,6 +151,7 @@ beforeAll(async (s) => {
         }
         if (serve) {
           server = await serve()
+          viteServer = mod.viteServer
           return
         }
       } else {
@@ -166,24 +172,43 @@ beforeAll(async (s) => {
     serverLogs.length = 0
     await page?.close()
     await server?.close()
-    watcher?.close()
+    await watcher?.close()
     if (browser) {
       await browser.close()
     }
   }
 })
 
+function loadConfigFromDir(dir: string) {
+  return loadConfigFromFile(
+    {
+      command: isBuild ? 'build' : 'serve',
+      mode: isBuild ? 'production' : 'development'
+    },
+    undefined,
+    dir
+  )
+}
+
 export async function startDefaultServe(): Promise<void> {
-  const testCustomConfig = resolve(dirname(testPath), 'vite.config.js')
-  let config: InlineConfig | undefined
-  if (fs.existsSync(testCustomConfig)) {
-    // test has custom server configuration.
-    config = await import(testCustomConfig).then((r) => r.default)
+  let config: UserConfig | null = null
+  // config file near the *.spec.ts
+  const res = await loadConfigFromDir(dirname(testPath))
+  if (res) {
+    config = res.config
+  }
+  // config file from test root dir
+  if (!config) {
+    const res = await loadConfigFromDir(rootDir)
+    if (res) {
+      config = res.config
+    }
   }
 
   const options: InlineConfig = {
     root: rootDir,
     logLevel: 'silent',
+    configFile: false,
     server: {
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
@@ -212,10 +237,12 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const testConfig = mergeConfig(options, config || {})
     viteConfig = testConfig
-    server = await (await createServer(testConfig)).listen()
+    viteServer = server = await (await createServer(testConfig)).listen()
     // use resolved port/base from server
-    const base = server.config.base === '/' ? '' : server.config.base
-    viteTestUrl = `http://localhost:${server.config.server.port}${base}`
+    const devBase = server.config.base
+    viteTestUrl = `http://localhost:${server.config.server.port}${
+      devBase === '/' ? '' : devBase
+    }`
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
@@ -236,20 +263,12 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(config)
+    viteTestUrl = await startStaticServer(testConfig)
     await page.goto(viteTestUrl)
   }
 }
 
-function startStaticServer(config?: InlineConfig): Promise<string> {
-  if (!config) {
-    // check if the test project has base config
-    const configFile = resolve(rootDir, 'vite.config.js')
-    try {
-      config = require(configFile)
-    } catch (e) {}
-  }
-
+function startStaticServer(config: UserConfig): Promise<string> {
   // fallback internal base to ''
   let base = config?.base
   if (!base || base === '/' || base === './') {
@@ -263,7 +282,10 @@ function startStaticServer(config?: InlineConfig): Promise<string> {
   }
 
   // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'), { dev: !!config?.build?.watch })
+  const serve = sirv(resolve(rootDir, 'dist'), {
+    dev: !!config?.build?.watch
+  })
+  // @ts-ignore
   const baseDir = config?.testConfig?.baseRoute
   const httpServer = (server = http.createServer((req, res) => {
     if (req.url === '/ping') {

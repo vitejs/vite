@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, page } from '~utils'
 
 const mode = isBuild ? `production` : `development`
@@ -34,6 +35,10 @@ test('inline variables', async () => {
   expect(await page.textContent('.inline')).toBe(
     isBuild ? `inline-build` : `inline-serve`
   )
+})
+
+test('bool', async () => {
+  expect(await page.textContent('.bool')).toBe('boolean')
 })
 
 test('NODE_ENV', async () => {

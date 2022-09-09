@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
@@ -18,6 +18,14 @@ module.exports = {
     },
     hmr: {
       overlay: false
+    },
+    headers: {
+      'x-served-by': 'vite'
+    }
+  },
+  preview: {
+    headers: {
+      'x-served-by': 'vite'
     }
   },
   define: {

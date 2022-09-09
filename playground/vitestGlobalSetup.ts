@@ -1,5 +1,5 @@
-import os from 'os'
-import path from 'path'
+import os from 'node:os'
+import path from 'node:path'
 import fs from 'fs-extra'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
@@ -42,7 +42,7 @@ export async function setup(): Promise<void> {
 }
 
 export async function teardown(): Promise<void> {
-  browserServer?.close()
+  await browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
     fs.removeSync(path.resolve(__dirname, '../playground-temp'))
   }

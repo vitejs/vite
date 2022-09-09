@@ -83,7 +83,7 @@ Here's the [complete list of Babel parser plugins](https://babeljs.io/docs/en/ba
 
 ## Middleware mode
 
-In [middleware mode](https://vitejs.dev/config/#server-middlewaremode), you should make sure your entry `index.html` file is transformed by Vite. Here's an example for an Express server:
+In [middleware mode](https://vitejs.dev/config/server-options.html#server-middlewaremode), you should make sure your entry `index.html` file is transformed by Vite. Here's an example for an Express server:
 
 ```js
 app.get('/', async (req, res, next) => {

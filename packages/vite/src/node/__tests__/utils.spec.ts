@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import {
+  asyncFlatten,
   getHash,
+  getLocalhostAddressIfDiffersFromDNS,
   getPotentialTsSrcPaths,
   injectQuery,
   isWindows,
+  posToNumber,
   resolveHostname
 } from '../utils'
 
@@ -16,6 +19,33 @@ describe('injectQuery', () => {
       )
     })
   }
+
+  test('relative path', () => {
+    expect(injectQuery('usr/vite/%20a%20', 'direct')).toEqual(
+      'usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('./usr/vite/%20a%20', 'direct')).toEqual(
+      './usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('../usr/vite/%20a%20', 'direct')).toEqual(
+      '../usr/vite/%20a%20?direct'
+    )
+  })
+
+  test('path with hash', () => {
+    expect(injectQuery('/usr/vite/path with space/#1?2/', 'direct')).toEqual(
+      '/usr/vite/path with space/?direct#1?2/'
+    )
+  })
+
+  test('path with protocol', () => {
+    expect(injectQuery('file:///usr/vite/%20a%20', 'direct')).toMatch(
+      'file:///usr/vite/%20a%20?direct'
+    )
+    expect(injectQuery('http://usr.vite/%20a%20', 'direct')).toMatch(
+      'http://usr.vite/%20a%20?direct'
+    )
+  })
 
   test('path with multiple spaces', () => {
     expect(injectQuery('/usr/vite/path with space', 'direct')).toEqual(
@@ -49,16 +79,43 @@ describe('injectQuery', () => {
 })
 
 describe('resolveHostname', () => {
-  test('defaults to 127.0.0.1', () => {
-    expect(resolveHostname(undefined)).toEqual({
-      host: '127.0.0.1',
+  test('defaults to localhost', async () => {
+    const resolved = await getLocalhostAddressIfDiffersFromDNS()
+
+    expect(await resolveHostname(undefined)).toEqual({
+      host: 'localhost',
+      name: resolved ?? 'localhost'
+    })
+  })
+
+  test('accepts localhost', async () => {
+    const resolved = await getLocalhostAddressIfDiffersFromDNS()
+
+    expect(await resolveHostname('localhost')).toEqual({
+      host: 'localhost',
+      name: resolved ?? 'localhost'
+    })
+  })
+
+  test('accepts 0.0.0.0', async () => {
+    expect(await resolveHostname('0.0.0.0')).toEqual({
+      host: '0.0.0.0',
       name: 'localhost'
     })
   })
 
-  test('accepts localhost', () => {
-    expect(resolveHostname('localhost')).toEqual({
-      host: 'localhost',
+  test('accepts ::', async () => {
+    expect(await resolveHostname('::')).toEqual({
+      host: '::',
+      name: 'localhost'
+    })
+  })
+
+  test('accepts 0000:0000:0000:0000:0000:0000:0000:0000', async () => {
+    expect(
+      await resolveHostname('0000:0000:0000:0000:0000:0000:0000:0000')
+    ).toEqual({
+      host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost'
     })
   })
@@ -100,9 +157,70 @@ test('ts import of file with .js and query param', () => {
   ])
 })
 
+describe('posToNumber', () => {
+  test('simple', () => {
+    const actual = posToNumber('a\nb', { line: 2, column: 0 })
+    expect(actual).toBe(2)
+  })
+  test('pass though pos', () => {
+    const actual = posToNumber('a\nb', 2)
+    expect(actual).toBe(2)
+  })
+  test('empty line', () => {
+    const actual = posToNumber('a\n\nb', { line: 3, column: 0 })
+    expect(actual).toBe(3)
+  })
+  test('out of range', () => {
+    const actual = posToNumber('a\nb', { line: 4, column: 0 })
+    expect(actual).toBe(4)
+  })
+})
+
 describe('getHash', () => {
   test('8-digit hex', () => {
     const hash = getHash(Buffer.alloc(0))
     expect(hash).toMatch(/^[\da-f]{8}$/)
+  })
+})
+
+describe('asyncFlatten', () => {
+  test('plain array', async () => {
+    const arr = await asyncFlatten([1, 2, 3])
+    expect(arr).toEqual([1, 2, 3])
+  })
+
+  test('nested array', async () => {
+    const arr = await asyncFlatten([1, 2, 3, [4, 5, 6]])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  test('nested falsy array', async () => {
+    const arr = await asyncFlatten([1, 2, false, [4, null, undefined]])
+    expect(arr).toEqual([1, 2, false, 4, null, undefined])
+  })
+
+  test('plain promise array', async () => {
+    const arr = await asyncFlatten([1, 2, Promise.resolve(3)])
+    expect(arr).toEqual([1, 2, 3])
+  })
+
+  test('nested promise array', async () => {
+    const arr = await asyncFlatten([
+      1,
+      2,
+      Promise.resolve(3),
+      Promise.resolve([4, 5, 6])
+    ])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  test('2x nested promise array', async () => {
+    const arr = await asyncFlatten([
+      1,
+      2,
+      Promise.resolve(3),
+      Promise.resolve([4, 5, Promise.resolve(6), Promise.resolve([7, 8, 9])])
+    ])
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
   })
 })

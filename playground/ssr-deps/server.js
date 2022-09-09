@@ -1,7 +1,7 @@
 // @ts-check
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -22,7 +22,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       watch: {
         // During tests we edit the files too fast and sometimes chokidar
         // misses change events, so enforce polling for consistency
@@ -32,7 +32,36 @@ export async function createServer(root = process.cwd(), hmrPort) {
       hmr: {
         port: hmrPort
       }
-    }
+    },
+    appType: 'custom',
+    ssr: {
+      noExternal: [
+        'no-external-cjs',
+        'import-builtin-cjs',
+        'no-external-css',
+        'external-entry'
+      ],
+      external: ['nested-external', 'external-entry/entry'],
+      optimizeDeps: {
+        disabled: 'build'
+      }
+    },
+    plugins: [
+      {
+        name: 'dep-virtual',
+        enforce: 'pre',
+        resolveId(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'pkg-exports/virtual'
+          }
+        },
+        load(id) {
+          if (id === 'pkg-exports/virtual') {
+            return 'export default "[success]"'
+          }
+        }
+      }
+    ]
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)

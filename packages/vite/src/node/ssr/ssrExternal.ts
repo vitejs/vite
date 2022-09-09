@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
@@ -105,32 +105,15 @@ export function shouldExternalizeForSSR(
   return isSsrExternal(id)
 }
 
-function createIsSsrExternal(
+export function createIsConfiguredAsSsrExternal(
   config: ResolvedConfig
-): (id: string) => boolean | undefined {
-  const processedIds = new Map<string, boolean | undefined>()
-
+): (id: string) => boolean {
   const { ssr, root } = config
-
   const noExternal = ssr?.noExternal
   const noExternalFilter =
     noExternal !== 'undefined' &&
     typeof noExternal !== 'boolean' &&
     createFilter(undefined, noExternal, { resolve: false })
-
-  const isConfiguredAsExternal = (id: string) => {
-    const { ssr } = config
-    if (!ssr || ssr.external?.includes(id)) {
-      return true
-    }
-    if (typeof noExternal === 'boolean') {
-      return !noExternal
-    }
-    if (noExternalFilter) {
-      return noExternalFilter(id)
-    }
-    return true
-  }
 
   const resolveOptions: InternalResolveOptions = {
     root,
@@ -139,36 +122,93 @@ function createIsSsrExternal(
     isBuild: true
   }
 
-  const isValidPackageEntry = (id: string) => {
+  const isExternalizable = (
+    id: string,
+    configuredAsExternal?: boolean
+  ): boolean => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
     }
-    return !!tryNodeResolve(
-      id,
-      undefined,
-      resolveOptions,
-      ssr?.target === 'webworker',
-      undefined,
-      true,
-      true // try to externalize, will return undefined if not possible
-    )
+    try {
+      return !!tryNodeResolve(
+        id,
+        undefined,
+        resolveOptions,
+        ssr?.target === 'webworker',
+        undefined,
+        true,
+        // try to externalize, will return undefined or an object without
+        // a external flag if it isn't externalizable
+        true,
+        // Allow linked packages to be externalized if they are explicitly
+        // configured as external
+        !!configuredAsExternal
+      )?.external
+    } catch (e) {
+      debug(
+        `Failed to node resolve "${id}". Skipping externalizing it by default.`
+      )
+      // may be an invalid import that's resolved by a plugin
+      return false
+    }
   }
+
+  // Returns true if it is configured as external, false if it is filtered
+  // by noExternal and undefined if it isn't affected by the explicit config
+  return (id: string) => {
+    const { ssr } = config
+    if (ssr) {
+      if (
+        // If this id is defined as external, force it as external
+        // Note that individual package entries are allowed in ssr.external
+        ssr.external?.includes(id)
+      ) {
+        return true
+      }
+      const pkgName = getNpmPackageName(id)
+      if (!pkgName) {
+        return isExternalizable(id)
+      }
+      if (
+        // A package name in ssr.external externalizes every
+        // externalizable package entry
+        ssr.external?.includes(pkgName)
+      ) {
+        return isExternalizable(id, true)
+      }
+      if (typeof noExternal === 'boolean') {
+        return !noExternal
+      }
+      if (noExternalFilter && !noExternalFilter(pkgName)) {
+        return false
+      }
+    }
+    return isExternalizable(id)
+  }
+}
+
+function createIsSsrExternal(
+  config: ResolvedConfig
+): (id: string) => boolean | undefined {
+  const processedIds = new Map<string, boolean | undefined>()
+
+  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
 
   return (id: string) => {
     if (processedIds.has(id)) {
       return processedIds.get(id)
     }
-    const external =
-      !id.startsWith('.') &&
-      !path.isAbsolute(id) &&
-      (isBuiltin(id) || (isConfiguredAsExternal(id) && isValidPackageEntry(id)))
+    let external = false
+    if (!id.startsWith('.') && !path.isAbsolute(id)) {
+      external = isBuiltin(id) || isConfiguredAsExternal(id)
+    }
     processedIds.set(id, external)
     return external
   }
 }
 
-// When ssr.format is 'cjs', this function is used reverting to the Vite 2.9
-// SSR externalization heuristics
+// When config.experimental.buildSsrCjsExternalHeuristics is enabled, this function
+// is used reverting to the Vite 2.9 SSR externalization heuristics
 function cjsSsrCollectExternals(
   root: string,
   preserveSymlinks: boolean | undefined,

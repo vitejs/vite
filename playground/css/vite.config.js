@@ -1,17 +1,23 @@
-const path = require('path')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
-  base: './',
   build: {
     cssTarget: 'chrome61'
+  },
+  esbuild: {
+    logOverride: {
+      'unsupported-css-property': 'silent'
+    }
   },
   resolve: {
     alias: {
       '@': __dirname,
-      spacefolder: __dirname + '/folder with space'
+      spacefolder: __dirname + '/folder with space',
+      '#alias': __dirname + '/aliased/foo.css',
+      '#alias-module': __dirname + '/aliased/bar.module.css'
     }
   },
   css: {

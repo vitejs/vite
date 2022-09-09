@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import { createDebugger, createFilter, resolveFrom } from './utils'
 import type { ResolvedConfig } from './config'
 import type { Plugin } from './plugin'

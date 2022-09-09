@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative } from 'path'
+import { basename, dirname, join, relative } from 'node:path'
 import { parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
@@ -10,7 +10,7 @@ import { normalizePath } from '../utils'
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
-  const base = config.base
+  const base = config.base // TODO:base
 
   return {
     name: 'vite:ssr-manifest',
@@ -39,7 +39,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             const code = chunk.code
             let imports: ImportSpecifier[]
             try {
-              imports = parseImports(code)[0].filter((i) => i.d > -1)
+              imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
             } catch (e: any) {
               this.error(e, e.idx)
             }
@@ -59,7 +59,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata.importedCss.forEach((file) => {
-                      deps.push(join(config.base, file))
+                      deps.push(join(base, file)) // TODO:base
                     })
                     chunk.imports.forEach(addDeps)
                   }

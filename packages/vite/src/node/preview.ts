@@ -1,17 +1,22 @@
-import path from 'path'
-import type * as http from 'http'
+import path from 'node:path'
+import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'types/connect'
 import corsMiddleware from 'cors'
-import type { ResolvedServerOptions } from './server'
+import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
-import { httpServerStart, resolveHttpServer, resolveHttpsConfig } from './http'
+import {
+  httpServerStart,
+  resolveHttpServer,
+  resolveHttpsConfig,
+  setClientErrorHandler
+} from './http'
 import { openBrowser } from './server/openBrowser'
 import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname } from './utils'
-import { printCommonServerUrls } from './logger'
+import { resolveHostname, resolveServerUrls } from './utils'
+import { printServerUrls } from './logger'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
 
@@ -48,15 +53,22 @@ export interface PreviewServer {
    */
   httpServer: http.Server
   /**
+   * The resolved urls Vite prints on the CLI
+   */
+  resolvedUrls: ResolvedServerUrls
+  /**
    * Print server urls
    */
-  printUrls: () => void
+  printUrls(): void
 }
 
-export type PreviewServerHook = (server: {
-  middlewares: Connect.Server
-  httpServer: http.Server
-}) => (() => void) | void | Promise<(() => void) | void>
+export type PreviewServerHook = (
+  this: void,
+  server: {
+    middlewares: Connect.Server
+    httpServer: http.Server
+  }
+) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
@@ -72,15 +84,12 @@ export async function preview(
     app,
     await resolveHttpsConfig(config.preview?.https, config.cacheDir)
   )
+  setClientErrorHandler(httpServer, config.logger)
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
-  for (const plugin of config.plugins) {
-    if (plugin.configurePreviewServer) {
-      postHooks.push(
-        await plugin.configurePreviewServer({ middlewares: app, httpServer })
-      )
-    }
+  for (const hook of config.getSortedPluginHooks('configurePreviewServer')) {
+    postHooks.push(await hook({ middlewares: app, httpServer }))
   }
 
   // cors
@@ -97,14 +106,25 @@ export async function preview(
 
   app.use(compression())
 
+  const previewBase =
+    config.base === './' || config.base === '' ? '/' : config.base
+
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
+  const headers = config.preview.headers
   app.use(
-    config.base,
+    previewBase,
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: config.spa
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
+        }
+      }
     })
   )
 
@@ -112,11 +132,10 @@ export async function preview(
   postHooks.forEach((fn) => fn && fn())
 
   const options = config.preview
-  const hostname = resolveHostname(options.host)
+  const hostname = await resolveHostname(options.host)
   const port = options.port ?? 4173
   const protocol = options.https ? 'https' : 'http'
   const logger = config.logger
-  const base = config.base
 
   const serverPort = await httpServerStart(httpServer, {
     port,
@@ -125,8 +144,14 @@ export async function preview(
     logger
   })
 
+  const resolvedUrls = await resolveServerUrls(
+    httpServer,
+    config.preview,
+    config
+  )
+
   if (options.open) {
-    const path = typeof options.open === 'string' ? options.open : base
+    const path = typeof options.open === 'string' ? options.open : previewBase
     openBrowser(
       path.startsWith('http')
         ? path
@@ -139,8 +164,9 @@ export async function preview(
   return {
     config,
     httpServer,
+    resolvedUrls,
     printUrls() {
-      printCommonServerUrls(httpServer, config.preview, config)
+      printServerUrls(resolvedUrls, options.host, logger.info)
     }
   }
 }

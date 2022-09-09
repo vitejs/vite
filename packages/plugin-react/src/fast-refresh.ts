@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { createRequire } from 'module'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import type { types as t } from '@babel/core'
 
 export const runtimePublicPath = '/@react-refresh'
@@ -92,6 +92,7 @@ export function isRefreshBoundary(ast: t.File): boolean {
     }
     const { declaration, specifiers } = node
     if (declaration) {
+      if (declaration.type === 'ClassDeclaration') return false
       if (declaration.type === 'VariableDeclaration') {
         return declaration.declarations.every((variable) =>
           isComponentLikeIdentifier(variable.id)

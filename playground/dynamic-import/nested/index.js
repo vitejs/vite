@@ -1,5 +1,5 @@
-import mxdStatic from '../mxd'
-import mxdStaticJSON from '../mxd.json'
+import mxdStatic from '../files/mxd'
+import mxdStaticJSON from '../files/mxd.json'
 
 async function setView(view) {
   const { msg } = await import(`../views/${view}.js`)
@@ -18,7 +18,7 @@ document.querySelector('.baz').addEventListener('click', async () => {
 
 // full dynamic
 const arr = ['qux.js']
-const view = `/${arr[0]}`
+const view = `/views/${arr[0]}`
 document.querySelector('.qux').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ view)
   text('.view', msg)
@@ -27,12 +27,12 @@ document.querySelector('.qux').addEventListener('click', async () => {
 // mixed static and dynamic
 document.querySelector('.mxd').addEventListener('click', async () => {
   const view = 'mxd'
-  const { default: mxdDynamic } = await import(`../${view}.js`)
+  const { default: mxdDynamic } = await import(`../files/${view}.js`)
   text('.view', mxdStatic === mxdDynamic)
 })
 
 document.querySelector('.mxd2').addEventListener('click', async () => {
-  const test = { jss: '../mxd.js' }
+  const test = { jss: '../files/mxd.js' }
   const ttest = test
   const view = 'mxd'
   const { default: mxdDynamic } = await import(/*@vite-ignore*/ test.jss)
@@ -41,7 +41,7 @@ document.querySelector('.mxd2').addEventListener('click', async () => {
 
 document.querySelector('.mxdjson').addEventListener('click', async () => {
   const view = 'mxd'
-  const { default: mxdDynamicJSON } = await import(`../${view}.json`)
+  const { default: mxdDynamicJSON } = await import(`../files/${view}.json`)
   text('.view', mxdStaticJSON === mxdDynamicJSON)
 })
 
@@ -84,6 +84,15 @@ import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
 })
 
+// prettier-ignore
+import(
+  /* this messes with */
+  `../alias/${base}.js`
+  /* es-module-lexer */
+).then((mod) => {
+  text('.dynamic-import-with-vars-multiline', mod.hello())
+})
+
 import(`../alias/${base}.js?raw`).then((mod) => {
   text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
 })
@@ -106,6 +115,15 @@ import(`../alias/${base}.js?worker`).then((workerMod) => {
 base = 'hi'
 import(`@/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars-alias', mod.hi())
+})
+
+base = 'self'
+import(`../nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-self', mod.self)
+})
+
+import(`../nested/nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-nested-self', mod.self)
 })
 
 console.log('index.js')

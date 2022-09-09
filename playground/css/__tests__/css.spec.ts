@@ -1,4 +1,5 @@
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
+import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
@@ -258,6 +259,11 @@ test.runIf(isBuild)('@charset hoist', async () => {
   })
 })
 
+test('layers', async () => {
+  expect(await getColor('.layers-blue')).toMatch('blue')
+  expect(await getColor('.layers-green')).toMatch('green')
+})
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
@@ -317,9 +323,11 @@ test('treeshaken async chunk', async () => {
 test('PostCSS dir-dependency', async () => {
   const el1 = await page.$('.dir-dep')
   const el2 = await page.$('.dir-dep-2')
+  const el3 = await page.$('.dir-dep-3')
 
   expect(await getColor(el1)).toBe('grey')
   expect(await getColor(el2)).toBe('grey')
+  expect(await getColor(el3)).toBe('grey')
 
   if (!isBuild) {
     editFile('glob-dep/foo.css', (code) =>
@@ -334,10 +342,22 @@ test('PostCSS dir-dependency', async () => {
     await untilUpdated(() => getColor(el2), 'red')
     expect(await getColor(el1)).toBe('blue')
 
+    editFile('glob-dep/nested (dir)/baz.css', (code) =>
+      code.replace('color: grey', 'color: green')
+    )
+    await untilUpdated(() => getColor(el3), 'green')
+    expect(await getColor(el1)).toBe('blue')
+    expect(await getColor(el2)).toBe('red')
+
     // test add/remove
     removeFile('glob-dep/bar.css')
     await untilUpdated(() => getColor(el2), 'black')
   }
+})
+
+test('import dependency includes css import', async () => {
+  expect(await getColor('.css-js-dep')).toBe('green')
+  expect(await getColor('.css-js-dep-module')).toBe('green')
 })
 
 test('URL separation', async () => {
@@ -415,5 +435,23 @@ test("relative path rewritten in Less's data-uri", async () => {
 test('PostCSS source.input.from includes query', async () => {
   const code = await page.textContent('.postcss-source-input')
   // should resolve assets
-  expect(code).toContain('/postcss-source-input.css?query=foo')
+  expect(code).toContain(
+    isBuild
+      ? '/postcss-source-input.css?used&query=foo'
+      : '/postcss-source-input.css?query=foo'
+  )
+})
+
+test('aliased css has content', async () => {
+  expect(await getColor('.aliased')).toBe('blue')
+  // skipped: currently not supported see #8936
+  // expect(await page.textContent('.aliased-content')).toMatch('.aliased')
+  expect(await getColor('.aliased-module')).toBe('blue')
+})
+
+test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
+  serverLogs.forEach((log) => {
+    // no warning from esbuild css minifier
+    expect(log).not.toMatch('unsupported-css-property')
+  })
 })

@@ -1,4 +1,4 @@
-import { posix } from 'path'
+import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
@@ -11,9 +11,11 @@ import {
   createFilter,
   normalizePath,
   parseRequest,
+  removeComments,
   requestQuerySplitRE,
-  transformResult
+  transformStableResult
 } from '../utils'
+import { toAbsoluteGlob } from './importMetaGlob'
 
 export const dynamicImportHelperId = '/@vite/dynamic-import-helper'
 
@@ -85,7 +87,8 @@ export async function transformDynamicImport(
   resolve: (
     url: string,
     importer?: string
-  ) => Promise<string | undefined> | string | undefined
+  ) => Promise<string | undefined> | string | undefined,
+  root: string
 ): Promise<{
   glob: string
   pattern: string
@@ -113,10 +116,20 @@ export async function transformDynamicImport(
   const params = globParams
     ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
     : ''
+
+  let newRawPattern = posix.relative(
+    posix.dirname(importer),
+    await toAbsoluteGlob(rawPattern, root, importer, resolve)
+  )
+
+  if (!/^\.{1,2}\//.test(newRawPattern)) {
+    newRawPattern = `./${newRawPattern}`
+  }
+
   const exp = `(import.meta.glob(${JSON.stringify(userPattern)}${params}))`
 
   return {
-    rawPattern,
+    rawPattern: newRawPattern,
     pattern: userPattern,
     glob: exp
   }
@@ -185,10 +198,17 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
+          // When import string is using backticks, es-module-lexer `end` captures
+          // until the closing parenthesis, instead of the closing backtick.
+          // There may be inline comments between the backtick and the closing
+          // parenthesis, so we manually remove them for now.
+          // See https://github.com/guybedford/es-module-lexer/issues/118
+          const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(
-            source.slice(start, end),
+            importSource,
             importer,
-            resolve
+            resolve,
+            config.root
           )
         } catch (error) {
           if (warnOnError) {
@@ -218,7 +238,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             `import __variableDynamicImportRuntimeHelper from "${dynamicImportHelperId}";`
           )
         }
-        return transformResult(s, importer, config)
+        return transformStableResult(s, importer, config)
       }
     }
   }

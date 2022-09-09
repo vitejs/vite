@@ -1,9 +1,9 @@
 /* eslint-disable node/no-extraneous-import */
-import path from 'path'
-import { createHash } from 'crypto'
-import { createRequire } from 'module'
-import { fileURLToPath } from 'url'
-import { build } from 'vite'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import { build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
   BuildOptions,
@@ -29,6 +29,73 @@ async function loadBabel() {
     babel = await import('@babel/standalone')
   }
   return babel
+}
+
+// Duplicated from build.ts in Vite Core, at least while the feature is experimental
+// We should later expose this helper for other plugins to use
+function toOutputFilePathInHtml(
+  filename: string,
+  type: 'asset' | 'public',
+  hostId: string,
+  hostType: 'js' | 'css' | 'html',
+  config: ResolvedConfig,
+  toRelative: (filename: string, importer: string) => string
+): string {
+  const { renderBuiltUrl } = config.experimental
+  let relative = config.base === '' || config.base === './'
+  if (renderBuiltUrl) {
+    const result = renderBuiltUrl(filename, {
+      hostId,
+      hostType,
+      type,
+      ssr: !!config.build.ssr
+    })
+    if (typeof result === 'object') {
+      if (result.runtime) {
+        throw new Error(
+          `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`
+        )
+      }
+      if (typeof result.relative === 'boolean') {
+        relative = result.relative
+      }
+    } else if (result) {
+      return result
+    }
+  }
+  if (relative && !config.build.ssr) {
+    return toRelative(filename, hostId)
+  } else {
+    return config.base + filename
+  }
+}
+function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
+  // Prefer explicit URL if defined for linking to assets and public files from HTML,
+  // even when base relative is specified
+  return config.base === './' || config.base === ''
+    ? path.posix.join(
+        path.posix.relative(urlRelativePath, '').slice(0, -2),
+        './'
+      )
+    : config.base
+}
+
+function toAssetPathFromHtml(
+  filename: string,
+  htmlPath: string,
+  config: ResolvedConfig
+): string {
+  const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
+  const toRelative = (filename: string, hostId: string) =>
+    getBaseInHTML(relativeUrlPath, config) + filename
+  return toOutputFilePathInHtml(
+    filename,
+    'asset',
+    htmlPath,
+    'html',
+    config,
+    toRelative
+  )
 }
 
 // https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc
@@ -92,19 +159,29 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    apply: 'build',
-    config(config) {
-      if (!config.build) {
-        config.build = {}
+    config(config, env) {
+      if (env.command === 'build') {
+        if (!config.build) {
+          config.build = {}
+        }
+
+        if (!config.build.cssTarget) {
+          // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
+          // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
+          // But note that only the `HexRGBA` feature affects the minify outcome.
+          // HSL & rebeccapurple values will be minified away regardless the target.
+          // So targeting `chrome61` suffices to fix the compatibility issue.
+          config.build.cssTarget = 'chrome61'
+        }
       }
 
-      if (!config.build.cssTarget) {
-        // Hint for esbuild that we are targeting legacy browsers when minifying CSS.
-        // Full CSS compat table available at https://github.com/evanw/esbuild/blob/78e04680228cf989bdd7d471e02bbc2c8d345dc9/internal/compat/css_table.go
-        // But note that only the `HexRGBA` feature affects the minify outcome.
-        // HSL & rebeccapurple values will be minified away regardless the target.
-        // So targeting `chrome61` suffices to fix the compatibility issue.
-        config.build.cssTarget = 'chrome61'
+      return {
+        define: {
+          'import.meta.env.LEGACY':
+            env.command === 'serve' || config.build?.ssr
+              ? false
+              : legacyEnvVarMarker
+        }
       }
     }
   }
@@ -128,13 +205,14 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills
           )
         await buildPolyfillChunk(
+          config.mode,
           modernPolyfills,
           bundle,
           facadeToModernPolyfillMap,
           config.build,
           'es',
           opts,
-          options.externalSystemJS
+          true
         )
         return
       }
@@ -160,6 +238,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           )
 
         await buildPolyfillChunk(
+          config.mode,
           legacyPolyfills,
           bundle,
           facadeToLegacyPolyfillMap,
@@ -355,13 +434,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       const modernPolyfillFilename = facadeToModernPolyfillMap.get(
         chunk.facadeModuleId
       )
+
       if (modernPolyfillFilename) {
         tags.push({
           tag: 'script',
           attrs: {
             type: 'module',
             crossorigin: true,
-            src: `${config.base}${modernPolyfillFilename}`
+            src: toAssetPathFromHtml(
+              modernPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           }
         })
       } else if (modernPolyfills.size) {
@@ -393,7 +477,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             nomodule: true,
             crossorigin: true,
             id: legacyPolyfillId,
-            src: `${config.base}${legacyPolyfillFilename}`
+            src: toAssetPathFromHtml(
+              legacyPolyfillFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           injectTo: 'body'
         })
@@ -409,7 +497,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       )
       if (legacyEntryFilename) {
         // `assets/foo.js` means importing "named register" in SystemJS
-        const nonBareBase = config.base === '' ? './' : config.base
         tags.push({
           tag: 'script',
           attrs: {
@@ -419,7 +506,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             // script content will stay consistent - which allows using a constant
             // hash value for CSP.
             id: legacyEntryId,
-            'data-src': nonBareBase + legacyEntryFilename
+            'data-src': toAssetPathFromHtml(
+              legacyEntryFilename,
+              chunk.facadeModuleId!,
+              config
+            )
           },
           children: systemJSInlineCode,
           injectTo: 'body'
@@ -468,41 +559,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     }
   }
 
-  let envInjectionFailed = false
-  const legacyEnvPlugin: Plugin = {
-    name: 'vite:legacy-env',
-
-    config(config, env) {
-      if (env) {
-        return {
-          define: {
-            'import.meta.env.LEGACY':
-              env.command === 'serve' || config.build?.ssr
-                ? false
-                : legacyEnvVarMarker
-          }
-        }
-      } else {
-        envInjectionFailed = true
-      }
-    },
-
-    configResolved(config) {
-      if (envInjectionFailed) {
-        config.logger.warn(
-          `[@vitejs/plugin-legacy] import.meta.env.LEGACY was not injected due ` +
-            `to incompatible vite version (requires vite@^2.0.0-beta.69).`
-        )
-      }
-    }
-  }
-
-  return [
-    legacyConfigPlugin,
-    legacyGenerateBundlePlugin,
-    legacyPostPlugin,
-    legacyEnvPlugin
-  ]
+  return [legacyConfigPlugin, legacyGenerateBundlePlugin, legacyPostPlugin]
 }
 
 export async function detectPolyfills(
@@ -560,25 +617,26 @@ function createBabelPresetEnvOptions(
 }
 
 async function buildPolyfillChunk(
+  mode: string,
   imports: Set<string>,
   bundle: OutputBundle,
   facadeToChunkMap: Map<string, string>,
   buildOptions: BuildOptions,
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
-  externalSystemJS?: boolean
+  excludeSystemJS?: boolean
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
+    mode,
     // so that everything is resolved from here
     root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
     logLevel: 'error',
-    plugins: [polyfillsPlugin(imports, externalSystemJS)],
+    plugins: [polyfillsPlugin(imports, excludeSystemJS)],
     build: {
       write: false,
-      target: false,
       minify,
       assetsDir,
       rollupOptions: {
@@ -587,9 +645,20 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
-          entryFileNames: rollupOutputOptions.entryFileNames,
-          manualChunks: undefined
+          entryFileNames: rollupOutputOptions.entryFileNames
         }
+      }
+    },
+    // Don't run esbuild for transpilation or minification
+    // because we don't want to transpile code.
+    esbuild: false,
+    optimizeDeps: {
+      esbuildOptions: {
+        // If a value above 'es5' is set, esbuild injects helper functions which uses es2015 features.
+        // This limits the input code not to include es2015+ codes.
+        // But core-js is the only dependency which includes commonjs code
+        // and core-js doesn't include es2015+ codes.
+        target: 'es5'
       }
     }
   })
@@ -614,7 +683,7 @@ const polyfillId = '\0vite/legacy-polyfills'
 
 function polyfillsPlugin(
   imports: Set<string>,
-  externalSystemJS?: boolean
+  excludeSystemJS?: boolean
 ): Plugin {
   return {
     name: 'vite:legacy-polyfills',
@@ -627,7 +696,7 @@ function polyfillsPlugin(
       if (id === polyfillId) {
         return (
           [...imports].map((i) => `import "${i}";`).join('') +
-          (externalSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
+          (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
       }
     }

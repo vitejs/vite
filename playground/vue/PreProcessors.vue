@@ -2,7 +2,7 @@
 h2.pre-processors Pre-Processors
 p.pug
   | This is rendered from &lt;template lang="pug"&gt;
-  | and styled with &lt;style lang="sass"&gt;. It should be megenta.
+  | and styled with &lt;style lang="sass"&gt;. It should be magenta.
 p.pug-less
   | This is rendered from &lt;template lang="pug"&gt;
   | and styled with &lt;style lang="less"&gt;. It should be green.

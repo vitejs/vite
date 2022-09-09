@@ -1,10 +1,16 @@
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
  */
 module.exports = {
+  esbuild: {
+    supported: {
+      // Force esbuild inject helpers to test regex
+      'object-rest-spread': false
+    }
+  },
   build: {
     rollupOptions: {
       output: {

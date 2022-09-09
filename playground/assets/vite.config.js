@@ -1,4 +1,4 @@
-const path = require('path')
+const path = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
@@ -17,6 +17,5 @@ module.exports = {
     assetsInlineLimit: 8192, // 8kb
     manifest: true,
     watch: {}
-  },
-  cacheDir: 'node_modules/.vite/foo'
+  }
 }

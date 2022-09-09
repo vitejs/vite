@@ -1,8 +1,8 @@
 /**
  * modified from https://github.com/vuejs/core/blob/master/scripts/release.js
  */
-import { existsSync, readdirSync, writeFileSync } from 'fs'
-import path from 'path'
+import { existsSync, readdirSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
 import { execa } from 'execa'
@@ -197,6 +197,15 @@ export async function getLatestTag(pkgName: string): Promise<string> {
     .reverse()[0]
 }
 
+export async function getActiveVersion(pkgName: string): Promise<string> {
+  const npmName =
+    pkgName === 'vite' || pkgName === 'create-vite'
+      ? pkgName
+      : `@vitejs/${pkgName}`
+  return (await run('npm', ['info', npmName, 'version'], { stdio: 'pipe' }))
+    .stdout
+}
+
 export async function logRecentCommits(pkgName: string): Promise<void> {
   const tag = await getLatestTag(pkgName)
   if (!tag) return
@@ -226,8 +235,9 @@ export async function logRecentCommits(pkgName: string): Promise<void> {
 }
 
 export async function updateTemplateVersions(): Promise<void> {
-  const viteVersion = (await fs.readJSON('../packages/vite/package.json'))
-    .version
+  const viteVersion = (
+    await fs.readJSON(path.resolve(__dirname, '../packages/vite/package.json'))
+  ).version
   if (/beta|alpha|rc/.test(viteVersion)) return
 
   const dir = path.resolve(__dirname, '../packages/create-vite')
@@ -241,7 +251,21 @@ export async function updateTemplateVersions(): Promise<void> {
     pkg.devDependencies.vite = `^` + viteVersion
     if (template.startsWith('template-vue')) {
       pkg.devDependencies['@vitejs/plugin-vue'] =
-        `^` + (await fs.readJSON('../packages/plugin-vue/package.json')).version
+        `^` +
+        (
+          await fs.readJSON(
+            path.resolve(__dirname, '../packages/plugin-vue/package.json')
+          )
+        ).version
+    }
+    if (template.startsWith('template-react')) {
+      pkg.devDependencies['@vitejs/plugin-react'] =
+        `^` +
+        (
+          await fs.readJSON(
+            path.resolve(__dirname, '../packages/plugin-react/package.json')
+          )
+        ).version
     }
     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }

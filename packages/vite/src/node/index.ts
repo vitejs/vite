@@ -17,12 +17,14 @@ export type {
   ServerOptions,
   FileSystemServeOptions,
   ServerHook,
-  ResolvedServerOptions
+  ResolvedServerOptions,
+  ResolvedServerUrls
 } from './server'
 export type {
   BuildOptions,
   LibraryOptions,
   LibraryFormats,
+  RenderBuiltAssetUrl,
   ResolvedBuildOptions
 } from './build'
 export type {
@@ -34,6 +36,7 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
+  DepOptimizationConfig,
   DepOptimizationResult,
   DepOptimizationProcessing,
   OptimizedDepInfo,
@@ -42,11 +45,12 @@ export type {
 } from './optimizer'
 export type {
   ResolvedSSROptions,
+  SsrDepOptimizationOptions,
   SSROptions,
   SSRFormat,
   SSRTarget
 } from './ssr'
-export type { Plugin } from './plugin'
+export type { Plugin, HookHandler } from './plugin'
 export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,

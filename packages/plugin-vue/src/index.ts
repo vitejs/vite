@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import type { Plugin, ViteDevServer } from 'vite'
 import { createFilter } from 'vite'
 /* eslint-disable import/no-duplicates */
@@ -30,9 +30,18 @@ export interface Options {
   isProduction?: boolean
 
   // options to pass on to vue/compiler-sfc
-  script?: Partial<SFCScriptCompileOptions>
-  template?: Partial<SFCTemplateCompileOptions>
-  style?: Partial<SFCStyleCompileOptions>
+  script?: Partial<Pick<SFCScriptCompileOptions, 'babelParserPlugins'>>
+  template?: Partial<
+    Pick<
+      SFCTemplateCompileOptions,
+      | 'compiler'
+      | 'compilerOptions'
+      | 'preprocessOptions'
+      | 'preprocessCustomRequire'
+      | 'transformAssetUrls'
+    >
+  >
+  style?: Partial<Pick<SFCStyleCompileOptions, 'trim'>>
 
   /**
    * Transform Vue SFCs into custom elements.
@@ -45,11 +54,11 @@ export interface Options {
 
   /**
    * Enable Vue reactivity transform (experimental).
-   * https://github.com/vuejs/core/tree/master/packages/reactivity-transform
+   * https://vuejs.org/guide/extras/reactivity-transform.html
    * - `true`: transform will be enabled for all vue,js(x),ts(x) files except
    *           those inside node_modules
    * - `string | RegExp`: apply to vue + only matched files (will include
-   *                      node_modules, so specify directories in necessary)
+   *                      node_modules, so specify directories if necessary)
    * - `false`: disable in all cases
    *
    * @default false
@@ -124,7 +133,9 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
           __VUE_PROD_DEVTOOLS__: config.define?.__VUE_PROD_DEVTOOLS__ ?? false
         },
         ssr: {
-          external: ['vue', '@vue/server-renderer']
+          external: config.legacy?.buildSsrCjsExternalHeuristics
+            ? ['vue', '@vue/server-renderer']
+            : []
         }
       }
     },
@@ -175,7 +186,7 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
         const descriptor = getDescriptor(filename, options)!
         let block: SFCBlock | null | undefined
         if (query.type === 'script') {
-          // handle <scrip> + <script setup> merge via compileScript()
+          // handle <script> + <script setup> merge via compileScript()
           block = getResolvedScript(descriptor, ssr)
         } else if (query.type === 'template') {
           block = descriptor.template!

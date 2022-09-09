@@ -1,6 +1,6 @@
 // @ts-check
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 const express = require('express')
 
 const isTest = process.env.NODE_ENV === 'test' || !!process.env.VITE_TEST_BUILD
@@ -17,11 +17,12 @@ async function createServer(root = process.cwd(), hmrPort) {
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
-      middlewareMode: 'ssr',
+      middlewareMode: true,
       hmr: {
         port: hmrPort
       }
-    }
+    },
+    appType: 'custom'
   })
   app.use(vite.middlewares)
 

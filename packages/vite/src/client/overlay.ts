@@ -1,8 +1,17 @@
 import type { ErrorPayload } from 'types/hmrPayload'
 
+// set :host styles to make playwright detect the element as visible
 const template = /*html*/ `
 <style>
 :host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.backdrop {
   position: fixed;
   z-index: 99999;
   top: 0;
@@ -99,15 +108,17 @@ code {
   cursor: pointer;
 }
 </style>
-<div class="window">
-  <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
-  <pre class="file"></pre>
-  <pre class="frame"></pre>
-  <pre class="stack"></pre>
-  <div class="tip">
-    Click outside or fix the code to dismiss.<br>
-    You can also disable this overlay by setting
-    <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+<div class="backdrop">
+  <div class="window">
+    <pre class="message"><span class="plugin"></span><span class="message-body"></span></pre>
+    <pre class="file"></pre>
+    <pre class="frame"></pre>
+    <pre class="stack"></pre>
+    <div class="tip">
+      Click outside or fix the code to dismiss.<br>
+      You can also disable this overlay by setting
+      <code>server.hmr.overlay</code> to <code>false</code> in <code>vite.config.js.</code>
+    </div>
   </div>
 </div>
 `
@@ -115,6 +126,9 @@ code {
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s+\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
 
+// Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
+// `HTMLElement` was not originally defined.
+const { HTMLElement = class {} as typeof globalThis.HTMLElement } = globalThis
 export class ErrorOverlay extends HTMLElement {
   root: ShadowRoot
 
@@ -184,6 +198,7 @@ export class ErrorOverlay extends HTMLElement {
 }
 
 export const overlayId = 'vite-error-overlay'
+const { customElements } = globalThis // Ensure `customElements` is defined before the next line.
 if (customElements && !customElements.get(overlayId)) {
   customElements.define(overlayId, ErrorOverlay)
 }

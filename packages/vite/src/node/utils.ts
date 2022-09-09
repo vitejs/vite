@@ -1,11 +1,13 @@
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
-import { createHash } from 'crypto'
-import { promisify } from 'util'
-import { URL, URLSearchParams, pathToFileURL } from 'url'
-import { builtinModules, createRequire } from 'module'
-import { performance } from 'perf_hooks'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { createHash } from 'node:crypto'
+import { promisify } from 'node:util'
+import { URL, URLSearchParams, pathToFileURL } from 'node:url'
+import { builtinModules, createRequire } from 'node:module'
+import { promises as dns } from 'node:dns'
+import { performance } from 'node:perf_hooks'
+import type { AddressInfo, Server } from 'node:net'
 import resolve from 'resolve'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
@@ -23,9 +25,15 @@ import {
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  VALID_ID_PREFIX
+  OPTIMIZABLE_ENTRY_RE,
+  VALID_ID_PREFIX,
+  loopbackHosts,
+  wildcardHosts
 } from './constants'
-import type { ResolvedConfig } from '.'
+import type { DepOptimizationConfig } from './optimizer'
+import type { ResolvedConfig } from './config'
+import type { ResolvedServerUrls } from './server'
+import type { CommonServerOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -87,6 +95,17 @@ export function moduleListContains(
   id: string
 ): boolean | undefined {
   return moduleList?.some((m) => m === id || id.startsWith(m + '/'))
+}
+
+export function isOptimizable(
+  id: string,
+  optimizeDeps: DepOptimizationConfig
+): boolean {
+  const { extensions } = optimizeDeps
+  return (
+    OPTIMIZABLE_ENTRY_RE.test(id) ||
+    (extensions?.some((ext) => id.endsWith(ext)) ?? false)
+  )
 }
 
 export const bareImportRE = /^[\w@](?!.*:\/\/)/
@@ -242,7 +261,7 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.((j|t)sx?|mjs|vue|marko|svelte|astro)($|\?)/
+const knownJsSrcRE = /\.((j|t)sx?|m[jt]s|vue|marko|svelte|astro)($|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -292,11 +311,9 @@ export function injectQuery(url: string, queryToInject: string): string {
   if (resolvedUrl.protocol !== 'relative:') {
     resolvedUrl = pathToFileURL(url)
   }
-  let { protocol, pathname, search, hash } = resolvedUrl
-  if (protocol === 'file:') {
-    pathname = pathname.slice(1)
-  }
-  pathname = decodeURIComponent(pathname)
+  const { search, hash } = resolvedUrl
+  let pathname = cleanUrl(url)
+  pathname = isWindows ? slash(pathname) : pathname
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash ?? ''
   }`
@@ -305,10 +322,6 @@ export function injectQuery(url: string, queryToInject: string): string {
 const timestampRE = /\bt=\d{13}&?\b/
 export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
-}
-
-export function isRelativeBase(base: string): boolean {
-  return base === '' || base.startsWith('.')
 }
 
 export async function asyncReplace(
@@ -375,6 +388,7 @@ export function isDefined<T>(value: T | undefined | null): value is T {
 interface LookupFileOptions {
   pathOnly?: boolean
   rootDir?: string
+  predicate?: (file: string) => boolean
 }
 
 export function lookupFile(
@@ -385,7 +399,12 @@ export function lookupFile(
   for (const format of formats) {
     const fullPath = path.join(dir, format)
     if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-      return options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8')
+      const result = options?.pathOnly
+        ? fullPath
+        : fs.readFileSync(fullPath, 'utf-8')
+      if (!options?.predicate || options.predicate(result)) {
+        return result
+      }
     }
   }
   const parentDir = path.dirname(dir)
@@ -414,10 +433,8 @@ export function posToNumber(
   const lines = source.split(splitRE)
   const { line, column } = pos
   let start = 0
-  for (let i = 0; i < line - 1; i++) {
-    if (lines[i]) {
-      start += lines[i].length + 1
-    }
+  for (let i = 0; i < line - 1 && i < lines.length; i++) {
+    start += lines[i].length + 1
   }
   return start + column
 }
@@ -471,7 +488,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = start - (count - lineLength) + 1
+          const pad = Math.max(start - (count - lineLength) + 1, 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start
@@ -734,20 +751,40 @@ export function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr))
 }
 
+/**
+ * Returns resolved localhost address when `dns.lookup` result differs from DNS
+ *
+ * `dns.lookup` result is same when defaultResultOrder is `verbatim`.
+ * Even if defaultResultOrder is `ipv4first`, `dns.lookup` result maybe same.
+ * For example, when IPv6 is not supported on that machine/network.
+ */
+export async function getLocalhostAddressIfDiffersFromDNS(): Promise<
+  string | undefined
+> {
+  const [nodeResult, dnsResult] = await Promise.all([
+    dns.lookup('localhost'),
+    dns.lookup('localhost', { verbatim: true })
+  ])
+  const isSame =
+    nodeResult.family === dnsResult.family &&
+    nodeResult.address === dnsResult.address
+  return isSame ? undefined : nodeResult.address
+}
+
 export interface Hostname {
-  // undefined sets the default behaviour of server.listen
+  /** undefined sets the default behaviour of server.listen */
   host: string | undefined
-  // resolve to localhost when possible
+  /** resolve to localhost when possible */
   name: string
 }
 
-export function resolveHostname(
+export async function resolveHostname(
   optionsHost: string | boolean | undefined
-): Hostname {
+): Promise<Hostname> {
   let host: string | undefined
   if (optionsHost === undefined || optionsHost === false) {
     // Use a secure default
-    host = '127.0.0.1'
+    host = 'localhost'
   } else if (optionsHost === true) {
     // If passed --host in the CLI without arguments
     host = undefined // undefined typically means 0.0.0.0 or :: (listen on all IPs)
@@ -755,16 +792,71 @@ export function resolveHostname(
     host = optionsHost
   }
 
-  // Set host name to localhost when possible, unless the user explicitly asked for '127.0.0.1'
-  const name =
-    (optionsHost !== '127.0.0.1' && host === '127.0.0.1') ||
-    host === '0.0.0.0' ||
-    host === '::' ||
-    host === undefined
-      ? 'localhost'
-      : host
+  // Set host name to localhost when possible
+  let name = host === undefined || wildcardHosts.has(host) ? 'localhost' : host
+
+  if (host === 'localhost') {
+    // See #8647 for more details.
+    const localhostAddr = await getLocalhostAddressIfDiffersFromDNS()
+    if (localhostAddr) {
+      name = localhostAddr
+    }
+  }
 
   return { host, name }
+}
+
+export async function resolveServerUrls(
+  server: Server,
+  options: CommonServerOptions,
+  config: ResolvedConfig
+): Promise<ResolvedServerUrls> {
+  const address = server.address()
+
+  const isAddressInfo = (x: any): x is AddressInfo => x?.address
+  if (!isAddressInfo(address)) {
+    return { local: [], network: [] }
+  }
+
+  const local: string[] = []
+  const network: string[] = []
+  const hostname = await resolveHostname(options.host)
+  const protocol = options.https ? 'https' : 'http'
+  const port = address.port
+  const base = config.base === './' || config.base === '' ? '/' : config.base
+
+  if (hostname.host && loopbackHosts.has(hostname.host)) {
+    let hostnameName = hostname.name
+    if (
+      hostnameName === '::1' ||
+      hostnameName === '0000:0000:0000:0000:0000:0000:0000:0001'
+    ) {
+      hostnameName = `[${hostnameName}]`
+    }
+    local.push(`${protocol}://${hostnameName}:${port}${base}`)
+  } else {
+    Object.values(os.networkInterfaces())
+      .flatMap((nInterface) => nInterface ?? [])
+      .filter(
+        (detail) =>
+          detail &&
+          detail.address &&
+          // Node < v18
+          ((typeof detail.family === 'string' && detail.family === 'IPv4') ||
+            // Node >= v18
+            (typeof detail.family === 'number' && detail.family === 4))
+      )
+      .forEach((detail) => {
+        const host = detail.address.replace('127.0.0.1', hostname.name)
+        const url = `${protocol}://${host}:${port}${base}`
+        if (detail.address.includes('127.0.0.1')) {
+          local.push(url)
+        } else {
+          network.push(url)
+        }
+      })
+  }
+  return { local, network }
 }
 
 export function arraify<T>(target: T | T[]): T[] {
@@ -894,6 +986,10 @@ export function emptyCssComments(raw: string): string {
   return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
 }
 
+export function removeComments(raw: string): string {
+  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1006,15 +1102,47 @@ function normalizeSingleAlias({
   return alias
 }
 
-export function transformResult(
+/**
+ * Transforms transpiled code result where line numbers aren't altered,
+ * so we can skip sourcemap generation during dev
+ */
+export function transformStableResult(
   s: MagicString,
   id: string,
   config: ResolvedConfig
 ): TransformResult {
-  const isBuild = config.command === 'build'
-  const needSourceMap = !isBuild || config.build.sourcemap
   return {
     code: s.toString(),
-    map: needSourceMap ? s.generateMap({ hires: true, source: id }) : null
+    map:
+      config.command === 'build' && config.build.sourcemap
+        ? s.generateMap({ hires: true, source: id })
+        : null
   }
+}
+
+export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+  do {
+    arr = (await Promise.all(arr)).flat(Infinity) as any
+  } while (arr.some((v: any) => v?.then))
+  return arr
+}
+
+// strip UTF-8 BOM
+export function stripBomTag(content: string): string {
+  if (content.charCodeAt(0) === 0xfeff) {
+    return content.slice(1)
+  }
+
+  return content
+}
+
+const windowsDrivePathPrefixRE = /^[A-Za-z]:[/\\]/
+
+/**
+ * path.isAbsolute also returns true for drive relative paths on windows (e.g. /something)
+ * this function returns false for them but true for absolute paths (e.g. C:/something)
+ */
+export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
+  if (!isWindows) return p.startsWith('/')
+  return windowsDrivePathPrefixRE.test(p)
 }
