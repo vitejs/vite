@@ -88,7 +88,9 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            (opts.ws ||
+              opts.target?.toString().startsWith('ws:') ||
+              opts.target?.toString().startsWith('wss:')) &&
             req.headers['sec-websocket-protocol'] !== HMR_HEADER
           ) {
             if (opts.rewrite) {
