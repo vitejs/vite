@@ -73,22 +73,26 @@ function preload(
       if (dep in seen) return
       // @ts-ignore
       seen[dep] = true
-      const seperatorIdx = dep.lastIndexOf('/')
-      const shortDep = seperatorIdx >= 0 ? dep.slice(seperatorIdx + 1) : dep
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      // @ts-ignore check if the file is already preloaded by SSR markup
-      const possibleLinks = document.querySelectorAll<HTMLLinkElement>(
-        `link[href$="${shortDep}"]${cssSelector}`
-      )
-      for (let i = 0; i < possibleLinks.length; ++i) {
-        const currentPath = possibleLinks[i].href
-        if (
-          currentPath === dep ||
-          new URL(currentPath, importerUrl).href === dep
-        ) {
-          return
+      const isBaseRelative = !!importerUrl
+
+      // check if the file is already preloaded by SSR markup
+      if (isBaseRelative) {
+        const separatorIdx = dep.lastIndexOf('/')
+        const shortDep = separatorIdx < 0 ? dep : dep.slice(separatorIdx + 1)
+        const linkSelector = `link[href$="${shortDep}"]${cssSelector}`
+        const links = document.querySelectorAll<HTMLLinkElement>(linkSelector)
+
+        for (let i = links.length - 1; i >= 0; i--) {
+          // When isBaseRelative is true then we have importerUrl and `dep` is
+          // already converted to an absolute URL by the assetsURL function. The
+          // `link.href` also has an absolute URL thanks to browser doing the
+          // work for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+          if (links[i].href === dep) return
         }
+      } else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+        return
       }
 
       const loadLink = () => {
