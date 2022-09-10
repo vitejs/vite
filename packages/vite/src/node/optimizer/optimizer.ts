@@ -81,9 +81,7 @@ export async function initDevSsrDepsOptimizer(
     if (!getDepsOptimizer(config, ssr)) {
       await initDepsOptimizer(config, server)
     }
-    await getDepsOptimizer(config, ssr)!.scanProcessing
-
-    await createDevSsrDepsOptimizer(config)
+    await Promise.all([getDepsOptimizer(config, ssr)!.scanProcessing, createDevSsrDepsOptimizer(config)])
     creatingDevSsrOptimizer = undefined
   })()
   return await creatingDevSsrOptimizer
@@ -166,14 +164,10 @@ async function createDepsOptimizer(
     // Initialize discovered deps with manually added optimizeDeps.include info
 
     const deps: Record<string, string> = {}
-    await addManuallyIncludedOptimizeDeps(deps, config, ssr)
-
-    const discovered = await toDiscoveredDependencies(
-      config,
-      deps,
-      ssr,
-      sessionTimestamp
-    )
+    const [,discovered] = await Promise.all([
+      addManuallyIncludedOptimizeDeps(deps, config, ssr),
+      toDiscoveredDependencies(config, deps, ssr, sessionTimestamp)
+    ])
 
     for (const depInfo of Object.values(discovered)) {
       addOptimizedDepInfo(metadata, 'discovered', {
