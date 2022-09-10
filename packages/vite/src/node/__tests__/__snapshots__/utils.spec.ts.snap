@@ -1,8 +1,8 @@
 // Vitest Snapshot v1
 
-exports[`analyzeSystemRegisteration > hello 1`] = `undefined`;
+exports[`analyzeSystemRegistration > hello 1`] = `undefined`;
 
-exports[`analyzeSystemRegisteration > minified 1`] = `
+exports[`analyzeSystemRegistration > minified 1`] = `
 {
   "chunkListCode": "[\\"./chunks/index-legacy-60db70ad.js\\",\\"./chunks/singletons-legacy-a9d19225.js\\"]",
   "exportParam": "n",
@@ -11,7 +11,7 @@ exports[`analyzeSystemRegisteration > minified 1`] = `
 }
 `;
 
-exports[`analyzeSystemRegisteration > svelte-legacy-part 1`] = `
+exports[`analyzeSystemRegistration > svelte-legacy-part 1`] = `
 {
   "chunkListCode": "['./chunks/index-legacy-60db70ad.js', './chunks/singletons-legacy-4fba2acb.js']",
   "exportParam": "exports",
@@ -20,7 +20,7 @@ exports[`analyzeSystemRegisteration > svelte-legacy-part 1`] = `
 }
 `;
 
-exports[`analyzeSystemRegisteration > vue-legacy-part 1`] = `
+exports[`analyzeSystemRegistration > vue-legacy-part 1`] = `
 {
   "chunkListCode": "[]",
   "exportParam": "exports",

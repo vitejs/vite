@@ -6,7 +6,7 @@ import type { OutputChunk, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { RawSourceMap } from '@ampproject/remapping'
 import {
-  analyzeSystemRegisteration,
+  analyzeSystemRegistration,
   bareImportRE,
   cleanUrl,
   combineSourcemaps,
@@ -580,7 +580,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 export function parseImportsSystemJS(
   code: string
 ): ReadonlyArray<ImportSpecifier> {
-  const moduleParam = analyzeSystemRegisteration(code)?.moduleParam
+  const moduleParam = analyzeSystemRegistration(code)?.moduleParam
 
   const re =
     /\((.+?(?<importDirective>\b\w+\.import\s*(?<parenthesesStart>\()\s*('(?<path1>.+?)'|"(?<path2>.+?)")\);?).*?),\s*"__VITE_PRELOAD__".*?\)/gs

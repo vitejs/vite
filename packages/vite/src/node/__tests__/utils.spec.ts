@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import {
-  analyzeSystemRegisteration,
+  analyzeSystemRegistration,
   asyncFlatten,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
@@ -197,11 +197,11 @@ describe('asyncFlatten', () => {
   })
 })
 
-describe('analyzeSystemRegisteration', () => {
+describe('analyzeSystemRegistration', () => {
   system_format_snippets.forEach((snippet) => {
     test(snippet, () => {
       expect(
-        analyzeSystemRegisteration(readInputFile(`${snippet}.js`))
+        analyzeSystemRegistration(readInputFile(`${snippet}.js`))
       ).toMatchSnapshot()
     })
   })

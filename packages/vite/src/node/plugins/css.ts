@@ -30,7 +30,7 @@ import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
-  analyzeSystemRegisteration,
+  analyzeSystemRegistration,
   asyncReplace,
   cleanUrl,
   combineSourcemaps,
@@ -588,8 +588,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               )
             case 'system':
               return (code: string) => {
-                const moduleParam =
-                  analyzeSystemRegisteration(code)?.moduleParam
+                const moduleParam = analyzeSystemRegistration(code)?.moduleParam
                 return moduleParam !== undefined
                   ? new RegExp(
                       `\\b${moduleParam}.import\\s*["'][^"']*(?:${emptyChunkFiles})["'];\n?`,

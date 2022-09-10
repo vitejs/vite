@@ -1154,7 +1154,7 @@ export const isNonDriveRelativeAbsolutePath = (p: string): boolean => {
 /**
  * Analyze the SystemJS module registration `System.register` in the code.
  */
-export function analyzeSystemRegisteration(code: string):
+export function analyzeSystemRegistration(code: string):
   | {
       chunkListCode: string
       paramsCode: string
