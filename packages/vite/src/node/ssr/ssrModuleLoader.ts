@@ -119,13 +119,14 @@ async function instantiateModule(
   // CommonJS modules are preferred. We want to avoid ESM->ESM imports
   // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
-    dedupe,
+    mainFields: ['main'],
+    conditions: [],
     extensions: ['.js', '.cjs', '.json'],
+    dedupe,
+    preserveSymlinks,
     isBuild: true,
     isProduction,
     isRequire: true,
-    mainFields: ['main'],
-    preserveSymlinks,
     root
   }
 

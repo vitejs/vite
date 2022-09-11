@@ -68,7 +68,7 @@ export interface ResolveOptions {
   preserveSymlinks?: boolean
 }
 
-export interface InternalResolveOptions extends ResolveOptions {
+export interface InternalResolveOptions extends Required<ResolveOptions> {
   root: string
   isBuild: boolean
   isProduction: boolean
@@ -84,7 +84,6 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryPrefix?: string
   skipPackageJson?: boolean
   preferRelative?: boolean
-  preserveSymlinks?: boolean
   isRequire?: boolean
   // #3040
   // when the importer is a ts module,
@@ -450,7 +449,7 @@ function tryFsResolve(
     return res
   }
 
-  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+  for (const ext of options.extensions) {
     if (
       postfix &&
       (res = tryResolveFile(
@@ -926,7 +925,7 @@ export function resolvePackageEntry(
     }
 
     if (!entryPoint || entryPoint.endsWith('.mjs')) {
-      for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
+      for (const field of options.mainFields) {
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
@@ -944,8 +943,8 @@ export function resolvePackageEntry(
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
       if (
-        options.mainFields?.[0] === 'sass' &&
-        !options.extensions?.includes(path.extname(entry))
+        options.mainFields[0] === 'sass' &&
+        !options.extensions.includes(path.extname(entry))
       ) {
         entry = ''
         options.skipPackageJson = true
@@ -994,7 +993,7 @@ function resolveExports(
   if (!options.isRequire) {
     conditions.push('module')
   }
-  if (options.conditions) {
+  if (options.conditions.length > 0) {
     conditions.push(...options.conditions)
   }
 
