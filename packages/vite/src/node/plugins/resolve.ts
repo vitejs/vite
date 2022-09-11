@@ -236,7 +236,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
-          options.mainFields.includes('browser') &&
+          mainFieldsContainsBrowser(options.mainFields) &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
@@ -307,7 +307,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
-          options.mainFields.includes('browser') &&
+          mainFieldsContainsBrowser(options.mainFields) &&
           (res = tryResolveBrowserMapping(
             id,
             importer,
@@ -394,6 +394,14 @@ export default new Proxy({}, {
       }
     }
   }
+}
+
+/**
+ * TODO
+ * @deprecated In Vite 4, this should be `mainFields.includes('browser')`
+ */
+function mainFieldsContainsBrowser(mainFields: string[]) {
+  return !mainFields.includes('!browser')
 }
 
 function splitFileAndPostfix(path: string) {
@@ -888,7 +896,7 @@ export function resolvePackageEntry(
     // fields are present, prioritize those instead.
     if (
       targetWeb &&
-      options.mainFields.includes('browser') &&
+      mainFieldsContainsBrowser(options.mainFields) &&
       (!entryPoint || entryPoint.endsWith('.mjs'))
     ) {
       // check browser field
@@ -962,7 +970,7 @@ export function resolvePackageEntry(
       const { browser: browserField } = data
       if (
         targetWeb &&
-        options.mainFields.includes('browser') &&
+        mainFieldsContainsBrowser(options.mainFields) &&
         isObject(browserField)
       ) {
         entry = mapWithBrowserField(entry, browserField) || entry
@@ -1059,7 +1067,7 @@ function resolveDeepImport(
     }
   } else if (
     targetWeb &&
-    options.mainFields.includes('browser') &&
+    mainFieldsContainsBrowser(options.mainFields) &&
     isObject(browserField)
   ) {
     // resolve without postfix (see #7098)

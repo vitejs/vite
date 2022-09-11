@@ -158,6 +158,10 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
+:::warning `browser` field
+Currently Vite resolves `browser` field even if `browser` is not included in `resolve.mainFields`. In future, `resolve.mainFields`'s default value will be `['browser', 'module', 'jsnext:main', 'jsnext']`. But for now, you could disable resolving to `browser` field by including `'!browser'` in `resolve.mainFields`.
+:::
+
 ## resolve.extensions
 
 - **Type:** `string[]`
