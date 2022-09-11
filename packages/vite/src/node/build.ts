@@ -567,10 +567,12 @@ function prepareOutDir(
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  for (const outDir of new Set(outDirs)) {
-    if (fs.existsSync(outDir)) {
+  const nonDuplicateDirs = new Set(outDirs)
+  let outside = false
+  if (emptyOutDir == null) {
+    for (const outDir of nonDuplicateDirs) {
       if (
-        emptyOutDir == null &&
+        fs.existsSync(outDir) &&
         !normalizePath(outDir).startsWith(config.root + '/')
       ) {
         // warn if outDir is outside of root
@@ -582,23 +584,28 @@ function prepareOutDir(
               `Use --emptyOutDir to override.\n`
           )
         )
-      } else if (emptyOutDir !== false) {
-        // skip those other outDirs which are nested in current outDir
-        const skipDirs = outDirs
-          .map((dir) => {
-            const relative = path.relative(outDir, dir)
-            if (
-              relative &&
-              !relative.startsWith('..') &&
-              !path.isAbsolute(relative)
-            ) {
-              return relative
-            }
-            return ''
-          })
-          .filter(Boolean)
-        emptyDir(outDir, [...skipDirs, '.git'])
+        outside = true
+        break
       }
+    }
+  }
+  for (const outDir of nonDuplicateDirs) {
+    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+      // skip those other outDirs which are nested in current outDir
+      const skipDirs = outDirs
+        .map((dir) => {
+          const relative = path.relative(outDir, dir)
+          if (
+            relative &&
+            !relative.startsWith('..') &&
+            !path.isAbsolute(relative)
+          ) {
+            return relative
+          }
+          return ''
+        })
+        .filter(Boolean)
+      emptyDir(outDir, [...skipDirs, '.git'])
     }
     if (config.publicDir && fs.existsSync(config.publicDir)) {
       copyDir(config.publicDir, outDir)
