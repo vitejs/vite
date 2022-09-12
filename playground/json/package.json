@@ -14,6 +14,6 @@
   "devDependencies": {
     "express": "^4.18.1",
     "json-module": "file:./json-module",
-    "vue": "^3.2.38"
+    "vue": "^3.2.39"
   }
 }
