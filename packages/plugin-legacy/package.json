@@ -35,8 +35,8 @@
   },
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "dependencies": {
-    "@babel/standalone": "^7.18.13",
-    "core-js": "^3.25.0",
+    "@babel/standalone": "^7.19.0",
+    "core-js": "^3.25.1",
     "magic-string": "^0.26.3",
     "regenerator-runtime": "^0.13.9",
     "systemjs": "^6.12.6"
@@ -46,7 +46,7 @@
     "vite": "^3.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.18.13",
+    "@babel/core": "^7.19.0",
     "vite": "workspace:*"
   }
 }
