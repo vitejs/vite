@@ -176,7 +176,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build.cssTarget = 'chrome61'
         }
 
-        // Vite's default target browser is **not** the same.
+        // Vite's default target browsers are **not** the same.
         // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
         overriddenBuildTarget = config.build.target !== undefined
         // browsers supporting ESM + dynamic import + import.meta
@@ -202,7 +202,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (overriddenBuildTarget) {
         config.logger.warn(
           colors.yellow(
-            `plugin-legacy overrode 'build.target'. You should pass 'targets' option to legacy browser instead.`
+            `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`
           )
         )
       }
