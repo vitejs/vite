@@ -79,10 +79,9 @@ function preload(
 
       // check if the file is already preloaded by SSR markup
       if (isBaseRelative) {
-        const separatorIdx = dep.lastIndexOf('/')
-        const shortDep = separatorIdx < 0 ? dep : dep.slice(separatorIdx + 1)
-        const linkSelector = `link[href$="${shortDep}"]${cssSelector}`
-        const links = document.querySelectorAll<HTMLLinkElement>(linkSelector)
+        const links = document.querySelectorAll<HTMLLinkElement>(
+          `link${cssSelector}`
+        )
 
         for (let i = links.length - 1; i >= 0; i--) {
           // When isBaseRelative is true then we have importerUrl and `dep` is
