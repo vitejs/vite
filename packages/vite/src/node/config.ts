@@ -477,6 +477,7 @@ export async function resolveConfig(
 
   const resolveOptions: ResolvedConfig['resolve'] = {
     mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    browserField: config.resolve?.browserField ?? true,
     conditions: config.resolve?.conditions ?? [],
     extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: config.resolve?.dedupe ?? [],

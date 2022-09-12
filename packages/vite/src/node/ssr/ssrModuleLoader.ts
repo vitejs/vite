@@ -120,6 +120,7 @@ async function instantiateModule(
   // whenever possible, because `hookNodeResolve` can't intercept them.
   const resolveOptions: InternalResolveOptions = {
     mainFields: ['main'],
+    browserField: true,
     conditions: [],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
