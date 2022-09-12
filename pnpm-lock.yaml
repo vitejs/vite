@@ -217,7 +217,7 @@ importers:
       '@rollup/plugin-commonjs': ^22.0.2
       '@rollup/plugin-dynamic-import-vars': ^1.4.4
       '@rollup/plugin-json': ^4.1.0
-      '@rollup/plugin-node-resolve': 13.3.0
+      '@rollup/plugin-node-resolve': 14.0.1
       '@rollup/plugin-typescript': ^8.4.0
       '@rollup/pluginutils': ^4.2.1
       acorn: ^8.8.0
@@ -282,7 +282,7 @@ importers:
       '@rollup/plugin-commonjs': 22.0.2_rollup@2.78.0
       '@rollup/plugin-dynamic-import-vars': 1.4.4_rollup@2.78.0
       '@rollup/plugin-json': 4.1.0_rollup@2.78.0
-      '@rollup/plugin-node-resolve': 13.3.0_rollup@2.78.0
+      '@rollup/plugin-node-resolve': 14.0.1_rollup@2.78.0
       '@rollup/plugin-typescript': 8.4.0_rollup@2.78.0+tslib@2.4.0
       '@rollup/pluginutils': 4.2.1
       acorn: 8.8.0
@@ -2474,21 +2474,6 @@ packages:
       rollup: 2.79.0
     dev: true
 
-  /@rollup/plugin-node-resolve/13.3.0_rollup@2.78.0:
-    resolution: {integrity: sha512-Lus8rbUo1eEcnS4yTFKLZrVumLPY+YayBdWXgFSHYhTT2iJbMhoaaBL3xl5NCdeRytErGr8tZ0L71BMRmnlwSw==}
-    engines: {node: '>= 10.0.0'}
-    peerDependencies:
-      rollup: ^2.42.0
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.78.0
-      '@types/resolve': 1.17.1
-      deepmerge: 4.2.2
-      is-builtin-module: 3.1.0
-      is-module: 1.0.0
-      resolve: 1.22.1
-      rollup: 2.78.0
-    dev: true
-
   /@rollup/plugin-node-resolve/13.3.0_rollup@2.79.0:
     resolution: {integrity: sha512-Lus8rbUo1eEcnS4yTFKLZrVumLPY+YayBdWXgFSHYhTT2iJbMhoaaBL3xl5NCdeRytErGr8tZ0L71BMRmnlwSw==}
     engines: {node: '>= 10.0.0'}
@@ -2502,6 +2487,21 @@ packages:
       is-module: 1.0.0
       resolve: 1.22.1
       rollup: 2.79.0
+    dev: true
+
+  /@rollup/plugin-node-resolve/14.0.1_rollup@2.78.0:
+    resolution: {integrity: sha512-YvSs0ev00QWTQS8u+yaCJkIUPBgpmBsnzRJFvg8c2chbky85ZKoZtoNuRH0k9rjZT4xpgEPOiVTyeJTj1/iMdQ==}
+    engines: {node: '>= 10.0.0'}
+    peerDependencies:
+      rollup: ^2.78.0
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.78.0
+      '@types/resolve': 1.17.1
+      deepmerge: 4.2.2
+      is-builtin-module: 3.1.0
+      is-module: 1.0.0
+      resolve: 1.22.1
+      rollup: 2.78.0
     dev: true
 
   /@rollup/plugin-replace/4.0.0_rollup@2.79.0:
@@ -6053,7 +6053,7 @@ packages:
       is-extglob: 2.1.1
 
   /is-module/1.0.0:
-    resolution: {integrity: sha1-Mlj7afeMFNW4FdZkM2tM/7ZEFZE=}
+    resolution: {integrity: sha512-51ypPSPCoTEIN9dy5Oy+h4pShgJmPCygKfyRCISBI+JoWT/2oJvK8QPxmwv7b/p239jXrm9M1mlQbyKJ5A152g==}
     dev: true
 
   /is-negative-zero/2.0.2:
@@ -7550,7 +7550,7 @@ packages:
       jstransformer: 1.0.0
       pug-error: 2.0.0
       pug-walk: 2.0.0
-      resolve: 1.22.0
+      resolve: 1.22.1
     dev: true
 
   /pug-lexer/5.0.1:
@@ -7873,15 +7873,6 @@ packages:
     dependencies:
       is-core-module: 2.9.0
       path-parse: 1.0.7
-    dev: true
-
-  /resolve/1.22.0:
-    resolution: {integrity: sha512-Hhtrw0nLeSrFQ7phPp4OOcVjLPIeMnRlr5mcnVuMe7M/7eBn98A3hmFRLoFo3DLZkivSYwhRUJTyPyWAk56WLw==}
-    hasBin: true
-    dependencies:
-      is-core-module: 2.9.0
-      path-parse: 1.0.7
-      supports-preserve-symlinks-flag: 1.0.0
     dev: true
 
   /resolve/1.22.1:
