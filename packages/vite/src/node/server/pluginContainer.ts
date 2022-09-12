@@ -582,12 +582,17 @@ export async function createPluginContainer(
           'handler' in plugin.resolveId
             ? plugin.resolveId.handler
             : plugin.resolveId
-        const result = await handler.call(ctx as any, rawId, importer, {
-          custom: options?.custom,
-          isEntry: !!options?.isEntry,
-          ssr,
-          scan
-        })
+        const result = await handler.call(
+          ctx as any,
+          rawId.replace(/%20/g, ' '),
+          importer,
+          {
+            custom: options?.custom,
+            isEntry: !!options?.isEntry,
+            ssr,
+            scan
+          }
+        )
         if (!result) continue
 
         if (typeof result === 'string') {
