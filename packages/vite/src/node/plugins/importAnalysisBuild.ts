@@ -65,6 +65,14 @@ function preload(
     return baseModule()
   }
 
+  const absoluteUrls = new Set<string>()
+  const links = document.getElementsByTagName('link')
+  for (let i = links.length - 1; i >= 0; i--) {
+    // The `links[i].href` is an absolute URL thanks to browser doing the work
+    // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
+    absoluteUrls.add(links[i].href)
+  }
+
   return Promise.all(
     deps.map((dep) => {
       // @ts-ignore
@@ -79,17 +87,9 @@ function preload(
 
       // check if the file is already preloaded by SSR markup
       if (isBaseRelative) {
-        const links = document.querySelectorAll<HTMLLinkElement>(
-          `link${cssSelector}`
-        )
-
-        for (let i = links.length - 1; i >= 0; i--) {
-          // When isBaseRelative is true then we have importerUrl and `dep` is
-          // already converted to an absolute URL by the assetsURL function. The
-          // `link.href` also has an absolute URL thanks to browser doing the
-          // work for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (links[i].href === dep) return
-        }
+        // When isBaseRelative is true then we have `importerUrl` and `dep` is
+        // already converted to an absolute URL by the `assetsURL` function
+        if (absoluteUrls.has(dep)) return
       } else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
