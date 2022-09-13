@@ -12,7 +12,8 @@ const getConfig = (base: string): InlineConfig => ({
   base,
   root: rootDir,
   logLevel: 'silent',
-  preview: { port: ports['css/dynamic-import'] }
+  preview: { port: ports['css/dynamic-import'] },
+  build: { assetsInlineLimit: 0 }
 })
 
 async function withBuild(base: string, fn: () => Promise<void>) {
@@ -42,14 +43,17 @@ async function withServe(base: string, fn: () => Promise<void>) {
   }
 }
 
-async function getChunks() {
+async function getLinks() {
   const links = await page.$$('link')
-  const hrefs = await Promise.all(links.map((l) => l.evaluate((el) => el.href)))
-  return hrefs.map((href) => {
-    // drop hash part from the file name
-    const [_, name, ext] = href.match(/assets\/([a-z]+)\..*?\.(.*)$/)
-    return `${name}.${ext}`
-  })
+  return await Promise.all(
+    links.map((handle) => {
+      return handle.evaluate((link) => ({
+        pathname: new URL(link.href).pathname,
+        rel: link.rel,
+        as: link.as
+      }))
+    })
+  )
 }
 
 baseOptions.forEach(({ base, label }) => {
@@ -60,12 +64,37 @@ baseOptions.forEach(({ base, label }) => {
         await page.waitForSelector('.loaded', { state: 'attached' })
 
         expect(await getColor('.css-dynamic-import')).toBe('green')
-        expect(await getChunks()).toEqual([
-          'index.css',
-          'dynamic.js',
-          'dynamic.css',
-          'static.js',
-          'index.js'
+        expect(await getLinks()).toEqual([
+          {
+            pathname: expect.stringMatching(/^\/assets\/index\..+\.css$/),
+            rel: 'stylesheet',
+            as: ''
+          },
+          {
+            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            rel: 'preload',
+            as: 'style'
+          },
+          {
+            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.js$/),
+            rel: 'modulepreload',
+            as: 'script'
+          },
+          {
+            pathname: expect.stringMatching(/^\/assets\/dynamic\..+\.css$/),
+            rel: 'stylesheet',
+            as: ''
+          },
+          {
+            pathname: expect.stringMatching(/^\/assets\/static\..+\.js$/),
+            rel: 'modulepreload',
+            as: 'script'
+          },
+          {
+            pathname: expect.stringMatching(/^\/assets\/index\..+\.js$/),
+            rel: 'modulepreload',
+            as: 'script'
+          }
         ])
       })
     }
@@ -79,7 +108,13 @@ baseOptions.forEach(({ base, label }) => {
 
         expect(await getColor('.css-dynamic-import')).toBe('green')
         // in serve there is no preloading
-        expect(await getChunks()).toEqual([])
+        expect(await getLinks()).toEqual([
+          {
+            pathname: '/dynamic.css',
+            rel: 'preload',
+            as: 'style'
+          }
+        ])
       })
     }
   )
