@@ -110,7 +110,7 @@ const detectModernBrowserVarName = '__vite_is_modern_browser'
 const detectModernBrowserCode = `try{import.meta.url;import("_").catch(()=>1);}catch(e){}window.${detectModernBrowserVarName}=true;`
 const dynamicFallbackInlineCode = `!function(){if(window.${detectModernBrowserVarName})return;console.warn("vite: loading legacy build because dynamic import or import.meta.url is unsupported, syntax error above should be ignored");var e=document.getElementById("${legacyPolyfillId}"),n=document.createElement("script");n.src=e.src,n.onload=function(){${systemJSInlineCode}},document.body.appendChild(n)}();`
 
-const forceDynamicImportUsage = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
+const forceDynamicImportUsageCode = `export function __vite_legacy_guard(){import('data:text/javascript,')};`
 
 const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
@@ -121,6 +121,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const targets = options.targets || 'defaults'
   const genLegacy = options.renderLegacyChunks !== false
   const genDynamicFallback = genLegacy
+  const forceDynamicImportUsage = options.forceDynamicImportUsage !== false
 
   const debugFlags = (process.env.DEBUG || '').split(',')
   const isDebug =
@@ -331,8 +332,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
         const ms = new MagicString(raw)
 
-        if (genDynamicFallback && chunk.isEntry) {
-          ms.prepend(forceDynamicImportUsage)
+        if (genDynamicFallback && chunk.isEntry && forceDynamicImportUsage) {
+          ms.prepend(forceDynamicImportUsageCode)
         }
 
         if (raw.includes(legacyEnvVarMarker)) {
