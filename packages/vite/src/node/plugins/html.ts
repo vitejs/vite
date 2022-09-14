@@ -196,7 +196,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   return { src, sourceCodeLocation, isModule, isAsync }
 }
 
-const attrValueStartRE = /=[\s\t\n\r]*(["']|.)/
+const attrValueStartRE = /=[\s\t\n\r]*(.)/
 
 export function overwriteAttrValue(
   s: MagicString,
@@ -214,7 +214,7 @@ export function overwriteAttrValue(
       `[vite:html] internal error, failed to overwrite attribute value`
     )
   }
-  const wrapOffset = valueStart[1] ? 1 : 0
+  const wrapOffset = valueStart[1] === '"' || valueStart[1] === "'" ? 1 : 0
   const valueOffset = valueStart.index! + valueStart[0].length - 1
   s.overwrite(
     sourceCodeLocation.startOffset + valueOffset + wrapOffset,
