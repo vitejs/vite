@@ -365,14 +365,6 @@ importers:
   playground/assets-sanitize:
     specifiers: {}
 
-  playground/async-chunk-css-order:
-    specifiers:
-      react: ^18.2.0
-      react-dom: ^18.2.0
-    dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-
   playground/backend-integration:
     specifiers:
       fast-glob: ^3.2.11
