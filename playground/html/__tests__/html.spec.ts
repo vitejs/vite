@@ -256,3 +256,14 @@ test('importmap', () => {
     'An import map is added after module script load was triggered.'
   )
 })
+
+describe('Valid HTML', () => {
+  test('valid HTML is parsed', async () => {
+    await page.goto(viteTestUrl + '/valid.html')
+    expect(await page.textContent('#no-quotes-on-attr')).toBe(
+      'No quotes on Attr working'
+    )
+
+    expect(await getColor('#duplicated-attrs')).toBe('green')
+  })
+})
