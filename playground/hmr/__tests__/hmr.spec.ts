@@ -633,6 +633,9 @@ if (!isBuild) {
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[success]')
     editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
-    await untilUpdated(() => el.textContent(), '[wow]')
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]')
   })
 }
