@@ -15,9 +15,7 @@ import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  FS_PREFIX
 } from '../constants'
 import {
   debugHmr,
@@ -42,7 +40,8 @@ import {
   stripBomTag,
   timeFrom,
   transformStableResult,
-  unwrapId
+  unwrapId,
+  wrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -330,8 +329,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
         if (!url.startsWith('.') && !url.startsWith('/')) {
-          url =
-            VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
+          url = wrapId(resolved.id)
         }
 
         // make the URL browser-valid if not SSR
