@@ -627,4 +627,12 @@ if (!isBuild) {
     btn = await page.$('button')
     expect(await btn.textContent()).toBe('Compteur 0')
   })
+
+  test('handle virtual module updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[success]')
+    editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
+    await untilUpdated(() => el.textContent(), '[wow]')
+  })
 }

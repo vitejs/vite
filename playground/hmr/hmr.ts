@@ -6,6 +6,10 @@ text('.app', foo)
 text('.dep', depFoo)
 text('.nested', nestedFoo)
 
+// @ts-ignore
+import { virtual } from 'virtual:file'
+text('.virtual', virtual)
+
 if (import.meta.hot) {
   import.meta.hot.accept(({ foo }) => {
     console.log('(self-accepting 1) foo is now:', foo)
