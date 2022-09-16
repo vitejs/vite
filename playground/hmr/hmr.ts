@@ -1,3 +1,5 @@
+// @ts-ignore
+import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
 
@@ -5,9 +7,6 @@ export const foo = 1
 text('.app', foo)
 text('.dep', depFoo)
 text('.nested', nestedFoo)
-
-// @ts-ignore
-import { virtual } from 'virtual:file'
 text('.virtual', virtual)
 
 if (import.meta.hot) {

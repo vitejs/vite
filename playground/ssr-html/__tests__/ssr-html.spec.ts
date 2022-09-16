@@ -48,6 +48,7 @@ describe.runIf(isServe)('hmr', () => {
     editFile('src/importedVirtual.js', (code) =>
       code.replace('[success]', '[wow]')
     )
+    await page.waitForNavigation()
     await untilUpdated(async () => {
       const el = await page.$('.virtual')
       return await el.textContent()
