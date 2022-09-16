@@ -712,10 +712,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
-          url = unwrapId(removeImportQuery(url)).replace(
-            NULL_BYTE_PLACEHOLDER,
-            '\0'
-          )
+          url = unwrapId(removeImportQuery(url))
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors

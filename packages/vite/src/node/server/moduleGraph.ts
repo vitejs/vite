@@ -8,7 +8,7 @@ import {
   removeTimestampQuery,
   unwrapId
 } from '../utils'
-import { FS_PREFIX, NULL_BYTE_PLACEHOLDER } from '../constants'
+import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
@@ -239,10 +239,7 @@ export class ModuleGraph {
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    url = unwrapId(removeImportQuery(removeTimestampQuery(url))).replace(
-      NULL_BYTE_PLACEHOLDER,
-      '\0'
-    )
+    url = unwrapId(removeImportQuery(removeTimestampQuery(url)))
     const resolved = await this.resolveId(url, !!ssr)
     const resolvedId = resolved?.id || url
     if (
