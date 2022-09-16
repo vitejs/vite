@@ -117,12 +117,12 @@ npm add -D terser
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
-### `noModule`
+### `renderModernChunks`
 
 - **Type:** `boolean`
-- **Default:** `false`
+- **Default:** `true`
 
-  Enabling this option will only output the legacy bundles that support all target browsers (loaded via plain <script>s)
+  Set to `true` to only output the legacy bundles that support all target browsers.
 
 ## Dynamic Import
 

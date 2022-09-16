@@ -25,7 +25,7 @@ export interface Options {
    */
   externalSystemJS?: boolean
   /**
-   * default: false
+   * default: true
    */
-  noModule?: boolean
+  renderModernChunks?: boolean
 }
