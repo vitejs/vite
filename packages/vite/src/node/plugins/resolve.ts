@@ -29,6 +29,7 @@ import {
   isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
+  isOptimizable,
   isPossibleTsOutput,
   isTsRequest,
   isWindows,
@@ -181,7 +182,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
           if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
             const versionHash = depsOptimizer.metadata.browserHash
-            if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+            if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
               resolved = injectQuery(resolved, `v=${versionHash}`)
             }
           }
@@ -750,7 +751,9 @@ export function tryNodeResolve(
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
+  const isJsType = depsOptimizer
+    ? isOptimizable(resolved, depsOptimizer.options)
+    : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
   let include = depsOptimizer?.options.exclude
