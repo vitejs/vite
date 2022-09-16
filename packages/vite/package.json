@@ -136,6 +136,7 @@
     "less": "*",
     "sass": "*",
     "stylus": "*",
+    "sugarss": "*",
     "terser": "^5.4.0"
   },
   "peerDependenciesMeta": {
@@ -146,6 +147,9 @@
       "optional": true
     },
     "less": {
+      "optional": true
+    },
+    "sugarss": {
       "optional": true
     },
     "terser": {
