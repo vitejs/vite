@@ -239,14 +239,11 @@ export class ModuleGraph {
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    url = unwrapId(removeImportQuery(removeTimestampQuery(url)))
-    const resolved = await this.resolveId(url, !!ssr)
-    const resolvedId = resolved?.id || url
-    if (
-      url !== resolvedId &&
-      !url.includes('\0') &&
-      !url.startsWith(`virtual:`)
-    ) {
+    url = removeImportQuery(removeTimestampQuery(url))
+    const id = unwrapId(url)
+    const resolved = await this.resolveId(id, !!ssr)
+    const resolvedId = resolved?.id || id
+    if (id !== resolvedId && !id.includes('\0') && !id.startsWith(`virtual:`)) {
       const ext = extname(cleanUrl(resolvedId))
       const { pathname, search, hash } = new URL(url, 'relative://')
       if (ext && !pathname!.endsWith(ext)) {
