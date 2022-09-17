@@ -1,3 +1,9 @@
+## <small>3.1.2 (2022-09-17)</small>
+
+* fix: use isOptimizable to ensure version query (#10141) ([23a51c6](https://github.com/vitejs/vite/commit/23a51c6)), closes [#10141](https://github.com/vitejs/vite/issues/10141)
+
+
+
 ## <small>3.1.1 (2022-09-15)</small>
 
 * fix: ensure version query for relative node_modules imports (#10016) ([1b822d0](https://github.com/vitejs/vite/commit/1b822d0)), closes [#10016](https://github.com/vitejs/vite/issues/10016)
