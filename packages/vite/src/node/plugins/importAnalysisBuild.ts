@@ -75,23 +75,8 @@ function preload(
       seen[dep] = true
       const isCss = dep.endsWith('.css')
       const cssSelector = isCss ? '[rel="stylesheet"]' : ''
-      const isBaseRelative = !!importerUrl
-
-      // check if the file is already preloaded by SSR markup
-      if (isBaseRelative) {
-        const separatorIdx = dep.lastIndexOf('/')
-        const shortDep = separatorIdx < 0 ? dep : dep.slice(separatorIdx + 1)
-        const linkSelector = `link[href$="${shortDep}"]${cssSelector}`
-        const links = document.querySelectorAll<HTMLLinkElement>(linkSelector)
-
-        for (let i = links.length - 1; i >= 0; i--) {
-          // When isBaseRelative is true then we have importerUrl and `dep` is
-          // already converted to an absolute URL by the assetsURL function. The
-          // `link.href` also has an absolute URL thanks to browser doing the
-          // work for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
-          if (links[i].href === dep) return
-        }
-      } else if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
+      // @ts-ignore check if the file is already preloaded by SSR markup
+      if (document.querySelector(`link[href="${dep}"]${cssSelector}`)) {
         return
       }
 
