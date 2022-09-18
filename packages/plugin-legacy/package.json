@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.19.0",
+    "picocolors": "^1.0.0",
     "vite": "workspace:*"
   }
 }
