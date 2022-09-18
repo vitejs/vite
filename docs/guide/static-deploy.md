@@ -276,60 +276,6 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 You can also deploy to a [custom domain](http://surge.sh/help/adding-a-custom-domain) by adding `surge dist yourdomain.com`.
 
-## Heroku
-
-1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
-
-2. Create a Heroku account by [signing up](https://signup.heroku.com).
-
-3. Run `heroku login` and fill in your Heroku credentials:
-
-   ```bash
-   $ heroku login
-   ```
-
-4. Create a file called `static.json` in the root of your project with the below content:
-
-   `static.json`:
-
-   ```json
-   {
-     "root": "./dist"
-   }
-   ```
-
-   This is the configuration of your site; read more at [heroku-buildpack-static](https://github.com/heroku/heroku-buildpack-static).
-
-5. Set up your Heroku git remote:
-
-   ```bash
-   # version change
-   $ git init
-   $ git add .
-   $ git commit -m "My site ready for deployment."
-
-   # creates a new app with a specified name
-   $ heroku apps:create example
-   ```
-
-6. Set buildpacks. We use `heroku/nodejs` to build the project and `heroku-buildpack-static` to serve it.
-
-   ```bash
-   # set buildpacks
-   $ heroku buildpacks:set heroku/nodejs
-   $ heroku buildpacks:add https://github.com/heroku/heroku-buildpack-static.git
-   ```
-
-7. Deploy your site:
-
-   ```bash
-   # publish site
-   $ git push heroku main
-
-   # opens a browser to view the Dashboard version of Heroku CI
-   $ heroku open
-   ```
-
 ## Azure Static Web Apps
 
 You can quickly deploy your Vite app with Microsoft Azure [Static Web Apps](https://aka.ms/staticwebapps) service. You need:
