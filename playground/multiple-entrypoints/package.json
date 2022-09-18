@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "fast-glob": "^3.2.11",
-    "sass": "^1.54.8"
+    "fast-glob": "^3.2.12",
+    "sass": "^1.54.9"
   }
 }
