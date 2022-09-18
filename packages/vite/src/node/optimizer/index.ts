@@ -911,12 +911,22 @@ function esbuildOutputFromId(
   id: string,
   cacheDirOutputPath: string
 ): any {
+  const cwd = process.cwd()
   const flatId = flattenId(id) + '.js'
-  return outputs[
-    normalizePath(
-      path.relative(process.cwd(), path.join(cacheDirOutputPath, flatId))
-    )
-  ]
+  const normalizedOutputPath = normalizePath(
+    path.relative(cwd, path.join(cacheDirOutputPath, flatId))
+  )
+  const output = outputs[normalizedOutputPath]
+  if (output) {
+    return output
+  }
+  // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
+  // Normalize keys to support this case too
+  for (const [key, value] of Object.entries(outputs)) {
+    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
+      return value
+    }
+  }
 }
 
 export async function extractExportsData(
