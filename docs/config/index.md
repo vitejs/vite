@@ -82,9 +82,9 @@ export default defineConfig(async ({ command, mode }) => {
 })
 ```
 
-## Config Custom Logger
+## Custom Logger
 
-Vite provides a `createLogger` function using which you can filter out warnings or provide a custom messages to your errors.
+Vite provides a `createLogger` function which you can filter out warnings or provide a custom message for your errors.
 
 ```js
 import { createLogger, defineConfig } from 'vite'
