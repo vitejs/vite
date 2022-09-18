@@ -138,6 +138,7 @@ importers:
       '@babel/standalone': ^7.19.0
       core-js: ^3.25.1
       magic-string: ^0.26.3
+      picocolors: ^1.0.0
       regenerator-runtime: ^0.13.9
       systemjs: ^6.12.6
       vite: workspace:*
@@ -149,6 +150,7 @@ importers:
       systemjs: 6.12.6
     devDependencies:
       '@babel/core': 7.19.0
+      picocolors: 1.0.0
       vite: link:../vite
 
   packages/plugin-react:
