@@ -4,7 +4,7 @@ exports[`serve:vue-sourcemap > css > serve-css 1`] = `
 {
   "mappings": ";AAQA;EACE,UAAU;AACZ",
   "sources": [
-    "/root/Css.vue",
+    "source-maps:///root/Css.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -51,7 +51,7 @@ exports[`serve:vue-sourcemap > css module > serve-css-module 1`] = `
 {
   "mappings": ";AAcA;EACE,UAAU;AACZ",
   "sources": [
-    "/root/Css.vue",
+    "source-maps:///root/Css.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -98,7 +98,7 @@ exports[`serve:vue-sourcemap > css scoped > serve-css-scoped 1`] = `
 {
   "mappings": ";AAoBA;EACE,UAAU;AACZ",
   "sources": [
-    "/root/Css.vue",
+    "source-maps:///root/Css.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -145,7 +145,7 @@ exports[`serve:vue-sourcemap > js > serve-js 1`] = `
 {
   "mappings": "AAKA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;;;;;wBARlB,oBAAiB,WAAd,MAAU",
   "sources": [
-    "/root/Js.vue",
+    "source-maps:///root/Js.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -169,7 +169,7 @@ exports[`serve:vue-sourcemap > less with additionalData > serve-less-with-additi
 {
   "mappings": "AAKA;EACE",
   "sources": [
-    "/root/Less.vue",
+    "source-maps:///root/Less.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -192,7 +192,7 @@ exports[`serve:vue-sourcemap > no script > serve-no-script 1`] = `
   "mappings": ";;;wBACE,oBAAwB,WAArB,aAAiB",
   "sourceRoot": "",
   "sources": [
-    "/root/NoScript.vue",
+    "source-maps:///root/NoScript.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -208,7 +208,7 @@ exports[`serve:vue-sourcemap > no template > serve-no-template 1`] = `
 {
   "mappings": "AACA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;AAGP;AACd,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;;;;;;",
   "sources": [
-    "/root/NoTemplate.vue",
+    "source-maps:///root/NoTemplate.vue",
   ],
   "sourcesContent": [
     "<script>
@@ -228,7 +228,7 @@ exports[`serve:vue-sourcemap > sass > serve-sass 1`] = `
 {
   "mappings": "AAKA;EACE",
   "sources": [
-    "/root/Sass.vue",
+    "source-maps:///root/Sass.vue",
   ],
   "sourcesContent": [
     "<template>
@@ -249,8 +249,8 @@ exports[`serve:vue-sourcemap > sass with import > serve-sass-with-import 1`] = `
 {
   "mappings": "AAAA;EACE;;ACOF;EACE",
   "sources": [
-    "/root/sassWithImportImported.sass",
-    "/root/SassWithImport.vue",
+    "source-maps:///root/sassWithImportImported.sass",
+    "source-maps:///root/SassWithImport.vue",
   ],
   "sourcesContent": [
     ".sass-with-import-imported
@@ -277,7 +277,7 @@ exports[`serve:vue-sourcemap > src imported > serve-src-imported 1`] = `
 {
   "mappings": "AAAA;EACE,UAAU;AACZ",
   "sources": [
-    "/root/src-import/src-import.css",
+    "source-maps:///root/src-import/src-import.css",
   ],
   "sourcesContent": [
     ".src-import {
@@ -293,8 +293,8 @@ exports[`serve:vue-sourcemap > src imported sass > serve-src-imported-sass 1`] =
 {
   "mappings": "AAAA;EACE;;ACCF;EACE",
   "sources": [
-    "/root/src-import/src-import-imported.sass",
-    "/root/src-import/src-import.sass",
+    "source-maps:///root/src-import/src-import-imported.sass",
+    "source-maps:///root/src-import/src-import.sass",
   ],
   "sourcesContent": [
     ".src-import-sass-imported
@@ -314,7 +314,7 @@ exports[`serve:vue-sourcemap > ts > serve-ts 1`] = `
 {
   "mappings": ";AAKA,QAAQ,IAAI,WAAW;;;;;AAIvB,YAAQ,IAAI,UAAU;;;;;;;;uBARpB,oBAAiB,WAAd,MAAU",
   "sources": [
-    "/root/Ts.vue",
+    "source-maps:///root/Ts.vue",
   ],
   "sourcesContent": [
     "<template>

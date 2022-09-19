@@ -17,7 +17,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../plugins/asset'
 import { getDepsOptimizer } from '../optimizer'
-import { injectSourcesContent } from './sourcemap'
+import { addNamespace, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 
 const debugLoad = createDebugger('vite:load')
@@ -252,8 +252,11 @@ async function loadAndTransform(
 
   if (map && mod.file) {
     map = (typeof map === 'string' ? JSON.parse(map) : map) as SourceMap
-    if (map.mappings && !map.sourcesContent) {
-      await injectSourcesContent(map, mod.file, logger)
+    if (map.mappings) {
+      if (!map.sourcesContent) {
+        await injectSourcesContent(map, mod.file, logger)
+      }
+      addNamespace(map)
     }
   }
 

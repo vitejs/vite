@@ -42,7 +42,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACT,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
         "sources": [
-          "/root/linked.css",
+          "source-maps:///root/linked.css",
         ],
         "sourcesContent": [
           ".linked {
@@ -70,8 +70,8 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/be-imported.css",
-          "/root/linked-with-import.css",
+          "source-maps:///root/be-imported.css",
+          "source-maps:///root/linked-with-import.css",
         ],
         "sourcesContent": [
           ".be-imported {
@@ -109,7 +109,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
         "sources": [
-          "/root/imported.css",
+          "source-maps:///root/imported.css",
         ],
         "sourcesContent": [
           ".imported {
@@ -129,8 +129,8 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/be-imported.css",
-          "/root/imported-with-import.css",
+          "source-maps:///root/be-imported.css",
+          "source-maps:///root/imported-with-import.css",
         ],
         "sourcesContent": [
           ".be-imported {
@@ -156,7 +156,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.sass",
+          "source-maps:///root/imported.sass",
         ],
         "sourcesContent": [
           ".imported
@@ -176,7 +176,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.module.sass",
+          "source-maps:///root/imported.module.sass",
         ],
         "sourcesContent": [
           ".imported
@@ -196,7 +196,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.less",
+          "source-maps:///root/imported.less",
         ],
         "sourcesContent": [
           ".imported {
@@ -218,7 +218,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE,cAAM",
         "sources": [
-          "/root/imported.styl",
+          "source-maps:///root/imported.styl",
         ],
         "sourcesContent": [
           ".imported
@@ -265,7 +265,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACT,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
         "sources": [
-          "/root/linked.css",
+          "source-maps:///root/linked.css",
         ],
         "sourcesContent": [
           ".linked {
@@ -293,8 +293,8 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/be-imported.css",
-          "/root/linked-with-import.css",
+          "source-maps:///root/be-imported.css",
+          "source-maps:///root/linked-with-import.css",
         ],
         "sourcesContent": [
           ".be-imported {
@@ -320,7 +320,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACX,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;AACb,CAAC;",
         "sources": [
-          "/root/imported.css",
+          "source-maps:///root/imported.css",
         ],
         "sourcesContent": [
           ".imported {
@@ -340,8 +340,8 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AAAA;EACE,UAAU;AACZ;;ACAA;EACE,UAAU;AACZ",
         "sources": [
-          "/root/be-imported.css",
-          "/root/imported-with-import.css",
+          "source-maps:///root/be-imported.css",
+          "source-maps:///root/imported-with-import.css",
         ],
         "sourcesContent": [
           ".be-imported {
@@ -367,7 +367,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.sass",
+          "source-maps:///root/imported.sass",
         ],
         "sourcesContent": [
           ".imported
@@ -387,7 +387,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.module.sass",
+          "source-maps:///root/imported.module.sass",
         ],
         "sourcesContent": [
           ".imported
@@ -407,7 +407,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE",
         "sources": [
-          "/root/imported.less",
+          "source-maps:///root/imported.less",
         ],
         "sourcesContent": [
           ".imported {
@@ -429,7 +429,7 @@ describe.runIf(isServe)('serve', () => {
       {
         "mappings": "AACE;EACE,cAAM",
         "sources": [
-          "/root/imported.styl",
+          "source-maps:///root/imported.styl",
         ],
         "sourcesContent": [
           ".imported
