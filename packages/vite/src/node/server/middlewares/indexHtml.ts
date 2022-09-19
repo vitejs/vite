@@ -19,19 +19,15 @@ import {
 } from '../../plugins/html'
 import type { ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
-import {
-  CLIENT_PUBLIC_PATH,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
-} from '../../constants'
+import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
   cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   injectQuery,
   normalizePath,
-  processSrcSetSync
+  processSrcSetSync,
+  wrapId
 } from '../../utils'
 import type { ModuleGraph } from '../moduleGraph'
 
@@ -144,7 +140,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = `${VALID_ID_PREFIX}${NULL_BYTE_PLACEHOLDER}${validPath}`
+    proxyModuleUrl = wrapId(proxyModulePath)
   }
 
   const s = new MagicString(html)

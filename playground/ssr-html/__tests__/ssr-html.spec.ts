@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
-import { page } from '~utils'
+import { editFile, isServe, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -37,5 +37,21 @@ describe('injected inline scripts', () => {
     for (const code of scriptContents) {
       expect(code).toBeTruthy()
     }
+  })
+})
+
+describe.runIf(isServe)('hmr', () => {
+  test('handle virtual module updates', async () => {
+    await page.goto(url)
+    const el = await page.$('.virtual')
+    expect(await el.textContent()).toBe('[success]')
+    editFile('src/importedVirtual.js', (code) =>
+      code.replace('[success]', '[wow]')
+    )
+    await page.waitForNavigation()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual')
+      return await el.textContent()
+    }, '[wow]')
   })
 })

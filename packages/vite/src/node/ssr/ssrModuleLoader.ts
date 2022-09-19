@@ -12,7 +12,6 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { hookNodeResolve } from '../plugins/ssrRequireHook'
-import { NULL_BYTE_PLACEHOLDER } from '../constants'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -38,7 +37,7 @@ export async function ssrLoadModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean
 ): Promise<SSRModule> {
-  url = unwrapId(url).replace(NULL_BYTE_PLACEHOLDER, '\0')
+  url = unwrapId(url)
 
   // when we instantiate multiple dependency modules in parallel, they may
   // point to shared modules. We need to avoid duplicate instantiation attempts
@@ -138,7 +137,7 @@ async function instantiateModule(
       return nodeImport(dep, mod.file!, resolveOptions)
     }
     // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
-    dep = unwrapId(dep).replace(NULL_BYTE_PLACEHOLDER, '\0')
+    dep = unwrapId(dep)
     if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
       pendingDeps.push(dep)
       if (pendingDeps.length === 1) {

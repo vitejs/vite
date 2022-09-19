@@ -48,7 +48,22 @@ export async function createServer(root = process.cwd(), hmrPort) {
         port: hmrPort
       }
     },
-    appType: 'custom'
+    appType: 'custom',
+    plugins: [
+      {
+        name: 'virtual-file',
+        resolveId(id) {
+          if (id === 'virtual:file') {
+            return '\0virtual:file'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:file') {
+            return 'import { virtual } from "/src/importedVirtual.js"; export { virtual };'
+          }
+        }
+      }
+    ]
   })
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
