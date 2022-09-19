@@ -13,7 +13,7 @@ Another special value is `'esnext'` - which assumes native dynamic imports suppo
 - If the [`build.minify`](#build-minify) option is `'terser'`, `'esnext'` will be forced down to `'es2021'`.
 - In other cases, it will perform no transpilation at all.
 
-The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be a ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
+The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be an ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
 Note the build will fail if the code contains features that cannot be safely transpiled by esbuild. See [esbuild docs](https://esbuild.github.io/content-types/#javascript) for more details.
 
@@ -53,8 +53,10 @@ Specify the directory to nest generated assets under (relative to `build.outDir`
 
 Imported or referenced assets that are smaller than this threshold will be inlined as base64 URLs to avoid extra http requests. Set to `0` to disable inlining altogether.
 
+Git LFS placeholders are automatically excluded from inlining because they do not contain the content of the file they represent.
+
 ::: tip Note
-If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size.
+If you specify `build.lib`, `build.assetsInlineLimit` will be ignored and assets will always be inlined, regardless of file size or being a Git LFS placeholder.
 :::
 
 ## build.cssCodeSplit
@@ -75,7 +77,7 @@ If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 - **Type:** `string | string[]`
 - **Default:** the same as [`build.target`](#build-target)
 
-This options allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
+This option allows users to set a different browser target for CSS minification from the one used for JavaScript transpilation.
 
 It should only be used when you are targeting a non-mainstream browser.
 One example is Android WeChat WebView, which supports most modern JavaScript features but not the [`#RGBA` hexadecimal color notation in CSS](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#rgb_colors).
@@ -128,7 +130,7 @@ When set to `true`, the build will also generate a `manifest.json` file that con
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-When set to `true`, the build will also generate a SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
+When set to `true`, the build will also generate an SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
 
 ## build.ssr
 
@@ -145,7 +147,7 @@ Produce SSR-oriented build. The value can be a string to directly specify the SS
 
 Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
-Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and break tree-shaking.
+Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking.
 
 Terser must be installed when it is set to `'terser'`.
 

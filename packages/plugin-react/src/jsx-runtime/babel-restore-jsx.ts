@@ -76,7 +76,7 @@ export default function (
 
   /**
    * Get a JSXIdentifier or JSXMemberExpression from a Node of known type.
-   * Returns null if a unknown node type, null or undefined is passed.
+   * Returns null if an unknown node type, null or undefined is passed.
    */
   function getJSXName(node: any): any {
     if (node == null) {
@@ -100,7 +100,7 @@ export default function (
   }
 
   /**
-   * Get a array of JSX(Spread)Attribute from a props ObjectExpression.
+   * Get an array of JSX(Spread)Attribute from a props ObjectExpression.
    * Handles the _extends Expression babel creates from SpreadElement nodes.
    * Returns null if a validation error occurs.
    */
@@ -126,14 +126,20 @@ export default function (
     if (!isPlainObjectExpression(node)) {
       return null
     }
-    return node.properties.map((prop: any) =>
-      t.isObjectProperty(prop)
-        ? t.jsxAttribute(
-            getJSXIdentifier(prop.key)!,
-            getJSXAttributeValue(prop.value)
-          )
-        : t.jsxSpreadAttribute(prop.argument)
-    )
+    return node.properties
+      .map((prop: any) =>
+        t.isObjectProperty(prop)
+          ? t.jsxAttribute(
+              getJSXIdentifier(prop.key)!,
+              getJSXAttributeValue(prop.value)
+            )
+          : t.jsxSpreadAttribute(prop.argument)
+      )
+      .filter((prop: any) =>
+        t.isJSXIdentifier(prop.name)
+          ? prop.name.name !== '__self' && prop.name.name !== '__source'
+          : true
+      )
   }
 
   function getJSXChild(node: any) {

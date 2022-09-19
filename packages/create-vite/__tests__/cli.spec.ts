@@ -11,8 +11,8 @@ const genPath = join(__dirname, projectName)
 
 const run = (
   args: string[],
-  options: SyncOptions<string> = {}
-): ExecaSyncReturnValue<string> => {
+  options: SyncOptions = {}
+): ExecaSyncReturnValue => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
 
