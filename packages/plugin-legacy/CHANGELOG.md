@@ -1,3 +1,12 @@
+## 2.2.0 (2022-09-19)
+
+* docs(plugin-legacy): fix Vite default target (#10158) ([62ff788](https://github.com/vitejs/vite/commit/62ff788)), closes [#10158](https://github.com/vitejs/vite/issues/10158)
+* fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
+* fix(deps): update all non-major dependencies (#9985) ([855f2f0](https://github.com/vitejs/vite/commit/855f2f0)), closes [#9985](https://github.com/vitejs/vite/issues/9985)
+* fix(plugin-legacy): force set `build.target` (#10072) ([a13a7eb](https://github.com/vitejs/vite/commit/a13a7eb)), closes [#10072](https://github.com/vitejs/vite/issues/10072)
+
+
+
 ## 2.1.0 (2022-09-05)
 
 
