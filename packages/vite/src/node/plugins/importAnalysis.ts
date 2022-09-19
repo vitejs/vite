@@ -534,9 +534,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // record for HMR import chain analysis
-          // make sure to normalize away base
-          const urlWithoutBase = url.replace(base, '/')
-          importedUrls.add(urlWithoutBase)
+          // make sure to unwrap and normalize away base
+          const hmrUrl = unwrapId(url).replace(base, '/')
+          importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {
             extractImportedBindings(
@@ -549,7 +549,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (!isDynamicImport) {
             // for pre-transforming
-            staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
+            staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!importer.includes('node_modules')) {
@@ -710,7 +710,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
-          url = unwrapId(removeImportQuery(url))
+          url = removeImportQuery(url)
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
