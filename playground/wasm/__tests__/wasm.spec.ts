@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, page, untilUpdated } from '~utils'
 
 test('should work when inlined', async () => {

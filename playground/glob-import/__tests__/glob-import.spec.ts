@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import {
   addFile,
   editFile,
@@ -15,6 +16,9 @@ const filteredResult = {
   },
   './foo.js': {
     msg: 'foo'
+  },
+  "./quote'.js": {
+    msg: 'single-quote'
   }
 }
 
@@ -61,6 +65,9 @@ const allResult = {
       '../baz.json': json
     },
     msg: 'bar'
+  },
+  "/dir/quote'.js": {
+    msg: 'single-quote'
   }
 }
 

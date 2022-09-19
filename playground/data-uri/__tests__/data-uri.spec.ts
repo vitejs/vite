@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { findAssetFile, isBuild, page } from '~utils'
 
 test('plain', async () => {

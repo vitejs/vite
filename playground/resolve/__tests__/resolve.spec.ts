@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import { isBuild, isWindows, page } from '~utils'
 
 test('bom import', async () => {
@@ -85,6 +86,18 @@ test('absolute path', async () => {
 
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
+})
+
+test('Resolve browser field even if module field exists', async () => {
+  expect(await page.textContent('.browser-module1')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely UMD or CJS', async () => {
+  expect(await page.textContent('.browser-module2')).toMatch('[success]')
+})
+
+test('Resolve module field if browser field is likely IIFE', async () => {
+  expect(await page.textContent('.browser-module3')).toMatch('[success]')
 })
 
 test('css entry', async () => {

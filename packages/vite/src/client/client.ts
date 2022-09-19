@@ -101,7 +101,7 @@ function setupWebSocket(
     }
 
     console.log(`[vite] server connection lost. polling for restart...`)
-    await waitForSuccessfulPing(hostAndPath)
+    await waitForSuccessfulPing(protocol, hostAndPath)
     location.reload()
   })
 
@@ -126,6 +126,7 @@ function cleanUrl(pathname: string): string {
 }
 
 let isFirstUpdate = true
+const outdatedLinkTags = new WeakSet<HTMLLinkElement>()
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
@@ -166,7 +167,10 @@ async function handleMessage(payload: HMRPayload) {
           // URL for the include check.
           const el = Array.from(
             document.querySelectorAll<HTMLLinkElement>('link')
-          ).find((e) => cleanUrl(e.href).includes(searchUrl))
+          ).find(
+            (e) =>
+              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
+          )
           if (el) {
             const newPath = `${base}${searchUrl.slice(1)}${
               searchUrl.includes('?') ? '&' : '?'
@@ -182,6 +186,7 @@ async function handleMessage(payload: HMRPayload) {
             const removeOldEl = () => el.remove()
             newLinkTag.addEventListener('load', removeOldEl)
             newLinkTag.addEventListener('error', removeOldEl)
+            outdatedLinkTags.add(el)
             el.after(newLinkTag)
           }
           console.log(`[vite] css hot updated: ${searchUrl}`)
@@ -292,14 +297,22 @@ async function queueUpdate(p: Promise<(() => void) | undefined>) {
   }
 }
 
-async function waitForSuccessfulPing(hostAndPath: string, ms = 1000) {
+async function waitForSuccessfulPing(
+  socketProtocol: string,
+  hostAndPath: string,
+  ms = 1000
+) {
+  const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
+
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       // A fetch on a websocket URL will return a successful promise with status 400,
       // but will reject a networking error.
       // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
-      await fetch(`${location.protocol}//${hostAndPath}`, { mode: 'no-cors' })
+      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
+        mode: 'no-cors'
+      })
       break
     } catch (e) {
       // wait ms before attempting to ping again

@@ -1,6 +1,6 @@
 {
   "name": "@vitejs/plugin-legacy",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "license": "MIT",
   "author": "Evan You",
   "files": [
@@ -39,7 +39,7 @@
     "core-js": "^3.24.1",
     "magic-string": "^0.26.2",
     "regenerator-runtime": "^0.13.9",
-    "systemjs": "^6.12.1"
+    "systemjs": "^6.12.2"
   },
   "peerDependencies": {
     "terser": "^5.4.0",

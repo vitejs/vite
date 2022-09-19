@@ -47,14 +47,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     content: string | Uint8Array,
     type: WriteType,
     maxLength: number,
+    outDir = config.build.outDir,
     compressedSize = ''
   ) {
-    const outDir =
+    outDir =
       normalizePath(
-        path.relative(
-          config.root,
-          path.resolve(config.root, config.build.outDir)
-        )
+        path.relative(config.root, path.resolve(config.root, outDir))
       ) + '/'
     const kibs = content.length / 1024
     const sizeColor = kibs > chunkLimit ? colors.yellow : colors.dim
@@ -137,7 +135,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async writeBundle(_, output) {
+    async writeBundle({ dir: outDir }, output) {
       let hasLargeChunks = false
 
       if (shouldLogInfo) {
@@ -161,6 +159,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   chunk.code,
                   WriteType.JS,
                   longest,
+                  outDir,
                   await getCompressedSize(chunk.code)
                 )
                 if (chunk.map) {
@@ -168,7 +167,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     chunk.fileName + '.map',
                     chunk.map.toString(),
                     WriteType.SOURCE_MAP,
-                    longest
+                    longest,
+                    outDir
                   )
                 }
               }
@@ -190,6 +190,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                   ? WriteType.SOURCE_MAP
                   : WriteType.ASSET,
                 longest,
+                outDir,
                 isCSS ? await getCompressedSize(chunk.source) : undefined
               )
             }

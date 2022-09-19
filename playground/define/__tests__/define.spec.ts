@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
 import { page } from '~utils'
 

@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
