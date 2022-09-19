@@ -359,7 +359,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
             const depModule = await moduleGraph.ensureEntryFromUrl(
-              url,
+              unwrapId(url),
               ssr,
               canSkipImportAnalysis(url)
             )
@@ -535,7 +535,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // record for HMR import chain analysis
           // make sure to unwrap and normalize away base
-          const hmrUrl = unwrapId(url).replace(base, '/')
+          const hmrUrl = unwrapId(url.replace(base, '/'))
           importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {
