@@ -1,4 +1,4 @@
-import { posix } from 'node:path'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { loadEnv } from '../env'
@@ -7,7 +7,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 describe('loadEnv', () => {
   test('basic', () => {
-    expect(loadEnv('development', posix.join(__dirname, './env')))
+    expect(loadEnv('development', join(__dirname, './env')))
       .toMatchInlineSnapshot(`
       {
         "VITE_APP_BASE_ROUTE": "/",
@@ -20,7 +20,7 @@ describe('loadEnv', () => {
   })
 
   test('specific prefix', () => {
-    expect(loadEnv('development', posix.join(__dirname, './env'), 'VVITE'))
+    expect(loadEnv('development', join(__dirname, './env'), 'VVITE'))
       .toMatchInlineSnapshot(`
         {
           "VVITE_A": "A",
@@ -30,7 +30,7 @@ describe('loadEnv', () => {
   })
 
   test('override', () => {
-    expect(loadEnv('production', posix.join(__dirname, './env')))
+    expect(loadEnv('production', join(__dirname, './env')))
       .toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "/app/",
@@ -41,13 +41,13 @@ describe('loadEnv', () => {
   })
 
   test('VITE_USER_NODE_ENV', () => {
-    loadEnv('development', posix.join(__dirname, './env'))
+    loadEnv('development', join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('production')
   })
 
   test('Already exists VITE_USER_NODE_ENV', () => {
     process.env.VITE_USER_NODE_ENV = 'test'
-    loadEnv('development', posix.join(__dirname, './env'))
+    loadEnv('development', join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('test')
   })
 })
