@@ -6,7 +6,7 @@ import { loadEnv } from '../env'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 describe('loadEnv', () => {
-  test('basic', async () => {
+  test('basic', () => {
     expect(loadEnv('development', posix.join(__dirname, './env')))
       .toMatchInlineSnapshot(`
       {
@@ -19,7 +19,7 @@ describe('loadEnv', () => {
     `)
   })
 
-  test('specific prefix', async () => {
+  test('specific prefix', () => {
     expect(loadEnv('development', posix.join(__dirname, './env'), 'VVITE'))
       .toMatchInlineSnapshot(`
         {
@@ -29,7 +29,7 @@ describe('loadEnv', () => {
       `)
   })
 
-  test('override', async () => {
+  test('override', () => {
     expect(loadEnv('production', posix.join(__dirname, './env')))
       .toMatchInlineSnapshot(`
         {
@@ -40,12 +40,12 @@ describe('loadEnv', () => {
       `)
   })
 
-  test('VITE_USER_NODE_ENV', async () => {
+  test('VITE_USER_NODE_ENV', () => {
     loadEnv('development', posix.join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('production')
   })
 
-  test('Already exists VITE_USER_NODE_ENV', async () => {
+  test('Already exists VITE_USER_NODE_ENV', () => {
     process.env.VITE_USER_NODE_ENV = 'test'
     loadEnv('development', posix.join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual('test')
