@@ -40,7 +40,7 @@ export function loadEnv(
     if (!path) return prev
 
     const output = dotenv.parse(fs.readFileSync(path), {
-      debug: process.env.DEBUG?.includes('vite:dotenv') || undefined
+      debug: process.env.DEBUG?.includes('vite:dotenv')
     })
     return { ...prev, ...output }
   }, {})
