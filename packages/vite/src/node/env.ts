@@ -35,15 +35,20 @@ export function loadEnv(
     }
   }
 
-  const parsed: Record<string, any> = envFiles.reduce((prev, file) => {
-    const path = lookupFile(envDir, [file], { pathOnly: true, rootDir: envDir })
-    if (!path) return prev
-
-    const output = dotenv.parse(fs.readFileSync(path), {
-      debug: process.env.DEBUG?.includes('vite:dotenv')
+  const parsed = Object.fromEntries(
+    envFiles.flatMap((file) => {
+      const path = lookupFile(envDir, [file], {
+        pathOnly: true,
+        rootDir: envDir
+      })
+      if (!path) return []
+      return Object.entries(
+        dotenv.parse(fs.readFileSync(path), {
+          debug: process.env.DEBUG?.includes('vite:dotenv')
+        })
+      )
     })
-    return { ...prev, ...output }
-  }, {})
+  )
 
   // let environment variables use each other
   dotenvExpand({
