@@ -1085,6 +1085,20 @@ importers:
       express: 4.18.1
       serve-static: 1.15.0
 
+  playground/ssr-resolve:
+    specifiers:
+      entries: file:./entries
+      pkg-exports: file:./pkg-exports
+    dependencies:
+      entries: file:playground/ssr-resolve/entries
+      pkg-exports: file:playground/ssr-resolve/pkg-exports
+
+  playground/ssr-resolve/entries:
+    specifiers: {}
+
+  playground/ssr-resolve/pkg-exports:
+    specifiers: {}
+
   playground/ssr-vue:
     specifiers:
       '@vitejs/plugin-vue': workspace:*
@@ -9320,6 +9334,18 @@ packages:
   file:playground/ssr-deps/ts-transpiled-exports:
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
     name: ts-transpiled-exports
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-resolve/entries:
+    resolution: {directory: playground/ssr-resolve/entries, type: directory}
+    name: entries
+    version: 0.0.0
+    dev: false
+
+  file:playground/ssr-resolve/pkg-exports:
+    resolution: {directory: playground/ssr-resolve/pkg-exports, type: directory}
+    name: pkg-exports-cjs
     version: 0.0.0
     dev: false
 
