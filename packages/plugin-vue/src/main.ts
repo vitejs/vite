@@ -213,9 +213,11 @@ export async function transformMain(
 
   // handle TS transpilation
   let resolvedCode = output.join('\n')
+  const lang = descriptor.scriptSetup?.lang || descriptor.script?.lang
+
   if (
-    (descriptor.script?.lang === 'ts' ||
-      descriptor.scriptSetup?.lang === 'ts') &&
+    lang &&
+    /tsx?$/.test(lang) &&
     !descriptor.script?.src // only normal script can have src
   ) {
     const { code, map } = await transformWithEsbuild(
