@@ -721,7 +721,11 @@ export function tryNodeResolve(
     let resolvedId = id
     if (isDeepImport) {
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
-        resolvedId += resolvedExt
+        resolvedId = resolved.id.slice(resolved.id.indexOf(id))
+        isDebug &&
+          debug(
+            `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`
+          )
       }
     }
     return { ...resolved, id: resolvedId, external: true }

@@ -15,9 +15,7 @@ import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-  VALID_ID_PREFIX
+  FS_PREFIX
 } from '../constants'
 import {
   debugHmr,
@@ -42,7 +40,8 @@ import {
   stripBomTag,
   timeFrom,
   transformStableResult,
-  unwrapId
+  unwrapId,
+  wrapId
 } from '../utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -330,8 +329,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // prefix it to make it valid. We will strip this before feeding it
         // back into the transform pipeline
         if (!url.startsWith('.') && !url.startsWith('/')) {
-          url =
-            VALID_ID_PREFIX + resolved.id.replace('\0', NULL_BYTE_PLACEHOLDER)
+          url = wrapId(resolved.id)
         }
 
         // make the URL browser-valid if not SSR
@@ -361,7 +359,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
             const depModule = await moduleGraph.ensureEntryFromUrl(
-              url,
+              unwrapId(url),
               ssr,
               canSkipImportAnalysis(url)
             )
@@ -536,9 +534,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // record for HMR import chain analysis
-          // make sure to normalize away base
-          const urlWithoutBase = url.replace(base, '/')
-          importedUrls.add(urlWithoutBase)
+          // make sure to unwrap and normalize away base
+          const hmrUrl = unwrapId(url.replace(base, '/'))
+          importedUrls.add(hmrUrl)
 
           if (enablePartialAccept && importedBindings) {
             extractImportedBindings(
@@ -551,7 +549,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (!isDynamicImport) {
             // for pre-transforming
-            staticImportedUrls.add({ url: urlWithoutBase, id: resolvedId })
+            staticImportedUrls.add({ url: hmrUrl, id: resolvedId })
           }
         } else if (!importer.startsWith(clientDir)) {
           if (!importer.includes('node_modules')) {
@@ -712,10 +710,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // by the deps optimizer
       if (config.server.preTransformRequests && staticImportedUrls.size) {
         staticImportedUrls.forEach(({ url, id }) => {
-          url = unwrapId(removeImportQuery(url)).replace(
-            NULL_BYTE_PLACEHOLDER,
-            '\0'
-          )
+          url = removeImportQuery(url)
           transformRequest(url, server, { ssr }).catch((e) => {
             if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
               // This are expected errors
