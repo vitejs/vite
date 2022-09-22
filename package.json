@@ -51,6 +51,7 @@
     "@types/micromatch": "^4.0.2",
     "@types/minimist": "^1.2.2",
     "@types/node": "^17.0.42",
+    "@types/picomatch": "^2.3.0",
     "@types/prompts": "^2.0.14",
     "@types/resolve": "^1.20.2",
     "@types/sass": "~1.43.1",

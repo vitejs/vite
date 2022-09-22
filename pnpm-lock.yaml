@@ -25,6 +25,7 @@ importers:
       '@types/micromatch': ^4.0.2
       '@types/minimist': ^1.2.2
       '@types/node': ^17.0.42
+      '@types/picomatch': ^2.3.0
       '@types/prompts': ^2.0.14
       '@types/resolve': ^1.20.2
       '@types/sass': ~1.43.1
@@ -80,6 +81,7 @@ importers:
       '@types/micromatch': 4.0.2
       '@types/minimist': 1.2.2
       '@types/node': 17.0.42
+      '@types/picomatch': 2.3.0
       '@types/prompts': 2.0.14
       '@types/resolve': 1.20.2
       '@types/sass': 1.43.1
@@ -251,6 +253,7 @@ importers:
       parse5: ^7.1.1
       periscopic: ^3.0.4
       picocolors: ^1.0.0
+      picomatch: ^2.3.1
       postcss: ^8.4.16
       postcss-import: ^15.0.0
       postcss-load-config: ^4.0.1
@@ -314,6 +317,7 @@ importers:
       parse5: 7.1.1
       periscopic: 3.0.4
       picocolors: 1.0.0
+      picomatch: 2.3.1
       postcss-import: 15.0.0_postcss@8.4.16
       postcss-load-config: 4.0.1_postcss@8.4.16
       postcss-modules: 5.0.0_postcss@8.4.16
@@ -2545,6 +2549,10 @@ packages:
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
+
+  /@types/picomatch/2.3.0:
+    resolution: {integrity: sha512-O397rnSS9iQI4OirieAtsDqvCj4+3eY1J+EPdNTKuHuRWIfUoGyzX294o8C4KJYaLqgSrd2o60c5EqCU8Zv02g==}
+    dev: true
 
   /@types/prompts/2.0.14:
     resolution: {integrity: sha512-HZBd99fKxRWpYCErtm2/yxUZv6/PBI9J7N4TNFffl5JbrYMHBwF25DjQGTW3b3jmXq+9P6/8fCIb2ee57BFfYA==}
@@ -5206,6 +5214,19 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dev: false
+
+  /follow-redirects/1.15.0_debug@4.3.4:
+    resolution: {integrity: sha512-aExlJShTV4qOUOL7yF1U5tvLCB0xQuudbf6toyYA0E/acBNw71mvjFTnLaRp50aQaYocMR0a/RMMBIHeZnGyjQ==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dependencies:
+      debug: 4.3.4
+    dev: true
 
   /form-data/4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
@@ -5599,7 +5620,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.0
+      follow-redirects: 1.15.0_debug@4.3.4
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug

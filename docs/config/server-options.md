@@ -297,10 +297,9 @@ export default defineConfig({
 ## server.fs.deny
 
 - **Type:** `string[]`
+- **Default:** `['.env', '.env.*', '*.{pem,crt}']`
 
-Blocklist for sensitive files being restricted to be served by Vite dev server.
-
-Default to `['.env', '.env.*', '*.{pem,crt}']`.
+Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
 ## server.origin
 
