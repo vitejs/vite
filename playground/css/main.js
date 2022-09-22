@@ -109,3 +109,5 @@ document
   .classList.add(aliasModule.aliasedModule)
 
 import './unsupported.css'
+
+import './async/index'
