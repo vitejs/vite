@@ -121,8 +121,7 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined,
-  cacheDir: string
+  https: boolean | HttpsServerOptions | undefined
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
