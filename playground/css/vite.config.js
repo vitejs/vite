@@ -45,9 +45,14 @@ module.exports = {
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer(url) {
-          if (url === 'virtual-dep') return { contents: '' }
-        }
+        importer: [
+          function (url) {
+            return url === 'virtual-dep' ? { contents: '' } : null
+          },
+          function (url) {
+            return url.endsWith('.wxss') ? { contents: '' } : null
+          }
+        ]
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
