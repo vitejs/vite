@@ -295,10 +295,7 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const { root, server: serverConfig } = config
-  const httpsOptions = await resolveHttpsConfig(
-    config.server.https,
-    config.cacheDir
-  )
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
   const resolvedWatchOptions = resolveChokidarOptions({
