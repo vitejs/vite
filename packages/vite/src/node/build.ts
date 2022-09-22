@@ -232,9 +232,7 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 export type ResolvedBuildOptions = Required<BuildOptions>
 
 export function resolveBuildOptions(
-  raw: BuildOptions | undefined,
-  isBuild: boolean,
-  logger: Logger
+  raw: BuildOptions | undefined
 ): ResolvedBuildOptions {
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
