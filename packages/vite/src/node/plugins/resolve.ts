@@ -1006,8 +1006,8 @@ function resolveExports(
   }
 
   return _resolveExports(pkg, key, {
-    browser: targetWeb,
-    require: options.isRequire,
+    browser: targetWeb && !conditions.includes('node'),
+    require: options.isRequire && !conditions.includes('import'),
     conditions
   })
 }
