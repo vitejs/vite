@@ -33,10 +33,11 @@ const template = /*html*/ `
 .window {
   font-family: var(--monospace);
   line-height: 1.5;
-  width: 800px;
+  width: 100%;
+  box-sizing: border-box;
   color: #d8d8d8;
   margin: 30px auto;
-  padding: 25px 40px;
+  padding: 3% 5%;
   position: relative;
   background: #181818;
   border-radius: 6px 6px 8px 8px;
@@ -68,6 +69,7 @@ pre::-webkit-scrollbar {
 
 .message-body {
   color: var(--red);
+  word-break: break-word;
 }
 
 .plugin {
