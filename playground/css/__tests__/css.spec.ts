@@ -9,7 +9,8 @@ import {
   page,
   removeFile,
   serverLogs,
-  untilUpdated
+  untilUpdated,
+  withRetry
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -454,4 +455,18 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
     // no warning from esbuild css minifier
     expect(log).not.toMatch('unsupported-css-property')
   })
+})
+
+// NOTE: the match inline snapshot should generate by build mode
+test('async css order', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
+    expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
+  }, true)
+})
+
+test('async css order with css modules', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
+  }, true)
 })
