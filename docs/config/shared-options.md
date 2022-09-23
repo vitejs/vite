@@ -158,6 +158,16 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
+## resolve.browserField
+
+- **Type:** `boolean`
+- **Default:** `true`
+- **Deprecated**
+
+Whether to enable resolving to `browser` field.
+
+In future, `resolve.mainFields`'s default value will be `['browser', 'module', 'jsnext:main', 'jsnext']` and this option will be removed.
+
 ## resolve.extensions
 
 - **Type:** `string[]`

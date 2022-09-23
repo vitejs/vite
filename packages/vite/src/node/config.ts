@@ -43,6 +43,8 @@ import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
+  DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -321,7 +323,7 @@ export type ResolvedConfig = Readonly<
     mainConfig: ResolvedConfig | null
     isProduction: boolean
     env: Record<string, any>
-    resolve: ResolveOptions & {
+    resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
     plugins: readonly Plugin[]
@@ -474,7 +476,12 @@ export async function resolveConfig(
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
-    ...config.resolve,
+    mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    browserField: config.resolve?.browserField ?? true,
+    conditions: config.resolve?.conditions ?? [],
+    extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
+    dedupe: config.resolve?.dedupe ?? [],
+    preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
     alias: resolvedAlias
   }
 
@@ -581,8 +588,8 @@ export async function resolveConfig(
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
   const ssr = resolveSSROptions(
     config.ssr,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-    config.resolve?.preserveSymlinks
+    resolveOptions.preserveSymlinks,
+    config.legacy?.buildSsrCjsExternalHeuristics
   )
 
   const middlewareMode = config?.server?.middlewareMode
@@ -649,7 +656,7 @@ export async function resolveConfig(
       disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
-        preserveSymlinks: config.resolve?.preserveSymlinks,
+        preserveSymlinks: resolveOptions.preserveSymlinks,
         ...optimizeDeps.esbuildOptions
       }
     },
