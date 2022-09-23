@@ -29,6 +29,7 @@ import {
   isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
+  isOptimizable,
   isPossibleTsOutput,
   isTsRequest,
   isWindows,
@@ -175,10 +176,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // as if they would have been imported through a bare import
           // Use the original id to do the check as the resolved id may be the real
           // file path after symlinks resolution
-          const isNodeModule = !!normalizePath(id).match(nodeModulesInPathRE)
+          const isNodeModule =
+            nodeModulesInPathRE.test(normalizePath(id)) ||
+            nodeModulesInPathRE.test(normalizePath(resolved))
+
           if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
             const versionHash = depsOptimizer.metadata.browserHash
-            if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+            if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
               resolved = injectQuery(resolved, `v=${versionHash}`)
             }
           }
@@ -717,7 +721,11 @@ export function tryNodeResolve(
     let resolvedId = id
     if (isDeepImport) {
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
-        resolvedId += resolvedExt
+        resolvedId = resolved.id.slice(resolved.id.indexOf(id))
+        isDebug &&
+          debug(
+            `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`
+          )
       }
     }
     return { ...resolved, id: resolvedId, external: true }
@@ -747,7 +755,9 @@ export function tryNodeResolve(
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
+  const isJsType = depsOptimizer
+    ? isOptimizable(resolved, depsOptimizer.options)
+    : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
   let include = depsOptimizer?.options.exclude
@@ -996,8 +1006,8 @@ function resolveExports(
   }
 
   return _resolveExports(pkg, key, {
-    browser: targetWeb,
-    require: options.isRequire,
+    browser: targetWeb && !conditions.includes('node'),
+    require: options.isRequire && !conditions.includes('import'),
     conditions
   })
 }

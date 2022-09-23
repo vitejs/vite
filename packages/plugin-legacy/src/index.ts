@@ -19,6 +19,7 @@ import type {
   RenderedChunk
 } from 'rollup'
 import type { PluginItem as BabelPlugin } from '@babel/core'
+import colors from 'picocolors'
 import type { Options } from './types'
 
 // lazy load babel since it's not used during dev
@@ -156,6 +157,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     })
   }
 
+  let overriddenBuildTarget = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
@@ -173,6 +175,18 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // So targeting `chrome61` suffices to fix the compatibility issue.
           config.build.cssTarget = 'chrome61'
         }
+
+        // Vite's default target browsers are **not** the same.
+        // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
+        overriddenBuildTarget = config.build.target !== undefined
+        // browsers supporting ESM + dynamic import + import.meta
+        config.build.target = [
+          'es2020',
+          'edge79',
+          'firefox67',
+          'chrome64',
+          'safari11.1'
+        ]
       }
 
       return {
@@ -182,6 +196,15 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               ? false
               : legacyEnvVarMarker
         }
+      }
+    },
+    configResolved(config) {
+      if (overriddenBuildTarget) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`
+          )
+        )
       }
     }
   }
