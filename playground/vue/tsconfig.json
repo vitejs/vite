@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    // esbuild transpile should ignore this
+    "target": "ES5"
+  },
+  "include": ["src"]
+}
