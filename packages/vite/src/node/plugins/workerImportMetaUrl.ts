@@ -38,7 +38,11 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   // need to find in comment code
-  const workerOptString = raw.substring(commaIndex + 1, endIndex)
+  let workerOptString = raw.substring(commaIndex + 1, endIndex).trim()
+  // strip trailing comma for parsing
+  if (workerOptString.endsWith(',')) {
+    workerOptString = workerOptString.slice(0, -1)
+  }
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -46,8 +50,8 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   // need to find in no comment code
-  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex)
-  if (!cleanWorkerOptString.trim().length) {
+  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex).trim()
+  if (!cleanWorkerOptString.length) {
     return 'classic'
   }
 
