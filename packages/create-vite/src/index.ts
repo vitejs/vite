@@ -29,8 +29,7 @@ type Framework = {
   name: string
   display: string
   color: ColorFunc
-  customCommand?: string
-  variants?: FrameworkVariant[]
+  variants: FrameworkVariant[]
 }
 type FrameworkVariant = {
   name: string
@@ -164,7 +163,14 @@ const FRAMEWORKS: Framework[] = [
     name: 'others',
     display: 'Others',
     color: reset,
-    customCommand: 'npm create vite-extra@latest TARGET_DIR'
+    variants: [
+      {
+        name: 'create-vite-extra',
+        display: 'create-vite-extra',
+        color: reset,
+        customCommand: 'npm create vite-extra@latest TARGET_DIR'
+      }
+    ]
   }
 ]
 
@@ -254,7 +260,7 @@ async function init() {
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>
-            framework.variants?.map((variant) => {
+            framework.variants.map((variant) => {
               const variantColor = variant.color
               return {
                 title: variantColor(variant.display || variant.name),
@@ -292,10 +298,8 @@ async function init() {
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
-  const customCommand =
-    FRAMEWORKS.find((f) => f.name === template)?.customCommand ??
-    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v?.name === template)
-      ?.customCommand
+  const { customCommand } =
+    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
 
   if (customCommand) {
     const fullCustomCommand = customCommand
