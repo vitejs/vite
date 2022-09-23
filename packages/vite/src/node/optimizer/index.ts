@@ -66,6 +66,8 @@ export interface DepsOptimizer {
   resetRegisteredIds: () => void
   ensureFirstRun: () => void
 
+  close: () => Promise<void>
+
   options: DepOptimizationOptions
 }
 
