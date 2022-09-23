@@ -12,7 +12,6 @@ module.exports = {
   ],
 
   build: {
-    minify: false,
     cssCodeSplit: false,
     manifest: true,
     rollupOptions: {

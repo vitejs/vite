@@ -1,18 +1,23 @@
-import * as http from 'node:http'
+import type * as http from 'node:http'
 import path, { dirname, join, resolve } from 'node:path'
 import os from 'node:os'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
-import {
+import type {
   InlineConfig,
   Logger,
   PluginOption,
-  preview,
   ResolvedConfig,
   UserConfig,
   ViteDevServer
 } from 'vite'
-import { build, createServer, loadConfigFromFile, mergeConfig } from 'vite'
+import {
+  build,
+  createServer,
+  loadConfigFromFile,
+  mergeConfig,
+  preview
+} from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
@@ -262,6 +267,11 @@ export async function startDefaultServe(): Promise<void> {
     if (isWatch) {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
+    }
+    // @ts-ignore
+    if (config && config.__test__) {
+      // @ts-ignore
+      config.__test__()
     }
     const _nodeEnv = process.env.NODE_ENV
     const previewServer = await preview(testConfig)
