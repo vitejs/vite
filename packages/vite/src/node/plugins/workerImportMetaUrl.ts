@@ -40,7 +40,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   // need to find in comment code
   const workerOptString = raw
     .substring(commaIndex + 1, endIndex)
-    .replace(/}[^]*,/, '}')
+    .replace(/}[^]*,/, '}') // trim trailing comma
 
   const hasViteIgnore = ignoreFlagRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -54,7 +54,6 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   let workerOpts: { type: WorkerType } = { type: 'classic' }
-
   try {
     workerOpts = JSON5.parse(workerOptString)
   } catch (e) {

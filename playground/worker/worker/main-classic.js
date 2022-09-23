@@ -16,11 +16,12 @@ classicWorker.addEventListener('message', ({ data }) => {
 })
 classicWorker.postMessage('ping')
 
+// prettier-ignore
 const classicSharedWorker = new SharedWorker(
   new URL('../classic-shared-worker.js', import.meta.url),
   {
     type: 'classic'
-  } // test trailing comma #10206
+  }, // test trailing comma #10206
 )
 classicSharedWorker.port.addEventListener('message', (ev) => {
   text('.classic-shared-worker', JSON.stringify(ev.data))
