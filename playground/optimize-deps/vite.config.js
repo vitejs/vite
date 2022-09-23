@@ -62,6 +62,12 @@ module.exports = {
           res.statusCode = 200
           res.end('pong')
         })
+      },
+      configurePreviewServer({ middlewares }) {
+        middlewares.use('/ping', (_, res) => {
+          res.statusCode = 200
+          res.end('pong')
+        })
       }
     },
     {
