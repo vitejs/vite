@@ -182,6 +182,14 @@
 <img class="import-meta-url-img" />
 <code class="import-meta-url"></code>
 
+<h2>new URL('@/...', import.meta.url)</h2>
+<img class="import-meta-url-dep-img" />
+<code class="import-meta-url-dep"></code>
+
+<h2>new URL('/...', import.meta.url)</h2>
+<img class="import-meta-url-base-path-img" />
+<code class="import-meta-url-base-path"></code>
+
 <h2>new URL('...', import.meta.url,) (with comma)</h2>
 <img class="import-meta-url-img-comma" />
 <code class="import-meta-url-comma"></code>
@@ -353,6 +361,16 @@
   const metaUrl = new URL('./nested/asset.png', import.meta.url)
   text('.import-meta-url', metaUrl)
   document.querySelector('.import-meta-url-img').src = metaUrl
+
+  const metaUrlDep = new URL('@/asset.png', import.meta.url)
+  text('.import-meta-url-dep', metaUrlDep)
+  document.querySelector('.import-meta-url-dep-img').src = metaUrlDep
+
+  // testing URLs for public assets served at the public base path
+  // equivalent to `new URL(`${import.meta.env.BASE_URL}/icon.png`, self.location)
+  const metaUrlBasePath = new URL('/icon.png', import.meta.url)
+  text('.import-meta-url-base-path', metaUrlBasePath)
+  document.querySelector('.import-meta-url-base-path-img').src = metaUrlBasePath
 
   // prettier-ignore
   const metaUrlWithComma = new URL('./nested/asset.png', import.meta.url,)

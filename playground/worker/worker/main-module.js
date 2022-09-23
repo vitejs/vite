@@ -65,6 +65,15 @@ w.addEventListener('message', (ev) =>
   text('.worker-import-meta-url', JSON.stringify(ev.data))
 )
 
+// url import worker with alias path
+const wResolve = new Worker(
+  new URL('@/url-worker.js', import.meta.url),
+  /* @vite-ignore */ workerOptions
+)
+wResolve.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-resolve', JSON.stringify(ev.data))
+)
+
 const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),

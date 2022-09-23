@@ -20,6 +20,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
@@ -88,6 +89,7 @@ export async function resolvePlugins(
     isBuild && config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
+    assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     dynamicImportVarsPlugin(config),
     importGlobPlugin(config),
