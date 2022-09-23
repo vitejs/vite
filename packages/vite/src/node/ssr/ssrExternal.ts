@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import type { InternalResolveOptions } from '../plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import {
   bareImportRE,
@@ -53,7 +53,7 @@ export function cjsSsrResolveExternals(
 
   cjsSsrCollectExternals(
     config.root,
-    config.resolve.preserveSymlinks,
+    config.resolve,
     ssrExternals,
     seen,
     config.logger
@@ -116,8 +116,8 @@ export function createIsConfiguredAsSsrExternal(
     createFilter(undefined, noExternal, { resolve: false })
 
   const resolveOptions: InternalResolveOptions = {
+    ...config.resolve,
     root,
-    preserveSymlinks: config.resolve.preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
@@ -211,7 +211,7 @@ function createIsSsrExternal(
 // is used reverting to the Vite 2.9 SSR externalization heuristics
 function cjsSsrCollectExternals(
   root: string,
-  preserveSymlinks: boolean | undefined,
+  resolveOptions: Required<ResolveOptions>,
   ssrExternals: Set<string>,
   seen: Set<string>,
   logger: Logger
@@ -227,9 +227,9 @@ function cjsSsrCollectExternals(
     ...rootPkg.dependencies
   }
 
-  const resolveOptions: InternalResolveOptions = {
+  const internalResolveOptions: InternalResolveOptions = {
+    ...resolveOptions,
     root,
-    preserveSymlinks,
     isProduction: false,
     isBuild: true
   }
@@ -247,7 +247,7 @@ function cjsSsrCollectExternals(
       esmEntry = tryNodeResolve(
         id,
         undefined,
-        resolveOptions,
+        internalResolveOptions,
         true, // we set `targetWeb` to `true` to get the ESM entry
         undefined,
         true
@@ -314,13 +314,7 @@ function cjsSsrCollectExternals(
   }
 
   for (const depRoot of depsToTrace) {
-    cjsSsrCollectExternals(
-      depRoot,
-      preserveSymlinks,
-      ssrExternals,
-      seen,
-      logger
-    )
+    cjsSsrCollectExternals(depRoot, resolveOptions, ssrExternals, seen, logger)
   }
 }
 
