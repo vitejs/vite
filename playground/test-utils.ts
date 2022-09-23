@@ -29,7 +29,8 @@ export const ports = {
   'ssr-vue': 9604,
   'ssr-webworker': 9605,
   'css/postcss-caching': 5005,
-  'css/postcss-plugins-different-dir': 5006
+  'css/postcss-plugins-different-dir': 5006,
+  'css/dynamic-import': 5007
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
