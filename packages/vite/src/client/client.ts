@@ -364,6 +364,7 @@ export function updateStyle(id: string, content: string): void {
     if (!style) {
       style = document.createElement('style')
       style.setAttribute('type', 'text/css')
+      style.setAttribute('data-vite-dev-id', id)
       style.innerHTML = content
       document.head.appendChild(style)
     } else {
