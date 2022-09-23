@@ -238,7 +238,7 @@ export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
 export interface ModulePreloadOptions {
   /**
-   * whether to inject module preload polyfill.
+   * Whether to inject a module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
    */
