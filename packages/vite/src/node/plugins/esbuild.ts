@@ -180,6 +180,7 @@ export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
     ...options,
+    target: 'esnext',
     minify: false,
     minifyIdentifiers: false,
     minifySyntax: false,
