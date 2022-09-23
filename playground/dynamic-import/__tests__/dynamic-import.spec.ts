@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { getColor, page, serverLogs, untilUpdated } from '~utils'
+import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -89,6 +89,22 @@ test('should load dynamic import with vars raw', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-raw'),
     'export function hello()',
+    true
+  )
+})
+
+test('should load dynamic import with vars url', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-url'),
+    isBuild ? 'data:application/javascript' : '/alias/url.js',
+    true
+  )
+})
+
+test('should load dynamic import with vars worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-worker'),
+    'load worker',
     true
   )
 })

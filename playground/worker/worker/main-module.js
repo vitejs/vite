@@ -78,3 +78,15 @@ w2.port.addEventListener('message', (ev) => {
   text('.shared-worker-import-meta-url', JSON.stringify(ev.data))
 })
 w2.port.start()
+
+const workers = import.meta.glob('../importMetaGlobEager.*.js', {
+  as: 'worker',
+  eager: true
+})
+const importMetaGlobEagerWorker = new workers[
+  '../importMetaGlobEager.worker.js'
+].default()
+importMetaGlobEagerWorker.postMessage('1')
+importMetaGlobEagerWorker.addEventListener('message', (e) => {
+  text('.importMetaGlobEager-worker', JSON.stringify(e.data))
+})
