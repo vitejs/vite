@@ -64,7 +64,7 @@ The resolved dependency paths can be further modified using [`experimental.rende
 - **Default:** `true`
 - **Deprecated** use `build.modulePreload.polyfill` instead
 
-Whether to automatically inject [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
+Whether to automatically inject a [module preload polyfill](https://guybedford.com/es-module-preloading-integrity#modulepreload-polyfill).
 
 ## build.outDir
 
