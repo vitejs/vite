@@ -161,14 +161,18 @@ test('hydration', async () => {
   expect(await page.textContent('button')).toMatch('1')
 })
 
-test('hmr', async () => {
-  // This is test is flaky in Mac CI, but can't be reproduced locally. Wait until
-  // network idle to avoid the issue. TODO: This may be caused by a bug when
-  // modifying a file while loading, we should remove this guard
-  await page.goto(url, { waitUntil: 'networkidle' })
-  editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
-  await untilUpdated(() => page.textContent('h1'), 'changed')
-})
+test(
+  'hmr',
+  async () => {
+    // This is test is flaky in Mac CI, but can't be reproduced locally. Wait until
+    // network idle to avoid the issue. TODO: This may be caused by a bug when
+    // modifying a file while loading, we should remove this guard
+    await page.goto(url, { waitUntil: 'networkidle' })
+    editFile('src/pages/Home.vue', (code) => code.replace('Home', 'changed'))
+    await untilUpdated(() => page.textContent('h1'), 'changed')
+  },
+  { retry: 3 }
+)
 
 test('client navigation', async () => {
   await page.goto(url)
