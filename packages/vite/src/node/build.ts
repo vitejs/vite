@@ -373,7 +373,7 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
-    ? resolve(libOptions.entry)
+    ? options.rollupOptions?.input || resolve(libOptions.entry)
     : typeof options.ssr === 'string'
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
@@ -481,7 +481,8 @@ async function doBuild(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssrWorkerBuild && typeof input === 'string'),
+          (ssrWorkerBuild &&
+            (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output
       }
     }

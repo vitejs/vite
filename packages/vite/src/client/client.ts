@@ -189,7 +189,7 @@ async function handleMessage(payload: HMRPayload) {
             outdatedLinkTags.add(el)
             el.after(newLinkTag)
           }
-          console.log(`[vite] css hot updated: ${searchUrl}`)
+          console.debug(`[vite] css hot updated: ${searchUrl}`)
         }
       })
       break
@@ -388,7 +388,12 @@ export function removeStyle(id: string): void {
   }
 }
 
-async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
+async function fetchUpdate({
+  path,
+  acceptedPath,
+  timestamp,
+  explicitImportRequired
+}: Update) {
   const mod = hotModulesMap.get(path)
   if (!mod) {
     // In a code-splitting project,
@@ -400,52 +405,37 @@ async function fetchUpdate({ path, acceptedPath, timestamp }: Update) {
   const moduleMap = new Map<string, ModuleNamespace>()
   const isSelfUpdate = path === acceptedPath
 
-  // make sure we only import each dep once
-  const modulesToUpdate = new Set<string>()
-  if (isSelfUpdate) {
-    // self update - only update self
-    modulesToUpdate.add(path)
-  } else {
-    // dep update
-    for (const { deps } of mod.callbacks) {
-      deps.forEach((dep) => {
-        if (acceptedPath === dep) {
-          modulesToUpdate.add(dep)
-        }
-      })
+  // determine the qualified callbacks before we re-import the modules
+  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) =>
+    deps.includes(acceptedPath)
+  )
+
+  if (isSelfUpdate || qualifiedCallbacks.length > 0) {
+    const dep = acceptedPath
+    const disposer = disposeMap.get(dep)
+    if (disposer) await disposer(dataMap.get(dep))
+    const [path, query] = dep.split(`?`)
+    try {
+      const newMod: ModuleNamespace = await import(
+        /* @vite-ignore */
+        base +
+          path.slice(1) +
+          `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+            query ? `&${query}` : ''
+          }`
+      )
+      moduleMap.set(dep, newMod)
+    } catch (e) {
+      warnFailedFetch(e, dep)
     }
   }
-
-  // determine the qualified callbacks before we re-import the modules
-  const qualifiedCallbacks = mod.callbacks.filter(({ deps }) => {
-    return deps.some((dep) => modulesToUpdate.has(dep))
-  })
-
-  await Promise.all(
-    Array.from(modulesToUpdate).map(async (dep) => {
-      const disposer = disposeMap.get(dep)
-      if (disposer) await disposer(dataMap.get(dep))
-      const [path, query] = dep.split(`?`)
-      try {
-        const newMod: ModuleNamespace = await import(
-          /* @vite-ignore */
-          base +
-            path.slice(1) +
-            `?import&t=${timestamp}${query ? `&${query}` : ''}`
-        )
-        moduleMap.set(dep, newMod)
-      } catch (e) {
-        warnFailedFetch(e, dep)
-      }
-    })
-  )
 
   return () => {
     for (const { deps, fn } of qualifiedCallbacks) {
       fn(deps.map((dep) => moduleMap.get(dep)))
     }
     const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-    console.log(`[vite] hot updated: ${loggedPath}`)
+    console.debug(`[vite] hot updated: ${loggedPath}`)
   }
 }
 

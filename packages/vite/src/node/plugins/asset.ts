@@ -1,15 +1,18 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
 import fs, { promises as fsp } from 'node:fs'
+import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
 import type {
   NormalizedOutputOptions,
+  OutputAsset,
   OutputOptions,
   PluginContext,
   PreRenderedAsset,
   RenderedChunk
 } from 'rollup'
 import MagicString from 'magic-string'
+import colors from 'picocolors'
 import { toOutputFilePathInString } from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -17,6 +20,11 @@ import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
+
+export const duplicateAssets = new WeakMap<
+  ResolvedConfig,
+  Map<string, OutputAsset>
+>()
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -127,6 +135,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       emittedHashMap.set(config, new Set())
+      duplicateAssets.set(config, new Map())
     },
 
     resolveId(id) {
@@ -398,6 +407,13 @@ export function publicFileToBuiltUrl(
   return `__VITE_PUBLIC_ASSET__${hash}__`
 }
 
+const GIT_LFS_PREFIX = Buffer.from('version https://git-lfs.github.com')
+function isGitLfsPlaceholder(content: Buffer): boolean {
+  if (content.length < GIT_LFS_PREFIX.length) return false
+  // Check whether the content begins with the characteristic string of Git LFS placeholders
+  return GIT_LFS_PREFIX.compare(content, 0, GIT_LFS_PREFIX.length) === 0
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -426,8 +442,15 @@ async function fileToBuiltUrl(
     config.build.lib ||
     (!file.endsWith('.svg') &&
       !file.endsWith('.html') &&
-      content.length < Number(config.build.assetsInlineLimit))
+      content.length < Number(config.build.assetsInlineLimit) &&
+      !isGitLfsPlaceholder(content))
   ) {
+    if (config.build.lib && isGitLfsPlaceholder(content)) {
+      config.logger.warn(
+        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`)
+      )
+    }
+
     const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
     // base64 inlined as a string
     url = `data:${mimeType};base64,${content.toString('base64')}`
@@ -454,8 +477,9 @@ async function fileToBuiltUrl(
       map.set(contentHash, fileName)
     }
     const emittedSet = emittedHashMap.get(config)!
+    const duplicates = duplicateAssets.get(config)!
+    const name = normalizePath(path.relative(config.root, file))
     if (!emittedSet.has(contentHash)) {
-      const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
         name,
         fileName,
@@ -463,6 +487,14 @@ async function fileToBuiltUrl(
         source: content
       })
       emittedSet.add(contentHash)
+    } else {
+      duplicates.set(name, {
+        name,
+        fileName: map.get(contentHash)!,
+        type: 'asset',
+        source: content,
+        isAsset: true
+      })
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE

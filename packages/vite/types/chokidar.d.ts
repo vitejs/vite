@@ -194,7 +194,7 @@ export interface WatchOptions {
   ignorePermissionErrors?: boolean
 
   /**
-   * `true` if `useFsEvents` and `usePolling` are `false`). Automatically filters out artifacts
+   * `true` if `useFsEvents` and `usePolling` are `false`. Automatically filters out artifacts
    * that occur when using editors that use "atomic writes" instead of writing directly to the
    * source file. If a file is re-added within 100 ms of being deleted, Chokidar emits a `change`
    * event rather than `unlink` then `add`. If the default of 100 ms does not work well for you,

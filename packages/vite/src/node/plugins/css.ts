@@ -380,7 +380,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const cssContent = await getContentWithSourcemap(css)
         const devBase = config.base
-        return [
+        const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(devBase, CLIENT_PUBLIC_PATH)
           )}`,
@@ -394,6 +394,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }`,
           `import.meta.hot.prune(() => __vite__removeStyle(__vite__id))`
         ].join('\n')
+        return { code, map: { mappings: '' } }
       }
 
       // build CSS handling ----------------------------------------------------
@@ -790,8 +791,8 @@ async function compileCSS(
       atImportResolvers
     )
 
-    if (preprocessResult.errors.length) {
-      throw preprocessResult.errors[0]
+    if (preprocessResult.error) {
+      throw preprocessResult.error
     }
 
     code = preprocessResult.code
@@ -834,6 +835,9 @@ async function compileCSS(
             return path.resolve(resolved)
           }
           return id
+        },
+        nameLayer(index) {
+          return `vite--anon-layer-${getHash(id)}-${index}`
         }
       })
     )
@@ -880,55 +884,66 @@ async function compileCSS(
     }
   }
 
-  // postcss is an unbundled dep and should be lazy imported
-  const postcssResult = await (await import('postcss'))
-    .default(postcssPlugins)
-    .process(code, {
-      ...postcssOptions,
-      to: id,
-      from: id,
-      ...(devSourcemap
-        ? {
-            map: {
-              inline: false,
-              annotation: false,
-              // postcss may return virtual files
-              // we cannot obtain content of them, so this needs to be enabled
-              sourcesContent: true
-              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-              // prev: preprocessorMap,
+  let postcssResult: PostCSS.Result
+  try {
+    // postcss is an unbundled dep and should be lazy imported
+    postcssResult = await (await import('postcss'))
+      .default(postcssPlugins)
+      .process(code, {
+        ...postcssOptions,
+        to: id,
+        from: id,
+        ...(devSourcemap
+          ? {
+              map: {
+                inline: false,
+                annotation: false,
+                // postcss may return virtual files
+                // we cannot obtain content of them, so this needs to be enabled
+                sourcesContent: true
+                // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
+                // prev: preprocessorMap,
+              }
             }
-          }
-        : {})
-    })
-
-  // record CSS dependencies from @imports
-  for (const message of postcssResult.messages) {
-    if (message.type === 'dependency') {
-      deps.add(normalizePath(message.file as string))
-    } else if (message.type === 'dir-dependency') {
-      // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
-      const { dir, glob: globPattern = '**' } = message
-      const pattern =
-        glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
-        `/` +
-        globPattern
-      const files = glob.sync(pattern, {
-        ignore: ['**/node_modules/**']
+          : {})
       })
-      for (let i = 0; i < files.length; i++) {
-        deps.add(files[i])
+
+    // record CSS dependencies from @imports
+    for (const message of postcssResult.messages) {
+      if (message.type === 'dependency') {
+        deps.add(normalizePath(message.file as string))
+      } else if (message.type === 'dir-dependency') {
+        // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
+        const { dir, glob: globPattern = '**' } = message
+        const pattern =
+          glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
+          `/` +
+          globPattern
+        const files = glob.sync(pattern, {
+          ignore: ['**/node_modules/**']
+        })
+        for (let i = 0; i < files.length; i++) {
+          deps.add(files[i])
+        }
+      } else if (message.type === 'warning') {
+        let msg = `[vite:css] ${message.text}`
+        if (message.line && message.column) {
+          msg += `\n${generateCodeFrame(code, {
+            line: message.line,
+            column: message.column
+          })}`
+        }
+        config.logger.warn(colors.yellow(msg))
       }
-    } else if (message.type === 'warning') {
-      let msg = `[vite:css] ${message.text}`
-      if (message.line && message.column) {
-        msg += `\n${generateCodeFrame(code, {
-          line: message.line,
-          column: message.column
-        })}`
-      }
-      config.logger.warn(colors.yellow(msg))
     }
+  } catch (e) {
+    e.message = `[postcss] ${e.message}`
+    e.code = code
+    e.loc = {
+      column: e.column,
+      line: e.line
+    }
+    throw e
   }
 
   if (!devSourcemap) {
@@ -1243,6 +1258,7 @@ async function minifyCSS(css: string, config: ResolvedConfig) {
     return code
   } catch (e) {
     if (e.errors) {
+      e.message = '[esbuild css minify] ' + e.message
       const msgs = await formatMessages(e.errors, { kind: 'error' })
       e.frame = '\n' + msgs.join('\n')
       e.loc = e.errors[0].location
@@ -1352,7 +1368,7 @@ export interface StylePreprocessorResults {
   code: string
   map?: ExistingRawSourceMap | undefined
   additionalMap?: ExistingRawSourceMap | undefined
-  errors: RollupError[]
+  error?: RollupError
   deps: string[]
 }
 
@@ -1412,8 +1428,8 @@ const scss: SassStylePreprocessor = async (
   const importer = [internalImporter]
   if (options.importer) {
     Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
+      ? importer.unshift(...options.importer)
+      : importer.unshift(options.importer)
   }
 
   const { content: data, map: additionalMap } = await getSource(
@@ -1456,14 +1472,14 @@ const scss: SassStylePreprocessor = async (
       code: result.css.toString(),
       map,
       additionalMap,
-      errors: [],
       deps
     }
   } catch (e) {
     // normalize SASS error
+    e.message = `[sass] ${e.message}`
     e.id = e.file
     e.frame = e.formatted
-    return { code: '', errors: [e], deps: [] }
+    return { code: '', error: e, deps: [] }
   }
 }
 
@@ -1575,13 +1591,15 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
   } catch (e) {
     const error = e as Less.RenderError
     // normalize error info
-    const normalizedError: RollupError = new Error(error.message || error.type)
+    const normalizedError: RollupError = new Error(
+      `[less] ${error.message || error.type}`
+    )
     normalizedError.loc = {
       file: error.filename || options.filename,
       line: error.line,
       column: error.column
     }
-    return { code: '', errors: [normalizedError], deps: [] }
+    return { code: '', error: normalizedError, deps: [] }
   }
 
   const map: ExistingRawSourceMap = result.map && JSON.parse(result.map)
@@ -1593,8 +1611,7 @@ const less: StylePreprocessor = async (source, root, options, resolvers) => {
     code: result.css.toString(),
     map,
     additionalMap,
-    deps: result.imports,
-    errors: []
+    deps: result.imports
   }
 }
 
@@ -1708,11 +1725,11 @@ const styl: StylePreprocessor = async (source, root, options) => {
       code: result,
       map: formatStylusSourceMap(map, root),
       additionalMap,
-      errors: [],
       deps
     }
   } catch (e) {
-    return { code: '', errors: [e], deps: [] }
+    e.message = `[stylus] ${e.message}`
+    return { code: '', error: e, deps: [] }
   }
 }
 

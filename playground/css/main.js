@@ -44,6 +44,8 @@ text('.modules-inline', inlineMod)
 import charset from './charset.css'
 text('.charset-css', charset)
 
+import './layered/index.css'
+
 import './dep.css'
 import './glob-dep.css'
 
@@ -107,3 +109,5 @@ document
   .classList.add(aliasModule.aliasedModule)
 
 import './unsupported.css'
+
+import './async/index'

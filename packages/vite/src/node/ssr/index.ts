@@ -41,8 +41,8 @@ export interface ResolvedSSROptions extends SSROptions {
 
 export function resolveSSROptions(
   ssr: SSROptions | undefined,
-  buildSsrCjsExternalHeuristics?: boolean,
-  preserveSymlinks?: boolean
+  preserveSymlinks: boolean,
+  buildSsrCjsExternalHeuristics?: boolean
 ): ResolvedSSROptions {
   ssr ??= {}
   const optimizeDeps = ssr.optimizeDeps ?? {}

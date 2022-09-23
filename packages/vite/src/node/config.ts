@@ -43,6 +43,8 @@ import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
+  DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -321,7 +323,7 @@ export type ResolvedConfig = Readonly<
     mainConfig: ResolvedConfig | null
     isProduction: boolean
     env: Record<string, any>
-    resolve: ResolveOptions & {
+    resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
     plugins: readonly Plugin[]
@@ -442,16 +444,7 @@ export async function resolveConfig(
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  for (const p of getSortedPluginsByHook('config', userPlugins)) {
-    const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
-    if (handler) {
-      const res = await handler(config, configEnv)
-      if (res) {
-        config = mergeConfig(config, res)
-      }
-    }
-  }
+  config = await runConfigHook(config, userPlugins, configEnv)
 
   if (process.env.VITE_TEST_WITHOUT_PLUGIN_COMMONJS) {
     config = mergeConfig(config, {
@@ -483,7 +476,12 @@ export async function resolveConfig(
   )
 
   const resolveOptions: ResolvedConfig['resolve'] = {
-    ...config.resolve,
+    mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    browserField: config.resolve?.browserField ?? true,
+    conditions: config.resolve?.conditions ?? [],
+    extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
+    dedupe: config.resolve?.dedupe ?? [],
+    preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
     alias: resolvedAlias
   }
 
@@ -590,8 +588,8 @@ export async function resolveConfig(
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
   const ssr = resolveSSROptions(
     config.ssr,
-    config.legacy?.buildSsrCjsExternalHeuristics,
-    config.resolve?.preserveSymlinks
+    resolveOptions.preserveSymlinks,
+    config.legacy?.buildSsrCjsExternalHeuristics
   )
 
   const middlewareMode = config?.server?.middlewareMode
@@ -611,16 +609,7 @@ export async function resolveConfig(
     ...workerNormalPlugins,
     ...workerPostPlugins
   ]
-  for (const p of getSortedPluginsByHook('config', workerUserPlugins)) {
-    const hook = p.config
-    const handler = hook && 'handler' in hook ? hook.handler : hook
-    if (handler) {
-      const res = await handler(workerConfig, configEnv)
-      if (res) {
-        workerConfig = mergeConfig(workerConfig, res)
-      }
-    }
-  }
+  workerConfig = await runConfigHook(workerConfig, workerUserPlugins, configEnv)
   const resolvedWorkerOptions: ResolveWorkerOptions = {
     format: workerConfig.worker?.format || 'iife',
     plugins: [],
@@ -667,7 +656,7 @@ export async function resolveConfig(
       disabled: 'build',
       ...optimizeDeps,
       esbuildOptions: {
-        preserveSymlinks: config.resolve?.preserveSymlinks,
+        preserveSymlinks: resolveOptions.preserveSymlinks,
         ...optimizeDeps.esbuildOptions
       }
     },
@@ -1087,6 +1076,27 @@ async function loadConfigFromBundledFile(
     _require.extensions[loaderExt] = defaultLoader
     return raw.__esModule ? raw.default : raw
   }
+}
+
+async function runConfigHook(
+  config: InlineConfig,
+  plugins: Plugin[],
+  configEnv: ConfigEnv
+): Promise<InlineConfig> {
+  let conf = config
+
+  for (const p of getSortedPluginsByHook('config', plugins)) {
+    const hook = p.config
+    const handler = hook && 'handler' in hook ? hook.handler : hook
+    if (handler) {
+      const res = await handler(conf, configEnv)
+      if (res) {
+        conf = mergeConfig(conf, res)
+      }
+    }
+  }
+
+  return conf
 }
 
 export function getDepOptimizationConfig(

@@ -11,6 +11,8 @@ import type { FSWatcher, WatchOptions } from 'types/chokidar'
 import type { Connect } from 'types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
+import picomatch from 'picomatch'
+import type { Matcher } from 'picomatch'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -143,7 +145,7 @@ export interface FileSystemServeOptions {
    * Restrict accessing files that matches the patterns.
    *
    * This will have higher priority than `allow`.
-   * Glob patterns are supported.
+   * picomatch patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
@@ -151,6 +153,7 @@ export interface FileSystemServeOptions {
 }
 
 export type ServerHook = (
+  this: void,
   server: ViteDevServer
 ) => (() => void) | void | Promise<(() => void) | void>
 
@@ -194,8 +197,6 @@ export interface ViteDevServer {
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -284,6 +285,10 @@ export interface ViteDevServer {
       abort: () => void
     }
   >
+  /**
+   * @internal
+   */
+  _fsDenyGlob: Matcher
 }
 
 export interface ResolvedServerUrls {
@@ -296,10 +301,7 @@ export async function createServer(
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve', 'development')
   const { root, server: serverConfig } = config
-  const httpsOptions = await resolveHttpsConfig(
-    config.server.https,
-    config.cacheDir
-  )
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
   const resolvedWatchOptions = resolveChokidarOptions({
@@ -430,7 +432,8 @@ export async function createServer(
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
-    _pendingRequests: new Map()
+    _pendingRequests: new Map(),
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)

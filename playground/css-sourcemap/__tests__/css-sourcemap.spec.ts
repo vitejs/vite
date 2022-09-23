@@ -90,6 +90,18 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
+  test.runIf(isServe)(
+    'js .css request does not include sourcemap',
+    async () => {
+      const res = await page.request.get(
+        new URL('./linked-with-import.css', page.url()).href
+      )
+      const content = await res.text()
+      const lines = content.trim().split('\n')
+      expect(lines[lines.length - 1]).not.toMatch(/^\/\/#/)
+    }
+  )
+
   test('imported css', async () => {
     const css = await getStyleTagContentIncluding('.imported ')
     const map = extractSourcemap(css)

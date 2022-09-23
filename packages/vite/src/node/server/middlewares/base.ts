@@ -15,7 +15,7 @@ export function baseMiddleware({
     const path = parsed.pathname || '/'
 
     if (path.startsWith(devBase)) {
-      // rewrite url to remove base.. this ensures that other middleware does
+      // rewrite url to remove base. this ensures that other middleware does
       // not need to consider base being prepended or not
       req.url = url.replace(devBase, '/')
       return next()
