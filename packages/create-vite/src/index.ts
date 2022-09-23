@@ -73,13 +73,13 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-vue',
-        display: 'Customize with create-vue',
+        display: 'Customize with create-vue ↗',
         color: green,
         customCommand: 'npm create vue@latest TARGET_DIR'
       },
       {
         name: 'custom-nuxt',
-        display: 'Nuxt',
+        display: 'Nuxt ↗',
         color: lightGreen,
         customCommand: 'npm exec nuxi init TARGET_DIR'
       }
@@ -153,7 +153,7 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-svelte-kit',
-        display: 'SvelteKit',
+        display: 'SvelteKit ↗',
         color: red,
         customCommand: 'npm create svelte@latest TARGET_DIR'
       }
@@ -166,7 +166,7 @@ const FRAMEWORKS: Framework[] = [
     variants: [
       {
         name: 'create-vite-extra',
-        display: 'create-vite-extra',
+        display: 'create-vite-extra ↗',
         color: reset,
         customCommand: 'npm create vite-extra@latest TARGET_DIR'
       }
