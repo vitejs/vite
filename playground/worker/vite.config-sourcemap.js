@@ -10,6 +10,11 @@ module.exports = vite.defineConfig((sourcemap) => {
     base: `/iife-${
       typeof sourcemap === 'boolean' ? 'sourcemap' : 'sourcemap-' + sourcemap
     }/`,
+    resolve: {
+      alias: {
+        '@': __dirname
+      }
+    },
     worker: {
       format: 'iife',
       plugins: [vueJsx()],

@@ -8,11 +8,12 @@ import type { Plugin } from '../plugin'
 import {
   cleanUrl,
   injectQuery,
-  normalizePath,
   parseRequest,
+  slash,
   transformStableResult
 } from '../utils'
 import { getDepsOptimizer } from '../optimizer'
+import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -75,6 +76,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
+  let workerResolver: ResolveFn
 
   return {
     name: 'vite:worker-import-meta-url',
@@ -116,22 +118,37 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             cleanString,
             index + allExp.length
           )
-          const file = normalizePath(
-            path.resolve(path.dirname(id), rawUrl.slice(1, -1))
-          )
+          const url = rawUrl.slice(1, -1)
+          let file: string | undefined
+          if (url.startsWith('.')) {
+            file = path.resolve(path.dirname(id), url)
+          } else {
+            workerResolver ??= config.createResolver({
+              extensions: [],
+              tryIndex: false,
+              preferRelative: true
+            })
+            file = await workerResolver(url, id)
+            file ??= url.startsWith('/')
+              ? slash(path.join(config.publicDir, url))
+              : slash(path.resolve(path.dirname(id), url))
+          }
 
-          let url: string
+          let builtUrl: string
           if (isBuild) {
             getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-            url = await workerFileToUrl(config, file, query)
+            builtUrl = await workerFileToUrl(config, file, query)
           } else {
-            url = await fileToUrl(cleanUrl(file), config, this)
-            url = injectQuery(url, WORKER_FILE_ID)
-            url = injectQuery(url, `type=${workerType}`)
+            builtUrl = await fileToUrl(cleanUrl(file), config, this)
+            builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
+            builtUrl = injectQuery(builtUrl, `type=${workerType}`)
           }
-          s.overwrite(urlIndex, urlIndex + exp.length, JSON.stringify(url), {
-            contentOnly: true
-          })
+          s.overwrite(
+            urlIndex,
+            urlIndex + exp.length,
+            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
+            { contentOnly: true }
+          )
         }
 
         if (s) {

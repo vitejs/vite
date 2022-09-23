@@ -3,6 +3,11 @@ const vite = require('vite')
 
 module.exports = vite.defineConfig({
   base: '/iife/',
+  resolve: {
+    alias: {
+      '@': __dirname
+    }
+  },
   worker: {
     format: 'iife',
     plugins: [

@@ -80,6 +80,14 @@ describe.runIf(isBuild)('build', () => {
 
 test('module worker', async () => {
   await untilUpdated(
+    () => page.textContent('.worker-import-meta-url'),
+    'A string'
+  )
+  await untilUpdated(
+    () => page.textContent('.worker-import-meta-url-resolve'),
+    'A string'
+  )
+  await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string'
   )
