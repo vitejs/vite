@@ -41,6 +41,7 @@ export default function compression() {
     let pendingListeners = []
     let started = false
     let size = 0
+    const { end, write, on, writeHead } = res
 
     function start() {
       started = true
@@ -80,8 +81,6 @@ export default function compression() {
 
       writeHead.call(res, pendingStatus || res.statusCode)
     }
-
-    const { end, write, on, writeHead } = res
 
     res.writeHead = function (status, reason, headers) {
       if (typeof reason !== 'string') [headers, reason] = [reason, headers]

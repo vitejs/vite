@@ -27,7 +27,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     req: http.IncomingMessage,
     res: http.ServerResponse,
     options: ProxyOptions
-  ) => void | null | undefined | false | string
+  ) => void | null | undefined | false | string | HttpProxy.ServerOptions
 }
 
 export function proxyMiddleware(
@@ -123,7 +123,6 @@ export function proxyMiddleware(
           } else if (isObject(bypassResult)) {
             Object.assign(options, bypassResult)
             debug(`bypass: ${req.url} use modified options: %O`, options)
-            return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
             return res.end(404)
