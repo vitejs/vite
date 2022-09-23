@@ -1,7 +1,6 @@
-import * as http from 'node:http'
+import type * as http from 'node:http'
 import path, { dirname, join, resolve } from 'node:path'
 import os from 'node:os'
-import sirv from 'sirv'
 import fs from 'fs-extra'
 import { chromium } from 'playwright-chromium'
 import type {
@@ -12,7 +11,13 @@ import type {
   UserConfig,
   ViteDevServer
 } from 'vite'
-import { build, createServer, loadConfigFromFile, mergeConfig } from 'vite'
+import {
+  build,
+  createServer,
+  loadConfigFromFile,
+  mergeConfig,
+  preview
+} from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
@@ -263,57 +268,18 @@ export async function startDefaultServe(): Promise<void> {
       watcher = rollupOutput as RollupWatcher
       await notifyRebuildComplete(watcher)
     }
-    viteTestUrl = await startStaticServer(testConfig)
+    // @ts-ignore
+    if (config && config.__test__) {
+      // @ts-ignore
+      config.__test__()
+    }
+    const _nodeEnv = process.env.NODE_ENV
+    const previewServer = await preview(testConfig)
+    // prevent preview change NODE_ENV
+    process.env.NODE_ENV = _nodeEnv
+    viteTestUrl = previewServer.resolvedUrls.local[0]
     await page.goto(viteTestUrl)
   }
-}
-
-function startStaticServer(config: UserConfig): Promise<string> {
-  // fallback internal base to ''
-  let base = config?.base
-  if (!base || base === '/' || base === './') {
-    base = ''
-  }
-
-  // @ts-ignore
-  if (config && config.__test__) {
-    // @ts-ignore
-    config.__test__()
-  }
-
-  // start static file server
-  const serve = sirv(resolve(rootDir, 'dist'), {
-    dev: !!config?.build?.watch
-  })
-  // @ts-ignore
-  const baseDir = config?.testConfig?.baseRoute
-  const httpServer = (server = http.createServer((req, res) => {
-    if (req.url === '/ping') {
-      res.statusCode = 200
-      res.end('pong')
-    } else {
-      if (baseDir) {
-        req.url = path.posix.join(baseDir, req.url)
-      }
-      serve(req, res)
-    }
-  }))
-  let port = 4173
-  return new Promise((resolve, reject) => {
-    const onError = (e: any) => {
-      if (e.code === 'EADDRINUSE') {
-        httpServer.close()
-        httpServer.listen(++port)
-      } else {
-        reject(e)
-      }
-    }
-    httpServer.on('error', onError)
-    httpServer.listen(port, () => {
-      httpServer.removeListener('error', onError)
-      resolve(`http://localhost:${port}${base}`)
-    })
-  })
 }
 
 /**
