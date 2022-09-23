@@ -244,8 +244,7 @@ export interface ModulePreloadOptions {
    */
   polyfill?: boolean
   /**
-   * Resolve the list of dependencies to preload for
-   * a given dynamic import
+   * Resolve the list of dependencies to preload for a given dynamic import
    * @experimental
    */
   resolveDependencies?: ResolveModulePreloadDependenciesFn
