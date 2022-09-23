@@ -122,7 +122,7 @@ npm add -D terser
 - **Type:** `boolean`
 - **Default:** `true`
 
-  Set to `true` to only output the legacy bundles that support all target browsers.
+  Set to `false` to only output the legacy bundles that support all target browsers.
 
 ## Dynamic Import
 
