@@ -29,7 +29,8 @@ type Framework = {
   name: string
   display: string
   color: ColorFunc
-  variants: FrameworkVariant[]
+  customCommand?: string
+  variants?: FrameworkVariant[]
 }
 type FrameworkVariant = {
   name: string
@@ -158,6 +159,12 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npm create svelte@latest TARGET_DIR'
       }
     ]
+  },
+  {
+    name: 'others',
+    display: 'Others',
+    color: reset,
+    customCommand: 'npm create vite-extra@latest TARGET_DIR'
   }
 ]
 
@@ -247,7 +254,7 @@ async function init() {
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>
-            framework.variants.map((variant) => {
+            framework.variants?.map((variant) => {
               const variantColor = variant.color
               return {
                 title: variantColor(variant.display || variant.name),
@@ -279,14 +286,17 @@ async function init() {
   }
 
   // determine template
-  const template: string = variant || framework || argTemplate
+  const template: string = variant || framework?.name || argTemplate
 
   const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
-  const { customCommand } =
-    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+  const customCommand =
+    FRAMEWORKS.find((f) => f.name === template)?.customCommand ??
+    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v?.name === template)
+      ?.customCommand
+
   if (customCommand) {
     const fullCustomCommand = customCommand
       .replace('TARGET_DIR', targetDir)
