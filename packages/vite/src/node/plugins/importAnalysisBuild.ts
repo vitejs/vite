@@ -122,8 +122,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   )
 
   const resolveModulePreloadDependencies =
-    typeof config.build.modulePreload === 'object' &&
-    config.build.modulePreload.resolveDependencies
+    config.build.modulePreload && config.build.modulePreload.resolveDependencies
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const customModulePreloadPaths = !!(
     resolveModulePreloadDependencies || renderBuiltUrl
@@ -134,8 +133,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
   const { modulePreload } = config.build
   const scriptRel =
-    modulePreload === true ||
-    (typeof modulePreload === 'object' && modulePreload.polyfill)
+    modulePreload && modulePreload.polyfill
       ? `'modulepreload'`
       : `(${detectScriptRel.toString()})()`
 
@@ -517,8 +515,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (normalizedFile && customModulePreloadPaths) {
                   const { modulePreload } = config.build
                   const resolveDependencies =
-                    typeof modulePreload === 'object' &&
-                    modulePreload.resolveDependencies
+                    modulePreload && modulePreload.resolveDependencies
                   let resolvedDeps: string[]
                   if (resolveDependencies) {
                     // We can't let the user remove css deps as these aren't really preloads, they are just using

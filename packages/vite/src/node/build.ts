@@ -249,6 +249,10 @@ export interface ModulePreloadOptions {
    */
   resolveDependencies?: ResolveModulePreloadDependenciesFn
 }
+export interface ResolvedModulePreloadOptions {
+  polyfill: boolean
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
 
 export type ResolveModulePreloadDependenciesFn = (
   filename: string,
@@ -259,9 +263,10 @@ export type ResolveModulePreloadDependenciesFn = (
   }
 ) => string[]
 
-export type ResolvedBuildOptions = Required<
-  Omit<BuildOptions, 'polyfillModulePreload'>
->
+export interface ResolvedBuildOptions
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
@@ -286,6 +291,9 @@ export function resolveBuildOptions(
   }
 
   const modulePreload = raw?.modulePreload
+  const defaultModulePreload = {
+    polyfill: true
+  }
 
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
@@ -318,13 +326,16 @@ export function resolveBuildOptions(
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
     },
+    // Resolve to false | object
     modulePreload:
-      typeof modulePreload === 'object'
+      modulePreload === false
+        ? false
+        : typeof modulePreload === 'object'
         ? {
-            polyfill: true,
+            ...defaultModulePreload,
             ...modulePreload
           }
-        : modulePreload ?? true
+        : defaultModulePreload
   }
 
   // handle special build targets

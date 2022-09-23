@@ -63,6 +63,7 @@ const debug = createDebugger('vite:config')
 export type {
   RenderBuiltAssetUrl,
   ModulePreloadOptions,
+  ResolvedModulePreloadOptions,
   ResolveModulePreloadDependenciesFn
 } from './build'
 
