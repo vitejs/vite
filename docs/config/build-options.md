@@ -106,6 +106,15 @@ If disabled, all CSS in the entire project will be extracted into a single CSS f
 If you specify `build.lib`, `build.cssCodeSplit` will be `false` as default.
 :::
 
+## build.cssEmitAsset
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Vite will generate external style files, as part of the build.
+
+If `false` vite will not generate any external asset, all css imports will behave like `.css?inline`;
+
 ## build.cssTarget
 
 - **Type:** `string | string[]`

@@ -345,8 +345,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
-
-      const inlined = inlineRE.test(id)
+      const inlined = config.build.cssEmitAsset ? inlineRE.test(id) : true
       const modules = cssModulesCache.get(config)!.get(id)
 
       // #6984, #7552

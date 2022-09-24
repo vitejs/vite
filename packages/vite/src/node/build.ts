@@ -116,6 +116,13 @@ export interface BuildOptions {
    */
   cssTarget?: TransformOptions['target'] | false
   /**
+   * Vite will generate external style files, as part of the build.
+   * If `false` vite will not generate any external asset, all css imports will
+   * behave like `.css?inline`;
+   * @default true
+   */
+  cssEmitAsset?: boolean
+  /**
    * If `true`, a separate sourcemap file will be created. If 'inline', the
    * sourcemap will be appended to the resulting output file as data URI.
    * 'hidden' works like `true` except that the corresponding sourcemap
@@ -301,6 +308,7 @@ export function resolveBuildOptions(
     assetsInlineLimit: 4096,
     cssCodeSplit: !raw?.lib,
     cssTarget: false,
+    cssEmitAsset: true,
     sourcemap: false,
     rollupOptions: {},
     minify: raw?.ssr ? false : 'esbuild',
