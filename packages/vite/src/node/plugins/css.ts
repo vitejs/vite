@@ -1441,8 +1441,8 @@ const scss: SassStylePreprocessor = async (
   const importer = [internalImporter]
   if (options.importer) {
     Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
+      ? importer.unshift(...options.importer)
+      : importer.unshift(options.importer)
   }
 
   const { content: data, map: additionalMap } = await getSource(

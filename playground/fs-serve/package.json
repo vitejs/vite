@@ -6,6 +6,6 @@
     "dev": "vite root",
     "build": "vite build root",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview"
+    "preview": "vite preview root"
   }
 }

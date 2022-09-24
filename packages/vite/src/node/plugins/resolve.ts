@@ -29,6 +29,7 @@ import {
   isFileReadable,
   isNonDriveRelativeAbsolutePath,
   isObject,
+  isOptimizable,
   isPossibleTsOutput,
   isTsRequest,
   isWindows,
@@ -62,13 +63,18 @@ const debug = createDebugger('vite:resolve-details', {
 
 export interface ResolveOptions {
   mainFields?: string[]
+  /**
+   * @deprecated In future, `mainFields` should be used instead.
+   * @default true
+   */
+  browserField?: boolean
   conditions?: string[]
   extensions?: string[]
   dedupe?: string[]
   preserveSymlinks?: boolean
 }
 
-export interface InternalResolveOptions extends ResolveOptions {
+export interface InternalResolveOptions extends Required<ResolveOptions> {
   root: string
   isBuild: boolean
   isProduction: boolean
@@ -84,7 +90,6 @@ export interface InternalResolveOptions extends ResolveOptions {
   tryPrefix?: string
   skipPackageJson?: boolean
   preferRelative?: boolean
-  preserveSymlinks?: boolean
   isRequire?: boolean
   // #3040
   // when the importer is a ts module,
@@ -175,10 +180,13 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           // as if they would have been imported through a bare import
           // Use the original id to do the check as the resolved id may be the real
           // file path after symlinks resolution
-          const isNodeModule = !!normalizePath(id).match(nodeModulesInPathRE)
+          const isNodeModule =
+            nodeModulesInPathRE.test(normalizePath(id)) ||
+            nodeModulesInPathRE.test(normalizePath(resolved))
+
           if (isNodeModule && !resolved.match(DEP_VERSION_RE)) {
             const versionHash = depsOptimizer.metadata.browserHash
-            if (versionHash && OPTIMIZABLE_ENTRY_RE.test(resolved)) {
+            if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
               resolved = injectQuery(resolved, `v=${versionHash}`)
             }
           }
@@ -234,6 +242,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
+          options.browserField &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
@@ -304,6 +313,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
 
         if (
           targetWeb &&
+          options.browserField &&
           (res = tryResolveBrowserMapping(
             id,
             importer,
@@ -447,7 +457,7 @@ function tryFsResolve(
     return res
   }
 
-  for (const ext of options.extensions || DEFAULT_EXTENSIONS) {
+  for (const ext of options.extensions) {
     if (
       postfix &&
       (res = tryResolveFile(
@@ -717,7 +727,11 @@ export function tryNodeResolve(
     let resolvedId = id
     if (isDeepImport) {
       if (!pkg?.data.exports && path.extname(id) !== resolvedExt) {
-        resolvedId += resolvedExt
+        resolvedId = resolved.id.slice(resolved.id.indexOf(id))
+        isDebug &&
+          debug(
+            `[processResult] ${colors.cyan(id)} -> ${colors.dim(resolvedId)}`
+          )
       }
     }
     return { ...resolved, id: resolvedId, external: true }
@@ -747,7 +761,9 @@ export function tryNodeResolve(
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
+  const isJsType = depsOptimizer
+    ? isOptimizable(resolved, depsOptimizer.options)
+    : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
   let include = depsOptimizer?.options.exclude
@@ -882,7 +898,11 @@ export function resolvePackageEntry(
     // This is because .mjs files can technically import .cjs files which would
     // make them invalid for pure ESM environments - so if other module/browser
     // fields are present, prioritize those instead.
-    if (targetWeb && (!entryPoint || entryPoint.endsWith('.mjs'))) {
+    if (
+      targetWeb &&
+      options.browserField &&
+      (!entryPoint || entryPoint.endsWith('.mjs'))
+    ) {
       // check browser field
       // https://github.com/defunctzombie/package-browser-field-spec
       const browserEntry =
@@ -893,6 +913,7 @@ export function resolvePackageEntry(
         // check if the package also has a "module" field.
         if (
           !options.isRequire &&
+          options.mainFields.includes('module') &&
           typeof data.module === 'string' &&
           data.module !== browserEntry
         ) {
@@ -923,7 +944,8 @@ export function resolvePackageEntry(
     }
 
     if (!entryPoint || entryPoint.endsWith('.mjs')) {
-      for (const field of options.mainFields || DEFAULT_MAIN_FIELDS) {
+      for (const field of options.mainFields) {
+        if (field === 'browser') continue // already checked above
         if (typeof data[field] === 'string') {
           entryPoint = data[field]
           break
@@ -941,8 +963,8 @@ export function resolvePackageEntry(
     for (let entry of entryPoints) {
       // make sure we don't get scripts when looking for sass
       if (
-        options.mainFields?.[0] === 'sass' &&
-        !options.extensions?.includes(path.extname(entry))
+        options.mainFields[0] === 'sass' &&
+        !options.extensions.includes(path.extname(entry))
       ) {
         entry = ''
         options.skipPackageJson = true
@@ -950,7 +972,7 @@ export function resolvePackageEntry(
 
       // resolve object browser field in package.json
       const { browser: browserField } = data
-      if (targetWeb && isObject(browserField)) {
+      if (targetWeb && options.browserField && isObject(browserField)) {
         entry = mapWithBrowserField(entry, browserField) || entry
       }
 
@@ -991,13 +1013,13 @@ function resolveExports(
   if (!options.isRequire) {
     conditions.push('module')
   }
-  if (options.conditions) {
+  if (options.conditions.length > 0) {
     conditions.push(...options.conditions)
   }
 
   return _resolveExports(pkg, key, {
-    browser: targetWeb,
-    require: options.isRequire,
+    browser: targetWeb && !conditions.includes('node'),
+    require: options.isRequire && !conditions.includes('import'),
     conditions
   })
 }
@@ -1043,7 +1065,7 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`
       )
     }
-  } else if (targetWeb && isObject(browserField)) {
+  } else if (targetWeb && options.browserField && isObject(browserField)) {
     // resolve without postfix (see #7098)
     const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)

@@ -42,7 +42,6 @@ import {
   getDepsCacheDir,
   initDepsOptimizer
 } from './optimizer'
-import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
@@ -310,7 +309,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
@@ -373,7 +371,7 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
-    ? resolve(libOptions.entry)
+    ? options.rollupOptions?.input || resolve(libOptions.entry)
     : typeof options.ssr === 'string'
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
