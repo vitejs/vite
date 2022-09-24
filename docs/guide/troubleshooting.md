@@ -88,7 +88,7 @@ If the HTML file output was opened with `file` protocol, the scripts won't run w
 
 See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSRequestNotHttp) for more information about why this happens.
 
-You will need to access the file with `http` protocol. The easiest way to achieve this will be to run `npx vite preview`.
+You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
 
 ## Others
 
