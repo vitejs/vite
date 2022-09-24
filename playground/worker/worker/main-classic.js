@@ -22,7 +22,7 @@ const classicSharedWorker = new SharedWorker(
   new URL('../classic-shared-worker.js', import.meta.url),
   {
     type: 'classic'
-  },
+  }, // test comment
 )
 classicSharedWorker.port.addEventListener('message', (ev) => {
   text('.classic-shared-worker', JSON.stringify(ev.data))
