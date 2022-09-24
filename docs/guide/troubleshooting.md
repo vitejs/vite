@@ -76,6 +76,20 @@ If HMR is not handled by Vite or a plugin, a full reload will happen.
 
 Also if there is a dependency loop, a full reload will happen. To solve this, try removing the loop.
 
+## Build
+
+### Built file does not work because of CORS error
+
+If the HTML file output was opened with `file` protocol, the scripts won't run with the following error.
+
+> Access to script at 'file:///foo/bar.js' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: http, data, isolated-app, chrome-extension, chrome, https, chrome-untrusted.
+
+> Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at file:///foo/bar.js. (Reason: CORS request not http).
+
+See [Reason: CORS request not HTTP - HTTP | MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSRequestNotHttp) for more information about why this happens.
+
+You will need to access the file with `http` protocol. The easiest way to achieve this is to run `npx vite preview`.
+
 ## Others
 
 ### Syntax Error / Type Error happens
