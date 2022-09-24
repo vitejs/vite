@@ -581,8 +581,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
+        const { modulePreload } = config.build
         if (
-          config.build.polyfillModulePreload &&
+          (modulePreload === true ||
+            (typeof modulePreload === 'object' && modulePreload.polyfill)) &&
           (someScriptsAreAsync || someScriptsAreDefer)
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
@@ -627,14 +629,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       })
 
       const toPreloadTag = (
-        chunk: OutputChunk,
+        filename: string,
         toOutputPath: (filename: string) => string
       ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
           crossorigin: true,
-          href: toOutputPath(chunk.fileName)
+          href: toOutputPath(filename)
         }
       })
 
@@ -726,15 +728,28 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when not inlined, inject <script> for entry and modulepreload its dependencies
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
-          const assetTags = canInlineEntry
-            ? imports.map((chunk) =>
-                toScriptTag(chunk, toOutputAssetFilePath, isAsync)
-              )
-            : [
-                toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-                ...imports.map((i) => toPreloadTag(i, toOutputAssetFilePath))
-              ]
-
+          let assetTags: HtmlTagDescriptor[]
+          if (canInlineEntry) {
+            assetTags = imports.map((chunk) =>
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync)
+            )
+          } else {
+            const { modulePreload } = config.build
+            const resolveDependencies =
+              typeof modulePreload === 'object' &&
+              modulePreload.resolveDependencies
+            const importsFileNames = imports.map((chunk) => chunk.fileName)
+            const resolvedDeps = resolveDependencies
+              ? resolveDependencies(chunk.fileName, importsFileNames, {
+                  hostId: relativeUrlPath,
+                  hostType: 'html'
+                })
+              : importsFileNames
+            assetTags = [
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+              ...resolvedDeps.map((i) => toPreloadTag(i, toOutputAssetFilePath))
+            ]
+          }
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)

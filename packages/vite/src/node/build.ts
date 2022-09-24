@@ -72,8 +72,15 @@ export interface BuildOptions {
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
+   * @deprecated use `modulePreload.polyfill` instead
    */
   polyfillModulePreload?: boolean
+  /**
+   * Configure module preload
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  modulePreload?: boolean | ModulePreloadOptions
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -228,16 +235,67 @@ export interface LibraryOptions {
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<BuildOptions>
+export interface ModulePreloadOptions {
+  /**
+   * Whether to inject a module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfill?: boolean
+  /**
+   * Resolve the list of dependencies to preload for a given dynamic import
+   * @experimental
+   */
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+export interface ResolvedModulePreloadOptions {
+  polyfill: boolean
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+
+export type ResolveModulePreloadDependenciesFn = (
+  filename: string,
+  deps: string[],
+  context: {
+    hostId: string
+    hostType: 'html' | 'js'
+  }
+) => string[]
+
+export interface ResolvedBuildOptions
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   isBuild: boolean,
   logger: Logger
 ): ResolvedBuildOptions {
+  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  if (raw) {
+    const { polyfillModulePreload, ...rest } = raw
+    raw = rest
+    if (deprecatedPolyfillModulePreload !== undefined) {
+      logger.warn(
+        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.'
+      )
+    }
+    if (
+      deprecatedPolyfillModulePreload === false &&
+      raw.modulePreload === undefined
+    ) {
+      raw.modulePreload = { polyfill: false }
+    }
+  }
+
+  const modulePreload = raw?.modulePreload
+  const defaultModulePreload = {
+    polyfill: true
+  }
+
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -266,7 +324,17 @@ export function resolveBuildOptions(
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    // Resolve to false | object
+    modulePreload:
+      modulePreload === false
+        ? false
+        : typeof modulePreload === 'object'
+        ? {
+            ...defaultModulePreload,
+            ...modulePreload
+          }
+        : defaultModulePreload
   }
 
   // handle special build targets
@@ -903,19 +971,16 @@ export type RenderBuiltAssetUrl = (
   }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
-export function toOutputFilePathInString(
+export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
   hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
-  format: InternalModuleFormat,
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
-    format
-  )
+  ) => string | { runtime: string }
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -943,7 +1008,7 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
-function getToImportMetaURLBasedRelativePath(
+export function createToImportMetaURLBasedRelativeRuntime(
   format: InternalModuleFormat
 ): (filename: string, importer: string) => { runtime: string } {
   const toRelativePath = relativeUrlMechanisms[format]
