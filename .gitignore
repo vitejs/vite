@@ -5,6 +5,7 @@
 *.local
 *.log
 /.vscode/
+/packages/vite/client/types.d.ts
 /packages/vite/LICENSE
 dist
 dist-ssr

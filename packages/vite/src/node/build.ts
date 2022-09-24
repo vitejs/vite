@@ -16,10 +16,10 @@ import type {
   WarningHandler,
   WatcherOptions
 } from 'rollup'
-import type { Terser } from 'types/terser'
+import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import type { RollupCommonJSOptions } from 'types/commonjs'
-import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { RollupCommonJSOptions } from 'dep-types/commonjs'
+import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
