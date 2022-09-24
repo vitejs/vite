@@ -4,6 +4,11 @@ const vite = require('vite')
 module.exports = vite.defineConfig({
   base: '/es/',
   enforce: 'pre',
+  resolve: {
+    alias: {
+      '@': __dirname
+    }
+  },
   worker: {
     format: 'es',
     plugins: [vueJsx()],

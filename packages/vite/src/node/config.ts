@@ -4,7 +4,7 @@ import { parse as parseUrl, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
-import type { Alias, AliasOptions } from 'types/alias'
+import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
@@ -62,7 +62,12 @@ import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
-export type { RenderBuiltAssetUrl } from './build'
+export type {
+  RenderBuiltAssetUrl,
+  ModulePreloadOptions,
+  ResolvedModulePreloadOptions,
+  ResolveModulePreloadDependenciesFn
+} from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.

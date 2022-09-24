@@ -20,6 +20,7 @@ import { preAliasPlugin } from './preAlias'
 import { definePlugin } from './define'
 import { ssrRequireHookPlugin } from './ssrRequireHook'
 import { workerImportMetaUrlPlugin } from './workerImportMetaUrl'
+import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { ensureWatchPlugin } from './ensureWatch'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
@@ -36,6 +37,7 @@ export async function resolvePlugins(
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const { modulePreload } = config.build
 
   return [
     isWatch ? ensureWatchPlugin() : null,
@@ -43,7 +45,8 @@ export async function resolvePlugins(
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
-    config.build.polyfillModulePreload
+    modulePreload === true ||
+    (typeof modulePreload === 'object' && modulePreload.polyfill)
       ? modulePreloadPolyfillPlugin(config)
       : null,
     ...(isDepsOptimizerEnabled(config, false) ||
@@ -88,6 +91,7 @@ export async function resolvePlugins(
     isBuild && config.build.ssr ? ssrRequireHookPlugin(config) : null,
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
+    assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
     dynamicImportVarsPlugin(config),
     importGlobPlugin(config),

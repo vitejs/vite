@@ -64,7 +64,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 2. Inside your project, create `deploy.sh` with the following content (with highlighted lines uncommented appropriately), and run it to deploy:
 
-   ```bash{13,21,24}
+   ```bash{16,24,27}
    #!/usr/bin/env sh
 
    # abort on errors
@@ -75,6 +75,9 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
    # navigate into the build output directory
    cd dist
+
+   # place .nojekyll to bypass Jekyll processing
+   echo > .nojekyll
 
    # if you are deploying to a custom domain
    # echo 'www.example.com' > CNAME

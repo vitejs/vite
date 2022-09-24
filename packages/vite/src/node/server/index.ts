@@ -7,8 +7,8 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'types/chokidar'
-import type { Connect } from 'types/connect'
+import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
@@ -398,6 +398,8 @@ export async function createServer(
         watcher.close(),
         ws.close(),
         container.close(),
+        getDepsOptimizer(server.config)?.close(),
+        getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer()
       ])
       server.resolvedUrls = null
