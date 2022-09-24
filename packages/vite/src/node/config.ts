@@ -62,7 +62,12 @@ import { resolveSSROptions } from './ssr'
 
 const debug = createDebugger('vite:config')
 
-export type { RenderBuiltAssetUrl } from './build'
+export type {
+  RenderBuiltAssetUrl,
+  ModulePreloadOptions,
+  ResolvedModulePreloadOptions,
+  ResolveModulePreloadDependenciesFn
+} from './build'
 
 // NOTE: every export in this file is re-exported from ./index.ts so it will
 // be part of the public API.

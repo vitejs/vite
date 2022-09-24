@@ -6,7 +6,11 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning, toOutputFilePathInString } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  onRollupWarning,
+  toOutputFilePathInJS
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -318,6 +322,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         )
       }
       if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          outputOptions.format
+        )
+
         let match: RegExpExecArray | null
         s = new MagicString(code)
 
@@ -328,13 +336,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          const replacement = toOutputFilePathInString(
+          const replacement = toOutputFilePathInJS(
             filename,
             'asset',
             chunk.fileName,
             'js',
             config,
-            outputOptions.format
+            toRelativeRuntime
           )
           const replacementString =
             typeof replacement === 'string'

@@ -37,6 +37,7 @@ export async function resolvePlugins(
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
+  const { modulePreload } = config.build
 
   return [
     isWatch ? ensureWatchPlugin() : null,
@@ -44,7 +45,8 @@ export async function resolvePlugins(
     preAliasPlugin(config),
     aliasPlugin({ entries: config.resolve.alias }),
     ...prePlugins,
-    config.build.polyfillModulePreload
+    modulePreload === true ||
+    (typeof modulePreload === 'object' && modulePreload.polyfill)
       ? modulePreloadPolyfillPlugin(config)
       : null,
     ...(isDepsOptimizerEnabled(config, false) ||
