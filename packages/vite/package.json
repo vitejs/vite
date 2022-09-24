@@ -20,6 +20,12 @@
     "./client": {
       "types": "./client.d.ts"
     },
+    "./import-meta": {
+      "types": "./import-meta.d.ts"
+    },
+    "./client/types": {
+      "types": "./client/types.d.ts"
+    },
     "./dist/client/*": "./dist/client/*",
     "./package.json": "./package.json"
   },
@@ -27,9 +33,11 @@
     "bin",
     "dist",
     "client.d.ts",
+    "import-meta.d.ts",
     "index.cjs",
     "src/client",
-    "types"
+    "types",
+    "client/types.d.ts"
   ],
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
@@ -47,11 +55,13 @@
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "build": "rimraf dist && run-s build-bundle build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "run-s build-temp-types patch-types roll-types check-dist-types",
-    "build-temp-types": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
-    "patch-types": "tsx scripts/patchTypes.ts",
-    "roll-types": "api-extractor run && rimraf temp",
-    "check-dist-types": "tsc --project tsconfig.check.json",
+    "build-types": "run-p build-node-types build-client-types",
+    "build-node-types": "run-s build-node-types-temp build-node-types-patch build-node-types-roll build-node-types-check",
+    "build-node-types-temp": "tsc --emitDeclarationOnly --outDir temp/node -p src/node",
+    "build-node-types-patch": "tsx scripts/patchTypes.ts",
+    "build-node-types-roll": "api-extractor run && rimraf temp",
+    "build-node-types-check": "tsc --project tsconfig.check.json",
+    "build-client-types": "api-extractor run -c api-extractor.client.json",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
@@ -117,7 +127,8 @@
     "strip-literal": "^0.4.2",
     "tsconfck": "^2.0.1",
     "tslib": "^2.4.0",
-    "types": "link:./types",
+    "dep-types": "link:./src/dep-types",
+    "types": "link:./src/types",
     "ufo": "^0.8.5",
     "ws": "^8.9.0"
   },

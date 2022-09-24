@@ -218,7 +218,7 @@ Avoid deps with large transitive dependencies that result in bloated size compar
 
 Vite aims to be fully usable as a dependency in a TypeScript project (e.g. it should provide proper typings for VitePress), and also in `vite.config.ts`. This means technically a dependency whose types are exposed needs to be part of `dependencies` instead of `devDependencies`. However, this also means we won't be able to bundle it.
 
-To get around this, we inline some of these dependencies' types in `packages/vite/types`. This way, we can still expose the typing but bundle the dependency's source code.
+To get around this, we inline some of these dependencies' types in `packages/vite/src/dep-types`. This way, we can still expose the typing but bundle the dependency's source code.
 
 Use `pnpm run check-dist-types` to check that the bundled types do not rely on types in `devDependencies`. If you are adding `dependencies`, make sure to configure `tsconfig.check.json`.
 

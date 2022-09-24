@@ -1,4 +1,4 @@
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '..'
 
 // this middleware is only active when (config.base !== '/')

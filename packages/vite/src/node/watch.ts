@@ -1,4 +1,4 @@
-import type { WatchOptions } from 'types/chokidar'
+import type { WatchOptions } from 'dep-types/chokidar'
 
 export function resolveChokidarOptions(
   options: WatchOptions | undefined

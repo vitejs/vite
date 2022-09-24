@@ -233,6 +233,7 @@ importers:
       cors: ^2.8.5
       cross-spawn: ^7.0.3
       debug: ^4.3.4
+      dep-types: link:./src/dep-types
       dotenv: ^14.3.2
       dotenv-expand: ^5.1.0
       es-module-lexer: ^1.0.3
@@ -268,7 +269,7 @@ importers:
       strip-literal: ^0.4.2
       tsconfck: ^2.0.1
       tslib: ^2.4.0
-      types: link:./types
+      types: link:./src/types
       ufo: ^0.8.5
       ws: ^8.9.0
     dependencies:
@@ -299,6 +300,7 @@ importers:
       cors: 2.8.5
       cross-spawn: 7.0.3
       debug: 4.3.4
+      dep-types: link:src/dep-types
       dotenv: 14.3.2
       dotenv-expand: 5.1.0
       es-module-lexer: 1.0.3
@@ -329,7 +331,7 @@ importers:
       strip-literal: 0.4.2
       tsconfck: 2.0.1
       tslib: 2.4.0
-      types: link:types
+      types: link:src/types
       ufo: 0.8.5
       ws: 8.9.0
 

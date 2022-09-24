@@ -3,19 +3,20 @@ import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ParseResult } from '@babel/parser'
 import { parse } from '@babel/parser'
-import type { File } from '@babel/types'
+import type { File, StringLiteral } from '@babel/types'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 
 const dir = dirname(fileURLToPath(import.meta.url))
 const tempDir = resolve(dir, '../temp/node')
-const typesDir = resolve(dir, '../types')
+const typesDir = resolve(dir, '../src/types')
+const depTypesDir = resolve(dir, '../src/dep-types')
 
-// walk through the temp dts dir, find all import/export of types/*
+// walk through the temp dts dir, find all import/export of types/*, deps-types/*
 // and rewrite them into relative imports - so that api-extractor actually
 // includes them in the rolled-up final d.ts file.
 walkDir(tempDir)
-console.log(colors.green(colors.bold(`patched types/* imports`)))
+console.log(colors.green(colors.bold(`patched types/*, deps-types/* imports`)))
 
 function slash(p: string): string {
   return p.replace(/\\/g, '/')
@@ -49,20 +50,34 @@ function rewriteFile(file: string): void {
   }
   for (const statement of ast.program.body) {
     if (
-      (statement.type === 'ImportDeclaration' ||
-        statement.type === 'ExportNamedDeclaration' ||
-        statement.type === 'ExportAllDeclaration') &&
-      statement.source?.value.startsWith('types/')
+      statement.type === 'ImportDeclaration' ||
+      statement.type === 'ExportNamedDeclaration' ||
+      statement.type === 'ExportAllDeclaration'
     ) {
       const source = statement.source
-      const absoluteTypePath = resolve(typesDir, source.value.slice(6))
-      const relativeTypePath = slash(relative(dirname(file), absoluteTypePath))
-      str.overwrite(
-        source.start!,
-        source.end!,
-        JSON.stringify(relativeTypePath)
-      )
+      if (source?.value.startsWith('types/')) {
+        rewriteSource(str, source, file, typesDir, 'types')
+      } else if (source?.value.startsWith('dep-types/')) {
+        rewriteSource(str, source, file, depTypesDir, 'dep-types')
+      }
     }
   }
   writeFileSync(file, str.toString())
+}
+
+function rewriteSource(
+  str: MagicString,
+  source: StringLiteral,
+  rewritingFile: string,
+  typesDir: string,
+  typesDirName: string
+) {
+  const absoluteTypePath = resolve(
+    typesDir,
+    source.value.slice(typesDirName.length + 1)
+  )
+  const relativeTypePath = slash(
+    relative(dirname(rewritingFile), absoluteTypePath)
+  )
+  str.overwrite(source.start!, source.end!, JSON.stringify(relativeTypePath))
 }
