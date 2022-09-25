@@ -20,9 +20,6 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./client/types": {
-      "types": "./client/types.d.ts"
-    },
     "./dist/client/*": "./dist/client/*",
     "./package.json": "./package.json"
   },
