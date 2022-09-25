@@ -498,7 +498,7 @@ export async function createServer(
         importers.add(importer)
       }
       const file = getShortName(mod.file!, config.root)
-      updateModules(file, Array.from(importers), Date.now(), server)
+      updateModules(file, Array.from(importers), mod.lastHMRTimestamp, server)
     }
   })
 
