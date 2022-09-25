@@ -574,6 +574,7 @@ async function doBuild(
       }
 
       const resolvedChokidarOptions = resolveChokidarOptions(
+        config,
         config.build.watch.chokidar
       )
 
