@@ -492,7 +492,7 @@ export async function createServer(
 
   ws.on('vite:invalidate', async (url: string) => {
     const mod = moduleGraph.urlToModuleMap.get(url)
-    if (mod) {
+    if (mod && mod.isSelfAccepting) {
       const importers = new Set<ModuleNode>()
       for (const importer of mod.importers) {
         importers.add(importer)
