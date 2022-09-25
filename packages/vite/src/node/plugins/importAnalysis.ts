@@ -147,7 +147,7 @@ function extractImportedBindings(
  *     ```
  *
  * - CSS imports are appended with `.js` since both the js module and the actual
- * css (referenced via <link>) may go through the transform pipeline:
+ * css (referenced via `<link>`) may go through the transform pipeline:
  *
  *     ```js
  *     import './style.css'
