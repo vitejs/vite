@@ -64,11 +64,16 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph';
+import type { ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HmrOptions} from './hmr';
-import { getShortName, handleFileAddUnlink , handleHMRUpdate, updateModules } from './hmr'
+import type { HmrOptions } from './hmr'
+import {
+  getShortName,
+  handleFileAddUnlink,
+  handleHMRUpdate,
+  updateModules
+} from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
