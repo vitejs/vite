@@ -125,7 +125,7 @@ Calling `import.meta.hot.decline()` indicates this module is not hot-updatable, 
 
 ## `hot.invalidate()`
 
-For now, calling `import.meta.hot.invalidate()` simply reloads the page.
+Calling `import.meta.hot.invalidate()` indicates that changes have occurred and the module's state should be treated as invalid. This will cause importers of the module to HMR, and thus provides a way to force changes to propagate upwards.
 
 ## `hot.on(event, cb)`
 
@@ -136,6 +136,7 @@ The following HMR events are dispatched by Vite automatically:
 - `'vite:beforeUpdate'` when an update is about to be applied (e.g. a module will be replaced)
 - `'vite:beforeFullReload'` when a full reload is about to occur
 - `'vite:beforePrune'` when modules that are no longer needed are about to be pruned
+- `'vite:invalidate'` when a module is invalidated with `import.meta.hot.invalidate()`
 - `'vite:error'` when an error occurs (e.g. syntax error)
 
 Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plugin#handlehotupdate) for more details.
