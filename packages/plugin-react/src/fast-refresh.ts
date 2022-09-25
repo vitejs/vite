@@ -101,8 +101,8 @@ function isReactRefreshBoundary(mod) {
 }
 
 import(/* @vite-ignore */ import.meta.url).then(mod => {
+  import.meta.hot.accept();
   if (isReactRefreshBoundary(mod)) {
-    import.meta.hot.accept();
     ${timeout}
   }
 })
