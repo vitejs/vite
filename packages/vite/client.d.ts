@@ -1,4 +1,4 @@
-/// <reference path="./import-meta.d.ts" />
+/// <reference path="./types/importMeta.d.ts" />
 
 // CSS modules
 type CSSModuleClasses = { readonly [key: string]: string }
