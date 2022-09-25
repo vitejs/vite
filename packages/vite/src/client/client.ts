@@ -546,10 +546,9 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     decline() {},
 
+    // tell the server to re-perform hmr propagation from this module as root
     invalidate() {
-      // TODO should tell the server to re-perform hmr propagation
-      // from this module as root
-      location.reload()
+      this.send('vite:invalidate', ownerPath)
     },
 
     // custom events

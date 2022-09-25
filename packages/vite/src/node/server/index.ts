@@ -64,14 +64,15 @@ import {
   serveStaticMiddleware
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph, ModuleNode } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HmrOptions } from './hmr'
+import { getShortName, HmrOptions, updateModules } from './hmr'
 import { handleFileAddUnlink, handleHMRUpdate } from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
+import { HMRPayload } from '../../types/hmrPayload'
 
 export { searchForWorkspaceRoot } from './searchRoot'
 
@@ -487,6 +488,18 @@ export async function createServer(
   })
   watcher.on('unlink', (file) => {
     handleFileAddUnlink(normalizePath(file), server)
+  })
+
+  ws.on('vite:invalidate', async (url: string) => {
+    const mod = moduleGraph.urlToModuleMap.get(url)
+    if (mod) {
+      const importers = new Set<ModuleNode>()
+      for (const importer of mod.importers) {
+        importers.add(importer)
+      }
+      const file = getShortName(mod.file!, config.root)
+      updateModules(file, Array.from(importers), Date.now(), server)
+    }
   })
 
   if (!middlewareMode && httpServer) {
