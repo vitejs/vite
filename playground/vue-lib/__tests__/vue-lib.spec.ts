@@ -22,4 +22,15 @@ describe('vue component library', () => {
     expect(code).toContain('styleA') // styleA is used by CompA
     expect(code).not.toContain('styleB') // styleB is not used
   })
+
+  test('should inject css when cssCodeSplit = true', async () => {
+    // Build lib
+    const { output } = (
+      await build({
+        logLevel: 'silent',
+        configFile: path.resolve(__dirname, '../vite.config.lib-css.ts')
+      })
+    )[0]
+    expect(output[0].code).toContain('.card{padding:4rem}')
+  })
 })
