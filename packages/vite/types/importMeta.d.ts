@@ -1,7 +1,14 @@
-import type { ViteHotContext } from './hot'
-import type { ImportGlobEagerFunction, ImportGlobFunction } from './importGlob'
+// This file is an augmentation to the built-in ImportMeta interface
+// Thus cannot contain any top-level imports
+// <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
 
-export interface ImportMetaEnv {
+/* eslint-disable @typescript-eslint/consistent-type-imports */
+
+// Duplicate of import('../src/node/importGlob').GlobOptions in order to
+// avoid breaking the production client type. Because this file is referenced
+// in vite/client.d.ts and in production src/node/importGlob.ts doesn't exist.
+
+interface ImportMetaEnv {
   [key: string]: any
   BASE_URL: string
   MODE: string
@@ -10,16 +17,16 @@ export interface ImportMetaEnv {
   SSR: boolean
 }
 
-export interface ImportMeta {
+interface ImportMeta {
   url: string
 
-  readonly hot?: ViteHotContext
+  readonly hot?: import('./hot').ViteHotContext
 
   readonly env: ImportMetaEnv
 
-  glob: ImportGlobFunction
+  glob: import('./importGlob').ImportGlobFunction
   /**
    * @deprecated Use `import.meta.glob('*', { eager: true })` instead
    */
-  globEager: ImportGlobEagerFunction
+  globEager: import('./importGlob').ImportGlobEagerFunction
 }

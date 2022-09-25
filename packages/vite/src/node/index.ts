@@ -103,7 +103,6 @@ export type {
   ErrorPayload
 } from 'types/hmrPayload'
 export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
-// [deprecated: use vite/client/types instead]
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
