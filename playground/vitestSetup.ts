@@ -122,6 +122,14 @@ beforeAll(async (s) => {
 
   try {
     page.on('console', (msg) => {
+      // ignore favicon request in headed browser
+      if (
+        process.env.VITE_DEBUG_SERVE &&
+        msg.text().includes('Failed to load resource:') &&
+        msg.location().url.includes('favicon.ico')
+      ) {
+        return
+      }
       browserLogs.push(msg.text())
     })
     page.on('pageerror', (error) => {
