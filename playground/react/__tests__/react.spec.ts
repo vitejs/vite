@@ -26,9 +26,11 @@ test('should only hmr files with exported react components', async () => {
   )
   await untilUpdated(() => page.textContent('#parent'), 'Updated')
   expect(browserLogs).toMatchObject([
+    '[vite] hot updated: /hmr/no-exported-comp.jsx',
     '[vite] hot updated: /hmr/parent.jsx',
     'Parent rendered'
   ])
+  browserLogs.length = 0
 })
 
 test.runIf(isServe)(
