@@ -125,7 +125,18 @@ Calling `import.meta.hot.decline()` indicates this module is not hot-updatable, 
 
 ## `hot.invalidate()`
 
-Calling `import.meta.hot.invalidate()` indicates that changes have occurred and the module's state should be treated as invalid. This will cause importers of the module to HMR, and thus provides a way to force changes to propagate upwards.
+A self-accepting module may realize during runtime that it can't handle a HMR update, and so the update needs to be forcefully propagated to importers. By calling `import.meta.hot.invalidate()`, the HMR server will invalidate the importers of the caller, as if the caller wasn't self-accepting.
+
+Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
+
+    ```ts
+    import.meta.hot.accept(module => {
+      // You may use the new module instance to decide whether to invalidate.
+      if (cannotHandleUpdate(module)) {
+        import.meta.hot.invalidate()
+      }
+    })
+    ```
 
 ## `hot.on(event, cb)`
 
