@@ -100,14 +100,13 @@ function isReactRefreshBoundary(mod) {
   return hasExports && areAllExportsComponents;
 }
 
-import(/* @vite-ignore */ import.meta.url).then(mod => {
-  import.meta.hot.accept();
+import.meta.hot.accept(mod => {
   if (isReactRefreshBoundary(mod)) {
     ${timeout}
   } else {
     import.meta.hot.invalidate();
   }
-})
+});
 `
 
 export function addRefreshWrapper(
