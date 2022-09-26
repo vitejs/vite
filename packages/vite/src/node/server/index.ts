@@ -498,12 +498,8 @@ export async function createServer(
   ws.on('vite:invalidate', async (url: string) => {
     const mod = moduleGraph.urlToModuleMap.get(url)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
-      const importers = new Set<ModuleNode>()
-      for (const importer of mod.importers) {
-        importers.add(importer)
-      }
       const file = getShortName(mod.file!, config.root)
-      updateModules(file, Array.from(importers), mod.lastHMRTimestamp, server)
+      updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)
     }
   })
 
