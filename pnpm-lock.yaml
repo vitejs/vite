@@ -199,13 +199,11 @@ importers:
   packages/plugin-vue-jsx:
     specifiers:
       '@babel/core': ^7.19.1
-      '@babel/plugin-syntax-import-meta': ^7.10.4
       '@babel/plugin-transform-typescript': ^7.19.1
       '@vue/babel-plugin-jsx': ^1.1.1
       vite: workspace:*
     dependencies:
       '@babel/core': 7.19.1
-      '@babel/plugin-syntax-import-meta': 7.10.4_@babel+core@7.19.1
       '@babel/plugin-transform-typescript': 7.19.1_@babel+core@7.19.1
       '@vue/babel-plugin-jsx': 1.1.1_@babel+core@7.19.1
     devDependencies:
@@ -1526,11 +1524,6 @@ packages:
       '@babel/types': 7.19.0
     dev: false
 
-  /@babel/helper-plugin-utils/7.16.7:
-    resolution: {integrity: sha512-Qg3Nk7ZxpgMrsox6HreY1ZNKdBq7K72tDSliA6dCl5f007jR4ne8iD5UzuNnCJH2xBf2BEEVGr+/OL6Gdp7RxA==}
-    engines: {node: '>=6.9.0'}
-    dev: false
-
   /@babel/helper-plugin-utils/7.18.6:
     resolution: {integrity: sha512-gvZnm1YAAxh13eJdkb9EWHBnF3eAub3XTLCZEehHT2kWxiKVRL64+ae5Y6Ivne0mVHmMYKT+xWgZO+gQhuLUBg==}
     engines: {node: '>=6.9.0'}
@@ -1616,15 +1609,6 @@ packages:
       '@babel/helper-plugin-utils': 7.18.9
       '@babel/plugin-syntax-pipeline-operator': 7.18.6
     dev: true
-
-  /@babel/plugin-syntax-import-meta/7.10.4_@babel+core@7.19.1:
-    resolution: {integrity: sha512-Yqfm+XDx0+Prh3VSeEQCPU81yC+JWZ2pDPFSS4ZdpfZhp4MkFMaDC1UqseovEKwSUpnIL7+vK+Clp7bfh0iD7g==}
-    peerDependencies:
-      '@babel/core': ^7.0.0-0
-    dependencies:
-      '@babel/core': 7.19.1
-      '@babel/helper-plugin-utils': 7.16.7
-    dev: false
 
   /@babel/plugin-syntax-jsx/7.16.7_@babel+core@7.19.1:
     resolution: {integrity: sha512-Esxmk7YjA8QysKeT3VhTXvF6y77f/a91SIs4pWb4H2eWGQkCKFgQaG6hdoEVZtGsrAcb2K5BW66XsOErD4WU3Q==}

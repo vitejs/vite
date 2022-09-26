@@ -3,8 +3,6 @@ import path from 'node:path'
 import type { types } from '@babel/core'
 import * as babel from '@babel/core'
 import jsx from '@vue/babel-plugin-jsx'
-// @ts-expect-error missing type
-import importMeta from '@babel/plugin-syntax-import-meta'
 import { createFilter, normalizePath } from 'vite'
 import type { ComponentOptions } from 'vue'
 import type { Plugin } from 'vite'
@@ -83,7 +81,7 @@ function vueJsxPlugin(options: Options = {}): Plugin {
       // use id for script blocks in Vue SFCs (e.g. `App.vue?vue&type=script&lang.jsx`)
       // use filepath for plain jsx files (e.g. App.jsx)
       if (filter(id) || filter(filepath)) {
-        const plugins = [importMeta, [jsx, babelPluginOptions], ...babelPlugins]
+        const plugins = [[jsx, babelPluginOptions], ...babelPlugins]
         if (id.endsWith('.tsx') || filepath.endsWith('.tsx')) {
           plugins.push([
             // @ts-ignore missing type
