@@ -810,13 +810,13 @@ export function resolveBaseUrl(
     return '/'
   }
 
-  // leading slash warn
+  // no leading slash warn
   if (!base.startsWith('/')) {
     logger.warn(
       colors.yellow(colors.bold(`(!) "base" option should start with a slash.`))
     )
   }
-  // ending slash warn
+  // no ending slash warn
   if (!base.endsWith('/')) {
     logger.warn(
       colors.yellow(colors.bold(`(!) "base" option should end with a slash.`))
