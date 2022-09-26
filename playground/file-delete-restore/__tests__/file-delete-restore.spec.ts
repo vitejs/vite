@@ -1,3 +1,4 @@
+import { test } from 'vitest'
 import {
   addFile,
   editFile,

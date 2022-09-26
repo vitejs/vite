@@ -125,6 +125,18 @@ test('export default', async () => {
   ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
 })
 
+test('export then import minified', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `export * from 'vue';import {createApp} from 'vue';`
+    )
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_1__ = await __vite_ssr_import__(\\"vue\\");
+    __vite_ssr_exportAll__(__vite_ssr_import_1__);const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"vue\\");
+    "
+  `)
+})
+
 test('import.meta', async () => {
   expect(
     await ssrTransformSimpleCode(`console.log(import.meta.url)`)
@@ -388,6 +400,30 @@ const a = () => {
     }
     "
   `)
+
+  // #9585
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import { n, m } from 'foo'
+const foo = {}
+
+{
+  const { [n]: m } = foo
+}
+`
+    )
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+    const foo = {}
+
+    {
+      const { [__vite_ssr_import_0__.n]: m } = foo
+    }
+    "
+  `)
 })
 
 test('nested object destructure alias', async () => {
@@ -447,6 +483,45 @@ objRest()
     __vite_ssr_import_0__.set()
     __vite_ssr_import_0__.rest()
     __vite_ssr_import_0__.objRest()
+    "
+  `)
+})
+
+test('object props and methods', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `
+import foo from 'foo'
+
+const bar = 'bar'
+
+const obj = {
+  foo() {},
+  [foo]() {},
+  [bar]() {},
+  foo: () => {},
+  [foo]: () => {},
+  [bar]: () => {},
+  bar(foo) {}
+}
+`
+    )
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foo\\");
+
+
+    const bar = 'bar'
+
+    const obj = {
+      foo() {},
+      [__vite_ssr_import_0__.default]() {},
+      [bar]() {},
+      foo: () => {},
+      [__vite_ssr_import_0__.default]: () => {},
+      [bar]: () => {},
+      bar(foo) {}
+    }
     "
   `)
 })

@@ -54,7 +54,7 @@ export default defineConfig({
 
 Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.
 
-`plugins` also accept presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
+`plugins` also accepts presets including several plugins as a single element. This is useful for complex features (like framework integration) that are implemented using several plugins. The array will be flattened internally.
 
 ```js
 // framework-plugin
@@ -214,7 +214,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 - **Type:** `(config: ResolvedConfig) => void | Promise<void>`
 - **Kind:** `async`, `parallel`
 
-  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based the command is being run.
+  Called after the Vite config is resolved. Use this hook to read and store the final resolved config. It is also useful when the plugin needs to do something different based on the command being run.
 
   **Example:**
 
@@ -595,12 +595,21 @@ It is possible to type custom events by extending the `CustomEventMap` interface
 
 ```ts
 // events.d.ts
-import 'vite/types/customEvent'
+import 'vite'
+import 'vite/client/types'
 
-declare module 'vite/types/customEvent' {
-  interface CustomEventMap {
-    'custom:foo': { msg: string }
-    // 'event-key': payload
-  }
+interface MyCustomEventMap {
+  'custom:foo': { msg: string }
+  // 'event-key': payload
+}
+
+// extend interface for server-side
+declare module 'vite' {
+  interface CustomEventMap extends MyCustomEventMap {}
+}
+
+// extend interface for client-side
+declare module 'vite/client/types' {
+  interface CustomEventMap extends MyCustomEventMap {}
 }
 ```

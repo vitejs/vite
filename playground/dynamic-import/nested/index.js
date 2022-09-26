@@ -97,9 +97,33 @@ import(`../alias/${base}.js?raw`).then((mod) => {
   text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
 })
 
+base = 'url'
+import(`../alias/${base}.js?url`).then((mod) => {
+  text('.dynamic-import-with-vars-url', JSON.stringify(mod))
+})
+
+base = 'worker'
+import(`../alias/${base}.js?worker`).then((workerMod) => {
+  const worker = new workerMod.default()
+  worker.postMessage('1')
+  worker.addEventListener('message', (ev) => {
+    console.log(ev)
+    text('.dynamic-import-with-vars-worker', JSON.stringify(ev.data))
+  })
+})
+
 base = 'hi'
 import(`@/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars-alias', mod.hi())
+})
+
+base = 'self'
+import(`../nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-self', mod.self)
+})
+
+import(`../nested/nested/${base}.js`).then((mod) => {
+  text('.dynamic-import-nested-self', mod.self)
 })
 
 console.log('index.js')

@@ -1,16 +1,33 @@
 import path from 'node:path'
 import { parse as parseUrl } from 'node:url'
 import fs, { promises as fsp } from 'node:fs'
+import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type { OutputOptions, PluginContext, PreRenderedAsset } from 'rollup'
+import type {
+  NormalizedOutputOptions,
+  OutputAsset,
+  OutputOptions,
+  PluginContext,
+  PreRenderedAsset,
+  RenderedChunk
+} from 'rollup'
 import MagicString from 'magic-string'
-import { toOutputFilePathInString } from '../build'
+import colors from 'picocolors'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  toOutputFilePathInJS
+} from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
+
+export const duplicateAssets = new WeakMap<
+  ResolvedConfig,
+  Map<string, OutputAsset>
+>()
 
 const rawRE = /(\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -36,6 +53,80 @@ export function registerCustomMime(): void {
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
 }
 
+export function renderAssetUrlInJS(
+  ctx: PluginContext,
+  config: ResolvedConfig,
+  chunk: RenderedChunk,
+  opts: NormalizedOutputOptions,
+  code: string
+): MagicString | undefined {
+  const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+    opts.format
+  )
+
+  let match: RegExpExecArray | null
+  let s: MagicString | undefined
+
+  // Urls added with JS using e.g.
+  // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
+
+  // Urls added in CSS that is imported in JS end up like
+  // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
+
+  // In both cases, the wrapping should already be fine
+
+  while ((match = assetUrlRE.exec(code))) {
+    s ||= new MagicString(code)
+    const [full, hash, postfix = ''] = match
+    // some internal plugins may still need to emit chunks (e.g. worker) so
+    // fallback to this.getFileName for that. TODO: remove, not needed
+    const file = getAssetFilename(hash, config) || ctx.getFileName(hash)
+    chunk.viteMetadata.importedAssets.add(cleanUrl(file))
+    const filename = file + postfix
+    const replacement = toOutputFilePathInJS(
+      filename,
+      'asset',
+      chunk.fileName,
+      'js',
+      config,
+      toRelativeRuntime
+    )
+    const replacementString =
+      typeof replacement === 'string'
+        ? JSON.stringify(replacement).slice(1, -1)
+        : `"+${replacement.runtime}+"`
+    s.overwrite(match.index, match.index + full.length, replacementString, {
+      contentOnly: true
+    })
+  }
+
+  // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
+
+  const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+  while ((match = publicAssetUrlRE.exec(code))) {
+    s ||= new MagicString(code)
+    const [full, hash] = match
+    const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
+    const replacement = toOutputFilePathInJS(
+      publicUrl,
+      'public',
+      chunk.fileName,
+      'js',
+      config,
+      toRelativeRuntime
+    )
+    const replacementString =
+      typeof replacement === 'string'
+        ? JSON.stringify(replacement).slice(1, -1)
+        : `"+${replacement.runtime}+"`
+    s.overwrite(match.index, match.index + full.length, replacementString, {
+      contentOnly: true
+    })
+  }
+
+  return s
+}
+
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
@@ -51,6 +142,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       emittedHashMap.set(config, new Set())
+      duplicateAssets.set(config, new Map())
     },
 
     resolveId(id) {
@@ -90,64 +182,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       return `export default ${JSON.stringify(url)}`
     },
 
-    renderChunk(code, chunk) {
-      let match: RegExpExecArray | null
-      let s: MagicString | undefined
-
-      // Urls added with JS using e.g.
-      // imgElement.src = "__VITE_ASSET__5aa0ddc0__" are using quotes
-
-      // Urls added in CSS that is imported in JS end up like
-      // var inlined = ".inlined{color:green;background:url(__VITE_ASSET__5aa0ddc0__)}\n";
-
-      // In both cases, the wrapping should already be fine
-
-      while ((match = assetUrlRE.exec(code))) {
-        s = s || (s = new MagicString(code))
-        const [full, hash, postfix = ''] = match
-        // some internal plugins may still need to emit chunks (e.g. worker) so
-        // fallback to this.getFileName for that. TODO: remove, not needed
-        const file = getAssetFilename(hash, config) || this.getFileName(hash)
-        chunk.viteMetadata.importedAssets.add(cleanUrl(file))
-        const filename = file + postfix
-        const replacement = toOutputFilePathInString(
-          filename,
-          'asset',
-          chunk.fileName,
-          'js',
-          config
-        )
-        const replacementString =
-          typeof replacement === 'string'
-            ? JSON.stringify(replacement).slice(1, -1)
-            : `"+${replacement.runtime}+"`
-        s.overwrite(match.index, match.index + full.length, replacementString, {
-          contentOnly: true
-        })
-      }
-
-      // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
-
-      const publicAssetUrlMap = publicAssetUrlCache.get(config)!
-      while ((match = publicAssetUrlRE.exec(code))) {
-        s = s || (s = new MagicString(code))
-        const [full, hash] = match
-        const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-        const replacement = toOutputFilePathInString(
-          publicUrl,
-          'public',
-          chunk.fileName,
-          'js',
-          config
-        )
-        const replacementString =
-          typeof replacement === 'string'
-            ? JSON.stringify(replacement).slice(1, -1)
-            : `"+${replacement.runtime}+"`
-        s.overwrite(match.index, match.index + full.length, replacementString, {
-          contentOnly: true
-        })
-      }
+    renderChunk(code, chunk, opts) {
+      const s = renderAssetUrlInJS(this, config, chunk, opts, code)
 
       if (s) {
         return {
@@ -322,7 +358,7 @@ export function assetFileNamesToFileName(
           return hash
 
         case '[name]':
-          return name
+          return sanitizeFileName(name)
       }
       throw new Error(
         `invalid placeholder ${placeholder} in assetFileNames "${assetFileNames}"`
@@ -331,6 +367,23 @@ export function assetFileNamesToFileName(
   )
 
   return fileName
+}
+
+// taken from https://github.com/rollup/rollup/blob/a8647dac0fe46c86183be8596ef7de25bc5b4e4b/src/utils/sanitizeFileName.ts
+// https://datatracker.ietf.org/doc/html/rfc2396
+// eslint-disable-next-line no-control-regex
+const INVALID_CHAR_REGEX = /[\x00-\x1F\x7F<>*#"{}|^[\]`;?:&=+$,]/g
+const DRIVE_LETTER_REGEX = /^[a-z]:/i
+function sanitizeFileName(name: string): string {
+  const match = DRIVE_LETTER_REGEX.exec(name)
+  const driveLetter = match ? match[0] : ''
+
+  // A `:` is only allowed as part of a windows drive letter (ex: C:\foo)
+  // Otherwise, avoid them because they can refer to NTFS alternate data streams.
+  return (
+    driveLetter +
+    name.substr(driveLetter.length).replace(INVALID_CHAR_REGEX, '_')
+  )
 }
 
 export const publicAssetUrlCache = new WeakMap<
@@ -361,6 +414,13 @@ export function publicFileToBuiltUrl(
   return `__VITE_PUBLIC_ASSET__${hash}__`
 }
 
+const GIT_LFS_PREFIX = Buffer.from('version https://git-lfs.github.com')
+function isGitLfsPlaceholder(content: Buffer): boolean {
+  if (content.length < GIT_LFS_PREFIX.length) return false
+  // Check whether the content begins with the characteristic string of Git LFS placeholders
+  return GIT_LFS_PREFIX.compare(content, 0, GIT_LFS_PREFIX.length) === 0
+}
+
 /**
  * Register an asset to be emitted as part of the bundle (if necessary)
  * and returns the resolved public URL
@@ -389,8 +449,15 @@ async function fileToBuiltUrl(
     config.build.lib ||
     (!file.endsWith('.svg') &&
       !file.endsWith('.html') &&
-      content.length < Number(config.build.assetsInlineLimit))
+      content.length < Number(config.build.assetsInlineLimit) &&
+      !isGitLfsPlaceholder(content))
   ) {
+    if (config.build.lib && isGitLfsPlaceholder(content)) {
+      config.logger.warn(
+        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`)
+      )
+    }
+
     const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
     // base64 inlined as a string
     url = `data:${mimeType};base64,${content.toString('base64')}`
@@ -417,8 +484,9 @@ async function fileToBuiltUrl(
       map.set(contentHash, fileName)
     }
     const emittedSet = emittedHashMap.get(config)!
+    const duplicates = duplicateAssets.get(config)!
+    const name = normalizePath(path.relative(config.root, file))
     if (!emittedSet.has(contentHash)) {
-      const name = normalizePath(path.relative(config.root, file))
       pluginContext.emitFile({
         name,
         fileName,
@@ -426,6 +494,14 @@ async function fileToBuiltUrl(
         source: content
       })
       emittedSet.add(contentHash)
+    } else {
+      duplicates.set(name, {
+        name,
+        fileName: map.get(contentHash)!,
+        type: 'asset',
+        source: content,
+        isAsset: true
+      })
     }
 
     url = `__VITE_ASSET__${contentHash}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE

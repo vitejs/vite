@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 
-import readline from 'readline'
+import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
@@ -153,7 +153,7 @@ export function printServerUrls(
     info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
-    const note = `use ${colors.white(colors.bold('--host'))} to expose`
+    const note = `use ${colors.reset(colors.bold('--host'))} to expose`
     info(
       colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`)
     )

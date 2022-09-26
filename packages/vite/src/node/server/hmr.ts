@@ -9,6 +9,7 @@ import { createDebugger, normalizePath, unique } from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
+import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import type { ModuleNode } from './moduleGraph'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -93,12 +94,10 @@ export async function handleHMRUpdate(
     server
   }
 
-  for (const plugin of config.plugins) {
-    if (plugin.handleHotUpdate) {
-      const filteredModules = await plugin.handleHotUpdate(hmrContext)
-      if (filteredModules) {
-        hmrContext.modules = filteredModules
-      }
+  for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
+    const filteredModules = await hook(hmrContext)
+    if (filteredModules) {
+      hmrContext.modules = filteredModules
     }
   }
 
@@ -153,9 +152,13 @@ export function updateModules(
 
     updates.push(
       ...[...boundaries].map(({ boundary, acceptedVia }) => ({
-        type: `${boundary.type}-update` as Update['type'],
+        type: `${boundary.type}-update` as const,
         timestamp,
         path: boundary.url,
+        explicitImportRequired:
+          boundary.type === 'js'
+            ? isExplicitImportRequired(acceptedVia.url)
+            : undefined,
         acceptedPath: acceptedVia.url
       }))
     )
@@ -231,6 +234,11 @@ function propagateUpdate(
   // if the imports of `node` have not been analyzed, then `node` has not
   // been loaded in the browser and we should stop propagation.
   if (node.id && node.isSelfAccepting === undefined) {
+    debugHmr(
+      `[propagate update] stop propagation because not analyzed: ${colors.dim(
+        node.id
+      )}`
+    )
     return false
   }
 

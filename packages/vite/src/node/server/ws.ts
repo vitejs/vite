@@ -6,7 +6,7 @@ import type { Socket } from 'node:net'
 import colors from 'picocolors'
 import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw } from 'ws'
-import type { WebSocket as WebSocketTypes } from 'types/ws'
+import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
 import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
@@ -25,7 +25,7 @@ export interface WebSocketServer {
    */
   clients: Set<WebSocketClient>
   /**
-   * Boardcast events to all clients
+   * Broadcast events to all clients
    */
   send(payload: HMRPayload): void
   /**

@@ -1,9 +1,6 @@
 // test utils used in e2e tests for playgrounds.
 // `import { getColor } from '~utils'`
 
-// TODO: explicitly import APIs and remove this
-/// <reference types="vitest/globals"/>
-
 import fs from 'node:fs'
 import path from 'node:path'
 import colors from 'css-color-names'
@@ -24,6 +21,7 @@ export const ports = {
   'legacy/ssr': 9520,
   lib: 9521,
   'optimize-missing-deps': 9522,
+  'legacy/client-and-ssr': 9523,
   'ssr-deps': 9600,
   'ssr-html': 9601,
   'ssr-pug': 9602,
@@ -31,7 +29,8 @@ export const ports = {
   'ssr-vue': 9604,
   'ssr-webworker': 9605,
   'css/postcss-caching': 5005,
-  'css/postcss-plugins-different-dir': 5006
+  'css/postcss-plugins-different-dir': 5006,
+  'css/dynamic-import': 5007
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,

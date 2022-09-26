@@ -1,4 +1,5 @@
 // @ts-check
+const { builtinModules } = require('node:module')
 const { defineConfig } = require('eslint-define-config')
 
 module.exports = defineConfig({
@@ -81,6 +82,10 @@ module.exports = defineConfig({
       { prefer: 'type-imports' }
     ],
 
+    'import/no-nodejs-modules': [
+      'error',
+      { allow: builtinModules.map((mod) => `node:${mod}`) }
+    ],
     'import/no-duplicates': 'error',
     'import/order': 'error',
     'sort-imports': [
@@ -126,7 +131,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**', '*.spec.ts'],
+      files: ['packages/vite/src/dep-types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
@@ -173,7 +178,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['*.js'],
+      files: ['*.js', '*.mjs', '*.cjs'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }

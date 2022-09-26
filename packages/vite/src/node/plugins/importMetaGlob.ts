@@ -438,7 +438,9 @@ export async function transformGlobImport(
 
           files.forEach((i) => matchedFiles.add(i))
 
-          const replacement = `Object.assign({${objectProps.join(',')}})`
+          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+            ','
+          )}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -461,6 +463,34 @@ type IdResolver = (
   importer?: string
 ) => Promise<string | undefined> | string | undefined
 
+function globSafePath(path: string) {
+  // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
+  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
+  return fg.escapePath(normalizePath(path))
+}
+
+function lastNthChar(str: string, n: number) {
+  return str.charAt(str.length - 1 - n)
+}
+
+function globSafeResolvedPath(resolved: string, glob: string) {
+  // we have to escape special glob characters in the resolved path, but keep the user specified globby suffix
+  // walk back both strings until a character difference is found
+  // then slice up the resolved path at that pos and escape the first part
+  let numEqual = 0
+  const maxEqual = Math.min(resolved.length, glob.length)
+  while (
+    numEqual < maxEqual &&
+    lastNthChar(resolved, numEqual) === lastNthChar(glob, numEqual)
+  ) {
+    numEqual += 1
+  }
+  const staticPartEnd = resolved.length - numEqual
+  const staticPart = resolved.slice(0, staticPartEnd)
+  const dynamicPart = resolved.slice(staticPartEnd)
+  return globSafePath(staticPart) + dynamicPart
+}
+
 export async function toAbsoluteGlob(
   glob: string,
   root: string,
@@ -472,18 +502,20 @@ export async function toAbsoluteGlob(
     pre = '!'
     glob = glob.slice(1)
   }
-
-  const dir = importer ? dirname(importer) : root
+  root = globSafePath(root)
+  const dir = importer ? globSafePath(dirname(importer)) : root
   if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
   const resolved = normalizePath((await resolveId(glob, importer)) || glob)
-  if (isAbsolute(resolved)) return pre + resolved
+  if (isAbsolute(resolved)) {
+    return pre + globSafeResolvedPath(resolved, glob)
+  }
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must starts with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
   )
 }
 
