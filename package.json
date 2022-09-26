@@ -62,7 +62,7 @@
     "@typescript-eslint/parser": "^5.38.0",
     "conventional-changelog-cli": "^2.2.2",
     "esbuild": "^0.14.47",
-    "eslint": "^8.23.1",
+    "eslint": "^8.24.0",
     "eslint-define-config": "^1.7.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-node": "^11.1.0",
@@ -88,7 +88,7 @@
     "typescript": "^4.6.4",
     "unbuild": "^0.8.11",
     "vite": "workspace:*",
-    "vitepress": "^1.0.0-alpha.15",
+    "vitepress": "^1.0.0-alpha.16",
     "vitest": "^0.23.4",
     "vue": "^3.2.39"
   },
