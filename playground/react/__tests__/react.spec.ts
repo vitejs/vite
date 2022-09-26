@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest'
-import { browserLogs, editFile, isServe, page, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  editFile,
+  isBuild,
+  isServe,
+  page,
+  untilUpdated
+} from '~utils'
 
 test('should render', async () => {
   expect(await page.textContent('h1')).toMatch('Hello Vite + React')
@@ -16,21 +23,6 @@ test('should hmr', async () => {
   await untilUpdated(() => page.textContent('h1'), 'Hello Updated')
   // preserve state
   expect(await page.textContent('#state-button')).toMatch('count is: 1')
-})
-
-// #9869
-test('should only hmr files with exported react components', async () => {
-  browserLogs.length = 0
-  editFile('hmr/no-exported-comp.jsx', (code) =>
-    code.replace('An Object', 'Updated')
-  )
-  await untilUpdated(() => page.textContent('#parent'), 'Updated')
-  expect(browserLogs).toMatchObject([
-    '[vite] hot updated: /hmr/no-exported-comp.jsx',
-    '[vite] hot updated: /hmr/parent.jsx',
-    'Parent rendered'
-  ])
-  browserLogs.length = 0
 })
 
 test.runIf(isServe)(
@@ -53,27 +45,45 @@ test.runIf(isServe)(
   }
 )
 
-test('should hmr react context', async () => {
-  browserLogs.length = 0
-  expect(await page.textContent('#context-button')).toMatch(
-    'context-based count is: 0'
-  )
-  await page.click('#context-button')
-  expect(await page.textContent('#context-button')).toMatch(
-    'context-based count is: 1'
-  )
-  editFile('context/CountProvider.jsx', (code) =>
-    code.replace('context provider', 'context provider updated')
-  )
-  await untilUpdated(
-    () => page.textContent('#context-provider'),
-    'context provider updated'
-  )
-  expect(browserLogs).toMatchObject([
-    '[vite] hot updated: /context/CountProvider.jsx',
-    '[vite] hot updated: /App.jsx',
-    '[vite] hot updated: /context/ContextButton.jsx',
-    'Parent rendered'
-  ])
-  browserLogs.length = 0
-})
+if (!isBuild) {
+  // #9869
+  test('should only hmr files with exported react components', async () => {
+    browserLogs.length = 0
+    editFile('hmr/no-exported-comp.jsx', (code) =>
+      code.replace('An Object', 'Updated')
+    )
+    await untilUpdated(() => page.textContent('#parent'), 'Updated')
+    expect(browserLogs).toMatchObject([
+      '[vite] hot updated: /hmr/no-exported-comp.jsx',
+      '[vite] hot updated: /hmr/parent.jsx',
+      'Parent rendered'
+    ])
+    browserLogs.length = 0
+  })
+
+  // #3301
+  test('should hmr react context', async () => {
+    browserLogs.length = 0
+    expect(await page.textContent('#context-button')).toMatch(
+      'context-based count is: 0'
+    )
+    await page.click('#context-button')
+    expect(await page.textContent('#context-button')).toMatch(
+      'context-based count is: 1'
+    )
+    editFile('context/CountProvider.jsx', (code) =>
+      code.replace('context provider', 'context provider updated')
+    )
+    await untilUpdated(
+      () => page.textContent('#context-provider'),
+      'context provider updated'
+    )
+    expect(browserLogs).toMatchObject([
+      '[vite] hot updated: /context/CountProvider.jsx',
+      '[vite] hot updated: /App.jsx',
+      '[vite] hot updated: /context/ContextButton.jsx',
+      'Parent rendered'
+    ])
+    browserLogs.length = 0
+  })
+}
