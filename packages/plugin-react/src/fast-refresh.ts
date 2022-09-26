@@ -104,6 +104,8 @@ import(/* @vite-ignore */ import.meta.url).then(mod => {
   import.meta.hot.accept();
   if (isReactRefreshBoundary(mod)) {
     ${timeout}
+  } else {
+    import.meta.hot.invalidate();
   }
 })
 `
