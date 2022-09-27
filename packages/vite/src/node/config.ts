@@ -31,7 +31,8 @@ import {
   mergeAlias,
   mergeConfig,
   normalizeAlias,
-  normalizePath
+  normalizePath,
+  resolveFrom
 } from './utils'
 import {
   createPluginHookUtils,
@@ -47,8 +48,12 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin } from './plugins/resolve'
+import type {
+  InternalResolveOptions,
+  ResolveOptions} from './plugins/resolve';
+import {
+  resolvePlugin
+, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
@@ -967,38 +972,27 @@ async function bundleConfigFile(
       {
         name: 'externalize-deps',
         setup(build) {
+          const options: InternalResolveOptions = {
+            root: path.dirname(fileName),
+            isBuild: true,
+            isProduction: true,
+            isRequire: !isESM,
+            preferRelative: false,
+            tryIndex: true,
+            mainFields: DEFAULT_MAIN_FIELDS,
+            browserField: false,
+            conditions: [],
+            dedupe: [],
+            extensions: DEFAULT_EXTENSIONS,
+            preserveSymlinks: false
+          }
+
           build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
             // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id)) {
               return {
+                path: tryNodeResolve(id, importer, options, false)?.id,
                 external: true
-              }
-            }
-            // bundle the rest and make sure that the we can also access
-            // it's third-party dependencies. externalize if not.
-            // monorepo/
-            // ├─ package.json
-            // ├─ utils.js -----------> bundle (share same node_modules)
-            // ├─ vite-project/
-            // │  ├─ vite.config.js --> entry
-            // │  ├─ package.json
-            // ├─ foo-project/
-            // │  ├─ utils.js --------> external (has own node_modules)
-            // │  ├─ package.json
-            const idFsPath = path.resolve(path.dirname(importer), id)
-            const idPkgPath = lookupFile(idFsPath, [`package.json`], {
-              pathOnly: true
-            })
-            if (idPkgPath) {
-              const idPkgDir = path.dirname(idPkgPath)
-              // if this file needs to go up one or more directory to reach the vite config,
-              // that means it has it's own node_modules (e.g. foo-project)
-              if (path.relative(idPkgDir, fileName).startsWith('..')) {
-                return {
-                  // normalize actual import after bundled as a single vite config
-                  path: isESM ? pathToFileURL(idFsPath).href : idFsPath,
-                  external: true
-                }
               }
             }
           })
