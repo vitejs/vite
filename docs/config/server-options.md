@@ -89,19 +89,19 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand
+      // string shorthand, matches calls to '/foo/bar' by default
       '/foo': 'http://localhost:4567',
-      // with options
+      // with options, returns http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace('/^\/api/', '')
+        rewrite: (path) => path.replace(/^\/api/, '')
       },
       // with RegEx
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace('/^\/fallback/', '')
+        rewrite: (path) => path.replace(/^\/fallback/, '')
       },
       // Using the proxy instance
       '/api': {
