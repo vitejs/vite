@@ -99,3 +99,10 @@ importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
   text('.importMetaGlobEager-worker', JSON.stringify(e.data))
 })
+
+if (import.meta.hot) {
+  import.meta.hot.accept()
+  import.meta.hot.accept('../my-shared-worker?sharedworker&name=shared', () => {
+    console.log('../my-shared-worker?sharedworker&name=shared changed')
+  })
+}

@@ -20,6 +20,10 @@ console.debug('[vite] connecting...')
 
 const importMetaUrl = new URL(import.meta.url)
 
+const onUi = typeof window !== 'undefined'
+const logReloadMessage =
+  '[vite] running on worker, please reload the page manually!'
+
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
 const socketProtocol =
@@ -102,6 +106,11 @@ function setupWebSocket(
 
     console.log(`[vite] server connection lost. polling for restart...`)
     await waitForSuccessfulPing(protocol, hostAndPath)
+    if (!onUi) {
+      console.warn(logReloadMessage)
+      return
+    }
+
     location.reload()
   })
 
@@ -162,32 +171,34 @@ async function handleMessage(payload: HMRPayload) {
           // this is only sent when a css file referenced with <link> is updated
           const { path, timestamp } = update
           const searchUrl = cleanUrl(path)
-          // can't use querySelector with `[href*=]` here since the link may be
-          // using relative paths so we need to use link.href to grab the full
-          // URL for the include check.
-          const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link')
-          ).find(
-            (e) =>
-              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
-          )
-          if (el) {
-            const newPath = `${base}${searchUrl.slice(1)}${
-              searchUrl.includes('?') ? '&' : '?'
-            }t=${timestamp}`
+          if (onUi) {
+            // can't use querySelector with `[href*=]` here since the link may be
+            // using relative paths so we need to use link.href to grab the full
+            // URL for the include check.
+            const el = Array.from(
+              document.querySelectorAll<HTMLLinkElement>('link')
+            ).find(
+              (e) =>
+                !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl)
+            )
+            if (el) {
+              const newPath = `${base}${searchUrl.slice(1)}${
+                searchUrl.includes('?') ? '&' : '?'
+              }t=${timestamp}`
 
-            // rather than swapping the href on the existing tag, we will
-            // create a new link tag. Once the new stylesheet has loaded we
-            // will remove the existing link tag. This removes a Flash Of
-            // Unstyled Content that can occur when swapping out the tag href
-            // directly, as the new stylesheet has not yet been loaded.
-            const newLinkTag = el.cloneNode() as HTMLLinkElement
-            newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => el.remove()
-            newLinkTag.addEventListener('load', removeOldEl)
-            newLinkTag.addEventListener('error', removeOldEl)
-            outdatedLinkTags.add(el)
-            el.after(newLinkTag)
+              // rather than swapping the href on the existing tag, we will
+              // create a new link tag. Once the new stylesheet has loaded we
+              // will remove the existing link tag. This removes a Flash Of
+              // Unstyled Content that can occur when swapping out the tag href
+              // directly, as the new stylesheet has not yet been loaded.
+              const newLinkTag = el.cloneNode() as HTMLLinkElement
+              newLinkTag.href = new URL(newPath, el.href).href
+              const removeOldEl = () => el.remove()
+              newLinkTag.addEventListener('load', removeOldEl)
+              newLinkTag.addEventListener('error', removeOldEl)
+              outdatedLinkTags.add(el)
+              el.after(newLinkTag)
+            }
           }
           console.debug(`[vite] css hot updated: ${searchUrl}`)
         }
@@ -209,10 +220,18 @@ async function handleMessage(payload: HMRPayload) {
           payload.path === '/index.html' ||
           (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
         ) {
+          if (!onUi) {
+            console.warn(logReloadMessage)
+            return
+          }
           location.reload()
         }
         return
       } else {
+        if (!onUi) {
+          console.warn(logReloadMessage)
+          return
+        }
         location.reload()
       }
       break
@@ -264,16 +283,30 @@ const enableOverlay = __HMR_ENABLE_OVERLAY__
 function createErrorOverlay(err: ErrorPayload['err']) {
   if (!enableOverlay) return
   clearErrorOverlay()
+  if (!onUi) {
+    console.log(`[vite] Internal Server Error\n${err.message}\n${err.stack}`)
+    return
+  }
+
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document
-    .querySelectorAll(overlayId)
-    .forEach((n) => (n as ErrorOverlay).close())
+  if (!onUi) {
+    // TODO: clear console?
+    // console.clear()
+    return
+  }
+
+  document.querySelectorAll(overlayId).forEach((n) =>
+    // @ts-ignore
+    (n as ErrorOverlay).close()
+  )
 }
 
 function hasErrorOverlay() {
+  if (!onUi) return false
+
   return document.querySelectorAll(overlayId).length
 }
 
@@ -547,6 +580,7 @@ export function createHotContext(ownerPath: string): ViteHotContext {
     decline() {},
 
     invalidate() {
+      if (!onUi) return
       // TODO should tell the server to re-perform hmr propagation
       // from this module as root
       location.reload()
