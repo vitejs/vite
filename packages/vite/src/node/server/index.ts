@@ -13,6 +13,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
+import type { InvalidatePayload } from 'types/customEvent'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -494,8 +495,8 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server)
   })
 
-  ws.on('vite:invalidate', async (url: string) => {
-    const mod = moduleGraph.urlToModuleMap.get(url)
+  ws.on('vite:invalidate', async ({ path }: InvalidatePayload) => {
+    const mod = moduleGraph.urlToModuleMap.get(path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       const file = getShortName(mod.file!, config.root)
       updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)

@@ -89,8 +89,8 @@ if (import.meta.hot) {
     console.log(`>>> vite:error -- ${event.type}`)
   })
 
-  import.meta.hot.on('vite:invalidate', (event) => {
-    console.log(`>>> vite:invalidate -- ${event}`)
+  import.meta.hot.on('vite:invalidate', ({ path }) => {
+    console.log(`>>> vite:invalidate -- ${path}`)
   })
 
   import.meta.hot.on('custom:foo', ({ msg }) => {

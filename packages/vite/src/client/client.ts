@@ -548,8 +548,8 @@ export function createHotContext(ownerPath: string): ViteHotContext {
 
     // tell the server to re-perform hmr propagation from this module as root
     invalidate() {
-      notifyListeners('vite:invalidate', ownerPath)
-      this.send('vite:invalidate', ownerPath)
+      notifyListeners('vite:invalidate', { path: ownerPath })
+      this.send('vite:invalidate', { path: ownerPath })
     },
 
     // custom events
