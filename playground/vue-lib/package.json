@@ -5,6 +5,7 @@
   "scripts": {
     "dev-consumer": "vite --config ./vite.config.consumer.ts",
     "build-lib": "vite build --config ./vite.config.lib.ts",
+    "build-lib-css": "vite build --config ./vite.config.lib-css.ts",
     "build-consumer": "vite build --config ./vite.config.consumer.ts"
   },
   "dependencies": {

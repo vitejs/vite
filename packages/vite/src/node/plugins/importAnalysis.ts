@@ -147,7 +147,7 @@ function extractImportedBindings(
  *     ```
  *
  * - CSS imports are appended with `.js` since both the js module and the actual
- * css (referenced via <link>) may go through the transform pipeline:
+ * css (referenced via `<link>`) may go through the transform pipeline:
  *
  *     ```js
  *     import './style.css'
@@ -187,8 +187,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const start = performance.now()
       await init
-      let imports: readonly ImportSpecifier[] = []
-      let exports: readonly ExportSpecifier[] = []
+      let imports!: readonly ImportSpecifier[]
+      let exports!: readonly ExportSpecifier[]
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
