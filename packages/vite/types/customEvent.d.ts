@@ -1,1 +1,5 @@
-export type { CustomEventMap, InferCustomEventPayload } from '../client/types'
+export type {
+  CustomEventMap,
+  InferCustomEventPayload,
+  InvalidatePayload
+} from '../client/types'

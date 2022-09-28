@@ -10,6 +10,11 @@ export interface CustomEventMap {
   'vite:beforePrune': PrunePayload
   'vite:beforeFullReload': FullReloadPayload
   'vite:error': ErrorPayload
+  'vite:invalidate': InvalidatePayload
+}
+
+export interface InvalidatePayload {
+  path: string
 }
 
 export type InferCustomEventPayload<T extends string> =

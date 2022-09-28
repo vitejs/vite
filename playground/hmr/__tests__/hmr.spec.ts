@@ -18,14 +18,14 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(browserLogs.length).toBe(2)
+    expect(browserLogs.length).toBe(3)
     expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
   test('self accept', async () => {
     const el = await page.$('.app')
-
+    browserLogs.length = 0
     editFile('hmr.ts', (code) => code.replace('const foo = 1', 'const foo = 2'))
     await untilUpdated(() => el.textContent(), '2')
 
@@ -91,6 +91,7 @@ if (!isBuild) {
 
   test('nested dep propagation', async () => {
     const el = await page.$('.nested')
+    browserLogs.length = 0
 
     editFile('hmrNestedDep.js', (code) =>
       code.replace('const foo = 1', 'const foo = 2')
@@ -123,6 +124,25 @@ if (!isBuild) {
       '(multi deps) foo is now: 3',
       '(multi deps) nested foo is now: 3',
       '[vite] hot updated: /hmrDep.js via /hmr.ts'
+    ])
+    browserLogs.length = 0
+  })
+
+  test('invalidate', async () => {
+    browserLogs.length = 0
+    const el = await page.$('.invalidation')
+
+    editFile('invalidation/child.js', (code) =>
+      code.replace('child', 'child updated')
+    )
+    await untilUpdated(() => el.textContent(), 'child updated')
+    expect(browserLogs).toMatchObject([
+      '>>> vite:beforeUpdate -- update',
+      '>>> vite:invalidate -- /invalidation/child.js',
+      '[vite] hot updated: /invalidation/child.js',
+      '>>> vite:beforeUpdate -- update',
+      '(invalidation) parent is executing',
+      '[vite] hot updated: /invalidation/parent.js'
     ])
     browserLogs.length = 0
   })

@@ -2,6 +2,7 @@
 import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
+import './invalidation/parent'
 
 export const foo = 1
 text('.app', foo)
@@ -86,6 +87,10 @@ if (import.meta.hot) {
 
   import.meta.hot.on('vite:error', (event) => {
     console.log(`>>> vite:error -- ${event.type}`)
+  })
+
+  import.meta.hot.on('vite:invalidate', ({ path }) => {
+    console.log(`>>> vite:invalidate -- ${path}`)
   })
 
   import.meta.hot.on('custom:foo', ({ msg }) => {
