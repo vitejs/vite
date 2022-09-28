@@ -1,5 +1,5 @@
-import myWorker from '../my-worker?worker'
-import InlineWorker from '../my-worker?worker&inline'
+import myWorker from '../my-worker.ts?worker'
+import InlineWorker from '../my-worker.ts?worker&inline'
 import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
