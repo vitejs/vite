@@ -26,7 +26,7 @@ These guides provide instructions for performing a static deployment of your Vit
 You may run `npm run build` command to build the app.
 
 ```bash
-$ npm run build
+npm run build
 ```
 
 By default, the build output will be placed at `dist`. You may deploy this `dist` folder to any of your preferred platforms.
@@ -36,8 +36,8 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
-$ npm run build
-$ npm run preview
+npm run build
+npm run preview
 ```
 
 The `vite preview` command will boot up a local static web server that serves the files from `dist` at `http://localhost:4173`. It's an easy way to check if the production build looks OK in your local environment.
@@ -142,20 +142,20 @@ You can also run the above script in your CI setup to enable automatic deploymen
 
 ```bash
 # Install the Netlify CLI
-$ npm install -g netlify-cli
+npm install -g netlify-cli
 
 # Create a new site in Netlify
-$ ntl init
+ntl init
 
 # Deploy to a unique preview URL
-$ ntl deploy
+ntl deploy
 ```
 
 The Netlify CLI will share with you a preview URL to inspect. When you are ready to go into production, use the `prod` flag:
 
 ```bash
 # Deploy the site into production
-$ ntl deploy --prod
+ntl deploy --prod
 ```
 
 ### Netlify with Git
@@ -177,8 +177,8 @@ After your project has been imported and deployed, all subsequent pushes to bran
 3. Your application is deployed! (e.g. [vite-vue-template.vercel.app](https://vite-vue-template.vercel.app/))
 
 ```bash
-$ npm i -g vercel
-$ vercel init vite
+npm i -g vercel
+vercel init vite
 Vercel CLI
 > Success! Initialized "vite" example in ~/your-folder.
 - To deploy, `cd vite` and run `vercel`.
@@ -206,16 +206,16 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 
 ```bash
 # Install Wrangler CLI
-$ npm install -g wrangler
+npm install -g wrangler
 
 # Login to Cloudflare account from CLI
-$ wrangler login
+wrangler login
 
 # Run your build command
-$ npm run build
+npm run build
 
 # Create new deployment
-$ npx wrangler pages publish dist
+npx wrangler pages publish dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.

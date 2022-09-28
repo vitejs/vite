@@ -161,7 +161,7 @@ export { Foo, Bar }
 Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
 
 ```
-$ vite build
+vite build
 building for production...
 dist/my-lib.js      0.08 KiB / gzip: 0.07 KiB
 dist/my-lib.umd.cjs 0.30 KiB / gzip: 0.16 KiB

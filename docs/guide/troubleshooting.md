@@ -27,9 +27,9 @@ To solve this:
 
   ```shell
   # Check current limit
-  $ ulimit -Sn
+  ulimit -Sn
   # Change limit (temporary)
-  $ ulimit -Sn 10000 # You might need to change the hard limit too
+  ulimit -Sn 10000 # You might need to change the hard limit too
   # Restart your browser
   ```
 
@@ -37,11 +37,11 @@ To solve this:
 
   ```shell
   # Check current limits
-  $ sysctl fs.inotify
+  sysctl fs.inotify
   # Change limits (temporary)
-  $ sudo sysctl fs.inotify.max_queued_events=16384
-  $ sudo sysctl fs.inotify.max_user_instances=8192
-  $ sudo sysctl fs.inotify.max_user_watches=524288
+  sudo sysctl fs.inotify.max_queued_events=16384
+  sudo sysctl fs.inotify.max_user_instances=8192
+  sudo sysctl fs.inotify.max_user_watches=524288
   ```
 
 ### 431 Request Header Fields Too Large
