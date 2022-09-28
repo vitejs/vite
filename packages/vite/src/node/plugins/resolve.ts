@@ -140,13 +140,14 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
+        const { file: importPath } = splitFileAndPostfix(importer)
         if (
-          isTsRequest(importer) ||
+          isTsRequest(importPath) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(importPath)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
