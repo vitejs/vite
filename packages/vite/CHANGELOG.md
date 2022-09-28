@@ -1,3 +1,9 @@
+## <small>3.1.4 (2022-09-28)</small>
+
+* fix(esbuild): transpile with esnext in dev (#10215) ([4a0f210](https://github.com/vitejs/vite/commit/4a0f210)), closes [#10215](https://github.com/vitejs/vite/issues/10215)
+
+
+
 ## <small>3.1.3 (2022-09-19)</small>
 
 * fix: esbuildOutputFromId for symlinked root (#10154) ([fc5310f](https://github.com/vitejs/vite/commit/fc5310f)), closes [#10154](https://github.com/vitejs/vite/issues/10154)
