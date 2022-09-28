@@ -44,6 +44,7 @@ import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { loadPackageData, resolvePackageData } from '../packages'
+import { isWorkerRequest } from './worker'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -140,14 +141,16 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       }
 
       if (importer) {
-        const { file: importPath } = splitFileAndPostfix(importer)
+        const _importer = isWorkerRequest(importer)
+          ? splitFileAndPostfix(importer).file
+          : importer
         if (
-          isTsRequest(importPath) ||
+          isTsRequest(_importer) ||
           resolveOpts.custom?.depScan?.loader?.startsWith('ts')
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(importPath)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(_importer)?.meta?.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
