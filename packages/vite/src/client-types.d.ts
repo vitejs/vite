@@ -1,6 +1,7 @@
 export type {
   CustomEventMap,
-  InferCustomEventPayload
+  InferCustomEventPayload,
+  InvalidatePayload
 } from './types/customEvent'
 export type {
   HMRPayload,
