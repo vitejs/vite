@@ -389,12 +389,7 @@ importers:
     specifiers: {}
 
   playground/config/packages/entry:
-    specifiers:
-      '@types/lodash-es': ^4.17.6
-      lodash-es: ^4.17.21
-    devDependencies:
-      '@types/lodash-es': 4.17.6
-      lodash-es: 4.17.21
+    specifiers: {}
 
   playground/config/packages/siblings:
     specifiers:
@@ -2530,12 +2525,6 @@ packages:
 
   /@types/less/3.0.3:
     resolution: {integrity: sha512-1YXyYH83h6We1djyoUEqTlVyQtCfJAFXELSKW2ZRtjHD4hQ82CC4lvrv5D0l0FLcKBaiPbXyi3MpMsI9ZRgKsw==}
-    dev: true
-
-  /@types/lodash-es/4.17.6:
-    resolution: {integrity: sha512-R+zTeVUKDdfoRxpAryaQNRKk3105Rrgx2CFRClIgRGaqDTdjsm8h6IYA8ir584W3ePzkZfst5xIgDwYrlh9HLg==}
-    dependencies:
-      '@types/lodash': 4.14.186
     dev: true
 
   /@types/lodash/4.14.186:
@@ -6210,6 +6199,7 @@ packages:
 
   /lodash-es/4.17.21:
     resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
+    dev: false
 
   /lodash.camelcase/4.3.0:
     resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
