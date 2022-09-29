@@ -31,8 +31,7 @@ import {
   mergeAlias,
   mergeConfig,
   normalizeAlias,
-  normalizePath,
-  resolveFrom
+  normalizePath
 } from './utils'
 import {
   createPluginHookUtils,
@@ -48,12 +47,8 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
-import type {
-  InternalResolveOptions,
-  ResolveOptions} from './plugins/resolve';
-import {
-  resolvePlugin
-, tryNodeResolve } from './plugins/resolve'
+import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
