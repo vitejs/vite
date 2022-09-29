@@ -985,8 +985,11 @@ async function bundleConfigFile(
           build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
             // externalize bare imports
             if (id[0] !== '.' && !path.isAbsolute(id)) {
+              const idFsPath = tryNodeResolve(id, importer, options, false)?.id
+              const idPath =
+                isESM && idFsPath ? pathToFileURL(idFsPath).href : idFsPath
               return {
-                path: tryNodeResolve(id, importer, options, false)?.id,
+                path: idPath,
                 external: true
               }
             }
