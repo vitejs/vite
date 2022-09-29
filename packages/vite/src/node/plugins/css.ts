@@ -18,7 +18,7 @@ import type * as PostCSS from 'postcss'
 import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
-import type { Alias } from 'types/alias'
+import type { Alias } from 'dep-types/alias'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -563,7 +563,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // the legacy build should avoid inserting entry CSS modules here, they
           // will be collected into `chunk.viteMetadata.importedCss` and injected
           // later by the `'vite:build-html'` plugin into the `index.html`
-          if (chunk.isEntry) {
+          if (chunk.isEntry && !config.build.lib) {
             return null
           }
           chunkCSS = await finalizeCss(chunkCSS, true, config)
@@ -1441,8 +1441,8 @@ const scss: SassStylePreprocessor = async (
   const importer = [internalImporter]
   if (options.importer) {
     Array.isArray(options.importer)
-      ? importer.push(...options.importer)
-      : importer.push(options.importer)
+      ? importer.unshift(...options.importer)
+      : importer.unshift(options.importer)
   }
 
   const { content: data, map: additionalMap } = await getSource(

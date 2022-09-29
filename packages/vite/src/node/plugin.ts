@@ -108,7 +108,7 @@ export interface Plugin extends RollupPlugin {
    * - bundle?: rollup.OutputBundle (only present during build)
    *
    * It can either return a transformed string, or a list of html tag
-   * descriptors that will be injected into the <head> or <body>.
+   * descriptors that will be injected into the `<head>` or `<body>`.
    *
    * By default the transform is applied **after** vite's internal html
    * transform. If you need to apply the transform before vite, use an object:

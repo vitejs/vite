@@ -7,10 +7,12 @@ import connect from 'connect'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
-import type { FSWatcher, WatchOptions } from 'types/chokidar'
-import type { Connect } from 'types/connect'
+import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
+import picomatch from 'picomatch'
+import type { Matcher } from 'picomatch'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -143,7 +145,7 @@ export interface FileSystemServeOptions {
    * Restrict accessing files that matches the patterns.
    *
    * This will have higher priority than `allow`.
-   * Glob patterns are supported.
+   * picomatch patterns are supported.
    *
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
@@ -283,6 +285,10 @@ export interface ViteDevServer {
       abort: () => void
     }
   >
+  /**
+   * @internal
+   */
+  _fsDenyGlob: Matcher
 }
 
 export interface ResolvedServerUrls {
@@ -392,6 +398,8 @@ export async function createServer(
         watcher.close(),
         ws.close(),
         container.close(),
+        getDepsOptimizer(server.config)?.close(),
+        getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer()
       ])
       server.resolvedUrls = null
@@ -426,7 +434,8 @@ export async function createServer(
     _restartPromise: null,
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
-    _pendingRequests: new Map()
+    _pendingRequests: new Map(),
+    _fsDenyGlob: picomatch(config.server.fs.deny, { matchBase: true })
   }
 
   server.transformIndexHtml = createDevHtmlTransformFn(server)

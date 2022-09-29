@@ -1,4 +1,8 @@
-import '../../../../../../types/importMeta'
+import type { ImportMeta as ViteImportMeta } from 'types/importMeta'
+
+declare global {
+  interface ImportMeta extends ViteImportMeta {}
+}
 
 export interface ModuleType {
   name: string
