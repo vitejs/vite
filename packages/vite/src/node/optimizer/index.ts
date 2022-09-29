@@ -1042,7 +1042,12 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-const lockfileFormats = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']
+const lockfileFormats = [
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'bun.lockb'
+]
 
 export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
   let content = lookupFile(config.root, lockfileFormats) || ''
