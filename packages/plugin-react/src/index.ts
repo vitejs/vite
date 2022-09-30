@@ -41,6 +41,11 @@ export interface Options {
    */
   jsxPure?: boolean
   /**
+   * Toggles whether or not to throw an error if an XML namespaced tag name is used.
+   * @default true
+   */
+  jsxThrowIfNamespace?: boolean
+  /**
    * Babel configuration applied in both dev and prod.
    */
   babel?:
@@ -248,7 +253,8 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
                 {
                   runtime: 'automatic',
                   importSource: opts.jsxImportSource,
-                  pure: opts.jsxPure !== false
+                  pure: opts.jsxPure !== false,
+                  throwIfNamespace: opts.jsxThrowIfNamespace
                 }
               ])
 
