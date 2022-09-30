@@ -1,5 +1,21 @@
-export type {
-  CustomEventMap,
-  InferCustomEventPayload,
-  InvalidatePayload
-} from '../client/types'
+import type {
+  ErrorPayload,
+  FullReloadPayload,
+  PrunePayload,
+  UpdatePayload
+} from './hmrPayload'
+
+export interface CustomEventMap {
+  'vite:beforeUpdate': UpdatePayload
+  'vite:beforePrune': PrunePayload
+  'vite:beforeFullReload': FullReloadPayload
+  'vite:error': ErrorPayload
+  'vite:invalidate': InvalidatePayload
+}
+
+export interface InvalidatePayload {
+  path: string
+}
+
+export type InferCustomEventPayload<T extends string> =
+  T extends keyof CustomEventMap ? CustomEventMap[T] : any
