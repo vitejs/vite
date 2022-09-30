@@ -102,7 +102,12 @@ export type {
   PrunePayload,
   ErrorPayload
 } from 'types/hmrPayload'
-export type { CustomEventMap, InferCustomEventPayload } from 'types/customEvent'
+export type {
+  CustomEventMap,
+  InferCustomEventPayload,
+  InvalidatePayload
+} from 'types/customEvent'
+// [deprecated: use vite/client/types instead]
 export type {
   ImportGlobFunction,
   ImportGlobEagerFunction,
