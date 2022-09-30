@@ -3,6 +3,9 @@ import './minify.css'
 import css from './imported.css'
 text('.imported-css', css)
 
+import sugarss from './sugarss.sss'
+text('.imported-sugarss', sugarss)
+
 import sass from './sass.scss'
 text('.imported-sass', sass)
 

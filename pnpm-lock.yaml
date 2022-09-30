@@ -397,6 +397,7 @@ importers:
       postcss-nested: ^5.0.6
       sass: ^1.55.0
       stylus: ^0.59.0
+      sugarss: ^4.0.1
     devDependencies:
       css-dep: link:css-dep
       css-js-dep: file:playground/css/css-js-dep
@@ -405,6 +406,7 @@ importers:
       postcss-nested: 5.0.6
       sass: 1.55.0
       stylus: 0.59.0
+      sugarss: 4.0.1
 
   playground/css-codesplit:
     specifiers: {}
@@ -8193,6 +8195,13 @@ packages:
       source-map: 0.7.3
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /sugarss/4.0.1:
+    resolution: {integrity: sha512-WCjS5NfuVJjkQzK10s8WOBY+hhDxxNt/N6ZaGwxFZ+wN3/lKKFSaaKUNecULcTTvE4urLcKaZFQD8vO0mOZujw==}
+    engines: {node: '>=12.0'}
+    peerDependencies:
+      postcss: ^8.3.3
     dev: true
 
   /supports-color/5.5.0:
