@@ -198,6 +198,11 @@ declare module '*?worker&inline' {
   export default workerConstructor
 }
 
+declare module '*?worker&url' {
+  const src: string
+  export default src
+}
+
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
     new (): SharedWorker
