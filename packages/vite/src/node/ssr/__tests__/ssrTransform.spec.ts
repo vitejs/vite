@@ -728,7 +728,8 @@ console.log("it can parse the hashbang")`
   `)
 })
 
-test('import name and variable scope shadowing', async () => {
+// #10289
+test('track scope by class, function, condition blocks', async () => {
   const code = `
 import { foo, bar } from 'foobar'
 if (false) {
