@@ -1,13 +1,28 @@
-import type {
-  ImportMeta as ViteImportMeta,
-  ImportMetaEnv as ViteImportMetaEnv
-} from '../client/types'
+// This file is an augmentation to the built-in ImportMeta interface
+// Thus cannot contain any top-level imports
+// <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
 
-declare global {
-  interface GlobOptions {
-    as?: string
-  }
+/* eslint-disable @typescript-eslint/consistent-type-imports */
 
-  interface ImportMeta extends ViteImportMeta {}
-  interface ImportMetaEnv extends ViteImportMetaEnv {}
+interface ImportMetaEnv {
+  [key: string]: any
+  BASE_URL: string
+  MODE: string
+  DEV: boolean
+  PROD: boolean
+  SSR: boolean
+}
+
+interface ImportMeta {
+  url: string
+
+  readonly hot?: import('./hot').ViteHotContext
+
+  readonly env: ImportMetaEnv
+
+  glob: import('./importGlob').ImportGlobFunction
+  /**
+   * @deprecated Use `import.meta.glob('*', { eager: true })` instead
+   */
+  globEager: import('./importGlob').ImportGlobEagerFunction
 }
