@@ -20,6 +20,7 @@ describe('resolveLibFilename', () => {
         entry: 'mylib.js'
       },
       'es',
+      'myLib',
       resolve(__dirname, 'packages/name')
     )
 
@@ -33,6 +34,7 @@ describe('resolveLibFilename', () => {
         entry: 'mylib.js'
       },
       'es',
+      'myLib',
       resolve(__dirname, 'packages/name')
     )
 
@@ -45,6 +47,7 @@ describe('resolveLibFilename', () => {
         entry: 'mylib.js'
       },
       'es',
+      'myLib',
       resolve(__dirname, 'packages/name')
     )
 
@@ -58,6 +61,7 @@ describe('resolveLibFilename', () => {
         entry: 'mylib.js'
       },
       'es',
+      'myLib',
       resolve(__dirname, 'packages/noname')
     )
 
@@ -71,6 +75,7 @@ describe('resolveLibFilename', () => {
           entry: 'mylib.js'
         },
         'es',
+        'myLib',
         resolve(__dirname, 'packages/noname')
       )
     }).toThrow()
@@ -88,6 +93,7 @@ describe('resolveLibFilename', () => {
       const filename = resolveLibFilename(
         baseLibOptions,
         format,
+        'myLib',
         resolve(__dirname, 'packages/noname')
       )
 
@@ -107,10 +113,134 @@ describe('resolveLibFilename', () => {
       const filename = resolveLibFilename(
         baseLibOptions,
         format,
+        'myLib',
         resolve(__dirname, 'packages/module')
       )
 
       expect(expectedFilename).toBe(filename)
     }
+  })
+
+  test('multiple entries with aliases', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js',
+        entryB: 'entryB.js'
+      }
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('entryA.mjs')
+    expect(fileName2).toBe('entryB.mjs')
+  })
+
+  test('multiple entries with aliases: custom filename function', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js',
+        entryB: 'entryB.js'
+      },
+      fileName: (format, entryAlias) =>
+        `custom-filename-function.${entryAlias}.${format}.js`
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('custom-filename-function.entryA.es.js')
+    expect(fileName2).toBe('custom-filename-function.entryB.es.js')
+  })
+
+  test('multiple entries with aliases: custom filename string', () => {
+    const libOptions: LibraryOptions = {
+      entry: {
+        entryA: 'entryA.js',
+        entryB: 'entryB.js'
+      },
+      fileName: 'custom-filename'
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('custom-filename.mjs')
+    expect(fileName2).toBe('custom-filename.mjs')
+  })
+
+  test('multiple entries as array', () => {
+    const libOptions: LibraryOptions = {
+      entry: ['entryA.js', 'entryB.js']
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('entryA.mjs')
+    expect(fileName2).toBe('entryB.mjs')
+  })
+
+  test('multiple entries as array: custom filename function', () => {
+    const libOptions: LibraryOptions = {
+      entry: ['entryA.js', 'entryB.js'],
+      fileName: (format, entryAlias) =>
+        `custom-filename-function.${entryAlias}.${format}.js`
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('custom-filename-function.entryA.es.js')
+    expect(fileName2).toBe('custom-filename-function.entryB.es.js')
+  })
+
+  test('multiple entries as array: custom filename string', () => {
+    const libOptions: LibraryOptions = {
+      entry: ['entryA.js', 'entryB.js'],
+      fileName: 'custom-filename'
+    }
+
+    const [fileName1, fileName2] = ['entryA', 'entryB'].map((entryAlias) =>
+      resolveLibFilename(
+        libOptions,
+        'es',
+        entryAlias,
+        resolve(__dirname, 'packages/name')
+      )
+    )
+
+    expect(fileName1).toBe('custom-filename.mjs')
+    expect(fileName2).toBe('custom-filename.mjs')
   })
 })
