@@ -322,7 +322,7 @@ function walk(
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
 
-  const setScope = (node: FunctionNode, name: string) => {
+  const setScope = (node: _Node, name: string) => {
     let scopeIds = scopeMap.get(node)
     if (scopeIds && scopeIds.has(name)) {
       return
@@ -337,29 +337,29 @@ function walk(
   function isInScope(name: string, parents: Node[]) {
     return parents.some((node) => node && scopeMap.get(node)?.has(name))
   }
-  function handlePattern(p: Pattern, parentFunction: FunctionNode) {
+  function handlePattern(p: Pattern, parentScope: _Node) {
     if (p.type === 'Identifier') {
-      setScope(parentFunction, p.name)
+      setScope(parentScope, p.name)
     } else if (p.type === 'RestElement') {
-      handlePattern(p.argument, parentFunction)
+      handlePattern(p.argument, parentScope)
     } else if (p.type === 'ObjectPattern') {
       p.properties.forEach((property) => {
         if (property.type === 'RestElement') {
-          setScope(parentFunction, (property.argument as Identifier).name)
+          setScope(parentScope, (property.argument as Identifier).name)
         } else {
-          handlePattern(property.value, parentFunction)
+          handlePattern(property.value, parentScope)
         }
       })
     } else if (p.type === 'ArrayPattern') {
       p.elements.forEach((element) => {
         if (element) {
-          handlePattern(element, parentFunction)
+          handlePattern(element, parentScope)
         }
       })
     } else if (p.type === 'AssignmentPattern') {
-      handlePattern(p.left, parentFunction)
+      handlePattern(p.left, parentScope)
     } else {
-      setScope(parentFunction, (p as any).name)
+      setScope(parentScope, (p as any).name)
     }
   }
 
@@ -369,7 +369,14 @@ function walk(
         return this.skip()
       }
 
-      parent && parentStack.unshift(parent)
+      // track parent stack, skip for "else-if"/"else" branches as acorn nests
+      // the ast within "if" nodes instead of flattening them
+      if (
+        parent &&
+        !(parent.type === 'IfStatement' && node === parent.alternate)
+      ) {
+        parentStack.unshift(parent)
+      }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
         onImportMeta(node)
@@ -389,9 +396,9 @@ function walk(
         // If it is a function declaration, it could be shadowing an import
         // Add its name to the scope so it won't get replaced
         if (node.type === 'FunctionDeclaration') {
-          const parentFunction = findParentFunction(parentStack)
-          if (parentFunction) {
-            setScope(parentFunction, node.id!.name)
+          const parentScope = findParentScope(parentStack)
+          if (parentScope) {
+            setScope(parentScope, node.id!.name)
           }
         }
         // walk function expressions and add its arguments to known identifiers
@@ -430,7 +437,7 @@ function walk(
         // mark property in destructuring pattern
         setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
-        const parentFunction = findParentFunction(parentStack)
+        const parentFunction = findParentScope(parentStack)
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
@@ -438,7 +445,13 @@ function walk(
     },
 
     leave(node: Node, parent: Node | null) {
-      parent && parentStack.shift()
+      // untrack parent stack from above
+      if (
+        parent &&
+        !(parent.type === 'IfStatement' && node === parent.alternate)
+      ) {
+        parentStack.shift()
+      }
     }
   })
 
@@ -521,12 +534,15 @@ const isStaticProperty = (node: _Node): node is Property =>
 const isStaticPropertyKey = (node: _Node, parent: _Node) =>
   isStaticProperty(parent) && parent.key === node
 
+const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
-  return /Function(?:Expression|Declaration)$|Method$/.test(node.type)
+  return functionNodeTypeRE.test(node.type)
 }
 
-function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  return parentStack.find((i) => isFunction(i)) as FunctionNode
+const scopeNodeTypeRE =
+  /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
+function findParentScope(parentStack: _Node[]): _Node | undefined {
+  return parentStack.find((i) => scopeNodeTypeRE.test(i.type))
 }
 
 function isInDestructuringAssignment(

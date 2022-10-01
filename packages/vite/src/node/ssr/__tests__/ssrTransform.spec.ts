@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest'
 import { transformWithEsbuild } from '../../plugins/esbuild'
-import { traverseHtml } from '../../plugins/html'
 import { ssrTransform } from '../ssrTransform'
 
 const ssrTransformSimple = async (code: string, url = '') =>
@@ -726,5 +725,65 @@ console.log("it can parse the hashbang")`
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node
     console.log(\\"it can parse the hashbang\\")"
+  `)
+})
+
+// #10289
+test('track scope by class, function, condition blocks', async () => {
+  const code = `
+import { foo, bar } from 'foobar'
+if (false) {
+  const foo = 'foo'
+  console.log(foo)
+} else if (false) {
+  const [bar] = ['bar']
+  console.log(bar)
+} else {
+  console.log(foo)
+  console.log(bar)
+}
+export class Test {
+  constructor() {
+    if (false) {
+      const foo = 'foo'
+      console.log(foo)
+    } else if (false) {
+      const [bar] = ['bar']
+      console.log(bar)
+    } else {
+      console.log(foo)
+      console.log(bar)
+    }
+  }
+};`.trim()
+
+  expect(await ssrTransformSimpleCode(code)).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+    if (false) {
+      const foo = 'foo'
+      console.log(foo)
+    } else if (false) {
+      const [bar] = ['bar']
+      console.log(bar)
+    } else {
+      console.log(__vite_ssr_import_0__.foo)
+      console.log(__vite_ssr_import_0__.bar)
+    }
+    class Test {
+      constructor() {
+        if (false) {
+          const foo = 'foo'
+          console.log(foo)
+        } else if (false) {
+          const [bar] = ['bar']
+          console.log(bar)
+        } else {
+          console.log(__vite_ssr_import_0__.foo)
+          console.log(__vite_ssr_import_0__.bar)
+        }
+      }
+    }
+    Object.defineProperty(__vite_ssr_exports__, \\"Test\\", { enumerable: true, configurable: true, get(){ return Test }});;"
   `)
 })
