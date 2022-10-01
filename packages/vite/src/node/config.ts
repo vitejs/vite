@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import pathPosix from 'node:path/posix'
 import { parse as parseUrl, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
@@ -984,7 +985,7 @@ async function bundleConfigFile(
 
           build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
             // externalize bare imports
-            if (id[0] !== '.' && !path.isAbsolute(id)) {
+            if (id[0] !== '.' && !isAbsolute(id)) {
               const idFsPath = tryNodeResolve(id, importer, options, false)?.id
               const idPath =
                 isESM && idFsPath ? pathToFileURL(idFsPath).href : idFsPath
@@ -1113,4 +1114,8 @@ export function isDepsOptimizerEnabled(
     (command === 'build' && disabled === 'build') ||
     (command === 'serve' && disabled === 'dev')
   )
+}
+
+function isAbsolute(id: string) {
+  return path.isAbsolute(id) || pathPosix.isAbsolute(id)
 }
