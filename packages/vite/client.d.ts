@@ -71,9 +71,13 @@ declare module '*.sss' {
 }
 
 // Built-in asset types
-// see `src/constants.ts`
+// see `src/node/constants.ts`
 
 // images
+declare module '*.png' {
+  const src: string
+  export default src
+}
 declare module '*.jpg' {
   const src: string
   export default src
@@ -91,10 +95,6 @@ declare module '*.pjpeg' {
   export default src
 }
 declare module '*.pjp' {
-  const src: string
-  export default src
-}
-declare module '*.png' {
   const src: string
   export default src
 }
@@ -172,12 +172,6 @@ declare module '*.otf' {
 }
 
 // other
-declare module '*.wasm?init' {
-  const initWasm: (
-    options: WebAssembly.Imports
-  ) => Promise<WebAssembly.Instance>
-  export default initWasm
-}
 declare module '*.webmanifest' {
   const src: string
   export default src
@@ -189,6 +183,14 @@ declare module '*.pdf' {
 declare module '*.txt' {
   const src: string
   export default src
+}
+
+// wasm?init
+declare module '*.wasm?init' {
+  const initWasm: (
+    options: WebAssembly.Imports
+  ) => Promise<WebAssembly.Instance>
+  export default initWasm
 }
 
 // web worker
