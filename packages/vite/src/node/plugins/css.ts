@@ -105,7 +105,7 @@ export interface CSSModulesOptions {
     | null
 }
 
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
+const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)($|\\?)`
 const cssLangRE = new RegExp(cssLangs)
 const cssModuleRE = new RegExp(`\\.module${cssLangs}`)
 const directRequestRE = /(\?|&)direct\b/
@@ -128,7 +128,13 @@ const enum PreprocessLang {
 const enum PureCssLang {
   css = 'css'
 }
-type CssLang = keyof typeof PureCssLang | keyof typeof PreprocessLang
+const enum PostCssDialectLang {
+  sss = 'sugarss'
+}
+type CssLang =
+  | keyof typeof PureCssLang
+  | keyof typeof PreprocessLang
+  | keyof typeof PostCssDialectLang
 
 export const isCSSRequest = (request: string): boolean =>
   cssLangRE.test(request)
@@ -151,10 +157,10 @@ export const removedPureCssFilesCache = new WeakMap<
 
 export const cssEntryFilesCache = new WeakMap<ResolvedConfig, Set<string>>()
 
-const postcssConfigCache = new WeakMap<
-  ResolvedConfig,
-  PostCSSConfigResult | null
->()
+const postcssConfigCache: Record<
+  string,
+  WeakMap<ResolvedConfig, PostCSSConfigResult | null>
+> = {}
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
@@ -780,8 +786,8 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const postcssConfig = await resolvePostcssConfig(config)
   const lang = id.match(cssLangRE)?.[1] as CssLang | undefined
+  const postcssConfig = await resolvePostcssConfig(config, getCssDialect(lang))
 
   // 1. plain css that needs no processing
   if (
@@ -855,6 +861,15 @@ async function compileCSS(
 
   // 3. postcss
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
+
+  // for sugarss change parser
+  if (lang === 'sss') {
+    postcssOptions.parser = loadPreprocessor(
+      PostCssDialectLang.sss,
+      config.root
+    )
+  }
+
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
@@ -1078,9 +1093,15 @@ interface PostCSSConfigResult {
 }
 
 async function resolvePostcssConfig(
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  dialect = 'css'
 ): Promise<PostCSSConfigResult | null> {
-  let result = postcssConfigCache.get(config)
+  postcssConfigCache[dialect] ??= new WeakMap<
+    ResolvedConfig,
+    PostCSSConfigResult | null
+  >()
+
+  let result = postcssConfigCache[dialect].get(config)
   if (result !== undefined) {
     return result
   }
@@ -1117,7 +1138,7 @@ async function resolvePostcssConfig(
     }
   }
 
-  postcssConfigCache.set(config, result)
+  postcssConfigCache[dialect].set(config, result)
   return result
 }
 
@@ -1413,7 +1434,9 @@ export interface StylePreprocessorResults {
   deps: string[]
 }
 
-const loadedPreprocessors: Partial<Record<PreprocessLang, any>> = {}
+const loadedPreprocessors: Partial<
+  Record<PreprocessLang | PostCssDialectLang, any>
+> = {}
 
 // TODO: use dynamic import
 const _require = createRequire(import.meta.url)
@@ -1425,7 +1448,14 @@ function loadPreprocessor(
   lang: PreprocessLang.stylus,
   root: string
 ): typeof Stylus
-function loadPreprocessor(lang: PreprocessLang, root: string): any {
+function loadPreprocessor(
+  lang: PostCssDialectLang.sss,
+  root: string
+): PostCSS.Parser
+function loadPreprocessor(
+  lang: PreprocessLang | PostCssDialectLang,
+  root: string
+): any {
   if (lang in loadedPreprocessors) {
     return loadedPreprocessors[lang]
   }
@@ -1836,4 +1866,8 @@ const preProcessors = Object.freeze({
 
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && lang in preProcessors
+}
+
+function getCssDialect(lang: CssLang | undefined): string {
+  return lang === 'sss' ? 'sss' : 'css'
 }
