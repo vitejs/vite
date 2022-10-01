@@ -231,6 +231,25 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
+  test('imported sugarss', async () => {
+    const css = await getStyleTagContentIncluding('.imported-sugarss ')
+    const map = extractSourcemap(css)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA;EACE;AADc",
+        "sources": [
+          "/root/imported.sss",
+        ],
+        "sourcesContent": [
+          ".imported-sugarss
+        color: red
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
   test('should not output missing source file warning', () => {
     serverLogs.forEach((log) => {
       expect(log).not.toMatch(/Sourcemap for .+ points to missing source files/)
