@@ -31,6 +31,10 @@ declare module '*.module.pcss' {
   const classes: CSSModuleClasses
   export default classes
 }
+declare module '*.module.sss' {
+  const classes: CSSModuleClasses
+  export default classes
+}
 
 // CSS
 declare module '*.css' {
@@ -58,6 +62,10 @@ declare module '*.stylus' {
   export default css
 }
 declare module '*.pcss' {
+  const css: string
+  export default css
+}
+declare module '*.sss' {
   const css: string
   export default css
 }
