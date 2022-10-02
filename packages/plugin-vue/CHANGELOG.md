@@ -1,3 +1,9 @@
+## <small>3.1.2 (2022-10-02)</small>
+
+* fix(esbuild): transpile with esnext in dev (#10207) ([abf2cfd](https://github.com/vitejs/vite/commit/abf2cfd)), closes [#10207](https://github.com/vitejs/vite/issues/10207)
+
+
+
 ## <small>3.1.1 (2022-10-02)</small>
 
 * fix(deps): update all non-major dependencies (#10077) ([caf00c8](https://github.com/vitejs/vite/commit/caf00c8)), closes [#10077](https://github.com/vitejs/vite/issues/10077)
