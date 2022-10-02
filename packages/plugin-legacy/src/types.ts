@@ -1,4 +1,4 @@
-import { BuildOptions } from 'vite'
+import type { BuildOptions } from 'vite'
 
 export interface Options {
   /**
@@ -26,5 +26,5 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
-  terserOptions?: BuildOptions['terserOptions'];
+  terserOptions?: BuildOptions['terserOptions']
 }
