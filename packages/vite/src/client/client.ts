@@ -418,7 +418,7 @@ async function fetchUpdate({
     const [path, query] = dep.split(`?`)
     try {
       let newPath = path.slice(1)
-      
+
       // Handle virtual modules
       if (path.charAt(0) === '\0') {
         newPath = `@id/__x00__${newPath}`
