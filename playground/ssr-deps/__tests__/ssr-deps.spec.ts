@@ -1,5 +1,6 @@
+import { expect, test } from 'vitest'
 import { port } from './serve'
-import { page } from '~utils'
+import { getColor, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
@@ -90,4 +91,26 @@ test('msg from optimized cjs with nested external', async () => {
   expect(await page.textContent('.optimized-cjs-with-nested-external')).toMatch(
     'Hello World!'
   )
+})
+
+test('msg from external using external entry', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.external-using-external-entry')).toMatch(
+    'Hello World!'
+  )
+})
+
+test('msg from linked no external', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.linked-no-external')).toMatch('Hello World!')
+})
+
+test('msg from linked no external', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.dep-virtual')).toMatch('[success]')
+})
+
+test('import css library', async () => {
+  await page.goto(url)
+  expect(await getColor('.css-lib')).toBe('blue')
 })

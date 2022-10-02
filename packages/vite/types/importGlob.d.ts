@@ -38,7 +38,9 @@ export interface KnownAsTypeMap {
 
 export interface ImportGlobFunction {
   /**
-   * 1. No generic provided, infer the type from `eager` and `as`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 1: No generic provided, infer the type from `eager` and `as`
    */
   <
     Eager extends boolean,
@@ -51,14 +53,18 @@ export interface ImportGlobFunction {
     ? Record<string, T>
     : Record<string, () => Promise<T>>
   /**
-   * 2. Module generic provided, infer the type from `eager: false`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 2: Module generic provided, infer the type from `eager: false`
    */
   <M>(
     glob: string | string[],
     options?: ImportGlobOptions<false, string>
   ): Record<string, () => Promise<M>>
   /**
-   * 3. Module generic provided, infer the type from `eager: true`
+   * Import a list of files with a glob pattern.
+   *
+   * Overload 3: Module generic provided, infer the type from `eager: true`
    */
   <M>(
     glob: string | string[],
@@ -68,7 +74,9 @@ export interface ImportGlobFunction {
 
 export interface ImportGlobEagerFunction {
   /**
-   * 1. No generic provided, infer the type from `as`
+   * Eagerly import a list of files with a glob pattern.
+   *
+   * Overload 1: No generic provided, infer the type from `as`
    */
   <
     As extends string,
@@ -78,7 +86,9 @@ export interface ImportGlobEagerFunction {
     options?: Omit<ImportGlobOptions<boolean, As>, 'eager'>
   ): Record<string, T>
   /**
-   * 2. Module generic provided
+   * Eagerly import a list of files with a glob pattern.
+   *
+   * Overload 2: Module generic provided
    */
   <M>(
     glob: string | string[],

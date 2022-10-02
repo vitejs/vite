@@ -19,6 +19,19 @@ export default defineConfig({
           client.send('custom:remote-add-result', { result: a + b })
         })
       }
+    },
+    {
+      name: 'virtual-file',
+      resolveId(id) {
+        if (id === 'virtual:file') {
+          return '\0virtual:file'
+        }
+      },
+      load(id) {
+        if (id === '\0virtual:file') {
+          return 'import { virtual } from "/importedVirtual.js"; export { virtual };'
+        }
+      }
     }
   ]
 })

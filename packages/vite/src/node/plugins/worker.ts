@@ -6,7 +6,11 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
-import { onRollupWarning, toOutputFilePathInString } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  onRollupWarning,
+  toOutputFilePathInJS
+} from '../build'
 import { getDepsOptimizer } from '../optimizer'
 import { fileToUrl } from './asset'
 
@@ -14,7 +18,7 @@ interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
   assets: Map<string, EmittedAsset>
 
-  // worker bundle don't deps on any more worker runtime info an id only had an result.
+  // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
   // <input_filename, fileName>
   bundle: Map<string, string>
@@ -27,6 +31,14 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
+
+export function isWorkerRequest(id: string): boolean {
+  const query = parseRequest(id)
+  if (query && query[WORKER_FILE_ID] != null) {
+    return true
+  }
+  return false
+}
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
@@ -144,15 +156,6 @@ function emitSourcemapForWorkerEntry(
   return chunk
 }
 
-// TODO:base review why we aren't using import.meta.url here
-function toStaticRelativePath(filename: string, importer: string) {
-  let outputFilepath = path.posix.relative(path.dirname(importer), filename)
-  if (!outputFilepath.startsWith('.')) {
-    outputFilepath = './' + outputFilepath
-  }
-  return outputFilepath
-}
-
 export const workerAssetUrlRE = /__VITE_WORKER_ASSET__([a-z\d]{8})__/g
 
 function encodeWorkerAssetFileName(
@@ -226,7 +229,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const ssr = options?.ssr === true
       const query = parseRequest(id)
       if (query && query[WORKER_FILE_ID] != null) {
-        // if import worker by worker constructor will had query.type
+        // if import worker by worker constructor will have query.type
         // other type will be import worker by esm
         const workerType = query['type']! as WorkerType
         let injectEnv = ''
@@ -246,7 +249,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             injectEnv = module?.transformResult?.code || ''
           }
         }
-
         return {
           code: injectEnv + raw
         }
@@ -317,7 +319,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    renderChunk(code, chunk) {
+    renderChunk(code, chunk, outputOptions) {
       let s: MagicString
       const result = () => {
         return (
@@ -328,6 +330,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         )
       }
       if (code.match(workerAssetUrlRE) || code.includes('import.meta.url')) {
+        const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+          outputOptions.format
+        )
+
         let match: RegExpExecArray | null
         s = new MagicString(code)
 
@@ -338,13 +344,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         while ((match = workerAssetUrlRE.exec(code))) {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
-          const replacement = toOutputFilePathInString(
+          const replacement = toOutputFilePathInJS(
             filename,
             'asset',
             chunk.fileName,
             'js',
             config,
-            toStaticRelativePath
+            toRelativeRuntime
           )
           const replacementString =
             typeof replacement === 'string'
@@ -359,21 +365,20 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }
           )
         }
-
-        // TODO: check if this should be removed
-        if (config.isWorker) {
-          s = s.replace('import.meta.url', 'self.location.href')
-          return result()
-        }
-      }
-      if (!isWorker) {
-        const workerMap = workerCache.get(config)!
-        workerMap.assets.forEach((asset) => {
-          this.emitFile(asset)
-          workerMap.assets.delete(asset.fileName!)
-        })
       }
       return result()
+    },
+
+    generateBundle(opts) {
+      // @ts-ignore asset emits are skipped in legacy bundle
+      if (opts.__vite_skip_asset_emit__ || isWorker) {
+        return
+      }
+      const workerMap = workerCache.get(config)!
+      workerMap.assets.forEach((asset) => {
+        this.emitFile(asset)
+        workerMap.assets.delete(asset.fileName!)
+      })
     }
   }
 }

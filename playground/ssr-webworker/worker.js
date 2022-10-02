@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { Miniflare } from 'miniflare'
 

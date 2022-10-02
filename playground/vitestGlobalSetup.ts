@@ -42,7 +42,7 @@ export async function setup(): Promise<void> {
 }
 
 export async function teardown(): Promise<void> {
-  browserServer?.close()
+  await browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
     fs.removeSync(path.resolve(__dirname, '../playground-temp'))
   }

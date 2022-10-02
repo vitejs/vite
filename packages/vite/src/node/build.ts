@@ -3,6 +3,8 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type {
   ExternalOption,
+  InputOption,
+  InternalModuleFormat,
   ModuleFormat,
   OutputOptions,
   Plugin,
@@ -15,11 +17,10 @@ import type {
   WarningHandler,
   WatcherOptions
 } from 'rollup'
-import type Rollup from 'rollup'
-import type { Terser } from 'types/terser'
+import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import type { RollupCommonJSOptions } from 'types/commonjs'
-import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { RollupCommonJSOptions } from 'dep-types/commonjs'
+import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
@@ -42,12 +43,13 @@ import {
   getDepsCacheDir,
   initDepsOptimizer
 } from './optimizer'
-import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
 import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import { resolveChokidarOptions } from './watch'
+import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 
 export interface BuildOptions {
   /**
@@ -71,8 +73,15 @@ export interface BuildOptions {
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
+   * @deprecated use `modulePreload.polyfill` instead
    */
   polyfillModulePreload?: boolean
+  /**
+   * Configure module preload
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  modulePreload?: boolean | ModulePreloadOptions
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -206,7 +215,7 @@ export interface LibraryOptions {
   /**
    * Path of library entry
    */
-  entry: string
+  entry: InputOption
   /**
    * The name of the exposed global variable. Required when the `formats` option includes
    * `umd` or `iife`
@@ -222,21 +231,72 @@ export interface LibraryOptions {
    * of the project package.json. It can also be defined as a function taking the
    * format as an argument.
    */
-  fileName?: string | ((format: ModuleFormat) => string)
+  fileName?: string | ((format: ModuleFormat, entryName: string) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<BuildOptions>
+export interface ModulePreloadOptions {
+  /**
+   * Whether to inject a module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfill?: boolean
+  /**
+   * Resolve the list of dependencies to preload for a given dynamic import
+   * @experimental
+   */
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+export interface ResolvedModulePreloadOptions {
+  polyfill: boolean
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+
+export type ResolveModulePreloadDependenciesFn = (
+  filename: string,
+  deps: string[],
+  context: {
+    hostId: string
+    hostType: 'html' | 'js'
+  }
+) => string[]
+
+export interface ResolvedBuildOptions
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   isBuild: boolean,
   logger: Logger
 ): ResolvedBuildOptions {
+  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  if (raw) {
+    const { polyfillModulePreload, ...rest } = raw
+    raw = rest
+    if (deprecatedPolyfillModulePreload !== undefined) {
+      logger.warn(
+        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.'
+      )
+    }
+    if (
+      deprecatedPolyfillModulePreload === false &&
+      raw.modulePreload === undefined
+    ) {
+      raw.modulePreload = { polyfill: false }
+    }
+  }
+
+  const modulePreload = raw?.modulePreload
+  const defaultModulePreload = {
+    polyfill: true
+  }
+
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -265,7 +325,17 @@ export function resolveBuildOptions(
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    // Resolve to false | object
+    modulePreload:
+      modulePreload === false
+        ? false
+        : typeof modulePreload === 'object'
+        ? {
+            ...defaultModulePreload,
+            ...modulePreload
+          }
+        : defaultModulePreload
   }
 
   // handle special build targets
@@ -303,11 +373,11 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
     commonjsOptions?.include.length !== 0
   return {
     pre: [
+      completeSystemWrapPlugin(),
       ...(options.watch ? [ensureWatchPlugin()] : []),
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
@@ -370,7 +440,17 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
-    ? resolve(libOptions.entry)
+    ? options.rollupOptions?.input ||
+      (typeof libOptions.entry === 'string'
+        ? resolve(libOptions.entry)
+        : Array.isArray(libOptions.entry)
+        ? libOptions.entry.map(resolve)
+        : Object.fromEntries(
+            Object.entries(libOptions.entry).map(([alias, file]) => [
+              alias,
+              resolve(file)
+            ])
+          ))
     : typeof options.ssr === 'string'
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
@@ -444,11 +524,13 @@ async function doBuild(
         )
       }
 
-      const ssrWorkerBuild = ssr && config.ssr?.target !== 'webworker'
-      const cjsSsrBuild = ssr && config.ssr?.format === 'cjs'
+      const ssrNodeBuild = ssr && config.ssr.target === 'node'
+      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
+      const cjsSsrBuild = ssr && config.ssr.format === 'cjs'
+
       const format = output.format || (cjsSsrBuild ? 'cjs' : 'es')
       const jsExt =
-        ssrWorkerBuild || libOptions
+        ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(format, getPkgJson(config.root)?.type)
           : 'js'
       return {
@@ -465,7 +547,8 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-          ? resolveLibFilename(libOptions, format, config.root, jsExt)
+          ? ({ name }) =>
+              resolveLibFilename(libOptions, format, name, config.root, jsExt)
           : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
@@ -476,7 +559,8 @@ async function doBuild(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssrWorkerBuild && typeof input === 'string'),
+          (ssrWorkerBuild &&
+            (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output
       }
     }
@@ -487,37 +571,33 @@ async function doBuild(
       libOptions,
       config.logger
     )
+    const normalizedOutputs: OutputOptions[] = []
+
+    if (Array.isArray(outputs)) {
+      for (const resolvedOutput of outputs) {
+        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
+      }
+    } else {
+      normalizedOutputs.push(buildOutputOptions(outputs))
+    }
+
+    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
-      const output: OutputOptions[] = []
-      if (Array.isArray(outputs)) {
-        for (const resolvedOutput of outputs) {
-          output.push(buildOutputOptions(resolvedOutput))
-        }
-      } else {
-        output.push(buildOutputOptions(outputs))
-      }
+      const resolvedChokidarOptions = resolveChokidarOptions(
+        config.build.watch.chokidar
+      )
 
-      const watcherOptions = config.build.watch
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
-        output,
+        output: normalizedOutputs,
         watch: {
-          ...watcherOptions,
-          chokidar: {
-            ignoreInitial: true,
-            ignorePermissionErrors: true,
-            ...watcherOptions.chokidar,
-            ignored: [
-              '**/node_modules/**',
-              '**/.git/**',
-              ...(watcherOptions?.chokidar?.ignored || [])
-            ]
-          }
+          ...config.build.watch,
+          chokidar: resolvedChokidarOptions
         }
       })
 
@@ -525,7 +605,7 @@ async function doBuild(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDir, options.emptyOutDir, config)
+            prepareOutDir(outDirs, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -544,24 +624,18 @@ async function doBuild(
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](
-        buildOutputOptions(output)
-      )
+      return bundle[options.write ? 'write' : 'generate'](output)
     }
 
     if (options.write) {
-      prepareOutDir(outDir, options.emptyOutDir, config)
+      prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
-      }
-      return res
-    } else {
-      return await generate(outputs)
+    const res = []
+    for (const output of normalizedOutputs) {
+      res.push(await generate(output))
     }
+    return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
@@ -569,30 +643,53 @@ async function doBuild(
 }
 
 function prepareOutDir(
-  outDir: string,
+  outDirs: string[],
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  if (fs.existsSync(outDir)) {
-    if (
-      emptyOutDir == null &&
-      !normalizePath(outDir).startsWith(config.root + '/')
-    ) {
-      // warn if outDir is outside of root
-      config.logger.warn(
-        colors.yellow(
-          `\n${colors.bold(`(!)`)} outDir ${colors.white(
-            colors.dim(outDir)
-          )} is not inside project root and will not be emptied.\n` +
-            `Use --emptyOutDir to override.\n`
+  const nonDuplicateDirs = new Set(outDirs)
+  let outside = false
+  if (emptyOutDir == null) {
+    for (const outDir of nonDuplicateDirs) {
+      if (
+        fs.existsSync(outDir) &&
+        !normalizePath(outDir).startsWith(config.root + '/')
+      ) {
+        // warn if outDir is outside of root
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(`(!)`)} outDir ${colors.white(
+              colors.dim(outDir)
+            )} is not inside project root and will not be emptied.\n` +
+              `Use --emptyOutDir to override.\n`
+          )
         )
-      )
-    } else if (emptyOutDir !== false) {
-      emptyDir(outDir, ['.git'])
+        outside = true
+        break
+      }
     }
   }
-  if (config.publicDir && fs.existsSync(config.publicDir)) {
-    copyDir(config.publicDir, outDir)
+  for (const outDir of nonDuplicateDirs) {
+    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+      // skip those other outDirs which are nested in current outDir
+      const skipDirs = outDirs
+        .map((dir) => {
+          const relative = path.relative(outDir, dir)
+          if (
+            relative &&
+            !relative.startsWith('..') &&
+            !path.isAbsolute(relative)
+          ) {
+            return relative
+          }
+          return ''
+        })
+        .filter(Boolean)
+      emptyDir(outDir, [...skipDirs, '.git'])
+    }
+    if (config.publicDir && fs.existsSync(config.publicDir)) {
+      copyDir(config.publicDir, outDir)
+    }
   }
 }
 
@@ -620,15 +717,20 @@ function resolveOutputJsExtension(
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
+  entryName: string,
   root: string,
   extension?: JsExt
 ): string {
   if (typeof libOptions.fileName === 'function') {
-    return libOptions.fileName(format)
+    return libOptions.fileName(format, entryName)
   }
 
   const packageJson = getPkgJson(root)
-  const name = libOptions.fileName || getPkgName(packageJson.name)
+  const name =
+    libOptions.fileName ||
+    (typeof libOptions.entry === 'string'
+      ? getPkgName(packageJson.name)
+      : entryName)
 
   if (!name)
     throw new Error(
@@ -651,14 +753,22 @@ function resolveBuildOutputs(
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
     const formats = libOptions.formats || ['es', 'umd']
-    if (
-      (formats.includes('umd') || formats.includes('iife')) &&
-      !libOptions.name
-    ) {
-      throw new Error(
-        `Option "build.lib.name" is required when output formats ` +
-          `include "umd" or "iife".`
-      )
+    if (formats.includes('umd') || formats.includes('iife')) {
+      if (
+        typeof libOptions.entry !== 'string' &&
+        Object.values(libOptions.entry).length > 1
+      ) {
+        throw new Error(
+          `Multiple entry points are not supported when output formats include "umd" or "iife".`
+        )
+      }
+
+      if (!libOptions.name) {
+        throw new Error(
+          `Option "build.lib.name" is required when output formats ` +
+            `include "umd" or "iife".`
+        )
+      }
     }
     if (!outputs) {
       return formats.map((format) => ({ format }))
@@ -788,33 +898,59 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
   }
 }
 
-function wrapSsrResolveId(
-  fn?: Rollup.ResolveIdHook
-): Rollup.ResolveIdHook | undefined {
-  if (!fn) return
+function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+  if (!hook) return
 
-  return function (id, importer, options) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['resolveId']
+  } else {
+    return handler
   }
 }
 
-function wrapSsrLoad(fn?: Rollup.LoadHook): Rollup.LoadHook | undefined {
-  if (!fn) return
+function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+  if (!hook) return
 
-  return function (id, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
   }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['load']
+  } else {
+    return handler
+  }
 }
 
-function wrapSsrTransform(
-  fn?: Rollup.TransformHook
-): Rollup.TransformHook | undefined {
-  if (!fn) return
+function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+  if (!hook) return
 
-  return function (code, importer, ...args) {
+  const fn = 'handler' in hook ? hook.handler : hook
+  const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler
+    } as Plugin['transform']
+  } else {
+    return handler
   }
 }
 
@@ -823,6 +959,51 @@ function injectSsrFlag<T extends Record<string, any>>(
 ): T & { ssr: boolean } {
   return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
 }
+
+/*
+  The following functions are copied from rollup
+  https://github.com/rollup/rollup/blob/c5269747cd3dd14c4b306e8cea36f248d9c1aa01/src/ast/nodes/MetaProperty.ts#L189-L232
+
+  https://github.com/rollup/rollup
+  The MIT License (MIT)
+  Copyright (c) 2017 [these people](https://github.com/rollup/rollup/graphs/contributors)
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
+
+const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
+  getResolveUrl(
+    `'${relativePath}', ${
+      umd ? `typeof document === 'undefined' ? location.href : ` : ''
+    }document.currentScript && document.currentScript.src || document.baseURI`
+  )
+
+const relativeUrlMechanisms: Record<
+  InternalModuleFormat,
+  (relativePath: string) => string
+> = {
+  amd: (relativePath) => {
+    if (relativePath[0] !== '.') relativePath = './' + relativePath
+    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+  },
+  cjs: (relativePath) =>
+    `(typeof document === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath)})`,
+  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
+  // NOTE: make sure rollup generate `module` params
+  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  umd: (relativePath) =>
+    `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getResolveUrl(
+      `'file:' + __dirname + '/${relativePath}'`,
+      `(require('u' + 'rl').URL)`
+    )} : ${getRelativeUrlFromDocument(relativePath, true)})`
+}
+/* end of copy */
 
 export type RenderBuiltAssetUrl = (
   filename: string,
@@ -834,7 +1015,7 @@ export type RenderBuiltAssetUrl = (
   }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
-export function toOutputFilePathInString(
+export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
@@ -869,6 +1050,17 @@ export function toOutputFilePathInString(
     return toRelative(filename, hostId)
   }
   return config.base + filename
+}
+
+export function createToImportMetaURLBasedRelativeRuntime(
+  format: InternalModuleFormat
+): (filename: string, importer: string) => { runtime: string } {
+  const toRelativePath = relativeUrlMechanisms[format]
+  return (filename, importer) => ({
+    runtime: toRelativePath(
+      path.posix.relative(path.dirname(importer), filename)
+    )
+  })
 }
 
 export function toOutputFilePathWithoutRuntime(

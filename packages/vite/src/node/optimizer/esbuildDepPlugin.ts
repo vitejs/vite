@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { promises as fs } from 'node:fs'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import { getDepOptimizationConfig } from '..'
@@ -8,11 +7,10 @@ import {
   flattenId,
   isBuiltin,
   isExternalUrl,
-  isRunningWithYarnPnp,
   moduleListContains,
   normalizePath
 } from '../utils'
-import { browserExternalId } from '../plugins/resolve'
+import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import type { ExportsData } from '.'
 
 const externalWithConversionNamespace =
@@ -91,6 +89,12 @@ export function esbuildDepPlugin(
       return {
         path: id,
         namespace: 'browser-external'
+      }
+    }
+    if (resolved.startsWith(optionalPeerDepId)) {
+      return {
+        path: resolved,
+        namespace: 'optional-peer-dep'
       }
     }
     if (ssr && isBuiltin(resolved)) {
@@ -270,7 +274,7 @@ module.exports = Object.create(new Proxy({}, {
       key !== 'constructor' &&
       key !== 'splice'
     ) {
-      throw new Error(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
+      console.warn(\`Module "${path}" has been externalized for browser compatibility. Cannot access "${path}.\${key}" in client code.\`)
     }
   }
 }))`
@@ -279,29 +283,21 @@ module.exports = Object.create(new Proxy({}, {
         }
       )
 
-      // yarn 2 pnp compat
-      if (isRunningWithYarnPnp) {
-        build.onResolve(
-          { filter: /.*/ },
-          async ({ path: id, importer, kind, resolveDir, namespace }) => {
-            const resolved = await resolve(
-              id,
-              importer,
-              kind,
-              // pass along resolveDir for entries
-              namespace === 'dep' ? resolveDir : undefined
-            )
-            if (resolved) {
-              return resolveResult(id, resolved)
+      build.onLoad(
+        { filter: /.*/, namespace: 'optional-peer-dep' },
+        ({ path }) => {
+          if (config.isProduction) {
+            return {
+              contents: 'module.exports = {}'
+            }
+          } else {
+            const [, peerDep, parentDep] = path.split(':')
+            return {
+              contents: `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
             }
           }
-        )
-
-        build.onLoad({ filter: /.*/ }, async (args) => ({
-          contents: await fs.readFile(args.path),
-          loader: 'default'
-        }))
-      }
+        }
+      )
     }
   }
 }

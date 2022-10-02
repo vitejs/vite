@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest'
 import viteConfig from '../vite.config'
 import { page } from '~utils'
 
@@ -37,7 +38,7 @@ test('string', async () => {
   )
   expect(await page.textContent('.no-identifier-substring')).toBe(String(true))
   expect(await page.textContent('.no-property')).toBe(String(true))
-  // html would't need to define replacement
+  // html wouldn't need to define replacement
   expect(await page.textContent('.exp-define')).toBe('__EXP__')
   expect(await page.textContent('.import-json')).toBe('__EXP__')
   expect(await page.textContent('.define-in-dep')).toBe(

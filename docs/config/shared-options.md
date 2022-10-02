@@ -110,6 +110,10 @@ When aliasing to file system paths, always use absolute paths. Relative alias va
 
 More advanced custom resolution can be achieved through [plugins](/guide/api-plugin).
 
+::: warning Using with SSR
+If you have configured aliases for [SSR externalized dependencies](/guide/ssr.md#ssr-externals), you may want to alias the actual `node_modules` packages. Both [Yarn](https://classic.yarnpkg.com/en/docs/cli/add/#toc-yarn-add-alias) and [pnpm](https://pnpm.js.org/en/aliases) support aliasing via the `npm:` prefix.
+:::
+
 ## resolve.dedupe
 
 - **Type:** `string[]`
@@ -153,6 +157,16 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 - **Default:** `['module', 'jsnext:main', 'jsnext']`
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
+
+## resolve.browserField
+
+- **Type:** `boolean`
+- **Default:** `true`
+- **Deprecated**
+
+Whether to enable resolving to `browser` field.
+
+In future, `resolve.mainFields`'s default value will be `['browser', 'module', 'jsnext:main', 'jsnext']` and this option will be removed.
 
 ## resolve.extensions
 
@@ -332,10 +346,10 @@ See [here](/guide/env-and-mode#env-files) for more about environment files.
 - **Type:** `string | string[]`
 - **Default:** `VITE_`
 
-Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+Env variables starting with `envPrefix` will be exposed to your client source code via import.meta.env.
 
 :::warning SECURITY NOTES
-`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of of sensitive information. Vite will throw error when detecting `''`.
+`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
 :::
 
 ## appType

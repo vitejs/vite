@@ -78,6 +78,8 @@ export async function transformWithEsbuild(
 
     if (ext === 'cjs' || ext === 'mjs') {
       loader = 'js'
+    } else if (ext === 'cts' || ext === 'mts') {
+      loader = 'ts'
     } else {
       loader = ext as Loader
     }
@@ -85,7 +87,7 @@ export async function transformWithEsbuild(
 
   let tsconfigRaw = options?.tsconfigRaw
 
-  // if options provide tsconfigraw in string, it takes highest precedence
+  // if options provide tsconfigRaw in string, it takes highest precedence
   if (typeof tsconfigRaw !== 'string') {
     // these fields would affect the compilation result
     // https://esbuild.github.io/content-types/#tsconfig-json
@@ -170,13 +172,14 @@ export async function transformWithEsbuild(
 
 export function esbuildPlugin(options: ESBuildOptions = {}): Plugin {
   const filter = createFilter(
-    options.include || /\.(tsx?|jsx)$/,
+    options.include || /\.(m?ts|[jt]sx)$/,
     options.exclude || /\.js$/
   )
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
   const transformOptions: TransformOptions = {
+    target: 'esnext',
     ...options,
     minify: false,
     minifyIdentifiers: false,
@@ -401,14 +404,17 @@ const tsconfckParseOptions: TSConfckParseOptions = {
 }
 
 async function initTSConfck(config: ResolvedConfig) {
-  tsconfckParseOptions.cache!.clear()
   const workspaceRoot = searchForWorkspaceRoot(config.root)
+  debug(`init tsconfck (root: ${colors.cyan(workspaceRoot)})`)
+
+  tsconfckParseOptions.cache!.clear()
   tsconfckParseOptions.root = workspaceRoot
   tsconfckParseOptions.tsConfigPaths = new Set([
     ...(await findAll(workspaceRoot, {
       skip: (dir) => dir === 'node_modules' || dir === '.git'
     }))
   ])
+  debug(`init tsconfck end`)
 }
 
 async function loadTsconfigJsonForFile(
@@ -441,7 +447,7 @@ function reloadOnTsconfigChange(changedFile: string) {
       tsconfckParseOptions?.cache?.has(changedFile))
   ) {
     server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure typescript is compiled with updated config values.`,
+      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
       { clear: server.config.clearScreen, timestamp: true }
     )
 

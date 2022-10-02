@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { expect, test } from 'vitest'
 import {
   editFile,
   findAssetFile,
@@ -8,7 +9,8 @@ import {
   page,
   removeFile,
   serverLogs,
-  untilUpdated
+  untilUpdated,
+  withRetry
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -258,6 +260,11 @@ test.runIf(isBuild)('@charset hoist', async () => {
   })
 })
 
+test('layers', async () => {
+  expect(await getColor('.layers-blue')).toMatch('blue')
+  expect(await getColor('.layers-green')).toMatch('green')
+})
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
@@ -448,4 +455,40 @@ test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
     // no warning from esbuild css minifier
     expect(log).not.toMatch('unsupported-css-property')
   })
+})
+
+test('sugarss', async () => {
+  const imported = await page.$('.sugarss')
+  const atImport = await page.$('.sugarss-at-import')
+  const atImportAlias = await page.$('.sugarss-at-import-alias')
+
+  expect(await getColor(imported)).toBe('blue')
+  expect(await getColor(atImport)).toBe('darkslateblue')
+  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
+  expect(await getColor(atImportAlias)).toBe('darkslateblue')
+  expect(await getBg(atImportAlias)).toMatch(
+    isBuild ? /base64/ : '/nested/icon.png'
+  )
+
+  editFile('sugarss.sss', (code) => code.replace('color: blue', 'color: coral'))
+  await untilUpdated(() => getColor(imported), 'coral')
+
+  editFile('nested/nested.sss', (code) =>
+    code.replace('color: darkslateblue', 'color: blue')
+  )
+  await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+// NOTE: the match inline snapshot should generate by build mode
+test('async css order', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
+    expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
+  }, true)
+})
+
+test('async css order with css modules', async () => {
+  await withRetry(async () => {
+    expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
+  }, true)
 })

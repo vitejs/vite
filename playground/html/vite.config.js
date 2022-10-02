@@ -1,4 +1,4 @@
-const { resolve } = require('path')
+const { resolve } = require('node:path')
 
 /**
  * @type {import('vite').UserConfig}
@@ -25,7 +25,9 @@ module.exports = {
         unicodePath: resolve(
           __dirname,
           'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html'
-        )
+        ),
+        linkProps: resolve(__dirname, 'link-props/index.html'),
+        valid: resolve(__dirname, 'valid.html')
       }
     }
   },
@@ -156,6 +158,25 @@ ${
             tag: 'noscript',
             children: '<!-- this is prepended to body -->',
             injectTo: 'body-prepend'
+          }
+        ]
+      }
+    },
+    {
+      name: 'head-prepend-importmap',
+      transformIndexHtml() {
+        return [
+          {
+            tag: 'script',
+            attrs: { type: 'importmap' },
+            children: `
+              {
+                "imports": {
+                  "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+                }
+              }
+            `,
+            injectTo: 'head'
           }
         ]
       }

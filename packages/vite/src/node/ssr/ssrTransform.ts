@@ -94,7 +94,7 @@ async function ssrTransformScript(
   function defineImport(node: Node, source: string) {
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
-    s.appendLeft(
+    s.appendRight(
       node.start,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(source)});\n`
     )
@@ -115,6 +115,7 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
+      s.remove(node.start, node.end)
       const importId = defineImport(node, node.source.value as string)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
@@ -129,7 +130,6 @@ async function ssrTransformScript(
           idToImportMap.set(spec.local.name, importId)
         }
       }
-      s.remove(node.start, node.end)
     }
   }
 
@@ -207,13 +207,11 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
+      s.remove(node.start, node.end)
+      const importId = defineImport(node, node.source.value as string)
       if (node.exported) {
-        const importId = defineImport(node, node.source.value as string)
-        s.remove(node.start, node.end)
         defineExport(node.end, node.exported.name, `${importId}`)
       } else {
-        const importId = defineImport(node, node.source.value as string)
-        s.remove(node.start, node.end)
         s.appendLeft(node.end, `${ssrExportAllKey}(${importId});`)
       }
     }
@@ -232,7 +230,7 @@ async function ssrTransformScript(
         // { foo } -> { foo: __import_x__.foo }
         // skip for destructuring patterns
         if (
-          !isNodeInPatternWeakMap.get(parent) ||
+          !isNodeInPattern(parent) ||
           isInDestructuringAssignment(parent, parentStack)
         ) {
           s.appendLeft(id.end, `: ${binding}`)
@@ -307,7 +305,10 @@ interface Visitors {
   onDynamicImport: (node: Node) => void
 }
 
-const isNodeInPatternWeakMap = new WeakMap<_Node, boolean>()
+const isNodeInPatternWeakSet = new WeakSet<_Node>()
+const setIsNodeInPattern = (node: Property) => isNodeInPatternWeakSet.add(node)
+const isNodeInPattern = (node: _Node): node is Property =>
+  isNodeInPatternWeakSet.has(node)
 
 /**
  * Same logic from \@vue/compiler-core & \@vue/compiler-sfc
@@ -321,7 +322,7 @@ function walk(
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
 
-  const setScope = (node: FunctionNode, name: string) => {
+  const setScope = (node: _Node, name: string) => {
     let scopeIds = scopeMap.get(node)
     if (scopeIds && scopeIds.has(name)) {
       return
@@ -336,29 +337,29 @@ function walk(
   function isInScope(name: string, parents: Node[]) {
     return parents.some((node) => node && scopeMap.get(node)?.has(name))
   }
-  function handlePattern(p: Pattern, parentFunction: FunctionNode) {
+  function handlePattern(p: Pattern, parentScope: _Node) {
     if (p.type === 'Identifier') {
-      setScope(parentFunction, p.name)
+      setScope(parentScope, p.name)
     } else if (p.type === 'RestElement') {
-      handlePattern(p.argument, parentFunction)
+      handlePattern(p.argument, parentScope)
     } else if (p.type === 'ObjectPattern') {
       p.properties.forEach((property) => {
         if (property.type === 'RestElement') {
-          setScope(parentFunction, (property.argument as Identifier).name)
+          setScope(parentScope, (property.argument as Identifier).name)
         } else {
-          handlePattern(property.value, parentFunction)
+          handlePattern(property.value, parentScope)
         }
       })
     } else if (p.type === 'ArrayPattern') {
       p.elements.forEach((element) => {
         if (element) {
-          handlePattern(element, parentFunction)
+          handlePattern(element, parentScope)
         }
       })
     } else if (p.type === 'AssignmentPattern') {
-      handlePattern(p.left, parentFunction)
+      handlePattern(p.left, parentScope)
     } else {
-      setScope(parentFunction, (p as any).name)
+      setScope(parentScope, (p as any).name)
     }
   }
 
@@ -368,7 +369,14 @@ function walk(
         return this.skip()
       }
 
-      parent && parentStack.unshift(parent)
+      // track parent stack, skip for "else-if"/"else" branches as acorn nests
+      // the ast within "if" nodes instead of flattening them
+      if (
+        parent &&
+        !(parent.type === 'IfStatement' && node === parent.alternate)
+      ) {
+        parentStack.unshift(parent)
+      }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
         onImportMeta(node)
@@ -388,9 +396,9 @@ function walk(
         // If it is a function declaration, it could be shadowing an import
         // Add its name to the scope so it won't get replaced
         if (node.type === 'FunctionDeclaration') {
-          const parentFunction = findParentFunction(parentStack)
-          if (parentFunction) {
-            setScope(parentFunction, node.id!.name)
+          const parentScope = findParentScope(parentStack)
+          if (parentScope) {
+            setScope(parentScope, node.id!.name)
           }
         }
         // walk function expressions and add its arguments to known identifiers
@@ -427,9 +435,9 @@ function walk(
         })
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
-        isNodeInPatternWeakMap.set(node, true)
+        setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
-        const parentFunction = findParentFunction(parentStack)
+        const parentFunction = findParentScope(parentStack)
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
@@ -437,7 +445,13 @@ function walk(
     },
 
     leave(node: Node, parent: Node | null) {
-      parent && parentStack.shift()
+      // untrack parent stack from above
+      if (
+        parent &&
+        !(parent.type === 'IfStatement' && node === parent.alternate)
+      ) {
+        parentStack.shift()
+      }
     }
   })
 
@@ -476,8 +490,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
   }
 
   // property key
-  // this also covers object destructuring pattern
-  if (isStaticPropertyKey(id, parent) || isNodeInPatternWeakMap.get(parent)) {
+  if (isStaticPropertyKey(id, parent)) {
+    return false
+  }
+
+  // object destructuring pattern
+  if (isNodeInPattern(parent) && parent.value === id) {
     return false
   }
 
@@ -516,12 +534,15 @@ const isStaticProperty = (node: _Node): node is Property =>
 const isStaticPropertyKey = (node: _Node, parent: _Node) =>
   isStaticProperty(parent) && parent.key === node
 
+const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
-  return /Function(?:Expression|Declaration)$|Method$/.test(node.type)
+  return functionNodeTypeRE.test(node.type)
 }
 
-function findParentFunction(parentStack: _Node[]): FunctionNode | undefined {
-  return parentStack.find((i) => isFunction(i)) as FunctionNode
+const scopeNodeTypeRE =
+  /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
+function findParentScope(parentStack: _Node[]): _Node | undefined {
+  return parentStack.find((i) => scopeNodeTypeRE.test(i.type))
 }
 
 function isInDestructuringAssignment(
