@@ -746,7 +746,7 @@ export function resolveLibFilename(
   return `${name}.${format}.${extension}`
 }
 
-function resolveBuildOutputs(
+export function resolveBuildOutputs(
   outputs: OutputOptions | OutputOptions[] | undefined,
   libOptions: LibraryOptions | false,
   logger: Logger
