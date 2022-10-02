@@ -237,7 +237,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'es',
           opts,
-          true
+          true,
+          options.terserOptions,
         )
         return
       }
@@ -272,7 +273,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'iife',
           opts,
-          options.externalSystemJS
+          options.externalSystemJS,
+          options.terserOptions,
         )
       }
     }
@@ -649,7 +651,8 @@ async function buildPolyfillChunk(
   buildOptions: BuildOptions,
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
-  excludeSystemJS?: boolean
+  excludeSystemJS?: boolean,
+  terserOptions?: BuildOptions['terserOptions']
 ) {
   let { minify, assetsDir } = buildOptions
   minify = minify ? 'terser' : false
@@ -672,7 +675,8 @@ async function buildPolyfillChunk(
           format,
           entryFileNames: rollupOutputOptions.entryFileNames
         }
-      }
+      },
+      terserOptions,
     },
     // Don't run esbuild for transpilation or minification
     // because we don't want to transpile code.
