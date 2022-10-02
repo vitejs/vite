@@ -1176,7 +1176,7 @@ function resolvePkg(importer: string, options: InternalResolveOptions) {
 
   const possiblePkgIds: string[] = []
   for (let prevSlashIndex = -1; ; ) {
-    const slashIndex = importer.indexOf('/', prevSlashIndex)
+    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
     if (slashIndex < 0) {
       break
     }
