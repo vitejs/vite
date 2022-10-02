@@ -417,10 +417,17 @@ async function fetchUpdate({
     if (disposer) await disposer(dataMap.get(dep))
     const [path, query] = dep.split(`?`)
     try {
+      let newPath = path.slice(1)
+      
+      // Handle virtual modules
+      if (path.charAt(0) === '\0') {
+        newPath = `@id/__x00__${newPath}`
+      }
+
       const newMod: ModuleNamespace = await import(
         /* @vite-ignore */
         base +
-          path.slice(1) +
+          newPath +
           `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
             query ? `&${query}` : ''
           }`
