@@ -238,7 +238,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           'es',
           opts,
           true,
-          options.terserOptions,
+          options.terserOptions
         )
         return
       }
@@ -274,7 +274,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           'iife',
           opts,
           options.externalSystemJS,
-          options.terserOptions,
+          options.terserOptions
         )
       }
     }
@@ -676,7 +676,7 @@ async function buildPolyfillChunk(
           entryFileNames: rollupOutputOptions.entryFileNames
         }
       },
-      terserOptions,
+      terserOptions
     },
     // Don't run esbuild for transpilation or minification
     // because we don't want to transpile code.
