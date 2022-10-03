@@ -982,18 +982,15 @@ async function bundleConfigFile(
             preserveSymlinks: false
           }
 
-          build.onResolve({ filter: /.*/ }, ({ path: id, importer }) => {
+          build.onResolve({ filter: /.*/ }, ({ path: id, importer, kind }) => {
             // externalize bare imports
             if (id[0] !== '.' && !isAbsolute(id)) {
-              const idFsPath = tryNodeResolve(id, importer, options, false)?.id
-              const idPath =
-                isESM && idFsPath
-                  ? pathToFileURL(idFsPath).href
-                  : idFsPath
-                  ? normalizePath(idFsPath)
-                  : undefined
+              let idFsPath = tryNodeResolve(id, importer, options, false)?.id
+              if (idFsPath && (isESM || kind === 'dynamic-import')) {
+                idFsPath = pathToFileURL(idFsPath).href
+              }
               return {
-                path: idPath,
+                path: idFsPath,
                 external: true
               }
             }
