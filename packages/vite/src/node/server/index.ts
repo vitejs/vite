@@ -266,6 +266,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _inlineConfig: InlineConfig | (() => InlineConfig)
+  /**
+   * @internal
+   */
   _importGlobMap: Map<string, string[][]>
   /**
    * Deps that are externalized
@@ -303,9 +307,13 @@ export interface ResolvedServerUrls {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig = {}
+  inlineConfig: InlineConfig | (() => InlineConfig) = {}
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const config = await resolveConfig(
+    typeof inlineConfig === 'function' ? inlineConfig() : inlineConfig,
+    'serve',
+    'development'
+  )
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
@@ -436,6 +444,7 @@ export async function createServer(
       return server._restartPromise
     },
 
+    _inlineConfig: inlineConfig,
     _ssrExternals: null,
     _restartPromise: null,
     _importGlobMap: new Map(),
@@ -773,7 +782,11 @@ async function restartServer(server: ViteDevServer) {
 
   await server.close()
 
-  let inlineConfig = server.config.inlineConfig
+  let inlineConfig =
+    typeof server._inlineConfig === 'function'
+      ? server._inlineConfig()
+      : server._inlineConfig
+
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
       optimizeDeps: {
@@ -793,8 +806,12 @@ async function restartServer(server: ViteDevServer) {
   }
 
   for (const key in newServer) {
-    if (key === '_restartPromise') {
+    if (
       // prevent new server `restart` function from calling
+      key === '_restartPromise' ||
+      // preserve original inline config for future restarts
+      key === '_inlineConfig'
+    ) {
       // @ts-ignore
       newServer[key] = server[key]
     } else {

@@ -18,7 +18,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
    */
   const vite = await (
     await import('vite')
-  ).createServer({
+  ).createServer(() => ({
     root,
     logLevel: isTest ? 'error' : 'info',
     server: {
@@ -62,7 +62,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
         }
       }
     ]
-  })
+  }))
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
