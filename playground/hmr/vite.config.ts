@@ -1,4 +1,5 @@
-import { defineConfig, Plugin } from 'vite'
+import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 
 export default defineConfig({
   experimental: {
