@@ -43,7 +43,7 @@
     "@jridgewell/trace-mapping": "^0.3.15",
     "debug": "^4.3.4",
     "rollup": "^2.79.1",
-    "slash": "^4.0.0",
+    "slash": "^5.0.0",
     "source-map": "^0.6.1",
     "vite": "workspace:*",
     "vue": "^3.2.39"
