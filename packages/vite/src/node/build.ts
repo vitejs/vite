@@ -685,7 +685,7 @@ function prepareOutDir(
           return ''
         })
         .filter(Boolean)
-      emptyDir(outDir, [...skipDirs, '.git'])
+      emptyDir(outDir, [...skipDirs, '.git', '.gitkeep'])
     }
     if (config.publicDir && fs.existsSync(config.publicDir)) {
       copyDir(config.publicDir, outDir)
