@@ -5,7 +5,7 @@ import colors from 'picocolors'
 import type { Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath, unique } from '../utils'
+import { createDebugger, normalizePath, unique, wrapId } from '../utils'
 import type { ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
@@ -154,12 +154,12 @@ export function updateModules(
       ...[...boundaries].map(({ boundary, acceptedVia }) => ({
         type: `${boundary.type}-update` as const,
         timestamp,
-        path: boundary.url,
+        path: normalizeHmrUrl(boundary.url),
         explicitImportRequired:
           boundary.type === 'js'
             ? isExplicitImportRequired(acceptedVia.url)
             : undefined,
-        acceptedPath: acceptedVia.url
+        acceptedPath: normalizeHmrUrl(acceptedVia.url)
       }))
     )
   }
@@ -482,6 +482,13 @@ export function lexAcceptedHmrExports(
     exportNames.add(url)
   }
   return urls.size > 0
+}
+
+export function normalizeHmrUrl(url: string): string {
+  if (!url.startsWith('.') && !url.startsWith('/')) {
+    url = wrapId(url)
+  }
+  return url
 }
 
 function error(pos: number) {
