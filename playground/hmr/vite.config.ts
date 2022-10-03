@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, Plugin } from 'vite'
 
 export default defineConfig({
   experimental: {
@@ -20,18 +20,31 @@ export default defineConfig({
         })
       }
     },
-    {
-      name: 'virtual-file',
-      resolveId(id) {
-        if (id === 'virtual:file') {
-          return '\0virtual:file'
-        }
-      },
-      load(id) {
-        if (id === '\0virtual:file') {
-          return 'import { virtual } from "/importedVirtual.js"; export { virtual };'
-        }
-      }
-    }
+    virtualPlugin()
   ]
 })
+
+function virtualPlugin(): Plugin {
+  let num = 0
+  return {
+    name: 'virtual-file',
+    resolveId(id) {
+      if (id === 'virtual:file') {
+        return '\0virtual:file'
+      }
+    },
+    load(id) {
+      if (id === '\0virtual:file') {
+        return `\
+import { virtual as _virtual } from "/importedVirtual.js";
+export const virtual = _virtual + '${num}';`
+      }
+    },
+    configureServer(server) {
+      server.ws.on('virtual:increment', async () => {
+        num++
+        server.invalidateModule('\0virtual:file')
+      })
+    }
+  }
+}
