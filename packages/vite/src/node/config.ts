@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import pathPosix from 'node:path/posix'
 import { parse as parseUrl, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
@@ -1117,5 +1116,5 @@ export function isDepsOptimizerEnabled(
 }
 
 function isAbsolute(id: string) {
-  return path.isAbsolute(id) || pathPosix.isAbsolute(id)
+  return path.isAbsolute(id) || path.posix.isAbsolute(id)
 }
