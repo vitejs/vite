@@ -987,7 +987,11 @@ async function bundleConfigFile(
             if (id[0] !== '.' && !isAbsolute(id)) {
               const idFsPath = tryNodeResolve(id, importer, options, false)?.id
               const idPath =
-                isESM && idFsPath ? pathToFileURL(idFsPath).href : idFsPath
+                isESM && idFsPath
+                  ? pathToFileURL(idFsPath).href
+                  : idFsPath
+                  ? normalizePath(idFsPath)
+                  : undefined
               return {
                 path: idPath,
                 external: true
