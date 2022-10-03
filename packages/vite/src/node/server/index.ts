@@ -266,7 +266,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _inlineConfig: InlineConfig | (() => InlineConfig)
+  _inlineConfig: InlineConfig | ((isRestart: boolean) => InlineConfig)
   /**
    * @internal
    */
@@ -307,10 +307,10 @@ export interface ResolvedServerUrls {
 }
 
 export async function createServer(
-  inlineConfig: InlineConfig | (() => InlineConfig) = {}
+  inlineConfig: InlineConfig | ((isRestart: boolean) => InlineConfig) = {}
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(
-    typeof inlineConfig === 'function' ? inlineConfig() : inlineConfig,
+    typeof inlineConfig === 'function' ? inlineConfig(false) : inlineConfig,
     'serve',
     'development'
   )
@@ -784,7 +784,7 @@ async function restartServer(server: ViteDevServer) {
 
   let inlineConfig =
     typeof server._inlineConfig === 'function'
-      ? server._inlineConfig()
+      ? server._inlineConfig(true)
       : server._inlineConfig
 
   if (server._forceOptimizeOnRestart) {
