@@ -20,7 +20,7 @@ import { cleanUrl, getHash, joinUrlSegments, normalizePath } from '../utils'
 import { FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/g
-const assetUrlRENoGFlag = /__VITE_ASSET__([a-z\d]+)__(?:\$_(.*?)__)?/
+const assetUrlRENoGFlag = /__VITE_ASSET__[a-z\d]+__?:\$_.*?__å?/
 
 const rawRE = /(?:\?|&)raw(?:&|$)/
 const urlRE = /(\?|&)url(?:&|$)/
@@ -63,6 +63,9 @@ export function renderAssetUrlInJS(
     opts.format,
   )
 
+  const isEmitAssetsWithModule =
+    config.build.lib && config.build.lib.emitAssetsWithModule
+
   let match: RegExpExecArray | null
   let s: MagicString | undefined
 
@@ -87,7 +90,10 @@ export function renderAssetUrlInJS(
       chunk.fileName,
       'js',
       config,
-      toRelativeRuntime,
+      isEmitAssetsWithModule
+        ? (filename: string, hostType: string) =>
+            path.posix.relative(path.dirname(hostType), filename)
+        : toRelativeRuntime,
     )
     const replacementString =
       typeof replacement === 'string'
@@ -110,7 +116,10 @@ export function renderAssetUrlInJS(
       chunk.fileName,
       'js',
       config,
-      toRelativeRuntime,
+      isEmitAssetsWithModule
+        ? (filename: string, hostType: string) =>
+            path.posix.relative(path.dirname(hostType), filename)
+        : toRelativeRuntime,
     )
     const replacementString =
       typeof replacement === 'string'
@@ -177,7 +186,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       id = id.replace(urlRE, '$1').replace(/[?&]$/, '')
       const url = await fileToUrl(id, config, this)
       if (isEmitAssetsWithModule) {
-        return `import img from ${JSON.stringify(url)};export default img;`
+        return `import asset from ${JSON.stringify(url)};export default asset;`
       }
       return `export default ${JSON.stringify(url)}`
     },
