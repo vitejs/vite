@@ -238,7 +238,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           'es',
           opts,
           true,
-          options.terserOptions
+          options.polyfillChunksTerserOptions
         )
         return
       }
@@ -274,7 +274,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           'iife',
           opts,
           options.externalSystemJS,
-          options.terserOptions
+          options.polyfillChunksTerserOptions
         )
       }
     }
@@ -652,10 +652,11 @@ async function buildPolyfillChunk(
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
   excludeSystemJS?: boolean,
-  terserOptions?: BuildOptions['terserOptions']
+  polyfillChunksTerserOptions?: BuildOptions['terserOptions']
 ) {
-  let { minify, assetsDir } = buildOptions
+  let { minify, assetsDir, terserOptions: buildTerserIOptions } = buildOptions
   minify = minify ? 'terser' : false
+  const terserOptions = polyfillChunksTerserOptions || buildTerserIOptions;
   const res = await build({
     mode,
     // so that everything is resolved from here

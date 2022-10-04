@@ -26,5 +26,8 @@ export interface Options {
    * default: false
    */
   externalSystemJS?: boolean
-  terserOptions?: BuildOptions['terserOptions']
+  /**
+   * default: config.build.terserOptions
+   */
+  polyfillChunksTerserOptions?: BuildOptions['terserOptions']
 }
