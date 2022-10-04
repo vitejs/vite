@@ -27,7 +27,7 @@ export default {
 }
 ```
 
-Terser must be installed because plugin-legacy uses Terser for minification.
+Terser must be installed because plugin-legacy uses Terser for minification. To configure terser for main chunks [build.terserOptions](https://vitejs.dev/config/build-options.html#build-terseroptions) can be set. In addition, to configure polyfill chunks [polyfillChunksTerserOptions](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#polyfillChunksTerserOptions) can be set separately.
 
 ```sh
 npm add -D terser
