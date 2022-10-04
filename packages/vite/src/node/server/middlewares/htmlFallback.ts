@@ -30,7 +30,8 @@ export function htmlFallbackMiddleware(
     ]
   })
 
-  return function htmlFallbackMiddleware(req, res, next) {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteHtmlFallbackMiddleware(req, res, next) {
     return historyHtmlFallbackMiddleware(req, res, next)
   }
 }
