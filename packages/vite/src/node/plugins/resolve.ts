@@ -1169,10 +1169,15 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
 
 /**
  * if importer was not resolved by vite's resolver previously
+ * (when esbuild resolved it)
  * resolve importer's pkg and add to idToPkgMap
  */
 function resolvePkg(importer: string, options: InternalResolveOptions) {
   const { root, preserveSymlinks, packageCache } = options
+
+  if (importer.includes('\x00')) {
+    return null
+  }
 
   const possiblePkgIds: string[] = []
   for (let prevSlashIndex = -1; ; ) {
@@ -1184,9 +1189,6 @@ function resolvePkg(importer: string, options: InternalResolveOptions) {
     prevSlashIndex = slashIndex + 1
 
     const possiblePkgId = importer.slice(0, slashIndex)
-    if (possiblePkgId.includes('\x00')) {
-      continue
-    }
     possiblePkgIds.push(possiblePkgId)
   }
 
