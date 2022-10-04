@@ -656,7 +656,7 @@ async function buildPolyfillChunk(
 ) {
   let { minify, assetsDir, terserOptions: buildTerserIOptions } = buildOptions
   minify = minify ? 'terser' : false
-  const terserOptions = polyfillChunksTerserOptions || buildTerserIOptions;
+  const terserOptions = polyfillChunksTerserOptions || buildTerserIOptions
   const res = await build({
     mode,
     // so that everything is resolved from here
