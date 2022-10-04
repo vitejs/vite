@@ -758,7 +758,15 @@ export async function resolveConfig(
     })
   }
 
-  if (config.build?.terserOptions && config.build.minify !== 'terser') {
+  if (
+    config.build?.terserOptions &&
+    config.build.minify !== 'terser' &&
+    /**
+     * To check whether "plugin-legacy" is used as a plugin or not.
+     * Since "plugin-legacy" enforces terser for minification, it uses "build.terserOptions".
+     */
+    !rawUserPlugins.some(({ name }) => name === 'vite:legacy-config')
+  ) {
     logger.warn(
       colors.yellow(
         `build.terserOptions is specified but build.minify is not set to use Terser. ` +
