@@ -117,12 +117,12 @@ npm add -D terser
 
   Defaults to `false`. Enabling this option will exclude `systemjs/dist/s.min.js` inside polyfills-legacy chunk.
 
-### `terserOptions`
+### `polyfillChunksTerserOptions`
 
 - **Type:** `BuildOptions['terserOptions']`
-- **Default:** `undefined`
+- **Default:** `build.terserOptions`
 
-  Defaults to `undefined`. Since `plugin-legacy` enforces the use of `terser` if minify is enabled, `terserOptions` can be passed to [build.terserOptions](https://vitejs.dev/config/build-options.html#build-terseroptions) this option.
+  Defaults to `build.terserOptions` specified inside config. Since `plugin-legacy` enforces the use of `terser` if minify is enabled, `polyfillChunksTerserOptions` can be set to be passed to [build.terserOptions](https://vitejs.dev/config/build-options.html#build-terseroptions).
 
 ## Dynamic Import
 
