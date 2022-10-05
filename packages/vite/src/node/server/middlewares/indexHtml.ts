@@ -283,7 +283,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // spa-fallback always redirects to /index.html
+    // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {
