@@ -645,6 +645,7 @@ importers:
       added-in-entries: file:./added-in-entries
       axios: ^0.27.2
       clipboard: ^2.0.11
+      dep-cjs-browser-field-bare: file:./dep-cjs-browser-field-bare
       dep-cjs-compiled-from-cjs: file:./dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:./dep-cjs-compiled-from-esm
       dep-cjs-with-assets: file:./dep-cjs-with-assets
@@ -674,6 +675,7 @@ importers:
       added-in-entries: file:playground/optimize-deps/added-in-entries
       axios: 0.27.2
       clipboard: 2.0.11
+      dep-cjs-browser-field-bare: file:playground/optimize-deps/dep-cjs-browser-field-bare
       dep-cjs-compiled-from-cjs: file:playground/optimize-deps/dep-cjs-compiled-from-cjs
       dep-cjs-compiled-from-esm: file:playground/optimize-deps/dep-cjs-compiled-from-esm
       dep-cjs-with-assets: file:playground/optimize-deps/dep-cjs-with-assets
@@ -703,6 +705,9 @@ importers:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
 
   playground/optimize-deps/added-in-entries:
+    specifiers: {}
+
+  playground/optimize-deps/dep-cjs-browser-field-bare:
     specifiers: {}
 
   playground/optimize-deps/dep-cjs-compiled-from-cjs:
@@ -9061,6 +9066,12 @@ packages:
     resolution: {directory: playground/optimize-deps/added-in-entries, type: directory}
     name: added-in-entries
     version: 1.0.0
+    dev: false
+
+  file:playground/optimize-deps/dep-cjs-browser-field-bare:
+    resolution: {directory: playground/optimize-deps/dep-cjs-browser-field-bare, type: directory}
+    name: dep-cjs-browser-field-bare
+    version: 0.0.0
     dev: false
 
   file:playground/optimize-deps/dep-cjs-compiled-from-cjs:

@@ -58,6 +58,10 @@ test('cjs browser field (axios)', async () => {
   expect(await page.textContent('.cjs-browser-field')).toBe('pong')
 })
 
+test('cjs browser field bare', async () => {
+  expect(await page.textContent('.cjs-browser-field-bare')).toBe('pong')
+})
+
 test('dep from linked dep (lodash-es)', async () => {
   expect(await page.textContent('.deps-linked')).toBe('fooBarBaz')
 })

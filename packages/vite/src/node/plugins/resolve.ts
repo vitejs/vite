@@ -1106,7 +1106,8 @@ function tryResolveBrowserMapping(
   externalize?: boolean
 ) {
   let res: string | undefined
-  const pkg = importer && idToPkgMap.get(importer)
+  const pkg =
+    importer && (idToPkgMap.get(importer) || resolvePkg(importer, options))
   if (pkg && isObject(pkg.data.browser)) {
     const mapId = isFilePath ? './' + slash(path.relative(pkg.dir, id)) : id
     const browserMappedPath = mapWithBrowserField(mapId, pkg.data.browser)
@@ -1164,4 +1165,41 @@ function getRealPath(resolved: string, preserveSymlinks?: boolean): string {
     resolved = fs.realpathSync(resolved)
   }
   return normalizePath(resolved)
+}
+
+/**
+ * if importer was not resolved by vite's resolver previously
+ * (when esbuild resolved it)
+ * resolve importer's pkg and add to idToPkgMap
+ */
+function resolvePkg(importer: string, options: InternalResolveOptions) {
+  const { root, preserveSymlinks, packageCache } = options
+
+  if (importer.includes('\x00')) {
+    return null
+  }
+
+  const possiblePkgIds: string[] = []
+  for (let prevSlashIndex = -1; ; ) {
+    const slashIndex = importer.indexOf(isWindows ? '\\' : '/', prevSlashIndex)
+    if (slashIndex < 0) {
+      break
+    }
+
+    prevSlashIndex = slashIndex + 1
+
+    const possiblePkgId = importer.slice(0, slashIndex)
+    possiblePkgIds.push(possiblePkgId)
+  }
+
+  let pkg: PackageData | undefined
+  possiblePkgIds.reverse().find((pkgId) => {
+    pkg = resolvePackageData(pkgId, root, preserveSymlinks, packageCache)!
+    return pkg
+  })!
+
+  if (pkg) {
+    idToPkgMap.set(importer, pkg)
+  }
+  return pkg
 }
