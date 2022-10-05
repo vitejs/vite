@@ -974,7 +974,7 @@ async function bundleConfigFile(
             isRequire: !isESM,
             preferRelative: false,
             tryIndex: true,
-            mainFields: DEFAULT_MAIN_FIELDS,
+            mainFields: [],
             browserField: false,
             conditions: [],
             dedupe: [],
