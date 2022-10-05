@@ -1,3 +1,13 @@
+## 2.3.0-beta.0 (2022-10-05)
+
+* fix(deps): update all non-major dependencies (#10160) ([6233c83](https://github.com/vitejs/vite/commit/6233c83)), closes [#10160](https://github.com/vitejs/vite/issues/10160)
+* fix(deps): update all non-major dependencies (#10246) ([81d4d04](https://github.com/vitejs/vite/commit/81d4d04)), closes [#10246](https://github.com/vitejs/vite/issues/10246)
+* fix(deps): update all non-major dependencies (#10316) ([a38b450](https://github.com/vitejs/vite/commit/a38b450)), closes [#10316](https://github.com/vitejs/vite/issues/10316)
+* fix(legacy): don't force set `build.target` when `renderLegacyChunks=false` (fixes #10201) (#10220) ([7f548e8](https://github.com/vitejs/vite/commit/7f548e8)), closes [#10201](https://github.com/vitejs/vite/issues/10201) [#10220](https://github.com/vitejs/vite/issues/10220)
+* refactor(types): bundle client types (#9966) ([da632bf](https://github.com/vitejs/vite/commit/da632bf)), closes [#9966](https://github.com/vitejs/vite/issues/9966)
+
+
+
 ## 2.2.0 (2022-09-19)
 
 * docs(plugin-legacy): fix Vite default target (#10158) ([62ff788](https://github.com/vitejs/vite/commit/62ff788)), closes [#10158](https://github.com/vitejs/vite/issues/10158)
