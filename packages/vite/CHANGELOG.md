@@ -1,3 +1,9 @@
+## <small>3.1.6 (2022-10-06)</small>
+
+* fix(config): don't resolve by module field (#10347) (#10360) ([f756e84](https://github.com/vitejs/vite/commit/f756e84)), closes [#10347](https://github.com/vitejs/vite/issues/10347) [#10360](https://github.com/vitejs/vite/issues/10360) [#10347](https://github.com/vitejs/vite/issues/10347)
+
+
+
 ## <small>3.1.5 (2022-10-06)</small>
 
 * fix(build): fix resolution algorithm when `build.ssr` is true (#9989) ([f20d285](https://github.com/vitejs/vite/commit/f20d285)), closes [#9989](https://github.com/vitejs/vite/issues/9989)
