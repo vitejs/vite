@@ -43,6 +43,8 @@ import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_EXTENSIONS,
+  DEFAULT_MAIN_FIELDS,
   ENV_ENTRY
 } from './constants'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -963,7 +965,6 @@ async function bundleConfigFile(
             preferRelative: false,
             tryIndex: true,
             mainFields: DEFAULT_MAIN_FIELDS,
-            browserField: false,
             conditions: [],
             dedupe: [],
             extensions: DEFAULT_EXTENSIONS,
