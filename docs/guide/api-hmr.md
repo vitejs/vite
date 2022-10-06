@@ -130,7 +130,7 @@ A self-accepting module may realize during runtime that it can't handle a HMR up
 Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
 
 ```js
-import.meta.hot.accept(module => {
+import.meta.hot.accept((module) => {
   // You may use the new module instance to decide whether to invalidate.
   if (cannotHandleUpdate(module)) {
     import.meta.hot.invalidate()
