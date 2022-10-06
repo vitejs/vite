@@ -1,3 +1,15 @@
+## <small>3.1.5 (2022-10-06)</small>
+
+* fix(build): fix resolution algorithm when `build.ssr` is true (#9989) ([f20d285](https://github.com/vitejs/vite/commit/f20d285)), closes [#9989](https://github.com/vitejs/vite/issues/9989)
+* fix(config): resolve implicit deps as absolute path (#10254) ([dc140af](https://github.com/vitejs/vite/commit/dc140af)), closes [#10254](https://github.com/vitejs/vite/issues/10254)
+* fix(css):  missing css in lib mode (#10185) ([e2cdb28](https://github.com/vitejs/vite/commit/e2cdb28)), closes [#10185](https://github.com/vitejs/vite/issues/10185)
+* fix(esbuild): transpile with esnext in dev (#10207) ([abf2cfd](https://github.com/vitejs/vite/commit/abf2cfd)), closes [#10207](https://github.com/vitejs/vite/issues/10207)
+* fix(hmr): handle virtual module update (#10324) ([14ebbc6](https://github.com/vitejs/vite/commit/14ebbc6)), closes [#10324](https://github.com/vitejs/vite/issues/10324)
+* fix(ssr): correctly track scope (#10300) ([effb7c3](https://github.com/vitejs/vite/commit/effb7c3)), closes [#10300](https://github.com/vitejs/vite/issues/10300)
+* chore: fix build error ([01aa224](https://github.com/vitejs/vite/commit/01aa224))
+
+
+
 ## <small>3.1.4 (2022-09-28)</small>
 
 * fix(esbuild): transpile with esnext in dev (#10215) ([4a0f210](https://github.com/vitejs/vite/commit/4a0f210)), closes [#10215](https://github.com/vitejs/vite/issues/10215)
