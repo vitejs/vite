@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {

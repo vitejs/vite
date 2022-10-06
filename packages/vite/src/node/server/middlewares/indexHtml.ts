@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
@@ -283,7 +283,7 @@ export function indexHtmlMiddleware(
     }
 
     const url = req.url && cleanUrl(req.url)
-    // spa-fallback always redirects to /index.html
+    // htmlFallbackMiddleware appends '.html' to URLs
     if (url?.endsWith('.html') && req.headers['sec-fetch-dest'] !== 'script') {
       const filename = getHtmlFilename(url, server)
       if (fs.existsSync(filename)) {

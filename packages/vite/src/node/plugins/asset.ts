@@ -13,7 +13,10 @@ import type {
 } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
-import { toOutputFilePathInString } from '../build'
+import {
+  createToImportMetaURLBasedRelativeRuntime,
+  toOutputFilePathInJS
+} from '../build'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
@@ -57,6 +60,10 @@ export function renderAssetUrlInJS(
   opts: NormalizedOutputOptions,
   code: string
 ): MagicString | undefined {
+  const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
+    opts.format
+  )
+
   let match: RegExpExecArray | null
   let s: MagicString | undefined
 
@@ -76,13 +83,13 @@ export function renderAssetUrlInJS(
     const file = getAssetFilename(hash, config) || ctx.getFileName(hash)
     chunk.viteMetadata.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
-    const replacement = toOutputFilePathInString(
+    const replacement = toOutputFilePathInJS(
       filename,
       'asset',
       chunk.fileName,
       'js',
       config,
-      opts.format
+      toRelativeRuntime
     )
     const replacementString =
       typeof replacement === 'string'
@@ -100,13 +107,13 @@ export function renderAssetUrlInJS(
     s ||= new MagicString(code)
     const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-    const replacement = toOutputFilePathInString(
+    const replacement = toOutputFilePathInJS(
       publicUrl,
       'public',
       chunk.fileName,
       'js',
       config,
-      opts.format
+      toRelativeRuntime
     )
     const replacementString =
       typeof replacement === 'string'
