@@ -29,6 +29,7 @@
   text('.bool', typeof import.meta.env.VITE_BOOL)
   text('.node-env', process.env.NODE_ENV)
   text('.env-object', JSON.stringify(import.meta.env, null, 2))
+  text('.expand', import.meta.env.VITE_EXPAND)
 
   function text(el, text) {
     document.querySelector(el).textContent = text
