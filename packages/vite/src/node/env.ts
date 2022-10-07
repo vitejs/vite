@@ -52,7 +52,9 @@ export function loadEnv(
 
   // let environment variables use each other
   expand({
-    parsed
+    parsed,
+    // prevent process.env mutation
+    ignoreProcessEnv: true
   })
 
   // only keys that start with prefix are exposed to client
