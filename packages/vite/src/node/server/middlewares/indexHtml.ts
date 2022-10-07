@@ -184,11 +184,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     if (module) {
       server?.moduleGraph.invalidateModule(module)
     }
-    s.overwrite(
+    s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"></script>`,
-      { contentOnly: true }
+      `<script type="module" src="${modulePath}"></script>`
     )
   }
 

@@ -196,11 +196,10 @@ async function ssrTransformScript(
         )
       } else {
         // anonymous default exports
-        s.overwrite(
+        s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
-          { contentOnly: true }
+          `${ssrModuleExportsKey}.default =`
         )
       }
     }
@@ -247,16 +246,14 @@ async function ssrTransformScript(
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else {
-        s.overwrite(id.start, id.end, binding, { contentOnly: true })
+        s.update(id.start, id.end, binding)
       }
     },
     onImportMeta(node) {
-      s.overwrite(node.start, node.end, ssrImportMetaKey, { contentOnly: true })
+      s.update(node.start, node.end, ssrImportMetaKey)
     },
     onDynamicImport(node) {
-      s.overwrite(node.start, node.start + 6, ssrDynamicImportKey, {
-        contentOnly: true
-      })
+      s.update(node.start, node.start + 6, ssrDynamicImportKey)
       if (node.type === 'ImportExpression' && node.source.type === 'Literal') {
         dynamicDeps.add(node.source.value as string)
       }
