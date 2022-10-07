@@ -649,10 +649,25 @@ export function tryNodeResolve(
   }
 
   let pkg: PackageData | undefined
-  const pkgId = possiblePkgIds.reverse().find((pkgId) => {
-    pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
-    return pkg
-  })!
+  let pkgId: string
+
+  const rootPkg =
+    possiblePkgIds.length &&
+    resolvePackageData(
+      possiblePkgIds[0],
+      basedir,
+      preserveSymlinks,
+      packageCache
+    )!
+  if (rootPkg && rootPkg?.data?.exports) {
+    pkg = rootPkg
+    pkgId = possiblePkgIds[0]
+  } else {
+    pkgId = possiblePkgIds.reverse().find((pkgId) => {
+      pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)!
+      return pkg
+    })!
+  }
 
   if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
