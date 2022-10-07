@@ -272,13 +272,23 @@ describe.runIf(isBuild)('encodeURI', () => {
   test('img src with encodeURI', async () => {
     const img = await page.$('.encodeURI')
     expect(
-      await (await img.getAttribute('src')).startsWith('data:image/png;base64')
+      (await img.getAttribute('src')).startsWith('data:image/png;base64')
     ).toBe(true)
   })
 })
 
 test('new URL(..., import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url')).toMatch(assetMatch)
+})
+
+test('new URL("@/...", import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url-dep')).toMatch(assetMatch)
+})
+
+test('new URL("/...", import.meta.url)', async () => {
+  expect(await page.textContent('.import-meta-url-base-path')).toMatch(
+    iconMatch
+  )
 })
 
 test('new URL(`${dynamic}`, import.meta.url)', async () => {

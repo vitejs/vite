@@ -131,7 +131,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['packages/vite/types/**', '*.spec.ts'],
+      files: ['packages/vite/src/types/**', '*.spec.ts'],
       rules: {
         'node/no-extraneous-import': 'off'
       }
@@ -178,7 +178,7 @@ module.exports = defineConfig({
       }
     },
     {
-      files: ['*.js'],
+      files: ['*.js', '*.mjs', '*.cjs'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off'
       }

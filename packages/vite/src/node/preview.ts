@@ -2,7 +2,7 @@ import path from 'node:path'
 import type * as http from 'node:http'
 import sirv from 'sirv'
 import connect from 'connect'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
 import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
 import type { CommonServerOptions } from './http'
@@ -54,8 +54,6 @@ export interface PreviewServer {
   httpServer: http.Server
   /**
    * The resolved urls Vite prints on the CLI
-   *
-   * @experimental
    */
   resolvedUrls: ResolvedServerUrls
   /**
@@ -64,10 +62,13 @@ export interface PreviewServer {
   printUrls(): void
 }
 
-export type PreviewServerHook = (server: {
-  middlewares: Connect.Server
-  httpServer: http.Server
-}) => (() => void) | void | Promise<(() => void) | void>
+export type PreviewServerHook = (
+  this: void,
+  server: {
+    middlewares: Connect.Server
+    httpServer: http.Server
+  }
+) => (() => void) | void | Promise<(() => void) | void>
 
 /**
  * Starts the Vite server in preview mode, to simulate a production deployment
@@ -81,7 +82,7 @@ export async function preview(
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https, config.cacheDir)
+    await resolveHttpsConfig(config.preview?.https)
   )
   setClientErrorHandler(httpServer, config.logger)
 
@@ -110,12 +111,20 @@ export async function preview(
 
   // static assets
   const distDir = path.resolve(config.root, config.build.outDir)
+  const headers = config.preview.headers
   app.use(
     previewBase,
     sirv(distDir, {
       etag: true,
       dev: true,
-      single: config.appType === 'spa'
+      single: config.appType === 'spa',
+      setHeaders(res) {
+        if (headers) {
+          for (const name in headers) {
+            res.setHeader(name, headers[name]!)
+          }
+        }
+      }
     })
   )
 

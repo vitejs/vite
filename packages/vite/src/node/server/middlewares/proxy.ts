@@ -1,8 +1,8 @@
 import type * as http from 'node:http'
 import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
-import type { Connect } from 'types/connect'
-import type { HttpProxy } from 'types/http-proxy'
+import type { Connect } from 'dep-types/connect'
+import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
 import { HMR_HEADER } from '../ws'
 import { createDebugger, isObject } from '../../utils'
@@ -88,7 +88,9 @@ export function proxyMiddleware(
         if (doesProxyContextMatchUrl(context, url)) {
           const [proxy, opts] = proxies[context]
           if (
-            (opts.ws || opts.target?.toString().startsWith('ws:')) &&
+            (opts.ws ||
+              opts.target?.toString().startsWith('ws:') ||
+              opts.target?.toString().startsWith('wss:')) &&
             req.headers['sec-websocket-protocol'] !== HMR_HEADER
           ) {
             if (opts.rewrite) {

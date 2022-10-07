@@ -5,7 +5,7 @@ import type {
   OutgoingHttpHeaders as HttpServerHeaders
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
@@ -121,8 +121,7 @@ export async function resolveHttpServer(
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined,
-  cacheDir: string
+  https: boolean | HttpsServerOptions | undefined
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
 
@@ -190,7 +189,9 @@ export function setClientErrorHandler(
   logger: Logger
 ): void {
   server.on('clientError', (err, socket) => {
+    let msg = '400 Bad Request'
     if ((err as any).code === 'HPE_HEADER_OVERFLOW') {
+      msg = '431 Request Header Fields Too Large'
       logger.warn(
         colors.yellow(
           'Server responded with status code 431. ' +
@@ -198,5 +199,9 @@ export function setClientErrorHandler(
         )
       )
     }
+    if ((err as any).code === 'ECONNRESET' || !socket.writable) {
+      return
+    }
+    socket.end(`HTTP/1.1 ${msg}\r\n\r\n`)
   })
 }
