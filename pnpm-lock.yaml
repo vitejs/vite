@@ -243,7 +243,7 @@ importers:
       http-proxy: ^1.18.1
       json5: ^2.2.1
       launch-editor-middleware: ^2.6.0
-      magic-string: ^0.26.5
+      magic-string: ^0.26.6
       micromatch: ^4.0.5
       mlly: ^0.5.16
       mrmime: ^1.0.1
@@ -308,7 +308,7 @@ importers:
       http-proxy: 1.18.1_debug@4.3.4
       json5: 2.2.1
       launch-editor-middleware: 2.6.0
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       micromatch: 4.0.5
       mlly: 0.5.16
       mrmime: 1.0.1
@@ -6246,6 +6246,13 @@ packages:
     dependencies:
       sourcemap-codec: 1.4.8
 
+  /magic-string/0.26.6:
+    resolution: {integrity: sha512-6d+3bFybzyQFJYSoRsl9ZC0wheze8M1LrQC7tNMRqXR4izUTDOLMd9BtSuExK9iAukFh+s5K0WAhc/dlQ+HKYA==}
+    engines: {node: '>=12'}
+    dependencies:
+      sourcemap-codec: 1.4.8
+    dev: true
+
   /make-dir/2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
@@ -7661,7 +7668,7 @@ packages:
       rollup: ^2.55
       typescript: ^4.1
     dependencies:
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       rollup: 2.79.1
       typescript: 4.8.2
     optionalDependencies:
@@ -7695,7 +7702,7 @@ packages:
       commenting: 1.1.0
       glob: 7.2.0
       lodash: 4.17.21
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       mkdirp: 1.0.4
       moment: 2.29.3
       package-name-regex: 2.0.6
@@ -8601,7 +8608,7 @@ packages:
       globby: 13.1.2
       hookable: 5.3.0
       jiti: 1.14.0
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       mkdirp: 1.0.4
       mkdist: 0.3.13_typescript@4.8.2
       mlly: 0.5.16

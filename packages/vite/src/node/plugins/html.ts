@@ -216,11 +216,10 @@ export function overwriteAttrValue(
   }
   const wrapOffset = valueStart[1] === '"' || valueStart[1] === "'" ? 1 : 0
   const valueOffset = valueStart.index! + valueStart[0].length - 1
-  s.overwrite(
+  s.update(
     sourceCodeLocation.startOffset + valueOffset + wrapOffset,
     sourceCodeLocation.endOffset - wrapOffset,
-    newValue,
-    { contentOnly: true }
+    newValue
   )
   return s
 }
@@ -487,11 +486,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
-            s.overwrite(
+            s.update(
               styleNode.sourceCodeLocation!.startOffset,
               styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-              { contentOnly: true }
+              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`
             )
           }
 
@@ -546,16 +544,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (!isExcludedUrl(url)) {
-            s.overwrite(
-              start,
-              end,
-              await urlToBuiltUrl(url, id, config, this),
-              { contentOnly: true }
-            )
+            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, toOutputPublicFilePath(url), {
-              contentOnly: true
-            })
+            s.update(start, end, toOutputPublicFilePath(url))
           }
         }
 
@@ -780,12 +771,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
-          s.overwrite(
-            match.index,
-            match.index + full.length,
-            cssTransformedCode,
-            { contentOnly: true }
-          )
+          s.update(match.index, match.index + full.length, cssTransformedCode)
         }
         if (s) {
           result = s.toString()
