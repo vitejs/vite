@@ -211,10 +211,10 @@ By default, Vite will empty the `outDir` on build if it is inside project root. 
 
 ## build.reportCompressedSize
 
-- **Type:** `boolean`
-- **Default:** `true`
+- **Type:** `boolean | 'gzip' | 'brotli'`
+- **Default:** `'gzip'`
 
-Enable/disable gzip-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
+Enable/disable gzip or brotli-compressed size reporting. Compressing large output files can be slow, so disabling this may increase build performance for large projects.
 
 ## build.chunkSizeWarningLimit
 

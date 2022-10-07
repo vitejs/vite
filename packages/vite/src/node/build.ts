@@ -198,7 +198,7 @@ export interface BuildOptions {
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
    */
-  reportCompressedSize?: boolean
+  reportCompressedSize?: boolean | 'gzip' | 'brotli'
   /**
    * Adjust chunk size warning limit (in kbs).
    * @default 500
@@ -312,7 +312,7 @@ export function resolveBuildOptions(
     lib: false,
     ssr: false,
     ssrManifest: false,
-    reportCompressedSize: true,
+    reportCompressedSize: 'gzip',
     chunkSizeWarningLimit: 500,
     watch: null,
     ...raw,

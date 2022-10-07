@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { gzip } from 'node:zlib'
+import { brotliCompress, gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
@@ -24,7 +24,10 @@ const writeColors = {
 }
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
-  const compress = promisify(gzip)
+  const compress =
+    config.build.reportCompressedSize === 'brotli'
+      ? promisify(brotliCompress)
+      : promisify(gzip)
   const chunkLimit = config.build.chunkSizeWarningLimit
 
   function isLarge(code: string | Uint8Array): boolean {
@@ -36,7 +39,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     if (config.build.ssr || !config.build.reportCompressedSize) {
       return ''
     }
-    return ` / gzip: ${(
+    const name =
+      config.build.reportCompressedSize === 'brotli' ? 'brotli' : 'gzip'
+    return ` / ${name}: ${(
       (await compress(typeof code === 'string' ? code : Buffer.from(code)))
         .length / 1024
     ).toFixed(2)} KiB`
