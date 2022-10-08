@@ -200,7 +200,7 @@ import { preview } from 'vite'
 ```ts
 async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve',
+  command: COMMAND,
   defaultMode = 'development'
 ): Promise<ResolvedConfig>
 ```

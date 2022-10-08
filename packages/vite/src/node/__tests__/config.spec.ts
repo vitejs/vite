@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
 import type { UserConfig, UserConfigExport } from '../config'
 import { resolveConfig } from '../config'
+import { COMMAND } from '../constants'
 import { resolveEnvPrefix } from '../env'
 import { mergeConfig } from '../publicUtils'
 
@@ -223,7 +224,7 @@ describe('preview config', () => {
     const config: InlineConfig = {
       server: serverConfig()
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, COMMAND.SERVE)).toMatchObject({
       preview: {
         ...serverConfig(),
         port: undefined
@@ -238,7 +239,7 @@ describe('preview config', () => {
         port: 3006
       }
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, COMMAND.SERVE)).toMatchObject({
       preview: {
         ...serverConfig(),
         port: 3006
@@ -261,7 +262,7 @@ describe('preview config', () => {
       server: serverConfig(),
       preview: previewConfig()
     }
-    expect(await resolveConfig(config, 'serve')).toMatchObject({
+    expect(await resolveConfig(config, COMMAND.SERVE)).toMatchObject({
       preview: previewConfig()
     })
   })

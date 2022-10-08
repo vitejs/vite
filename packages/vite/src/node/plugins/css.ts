@@ -26,7 +26,7 @@ import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
 import { toOutputFilePathInCss } from '../build'
-import { CLIENT_PUBLIC_PATH, SPECIAL_QUERY_RE } from '../constants'
+import { CLIENT_PUBLIC_PATH, COMMAND, SPECIAL_QUERY_RE } from '../constants'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import {
@@ -162,7 +162,7 @@ const postcssConfigCache: Record<
 > = {}
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
-  return config.command === 'build'
+  return config.command === COMMAND.BUILD
 }
 
 /**
@@ -238,7 +238,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       }
 
       // track deps for build watch mode
-      if (config.command === 'build' && config.build.watch && deps) {
+      if (config.command === COMMAND.BUILD && config.build.watch && deps) {
         for (const file of deps) {
           this.addWatchFile(file)
         }
@@ -363,7 +363,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         !inlined &&
         dataToEsm(modules, { namedExports: true, preferConst: true })
 
-      if (config.command === 'serve') {
+      if (config.command === COMMAND.SERVE) {
         const getContentWithSourcemap = async (content: string) => {
           if (config.css?.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()

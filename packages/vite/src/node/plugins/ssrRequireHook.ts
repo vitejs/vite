@@ -2,6 +2,7 @@ import { createRequire } from 'node:module'
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
+import { COMMAND } from '../constants'
 import { arraify } from '../utils'
 
 /**
@@ -11,7 +12,7 @@ import { arraify } from '../utils'
  */
 export function ssrRequireHookPlugin(config: ResolvedConfig): Plugin | null {
   if (
-    config.command !== 'build' ||
+    config.command !== COMMAND.BUILD ||
     !config.build.ssr ||
     !config.resolve.dedupe.length ||
     config.ssr?.noExternal === true ||

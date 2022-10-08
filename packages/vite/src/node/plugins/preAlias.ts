@@ -7,6 +7,7 @@ import type {
   ResolvedConfig
 } from '..'
 import type { Plugin } from '../plugin'
+import { COMMAND } from '../constants'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
@@ -23,7 +24,7 @@ import { tryOptimizedResolve } from './resolve'
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {

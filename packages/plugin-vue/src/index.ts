@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import type { Plugin, ViteDevServer } from 'vite'
-import { createFilter } from 'vite'
+import { COMMAND, createFilter } from 'vite'
 /* eslint-disable import/no-duplicates */
 import type {
   SFCBlock,
@@ -144,7 +144,8 @@ export default function vuePlugin(rawOptions: Options = {}): Plugin {
       options = {
         ...options,
         root: config.root,
-        sourceMap: config.command === 'build' ? !!config.build.sourcemap : true,
+        sourceMap:
+          config.command === COMMAND.BUILD ? !!config.build.sourcemap : true,
         cssDevSourcemap: config.css?.devSourcemap ?? false,
         isProduction: config.isProduction,
         devToolsEnabled:

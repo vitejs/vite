@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { COMMAND } from '../constants'
 import { resolveConfig } from '..'
 
 describe('resolveBuildOptions in dev', () => {
@@ -11,7 +12,7 @@ describe('resolveBuildOptions in dev', () => {
           }
         }
       },
-      'serve'
+      COMMAND.SERVE
     )
 
     expect(config.build.rollupOptions).not.toHaveProperty('input')

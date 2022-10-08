@@ -3,7 +3,7 @@ import path from 'node:path'
 import type { types } from '@babel/core'
 import * as babel from '@babel/core'
 import jsx from '@vue/babel-plugin-jsx'
-import { createFilter, normalizePath } from 'vite'
+import { COMMAND, createFilter, normalizePath } from 'vite'
 import type { ComponentOptions } from 'vue'
 import type { Plugin } from 'vite'
 import type { Options } from './types'
@@ -57,8 +57,9 @@ function vueJsxPlugin(options: Options = {}): Plugin {
     },
 
     configResolved(config) {
-      needHmr = config.command === 'serve' && !config.isProduction
-      needSourceMap = config.command === 'serve' || !!config.build.sourcemap
+      needHmr = config.command === COMMAND.SERVE && !config.isProduction
+      needSourceMap =
+        config.command === COMMAND.SERVE || !!config.build.sourcemap
       root = config.root
     },
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { definePlugin } from '../../plugins/define'
+import { COMMAND } from '../../constants'
 import { resolveConfig } from '../../config'
 
 async function createDefinePluginTransform(
@@ -7,7 +8,10 @@ async function createDefinePluginTransform(
   build = true,
   ssr = false
 ) {
-  const config = await resolveConfig({ define }, build ? 'build' : 'serve')
+  const config = await resolveConfig(
+    { define },
+    build ? COMMAND.BUILD : COMMAND.SERVE
+  )
   const instance = definePlugin(config)
   return async (code: string) => {
     const result = await instance.transform.call({}, code, 'foo.ts', { ssr })

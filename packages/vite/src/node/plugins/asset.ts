@@ -20,7 +20,7 @@ import {
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { cleanUrl, getHash, normalizePath } from '../utils'
-import { FS_PREFIX } from '../constants'
+import { COMMAND, FS_PREFIX } from '../constants'
 
 export const assetUrlRE = /__VITE_ASSET__([a-z\d]{8})__(?:\$_(.*?)__)?/g
 
@@ -193,7 +193,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // do not emit assets for SSR build
-      if (config.command === 'build' && config.build.ssr) {
+      if (config.command === COMMAND.BUILD && config.build.ssr) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&
@@ -229,7 +229,7 @@ export async function fileToUrl(
   config: ResolvedConfig,
   ctx: PluginContext
 ): Promise<string> {
-  if (config.command === 'serve') {
+  if (config.command === COMMAND.SERVE) {
     return fileToDevUrl(id, config)
   } else {
     return fileToBuiltUrl(id, config, ctx)
@@ -394,7 +394,7 @@ export function publicFileToBuiltUrl(
   url: string,
   config: ResolvedConfig
 ): string {
-  if (config.command !== 'build') {
+  if (config.command !== COMMAND.BUILD) {
     // We don't need relative base or renderBuiltUrl support during dev
     return config.base + url.slice(1)
   }

@@ -4,7 +4,7 @@ import type { EmittedAsset, OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
-import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { COMMAND, ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import { cleanUrl, getHash, injectQuery, parseRequest } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -191,7 +191,7 @@ export async function workerFileToUrl(
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   let server: ViteDevServer
   const isWorker = config.isWorker
 

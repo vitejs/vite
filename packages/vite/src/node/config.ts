@@ -41,6 +41,7 @@ import {
 import type { ESBuildOptions } from './plugins/esbuild'
 import {
   CLIENT_ENTRY,
+  COMMAND,
   DEFAULT_ASSETS_RE,
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
@@ -73,7 +74,7 @@ export type {
 // be part of the public API.
 
 export interface ConfigEnv {
-  command: 'build' | 'serve'
+  command: COMMAND
   mode: string
   /**
    * @experimental
@@ -320,7 +321,7 @@ export type ResolvedConfig = Readonly<
     base: string
     publicDir: string
     cacheDir: string
-    command: 'build' | 'serve'
+    command: COMMAND
     mode: string
     isWorker: boolean
     // in nested worker bundle to find the main config
@@ -364,7 +365,7 @@ export type ResolveFn = (
 
 export async function resolveConfig(
   inlineConfig: InlineConfig,
-  command: 'build' | 'serve',
+  command: COMMAND,
   defaultMode = 'development'
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
@@ -378,7 +379,7 @@ export async function resolveConfig(
     process.env.NODE_ENV = 'production'
   }
   // production env would not work in serve, fallback to development
-  if (command === 'serve' && process.env.NODE_ENV === 'production') {
+  if (command === COMMAND.SERVE && process.env.NODE_ENV === 'production') {
     process.env.NODE_ENV = 'development'
   }
 
@@ -510,7 +511,7 @@ export async function resolveConfig(
   }
 
   // resolve public base url
-  const isBuild = command === 'build'
+  const isBuild = command === COMMAND.BUILD
   const relativeBaseShortcut = config.base === '' || config.base === './'
 
   // During dev, we ignore relative base and fallback to '/'
@@ -565,7 +566,7 @@ export async function resolveConfig(
                 ...resolved.resolve,
                 root: resolvedRoot,
                 isProduction,
-                isBuild: command === 'build',
+                isBuild: command === COMMAND.BUILD,
                 ssrConfig: resolved.ssr,
                 asSrc: true,
                 preferRelative: false,
@@ -1111,8 +1112,8 @@ export function isDepsOptimizerEnabled(
   const { disabled } = getDepOptimizationConfig(config, ssr)
   return !(
     disabled === true ||
-    (command === 'build' && disabled === 'build') ||
-    (command === 'serve' && disabled === 'dev')
+    (command === COMMAND.BUILD && disabled === 'build') ||
+    (command === COMMAND.SERVE && disabled === 'dev')
   )
 }
 

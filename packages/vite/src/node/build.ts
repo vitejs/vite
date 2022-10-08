@@ -47,7 +47,7 @@ import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
 import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
+import { COMMAND, ESBUILD_MODULES_TARGET, VERSION } from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 
@@ -425,7 +425,7 @@ export async function build(
 async function doBuild(
   inlineConfig: InlineConfig = {}
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(inlineConfig, 'build', 'production')
+  const config = await resolveConfig(inlineConfig, COMMAND.BUILD, 'production')
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib

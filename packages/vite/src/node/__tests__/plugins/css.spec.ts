@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
+import { COMMAND } from '../../constants'
 import { resolveConfig } from '../../config'
 import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
 
@@ -63,7 +64,7 @@ describe('css path resolutions', () => {
           ]
         }
       },
-      'serve'
+      COMMAND.SERVE
     )
 
     const { transform, buildStart } = cssPlugin(config)

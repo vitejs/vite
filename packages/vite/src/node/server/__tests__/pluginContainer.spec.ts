@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
+import { COMMAND } from '../../constants'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { ModuleGraph } from '../moduleGraph'
@@ -154,7 +155,7 @@ async function getPluginContainer(
 ): Promise<PluginContainer> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
-    'serve'
+    COMMAND.SERVE
   )
 
   // @ts-ignore: This plugin requires a ViteDevServer instance.

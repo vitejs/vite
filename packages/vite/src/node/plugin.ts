@@ -10,6 +10,7 @@ import type {
 } from 'rollup'
 export type { PluginContext } from 'rollup'
 import type { UserConfig } from './config'
+import type { COMMAND } from './constants'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
@@ -56,8 +57,7 @@ export interface Plugin extends RollupPlugin {
    * Apply the plugin only for serve or build, or on certain conditions.
    */
   apply?:
-    | 'serve'
-    | 'build'
+    | COMMAND
     | ((this: void, config: UserConfig, env: ConfigEnv) => boolean)
   /**
    * Modify vite config before it's resolved. The hook can either mutate the

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { ParserOptions, TransformOptions, types as t } from '@babel/core'
 import * as babel from '@babel/core'
-import { createFilter, normalizePath } from 'vite'
+import { COMMAND, createFilter, normalizePath } from 'vite'
 import type { Plugin, PluginOption, ResolvedConfig } from 'vite'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'magic-string'
@@ -146,9 +146,9 @@ export default function viteReact(opts: Options = {}): PluginOption[] {
         resolve: projectRoot
       })
       needHiresSourcemap =
-        config.command === 'build' && !!config.build.sourcemap
+        config.command === COMMAND.BUILD && !!config.build.sourcemap
       isProduction = config.isProduction
-      skipFastRefresh ||= isProduction || config.command === 'build'
+      skipFastRefresh ||= isProduction || config.command === COMMAND.BUILD
 
       const jsxInject = config.esbuild && config.esbuild.jsxInject
       if (jsxInject && importReactRE.test(jsxInject)) {

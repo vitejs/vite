@@ -1,12 +1,13 @@
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
+import { COMMAND } from '../constants'
 import { isModernFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
   // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
-  const skip = config.command !== 'build' || config.build.ssr
+  const skip = config.command !== COMMAND.BUILD || config.build.ssr
   let polyfillString: string | undefined
 
   return {

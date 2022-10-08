@@ -42,7 +42,7 @@ import {
   initDepsOptimizer,
   initDevSsrDepsOptimizer
 } from '../optimizer'
-import { CLIENT_DIR } from '../constants'
+import { CLIENT_DIR, COMMAND } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { invalidatePackageData } from '../packages'
@@ -305,7 +305,7 @@ export interface ResolvedServerUrls {
 export async function createServer(
   inlineConfig: InlineConfig = {}
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'development')
+  const config = await resolveConfig(inlineConfig, COMMAND.SERVE, 'development')
   const { root, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig

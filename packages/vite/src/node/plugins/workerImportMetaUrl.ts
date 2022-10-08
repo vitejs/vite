@@ -5,6 +5,7 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { COMMAND } from '../constants'
 import {
   cleanUrl,
   injectQuery,
@@ -73,7 +74,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
 }
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   let workerResolver: ResolveFn
 
   return {

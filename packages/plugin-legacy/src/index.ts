@@ -3,7 +3,7 @@ import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { build, normalizePath } from 'vite'
+import { COMMAND, build, normalizePath } from 'vite'
 import MagicString from 'magic-string'
 import type {
   BuildOptions,
@@ -162,7 +162,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     name: 'vite:legacy-config',
 
     config(config, env) {
-      if (env.command === 'build') {
+      if (env.command === COMMAND.BUILD) {
         if (!config.build) {
           config.build = {}
         }
@@ -194,7 +194,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return {
         define: {
           'import.meta.env.LEGACY':
-            env.command === 'serve' || config.build?.ssr
+            env.command === COMMAND.SERVE || config.build?.ssr
               ? false
               : legacyEnvVarMarker
         }
@@ -213,7 +213,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
   const legacyGenerateBundlePlugin: Plugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
-    apply: 'build',
+    apply: COMMAND.BUILD,
 
     async generateBundle(opts, bundle) {
       if (config.build.ssr) {
@@ -281,7 +281,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const legacyPostPlugin: Plugin = {
     name: 'vite:legacy-post-process',
     enforce: 'post',
-    apply: 'build',
+    apply: COMMAND.BUILD,
 
     configResolved(_config) {
       if (_config.build.lib) {

@@ -5,7 +5,7 @@ import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { VERSION } from './constants'
+import { COMMAND, VERSION } from './constants'
 import { resolveConfig } from '.'
 
 const cli = cac('vite')
@@ -205,7 +205,7 @@ cli
             configFile: options.config,
             logLevel: options.logLevel
           },
-          'build',
+          COMMAND.BUILD,
           'development'
         )
         await optimizeDeps(config, options.force, true)

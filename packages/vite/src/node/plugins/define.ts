@@ -1,6 +1,7 @@
 import MagicString from 'magic-string'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { COMMAND } from '../constants'
 import { transformStableResult } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
@@ -9,7 +10,7 @@ const nonJsRe = /\.(json)($|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   const isBuildLib = isBuild && config.build.lib
 
   // ignore replace process.env in lib build

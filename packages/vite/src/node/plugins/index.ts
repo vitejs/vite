@@ -1,6 +1,7 @@
 import aliasPlugin from '@rollup/plugin-alias'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
+import { COMMAND } from '../constants'
 import type { HookHandler, Plugin } from '../plugin'
 import { getDepsOptimizer } from '../optimizer'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
@@ -32,7 +33,7 @@ export async function resolvePlugins(
   normalPlugins: Plugin[],
   postPlugins: Plugin[]
 ): Promise<Plugin[]> {
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   const isWatch = isBuild && !!config.build.watch
   const buildPlugins = isBuild
     ? (await import('../build')).resolveBuildPlugins(config)

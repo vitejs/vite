@@ -3,6 +3,7 @@ import _debug from 'debug'
 import { getHash } from '../utils'
 import { getDepOptimizationConfig } from '..'
 import type { ResolvedConfig, ViteDevServer } from '..'
+import { COMMAND } from '../constants'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -27,7 +28,6 @@ import type {
   DepsOptimizer,
   OptimizedDepInfo
 } from '.'
-
 const isDebugEnabled = _debug('vite:deps').enabled
 
 /**
@@ -44,7 +44,7 @@ export function getDepsOptimizer(
   ssr?: boolean
 ): DepsOptimizer | undefined {
   // Workers compilation shares the DepsOptimizer from the main build
-  const isDevSsr = ssr && config.command !== 'build'
+  const isDevSsr = ssr && config.command !== COMMAND.BUILD
   return (isDevSsr ? devSsrDepsOptimizerMap : depsOptimizerMap).get(
     config.mainConfig || config
   )
@@ -55,7 +55,7 @@ export async function initDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   // Non Dev SSR Optimizer
-  const ssr = config.command === 'build' && !!config.build.ssr
+  const ssr = config.command === COMMAND.BUILD && !!config.build.ssr
   if (!getDepsOptimizer(config, ssr)) {
     await createDepsOptimizer(config, server)
   }
@@ -94,7 +94,7 @@ async function createDepsOptimizer(
   server?: ViteDevServer
 ): Promise<void> {
   const { logger } = config
-  const isBuild = config.command === 'build'
+  const isBuild = config.command === COMMAND.BUILD
   const ssr = isBuild && !!config.build.ssr // safe as Dev SSR don't use this optimizer
 
   const sessionTimestamp = Date.now().toString()

@@ -22,6 +22,7 @@ import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
+  COMMAND,
   DEFAULT_EXTENSIONS,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
@@ -1158,7 +1159,7 @@ export function transformStableResult(
   return {
     code: s.toString(),
     map:
-      config.command === 'build' && config.build.sourcemap
+      config.command === COMMAND.BUILD && config.build.sourcemap
         ? s.generateMap({ hires: true, source: id })
         : null
   }

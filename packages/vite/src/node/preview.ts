@@ -17,6 +17,7 @@ import compression from './server/middlewares/compression'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls } from './utils'
 import { printServerUrls } from './logger'
+import { COMMAND } from './constants'
 import { resolveConfig } from '.'
 import type { InlineConfig, ResolvedConfig } from '.'
 
@@ -76,7 +77,7 @@ export type PreviewServerHook = (
 export async function preview(
   inlineConfig: InlineConfig = {}
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(inlineConfig, 'serve', 'production')
+  const config = await resolveConfig(inlineConfig, COMMAND.SERVE, 'production')
 
   const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
