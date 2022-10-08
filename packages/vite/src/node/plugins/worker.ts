@@ -32,6 +32,14 @@ export type WorkerType = 'classic' | 'module' | 'ignore'
 export const WORKER_FILE_ID = 'worker_file'
 const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
+export function isWorkerRequest(id: string): boolean {
+  const query = parseRequest(id)
+  if (query && query[WORKER_FILE_ID] != null) {
+    return true
+  }
+  return false
+}
+
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
   asset: EmittedAsset
@@ -348,14 +356,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             typeof replacement === 'string'
               ? JSON.stringify(replacement).slice(1, -1)
               : `"+${replacement.runtime}+"`
-          s.overwrite(
-            match.index,
-            match.index + full.length,
-            replacementString,
-            {
-              contentOnly: true
-            }
-          )
+          s.update(match.index, match.index + full.length, replacementString)
         }
       }
       return result()

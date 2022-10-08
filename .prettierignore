@@ -9,4 +9,3 @@ playground/tsconfig-json-load-error/has-error/tsconfig.json
 playground/html/invalid.html
 playground/html/valid.html
 playground/worker/classic-worker.js
-packages/vite/client/types.d.ts

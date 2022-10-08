@@ -13,6 +13,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
+import type { InvalidatePayload } from 'types/customEvent'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -52,7 +53,7 @@ import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
 import { proxyMiddleware } from './middlewares/proxy'
-import { spaFallbackMiddleware } from './middlewares/spaFallback'
+import { htmlFallbackMiddleware } from './middlewares/htmlFallback'
 import { transformMiddleware } from './middlewares/transform'
 import {
   createDevHtmlTransformFn,
@@ -67,7 +68,12 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './moduleGraph'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HmrOptions } from './hmr'
-import { handleFileAddUnlink, handleHMRUpdate } from './hmr'
+import {
+  getShortName,
+  handleFileAddUnlink,
+  handleHMRUpdate,
+  updateModules
+} from './hmr'
 import { openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -489,6 +495,14 @@ export async function createServer(
     handleFileAddUnlink(normalizePath(file), server)
   })
 
+  ws.on('vite:invalidate', async ({ path }: InvalidatePayload) => {
+    const mod = moduleGraph.urlToModuleMap.get(path)
+    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+      const file = getShortName(mod.file!, config.root)
+      updateModules(file, [...mod.importers], mod.lastHMRTimestamp, server)
+    }
+  })
+
   if (!middlewareMode && httpServer) {
     httpServer.once('listening', () => {
       // update actual port since this may be different from initial value
@@ -546,9 +560,9 @@ export async function createServer(
   middlewares.use(serveRawFsMiddleware(server))
   middlewares.use(serveStaticMiddleware(root, server))
 
-  // spa fallback
-  if (config.appType === 'spa') {
-    middlewares.use(spaFallbackMiddleware(root))
+  // html fallback
+  if (config.appType === 'spa' || config.appType === 'mpa') {
+    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks

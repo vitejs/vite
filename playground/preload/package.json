@@ -17,7 +17,7 @@
     "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
   },
   "dependencies": {
-    "vue": "^3.2.39",
+    "vue": "^3.2.40",
     "vue-router": "^4.1.5"
   },
   "devDependencies": {

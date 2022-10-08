@@ -95,9 +95,7 @@ export function renderAssetUrlInJS(
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
-    s.overwrite(match.index, match.index + full.length, replacementString, {
-      contentOnly: true
-    })
+    s.update(match.index, match.index + full.length, replacementString)
   }
 
   // Replace __VITE_PUBLIC_ASSET__5aa0ddc0__ with absolute paths
@@ -119,9 +117,7 @@ export function renderAssetUrlInJS(
       typeof replacement === 'string'
         ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
-    s.overwrite(match.index, match.index + full.length, replacementString, {
-      contentOnly: true
-    })
+    s.update(match.index, match.index + full.length, replacementString)
   }
 
   return s
