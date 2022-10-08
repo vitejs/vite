@@ -123,6 +123,7 @@ export function proxyMiddleware(
           } else if (isObject(bypassResult)) {
             Object.assign(options, bypassResult)
             debug(`bypass: ${req.url} use modified options: %O`, options)
+            return next()
           } else if (bypassResult === false) {
             debug(`bypass: ${req.url} -> 404`)
             return res.end(404)
