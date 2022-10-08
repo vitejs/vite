@@ -9,7 +9,8 @@ import type {
   PluginOption,
   ResolvedConfig,
   UserConfig,
-  ViteDevServer
+  ViteDevServer,
+  COMMAND
 } from 'vite'
 import {
   build,
@@ -195,7 +196,7 @@ beforeAll(async (s) => {
 function loadConfigFromDir(dir: string) {
   return loadConfigFromFile(
     {
-      command: isBuild ? 'build' : 'serve',
+      command: isBuild ? COMMAND.BUILD : COMMAND.SERVE,
       mode: isBuild ? 'production' : 'development'
     },
     undefined,
