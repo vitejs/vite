@@ -12,12 +12,12 @@ import type {
   ViteDevServer
 } from 'vite'
 import {
+  COMMAND,
   build,
   createServer,
   loadConfigFromFile,
   mergeConfig,
-  preview,
-  COMMAND
+  preview
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
