@@ -182,6 +182,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   let isModule = false
   let isAsync = false
   for (const p of node.attrs) {
+    if (p.prefix !== undefined) continue
     if (p.name === 'src') {
       if (!src) {
         src = p
@@ -412,9 +413,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           const assetAttrs = assetAttrsConfig[node.nodeName]
           if (assetAttrs) {
             for (const p of node.attrs) {
-              if (p.value && assetAttrs.includes(p.name)) {
+              const attrKey = getAttrKey(p)
+              if (p.value && assetAttrs.includes(attrKey)) {
                 const attrSourceCodeLocation =
-                  node.sourceCodeLocation!.attrs![p.name]
+                  node.sourceCodeLocation!.attrs![attrKey]
                 // assetsUrl may be encodeURI
                 const url = decodeURI(p.value)
                 if (!isExcludedUrl(url)) {
@@ -423,7 +425,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     isCSSRequest(url) &&
                     // should not be converted if following attributes are present (#6748)
                     !node.attrs.some(
-                      (p) => p.name === 'media' || p.name === 'disabled'
+                      (p) =>
+                        p.prefix === undefined &&
+                        (p.name === 'media' || p.name === 'disabled')
                     )
                   ) {
                     // CSS references, convert to import
@@ -453,7 +457,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // <tag style="... url(...) ..."></tag>
           // extract inline styles as virtual css and add class attribute to tag for selecting
           const inlineStyle = node.attrs.find(
-            (prop) => prop.name === 'style' && prop.value.includes('url(') // only url(...) in css need to emit file
+            (prop) =>
+              prop.prefix === undefined &&
+              prop.name === 'style' &&
+              prop.value.includes('url(') // only url(...) in css need to emit file
           )
           if (inlineStyle) {
             inlineModuleIndex++
@@ -527,7 +534,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           ) {
             try {
               const url =
-                attr.name === 'srcset'
+                attr.prefix === undefined && attr.name === 'srcset'
                   ? await processSrcSet(content, ({ url }) =>
                       urlToBuiltUrl(url, id, config, this)
                     )
@@ -1132,4 +1139,8 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+export function getAttrKey(attr: Token.Attribute): string {
+  return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
 }
