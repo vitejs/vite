@@ -6,7 +6,7 @@ import type {
 } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Http2SecureServer } from 'node:http2'
-import type { Connect } from 'types/connect'
+import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
 import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'

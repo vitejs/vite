@@ -216,11 +216,10 @@ export function overwriteAttrValue(
   }
   const wrapOffset = valueStart[1] === '"' || valueStart[1] === "'" ? 1 : 0
   const valueOffset = valueStart.index! + valueStart[0].length - 1
-  s.overwrite(
+  s.update(
     sourceCodeLocation.startOffset + valueOffset + wrapOffset,
     sourceCodeLocation.endOffset - wrapOffset,
-    newValue,
-    { contentOnly: true }
+    newValue
   )
   return s
 }
@@ -487,11 +486,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
-            s.overwrite(
+            s.update(
               styleNode.sourceCodeLocation!.startOffset,
               styleNode.sourceCodeLocation!.endOffset,
-              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
-              { contentOnly: true }
+              `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`
             )
           }
 
@@ -546,16 +544,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (!isExcludedUrl(url)) {
-            s.overwrite(
-              start,
-              end,
-              await urlToBuiltUrl(url, id, config, this),
-              { contentOnly: true }
-            )
+            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
           } else if (checkPublicFile(url, config)) {
-            s.overwrite(start, end, toOutputPublicFilePath(url), {
-              contentOnly: true
-            })
+            s.update(start, end, toOutputPublicFilePath(url))
           }
         }
 
@@ -581,8 +572,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
+        const { modulePreload } = config.build
         if (
-          config.build.polyfillModulePreload &&
+          (modulePreload === true ||
+            (typeof modulePreload === 'object' && modulePreload.polyfill)) &&
           (someScriptsAreAsync || someScriptsAreDefer)
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
@@ -627,14 +620,14 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       })
 
       const toPreloadTag = (
-        chunk: OutputChunk,
+        filename: string,
         toOutputPath: (filename: string) => string
       ): HtmlTagDescriptor => ({
         tag: 'link',
         attrs: {
           rel: 'modulepreload',
           crossorigin: true,
-          href: toOutputPath(chunk.fileName)
+          href: toOutputPath(filename)
         }
       })
 
@@ -726,15 +719,28 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // when not inlined, inject <script> for entry and modulepreload its dependencies
           // when inlined, discard entry chunk and inject <script> for everything in post-order
           const imports = getImportedChunks(chunk)
-          const assetTags = canInlineEntry
-            ? imports.map((chunk) =>
-                toScriptTag(chunk, toOutputAssetFilePath, isAsync)
-              )
-            : [
-                toScriptTag(chunk, toOutputAssetFilePath, isAsync),
-                ...imports.map((i) => toPreloadTag(i, toOutputAssetFilePath))
-              ]
-
+          let assetTags: HtmlTagDescriptor[]
+          if (canInlineEntry) {
+            assetTags = imports.map((chunk) =>
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync)
+            )
+          } else {
+            const { modulePreload } = config.build
+            const resolveDependencies =
+              typeof modulePreload === 'object' &&
+              modulePreload.resolveDependencies
+            const importsFileNames = imports.map((chunk) => chunk.fileName)
+            const resolvedDeps = resolveDependencies
+              ? resolveDependencies(chunk.fileName, importsFileNames, {
+                  hostId: relativeUrlPath,
+                  hostType: 'html'
+                })
+              : importsFileNames
+            assetTags = [
+              toScriptTag(chunk, toOutputAssetFilePath, isAsync),
+              ...resolvedDeps.map((i) => toPreloadTag(i, toOutputAssetFilePath))
+            ]
+          }
           assetTags.push(...getCssTagsForChunk(chunk, toOutputAssetFilePath))
 
           result = injectToHead(result, assetTags)
@@ -765,12 +771,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(result)
           const { 0: full, 1: scopedName } = match
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
-          s.overwrite(
-            match.index,
-            match.index + full.length,
-            cssTransformedCode,
-            { contentOnly: true }
-          )
+          s.update(match.index, match.index + full.length, cssTransformedCode)
         }
         if (s) {
           result = s.toString()

@@ -3,6 +3,7 @@ import path from 'node:path'
 import colors from 'picocolors'
 import type {
   ExternalOption,
+  InputOption,
   InternalModuleFormat,
   ModuleFormat,
   OutputOptions,
@@ -16,10 +17,10 @@ import type {
   WarningHandler,
   WatcherOptions
 } from 'rollup'
-import type { Terser } from 'types/terser'
+import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
-import type { RollupCommonJSOptions } from 'types/commonjs'
-import type { RollupDynamicImportVarsOptions } from 'types/dynamicImportVars'
+import type { RollupCommonJSOptions } from 'dep-types/commonjs'
+import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { isDepsOptimizerEnabled, resolveConfig } from './config'
@@ -42,7 +43,6 @@ import {
   getDepsCacheDir,
   initDepsOptimizer
 } from './optimizer'
-import { assetImportMetaUrlPlugin } from './plugins/assetImportMetaUrl'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import type { PackageData } from './packages'
 import { watchPackageDataPlugin } from './packages'
@@ -73,8 +73,15 @@ export interface BuildOptions {
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
    * @default true
+   * @deprecated use `modulePreload.polyfill` instead
    */
   polyfillModulePreload?: boolean
+  /**
+   * Configure module preload
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  modulePreload?: boolean | ModulePreloadOptions
   /**
    * Directory relative from `root` where build output will be placed. If the
    * directory exists, it will be removed before the build.
@@ -208,7 +215,7 @@ export interface LibraryOptions {
   /**
    * Path of library entry
    */
-  entry: string
+  entry: InputOption
   /**
    * The name of the exposed global variable. Required when the `formats` option includes
    * `umd` or `iife`
@@ -224,19 +231,70 @@ export interface LibraryOptions {
    * of the project package.json. It can also be defined as a function taking the
    * format as an argument.
    */
-  fileName?: string | ((format: ModuleFormat) => string)
+  fileName?: string | ((format: ModuleFormat, entryName: string) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
 
-export type ResolvedBuildOptions = Required<BuildOptions>
+export interface ModulePreloadOptions {
+  /**
+   * Whether to inject a module preload polyfill.
+   * Note: does not apply to library mode.
+   * @default true
+   */
+  polyfill?: boolean
+  /**
+   * Resolve the list of dependencies to preload for a given dynamic import
+   * @experimental
+   */
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+export interface ResolvedModulePreloadOptions {
+  polyfill: boolean
+  resolveDependencies?: ResolveModulePreloadDependenciesFn
+}
+
+export type ResolveModulePreloadDependenciesFn = (
+  filename: string,
+  deps: string[],
+  context: {
+    hostId: string
+    hostType: 'html' | 'js'
+  }
+) => string[]
+
+export interface ResolvedBuildOptions
+  extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
 
 export function resolveBuildOptions(
   raw: BuildOptions | undefined
 ): ResolvedBuildOptions {
+  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  if (raw) {
+    const { polyfillModulePreload, ...rest } = raw
+    raw = rest
+    if (deprecatedPolyfillModulePreload !== undefined) {
+      logger.warn(
+        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.'
+      )
+    }
+    if (
+      deprecatedPolyfillModulePreload === false &&
+      raw.modulePreload === undefined
+    ) {
+      raw.modulePreload = { polyfill: false }
+    }
+  }
+
+  const modulePreload = raw?.modulePreload
+  const defaultModulePreload = {
+    polyfill: true
+  }
+
   const resolved: ResolvedBuildOptions = {
     target: 'modules',
-    polyfillModulePreload: true,
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: 4096,
@@ -265,7 +323,17 @@ export function resolveBuildOptions(
       warnOnError: true,
       exclude: [/node_modules/],
       ...raw?.dynamicImportVarsOptions
-    }
+    },
+    // Resolve to false | object
+    modulePreload:
+      modulePreload === false
+        ? false
+        : typeof modulePreload === 'object'
+        ? {
+            ...defaultModulePreload,
+            ...modulePreload
+          }
+        : defaultModulePreload
   }
 
   // handle special build targets
@@ -308,7 +376,6 @@ export function resolveBuildPlugins(config: ResolvedConfig): {
       watchPackageDataPlugin(config),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      assetImportMetaUrlPlugin(config),
       ...(options.rollupOptions.plugins
         ? (options.rollupOptions.plugins.filter(Boolean) as Plugin[])
         : [])
@@ -371,7 +438,17 @@ async function doBuild(
 
   const resolve = (p: string) => path.resolve(config.root, p)
   const input = libOptions
-    ? options.rollupOptions?.input || resolve(libOptions.entry)
+    ? options.rollupOptions?.input ||
+      (typeof libOptions.entry === 'string'
+        ? resolve(libOptions.entry)
+        : Array.isArray(libOptions.entry)
+        ? libOptions.entry.map(resolve)
+        : Object.fromEntries(
+            Object.entries(libOptions.entry).map(([alias, file]) => [
+              alias,
+              resolve(file)
+            ])
+          ))
     : typeof options.ssr === 'string'
     ? resolve(options.ssr)
     : options.rollupOptions?.input || resolve('index.html')
@@ -468,7 +545,8 @@ async function doBuild(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-          ? resolveLibFilename(libOptions, format, config.root, jsExt)
+          ? ({ name }) =>
+              resolveLibFilename(libOptions, format, name, config.root, jsExt)
           : path.posix.join(options.assetsDir, `[name].[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name].[hash].${jsExt}`
@@ -491,19 +569,21 @@ async function doBuild(
       libOptions,
       config.logger
     )
+    const normalizedOutputs: OutputOptions[] = []
+
+    if (Array.isArray(outputs)) {
+      for (const resolvedOutput of outputs) {
+        normalizedOutputs.push(buildOutputOptions(resolvedOutput))
+      }
+    } else {
+      normalizedOutputs.push(buildOutputOptions(outputs))
+    }
+
+    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
     if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
-
-      const output: OutputOptions[] = []
-      if (Array.isArray(outputs)) {
-        for (const resolvedOutput of outputs) {
-          output.push(buildOutputOptions(resolvedOutput))
-        }
-      } else {
-        output.push(buildOutputOptions(outputs))
-      }
 
       const resolvedChokidarOptions = resolveChokidarOptions(
         config.build.watch.chokidar
@@ -512,7 +592,7 @@ async function doBuild(
       const { watch } = await import('rollup')
       const watcher = watch({
         ...rollupOptions,
-        output,
+        output: normalizedOutputs,
         watch: {
           ...config.build.watch,
           chokidar: resolvedChokidarOptions
@@ -523,7 +603,7 @@ async function doBuild(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDir, options.emptyOutDir, config)
+            prepareOutDir(outDirs, options.emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -542,24 +622,18 @@ async function doBuild(
     parallelBuilds.push(bundle)
 
     const generate = (output: OutputOptions = {}) => {
-      return bundle[options.write ? 'write' : 'generate'](
-        buildOutputOptions(output)
-      )
+      return bundle[options.write ? 'write' : 'generate'](output)
     }
 
     if (options.write) {
-      prepareOutDir(outDir, options.emptyOutDir, config)
+      prepareOutDir(outDirs, options.emptyOutDir, config)
     }
 
-    if (Array.isArray(outputs)) {
-      const res = []
-      for (const output of outputs) {
-        res.push(await generate(output))
-      }
-      return res
-    } else {
-      return await generate(outputs)
+    const res = []
+    for (const output of normalizedOutputs) {
+      res.push(await generate(output))
     }
+    return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     outputBuildError(e)
     throw e
@@ -567,30 +641,53 @@ async function doBuild(
 }
 
 function prepareOutDir(
-  outDir: string,
+  outDirs: string[],
   emptyOutDir: boolean | null,
   config: ResolvedConfig
 ) {
-  if (fs.existsSync(outDir)) {
-    if (
-      emptyOutDir == null &&
-      !normalizePath(outDir).startsWith(config.root + '/')
-    ) {
-      // warn if outDir is outside of root
-      config.logger.warn(
-        colors.yellow(
-          `\n${colors.bold(`(!)`)} outDir ${colors.white(
-            colors.dim(outDir)
-          )} is not inside project root and will not be emptied.\n` +
-            `Use --emptyOutDir to override.\n`
+  const nonDuplicateDirs = new Set(outDirs)
+  let outside = false
+  if (emptyOutDir == null) {
+    for (const outDir of nonDuplicateDirs) {
+      if (
+        fs.existsSync(outDir) &&
+        !normalizePath(outDir).startsWith(config.root + '/')
+      ) {
+        // warn if outDir is outside of root
+        config.logger.warn(
+          colors.yellow(
+            `\n${colors.bold(`(!)`)} outDir ${colors.white(
+              colors.dim(outDir)
+            )} is not inside project root and will not be emptied.\n` +
+              `Use --emptyOutDir to override.\n`
+          )
         )
-      )
-    } else if (emptyOutDir !== false) {
-      emptyDir(outDir, ['.git'])
+        outside = true
+        break
+      }
     }
   }
-  if (config.publicDir && fs.existsSync(config.publicDir)) {
-    copyDir(config.publicDir, outDir)
+  for (const outDir of nonDuplicateDirs) {
+    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+      // skip those other outDirs which are nested in current outDir
+      const skipDirs = outDirs
+        .map((dir) => {
+          const relative = path.relative(outDir, dir)
+          if (
+            relative &&
+            !relative.startsWith('..') &&
+            !path.isAbsolute(relative)
+          ) {
+            return relative
+          }
+          return ''
+        })
+        .filter(Boolean)
+      emptyDir(outDir, [...skipDirs, '.git'])
+    }
+    if (config.publicDir && fs.existsSync(config.publicDir)) {
+      copyDir(config.publicDir, outDir)
+    }
   }
 }
 
@@ -618,15 +715,20 @@ function resolveOutputJsExtension(
 export function resolveLibFilename(
   libOptions: LibraryOptions,
   format: ModuleFormat,
+  entryName: string,
   root: string,
   extension?: JsExt
 ): string {
   if (typeof libOptions.fileName === 'function') {
-    return libOptions.fileName(format)
+    return libOptions.fileName(format, entryName)
   }
 
   const packageJson = getPkgJson(root)
-  const name = libOptions.fileName || getPkgName(packageJson.name)
+  const name =
+    libOptions.fileName ||
+    (typeof libOptions.entry === 'string'
+      ? getPkgName(packageJson.name)
+      : entryName)
 
   if (!name)
     throw new Error(
@@ -649,14 +751,22 @@ function resolveBuildOutputs(
 ): OutputOptions | OutputOptions[] | undefined {
   if (libOptions) {
     const formats = libOptions.formats || ['es', 'umd']
-    if (
-      (formats.includes('umd') || formats.includes('iife')) &&
-      !libOptions.name
-    ) {
-      throw new Error(
-        `Option "build.lib.name" is required when output formats ` +
-          `include "umd" or "iife".`
-      )
+    if (formats.includes('umd') || formats.includes('iife')) {
+      if (
+        typeof libOptions.entry !== 'string' &&
+        Object.values(libOptions.entry).length > 1
+      ) {
+        throw new Error(
+          `Multiple entry points are not supported when output formats include "umd" or "iife".`
+        )
+      }
+
+      if (!libOptions.name) {
+        throw new Error(
+          `Option "build.lib.name" is required when output formats ` +
+            `include "umd" or "iife".`
+        )
+      }
     }
     if (!outputs) {
       return formats.map((format) => ({ format }))
@@ -903,19 +1013,16 @@ export type RenderBuiltAssetUrl = (
   }
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
-export function toOutputFilePathInString(
+export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
   hostType: 'js' | 'css' | 'html',
   config: ResolvedConfig,
-  format: InternalModuleFormat,
   toRelative: (
     filename: string,
     hostType: string
-  ) => string | { runtime: string } = getToImportMetaURLBasedRelativePath(
-    format
-  )
+  ) => string | { runtime: string }
 ): string | { runtime: string } {
   const { renderBuiltUrl } = config.experimental
   let relative = config.base === '' || config.base === './'
@@ -943,7 +1050,7 @@ export function toOutputFilePathInString(
   return config.base + filename
 }
 
-function getToImportMetaURLBasedRelativePath(
+export function createToImportMetaURLBasedRelativeRuntime(
   format: InternalModuleFormat
 ): (filename: string, importer: string) => { runtime: string } {
   const toRelativePath = relativeUrlMechanisms[format]
