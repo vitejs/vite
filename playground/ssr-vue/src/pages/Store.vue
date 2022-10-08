@@ -3,16 +3,16 @@
 </template>
 
 <script>
-import { createStore } from 'vuex'
+import { defineStore } from 'pinia'
 
 export default {
   async setup() {
-    const store = createStore({
-      state: {
+    const useFooStore = defineStore('foo-store', {
+      state: () => ({
         foo: 'bar'
-      }
+      })
     })
-    return store.state
+    return useFooStore()
   }
 }
 </script>

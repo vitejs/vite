@@ -243,7 +243,7 @@ importers:
       http-proxy: ^1.18.1
       json5: ^2.2.1
       launch-editor-middleware: ^2.6.0
-      magic-string: ^0.26.5
+      magic-string: ^0.26.6
       micromatch: ^4.0.5
       mlly: ^0.5.16
       mrmime: ^1.0.1
@@ -308,7 +308,7 @@ importers:
       http-proxy: 1.18.1_debug@4.3.4
       json5: 2.2.1
       launch-editor-middleware: 2.6.0
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       micromatch: 4.0.5
       mlly: 0.5.16
       mrmime: 1.0.1
@@ -1131,15 +1131,15 @@ importers:
       dep-import-type: link:./dep-import-type
       example-external-component: file:example-external-component
       express: ^4.18.1
+      pinia: ^2.0.22
       serve-static: ^1.15.0
       vue: ^3.2.40
       vue-router: ^4.1.5
-      vuex: ^4.0.2
     dependencies:
       example-external-component: file:playground/ssr-vue/example-external-component
+      pinia: 2.0.22_vue@3.2.40
       vue: 3.2.40
       vue-router: 4.1.5_vue@3.2.40
-      vuex: 4.0.2_vue@3.2.40
     devDependencies:
       '@vitejs/plugin-vue': link:../../packages/plugin-vue
       '@vitejs/plugin-vue-jsx': link:../../packages/plugin-vue-jsx
@@ -2767,7 +2767,6 @@ packages:
 
   /@vue/devtools-api/6.4.2:
     resolution: {integrity: sha512-6hNZ23h1M2Llky+SIAmVhL7s6BjLtZBCzjIz9iRSBUsysjE7kC39ulW0dH4o/eZtycmSt4qEr6RDVGTIuWu+ow==}
-    dev: true
 
   /@vue/reactivity-transform/3.2.40:
     resolution: {integrity: sha512-HQUCVwEaacq6fGEsg2NUuGKIhUveMCjOk8jGHqLXPI2w6zFoPrlQhwWEaINTv5kkZDXKEnCijAp+4gNEHG03yw==}
@@ -6247,6 +6246,13 @@ packages:
     dependencies:
       sourcemap-codec: 1.4.8
 
+  /magic-string/0.26.6:
+    resolution: {integrity: sha512-6d+3bFybzyQFJYSoRsl9ZC0wheze8M1LrQC7tNMRqXR4izUTDOLMd9BtSuExK9iAukFh+s5K0WAhc/dlQ+HKYA==}
+    engines: {node: '>=12'}
+    dependencies:
+      sourcemap-codec: 1.4.8
+    dev: true
+
   /make-dir/2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
@@ -6985,6 +6991,23 @@ packages:
     dev: true
     optional: true
 
+  /pinia/2.0.22_vue@3.2.40:
+    resolution: {integrity: sha512-u+b8/BC+tmvo3ACbYO2w5NfxHWFOjvvw9DQnyT0dW8aUMCPRQT5QnfZ5R5W2MzZBMTeZRMQI7V/QFbafmM9QHw==}
+    peerDependencies:
+      '@vue/composition-api': ^1.4.0
+      typescript: '>=4.4.4'
+      vue: ^2.6.14 || ^3.2.0
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      '@vue/devtools-api': 6.4.2
+      vue: 3.2.40
+      vue-demi: 0.13.1_vue@3.2.40
+    dev: false
+
   /pkg-types/0.3.5:
     resolution: {integrity: sha512-VkxCBFVgQhNHYk9subx+HOhZ4jzynH11ah63LZsprTKwPCWG9pfWBlkElWFbvkP9BVR0dP1jS9xPdhaHQNK74Q==}
     dependencies:
@@ -7645,7 +7668,7 @@ packages:
       rollup: ^2.55
       typescript: ^4.1
     dependencies:
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       rollup: 2.79.1
       typescript: 4.8.2
     optionalDependencies:
@@ -7679,7 +7702,7 @@ packages:
       commenting: 1.1.0
       glob: 7.2.0
       lodash: 4.17.21
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       mkdirp: 1.0.4
       moment: 2.29.3
       package-name-regex: 2.0.6
@@ -8585,7 +8608,7 @@ packages:
       globby: 13.1.2
       hookable: 5.3.0
       jiti: 1.14.0
-      magic-string: 0.26.5
+      magic-string: 0.26.6
       mkdirp: 1.0.4
       mkdist: 0.3.13_typescript@4.8.2
       mlly: 0.5.16
@@ -8775,7 +8798,6 @@ packages:
         optional: true
     dependencies:
       vue: 3.2.40
-    dev: true
 
   /vue-router/4.1.5_vue@3.2.40:
     resolution: {integrity: sha512-IsvoF5D2GQ/EGTs/Th4NQms9gd2NSqV+yylxIyp/OYp8xOwxmU8Kj/74E9DTSYAyH5LX7idVUngN3JSj1X4xcQ==}
