@@ -9,15 +9,15 @@ import type {
   PluginOption,
   ResolvedConfig,
   UserConfig,
-  ViteDevServer,
-  COMMAND
+  ViteDevServer
 } from 'vite'
 import {
   build,
   createServer,
   loadConfigFromFile,
   mergeConfig,
-  preview
+  preview,
+  COMMAND
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
