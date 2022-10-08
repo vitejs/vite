@@ -24,7 +24,7 @@ import {
   writeFile
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET } from '../constants'
+import { COMMAND, ESBUILD_MODULES_TARGET } from '../constants'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 export {
@@ -227,7 +227,7 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  const ssr = config.command === 'build' && !!config.build.ssr
+  const ssr = config.command === COMMAND.BUILD && !!config.build.ssr
 
   const cachedMetadata = loadCachedDepOptimizationMetadata(
     config,
@@ -449,13 +449,13 @@ export function depsLogString(qualifiedIds: string[]): string {
 export async function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = resolvedConfig.command === 'build' &&
+  ssr: boolean = resolvedConfig.command === COMMAND.BUILD &&
     !!resolvedConfig.build.ssr
 ): Promise<DepOptimizationResult> {
-  const isBuild = resolvedConfig.command === 'build'
+  const isBuild = resolvedConfig.command === COMMAND.BUILD
   const config: ResolvedConfig = {
     ...resolvedConfig,
-    command: 'build'
+    command: COMMAND.BUILD
   }
 
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
@@ -761,7 +761,7 @@ export function getOptimizedDepPath(
 
 function getDepsCacheSuffix(config: ResolvedConfig, ssr: boolean): string {
   let suffix = ''
-  if (config.command === 'build') {
+  if (config.command === COMMAND.BUILD) {
     // Differentiate build caches depending on outDir to allow parallel builds
     const { outDir } = config.build
     const buildId =
