@@ -269,7 +269,9 @@ export interface ResolvedBuildOptions
 }
 
 export function resolveBuildOptions(
-  raw: BuildOptions | undefined
+  raw: BuildOptions | undefined,
+  isBuild: boolean,
+  logger: Logger
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
