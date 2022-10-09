@@ -5,6 +5,7 @@ import type {
   Identifier,
   Pattern,
   Property,
+  VariableDeclaration,
   Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
@@ -316,6 +317,7 @@ function walk(
   { onIdentifier, onImportMeta, onDynamicImport }: Visitors
 ) {
   const parentStack: Node[] = []
+  const varKindStack: VariableDeclaration['kind'][] = []
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
 
@@ -373,6 +375,11 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.unshift(parent)
+      }
+
+      // track variable declaration kind stack used by VariableDeclarator
+      if (node.type === 'VariableDeclaration') {
+        varKindStack.unshift(node.kind)
       }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
@@ -434,7 +441,10 @@ function walk(
         // mark property in destructuring pattern
         setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
-        const parentFunction = findParentScope(parentStack)
+        const parentFunction = findParentScope(
+          parentStack,
+          varKindStack[0] === 'var'
+        )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
@@ -448,6 +458,10 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.shift()
+      }
+
+      if (node.type === 'VariableDeclaration') {
+        varKindStack.shift()
       }
     }
   })
@@ -538,8 +552,12 @@ function isFunction(node: _Node): node is FunctionNode {
 
 const scopeNodeTypeRE =
   /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
-function findParentScope(parentStack: _Node[]): _Node | undefined {
-  return parentStack.find((i) => scopeNodeTypeRE.test(i.type))
+function findParentScope(
+  parentStack: _Node[],
+  isVar = false
+): _Node | undefined {
+  const regex = isVar ? functionNodeTypeRE : scopeNodeTypeRE
+  return parentStack.find((i) => regex.test(i.type))
 }
 
 function isInDestructuringAssignment(
