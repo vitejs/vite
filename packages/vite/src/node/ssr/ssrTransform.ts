@@ -317,9 +317,9 @@ function walk(
   { onIdentifier, onImportMeta, onDynamicImport }: Visitors
 ) {
   const parentStack: Node[] = []
+  const varKindStack: VariableDeclaration['kind'][] = []
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
-  let variableDeclarationKind: VariableDeclaration['kind'] | undefined
 
   const setScope = (node: _Node, name: string) => {
     let scopeIds = scopeMap.get(node)
@@ -375,6 +375,11 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.unshift(parent)
+      }
+
+      // track variable declaration kind stack used by VariableDeclarator
+      if (node.type === 'VariableDeclaration') {
+        varKindStack.unshift(node.kind)
       }
 
       if (node.type === 'MetaProperty' && node.meta.name === 'import') {
@@ -438,13 +443,11 @@ function walk(
       } else if (node.type === 'VariableDeclarator') {
         const parentFunction = findParentScope(
           parentStack,
-          variableDeclarationKind === 'var'
+          varKindStack[0] === 'var'
         )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
-      } else if (node.type === 'VariableDeclaration') {
-        variableDeclarationKind = node.kind
       }
     },
 
@@ -458,7 +461,7 @@ function walk(
       }
 
       if (node.type === 'VariableDeclaration') {
-        variableDeclarationKind = undefined
+        varKindStack.shift()
       }
     }
   })

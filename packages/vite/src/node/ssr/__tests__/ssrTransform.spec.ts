@@ -792,12 +792,12 @@ export class Test {
 test('track var scope by function', async () => {
   expect(
     await ssrTransformSimpleCode(`
-import { foo } from 'foobar'
+import { foo, bar } from 'foobar'
 function test() {
   if (true) {
-    var foo = 'shadow'
+    var foo = () => { var why = 'would' }, bar = 'someone'
   }
-  return foo
+  return [foo, bar]
 }`)
   ).toMatchInlineSnapshot(`
     "
@@ -805,9 +805,9 @@ function test() {
 
     function test() {
       if (true) {
-        var foo = 'shadow'
+        var foo = () => { var why = 'would' }, bar = 'someone'
       }
-      return foo
+      return [foo, bar]
     }"
   `)
 })
