@@ -5,6 +5,7 @@ import type {
   Identifier,
   Pattern,
   Property,
+  VariableDeclaration,
   Node as _Node
 } from 'estree'
 import { extract_names as extractNames } from 'periscopic'
@@ -318,6 +319,7 @@ function walk(
   const parentStack: Node[] = []
   const scopeMap = new WeakMap<_Node, Set<string>>()
   const identifiers: [id: any, stack: Node[]][] = []
+  let variableDeclarationKind: VariableDeclaration['kind'] | undefined
 
   const setScope = (node: _Node, name: string) => {
     let scopeIds = scopeMap.get(node)
@@ -434,10 +436,15 @@ function walk(
         // mark property in destructuring pattern
         setIsNodeInPattern(node)
       } else if (node.type === 'VariableDeclarator') {
-        const parentFunction = findParentScope(parentStack)
+        const parentFunction = findParentScope(
+          parentStack,
+          variableDeclarationKind === 'var'
+        )
         if (parentFunction) {
           handlePattern(node.id, parentFunction)
         }
+      } else if (node.type === 'VariableDeclaration') {
+        variableDeclarationKind = node.kind
       }
     },
 
@@ -448,6 +455,10 @@ function walk(
         !(parent.type === 'IfStatement' && node === parent.alternate)
       ) {
         parentStack.shift()
+      }
+
+      if (node.type === 'VariableDeclaration') {
+        variableDeclarationKind = undefined
       }
     }
   })
@@ -538,8 +549,12 @@ function isFunction(node: _Node): node is FunctionNode {
 
 const scopeNodeTypeRE =
   /(?:Function|Class)(?:Expression|Declaration)$|Method$|^IfStatement$/
-function findParentScope(parentStack: _Node[]): _Node | undefined {
-  return parentStack.find((i) => scopeNodeTypeRE.test(i.type))
+function findParentScope(
+  parentStack: _Node[],
+  isVar = false
+): _Node | undefined {
+  const regex = isVar ? functionNodeTypeRE : scopeNodeTypeRE
+  return parentStack.find((i) => regex.test(i.type))
 }
 
 function isInDestructuringAssignment(

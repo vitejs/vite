@@ -787,3 +787,27 @@ export class Test {
     Object.defineProperty(__vite_ssr_exports__, \\"Test\\", { enumerable: true, configurable: true, get(){ return Test }});;"
   `)
 })
+
+// #10386
+test('track var scope by function', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { foo } from 'foobar'
+function test() {
+  if (true) {
+    var foo = 'shadow'
+  }
+  return foo
+}`)
+  ).toMatchInlineSnapshot(`
+    "
+    const __vite_ssr_import_0__ = await __vite_ssr_import__(\\"foobar\\");
+
+    function test() {
+      if (true) {
+        var foo = 'shadow'
+      }
+      return foo
+    }"
+  `)
+})
