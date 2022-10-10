@@ -1,3 +1,9 @@
+## <small>3.1.7 (2022-10-10)</small>
+
+* fix(ssr): track var as function scope (#10397) ([a5143e9](https://github.com/vitejs/vite/commit/a5143e9)), closes [#10397](https://github.com/vitejs/vite/issues/10397) [#10388](https://github.com/vitejs/vite/issues/10388)
+
+
+
 ## <small>3.1.6 (2022-10-06)</small>
 
 * fix(config): don't resolve by module field (#10347) (#10360) ([f756e84](https://github.com/vitejs/vite/commit/f756e84)), closes [#10347](https://github.com/vitejs/vite/issues/10347) [#10360](https://github.com/vitejs/vite/issues/10360) [#10347](https://github.com/vitejs/vite/issues/10347)
