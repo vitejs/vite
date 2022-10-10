@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@jridgewell/gen-mapping": "^0.3.2",
-    "@jridgewell/trace-mapping": "^0.3.15",
+    "@jridgewell/trace-mapping": "^0.3.16",
     "debug": "^4.3.4",
     "rollup": "^2.79.1",
     "slash": "^5.0.0",
